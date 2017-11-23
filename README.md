@@ -1,6 +1,6 @@
 #######################################
 # STARK                               #
-# Stellar Tools for varaints          #
+# Stellar Tools for variants          #
 #    Analysis and RanKing             #
 # Author: Antony Le Béchec            #
 # Copyright: IRC                      #
