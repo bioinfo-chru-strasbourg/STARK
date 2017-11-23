@@ -1,0 +1,43 @@
+#######################################
+# STARK                               #
+# Stellar Tools for varaints          #
+#    Analysis and RanKing             #
+# Author: Antony Le Béchec            #
+# Copyright: IRC                      #
+# Licence: GNU-GPL/CeCILL             #
+#######################################
+
+#######################################
+# Release : 0.9.14b                   #
+# Date : 20170629                     #
+#######################################
+
+
+## Operating system
+
+STARK works on Linux. 
+STARK was tested on CentOS 6.7
+
+
+## Packages
+
+Python 2.6.6
+Make 3.81
+ghostscript 8.70
+
+
+## CPU
+
+STARK does not need a minimum of CPU to work.
+Hoever, we recommand at least 2 CPU, ideally 8 CPU.
+Note that bigger are your data, more CPU is required.
+
+
+## RAM
+
+We recommand at least 4Go by CPU (especially for SNPEff annotation).
+Thus, STARK works ideally with 32Go of memory
+
+
+
+

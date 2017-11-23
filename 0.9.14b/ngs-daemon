@@ -1,0 +1,139 @@
+#!/bin/sh
+#
+# ngs        Startup script for the NGS Service
+#
+# description: The NGS Service performs analyses after MiSeq Sequencing.
+# processname: ngs
+# config: /etc/... # No config file et
+# pidfile: /var/run/ngs.pid
+#
+### BEGIN INIT INFO
+# Provides: ngs
+# Required-Start: $local_fs $remote_fs $network $named
+# Required-Stop: $local_fs $remote_fs $network
+# Should-Start: distcache
+# Short-Description: start and stop NGS Service
+# Description: The NGS Service performs analyses after MiSeq Sequencing.
+### END INIT INFO
+
+#if [ "$(id -u)" != "0" ]; then
+		
+	#usage
+	#echo "Daemon need to be launch as root";
+	#exit 1;
+#fi
+
+#NOMSERVICE=ngs
+#FOLDERSERVICE=/NGS/bin/scripts/
+#SCRIPTSERVICE=ngs.sh
+#delai d'activation
+#DELAI=10
+#PID=$$
+#PIDFILE=$FOLDERSERVICE$NOMSERVICE.pid
+#PIDFILE=/var/run/$NOMSERVICE.pid
+
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source $SCRIPT_DIR/env.sh
+
+
+############## Commandes personnalisables : envoi de commandes au démon en cours #################
+
+#trap commande1 USR1
+#commande1() {
+# echo commandes à exécuter
+#}
+
+
+#################  Corps du démon ######################
+demon() {
+        # Code du démon
+	$FOLDERSERVICE$SCRIPTSERVICE
+}
+
+
+###########  Partie générale - Ne pas modifier ############
+
+getpid() {
+        [ -e "$PIDFILE" ] && cat $PIDFILE
+}
+
+start() {
+        if [ "$OLDPID" == "" ] ; then
+                while /bin/true ; do
+                        demon
+                        delai
+                done
+        fi
+}
+
+stop() {
+        PID="$(getpid)"
+        if [ "$PID" != "" ] ; then
+                kill -TERM $PID
+                rm -f $PIDFILE
+                echo "$NOMSERVICE arrêté"
+        else
+                echo "$NOMSERVICE déjà arrêté"
+        fi
+}
+
+status() {
+        PID="$(getpid)"
+        if [ "$PID" != "" ] ; then
+                echo "$NOMSERVICE OK : $PID"
+        else
+                echo "$NOMSERVICE KO"
+        fi
+}
+
+delai() {
+        sleep $((1 * $DELAI))
+}
+
+usage(){
+        echo "Usage : $0 <start|stop|restart|debug|status>"
+}
+
+case "$1" in
+        "start")
+                disown $PID &>/dev/null
+                OLDPID="$(getpid)"
+                start &
+                PID=$!
+                if [ "$OLDPID" == "" ] ; then
+                        echo "$NOMSERVICE lancé : $PID"
+                        echo $PID > $PIDFILE
+                else
+                        echo "$NOMSERVICE déjà lancé : $OLDPID"
+                fi
+                ;;
+        "stop")
+                stop
+                
+                ;;
+        "restart")
+                stop
+                
+                PID=$$
+                disown $PID &>/dev/null
+                start &
+                PID=$!
+                echo "$NOMSERVICE lancé : $PID"
+                echo $PID > $PIDFILE
+                ;;
+        "status")
+                status
+                ;;
+        "debug")
+                set +x
+                start
+                ;;
+#  Commandes personnalisables
+#       "commande1" )
+#               status | grep -q OK
+#               kill -USR1 $PID
+#               ;;
+        *)
+                usage
+                ;;
+esac
