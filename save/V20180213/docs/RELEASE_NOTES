@@ -1,0 +1,235 @@
+#######################################
+# STARK                               #
+# Stellar Tools for variants          #
+#    Analysis and RanKing             #
+# Author: Antony Le Bechec            #
+# Copyright: IRC                      #
+# Licence: GNU-GPL/CeCILL             #
+#######################################
+
+#######################################
+# Release : 0.9.18b                   #
+# Date : 20190211                     #
+#######################################
+
+## New
+
+- New folder architecture (bin, config, app, ...)
+- BED file provided in each sample folder in repository
+- BAM compression changed to 9 by default
+- HOWARD new release 0.9.14b (Alamut compatibility, bug fixed...)
+- Automatiszation of Databases download (get_databases.sh)
+
+
+## Improvments
+
+- Databases files/folder structure simplification
+
+
+## Fixes
+
+- Java flags parameter
+- GZIP environment variable warning fixed
+
+
+
+#######################################
+# STARK                               #
+# Stellar Tools for variants          #
+#    Analysis and RanKing             #
+# Author: Antony Le Bechec            #
+# Copyright: IRC                      #
+# Licence: GNU-GPL/CeCILL             #
+#######################################
+
+#######################################
+# Release : 0.9.17d                   #
+# Date : 20181002                     #
+#######################################
+
+
+## New
+
+- HOWARD new release 0.9.13b (multithreading improved...)
+- Annotation options in applications for annotation rule howard (and a minimum annotation rule howard_minimum)
+- Annotation options in applications for report annotation
+- Report now generates VCF and TSV files with all samples for a run
+
+
+## Improvments
+
+- Report generation improved (multiallelic splitted into multi lines into VCF)
+- VCF metrics improved (snpEff and BCFTOOLS stats)
+- CANOE rule improved (detection improved and exit if failed) 
+
+
+## Fixes
+
+- Report bugs fixed
+- Symlink bug fixed
+- some bugs from 0.9.16b fixed
+
+
+
+#######################################
+# STARK                               #
+# Stellar Tools for variants          #
+#    Analysis and RanKing             #
+# Author: Antony Le Bechec            #
+# Copyright: IRC                      #
+# Licence: GNU-GPL/CeCILL             #
+#######################################
+
+#######################################
+# Release : 0.9.16b                   #
+# Date : 20180615                     #
+#######################################
+
+
+## New
+
+- Option --transcripts added for sample analysis, and auto-detection for run analysis (<manifest>.transcripts)
+- FATBAM new release 0.9.8b (temporary folder, empty primers...)
+- HOWARD new release 0.9.11.1b (CALLING_QUALITY, VARTYPE calculation...)
+- CANOE CNV caller analysis generates new pictures representing region coverage
+
+
+## Improvments
+
+- Rules updated to use BCFTOOLS and SAMTOOLS release 1.8
+- Report generation improved (speed-up)
+- Report files in REPOSITORY are symlink if possible (disk system compatible)
+- Tab-delimited files from VCF now with extension .tsv
+- *idx, *gz and *gz.tbi files from report VCF
+- Application can now include a specific manifest
+- Manifest/BED priority changed (1. Input in option/SampleSheet, then 2. in the Application APP)
+- New option listing all tools/version used in the configuration
+- Applications are now released
+
+
+## Fixes
+
+- Report bugs fixed
+- some bugs from 0.9.15b fixed
+
+
+
+#######################################
+# STARK                               #
+# Stellar Tools for variants          #
+#    Analysis and RanKing             #
+# Author: Antony Le Bechec            #
+# Copyright: IRC                      #
+# Licence: GNU-GPL/CeCILL             #
+#######################################
+
+#######################################
+# Release : 0.9.15b                   #
+# Date : 20171120                     #
+#######################################
+
+
+## New
+
+- FLT3-ITD detection is now available through "itdseek" caller
+- APPS added (new EXOME_SOMATIC analysis)
+- HOWARD new release (VAF calculation on SAMTOOLS fixed, generic DB detected if file exists in option --annotation)
+- HOWARD additionnal DEJAVU database automatically detected using APP (ANNOVAR file ASSEMBLY_GROUP.PROJECT.txt automatically detected)
+- Report coverage tables on regions and amplicons (if any) added
+- Option -j/--bedfile_genes added for sample analysis
+- Folders RESULTS and REPOSITORY now work on all files systems (using symlink or not)
+
+
+## Improvments
+
+- CANOE CNV caller analysis improved: algorithm statistically improved (sex separation on sex chromosomes only) and code optimization (faster)
+- CANOE CNV caller performance improved (scaling)
+- Reports generation was improved, result files clarified
+- Report per target coverage using PICARD improved (especially adding mean_coverage, min_coverage, max_coverage)
+- Raw data are now extract directly from fastq by default, to speed up the analysis
+- More multithreading (remove duplicates, realignment, HOWARD annotation, metrics)
+
+
+## Fixes
+
+- *vcf.gz creation
+- demultiplexing check
+- alternative samplesheet option
+- canoe bugs fixed
+- some bugs from 0.9.14.1 fixed
+
+
+
+#######################################
+# STARK                               #
+# Stellar Tools for variants          #
+#    Analysis and RanKing             #
+# Author: Antony Le Bechec            #
+# Copyright: IRC                      #
+# Licence: GNU-GPL/CeCILL             #
+#######################################
+
+#######################################
+# Release : 0.9.14.1b                 #
+# Date : 20170804                     #
+#######################################
+
+
+## New
+
+- CANOE CNV caller is now available
+- APPS improved and added (new GENOME analysis)
+- CRAM archive
+- HOWARD new calculation option (VAF with stats homogenized, VaRank BarCode, NOMEN identification, Genotype Concordance)
+- Definition of reference transcipts in a file (from HOWARD analysis)
+- Report additions: main coverage table, genes coverage, variants prioritization
+- Much more parameters included in APPS
+
+
+## Fixes
+
+- canoes script correction
+- remove symbolic link copy on REP folder
+- remove $SAMPLE.bwamem.bam.cleaned.bam file (no needed because it's a tempory file)
+
+
+
+#######################################
+# STARK                               #
+# Stellar Tools for variants          #
+#    Analysis and RanKing             #
+# Author: Antony Le Bechec            #
+# Copyright: IRC                      #
+# Licence: GNU-GPL/CeCILL             #
+#######################################
+
+#######################################
+# Release : 0.9.14b                   #
+# Date : 20170629                     #
+#######################################
+
+
+## New
+
+- CANOE CNV caller is now available
+- APPS improved and added (new GENOME analysis)
+- CRAM archive
+- HOWARD new calculation option (VAF with stats homogenized, VaRank BarCode, NOMEN identification, Genotype Concordance)
+- Definition of reference transcipts in a file (from HOWARD analysis)
+- Report additions: main coverage table, genes coverage, variants prioritization
+- Much more parameters included in APPS
+
+
+## Improvments
+
+- Reports generation was improved, informations were added, result files clarified
+- Raw data are now extract directly from fastq by default, to speed up the analysis
+- More multithreading (remove duplcates, realignment, HOWARD annotation, metrics)
+
+
+## Fixes
+
+- *vcf.gz creation
+- demultiplexing check
+- alternative samplesheet option
+
