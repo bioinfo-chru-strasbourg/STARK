@@ -1,39 +1,20 @@
 #!/bin/bash
-## STARK env for HEMATOLOGY
+## STARK application HEMATOLOGY
 
 # DEFAULT ENV
 ######################
-source $CONFIG_DEFAULT_APP
+source_app $CONFIG_DEFAULT_APP
 
 # APPLICATION INFOS
 #####################
 APP_NAME="HEMATOLOGY"
-APP_RELEASE="1.0"
-GROUP="HEMATOLOGY"
-PROJECT="HEMATOLOGY"
+APP_RELEASE="1.1"
+APP_DESCRIPTION="Application to detect somatic mutations in hematology gene panel sequencing data"
+APP_GROUP=""
+APP_PROJECT=""
 
 # ANALYSIS PARAMETERS
 #######################
 
-# ALIGNERS CALLERS ANNOTATORS
-ALIGNERS="bwamem"
-CALLERS="gatkUG_HEMATOLOGY VarScan_HEMATOLOGY"
-ANNOTATORS="howard"
 # PIPELINES
-PIPELINES="bwamem.gatkUG_HEMATOLOGY.howard bwamem.VarScan_HEMATOLOGY.howard"
-
-# NB_BASES_AROUND
-NB_BASES_AROUND=0
-
-# MANIFEST
-#MANIFEST=$MANIFEST_FOLDER/HEMATOLOGY.txt
-MANIFEST=$MANIFEST_FOLDER/HEMATOLOGY.txt
-
-# HOWARD filter / prioritization
-HOWARD_FILTER="HEMATOLOGY"
-
-# FOOTER
-###########
-source $CONFIG_FOOTER
-
-
+PIPELINES="bwamem.gatkUG_HEMATOLOGY.howard bwamem.VarScan_HEMATOLOGY.howard bwamem.itdseek.howard" #

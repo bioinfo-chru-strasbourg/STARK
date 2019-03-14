@@ -83,11 +83,13 @@ HOWARD_CALCULATION?=VAF,NOMEN,VAF_STATS,VARTYPE
 	
 	# Report release
 	-cp $*.$(ANALYSIS_DATE).config $*.$(ANALYSIS_DATE).config.txt
-	
-	# STARK REPORT
-	echo "$(STARK)/stark_report.sh -f "`echo $$(basename $$(dirname $$(dirname $(@D))))`" -s "$(*F)" -e $(ENV) -i $$(echo $(PIPELINES) | tr " " ",") -d $(ANALYSIS_DATE) -r $(OUTDIR)"
-	$(STARK)/stark_report.sh -f "`echo $$(basename $$(dirname $$(dirname $(@D))))`" -s "$(*F)" -e $(ENV) -i $$(echo $(PIPELINES) | tr " " ",") -d $(ANALYSIS_DATE) -r $(OUTDIR)
 
+	# STARK REPORT
+	echo "$(STARK_FOLDER_BIN)/stark_report.sh -f "`echo $$(basename $$(dirname $$(dirname $(@D))))`" -s "$(*F)" -e '$(ENV)' -i $$(echo $(PIPELINES) | tr " " ",") -d $(ANALYSIS_DATE) -r $(OUTDIR)"
+	#$(STARK_FOLDER_BIN)/stark_report.sh -f "`echo $$(basename $$(dirname $$(dirname $(@D))))`" -s "$(*F)" -e "$(ENV)" -i $$(echo $(PIPELINES) | tr " " ",") -d $(ANALYSIS_DATE) -r $(OUTDIR)
+	#$(STARK_FOLDER_BIN)/stark_report.sh -f "`echo $$(basename $$(dirname $$(dirname $(@D))))`" -s "$(*F)" -e "$(STARK_FOLDER_CONFIG)/config.app" -i $$(echo $(PIPELINES) | tr " " ",") -d $(ANALYSIS_DATE) -r $(OUTDIR)
+	$(STARK_FOLDER_BIN)/stark_report.sh -f "`echo $$(basename $$(dirname $$(dirname $(@D))))`" -s "$(*F)" -e "$(CONFIG_TOOLS)" -i $$(echo $(PIPELINES) | tr " " ",") -d $(ANALYSIS_DATE) -r $(OUTDIR)
+	#--env=$(CONFIG_TOOLS)
 
 
 ## list of vcf
@@ -134,9 +136,9 @@ HOWARD_CALCULATION?=VAF,NOMEN,VAF_STATS,VARTYPE
 ## FULLE VCF: ANNOTATION OF A MERGE FILE
 %.full.vcf: %.merge.vcf %.transcripts
 	# HOWARD annotation
-	+$(HOWARD) --input=$< --output=$@.tmp --config=$(HOWARD_CONFIG) --config_filter=$(HOWARD_CONFIG_PRIORITIZATION) --config_filter=$(HOWARD_CONFIG_ANNOTATION) --annotation=$(HOWARD_ANNOTATION_REPORT) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP);
+	+$(HOWARD) --input=$< --output=$@.tmp --config=$(HOWARD_CONFIG) --config_filter=$(HOWARD_CONFIG_PRIORITIZATION) --config_filter=$(HOWARD_CONFIG_ANNOTATION) --annotation=$(HOWARD_ANNOTATION_REPORT) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS);
 	# HOWARD calculation and prioritization
-	+$(HOWARD) --input=$@.tmp --output=$@  --config=$(HOWARD_CONFIG) --config_filter=$(HOWARD_CONFIG_PRIORITIZATION) --config_filter=$(HOWARD_CONFIG_ANNOTATION) --calculation=$(HOWARD_CALCULATION_REPORT) --filter=$(HOWARD_PRIORITIZATION_REPORT) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --tmp=$(TMP_FOLDER_TMP)  --transcripts=$*.transcripts --force --multithreading --threads=$(THREADS);
+	+$(HOWARD) --input=$@.tmp --output=$@  --config=$(HOWARD_CONFIG) --config_filter=$(HOWARD_CONFIG_PRIORITIZATION) --config_filter=$(HOWARD_CONFIG_ANNOTATION) --calculation=$(HOWARD_CALCULATION_REPORT) --filter=$(HOWARD_PRIORITIZATION_REPORT) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --tmp=$(TMP_FOLDER_TMP)  --transcripts=$*.transcripts --force --multithreading --threads=$(THREADS) --env=$(CONFIG_TOOLS);
 	# cleaning
 	rm -rf $@.tmp
 

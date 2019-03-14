@@ -61,19 +61,19 @@ export STARK_FOLDER_RULES=$STARK_FOLDER_CONFIG/rules
 
 # RUN FOLDER
 if [ "$FOLDER_RUN" == "" ]; then
-	FOLDER_RUN="/runs"
+	FOLDER_RUN="/STARK/runs"
 fi;
 if [ "$FOLDER_RESULTS" == "" ]; then
-	FOLDER_RESULTS="/results"
+	FOLDER_RESULTS="/STARK/results"
 fi;
 if [ "$FOLDER_TOOLS" == "" ]; then
-	FOLDER_TOOLS="/tools"
+	FOLDER_TOOLS="/STARK/tools"
 fi;
 if [ "$FOLDER_MANIFEST" == "" ]; then
-	FOLDER_MANIFEST="/manifests"
+	FOLDER_MANIFEST="/STARK/manifests"
 fi;
 if [ "$FOLDER_DATABASES" == "" ]; then
-	FOLDER_DATABASES="/databases"
+	FOLDER_DATABASES="/STARK/databases"
 fi;
 
 
@@ -118,24 +118,26 @@ export RESULTS_SUBFOLDER_DATA="DATA";				# Copy sample results in a SUBFOLDER
 export RESULTS_SUBFOLDER_ROOT_FILE_PATTERNS=$RESULTS_SUBFOLDER_ROOT_FILE_PATTERNS' $SAMPLE.reports/$SAMPLE.final.vcf.gz $SAMPLE.reports/$SAMPLE.final.vcf.gz.tbi $SAMPLE.reports/$SAMPLE.final.tsv *.reports/*.report.pdf $SAMPLE.bed';
 
 
+#Rules defined in the app
+for RA in $(echo "$RULES_APP" | tr "," " " | tr " " "\n"); do
+	RULES_APP=$RULES_APP" "$(find $STARK_FOLDER_APPS/$RA -maxdepth 0 -type f 2>/dev/null)
+done;
 
 # RULES for the application
-if [ "$APP_NAME" != "" ] && (($(ls $STARK_FOLDER_RULES/$APP_NAME.app/*rules.mk 2>/dev/null | wc -w))); then
-	RULES_APP="$RULES_APP $STARK_FOLDER_RULES/$APP_NAME.app/*rules.mk"
-fi;
+[ "$APP_NAME" != "" ] && RULES_APP="$RULES_APP $STARK_FOLDER_RULES/$APP_NAME.app/*rules.mk";
 
 # RULES for the group
-if [ "$APP_GROUP" != "" ] && (($(ls $STARK_FOLDER_RULES/$APP_GROUP/*rules.mk 2>/dev/null | wc -w))); then
-	RULES_APP="$RULES_APP $STARK_FOLDER_RULES/$APP_GROUP/*rules.mk"
-fi;
+[ "$APP_GROUP" != "" ] && RULES_APP="$RULES_APP $STARK_FOLDER_RULES/$APP_GROUP/*rules.mk";
 
 # RULES for the project
-if [ "$APP_PROJECT" != "" ] && (($(ls $STARK_FOLDER_RULES/$APP_PROJECT/*rules.mk 2>/dev/null | wc -w))); then
-	RULES_APP="$RULES_APP $STARK_FOLDER_RULES/$APP_PROJECT/*rules.mk"
-fi;
+[ "$APP_PROJECT" != "" ] && RULES_APP="$RULES_APP $STARK_FOLDER_RULES/$APP_PROJECT/*rules.mk";
 
 
-export RULES="$RULES $RULES_APP"
+#export RULES="$RULES $RULES_APP"
+#export RULES=$(ls -N $RULES $RULES_APP)
+export RULES=$(find $RULES $RULES_APP -maxdepth 0 -type f 2>/dev/null | sort -u | tr "\n" " ")
+#export RULES=$(find $RULES $RULES_APP)
+#echo "RULLES: $RULES"
 
 #SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd -P )"
 #echo $SCRIPT_DIR
@@ -308,6 +310,18 @@ else
 	BAM_CHECK_STEPS=0
 fi;
 export BAM_CHECK_STEPS
+
+# METRICS SNPEFF (default 0)
+# Generate snpEff variant metrics from VCF
+if [ -z $METRICS_SNPEFF ] || [ "${METRICS_SNPEFF^^}" == "FALSE" ] || [ "${METRICS_SNPEFF^^}" == "NO" ] || [ "${METRICS_SNPEFF^^}" == "N" ]  || [ "$METRICS_SNPEFF" == "0" ]; then
+	METRICS_SNPEFF=0
+elif [ "${METRICS_SNPEFF^^}" == "TRUE" ] || [ "${METRICS_SNPEFF^^}" == "YES" ] || [ "${METRICS_SNPEFF^^}" == "Y" ]  || [ "$METRICS_SNPEFF" == "1" ]; then
+	METRICS_SNPEFF=1
+else
+	METRICS_SNPEFF=0
+fi;
+export METRICS_SNPEFF
+
 
 # PIPELINES PRIORITIZATION
 # List of pipelines to prioritize for the report (final.vcf)

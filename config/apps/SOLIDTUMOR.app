@@ -1,41 +1,20 @@
 #!/bin/bash
-## STARK env for SOLIDTUMOR
+## STARK application SOLIDTUMOR
 
 # DEFAULT ENV
 ######################
-source $CONFIG_DEFAULT_APP
+source_app $CONFIG_DEFAULT_APP
 
 # APPLICATION INFOS
 #####################
 APP_NAME="SOLIDTUMOR"
 APP_RELEASE="1.0"
-GROUP="SOLIDTUMOR"
-PROJECT="SOLIDTUMOR"
+APP_DESCRIPTION="Application to detect somatic mutations in solid tumor gene panel sequencing data"
+APP_GROUP=""
+APP_PROJECT=""
 
 # ANALYSIS PARAMETERS
 #######################
 
-# ALIGNERS CALLERS ANNOTATORS
-ALIGNERS="bwamem"
-CALLERS="gatkUG_SOLIDTUMOR VarScan_SOLIDTUMOR"
-ANNOTATORS="howard"
 # PIPELINES
 PIPELINES="bwamem.gatkUG_SOLIDTUMOR.howard bwamem.VarScan_SOLIDTUMOR.howard"
-
-# NB_BASES_AROUND
-NB_BASES_AROUND=0
-
-# MANIFEST
-MANIFEST=$MANIFEST_FOLDER/SOLIDTUMOR.txt
-
-
-# HOWARD FILTER
-################
-# HOWARD filter / prioritization
-HOWARD_FILTER="SOLIDTUMOR"
-
-# FOOTER
-###################
-source $CONFIG_FOOTER
-
-

@@ -61,10 +61,14 @@ GZ?=gzip
 	if [ ! -s $< ]; then cp $*.empty.vcf $<; fi;
 	# VCF Sorting
 	#$(VCFTOOLS)/vcf-sort $^ > $<.sorted
-	$(VCFTOOLS)/vcf-sort $< > $<.sorted
+	#$(VCFTOOLS)/vcf-sort $< > $<.sorted
+	#$(BCFTOOLS) sort $< -o $<.sorted
+	mkdir -p $@.SAMTOOLS_PREFIX
+	$(BCFTOOLS) sort -T $@.SAMTOOLS_PREFIX $< > $@.sorted
+	rm -rf $@.SAMTOOLS_PREFIX
 	# VCF compression with BGZIP
-	$(BGZIP) -f $<.sorted -c > $@
-	rm -f $<.sorted
+	$(BGZIP) -f $@.sorted -c > $@
+	rm -f $@.sorted
 	# remove files
 	-rm -f $*.empty.vcf*
 
@@ -102,20 +106,21 @@ GZ?=gzip
 
 
 # NORMALIZE VCF with BCFTOOLS
-%.norm.vcf: %.vcf %.genome 
+%.norm.vcf: %.vcf %.genome
 	$(BCFTOOLS) norm -m- -f `cat $*.genome` $< > $@
 
 
 # MERGE SNP and InDel VCF
 %.unsorted.vcf: %.SNP.vcf %.InDel.vcf
 	# CONCAT
-	$(VCFTOOLS)/vcf-concat $^ > $@
+	#$(VCFTOOLS)/vcf-concat $^ > $@
+	$(BCFTOOLS) concat $^ > $@
 	# Cleaning
 	-rm -f $*.SNP.vcf.idx $*.InDel.vcf.idx
 	-rm -f $*.idx
 
 
-# HOWARD 
+# HOWARD
 #####################
 # Translation, prioritiazzation, hard filtering
 
@@ -123,7 +128,7 @@ GZ?=gzip
 # VCF to tab delimiter
 %.tsv: %.vcf
 	# translation step
-	$(HOWARD) --config=$(HOWARD_CONFIG) --config=$(HOWARD_CONFIG) --config_filter=$(HOWARD_CONFIG_PRIORITIZATION) --config_filter=$(HOWARD_CONFIG_ANNOTATION) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --format=tab  --fields="$(HOWARD_FIELDS)" --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)"  --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --input=$< --output=$@ --force;
+	$(HOWARD) --config=$(HOWARD_CONFIG) --config=$(HOWARD_CONFIG) --config_filter=$(HOWARD_CONFIG_PRIORITIZATION) --config_filter=$(HOWARD_CONFIG_ANNOTATION) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --format=tab  --fields="$(HOWARD_FIELDS)" --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)"  --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --input=$< --output=$@ --force;
 	# Touch
 	if [ ! -e $@ ]; then touch $@; fi;
 	# Cleaning
@@ -131,15 +136,15 @@ GZ?=gzip
 # Hard filtering
 %.hard.tsv: %.vcf
 	# translation step and hard filtering
-	$(HOWARD) --config=$(HOWARD_CONFIG) --config=$(HOWARD_CONFIG) --config_filter=$(HOWARD_CONFIG_PRIORITIZATION) --config_filter=$(HOWARD_CONFIG_ANNOTATION) --filter=$(HOWARD_PRIORITIZATION) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --format=tab  --fields=$(HOWARD_FIELDS) --sort_by=$(HOWARD_SORT_BY) --order_by=$(HOWARD_ORDER_BY)  --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --input=$< --output=$@ --hard --force;
+	$(HOWARD) --config=$(HOWARD_CONFIG) --config=$(HOWARD_CONFIG) --config_filter=$(HOWARD_CONFIG_PRIORITIZATION) --config_filter=$(HOWARD_CONFIG_ANNOTATION) --filter=$(HOWARD_PRIORITIZATION) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --format=tab  --fields=$(HOWARD_FIELDS) --sort_by=$(HOWARD_SORT_BY) --order_by=$(HOWARD_ORDER_BY)  --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --input=$< --output=$@ --hard --force;
 	# Touch
 	if [ ! -e $@ ]; then touch $@; fi;
 	# Cleaning
-	
+
 # VCF to tab delimiter
 %.txt: %.vcf
 	# Translation step
-	$(HOWARD) --config=$(HOWARD_CONFIG) --config=$(HOWARD_CONFIG) --config_filter=$(HOWARD_CONFIG_PRIORITIZATION) --config_filter=$(HOWARD_CONFIG_ANNOTATION) --filter=$(HOWARD_PRIORITIZATION) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --format=tab  --fields=$(HOWARD_FIELDS) --sort_by=$(HOWARD_SORT_BY) --order_by=$(HOWARD_ORDER_BY)  --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --input=$< --output=$@ --force;
+	$(HOWARD) --config=$(HOWARD_CONFIG) --config=$(HOWARD_CONFIG) --config_filter=$(HOWARD_CONFIG_PRIORITIZATION) --config_filter=$(HOWARD_CONFIG_ANNOTATION) --filter=$(HOWARD_PRIORITIZATION) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --format=tab  --fields=$(HOWARD_FIELDS) --sort_by=$(HOWARD_SORT_BY) --order_by=$(HOWARD_ORDER_BY)  --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --input=$< --output=$@ --force;
 	# Touch
 	if [ ! -e $@ ]; then touch $@; fi;
 	# Cleaning
@@ -148,7 +153,7 @@ GZ?=gzip
 # Hard filtering
 %.hard.txt: %.vcf
 	# Translation and hard filtering
-	$(HOWARD) --config=$(HOWARD_CONFIG) --config=$(HOWARD_CONFIG) --config_filter=$(HOWARD_CONFIG_PRIORITIZATION) --config_filter=$(HOWARD_CONFIG_ANNOTATION) --filter=$(HOWARD_FILTER) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --format=tab  --fields=$(HOWARD_FIELDS) --sort_by=$(HOWARD_SORT_BY) --order_by=$(HOWARD_ORDER_BY)  --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --input=$< --output=$@ --hard --force;
+	$(HOWARD) --config=$(HOWARD_CONFIG) --config=$(HOWARD_CONFIG) --config_filter=$(HOWARD_CONFIG_PRIORITIZATION) --config_filter=$(HOWARD_CONFIG_ANNOTATION) --filter=$(HOWARD_FILTER) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --format=tab  --fields=$(HOWARD_FIELDS) --sort_by=$(HOWARD_SORT_BY) --order_by=$(HOWARD_ORDER_BY)  --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --input=$< --output=$@ --hard --force;
 	# Touch
 	if [ ! -e $@ ]; then touch $@; fi;
 	# Cleaning
@@ -156,7 +161,7 @@ GZ?=gzip
 
 %.prioritized.vcf: %.vcf
 	# Prioritization step
-	$(HOWARD) --input=$< --output=$@ --config=$(HOWARD_CONFIG) --config=$(HOWARD_CONFIG) --config_filter=$(HOWARD_CONFIG_PRIORITIZATION) --config_filter=$(HOWARD_CONFIG_ANNOTATION) --filter=$(HOWARD_PRIORITIZATION)  --format=tab --annotation=$(HOWARD_ANNOTATION) --sort_by=$(HOWARD_SORT_BY) --order_by=$(HOWARD_ORDER_BY)
+	$(HOWARD) --input=$< --output=$@ --config=$(HOWARD_CONFIG) --config=$(HOWARD_CONFIG) --config_filter=$(HOWARD_CONFIG_PRIORITIZATION) --config_filter=$(HOWARD_CONFIG_ANNOTATION) --filter=$(HOWARD_PRIORITIZATION)  --format=tab --annotation=$(HOWARD_ANNOTATION) --sort_by=$(HOWARD_SORT_BY) --env=$(CONFIG_TOOLS) --order_by=$(HOWARD_ORDER_BY)
 
 
 
@@ -220,7 +225,7 @@ GZ?=gzip
 %.R1.fastq %.R2.fastq: %.bam
 	#$(JAVA) -jar $(PICARDLIB)/SamToFastq.jar INPUT=$< FASTQ=$*.R1.fastq SECOND_END_FASTQ=$*.R2.fastq
 	$(JAVA) -jar $(PICARD) SamToFastq INPUT=$< FASTQ=$*.R1.fastq SECOND_END_FASTQ=$*.R2.fastq
-	
+
 
 # BAM reduction
 GATKRR_FLAGS=
@@ -230,7 +235,7 @@ GATKRR_FLAGS=
 
 
 # SampleSheet Copy
-%.SampleSheet.csv: 
+%.SampleSheet.csv:
 	-mkdir -p $(@D)
 	-cp -p $(@D)/`echo $$(basename $(@D))`.SampleSheet.csv $@ || cp -p $(INPUTDIR)/`echo $$(basename $$(dirname $(@D)))`/SampleSheet.csv $@ || touch $@;
 
@@ -246,7 +251,7 @@ GATKRR_FLAGS=
 	# 1. test if main manifest file (SAMPLE.manifest) exists (use for Sample analysis)
 	# 2. test if a manifest is found on SampleSheet (use for Run analysis)
 	# 3. test if a manifest is defined in the APP (as an environment variable)
-	
+
 	-if [ -e $(@D)/`echo $$(basename $(@D))`.manifest ]; then \
 		echo "# MANIFEST for the sample '$(@D)/`echo $$(basename $(@D))`.manifest' exists" ; \
 		if  [ "$(@D)/`echo $$(basename $(@D))`.manifest" != "$@" ]; then \
@@ -274,7 +279,7 @@ GATKRR_FLAGS=
 	# Create MANIFEST file
 	# 1. test if main manifest name file (SAMPLE.manifest_name) exists (use for Sample analysis)
 	# 2. test if a manifest name is found on SampleSheet (use for Run analysis)
-	
+
 	-if [ -e $(@D)/`echo $$(basename $(@D))`.manifest_name ]; then \
 		echo "# MANIFEST name for the sample '$(@D)/`echo $$(basename $(@D))`.manifest_name' exists" ; \
 		if  [ "$(@D)/`echo $$(basename $(@D))`.manifest_name" != "$@" ]; then \
@@ -321,16 +326,16 @@ GATKRR_FLAGS=
 		touch $*.manifests_list.txt; \
 	fi;
 	if [ ! -e $@ ]; then touch $*.manifests_list.txt; fi;
-	
+
 	# Column number of sample manifest
 	-grep -i ^Sample_ID $< | tr -d '\r\n' | sed -e 's/,/\n/g' | grep -i -n Manifest | cut -d \: -f 1 > $(@D)/$(*F).INDEX_SAMPLEMANIFEST_I;
 	-if [ ! -s $(@D)/$(*F).INDEX_SAMPLEMANIFEST_I ]; then echo "1" > $(@D)/$(*F).INDEX_SAMPLEMANIFEST_I; fi;
 	# Manifest letter for the index
 	-grep -e ^$$(basename $(@D)), $< | tail -n 1 | tr -d '\r\n' | cut -d \, -f `cat $(@D)/$(*F).INDEX_SAMPLEMANIFEST_I` > $(@D)/$(*F).SAMPLE_MANIFEST_I;
-	
+
 	# Manifest name for the sample
 	-grep ^`cat $(@D)/$(*F).SAMPLE_MANIFEST_I`, $*.manifests_list.txt | cut -d \, -f 2 > $(@D)/$(*F).SAMPLE_MANIFEST;
-	
+
 	# BED
 	file=$$( echo "$$( dirname $(MANIFEST_FOLDER)/`cat $(@D)/$(*F).SAMPLE_MANIFEST` )/$$( basename $(MANIFEST_FOLDER)/`cat $(@D)/$(*F).SAMPLE_MANIFEST` ).bed" ); \
 	echo "bed file is : $$file "; \
@@ -339,7 +344,7 @@ GATKRR_FLAGS=
 	else \
 		echo "$$file don't exist !!!"; \
 	fi;
-	
+
 	# BED GENES
 	file=$$( echo "$$( dirname $(MANIFEST_FOLDER)/`cat $(@D)/$(*F).SAMPLE_MANIFEST` )/$$( basename $(MANIFEST_FOLDER)/`cat $(@D)/$(*F).SAMPLE_MANIFEST` ).genes" ); \
 	echo "genes file is : $$file "; \
@@ -348,7 +353,7 @@ GATKRR_FLAGS=
 	else \
 		echo "$$file don't exist !!!"; \
 	fi;
-	
+
 	# TRANSCRIPTS
 	file=$$( echo "$$( dirname $(MANIFEST_FOLDER)/`cat $(@D)/$(*F).SAMPLE_MANIFEST` )/$$( basename $(MANIFEST_FOLDER)/`cat $(@D)/$(*F).SAMPLE_MANIFEST` ).transcripts" ); \
 	echo "transcripts file is : $$file "; \
@@ -357,7 +362,7 @@ GATKRR_FLAGS=
 	else \
 		echo "$$file don't exist !!!"; \
 	fi;
-	
+
 	# Found manifest, or Default manifest is the first in the list
 	if [ "`cat $(@D)/$(*F).SAMPLE_MANIFEST`" != "" ] && [ -e "$(MANIFEST_FOLDER)/`cat $(@D)/$(*F).SAMPLE_MANIFEST`" ]; then \
 		echo "# TEST Found Manifest '"`cat $(@D)/$(*F).SAMPLE_MANIFEST`"' in '$(MANIFEST_FOLDER)' for sample `echo $$(basename $$(dirname $(@D)))`/$(*F)"; \
@@ -366,12 +371,12 @@ GATKRR_FLAGS=
 		echo "# TEST Manifest NOT found in '$(MANIFEST_FOLDER)'. Default Manifest used '"`cut -d, -f2 $*.manifests_list.txt`"' for sample `echo $$(basename $$(dirname $(@D)))`/$(*F)"; \
 		cat "$(MANIFEST_FOLDER)/`cut -d, -f2 $*.manifests_list.txt`" > $@; \
 	fi;
-	
+
 	# IF root manifest exists
 	if [ -s $(@D)/`echo $$(basename $(@D))`.manifest ] && [ "$(@D)/`echo $$(basename $(@D))`.manifest" != "$@" ]; then \
 		cp -p $(@D)/`echo $$(basename $(@D))`.manifest $@; \
 	fi;
-	
+
 	# Empty manifest if failed!
 	if [ ! -e $@ ]; then touch $@; fi;
 	# Touch manifest to use time of SampleSheet
@@ -403,25 +408,25 @@ GATKRR_FLAGS=
 		touch $*.manifests_list_name.txt; \
 	fi;
 	if [ ! -e $@ ]; then touch $*.manifests_list_name.txt; fi;
-	
+
 	# Column number of sample manifest
 	-grep -i ^Sample_ID $< | tr -d '\r\n' | sed -e 's/,/\n/g' | grep -i -n Manifest | cut -d \: -f 1 > $(@D)/$(*F).INDEX_SAMPLEMANIFEST_I_name;
 	-if [ ! -s $(@D)/$(*F).INDEX_SAMPLEMANIFEST_I_name ]; then echo "1" > $(@D)/$(*F).INDEX_SAMPLEMANIFEST_I_name; fi;
 	# Manifest letter for the index
 	-grep -e ^$$(basename $(@D)), $< | tail -n 1 | tr -d '\r\n' | cut -d \, -f `cat $(@D)/$(*F).INDEX_SAMPLEMANIFEST_I_name` > $(@D)/$(*F).SAMPLE_MANIFEST_I_name;
-	
+
 	# Manifest name for the sample
 	-grep ^`cat $(@D)/$(*F).SAMPLE_MANIFEST_I_name`, $*.manifests_list_name.txt | cut -d \, -f 2 > $(@D)/$(*F).SAMPLE_MANIFEST_name;
-	
+
 	-if [ ! -s $(@D)/$(*F).SAMPLE_MANIFEST_name ]; then \
 		> $@; \
 	else \
 		echo -e $$(cat $(@D)/$(*F).SAMPLE_MANIFEST_name)"\tfrom SampleSheet" > $@; \
 	fi;
-	
+
 	# Empty manifest if failed!
 	if [ ! -e $@ ]; then touch $@; fi;
-	
+
 	# Clean
 	-rm -f $*.manifests_list_name.txt
 	# Remove intermediate files
@@ -501,7 +506,7 @@ GATKRR_FLAGS=
 	# 1. test if main bed file (SAMPLE.bed) exists (use for Sample analysis)
 	# 2. test if a bed can be generated from the manifest
 	# 3. test if a manifest is defined in the APP (as an environment variable)
-	
+
 	-rm -f $@
 	-if [ -e $(@D)/`echo $$(basename $(@D))`.bed ]; then \
 		echo "# BED for the sample '$(@D)/`echo $$(basename $(@D))`.bed' exists" ; \
@@ -523,11 +528,11 @@ GATKRR_FLAGS=
 	else \
 		touch $@; \
 	fi;
-	
+
 	if [ ! -e $@ ]; then touch $@; fi;
 	# Clean
 	#-rm -f $*.manifest
-	
+
 
 # BED file from a Manifest
 %.bed_name: %.manifest_name
@@ -535,7 +540,7 @@ GATKRR_FLAGS=
 	# 1. test if main bed file (SAMPLE.bed) exists (use for Sample analysis)
 	# 2. test if a bed can be generated from the manifest
 	# 3. test if a manifest is defined in the APP (as an environment variable)s
-	
+
 	-if [ -e $(@D)/`echo $$(basename $(@D))`.bed_name ]; then \
 		echo "# BED name for the sample '$(@D)/`echo $$(basename $(@D))`.bed_name' exists" ; \
 		if  [ "$(@D)/`echo $$(basename $(@D))`.bed_name" != "$@" ]; then \
@@ -557,7 +562,7 @@ GATKRR_FLAGS=
 	else \
 		touch $@; \
 	fi;
-	
+
 	if [ ! -e $@ ]; then touch $@; fi;
 	# Clean
 	#-rm -f $*.manifest
@@ -634,6 +639,3 @@ PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
 
 PIPELINES_COMMENT := "POST_ALIGNMENT:compress:BAM compression:BAM_COMPRESS='$(BAM_COMPRESSION)'"
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
-
-
-

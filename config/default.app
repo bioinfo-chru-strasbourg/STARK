@@ -1,43 +1,17 @@
 #!/bin/bash
-#################################
-## STARK environment
-#################################
+## STARK application DEFAULT
 
-# Usage source env.sh
-
-# SCRIPT DIR
-##############
-
-# Script folder
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd -P )"
-
-# HEADER
-###########
-
-# Source ENV HEADER (default source $STARK_FOLDER/env_header.sh)
-# Use another ENV parent to herit parameters and change only few of them
-# Examples:
-# source $STARK_FOLDER_APPS/app.sh # in env.DIAG.sh ENV/APP to inherit the main ENV/APP
-source $CONFIG_HEADER
-
+# DEFAULT ENV
+######################
+#source_app $CONFIG_HEADER
 
 # APPLICATION INFOS
 #####################
-
-# Name of the APP
-# Used to autodetect APP in RUNS (SampleSheet/investigator Name field)
-# Usefull to include specific rules if exists (in $STARK/$APP_NAME.rules.mk/*rules.mk)
-# AUTO detect with ENV file name:
 APP_NAME="DEFAULT"
-
-# Release of the APP
 APP_RELEASE="1.1"
-
-# GROUP and PROJECT Associated with the APP
-# Use to structure data in the repository folder
-# AUTO detect with ENV file name:
-GROUP="UNKNOWN"
-PROJECT="UNKNOWN"
+APP_DESCRIPTION="Default application"
+APP_GROUP=""
+APP_PROJECT=""
 
 
 # FOLDERS
@@ -45,21 +19,21 @@ PROJECT="UNKNOWN"
 
 # TOOLS FOLDER
 # tools: All tools needed for STARK, and more, including STARK
-FOLDER_TOOLS=/tools
+FOLDER_TOOLS=/STARK/tools
 
 # DATABASES FOLDER
 # genomes: All references genomes. format: $FOLDER_GENOMES/$ASSEMBLY/$ASSEMBLY.fa (with ASSEMBLY=hg19, hg38, mmu19...)
 # db: Folder with mandatory databases: dbSNP database for variant calling, such as "dbsnp_138.hg19.vcf.gz" (mandatory, depending on ASSEMBLY), VCF databases for recalibration such as "dbsnp_137.hg19.vcf" (mandatory, depending on ASSEMBLY)
-FOLDER_DATABASES=/databases
+FOLDER_DATABASES=/STARK/databases
 
 # RUN FOLDER
 # Illumina Sequencer repository Folder. Subfolder as runs
-FOLDER_RUN=/runs
+FOLDER_RUN=/STARK/runs
 
 # MANIFEST FOLDER
 # Illumina Manifests repository.
 # Files to provide in the SampleSheet of each run
-FOLDER_MANIFEST=/manifests
+FOLDER_MANIFEST=/STARK/manifests
 
 # RESULTS FOLDER
 # All results will be generated in this folder :
@@ -67,15 +41,23 @@ FOLDER_MANIFEST=/manifests
 # DEM: Demultiplexing folder
 # LOG: log files
 # TMP: temporary files
-FOLDER_RESULTS=/results
+FOLDER_RESULTS=/STARK/results
 
 # REPOSITORY FOLDER
 # Results data can be copy in a repository folder. leave it blank for no copy
-FOLDER_REPOSITORY=/repository
+FOLDER_REPOSITORY=/STARK/repository
 
 
 # PARAMETERS
 ######################
+
+
+# Rules
+# Add specific rules to load.
+# These files will be added to the list of rules files from APPS folder
+# example: RULES_APP="MYGROUP/*.rules.mk" "$APP_FOLDER/*.rules.mk"
+# for inheritance, use RULES_APP="$RULES_APP MYGROUP/*.rules.mk"
+#RULES_APP=""
 
 
 # ASSEMBLY (default hg19)
@@ -94,12 +76,12 @@ PIPELINES="bwamem.gatkHC.howard"
 # ALIGNERS (default "")
 # Aligners to use for the analysis
 # Example of available aligners: bwamem  bwasw bwaaln
-#ALIGNERS="bwamem" 
+#ALIGNERS="bwamem"
 
 # CALLERS (default "")
 # Callers to use for the analysis
 # Example of available callers: gatkHC gatkUG VarScan samtools
-#CALLERS="gatkHC" 
+#CALLERS="gatkHC"
 
 # ANNOTATORS (default "")
 # Annotator to use for the analysis
@@ -155,6 +137,9 @@ VARANK_ANALYSIS=0
 # A Metrics on each BAM check the BAM decrependy in any case
 BAM_CHECK_STEPS=0
 
+# METRICS SNPEFF (default 0)
+# Generate snpEff variant metrics from VCF
+METRICS_SNPEFF=0
 
 # PIPELINES PRIORITIZATION
 # List of pipelines to prioritize for the report (final.vcf)
@@ -169,17 +154,18 @@ PRIORITIZE_PIPELINES_LIST=""
 #    This sequence will generate the file $ALIGNER.compress.clipping.realigned.sorting.bam whose will be processed
 #    Then, this BAM file will be 1/ sorted, 2/ realigned, 3/ clipped and 4/ compressed
 # The steps are defined as makefiles rules
-# Check available steps by using the command: STARK.sh --pipelines_infos
+# Check available steps by using the command: STARK --pipelines_infos
 # Available steps (not up-to-date:
 #    sorting: BAM sorting
 #    compress: BAM compression (see $BAM_COMPRESSION variable)
-#    realignment: local realignment 
+#    realignment: local realignment
 #    markduplicates: BAM Mark Duplicates
 #    clipping: BAM Clipping according to primer definition in manifest file, if any
 # Usually:
 #    "sorting realignment clipping compress" for Amplicon technology
 #    "sorting markduplicates realignment compress" for Capture technology
-POST_ALIGNMENT_STEPS="sorting realignment recalibration clipping compress"
+#POST_ALIGNMENT_STEPS="sorting realignment recalibration clipping compress"
+POST_ALIGNMENT_STEPS="sorting markduplicates realignment recalibration compress"
 
 # BAM COMPRESSION
 # Final BAM copression level (unaligned.bam, ALIGNER.bam)
@@ -194,6 +180,14 @@ THREADS=AUTO
 
 
 # HOWARD ANNOTATION/PRIOTITIZATION/TRANSLATION CONFIGURATION
+
+# HOWARD Configuration files for Annotation and Prioritization
+# Use APP_FOLDER if necessary
+# Example: HOWARD_CONFIG_ANNOTATION=$APP_FOLDER/config.annotation.stark.ini
+# Example: HOWARD_CONFIG_ANNOTATION=$STARK_FOLDER_APPS/MY_APP_GROUP/config.annotation.stark.ini
+#HOWARD_CONFIG_ANNOTATION=$APP_FOLDER/config.annotation.stark.ini
+#HOWARD_CONFIG_PRIORITIZATION=$APP_FOLDER/config.prioritization.stark.ini
+
 
 # ANNOTATION
 # Default annotation with HOWARD for intermediate VCF (for each caller) used by default with annotation rule "howard"
@@ -219,10 +213,10 @@ HOWARD_CALCULATION_REPORT="FindByPipelines,GenotypeConcordance,VAF,VAF_STATS,CAL
 # Default filter to prioritize/rank variant.
 # This option create ranking scores in VCF and comment in TXT (after translation).
 # Scores can be used to sort variant in the TXT
-# HOWARD_FILTER_DEFAULT="default" # in env_header.sh 
-# Default calculation with HOWARD 
+# HOWARD_FILTER_DEFAULT="default" # in env_header.sh
+# Default calculation with HOWARD
 HOWARD_PRIORITIZATION=$HOWARD_PRIORITIZATION_DEFAULT # "default"
-# Minimal calculation with HOWARD 
+# Minimal calculation with HOWARD
 HOWARD_PRIORITIZATION_MINIMAL=$HOWARD_PRIORITIZATION_DEFAULT # "default"
 # Default calculation with HOWARD for Report (full/final VCF)
 HOWARD_PRIORITIZATION_REPORT=$HOWARD_PRIORITIZATION_DEFAULT # "default"
@@ -235,15 +229,3 @@ HOWARD_PRIORITIZATION_REPORT=$HOWARD_PRIORITIZATION_DEFAULT # "default"
 HOWARD_FIELDS="NOMEN,PZFlag,PZScore,PZComment,CNOMEN,PNOMEN,location,outcome,VAF_average,dbSNP,dbSNPNonFlagged,popfreq,snpeff_impact,ALL"
 HOWARD_SORT_BY="PZFlag,PZScore"
 HOWARD_ORDER_BY="DESC,DESC"
-
-
-
-# FOOTER
-###########
-
-# Source ENV FOOTER
-source $CONFIG_FOOTER
-
-
-#exit;
-

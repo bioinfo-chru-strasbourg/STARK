@@ -6,6 +6,33 @@
 
 # in run_analysis.sh, this report is launch with the command : stark_report.sh -f $RUN -p $SAMPLE_PROJECT -g $SAMPLE_GROUP -u $SAMPLE_USER -s $SAMPLE -e $ENV
 
+#!/bin/bash
+#################################
+##
+## NGS environment
+##
+#################################
+
+SCRIPT_NAME="STARKReport"
+SCRIPT_DESCRIPTION="STARK Report"
+SCRIPT_RELEASE="0.9b"
+SCRIPT_DATE="01/05/2016"
+SCRIPT_AUTHOR="Amandine VELT, Antony Le Bechec"
+SCRIPT_COPYRIGHT="IRC"
+SCRIPT_LICENCE="GNU AGPL V3"
+
+# Realse note
+RELEASE_NOTES=$RELEASE_NOTES"# 0.9b-01/05/2016: Sript creation\n";
+
+# Script folder
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# Configuration
+#ENV_CONFIG=$(find $SCRIPT_DIR/.. -name config.app)
+#source $ENV_CONFIG
+
+
+
 ####################################################################################################################################
 # Define the function to print the usage of the script
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -42,6 +69,9 @@ function usage
 		__EOF__
 }
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
 
 ####################################################################################################################################
 # Getting parameters from the input
@@ -117,8 +147,17 @@ done
 	echo "Options --flowcell, --project, --sample, --group, --user, --env and --date are required. " "Use -h or --help to display the help." && exit 1;
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+
 # source of environement file or exit
 source $ENV || (echo "$ENV can't be sourced ! Exit." && exit 1);
+
+#for E in $ENV; do
+#	source $ENV || (echo "$ENV can't be sourced ! Exit." && exit 1);
+#done;
+
+#ENV=$(find_app "$ENV")
+#echo "ENV=$ENV"
+#source_app "$ENV"
 
 # PIPELINES
 if [ "$PIPELINES_INPUT" != "" ]; then

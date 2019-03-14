@@ -7,10 +7,9 @@ export ENV_NAME="STARK"
 export ENV_DESCRIPTION="Stellar Tools for variants Analysis and RanKing"
 export ENV_RELEASE="0.9.18d"
 export ENV_DATE="14/01/2019"
-export ENV_AUTHOR="Antony Le Bechec/Amandine Velt/Sinthuja PACHCHEK/Vincent ZILLIOX"
+export ENV_AUTHOR="Antony Le Bechec/Amandine Velt/Sinthuja Pachchek/Vincent Zilliox/Samuel Nicaise"
 export ENV_COPYRIGHT="IRC"
 export ENV_LICENCE="GNU GPLA V3"
-
 
 export STARK_FOLDER_CONFIG="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
@@ -19,15 +18,13 @@ export CONFIG_FOOTER=$STARK_FOLDER_CONFIG/footer.app
 export CONFIG_FUNCTIONS=$STARK_FOLDER_CONFIG/functions.app
 export CONFIG_DATABASES=$STARK_FOLDER_CONFIG/databases.app
 export CONFIG_TOOLS=$STARK_FOLDER_CONFIG/tools.app
+export CONFIG_CONFIG=$STARK_FOLDER_CONFIG/config.app
 
 source $CONFIG_HEADER 1>/dev/null 2>/dev/null
-source $CONFIG_FOOTER #1>/dev/null 2>/dev/null
+source $CONFIG_FOOTER 1>/dev/null 2>/dev/null
 source $CONFIG_FUNCTIONS 1>/dev/null 2>/dev/null
+source $CONFIG_TOOLS 1>/dev/null 2>/dev/null
+source $CONFIG_DATABASES 1>/dev/null 2>/dev/null
 
 [ -e $STARK_FOLDER_CONFIG/default.app ] && export CONFIG_DEFAULT_APP=$STARK_FOLDER_CONFIG/default.app
 [ -e $STARK_FOLDER_APPS/default.app ] && export CONFIG_DEFAULT_APP=$STARK_FOLDER_APPS/default.app
-
-
-#echo $RULES;
-#exit 0
-

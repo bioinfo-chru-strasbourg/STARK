@@ -26,6 +26,8 @@ BAM_METRICS?=1
 
 FATBAM_TMP_FOLDER?=$(TMP_FOLDER_TMP)
 
+METRICS_SNPEFF?=0
+
 GZ?=gzip
 
 # BED / INTERVALS for Metrics
@@ -131,9 +133,9 @@ GZ?=gzip
 
 
 # FATBAM Metrics
-%.bam.metrics/metrics.amplicon_coverage: %.bam %.bam.bai %.manifest
+%.bam.metrics/metrics.amplicon_coverage: %.bam %.bam.bai %.manifest %.genome
 	mkdir -p $(@D) ;
-	-+$(FATBAM_COVERAGE) --env=$(ENV) --bam=$< --output=$(@D)/$(*F).amplicon_coverage --manifest=$*.manifest --multithreading --threads=$(THREADS) -v --tmp=$(FATBAM_TMP_FOLDER);
+	-+$(FATBAM_COVERAGE) --env=$(CONFIG_TOOLS) --ref=`cat $*.genome`  --bam=$< --output=$(@D)/$(*F).amplicon_coverage --manifest=$*.manifest --multithreading --threads=$(THREADS) -v --tmp=$(FATBAM_TMP_FOLDER);
 	echo "#[$$(date)] BAM Amplicon Coverage Metrics done" > $@;
 
 # GATK METRICS
@@ -318,8 +320,12 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 %.vcf.metrics/metrics.snpeff: %.vcf
 	mkdir -p $(@D);
 	touch $@;
-	+$(HOWARD) --input=$< --output=$@.vcf --snpeff_stats=$@.html --annotation=null --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --force;
-	echo "#snpEff metrics done. See '$@.html' file." >> $@;
+	if (($(METRICS_SNPEFF))); then \
+		+$(HOWARD) --input=$< --output=$@.vcf --snpeff_stats=$@.html --annotation=null --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS)  --force; \
+		echo "#snpEff metrics done. See '$@.html' file." >> $@; \
+	else \
+		echo "# snpEff metrics NOT done." >> $@; \
+	fi;
 
 
 %.vcf.metrics/metrics.bcftools: %.vcf

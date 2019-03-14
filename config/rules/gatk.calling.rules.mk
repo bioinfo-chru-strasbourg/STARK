@@ -73,7 +73,7 @@ GATKUG_FLAGS= -nct $(THREADS_GATKUG) -glm BOTH \
 DPMIN=1
 
 %.gatkUG.unfiltered.unrecalibrated.vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
-	
+
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKUG_FLAGS) \
 		-T UnifiedGenotyper \
 		-R `cat $*.genome` \
@@ -110,7 +110,7 @@ GATKUG_GERMLINE_FLAGS= -nct $(GATKUG_THREADS_GERMLINE) -glm BOTH \
 # Minimum coverage for a variant called by gatkUG
 
 %.gatkUG_GERMLINE.unfiltered.unrecalibrated.vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
-	
+
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKUG_GERMLINE_FLAGS) \
 		-T UnifiedGenotyper \
 		-R `cat $*.genome` \
@@ -149,7 +149,7 @@ GATKUG_EXOME_FLAGS= -nct $(GATKUG_THREADS_EXOME) -glm BOTH \
 # Minimum coverage for a variant called by gatkUG
 
 %.gatkUG_EXOME.unfiltered.unrecalibrated.vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
-	
+
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKUG_EXOME_FLAGS) \
 		-T UnifiedGenotyper \
 		-R `cat $*.genome` \
@@ -188,7 +188,7 @@ GATKUG_EXOME_SOMATIC_FLAGS= -nct $(GATKUG_THREADS_EXOME_SOMATIC) -glm BOTH \
 # Minimum coverage for a variant called by gatkUG
 
 %.gatkUG_EXOME_SOMATIC.unfiltered.unrecalibrated.vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
-	
+
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKUG_EXOME_SOMATIC_FLAGS) \
 		-T UnifiedGenotyper \
 		-R `cat $*.genome` \
@@ -226,7 +226,7 @@ GATKUG_GENOME_FLAGS= -nct $(GATKUG_THREADS_GENOME) -glm BOTH \
 # Minimum coverage for a variant called by gatkUG
 
 %.gatkUG_GENOME.unfiltered.unrecalibrated.vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
-	
+
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKUG_GENOME_FLAGS) \
 		-T UnifiedGenotyper \
 		-R `cat $*.genome` \
@@ -260,7 +260,7 @@ GATKUG_HEMATOLOGY_FLAGS= -nct $(THREADS_GATKUG_HEMATOLOGY) -glm BOTH \
 DPMIN_HEMATOLOGY=1
 
 %.gatkUG_HEMATOLOGY.unfiltered.unrecalibrated.vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
-	
+
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKUG_HEMATOLOGY_FLAGS) \
 		-T UnifiedGenotyper \
 		-R `cat $*.genome` \
@@ -294,7 +294,7 @@ GATKUG_SOLIDTUMOR_FLAGS= -nct $(THREADS_GATKUG_SOLIDTUMOR) -glm BOTH \
 DPMIN_SOLIDTUMOR=1
 
 %.gatkUG_SOLIDTUMOR.unfiltered.unrecalibrated.vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
-	
+
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKUG_SOLIDTUMOR_FLAGS) \
 		-T UnifiedGenotyper \
 		-R `cat $*.genome` \
@@ -336,7 +336,7 @@ GATKUG_ONCOGENET_FLAGS= -nct $(GATKUG_THREADS_ONCOGENET) -glm BOTH \
 DPMIN_ONCOGENET=4
 
 %.gatkUG_ONCOGENET.unfiltered.unrecalibrated.vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
-	
+
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKUG_ONCOGENET_FLAGS) \
 		-T UnifiedGenotyper \
 		-R `cat $*.genome` \
@@ -382,7 +382,7 @@ maxReadsInRegionPerSample=250
 GATKHC_FLAGS= -nct $(THREADS_GATKHC) -baq OFF -stand_call_conf 10 -dfrac $(DFRAC) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC) -rf BadCigar -minPruning $(MINPRUNING) -allowPotentiallyMisencodedQuals
 
 %.gatkHC.unfiltered.unrecalibrated.vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
-	
+
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKHC_FLAGS) \
 		-T HaplotypeCaller \
 		-R `cat $*.genome` \
@@ -393,7 +393,7 @@ GATKHC_FLAGS= -nct $(THREADS_GATKHC) -baq OFF -stand_call_conf 10 -dfrac $(DFRAC
 	-if [ ! -e $@ ]; then cp $*.empty.vcf $@; fi;
 	-if [ ! -e $@ ]; then touch $@; fi;
 	-rm -f $@.idx
-	
+
 
 ###################
 # gatkHC_GERMLINE #
@@ -506,7 +506,7 @@ DPMIN_HC_GENOME=4
 GATKHC_GENOME_FLAGS= -nct $(THREADS_GATKHC_GENOME) -baq OFF -stand_call_conf $(STAND_CALL_CONF_HC_GENOME) -dfrac $(DFRAC_HC_GENOME) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample_HC_GENOME) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC_GENOME) -rf BadCigar -minPruning $(MINPRUNING_HC_GENOME) -allowPotentiallyMisencodedQuals
 
 %.gatkHC_GENOME.unfiltered.unrecalibrated.vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
-	
+
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKHC_GENOME_FLAGS) \
 		-T HaplotypeCaller \
 		-R `cat $*.genome` \
@@ -532,7 +532,7 @@ maxReadsInRegionPerSample_HEMATOLOGY=1000
 GATKHC_HEMATOLOGY_FLAGS= -nct $(THREADS_GATKHC_HEMATOLOGY) -baq OFF -stand_call_conf 10 -dfrac $(DFRAC) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample_HEMATOLOGY) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC) -rf BadCigar -minPruning $(MINPRUNING_HEMATOLOGY) -allowPotentiallyMisencodedQuals
 
 %.gatkHC_HEMATOLOGY.unfiltered.unrecalibrated.vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
-	
+
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKHC_HEMATOLOGY_FLAGS) \
 		-T HaplotypeCaller \
 		-R `cat $*.genome` \
@@ -556,7 +556,7 @@ maxReadsInRegionPerSample_SOLIDTUMOR=1000
 GATKHC_SOLIDTUMOR_FLAGS= -nct $(THREADS_GATKHC_SOLIDTUMOR) -baq OFF -stand_call_conf 10 -dfrac $(DFRAC) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample_SOLIDTUMOR) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC) -rf BadCigar -minPruning $(MINPRUNING_SOLIDTUMOR) -allowPotentiallyMisencodedQuals
 
 %.gatkHC_SOLIDTUMOR.unfiltered.unrecalibrated.vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
-	
+
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKHC_SOLIDTUMOR_FLAGS) \
 		-T HaplotypeCaller \
 		-R `cat $*.genome` \
@@ -582,7 +582,7 @@ maxReadsInRegionPerSample=8000
 GATKHC_ONCOGENET_FLAGS= -nct $(THREADS_GATKHC_ONCOGENET) -baq OFF -stand_call_conf 10 -dfrac $(DFRAC_ONCOGENET) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC_ONCOGENET) -rf BadCigar -minPruning $(MINPRUNING_ONCOGENET) -allowPotentiallyMisencodedQuals
 
 %.gatkHC_ONCOGENET.unfiltered.unrecalibrated.vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
-	
+
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKHC_ONCOGENET_FLAGS) \
 		-T HaplotypeCaller \
 		-R `cat $*.genome` \
@@ -619,9 +619,9 @@ recalibration_indels_options=$(recalibration_DBs_indels_options) --maxGaussians 
 
 #%.unfiltered.vcf: %.unfiltered.unrecalibrated.vcf %.unfiltered.unrecalibrated.vcf.idx %.empty.vcf %.genome
 %.vcf: %.unrecalibrated.vcf %.unrecalibrated.vcf.idx %.empty.vcf %.genome
-	if [ $(VARIANT_RECALIBRATION) == 1 ]; then \
-		cat $< | $(VCFTOOLS)/vcf-subset -r -t indels -e > $*.indels.vcf; \
-		cat $< | $(VCFTOOLS)/vcf-subset -r -t SNPs -e > $*.snps.vcf; \
+	if (($(VARIANT_RECALIBRATION))); then \
+		$(BCFTOOLS) view --types=indels > $*.indels.vcf; \
+		$(BCFTOOLS) view --exclude-types=indels > $*.snps.vcf; \
 		$(JAVA) $(JAVA_FLAGS) -jar $(GATK) -T VariantRecalibrator -R `cat $*.genome` -input $*.snps.vcf -recalFile `echo $* | cut -d"." -f1`.snps.recal -tranchesFile `echo $* | cut -d"." -f1`.snps.tranches -ip $(INTERVAL_PADDING) $(recalibration_SNPs_options) \
 		&& $(JAVA) $(JAVA_FLAGS) -jar $(GATK) -T VariantRecalibrator -R `cat $*.genome` -input $*.indels.vcf -recalFile `echo $* | cut -d"." -f1`.indels.recal -tranchesFile `echo $* | cut -d"." -f1`.indels.tranches -ip $(INTERVAL_PADDING) $(recalibration_indels_options) \
 		&& $(JAVA) $(JAVA_FLAGS) -jar $(GATK) -T ApplyRecalibration -R `cat $*.genome` -input $*.snps.vcf -tranchesFile `echo $* | cut -d"." -f1`.snps.tranches -recalFile `echo $* | cut -d"." -f1`.snps.recal -ip $(INTERVAL_PADDING) --ts_filter_level 99.5 -mode "SNP" -o $*.recalibrated.snps.vcf \
@@ -632,6 +632,9 @@ recalibration_indels_options=$(recalibration_DBs_indels_options) --maxGaussians 
 	else \
 		mv $< $@; \
 	fi; \
+
+	#cat $< | $(VCFTOOLS)/vcf-subset -r -t indels -e > $*.indels.vcf;
+	#cat $< | $(VCFTOOLS)/vcf-subset -r -t SNPs -e > $*.snps.vcf;
 
 #####################
 # VariantFiltration #
@@ -818,5 +821,3 @@ PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
 
 PIPELINES_COMMENT := "CALLER:gatkHC_ONCOGENET:GATK Haplotype Caller - designed for ONCOGENET variant discovery:GATKHC_ONCOGENET_FLAGS='$(GATKHC_ONCOGENET_FLAGS)'"
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
-
-

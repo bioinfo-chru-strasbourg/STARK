@@ -24,9 +24,11 @@ FATBAM_OPTIONS?=--verbose # Default options + verbose
 FATBAM_TMP_FOLDER?=$(TMP_FOLDER_TMP) # TMP_SYS_FOLDER ???
 
 #%.bam: %.unclipped.bam %.unclipped.bam.bai %.manifest
-%.bam: %.clipping.bam %.clipping.bam.bai %.manifest
+%.bam: %.clipping.bam %.clipping.bam.bai %.manifest %.genome
 	# Clipping
-	+$(FATBAM_CLIPPING) --env=$(ENV) --bam=$< --manifest=$*.manifest --output=$@ --verbose --multithreading --threads=$(THREADS) --tmp=$(FATBAM_TMP_FOLDER)
+	#+$(FATBAM_CLIPPING) --env=$(ENV) --bam=$< --manifest=$*.manifest --output=$@ --verbose --multithreading --threads=$(THREADS) --tmp=$(FATBAM_TMP_FOLDER)
+	+$(FATBAM_CLIPPING) --env=$(CONFIG_TOOLS) --ref=`cat $*.genome` --bam=$< --manifest=$*.manifest --output=$@ --verbose --multithreading --threads=$(THREADS) --tmp=$(FATBAM_TMP_FOLDER)
+	
 	# CHECK NUMBER of READS in BAM
 	if (($(BAM_CHECK_STEPS))); then \
 		#echo $$($(SAMTOOLS) view -c -@ $(THREADS_SAMTOOLS) -F 0x0100 $<)" READS for $<"; \

@@ -16,8 +16,5 @@ for BAM in $BAMS; do
 	if [ "$ENV" != "" ]; then PARAM=$PARAM" -e $ENV "; fi;
 	if [ "$BED" != "" ]; then PARAM=$PARAM" -e $BED "; fi;
 	# Launch STARK Command with COULSON
-	$COULSON/add.sh '' "$SCRIPT_DIR/STARK.sh $PARAM ";
+	$COULSON/add.sh '' "$SCRIPT_DIR/STARK $PARAM ";
 done;
-
-
-

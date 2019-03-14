@@ -76,11 +76,20 @@ BAM_COMPRESSION?=5
 
 
 # HEADER
+#RELEASE_CMD := $(shell echo "\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#" >> $(RELEASE_INFOS) )
+#RELEASE_CMD := $(shell echo "\# $(ENV_NAME) - $(ENV_DESCRIPTION)" >> $(RELEASE_INFOS) )
+#RELEASE_CMD := $(shell echo "\# RELEASE $(ENV_RELEASE) - $(ENV_DATE) - COPYRIGHT © $(ENV_COPYRIGHT) - $(ENV_AUTHOR) ($(ENV_LICENCE) licence)" >> $(RELEASE_INFOS) )
+#RELEASE_CMD := $(shell echo "\# CONFIG  Scripts '$(NGSscripts)' - ENV '$(ENV)' - TOOLS '$(NGSEnv)'" >> $(RELEASE_INFOS) )
+#RELEASE_CMD := $(shell echo "\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#" >> $(RELEASE_INFOS) )
+
 RELEASE_CMD := $(shell echo "\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#" >> $(RELEASE_INFOS) )
 RELEASE_CMD := $(shell echo "\# $(ENV_NAME) - $(ENV_DESCRIPTION)" >> $(RELEASE_INFOS) )
-RELEASE_CMD := $(shell echo "\# RELEASE $(ENV_RELEASE) - $(ENV_DATE) - COPYRIGHT © $(ENV_COPYRIGHT) - $(ENV_AUTHOR) ($(ENV_LICENCE) licence)" >> $(RELEASE_INFOS) )
-RELEASE_CMD := $(shell echo "\# CONFIG  Scripts '$(NGSscripts)' - ENV '$(ENV)' - TOOLS '$(NGSEnv)'" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "\# RELEASE $(ENV_RELEASE) [$(ENV_DATE)]" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "\# AUTHORS $(ENV_AUTHOR)" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "\# COPYRIGHT $(ENV_COPYRIGHT)" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "\# LICENCE $(ENV_LICENCE)" >> $(RELEASE_INFOS) )
 RELEASE_CMD := $(shell echo "\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#" >> $(RELEASE_INFOS) )
+
 
 # RELEASE
 RELEASE_CMD := $(shell echo "\#\# STARK_RELEASE: $(ENV_RELEASE)" >> $(RELEASE_INFOS) )
@@ -94,6 +103,23 @@ RELEASE_CMD := $(shell echo "\#\# PROJECT: $(PROJECT)" >> $(RELEASE_INFOS) )
 # INFRASTRUCTURE
 RELEASE_CMD := $(shell echo "\#\# INFRASTRUCTURE: THREADS=$(THREADS), THREADS_BY_SAMPLE=$(THREADS_BY_SAMPLE), MEMORY=$(MEMORY)" >> $(RELEASE_INFOS) )
 
+RELEASE_CMD := $(shell echo "" >> $(RELEASE_INFOS) )
+
+# TOOLS
+#RELEASE_CMD := $(shell echo "\#\# TOOLS INFOS" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell $(STARK_FOLDER_BIN)/STARK --tools_infos --app=$(ENV) >> $(RELEASE_INFOS) )
+
+# DATABASES
+#RELEASE_CMD := $(shell echo "\#\# DATABASES INFOS" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell $(STARK_FOLDER_BIN)/STARK --databases_infos --app=$(ENV) >> $(RELEASE_INFOS) )
+
+# OTHER INFORMATIONS
+RELEASE_CMD := $(shell echo "" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "\#\#\#\# OTHER INFORMATIONS \#\#\#\#" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#" >> $(RELEASE_INFOS) )
+
+
 # DATABASES
 RELEASE_COMMENT := "\#\# DATABASES: VCFDBSNP='$(VCFDBSNP)', VCFDBSNP137VCF='$(VCFDBSNP137VCF)', VCF1000G='$(VCF1000G)', VCFMILLS1000G='$(VCFMILLS1000G)', KNOWN_ALLELES='$(KNOWN_ALLELES)', COSMIC='$(COSMIC)'"
 RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
@@ -106,4 +132,8 @@ RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 RELEASE_COMMENT := "\#\# CONFIG FILES: CONFIG=$(CONFIG), FUNCTIONS=$(FUNCTIONS), PARAM=$(PARAM)"
 RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
-
+# OTHER INFORMATIONS
+RELEASE_CMD := $(shell echo "" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "\#\#\#\# INFORMATIONS ON RULES \#\#\#\#" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#" >> $(RELEASE_INFOS) )

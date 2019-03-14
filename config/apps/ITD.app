@@ -1,41 +1,23 @@
 #!/bin/bash
-## STARK env for HUSHEMATO RUNs
+## STARK application ITD
 
 # DEFAULT ENV
 ######################
-source $CONFIG_DEFAULT_APP
+source_app $CONFIG_DEFAULT_APP
 
 # APPLICATION INFOS
 #####################
-
 APP_NAME="ITD"
-
-GROUP="UNKNOWN"
-PROJECT="UNKNOWN"
-
+APP_RELEASE="1.0"
+APP_DESCRIPTION="ITD-FMT3 mutation detection (ITDSeek tool), for amplicon sequencing"
+APP_GROUP=""
+APP_PROJECT=""
 
 # ANALYSIS PARAMETERS
 #######################
 
-# ALIGNERS
-ALIGNERS="bwamem"
-
-# CALLERS
-CALLERS="itdseek"
-
-# ANNOTATORS
-ANNOTATORS="howard"
-
 # PIPELINES
-PIPELINES=""
+PIPELINES="bwamem.itdseek.howard"
 
 # POST ALIGNEMENT STEPS (default "sorting realignment clipping compress")
 POST_ALIGNMENT_STEPS="sorting realignment recalibration clipping compress"
-
-
-# FOOTER
-###########
-source $CONFIG_FOOTER
-
-
-

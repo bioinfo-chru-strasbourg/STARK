@@ -89,8 +89,8 @@ header;
 
 # USAGE exemple
 # ./launch.sample.sh -f "$DATA/SAMPLE/HORIZON/HORIZON.R1.fastq.gz,$DATA/SAMPLE/HORIZON/HORIZON.bam,$DATA/SAMPLE/TEST/TEST.cram" -q "$DATA/SAMPLE/HORIZON/HORIZON.R2.fastq.gz" -s "H1,H2" -r "test" -b "/home1/TOOLS/data/SAMPLE/HORIZON/HORIZON.manifest,/home1/TOOLS/data/SAMPLE/HORIZON/HORIZON.bed,/home1/TOOLS/data/SAMPLE/TEST/TEST.bed" --output="$DATA/RESULTS"
-# /home1/IRC/TOOLS/tools/stark/dev/STARK.sh -f "$DATA/SAMPLE/HORIZON/HORIZON.R1.fastq.gz,$DATA/SAMPLE/HORIZON/HORIZON.bam,$DATA/SAMPLE/TEST/TEST.cram" -q "$DATA/SAMPLE/HORIZON/HORIZON.R2.fastq.gz" -s "H1,H2" -r "testH,testH,testT" -b "/home1/TOOLS/data/SAMPLE/HORIZON/HORIZON.manifest,/home1/TOOLS/data/SAMPLE/HORIZON/HORIZON.bed,/home1/TOOLS/data/SAMPLE/TEST/TEST.bed" -e env.HUSTUMSOL.sh --output="$DATA/RESULTS" --repository="$DATA/REPOSITORY"
-# /home1/IRC/TOOLS/tools/stark/dev/STARK.sh -f $DATA/SAMPLE/TEST/TEST.cram -b /home1/TOOLS/data/SAMPLE/TEST/TEST.bed --output="$DATA/RESULTS" -r testT
+# /home1/IRC/TOOLS/tools/stark/dev/STARK -f "$DATA/SAMPLE/HORIZON/HORIZON.R1.fastq.gz,$DATA/SAMPLE/HORIZON/HORIZON.bam,$DATA/SAMPLE/TEST/TEST.cram" -q "$DATA/SAMPLE/HORIZON/HORIZON.R2.fastq.gz" -s "H1,H2" -r "testH,testH,testT" -b "/home1/TOOLS/data/SAMPLE/HORIZON/HORIZON.manifest,/home1/TOOLS/data/SAMPLE/HORIZON/HORIZON.bed,/home1/TOOLS/data/SAMPLE/TEST/TEST.bed" -e env.HUSTUMSOL.sh --output="$DATA/RESULTS" --repository="$DATA/REPOSITORY"
+# /home1/IRC/TOOLS/tools/stark/dev/STARK -f $DATA/SAMPLE/TEST/TEST.cram -b /home1/TOOLS/data/SAMPLE/TEST/TEST.bed --output="$DATA/RESULTS" -r testT
 
 ####################################################################################################################################
 # Getting parameters from the input
@@ -252,6 +252,18 @@ done;
 
 ENV=$(find_app "$APP" "$STARK_FOLDER_APPS")
 source_app "$APP" "$STARK_FOLDER_APPS"
+
+if ((0)); then
+	echo "APP=$APP"
+	echo "ASSEMBLY=$ASSEMBLY"
+	echo "PIPELINES=$PIPELINES"
+	echo "ALIGNERS=$ALIGNERS"
+	echo "CALLERS=$CALLERS"
+	echo "ANNOTATORS=$ANNOTATORS"
+	echo "ASSEMBLY=$ASSEMBLY"
+	#exit 0
+fi;
+
 
 # SOURCE ENV if exists
 #if [ ! -z $ENV ] && [ -s $ENV ]; then
@@ -581,30 +593,44 @@ if [ "$JAVA_FLAGS" == "" ]; then
 fi;
 
 
-
-
 #echo "ENV=$ENV";
 #APP_NAME_DEF=$($SCRIPT_DIR/extract_variable_from_env.sh $ENV "APP_NAME")
-APP_NAME_DEF=$(source $ENV; echo $APP_NAME)
-if [ -z "$APP_NAME" ]; then
-	APP_NAME=$(echo $(basename $ENV) | sed "s/^env.//gi" | sed "s/.sh$//gi" | sed "s/sh$//gi")
-fi;
-if [ ! -z "$GROUP" ]; then
-	SAMPLE_GROUP=$GROUP
-else
-	SAMPLE_GROUP=$(echo $APP_NAME | awk -F- '{print $1}');
-fi;
-if [ "$SAMPLE_GROUP" == "" ]; then SAMPLE_GROUP="UNKNOWN"; fi;
-if [ ! -z "$PROJECT" ]; then
-	SAMPLE_PROJECT=$PROJECT
-else
-	SAMPLE_PROJECT=$(echo $APP_NAME | awk -F- '{print $2}');
-fi;
-if [ "$SAMPLE_PROJECT" == "" ]; then SAMPLE_PROJECT="UNKNOWN"; fi;
-
-#SAMPLE_PROJECT=$(echo $APP_NAME | awk -F- '{print $2}'); if [ "$SAMPLE_PROJECT" == "" ]; then SAMPLE_PROJECT="UNKNOWN"; fi;
-SAMPLE_USER=$(echo $APP_NAME | awk -F- '{print $3}'); if [ "$SAMPLE_USER" == "" ]; then SAMPLE_USER="UNKNOWN"; fi;
+#APP_NAME_DEF=$(source_app "$APP" "$STARK_FOLDER_APPS"; echo $APP_NAME)
+APP_NAME=$(name_app "$APP" "$STARK_FOLDER_APPS");
+SAMPLE_GROUP=$APP_GROUP
+SAMPLE_PROJECT=$APP_PROJECT
 if [ -z "$APP_NAME" ]; then APP_NAME="UNKNOWN"; fi;
+if [ -z "$SAMPLE_GROUP" ]; then SAMPLE_GROUP="UNKNOWN"; fi;
+if [ -z "$SAMPLE_PROJECT" ]; then SAMPLE_PROJECT="UNKNOWN"; fi;
+
+if ((0)); then
+
+	#if [ -z "$APP_NAME" ]; then
+	#	APP_NAME=$(echo $(basename $ENV) | sed "s/^env.//gi" | sed "s/.sh$//gi" | sed "s/sh$//gi")
+	#fi;
+
+	if [ ! -z "$GROUP" ]; then
+		SAMPLE_GROUP=$GROUP
+	else
+		SAMPLE_GROUP=$(echo $APP_NAME | awk -F- '{print $1}');
+	fi;
+	if [ "$SAMPLE_GROUP" == "" ]; then SAMPLE_GROUP="UNKNOWN"; fi;
+	if [ ! -z "$PROJECT" ]; then
+		SAMPLE_PROJECT=$PROJECT
+	else
+		SAMPLE_PROJECT=$(echo $APP_NAME | awk -F- '{print $2}');
+	fi;
+	if [ "$SAMPLE_PROJECT" == "" ]; then SAMPLE_PROJECT="UNKNOWN"; fi;
+
+	#SAMPLE_PROJECT=$(echo $APP_NAME | awk -F- '{print $2}'); if [ "$SAMPLE_PROJECT" == "" ]; then SAMPLE_PROJECT="UNKNOWN"; fi;
+	SAMPLE_USER=$(echo $APP_NAME | awk -F- '{print $3}'); if [ "$SAMPLE_USER" == "" ]; then SAMPLE_USER="UNKNOWN"; fi;
+
+fi;
+
+if [ -z "$APP_NAME" ]; then APP_NAME="UNKNOWN"; fi;
+
+
+
 
 #echo "ENV=$ENV";
 #echo "APP=$APP_NAME";
@@ -634,6 +660,8 @@ RUN_UNIQ=$(echo $RUN | tr " " "\n" | sort | uniq | tr "\n" " ");
 #echo $RUN_UNIQ
 #exit 0;
 
+
+echo "#[INFO] *** INPUT"
 
 for RUU in $RUN_UNIQ; do
 
@@ -947,51 +975,38 @@ for RUU in $RUN_UNIQ; do
 	#exit 0;
 
 	# OUTPUT
-	echo "# "
-	echo "# CONFIGURATION ($APP_NAME)"
-	echo "################"
-	echo "# NGS TOOLS Folder:      "$NGS_TOOLS
-	#echo "# MISEQ Folder:          "$MISEQ_FOLDER
-	#echo "# DEMULTIPLEXING Folder: "$DEMULTIPLEXING_FOLDER
-	echo "# RESULTS Folder:        "$OUTPUT
-	echo "# REPOSITORY Folder:     "$REPOSITORY
-	#echo "# ANALYSIS Folder:       "$ANALYSIS_FOLDER
-	echo "# ENV:                   "$ENV
-	echo "# APP:                   "$APP_NAME
-	echo "# APP RELEASE:           "$APP_RELEASE
-	echo "# GROUP:                 "$GROUP
-	echo "# PROJECT:               "$PROJECT
-	echo "# ALIGNERS:              "$ALIGNERS
-	echo "# CALLERS:               "$CALLERS
-	echo "# ANNOTATORS:            "$ANNOTATORS
-	echo "# PIPELINES:             "$PIPELINES
-	echo "# "
+	#echo "# "
+	echo "#[INFO] *** CONFIGURATION"
+	#echo "#################"
+	echo "#[INFO] FASTQ/BAM/CRAM            $F_LIST"
+	echo "#[INFO] FASTQ R2                  $Q_LIST"
+	echo "#[INFO] DESIGN                    $B_LIST"
+	echo "#[INFO] GENES                     $G_LIST"
+	echo "#[INFO] TRANSCRIPTS               $T_LIST"
+	echo "#[INFO] SAMPLES                   $S_LIST"
+	echo "#[INFO] RUN                       $RUU"
+	echo "#[INFO] APPLICATION               $APP_NAME"
+	echo "#[INFO] APPLICATION FILE          "$(echo $ENV | sed s#$STARK_FOLDER_APPS/##gi)
+	echo "#[INFO] GROUP                     $SAMPLE_GROUP"
+	echo "#[INFO] PROJECT                   $SAMPLE_PROJECT"
+	echo "#[INFO] PIPELINES                 $PIPELINES"
+	echo "#[INFO] POST_ALIGNMENT            "$(echo $POST_ALIGNMENT | tr "." "\n" | tac | tr "\n" " " )""
+	echo "#[INFO] RESULTS                   $OUTPUT"
+	echo "#[INFO] REPOSITORY                $REPOSITORY"
+	echo "#[INFO] RELEASE INFOS             $RELEASE_RUN"
+	echo "#[INFO] MAKEFILE CONFIGURATION    $MAKEFILE_ANALYSIS_RUN"
+	echo "#[INFO] SHELL CONFIGURATION       $SHELL_ANALYSIS_RUN"
+	echo "#[INFO] LOGFILE                   $LOGFILE_RES_RUN"
+	echo "#[INFO] *** Start Analysis        [`date`]"
 
-	echo "[`date`] *** Start Analysis 	'$RELEASE_RUN'"
-	echo "[`date`] MAKEFILE_ANALYSIS_RUN 	'$MAKEFILE_ANALYSIS_RUN'"
-	echo "[`date`] SHELL_ANALYSIS_RUN 	'$SHELL_ANALYSIS_RUN'"
-	echo "[`date`] LOGFILE_RES_RUN		'$LOGFILE_RES_RUN'"
-	echo "[`date`] FASTQ/BAM/CRAM 		'$F_LIST'"
-	echo "[`date`] FASTQ R2 		'$Q_LIST'"
-	echo "[`date`] BED	 		'$B_LIST'"
-	echo "[`date`] GENES	 		'$G_LIST'"
-	echo "[`date`] TRANSCRIPTS	 	'$T_LIST'"
-	echo "[`date`] SAMPLE	 		'$S_LIST'"
-	echo "[`date`] RUN	 		'$RUU'"
-	echo "[`date`] APP	 	        '$APP_NAME'"
-	echo "[`date`] APP RELEASE	        '$APP_RELEASE'"
-	echo "[`date`] GROUP	 	        '$SAMPLE_GROUP'"
-	echo "[`date`] PROJECT	 	        '$SAMPLE_PROJECT'"
-	echo "[`date`] PIPELINES	 	'$PIPELINES'"
-	echo "[`date`] POST_ALIGNMENT	 	'"$(echo $POST_ALIGNMENT | tr "." "\n" | tac | tr "\n" " " )"'"
-
+	START_ANALYSIS=$(date +%s)
 
 	#STARK_QUEUED=$($SCRIPT_DIR/extract_variable_from_env.sh $RUN_ENV "STARK_QUEUED")
 	#STARK_RUNNING=$($SCRIPT_DIR/extract_variable_from_env.sh $RUN_ENV "STARK_RUNNING")
 	#STARK_COMPLETE=$($SCRIPT_DIR/extract_variable_from_env.sh $RUN_ENV "STARK_COMPLETE")
-	STARK_QUEUED=$(source $ENV; echo $STARK_QUEUED)
-	STARK_RUNNING=$(source $ENV; echo $STARK_RUNNING)
-	STARK_COMPLETE=$(source $ENV; echo $STARK_COMPLETE)
+	STARK_QUEUED=$(source_app "$APP" "$STARK_FOLDER_APPS"; echo $STARK_QUEUED)
+	STARK_RUNNING=$(source_app "$APP" "$STARK_FOLDER_APPS"; echo $STARK_RUNNING)
+	STARK_COMPLETE=$(source_app "$APP" "$STARK_FOLDER_APPS"; echo $STARK_COMPLETE)
 	if [ "$STARK_QUEUED" == "" ]; then STARK_QUEUED=STARKQueued.txt; fi;
 	if [ "$STARK_RUNNING" == "" ]; then  STARK_RUNNING=STARKRunning.txt; fi;
 	if [ "$STARK_COMPLETE" == "" ]; then  STARK_COMPLETE=STARKComplete.txt; fi;
@@ -1005,54 +1020,22 @@ for RUU in $RUN_UNIQ; do
 	# TREADS
 	#JAVA_MEMORY=4
 	THREADS_BY_SAMPLE=$THREADS; # Allocate all thread to the sample because no other sample analysed in parallele
-		
+
 	echo "["`date '+%Y%m%d-%H%M%S'`"] Main Analysis Process for Analysis '$RELEASE_RUN' START" >>$LOGFILE_RES_RUN
-	make -k -j $THREADS -e ENV=$ENV PARAM=$MAKEFILE_ANALYSIS_RUN $PARAMETERS $THREAD_PARAMETERS JAVA_MEMORY=$JAVA_MEMORY SNAPSHOT=0 VALIDATION=1 INPUT=$INPUT OUTDIR=$OUTPUT RELEASE=$RELEASE_RUN FINAL_REPORT=$FINAL_REPORT_RUN ANALYSIS_REF=$ANALYSIS_REF -f $NGS_SCRIPTS/NGSWorkflow.mk 1>>$LOGFILE_RES_RUN 2>>$LOGFILE_RES_RUN
+	make -k -j $THREADS -e ENV="$ENV" PARAM=$MAKEFILE_ANALYSIS_RUN $PARAMETERS $THREAD_PARAMETERS JAVA_MEMORY=$JAVA_MEMORY SNAPSHOT=0 VALIDATION=1 INPUT=$INPUT OUTDIR=$OUTPUT RELEASE=$RELEASE_RUN FINAL_REPORT=$FINAL_REPORT_RUN ANALYSIS_REF=$ANALYSIS_REF -f $NGS_SCRIPTS/NGSWorkflow.mk 1>>$LOGFILE_RES_RUN 2>>$LOGFILE_RES_RUN
 	echo "["`date '+%Y%m%d-%H%M%S'`"] Main Analysis Process for Analysis '$RELEASE_RUN' END" >>$LOGFILE_RES_RUN
 
 	if (($(grep "\*\*\*" $LOGFILE_RES_RUN -c))); then
 		echo "["`date '+%Y%m%d-%H%M%S'`"] Main Analysis Process for Analysis '$RELEASE_RUN' ERROR" >>$LOGFILE_RES_RUN
-		echo "["`date`"] Main Analysis Process for Analysis '$RELEASE_RUN' finished with ERRORS"
+		STOP_ANALYSIS=$(date +%s)
+		ANALYSIS_TIME=$(convertsecs $((STOP_ANALYSIS - START_ANALYSIS)))
+		echo "#[INFO] Main Analysis Process for Analysis '$RELEASE_RUN' finished with ERRORS [`date`] - $ANALYSIS_TIME"
 		if (($VERBOSE)); then grep "\*\*\*" $LOGFILE_RES_RUN; fi;
 		# RUNNING stop
 		rm -f $STARK_RUNNING_FILE
 		continue;
 	fi;
 
-
-	if ((0)); then
-	# ANALYSIS
-
-	echo "["`date '+%Y%m%d-%H%M%S'`"] Main Analysis Process for Analysis '$RELEASE_RUN' START" >>$LOGFILE_RES_RUN
-	make -k -j $THREADS -e ENV=$ENV PARAM=$MAKEFILE_ANALYSIS_RUN $PARAMETERS $THREAD_PARAMETERS JAVA_MEMORY=$JAVA_MEMORY SNAPSHOT=0 VALIDATION=1 INPUT=$INPUT OUTDIR=$OUTPUT RELEASE=$RELEASE_RUN -f $NGS_SCRIPTS/NGSWorkflow.mk 1>>$LOGFILE_RES_RUN 2>>$LOGFILE_RES_RUN
-	echo "["`date '+%Y%m%d-%H%M%S'`"] Main Analysis Process for Analysis '$RELEASE_RUN' END" >>$LOGFILE_RES_RUN
-
-	if (($(grep "\*\*\*" $LOGFILE_RES_RUN -c))); then
-		echo "["`date '+%Y%m%d-%H%M%S'`"] Main Analysis Process for Analysis '$RELEASE_RUN' ERROR" >>$LOGFILE_RES_RUN
-		echo "["`date`"] Main Analysis Process for Analysis '$RELEASE_RUN' finished with ERRORS"
-		if (($VERBOSE)); then grep "\*\*\*" $LOGFILE_RES_RUN; fi;
-		# RUNNING stop
-		rm -f $STARK_RUNNING_FILE
-		continue;
-	fi;
-
-
-	# REPORT
-	#echo "ANALYSIS_REF=$ANALYSIS_REF"
-	echo "["`date '+%Y%m%d-%H%M%S'`"] Main Report Process for Analysis '$RELEASE_RUN' START" >>$LOGFILE_RES_RUN_REPORT
-	#make -k -j $THREADS -e ENV=$ENV PARAM=$MAKEFILE_ANALYSIS_RUN $PARAMETERS $THREAD_PARAMETERS JAVA_MEMORY=$JAVA_MEMORY SNAPSHOT=0 VALIDATION=1 INPUT=$INPUT OUTDIR=$OUTPUT RELEASE=$RELEASE_RUN FINAL_REPORT=$FINAL_REPORT_RUN ANALYSIS_REF=$ANALYSIS_REF FINAL_REPORT_FULL=$FINAL_REPORT_FULL_RUN -f $NGS_SCRIPTS/NGSWorkflow.mk  1>>$LOGFILE_RES_RUN_REPORT 2>>$LOGFILE_RES_RUN_REPORT
-	make -k -j $THREADS -e ENV=$ENV PARAM=$MAKEFILE_ANALYSIS_RUN $PARAMETERS $THREAD_PARAMETERS JAVA_MEMORY=$JAVA_MEMORY SNAPSHOT=0 VALIDATION=1 INPUT=$INPUT OUTDIR=$OUTPUT RELEASE=$RELEASE_RUN FINAL_REPORT=$FINAL_REPORT_RUN ANALYSIS_REF=$ANALYSIS_REF -f $NGS_SCRIPTS/NGSWorkflow.mk  1>>$LOGFILE_RES_RUN_REPORT 2>>$LOGFILE_RES_RUN_REPORT
-
-
-	if (($(grep "\*\*\*" $LOGFILE_RES_RUN_REPORT -c))); then
-		echo "["`date '+%Y%m%d-%H%M%S'`"] Main Report Process for Analysis '$RELEASE_RUN' ERROR" >>$LOGFILE_RES_RUN_REPORT
-		echo "["`date`"] Main Report Process for Analysis '$RELEASE_RUN' finished with ERRORS"
-		if (($VERBOSE)); then grep "\*\*\*" $LOGFILE_RES_RUN_REPORT; fi;
-		# RUNNING stop
-		rm -f $STARK_RUNNING_FILE
-		continue;
-	fi;
-	fi;
 
 	# STARK REport
 	I=0
@@ -1091,7 +1074,7 @@ for RUU in $RUN_UNIQ; do
 			if [ "$RESULTS_FOLDER_COPY_ALL" != "$OUTPUT" ] && [ "$RESULTS_FOLDER_COPY_ALL" != "" ] ; then
 				for RESULTS_FOLDER_COPY_FOLDER in $RESULTS_FOLDER_COPY_ALL;
 				do
-					echo "["`date`"] Copying RUN/SAMPLE '$RUU/$S' files from main result folder '$OUTPUT/$RUU/$S' to Copy folder '$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S'..."
+					echo "#[INFO] Copying '$RUU/$S' files from '$OUTPUT/$RUU/$S' to '$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S'..."
 
 					# Copy SAMPLE files
 					chmod $PERMS -R $OUTPUT/$RUU/$S 1>/dev/null 2>/dev/null
@@ -1147,8 +1130,10 @@ for RUU in $RUN_UNIQ; do
 	done
 	#echo "["`date '+%Y%m%d-%H%M%S'`"] Main Report Process for Analysis '$RELEASE_RUN' END" >>$LOGFILE_RES_RUN_REPORT
 
+	STOP_ANALYSIS=$(date +%s)
+	ANALYSIS_TIME=$(convertsecs $((STOP_ANALYSIS - START_ANALYSIS)))
 
-	echo "[`date`] *** Stop Analysis '$RELEASE_RUN'"
+	echo "#[INFO] *** Stop Analysis         [`date`] - $ANALYSIS_TIME"
 
 	# STARK COMPLETE
 	echo "#["`date '+%Y%m%d-%H%M%S'`"] RUN $RUN analyzed by STARK ($STARK_VERSION)" >> $STARK_COMPLETE_FILE

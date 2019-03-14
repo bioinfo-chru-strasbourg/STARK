@@ -1,0 +1,38 @@
+#!/bin/bash
+## STARK application NO_ANNOTATION
+
+# DEFAULT ENV
+######################
+#source $CONFIG_DEFAULT_APP
+
+# APPLICATION INFOS
+#####################
+APP_NAME="AMPLICON"
+APP_RELEASE="1.0"
+APP_DESCRIPTION="PlugAPP for Amplicon sequencing"
+#APP_GROUP=""
+#APP_PROJECT=""
+
+# ANALYSIS PARAMETERS
+#######################
+
+# POST ALIGNEMENT STEPS (default "sorting realignment clipping compress")
+# All steps after alignement and before calling
+# This sequence correspond to the BAM file generated jsut after the alignemnt
+# Format: "step1 step2 step3"
+# Example: "sorting realignment clipping compress"
+#    This sequence will generate the file $ALIGNER.compress.clipping.realigned.sorting.bam whose will be processed
+#    Then, this BAM file will be 1/ sorted, 2/ realigned, 3/ clipped and 4/ compressed
+# The steps are defined as makefiles rules
+# Check available steps by using the command: STARK --pipelines_infos
+# Available steps (not up-to-date:
+#    sorting: BAM sorting
+#    compress: BAM compression (see $BAM_COMPRESSION variable)
+#    realignment: local realignment
+#    markduplicates: BAM Mark Duplicates
+#    clipping: BAM Clipping according to primer definition in manifest file, if any
+# Usually:
+#    "sorting realignment clipping compress" for Amplicon technology
+#    "sorting markduplicates realignment compress" for Capture technology
+POST_ALIGNMENT_STEPS="sorting realignment recalibration clipping compress"
+#POST_ALIGNMENT_STEPS="sorting markduplicates realignment recalibration compress"

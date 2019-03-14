@@ -16,12 +16,12 @@ PWD:=$(shell pwd -P)
 #Define NGSEnv and config.mk file
 NGSEnv?=/NGS
 #CONFIG?=$(MK_DIR_PATH)/rules.mk/config.mk
-CONFIG?=$(STARK_FOLDER_BIN)/config.mk
+CONFIG?=$(STARK_FOLDER_RULES)/config.mk
 #FUNCTIONS?=$(MK_DIR_PATH)/functions.mk
 FUNCTIONS?=$(STARK_FOLDER_BIN)/functions.mk
 PARAM?=makefile.param
 #RULES?=$(MK_DIR_PATH)/rules.mk/*.rules.mk
-RULES?=$(STARK_FOLDER_APPS)/rules.mk/*.rules.mk
+RULES?=$(STARK_FOLDER_RULES)/*.rules.mk
 DATE:=$(shell date '+%Y%m%d-%H%M%S')
 #ANALYSIS_DATE?=$(DATE)
 ANALYSIS_REF?=$(DATE)
@@ -76,7 +76,7 @@ REMOVE_INTERMEDIATE_SAM?=1 # Remove SAM file after BAM conversion
 ## FILES TO GENERATE and KEEP
 ###############################
 
-#CLEAN := 
+#CLEAN :=
 
 # NEEDED files/folder, i.e. Run's configuration and Demultiplexing OK
 SAMPLESHEETS?=$(foreach RUN,$(RUNS),$(MISEQDIR)/$(RUN)/SampleSheet.csv )
@@ -160,7 +160,7 @@ REPORT_FILES2=$(foreach EXT,$(REPORT_FILES_EXT), $(foreach RUN_SAMPLE,$(RUNS_SAM
 
 
 ifdef FINAL_REPORT
-	FINAL_REPORT_FILES=$(FINAL_REPORT) $(REPORT_FILES2) 
+	FINAL_REPORT_FILES=$(FINAL_REPORT) $(REPORT_FILES2)
 endif
 
 
@@ -300,13 +300,3 @@ clean: #$(CLEAN)
 	#rm -rf $(OUTDIR)/*/*/$(ANALYSIS_DATE)
 	#rm -rf $(OUTDIR)/*/*/$(RELEASE_DATE)
 	#rm -rf $(OUTDIR)/*/*/$(RELEASE_REF)
-
-
-
-
-
-
-	
-	
-	
-	
