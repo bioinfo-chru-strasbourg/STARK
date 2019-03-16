@@ -60,8 +60,8 @@ TOOLS_LIST=$TOOLS_LIST" SAMTOOLS"
 
 
 # VCFUTILS
-export VCFUTILS=$NGS_TOOLS/vcfutils/current/bin/vcfutils.pl		# BIN-SCRIPT
-export VCFUTILS_VERSION=1.2					# VER
+export VCFUTILS=$NGS_TOOLS/bcftools/current/bin/vcfutils.pl		# BIN-SCRIPT
+export VCFUTILS_VERSION=1.8					# VER
 export VCFUTILS_DESCRIPTION="fix a compatibility issue with the new bcftools"
 export VCFUTILS_REF="unknown"
 TOOLS_LIST=$TOOLS_LIST" VCFUTILS"

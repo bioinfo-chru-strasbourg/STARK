@@ -10,7 +10,7 @@ MK_DATE="02/10/2018"
 # 10/07/2015-V0.9b: Create HOWARD annotation and VCF translation
 # 24/11/2015-V0.9.1b: Bug correction
 # 22/04/2016-V0.9.2b: HOWARD and snpEff
-# 10/05/2016-V0.9.3b: Add CORE annotation only and Minimal Annotation, and empty.vcf 
+# 10/05/2016-V0.9.3b: Add CORE annotation only and Minimal Annotation, and empty.vcf
 # 02/10/2018-V0.9.4b: Modification of the HOWARD annotation
 
 
@@ -43,11 +43,11 @@ HOWARD_CALCULATION?=VAF,NOMEN,VAF_STATS,VARTYPE
 # HOWARD ANNOTATION
 %.howard.vcf: %.norm.vcf %.empty.vcf %.transcripts
 	# Annotation step
-	mkdir -p $@.metrics 
-	+$(HOWARD) --input=$< --output=$@ --transcripts=$*.transcripts --config=$(HOWARD_CONFIG) --config_filter=$(HOWARD_CONFIG_PRIORITIZATION) --config_filter=$(HOWARD_CONFIG_ANNOTATION) --annotation=$(HOWARD_ANNOTATION) --calculation=$(HOWARD_CALCULATION) --filter=$(HOWARD_PRIORITIZATION) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS);
+	mkdir -p $@.metrics
+	+$(HOWARD) --input=$< --output=$@ --transcripts=$*.transcripts --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --annotation=$(HOWARD_ANNOTATION) --calculation=$(HOWARD_CALCULATION) --filter=$(HOWARD_PRIORITIZATION) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS);
 	#--snpeff_stats=$@.metrics/$(@F).snpeff.metrics.html
 	-if [ ! -e $@ ]; then cp $*.empty.vcf $@; fi;
-	
+
 	# STATS
 	#-$(BCFTOOLS) stats $@ > $@.metrics/$(@F).bcftools.metrics
 
@@ -59,11 +59,11 @@ HOWARD_CALCULATION?=VAF,NOMEN,VAF_STATS,VARTYPE
 # HOWARD MINIMAL ANNOTATION
 %.howard_minimal.vcf: %.norm.vcf %.empty.vcf %.transcripts
 	# Annotation step
-	mkdir -p $@.metrics 
-	+$(HOWARD) --input=$< --output=$@ --transcripts=$*.transcripts --config=$(HOWARD_CONFIG) --config_filter=$(HOWARD_CONFIG_PRIORITIZATION) --config_filter=$(HOWARD_CONFIG_ANNOTATION) --annotation=$(HOWARD_ANNOTATION_MINIMAL) --calculation=$(HOWARD_CALCULATION_MINIMAL) --filter=$(HOWARD_PRIORITIZATION_MINIMAL) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS);
-	#--snpeff_stats=$@.metrics/$(@F).snpeff.metrics.html 
+	mkdir -p $@.metrics
+	+$(HOWARD) --input=$< --output=$@ --transcripts=$*.transcripts --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --annotation=$(HOWARD_ANNOTATION_MINIMAL) --calculation=$(HOWARD_CALCULATION_MINIMAL) --filter=$(HOWARD_PRIORITIZATION_MINIMAL) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS);
+	#--snpeff_stats=$@.metrics/$(@F).snpeff.metrics.html
 	-if [ ! -e $@ ]; then cp $*.empty.vcf $@; fi;
-	
+
 	# STATS
 	-$(BCFTOOLS) stats $@ > $@.metrics/$(@F).bcftools.metrics
 
@@ -75,7 +75,7 @@ HOWARD_CALCULATION?=VAF,NOMEN,VAF_STATS,VARTYPE
 %.vcf: %.unannotatedCORE.vcf %.empty.vcf
 	# Annotation CORE and snpEff HGVS
 	#$(HOWARD_ANNOTATION) --input_file=$< --output_file=$@ --annotation=core,snpeff_hgvs --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --verbose;
-	$(HOWARD) --input=$< --output=$@ --config=$(HOWARD_CONFIG) --config_filter=$(HOWARD_CONFIG_PRIORITIZATION) --config_filter=$(HOWARD_CONFIG_ANNOTATION) --annotation=core,snpeff_hgvs --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --verbose;
+	$(HOWARD) --input=$< --output=$@ --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --annotation=core,snpeff_hgvs --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --verbose;
 	-if [ ! -e $@ ]; then cp $*.empty.vcf $@; fi;
 	#-rm $*.empty.vcf $@;
 
@@ -84,7 +84,7 @@ HOWARD_CALCULATION?=VAF,NOMEN,VAF_STATS,VARTYPE
 	# Annotation CORE and snpEff HGVS
 	if [ "$(ANNOTATION_TYPE_MINIMAL)" != "" ]; then \
 		#$(HOWARD_ANNOTATION) --input_file=$< --output_file=$@ --annotation=$(ANNOTATION_TYPE_MINIMAL) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --verbose; \
-		$(HOWARD) --input=$< --output=$@ --config=$(HOWARD_CONFIG) --config_filter=$(HOWARD_CONFIG_PRIORITIZATION) --config_filter=$(HOWARD_CONFIG_ANNOTATION) --annotation=$(ANNOTATION_TYPE_MINIMAL) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --verbose; \
+		$(HOWARD) --input=$< --output=$@ --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --annotation=$(ANNOTATION_TYPE_MINIMAL) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --verbose; \
 	else \
 		cp $< $@; \
 	fi;
@@ -104,5 +104,3 @@ PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
 
 PIPELINES_COMMENT := "ANNOTATOR:howard_minimal:HOWARD MINIMAL annotates and prioritizes variants:HOWARD_ANNOTATION='$(HOWARD_ANNOTATION_MINIMAL)', HOWARD_CALCULATION='$(HOWARD_CALCULATION)', HOWARD_PRIORITIZATION='$(HOWARD_PRIORITIZATION)', SORT_BY='$(SORT_BY)', ORDER_BY='$(ORDER_BY)'"
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
-
-

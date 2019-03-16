@@ -520,6 +520,7 @@ if (($DATABASES_INFOS)); then
 	echo "########################"
 	echo "#### DATABASES LIST ####"
 	echo "########################"
+	#echo ""
 	#echo "$ENV"
 	for D in $DATABASES_LIST; do
 		VAR_D=$D; #echo ${!VAR_VERSION};
@@ -533,7 +534,7 @@ if (($DATABASES_INFOS)); then
 	echo "##########################"
 	echo "#### DATABASES CONFIG ####"
 	echo "##########################"
-	echo ""
+	#echo ""
 	for DC in $DATABASES_CONFIG_LIST; do
 		VAR_DC=$DC; #echo ${!VAR_VERSION};
 		#VAR_DESCRIPTION=$T"_DESCRIPTION"; #echo ${!VAR_DESCRIPTION};

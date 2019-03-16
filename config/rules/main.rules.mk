@@ -100,9 +100,10 @@ GZ?=gzip
 
 # SORT VCF
 %.vcf: %.unsorted.vcf
-	mkdir -p $@"_BCFTOOLS_sort/"
-	$(BCFTOOLS) sort -T $@"_BCFTOOLS_sort/" $< > $@
-	rm -rf $@"_BCFTOOLS_sort/"
+	$(VCFTOOLS)/vcf-sort $< -c -t $@"_BCFTOOLS_sort/" -p $(THREADS_BY_SAMPLE) > $@
+	#mkdir -p $@"_BCFTOOLS_sort/"
+	#$(BCFTOOLS) sort -T $@"_BCFTOOLS_sort/" $< > $@
+	#rm -rf $@"_BCFTOOLS_sort/"
 
 
 # NORMALIZE VCF with BCFTOOLS
@@ -111,10 +112,11 @@ GZ?=gzip
 
 
 # MERGE SNP and InDel VCF
-%.unsorted.vcf: %.SNP.vcf %.InDel.vcf
+%.unsorted.vcf: %.SNP.vcf.gz %.InDel.vcf.gz %.SNP.vcf.gz.tbi %.InDel.vcf.gz.tbi
 	# CONCAT
 	#$(VCFTOOLS)/vcf-concat $^ > $@
-	$(BCFTOOLS) concat $^ > $@
+	#$(BCFTOOLS) concat $^ > $@
+	$(BCFTOOLS) concat -a $*.SNP.vcf.gz $*.InDel.vcf.gz > $@
 	# Cleaning
 	-rm -f $*.SNP.vcf.idx $*.InDel.vcf.idx
 	-rm -f $*.idx
@@ -128,7 +130,7 @@ GZ?=gzip
 # VCF to tab delimiter
 %.tsv: %.vcf
 	# translation step
-	$(HOWARD) --config=$(HOWARD_CONFIG) --config=$(HOWARD_CONFIG) --config_filter=$(HOWARD_CONFIG_PRIORITIZATION) --config_filter=$(HOWARD_CONFIG_ANNOTATION) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --format=tab  --fields="$(HOWARD_FIELDS)" --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)"  --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --input=$< --output=$@ --force;
+	$(HOWARD) --config=$(HOWARD_CONFIG) --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --format=tab  --fields="$(HOWARD_FIELDS)" --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)"  --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --input=$< --output=$@ --force;
 	# Touch
 	if [ ! -e $@ ]; then touch $@; fi;
 	# Cleaning
@@ -136,7 +138,7 @@ GZ?=gzip
 # Hard filtering
 %.hard.tsv: %.vcf
 	# translation step and hard filtering
-	$(HOWARD) --config=$(HOWARD_CONFIG) --config=$(HOWARD_CONFIG) --config_filter=$(HOWARD_CONFIG_PRIORITIZATION) --config_filter=$(HOWARD_CONFIG_ANNOTATION) --filter=$(HOWARD_PRIORITIZATION) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --format=tab  --fields=$(HOWARD_FIELDS) --sort_by=$(HOWARD_SORT_BY) --order_by=$(HOWARD_ORDER_BY)  --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --input=$< --output=$@ --hard --force;
+	$(HOWARD) --config=$(HOWARD_CONFIG) --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --prioritization=$(HOWARD_PRIORITIZATION) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --format=tab  --fields=$(HOWARD_FIELDS) --sort_by=$(HOWARD_SORT_BY) --order_by=$(HOWARD_ORDER_BY)  --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --input=$< --output=$@ --hard --force;
 	# Touch
 	if [ ! -e $@ ]; then touch $@; fi;
 	# Cleaning
@@ -144,7 +146,7 @@ GZ?=gzip
 # VCF to tab delimiter
 %.txt: %.vcf
 	# Translation step
-	$(HOWARD) --config=$(HOWARD_CONFIG) --config=$(HOWARD_CONFIG) --config_filter=$(HOWARD_CONFIG_PRIORITIZATION) --config_filter=$(HOWARD_CONFIG_ANNOTATION) --filter=$(HOWARD_PRIORITIZATION) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --format=tab  --fields=$(HOWARD_FIELDS) --sort_by=$(HOWARD_SORT_BY) --order_by=$(HOWARD_ORDER_BY)  --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --input=$< --output=$@ --force;
+	$(HOWARD) --config=$(HOWARD_CONFIG) --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --prioritization=$(HOWARD_PRIORITIZATION) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --format=tab  --fields=$(HOWARD_FIELDS) --sort_by=$(HOWARD_SORT_BY) --order_by=$(HOWARD_ORDER_BY)  --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --input=$< --output=$@ --force;
 	# Touch
 	if [ ! -e $@ ]; then touch $@; fi;
 	# Cleaning
@@ -153,7 +155,7 @@ GZ?=gzip
 # Hard filtering
 %.hard.txt: %.vcf
 	# Translation and hard filtering
-	$(HOWARD) --config=$(HOWARD_CONFIG) --config=$(HOWARD_CONFIG) --config_filter=$(HOWARD_CONFIG_PRIORITIZATION) --config_filter=$(HOWARD_CONFIG_ANNOTATION) --filter=$(HOWARD_FILTER) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --format=tab  --fields=$(HOWARD_FIELDS) --sort_by=$(HOWARD_SORT_BY) --order_by=$(HOWARD_ORDER_BY)  --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --input=$< --output=$@ --hard --force;
+	$(HOWARD) --config=$(HOWARD_CONFIG) --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --prioritization=$(HOWARD_PRIORITIZATION) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --format=tab  --fields=$(HOWARD_FIELDS) --sort_by=$(HOWARD_SORT_BY) --order_by=$(HOWARD_ORDER_BY)  --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --input=$< --output=$@ --hard --force;
 	# Touch
 	if [ ! -e $@ ]; then touch $@; fi;
 	# Cleaning
@@ -161,7 +163,7 @@ GZ?=gzip
 
 %.prioritized.vcf: %.vcf
 	# Prioritization step
-	$(HOWARD) --input=$< --output=$@ --config=$(HOWARD_CONFIG) --config=$(HOWARD_CONFIG) --config_filter=$(HOWARD_CONFIG_PRIORITIZATION) --config_filter=$(HOWARD_CONFIG_ANNOTATION) --filter=$(HOWARD_PRIORITIZATION)  --format=tab --annotation=$(HOWARD_ANNOTATION) --sort_by=$(HOWARD_SORT_BY) --env=$(CONFIG_TOOLS) --order_by=$(HOWARD_ORDER_BY)
+	$(HOWARD) --input=$< --output=$@ --config=$(HOWARD_CONFIG) --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --filter=$(HOWARD_PRIORITIZATION)  --format=tab --annotation=$(HOWARD_ANNOTATION) --sort_by=$(HOWARD_SORT_BY) --env=$(CONFIG_TOOLS) --order_by=$(HOWARD_ORDER_BY)
 
 
 
@@ -519,9 +521,8 @@ GATKRR_FLAGS=
 		echo "# BED for the sample generated from the manifest '$<'" ; \
 		rm -f $@.tmp $@.sorted.tmp; \
 		$(FATBAM_ManifestToBED) --input=$< --output=$@.tmp --output_type=region; \
-		$(BEDTOOLS)/sortBed -i $@.tmp > $@.sorted.tmp; \
-		$(BEDTOOLS)/mergeBed -i $@.sorted.tmp -nms | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$4}' > $@; \
-		rm -f $@.tmp $@.sorted.tmp; \
+		$(BEDTOOLS)/bedtools sort -i $@.tmp | $(BEDTOOLS)/bedtools merge -c 4 -o collapse  | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$4}' > $@; \
+		rm -f $@.tmp; \
 	elif [ -e "$(BED)" ] && [ "$(BED)" != "" ]; then \
 		echo "# Input BED '$(BED)' exists" ; \
 		cp $(BED) $@; \
@@ -532,7 +533,8 @@ GATKRR_FLAGS=
 	if [ ! -e $@ ]; then touch $@; fi;
 	# Clean
 	#-rm -f $*.manifest
-
+	#$(BEDTOOLS)/sortBed -i $@.tmp > $@.sorted.tmp; \
+	#$(BEDTOOLS)/mergeBed -i $@.sorted.tmp -nms | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$4}' > $@; \
 
 # BED file from a Manifest
 %.bed_name: %.manifest_name
@@ -610,9 +612,8 @@ GATKRR_FLAGS=
 		echo "# Region Clipped BED for the sample generated from the manifest '$<'" ; \
 		rm -f $@.tmp $@.sorted.tmp; \
 		$(FATBAM_ManifestToBED) --input=$< --output=$@.tmp --output_type=region_clipped; \
-		$(BEDTOOLS)/sortBed -i $@.tmp > $@.sorted.tmp; \
-		$(BEDTOOLS)/mergeBed -i $@.sorted.tmp -nms  | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$4}' > $@; \
-		rm -f $@.tmp $@.sorted.tmp; \
+		$(BEDTOOLS)/bedtools sort -i $@.tmp | $(BEDTOOLS)/bedtools merge -c 4 -o collapse  | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$4}' > $@; \
+		rm -f $@.tmp; \
 	else \
 		echo "# Error creating region BED"; \
 	fi;
@@ -621,6 +622,10 @@ GATKRR_FLAGS=
 		cp $*.bed $@; \
 	fi;
 	if [ ! -e $@ ]; then touch $@; fi;
+
+	#$(BEDTOOLS)/sortBed -i $@.tmp > $@.sorted.tmp; \
+	#$(BEDTOOLS)/mergeBed -i $@.sorted.tmp -nms  | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$4}' > $@; \
+
 
 	# Error
 	#elif [ -s $*.bed ]; then

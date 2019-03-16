@@ -1,5 +1,5 @@
 ############################
-# Metrics Rules 
+# Metrics Rules
 # Author: Antony Le Bechec
 ############################
 # Release
@@ -49,7 +49,7 @@ GZ?=gzip
 %.bam.bed: %.bam %.bam.bai
 	#BAM.BED from BAM
 	#$(BEDTOOLS)/genomeCoverageBed -ibam $< -bg | $(BEDTOOLS)/mergeBed -n -i - > $@;
-	#+if [ ! -e $@ ] && (($$($(SAMTOOLS) idxstats $< | awk '{SUM+=$$3+$$4} END {print SUM}'))); then \ 
+	#+if [ ! -e $@ ] && (($$($(SAMTOOLS) idxstats $< | awk '{SUM+=$$3+$$4} END {print SUM}'))); then \
 	-+if ((1)); then \
 	if (($$($(SAMTOOLS) idxstats $< | awk '{SUM+=$$3+$$4} END {print SUM}'))); then \
 		rm -f $<.genomeCoverageBed.mk $<.genomeCoverageBed1.mk $<.genomeCoverageBed2.mk $<.genomeCoverageBed3.mk; \
@@ -68,8 +68,8 @@ GZ?=gzip
 		rm $<.genomeCoverageBed*.mk; \
 	fi; \
 	fi;
-	
-	
+
+
 # BED for metrics
 %.metrics.bam: %.bam
 	#-ln -s $< $@;
@@ -190,9 +190,9 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 		#$(JAVA) $(JAVA_FLAGS_BY_SAMPLE) -jar $(PICARD) CollectHsMetrics INPUT=$< OUTPUT=$(@D)/$(*F).HsMetrics R=`cat $*.genome` BAIT_INTERVALS=$*.3fields.for_metrics_bed TARGET_INTERVALS=$*.3fields.for_metrics_bed PER_TARGET_COVERAGE=$(@D)/$(*F).HsMetrics.per_target_coverage 2>$(@D)/$(*F).HsMetrics.err VALIDATION_STRINGENCY=LENIENT; \
 		$(JAVA) $(JAVA_FLAGS_BY_SAMPLE) -jar $(PICARD) CollectHsMetrics INPUT=$< OUTPUT=$(@D)/$(*F).HsMetrics R=`cat $*.genome` BAIT_INTERVALS=$*.for_metrics_bed TARGET_INTERVALS=$*.for_metrics_bed PER_TARGET_COVERAGE=$(@D)/$(*F).HsMetrics.per_target_coverage 2>$(@D)/$(*F).HsMetrics.err VALIDATION_STRINGENCY=LENIENT; \
 	fi;
-	# VALIDATION_STRINGENCY=LENIENT 
+	# VALIDATION_STRINGENCY=LENIENT
 	if [ ! -s $(@D)/$(*F).HsMetrics ]; then cp $*.empty.HsMetrics $(@D)/$(*F).HsMetrics; echo "#[ERROR] BAM PICARD Metrics failed. Empty HsMetrics file generated. See '$(@D)/$(*F).HsMetrics.err'" >> $@; fi
-	echo "#[$$(date)] BAM PICARD Metrics done" >> $@ 
+	echo "#[$$(date)] BAM PICARD Metrics done" >> $@
 
 
 # SAMTOOLS METRICS
@@ -220,7 +220,7 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 	else \
 		echo "#[$$(date)] COVERAGE with SAMTOOLS with a BED file not done due to a lack of region defined in BED '$*.withoutheader.for_metrics_bed'" >> $@; \
 	fi;
-	
+
 	if (($(BAM_METRICS))); then \
 		#%.withoutheader.for_metrics_bed ; \
 		#Create directory ; \
@@ -300,7 +300,7 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 		echo "#FASTQ Counts ERROR. No reads in '$<'..." > $@; \
 	fi;
 	-rm -f $*.counts.tmp
-	
+
 %.from_unaligned_bam.fastqc/metrics: %.unaligned.bam
 	mkdir -p $(@D)
 	touch $@;
@@ -333,9 +333,9 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 	touch $@;
 	-$(BCFTOOLS) stats $< > $@.stats
 	echo "#BCFTOOLS metrics done. See '$@.stats' file." >> $@;
-	
 
-# 
+
+#
 
 # GENES COVERAGE METRICS
 
@@ -377,26 +377,6 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 			fi; \
 			#echo "final genes file '$${manifest}.bed'" >> $*.test; \
 			if [ -s `echo "$${manifest}.bed"` ] ; then \
-				#echo "`echo "$${manifest}.bed"` EXISTS!"; \
-				# recover genes list from manifest in refseq file ; \
-				#genes_list=`$(BEDTOOLS)/bedtools intersect -wb -a $${manifest}.bed -b $(REFSEQ_GENES) | cut -f8 | sort -u `; \
-				# if strand information : genes_list=`$(BEDTOOLS)/bedtools intersect -s -wb -a $${manifest}.bed -b $(REFSEQ_GENES) | cut -f8 | sort -u `; \
-				#touch $${bedfile_genes_list}.tmp; \
-				#echo "GENES_LIST: $$(echo $$genes_list)"; \
-				# recover exon coordinates for all genes in refseq file and create bed file for genes coverage report ; \
-				#join -1 1 -2 5 <($(BEDTOOLS)/bedtools intersect -wb -a $${manifest}.bed -b $(REFSEQ_GENES) | cut -f8 | sort -u) <(sort -k5 /home1/TOOLS/db/RefSeq.hg19.bed) -o 2.1,2.2,2.3,2.5 | tr " " "\t"; \
-				# join -1 1 -2 5 <($(BEDTOOLS)/bedtools intersect -wb -a $${manifest}.bed -b $(REFSEQ_GENES) | cut -f8 | sort -u) <(sort -k5 $(REFSEQ_GENES)) -o 2.1,2.2,2.3,2.5 | sort -u -k1,2 | tr " " "\t"; \
-				#for gene in $$(echo $$genes_list); \
-				#do \
-				#	echo "GENE: $$gene"; \
-				#	awk -v pattern="$$gene" '$$5 == pattern {print $$0}' $(REFSEQ_GENES) >> $${bedfile_genes_list}.tmp; \
-				#	#echo "bedfile_genes_list.tmp $$gene: "; cat $${bedfile_genes_list}.tmp; \
-				#done; \
-				#echo "bedfile_genes_list.tmp: "; cat $${bedfile_genes_list}.tmp; \
-				#touch $${bedfile_genes_list}; \
-				#cut -f1,2,3,5 $${bedfile_genes_list}.tmp > $${bedfile_genes_list}; \
-				#rm $${bedfile_genes_list}.tmp ; \
-				#join -1 1 -2 5 <( $(BEDTOOLS)/bedtools intersect -wb -a $${manifest}.bed -b $(REFSEQ_GENES) | cut -f9 | sort -u ) <( sort -k5 $(REFSEQ_GENES) ) -o 2.1,2.2,2.3,2.5 | sort -u -k1,2 | tr " " "\t" > $$bedfile_genes_list; \
 				echo "MANIFEST.bed to bedfile_genes_list : $bedfile_genes_list"; \
 				$(BEDTOOLS)/bedtools intersect -wb -a $${manifest}.bed -b $(REFSEQ_GENES) | cut -f8 | sort -u > $${manifest}.bed.intersect; \
 				sort -k5 $(REFSEQ_GENES) > $${manifest}.bed.refseq; \
@@ -496,7 +476,7 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 	if [ ! -e $@ ]; then echo "#[$$(date)] Metrics on genes coverage FAILED" > $@; fi;
 
 
-	
+
 %.bam.metrics/metrics.bam_check: %.bam %.bam.bai #%.R1.fastq.gz %.R2.fastq.gz
 	# CHECK NUMBER of READS in BAM \
 	# Create directory if not created
@@ -532,7 +512,7 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 	cat $(@D)/$(*F).bam_check;
 	echo "#[$$(date)] BAM Check done" > $@ ;
 	#-rm -f $@.sample_pattern
-	
+
 
 
 %.bam.metrics/metrics.bam_check_fromUBAM: %.bam %.bam.bai #$*.unaligned.bam $*.unaligned.bam.bai
@@ -578,11 +558,8 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 	cat $(@D)/$(*F).bam_check;
 	echo "#[$$(date)] BAM Check done" > $@ ;
 	-rm $@.sample_pattern
-	
+
 
 # CONFIG/RELEASE
 RELEASE_COMMENT := "\#\# MAIN RULES '$(MK_RELEASE)' : basicaly to manage VCF, BAM, FASTQ, METRICS, MANIFEST, INTERVAL, BED... using SAMTOOLS, FASTQC GATK, PICARD, FATBAM, BWA, TABIX, IGV..."
 RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
-
-
-	

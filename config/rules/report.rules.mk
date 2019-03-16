@@ -80,7 +80,7 @@ HOWARD_CALCULATION?=VAF,NOMEN,VAF_STATS,VARTYPE
 	@echo "### from Analysis '$(ANALYSIS_REF)' " >> $@
 	@echo "######################################### " >> $@
 	@echo " " >> $@
-	
+
 	# Report release
 	-cp $*.$(ANALYSIS_DATE).config $*.$(ANALYSIS_DATE).config.txt
 
@@ -100,7 +100,7 @@ HOWARD_CALCULATION?=VAF,NOMEN,VAF_STATS,VARTYPE
 	# TEST
 	echo "FINALVARIANTSFILES: $@"
 	cat $@
-	
+
 
 ## list of vcf
 %.final_variants_files_vcf_gz: %.$(ANALYSIS_DATE).final_variants_files_vcf_gz #$(VCF) %.$(ANALYSIS_DATE).config
@@ -124,7 +124,7 @@ HOWARD_CALCULATION?=VAF,NOMEN,VAF_STATS,VARTYPE
 ## MERGE OF GENERATED VCF
 %.merge.unsorted.vcf: %.final_variants_files_vcf_gz %.genome
 	# Generate pipeline name list
-	cat $< | rev | cut -d/ -f1 | rev | sed s/\.vcf.gz//gi | cut -d. -f2- > $@.pipelines #| tr '\n' '\t' | sed 's/\t$$//' 
+	cat $< | rev | cut -d/ -f1 | rev | sed s/\.vcf.gz//gi | cut -d. -f2- > $@.pipelines #| tr '\n' '\t' | sed 's/\t$$//'
 	#echo "final_variants_files_vcf_gz:"; cat $<;
 	#echo "pipelines:"; cat $@.pipelines;
 	# Merge VCF, noramize and rehead with pipelines names
@@ -132,24 +132,24 @@ HOWARD_CALCULATION?=VAF,NOMEN,VAF_STATS,VARTYPE
 	# Cleaning
 	-rm -f $@.tmp* $@.pipelines
 
-	
+
 ## FULLE VCF: ANNOTATION OF A MERGE FILE
 %.full.vcf: %.merge.vcf %.transcripts
 	# HOWARD annotation
-	+$(HOWARD) --input=$< --output=$@.tmp --config=$(HOWARD_CONFIG) --config_filter=$(HOWARD_CONFIG_PRIORITIZATION) --config_filter=$(HOWARD_CONFIG_ANNOTATION) --annotation=$(HOWARD_ANNOTATION_REPORT) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS);
+	+$(HOWARD) --input=$< --output=$@.tmp --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --annotation=$(HOWARD_ANNOTATION_REPORT) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS);
 	# HOWARD calculation and prioritization
-	+$(HOWARD) --input=$@.tmp --output=$@  --config=$(HOWARD_CONFIG) --config_filter=$(HOWARD_CONFIG_PRIORITIZATION) --config_filter=$(HOWARD_CONFIG_ANNOTATION) --calculation=$(HOWARD_CALCULATION_REPORT) --filter=$(HOWARD_PRIORITIZATION_REPORT) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --tmp=$(TMP_FOLDER_TMP)  --transcripts=$*.transcripts --force --multithreading --threads=$(THREADS) --env=$(CONFIG_TOOLS);
+	+$(HOWARD) --input=$@.tmp --output=$@  --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --calculation=$(HOWARD_CALCULATION_REPORT) --prioritization=$(HOWARD_PRIORITIZATION_REPORT) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --tmp=$(TMP_FOLDER_TMP)  --transcripts=$*.transcripts --force --multithreading --threads=$(THREADS) --env=$(CONFIG_TOOLS);
 	# cleaning
 	rm -rf $@.tmp
 
-%.$(ANALYSIS_DATE).full.vcf: %.$(ANALYSIS_DATE).final_variants_files_vcf_gz %.full.vcf 
-	cat $< | rev | cut -d/ -f1 | rev | sed s/\.vcf.gz//gi | cut -d. -f2- > $@.pipelines 
+%.$(ANALYSIS_DATE).full.vcf: %.$(ANALYSIS_DATE).final_variants_files_vcf_gz %.full.vcf
+	cat $< | rev | cut -d/ -f1 | rev | sed s/\.vcf.gz//gi | cut -d. -f2- > $@.pipelines
 	$(BCFTOOLS) view -S $@.pipelines $*.full.vcf > $@
 	-rm -f $@.tmp* $@.pipelines
 
 
 ## FINAL VCF  RULE
-%.final.vcf: %.full.vcf 
+%.final.vcf: %.full.vcf
 	-rm -f $<.tmp.*
 	for S in $$(grep "^#CHROM" $< | cut -f10-); do \
 		$(BCFTOOLS) view -U -s $$S $< | sed '/^#CHROM/s/'$$S'/'$$(echo $(@F) | cut -d\. -f1)'/' > $<.tmp.$$S; \
@@ -159,8 +159,8 @@ HOWARD_CALCULATION?=VAF,NOMEN,VAF_STATS,VARTYPE
 	#$(VCFTOOLS)/vcf-subset -c $$S $< | sed '/^#CHROM/s/'$$S'/'$$(echo $(@F) | cut -d\. -f1)'/' > $<.tmp.$$S; \
 	$(BCFTOOLS) concat $<.tmp.*.gz -a -D > $@
 	rm -f $<.tmp.*.gz*
-	
-	
+
+
 ## ALL samples VCF RULE
 %.samples.vcf: $(REPORT_FILES)
 	echo $(REPORT_FILES)
@@ -168,14 +168,3 @@ HOWARD_CALCULATION?=VAF,NOMEN,VAF_STATS,VARTYPE
 	cat $@.vcf_list
 	$(BCFTOOLS) merge -l $@.vcf_list --info-rules - > $@
 	-rm -f $@.vcf_list
-	
-
-
-
-
-
-
-
-
-
-

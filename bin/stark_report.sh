@@ -15,14 +15,15 @@
 
 SCRIPT_NAME="STARKReport"
 SCRIPT_DESCRIPTION="STARK Report"
-SCRIPT_RELEASE="0.9b"
-SCRIPT_DATE="01/05/2016"
+SCRIPT_RELEASE="0.9.1b"
+SCRIPT_DATE="16/03/2019"
 SCRIPT_AUTHOR="Amandine VELT, Antony Le Bechec"
 SCRIPT_COPYRIGHT="IRC"
 SCRIPT_LICENCE="GNU AGPL V3"
 
 # Realse note
-RELEASE_NOTES=$RELEASE_NOTES"# 0.9b-01/05/2016: Sript creation\n";
+RELEASE_NOTES=$RELEASE_NOTES"# 0.9b-01/05/2016: Script creation\n";
+RELEASE_NOTES=$RELEASE_NOTES"# 0.9.1b-16/03/2019: Add features, tables, new VCF tables\n";
 
 # Script folder
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -47,7 +48,7 @@ function usage
 
 		Options:
 		 	-f, --flowcell The flowcell ID
-		 	This option is required. 
+		 	This option is required.
 		 	-p, --project The project ID
 		 	This option is NOT required.
 		 	-g --group The group name
@@ -86,51 +87,51 @@ do
 	case "$1" in
 		-r|--results)
 			RESULTS_FOLDER_INPUT="$2"
-			shift 2 
+			shift 2
 			;;
 		-f|--flowcell)
 			FLOWCELL="$2"
-			shift 2 
+			shift 2
 			;;
 		-p|--project)
 			PROJECT_INPUT="$2"
-			shift 2 
+			shift 2
 			;;
 		-g|--group)
 			GROUP_INPUT="$2"
-			shift 2 
+			shift 2
 			;;
 		-u|--user)
 			USER_INPUT="$2"
-			shift 2 
+			shift 2
 			;;
 		-s|--sample)
 			SAMPLE="$2"
-			shift 2 
+			shift 2
 			;;
 		-e|--env)
 			ENV="$2"
-			shift 2 
+			shift 2
 			;;
 		-i|--pipelines)
 			PIPELINES_INPUT="$2"
 			PIPELINES_INPUT=$(echo $PIPELINES_INPUT | tr "," " ")
-			shift 2 
+			shift 2
 			;;
 		-d|--date)
 			DATE="$2"
-			shift 2 
+			shift 2
 			;;
 		-o|--output)
 			OUTPUT_INPUT="$2"
-			shift 2 
+			shift 2
 			;;
 		-h|--help)
 			usage
 			exit 0
 			;;
 		--) shift
-			break 
+			break
 			;;
 		*) 	echo "Option $1 is not recognized. " "Use -h or --help to display the help." && \
 			exit 1
@@ -191,6 +192,12 @@ if [ ! -z $TMP_FOLDER_TMP ]; then
 else
 	TMP_REPORT=/tmp;
 fi;
+if [ ! -z $NB_VARIANT_LIMIT ]; then
+	NB_VARIANT_LIMIT=$NB_VARIANT_LIMIT;
+else
+	NB_VARIANT_LIMIT=20;
+fi;
+
 
 
 # logo must be sourced from env, thn it can be specific to a project etc ...
@@ -233,7 +240,7 @@ TEXFILE="$REPORTDIR/$SAMPLE.$DATE.stark.report.tex"
 PDFFILE="$REPORTDIR/$SAMPLE.$DATE.stark.report.pdf"
 if [ -z $OUTPUT_INPUT ]; then
 	OUTPUT_PDFFILE=$RESULTS_FOLDER/$FLOWCELL/$SAMPLE/$SAMPLE.reports/$SAMPLE.$DATE.stark.report.pdf
-else 
+else
 	OUTPUT_PDFFILE=$OUTPUT_INPUT
 fi;
 #STATSFILE="$RESULTS_FOLDER/$FLOWCELL/global_stats_$DATE.txt"
@@ -271,7 +278,7 @@ MANIFEST_SOURCE=""
 BED_NAME=""
 BED_SOURCE=""
 if [ -s "$MANIFEST_NAME_FILE" ]; then
-	MANIFEST_NAME=$(basename $(awk -F"\t" '{print $1}' $MANIFEST_NAME_FILE)) # awk -F\t '{print $2}' 
+	MANIFEST_NAME=$(basename $(awk -F"\t" '{print $1}' $MANIFEST_NAME_FILE)) # awk -F\t '{print $2}'
 	MANIFEST_SOURCE=$(awk -F"\t" '{print $2}' $MANIFEST_NAME_FILE)
 fi;
 if [ -s "$BED_NAME_FILE" ]; then
@@ -338,11 +345,11 @@ echo "\documentclass[a4paper]{report}
 %\renewcommand{\headrulewidth}{0pt} % no line for the header
 \renewcommand{\footrulewidth}{1pt}
 
-\chead{ 
+\chead{
 	\begin{tabularx}{\textwidth}{cXc}
 	\begin{minipage}[c]{0.15\textwidth}
 		\vspace{3pt}
-		\centering \\includegraphics[width=0.8\\textwidth]{$LOGO} 
+		\centering \\includegraphics[width=0.8\\textwidth]{$LOGO}
 		\vspace{3pt}
 	\end{minipage} &
 	\centering $SAMPLEID Report &
@@ -416,7 +423,7 @@ FastQC performs analyses to assess the quality of the data. Informative controls
 # & (`basename $ENV`)\\\\
 
 #FASTQCDATA="$RESULTS_FOLDER/$FLOWCELL/$SAMPLE/$SAMPLE.fastqc/$SAMPLE.unaligned_fastqc/fastqc_data.txt"
-FASTQCDATA="$RESULTS_FOLDER/$FLOWCELL/$SAMPLE/$SAMPLE.fastqc/metrics.fastqc.txt" 
+FASTQCDATA="$RESULTS_FOLDER/$FLOWCELL/$SAMPLE/$SAMPLE.fastqc/metrics.fastqc.txt"
 FASTQCIMAGESDIR="$RESULTS_FOLDER/$FLOWCELL/$SAMPLE/$SAMPLE.fastqc/$SAMPLE.unaligned_fastqc/Images"
 
 Filename=$(grep "Filename" $FASTQCDATA | cut -f2  | sed "s/\_/\\\_/gi")
@@ -476,7 +483,7 @@ Note : the reads length varying because we trimm the adapters from the reads wit
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.8\textwidth]{$FASTQCIMAGESDIR/per_base_n_content.png}
-\caption{\label{n_content}Proportion of undetermined nucleotide (N) along the read.} 
+\caption{\label{n_content}Proportion of undetermined nucleotide (N) along the read.}
 \end{figure}
 
 \begin{figure}[H]
@@ -546,17 +553,11 @@ done
 fi
 
 
-
-
-
-
-
-
 	echo "\section{Coverage}" >> $TEXFILE
-	
-	
-	
-	
+
+
+
+
 for aligner in `echo $ALIGNERS`
 do
 
@@ -566,22 +567,22 @@ do
 	COVERAGEFILESTATS_ONREADS_SAMTOOLS="$RESULTS_FOLDER/$FLOWCELL/$SAMPLE/$SAMPLE.$aligner.bam.metrics/$SAMPLE.$aligner.on.nbreads"
 	COVERAGEFILESTATS_OFFREADS_SAMTOOLS="$RESULTS_FOLDER/$FLOWCELL/$SAMPLE/$SAMPLE.$aligner.bam.metrics/$SAMPLE.$aligner.off.nbreads"
 	COVERAGEFILESTATS_HSMETRICS="$RESULTS_FOLDER/$FLOWCELL/$SAMPLE/$SAMPLE.$aligner.bam.metrics/$SAMPLE.$aligner.HsMetrics"
-	
+
 	# COVERAGE SUMMARY AVERAGE on all sequencing with SAMTOOLS
 	if [ -s $COVERAGEFILESTATS_SAMTOOLS ]; then
 		COV_CALC=$( cat $COVERAGEFILESTATS_SAMTOOLS | awk '{SUM+=$3; LINES+=1} END {print SUM/LINES}' )
 		echo "Sequencing coverage estimation on target ( total number of sequenced bases / number bases of target) : `echo "scale=2;($COV_CALC)/1" | bc` X" >> $TEXFILE
 	fi
-	
-	
+
+
 	# COVERAGE SUMMARY ON/OFF target with HsMetrics
 	if [ -s $COVERAGEFILESTATS_HSMETRICS ] && ((1)); then
 		PCT_SELECTED_BASES=$( C=1; for i in $(grep -v "#" $COVERAGEFILESTATS_HSMETRICS | sed '/^\s*$/d' | head -n 2) ; do if [ $i == "PCT_SELECTED_BASES" ] ; then break ; else C=$(( $C + 1 )) ; fi ; done ; grep -v "#" $COVERAGEFILESTATS_HSMETRICS | sed '/^\s*$/d'  | head -n2 | tail -n1 | cut -f$C | sed 's/,/./' )
 		PCT_OFF_BAIT=$( C=1; for i in $(grep -v "#" $COVERAGEFILESTATS_HSMETRICS | sed '/^\s*$/d' | head -n 2) ; do if [ $i == "PCT_OFF_BAIT" ] ; then break ; else C=$(( $C + 1 )) ; fi ; done ; grep -v "#" $COVERAGEFILESTATS_HSMETRICS | sed '/^\s*$/d'  | head -n2 | tail -n1 | cut -f$C | sed 's/,/./' )
 		#echo "PCT_SELECTED_BASES=$PCT_SELECTED_BASES PCT_OFF_BAIT=$PCT_OFF_BAIT"
-		
+
 		if [ "$PCT_SELECTED_BASES" != "" ] && [ "$PCT_OFF_BAIT" != "" ]; then
-		
+
 			echo "\begin{table}[H]
 			\begin{center}
 			\begin{tabular}{| c | c | c | }
@@ -594,16 +595,16 @@ do
 			\end{center}
 			\caption{\label{stats_on_off_$aligner}Coverage statistics between on and off targets reads on $aligner on $SAMPLEID. Statistics were determined with Picard HSMetrics on the $SAMPLEID.$aligner.bam file.}
 			\end{table}" >> $TEXFILE
-		
+
 		fi;
 	fi;
-	
+
 	if [ -e $COVERAGEFILESTATS_ONREADS_SAMTOOLS ] && [ -e $COVERAGEFILESTATS_OFFREADS_SAMTOOLS ]; then
 		READS_ON_TARGET=$(echo $(cat $COVERAGEFILESTATS_ONREADS_SAMTOOLS)" +0 " | bc);
 		READS_OFF_TARGET=$(echo $(cat $COVERAGEFILESTATS_OFFREADS_SAMTOOLS)" +0 " | bc);
 		READS_ALL_TARGET=$(echo "$READS_ON_TARGET+$READS_OFF_TARGET" | bc)
 		if [ "$READS_ON_TARGET" != "" ] && [ "$READS_OFF_TARGET" != "" ]; then
-		
+
 			echo "\begin{table}[H]
 			\begin{center}
 			\begin{tabular}{| c | c | c | }
@@ -618,12 +619,12 @@ do
 			\end{table}" >> $TEXFILE
 
 		fi;
-		
-		
-		
+
+
+
 	fi;
-	
-	
+
+
 
 	# COVERAGE SUMMARY with SAMTOOLS
 	if [ -s $COVERAGEFILESTATS_SAMTOOLS ]
@@ -633,22 +634,22 @@ do
 			COVS="5,10,20,30,50,100,200,300";
 		fi;
 		MDP=$(echo $COVS | tr "," "\n" | sort -n | tail -n 1);
-		
+
 		cat $COVERAGEFILESTATS_SAMTOOLS | awk -v MDP=$MDP  '{SUM++} { if ($3>MDP) {DP[MDP]++} else {DP[$3]++} } END { for (i=MDP; i>=0; i-=1) {print i" "DP[i]" SUM"SUM}}' | sort -g -r | awk -v COVS=$COVS '{SUM+=$2} {CUM[$1]=SUM} {split(COVS,C,",")}  END  { for (j in C) {print C[j]" "CUM[C[j]]" SUM "(CUM[C[j]]/SUM)} }' | sort -g > $COVERAGEFILESTATS_SAMTOOLS.summary.tmp
-		
+
 		#cat $COVERAGEFILESTATS_SAMTOOLS.summary.tmp
-		
+
 		cat $COVERAGEFILESTATS_SAMTOOLS.summary.tmp | awk '{print $1"X & "($4*100)"\\% \\\\ \\hline"}' > $COVERAGEFILESTATS_SAMTOOLS.summary.tmp.latex
-		
-		
+
+
 		echo "\begin{longtable}{|r|l|}
-			
-			\hline \multicolumn{1}{|c|}{\textbf{Coverage}} & \multicolumn{1}{c|}{\textbf{\\%targeted bases}}  \\\\ \hline 
+
+			\hline \multicolumn{1}{|c|}{\textbf{Coverage}} & \multicolumn{1}{c|}{\textbf{\\%targeted bases}}  \\\\ \hline
 			\endfirsthead
 
 			\multicolumn{2}{c}%
 			{{\bfseries \tablename\ \thetable{} -- continued from previous page}} \\\\
-			\hline \multicolumn{1}{|c|}{\textbf{Coverage}} & \multicolumn{1}{c|}{\textbf{\\%targeted bases}} \\\\ \hline 
+			\hline \multicolumn{1}{|c|}{\textbf{Coverage}} & \multicolumn{1}{c|}{\textbf{\\%targeted bases}} \\\\ \hline
 			\endhead
 
 			\hline \multicolumn{2}{|r|}{{Continued on next page}} \\\\ \hline
@@ -659,166 +660,23 @@ do
 			" >> $TEXFILE
 		cat $COVERAGEFILESTATS_SAMTOOLS.summary.tmp.latex >> $TEXFILE
 		echo "
-			\caption{Coverage statistics on targeted regions on $aligner on $SAMPLEID. Statistics were determined with SAMTOOLS (duplicates and bad quality reads removed) on the $SAMPLEID.$aligner.bam file.} \label{tab:long} \\\\	
+			\caption{Coverage statistics on targeted regions on $aligner on $SAMPLEID. Statistics were determined with SAMTOOLS (duplicates and bad quality reads removed) on the $SAMPLEID.$aligner.bam file.} \label{tab:long} \\\\
 			\end{longtable}
-			
+
 			" >> $TEXFILE
-			
-	
+
+
 		rm $COVERAGEFILESTATS_SAMTOOLS.summary.tmp $COVERAGEFILESTATS_SAMTOOLS.summary.tmp.latex;
-	
+
 	fi;
 	#fi;
-	
-	
+
+
 done
 
 
 
-if ((1)); then
 
-
-for aligner in `echo $ALIGNERS`
-do
-	for metrics in $(ls $RESULTS_FOLDER/$FLOWCELL/$SAMPLE/$SAMPLE.$aligner.bam.metrics/$SAMPLE.$aligner.HsMetrics.per_target_coverage 2>/dev/null)
-	do
-		if [ -s "${metrics}" ]
-		then
-		
-			echo "\begin{longtable}{|c|c|c|c|}
-			
-				\hline \multicolumn{1}{|c|}{\textbf{Region}} & \multicolumn{1}{c|}{\textbf{Min}} & \multicolumn{1}{c|}{\textbf{Mean}} & \multicolumn{1}{c|}{\textbf{Max}}  \\\\ \hline 
-				\endfirsthead
-
-				\multicolumn{4}{c}%
-				{{\bfseries \tablename\ \thetable{} -- continued from previous page}} \\\\
-				\hline \multicolumn{1}{|c|}{\textbf{Region}} & \multicolumn{1}{c|}{\textbf{Min}} & \multicolumn{1}{c|}{\textbf{Mean}} & \multicolumn{1}{c|}{\textbf{Max}} \\\\ \hline 
-				\endhead
-
-				\hline \multicolumn{4}{|r|}{{Continued on next page}} \\\\ \hline
-				\endfoot
-
-				\hline
-				\endlastfoot
-				" >> $TEXFILE
-			#cat $COVERAGEFILESTATS_SAMTOOLS.summary.tmp.latex >> $TEXFILE
-			
-			tail -n +2 ${metrics} |  sort -k5 | awk -F "\t" '{split($7,M1,".")} {Mean=M1[1]} length($5)>50 {N=substr($5,1,47)"..." } length($5)<=50 {N=$5} {O=Ol[1]} {print "{\\small "N"} & {\\small "$11"} & {\\small "Mean"} & {\\small "$12"} \\\\ \\hline"}' | sed 's/_/\\_/gi' | sed 's/>/\\textgreater /gi' >> $TEXFILE;
-			
-			echo "
-				\caption{Coverage statistics on each targeted region (primers excluded if any) on $aligner on $SAMPLEID. Statistics were determined with PICARD on the $SAMPLEID.$aligner.bam file.} \label{tab:long} \\\\	
-				\end{longtable}
-			
-			
-			
-				" >> $TEXFILE
-		
-
-		fi;
-	done;
-done;
-
-fi;
-
-echo "\\\\" >> $TEXFILE
-
-#ACROMETRIX.bwamem.amplicon_coverage
-if ((1)); then
-
-
-for aligner in `echo $ALIGNERS`
-do
-	for metrics in $(ls $RESULTS_FOLDER/$FLOWCELL/$SAMPLE/$SAMPLE.$aligner.bam.metrics/$SAMPLE.$aligner.amplicon_coverage 2>/dev/null)
-	do
-		if [ -s "${metrics}" ]
-		then
-		
-			echo "\begin{longtable}{|c|c|c|c|}
-			
-				\hline \multicolumn{1}{|c|}{\textbf{Region}} & \multicolumn{1}{c|}{\textbf{Min}} & \multicolumn{1}{c|}{\textbf{Mean}} & \multicolumn{1}{c|}{\textbf{Max}}  \\\\ \hline 
-				\endfirsthead
-
-				\multicolumn{4}{c}%
-				{{\bfseries \tablename\ \thetable{} -- continued from previous page}} \\\\
-				\hline \multicolumn{1}{|c|}{\textbf{Region}} & \multicolumn{1}{c|}{\textbf{Min}} & \multicolumn{1}{c|}{\textbf{Mean}} & \multicolumn{1}{c|}{\textbf{Max}} \\\\ \hline 
-				\endhead
-
-				\hline \multicolumn{4}{|r|}{{Continued on next page}} \\\\ \hline
-				\endfoot
-
-				\hline
-				\endlastfoot
-				" >> $TEXFILE
-			#cat $COVERAGEFILESTATS_SAMTOOLS.summary.tmp.latex >> $TEXFILE
-			
-			tail -n +2 ${metrics} |  sort -k5 | awk -F "\t" '{split($7,M1,".")} {Mean=M1[1]} length($5)>50 {N=substr($5,1,47)"..." } length($5)<=50 {N=$5} {O=Ol[1]} {print "{\\small "N"} & {\\small "$11"} & {\\small "Mean"} & {\\small "$12"} \\\\ \\hline"}' | sed 's/_/\\_/gi' | sed 's/>/\\textgreater /gi' >> $TEXFILE;
-			
-			echo "
-				\caption{Coverage statistics on each amplicon (primers excluded) on $aligner on $SAMPLEID. Statistics were determined with FATBAM/PICARD on the $SAMPLEID.$aligner.bam file.} \label{tab:long} \\\\	
-				\end{longtable}
-			
-			
-			
-				" >> $TEXFILE
-		
-
-		fi;
-	done;
-done;
-
-fi;
-
-echo "\\\\" >> $TEXFILE
-echo "\\\\" >> $TEXFILE
-echo "\\vskip 0.5cm" >> $TEXFILE
-
-
-
-for aligner in `echo $ALIGNERS`
-do
-	for metrics in $(ls $RESULTS_FOLDER/$FLOWCELL/$SAMPLE/$SAMPLE.$aligner.bam.metrics/$SAMPLE*latex.txt 2>/dev/null)
-	do
-		if [ -s "${metrics}" ]
-		then
-				
-				NB_ERROR_COVERED=$(grep "orange\|red\|yellow" ${metrics} | cut -d" " -f1 | sort -u | wc -l)
-				NB_GENES=$(grep "^#" ${metrics} -vc)
-				NB_FULL_COVERED=$(echo $(grep -v "orange\|red\|yellow" ${metrics} | cut -d" " -f1 | sort -u | wc -l)" -1 " | bc)
-				
-
-				
-				number_col=`awk -F'&' '{print NF; exit}' $metrics`
-				first=1
-				while read line
-				do
-					if [[ "$first" == "1" ]]
-					then
-						# table for genes coverage withUTR
-						echo "`echo $line | sed 's/#/\\\\tablefirsthead{\\\\hline \\\\multicolumn{1}{|c}{/' | sed 's/&/} \& \\\\multicolumn{1}{|p{1cm}|}{/g' | sed 's/$/} \\\\\\\\ \\\\hline}/'`" >> $TEXFILE
-						echo "`echo $line | sed 's/#/\\\\tablehead{\\\\hline \\\\multicolumn{'"${number_col}"'}{|l|}{\\\\small ... next} \\\\\\\\ \\\\hline \\\\multicolumn{1}{|c}{/' | sed 's/&/} \& \\\\multicolumn{1}{|p{1cm}|}{/g' | sed 's/$/} \\\\\\\\ \\\\hline}/'`" >> $TEXFILE
-						echo "\par
-\bottomcaption{Genes coverage statistics on reads aligned with $aligner from $SAMPLEID from `basename "${metrics}" | sed 's/\\_/\\\_/g'` file. Genes coverage was calculated with a padding of ${NB_BASES_AROUND} bases around the coordinates.}
-\begin{center}
-\small
-\begin{supertabular}{*{${number_col}}{|l}|}" >> $TEXFILE
-					else
-						echo "`echo $line | sed 's/$/ \\\\\\\\ \\\\hline/'`" >> $TEXFILE
-					fi
-				let "first=first+1"
-				done < ${metrics}
-				echo "\end{supertabular}
-				\end{center}"  >> $TEXFILE
-				
-				echo "\begin{itemize}" >> $TEXFILE
-				echo "\item$NB_FULL_COVERED (out of $NB_GENES) genes fully covered" >> $TEXFILE
-				echo "\item$NB_ERROR_COVERED (out of $NB_GENES) genes not fully covered" >> $TEXFILE
-				echo "\end{itemize}" >> $TEXFILE
-				
-		else
-			echo "${metrics} doesn't exists ! No coverage genes table write in the report."
-		fi
-	done
-done
 
 
 #rm  ${STATSFILE}
@@ -843,7 +701,7 @@ else
 
 	echo -ne "\tSequencing coverage estimation\tPercent target covered > 10 X\tPercent target covered > 20 X\tPercent target covered > 30 X\tPercent target covered > 40 X\tPercent target covered > 50 X\tPercent target covered > 100 X"  >> ${STATSFILE}
 
-	
+
 fi
 #echo $PERCENT_DUPLICATION; exit 0;
 if [ ! -z $PERCENT_DUPLICATION ]; then
@@ -853,7 +711,7 @@ else
 fi;
 #exit 0;
 
-echo -ne "\n${SAMPLE}\t${TotalSequences}\t${SequenceLength}\t${UniqueNumberReads}\t$PERCENT_DUPLICATION_SHOW\t" >> ${STATSFILE} 
+echo -ne "\n${SAMPLE}\t${TotalSequences}\t${SequenceLength}\t${UniqueNumberReads}\t$PERCENT_DUPLICATION_SHOW\t" >> ${STATSFILE}
 
 #exit 0;
 
@@ -889,7 +747,7 @@ do
 				VCFFILE=$RESULTS_FOLDER/$FLOWCELL/$SAMPLE/$SAMPLE.$aligner.$caller.$annotator.vcf
 				if [ -e $VCFFILE ]; then
 					number_variants=$(grep -cv ^# $VCFFILE)
-					
+
 				else
 					number_variants="?"
 				fi;
@@ -907,57 +765,259 @@ echo "\end{itemize}" >> $TEXFILE
 
 if ((1)); then
 
-	
+
 
 	echo "\section{Variants prioritization}" >> $TEXFILE
-	
-	NB_FILTERED=$(echo $(awk -F "\t" '$9 != "PASS" {print $0}' $FINALTXTFILE | wc -l)" -1 " | bc)
-	NB_PASS=$(awk -F "\t" '$9 == "PASS" {print $0}' $FINALTXTFILE | wc -l)
-	
+
+	#NB_FILTERED=$(echo $(awk -F "\t" '$9 != "PASS" {print $0}' $FINALTXTFILE | wc -l)" -1 " | bc)
+	#NB_PASS=$(awk -F "\t" '$9 == "PASS" {print $0}' $FINALTXTFILE | wc -l)
+
 	echo "\begin{itemize}" >> $TEXFILE
-	echo "\item Prioritization filters (only first is listed below): "$(echo $HOWARD_PRIORITIZATION_REPORT | tr "," " ") >> $TEXFILE
-	echo "\item Number of variants filtered by the prioritization filter '"$(echo $HOWARD_PRIORITIZATION_REPORT | cut -d, -f1 | sed 's/\\_/\\\_/g')"': $NB_FILTERED" >> $TEXFILE
-	echo "\item Number of variants passing the prioritization filter '"$(echo $HOWARD_PRIORITIZATION_REPORT | cut -d, -f1 | sed 's/\\_/\\\_/g')"': $NB_PASS" >> $TEXFILE
+	echo "\item Prioritization filters (only first is listed below): "$(echo $HOWARD_PRIORITIZATION_REPORT | tr "," " " | sed 's/\_/\\_/g') >> $TEXFILE
+	#echo "\item Number of variants filtered by the prioritization filter '"$(echo $HOWARD_PRIORITIZATION_REPORT | cut -d, -f1 | sed 's/\\_/\\\_/g')"': $NB_FILTERED" >> $TEXFILE
+	#echo "\item Number of variants passing the prioritization filter '"$(echo $HOWARD_PRIORITIZATION_REPORT | cut -d, -f1 | sed 's/\\_/\\\_/g')"': $NB_PASS" >> $TEXFILE
 	echo "\end{itemize}" >> $TEXFILE
-	
-	if (($NB_PASS)); then
-	
-	#for $HOWARD_FILTER_one in $(echo $HOWARD_FILTER | tr "," " "); do echo $H; 
-	
-	echo "\begin{longtable}{|p{8cm}|p{5cm}|p{1.2cm}|}
-	\caption{Variants passing prioritization filter '"$(echo $HOWARD_PRIORITIZATION_REPORT | cut -d, -f1 | sed 's/\\_/\\\_/g')"'.} \label{tab:long} \\\\
 
-	\hline \multicolumn{1}{|p{7cm}|}{\textbf{HGVS}} & \multicolumn{1}{p{5.5cm}|}{\textbf{Location Outcome Impact}} & \multicolumn{1}{p{1cm}|}{\textbf{VAF}} \\\\ \hline 
-	\endfirsthead
+	#if (($NB_PASS)); then
 
-	\multicolumn{3}{c}%
-	{{\bfseries \tablename\ \thetable{} -- continued from previous page}} \\\\
-	\hline \multicolumn{1}{|p{7cm}|}{\textbf{HGVS}} & \multicolumn{1}{p{5.5cm}|}{\textbf{Location Outcome Impact}} & \multicolumn{1}{p{1cm}|}{\textbf{VAF}} \\\\ \hline 
-	\endhead
+		#for $HOWARD_FILTER_one in $(echo $HOWARD_FILTER | tr "," " "); do echo $H;
 
-	\hline \multicolumn{3}{|r|}{{Continued on next page}} \\\\ \hline
-	\endfoot
+		#echo "LIST: "$(echo "DEFAULT "$(echo $HOWARD_PRIORITIZATION_REPORT | cut -d, -f2- | tr "," " "))
 
-	\hline \hline
-	\endlastfoot
-	
-		" >> $TEXFILE
-		#awk -F "\t" '$9 == "PASS" {print $11" & "$13" & "$14" & \begin{left} "$12" \end{left} \\\\ \\hline"}' $FINALTXTFILE | sed "s/,/ /gi" | sed 's/_/\\_/gi' >> $TEXFILE
-		#awk -F "\t" '$9 == "PASS" {print $11" & "$13" & "$14" & \\hline "$12" \\\\ \\hline"}' $FINALTXTFILE | cut -d, -f1 | sed 's/_/\\_/gi' >> $TEXFILE
-		#awk -F "\t" '{split($8,H,",")} {V=$16*100} length(H[1])>50 {N=substr(H[1],1,47)"..." } length(H[1])<=50 {N=H[1]} $9 == "PASS" {print "N" & "$14"/"$15"} & "V"\\% \\\\ \\hline"}' $FINALTXTFILE | sed 's/_/\\_/gi' | sed 's/>/\\textgreater /gi' >> $TEXFILE
-		#awk -F "\t" '{split($8,H,",")} {split($15,Ol,",")} {V=$16*100} length(H[1])>50 {N=substr(H[1],1,47)"..." } length(H[1])<=50 {N=H[1]} {O=Ol[1]} $9 == "PASS" {print "{\\small "N"} & {\\small "$14"/"$O"} & {\\small "V"\\%} \\\\ \\hline"}' $FINALTXTFILE | sed 's/_/\\_/gi' | sed 's/>/\\textgreater /gi' >> $TEXFILE
-		cat $FINALTXTFILE | sed 's/&/ /gi' | awk -F "\t" '{split($8,H,",")} {split($15,Ol,",")} {V=$16*100} length(H[1])>50 {N=substr(H[1],1,47)"..." } length(H[1])<=50 {N=H[1]} {O=Ol[1]} {L=$14} {I=$20} $9 == "PASS" {print "{\\small "N"} & {\\small "L" "O" "I"} & {\\small "V"\\%} \\\\ \\hline"}' | sed 's/_/\\_/gi' | sed 's/>/\\textgreater /gi' >> $TEXFILE
+		for HOWARD_PRIORITIZATION_REPORT_ONE in $(echo "DEFAULT "$(echo $HOWARD_PRIORITIZATION_REPORT | cut -d, -f2- | tr "," " ")); do
 
-	#substr($0,7,20)
 
-		#echo " \\\\ \hline";
-	echo "
-			\end{longtable}" >> $TEXFILE
-		
-	fi;	
-	#done	
-		
+			if [ $HOWARD_PRIORITIZATION_REPORT_ONE == "DEFAULT" ]; then
+				PZFLAG_FIELD="PZFlag"
+				HOWARD_PRIORITIZATION_REPORT_NAME=$(echo $HOWARD_PRIORITIZATION_REPORT | cut -d, -f1 | sed 's/\_/\\_/g')
+			else
+				PZFLAG_FIELD="PZFlag-$HOWARD_PRIORITIZATION_REPORT_ONE"
+				HOWARD_PRIORITIZATION_REPORT_NAME=$(echo $HOWARD_PRIORITIZATION_REPORT_ONE | sed 's/\_/\\_/g')
+			fi;
+
+			NB_FILTERED=$(cat $FINALTXTFILE | awk -f $SCRIPT_DIR/tsv_extract.awk -F'\t' -v COLS="$PZFLAG_FIELD" | grep ^# -v | awk -F'\t' '$1 != "PASS" {print $0}' | wc -l)
+			NB_PASS=$(cat $FINALTXTFILE | awk -f $SCRIPT_DIR/tsv_extract.awk -F'\t' -v COLS="$PZFLAG_FIELD"  | grep ^# -v | awk -F'\t' '$1 == "PASS" {print $0}' | wc -l)
+
+			#echo "$HOWARD_PRIORITIZATION_REPORT_ONE $PZFLAG_FIELD $HOWARD_PRIORITIZATION_REPORT_NAME $NB_FILTERED $NB_PASS"
+
+			echo "\begin{itemize}" >> $TEXFILE
+			#echo "\item Prioritization filters (only first is listed below): "$(echo $HOWARD_PRIORITIZATION_REPORT | tr "," " " | sed 's/\\_/\\\_/g') >> $TEXFILE
+			echo "\item Number of variants filtered by the prioritization filter '$HOWARD_PRIORITIZATION_REPORT_NAME': $NB_FILTERED" >> $TEXFILE
+			echo "\item Number of variants passing the prioritization filter '$HOWARD_PRIORITIZATION_REPORT_NAME': $NB_PASS" >> $TEXFILE
+			echo "\end{itemize}" >> $TEXFILE
+
+			if (($NB_PASS)); then
+
+				echo "\begin{longtable}{|p{8cm}|p{5cm}|p{1.2cm}|}
+				\caption{Variants passing prioritization filter '$HOWARD_PRIORITIZATION_REPORT_NAME' (first $NB_VARIANT_LIMIT variants).} \label{tab:long} \\\\
+
+				\hline \multicolumn{1}{|p{7cm}|}{\textbf{HGVS}} & \multicolumn{1}{p{5.5cm}|}{\textbf{Location Outcome Impact}} & \multicolumn{1}{p{1cm}|}{\textbf{VAF}} \\\\ \hline
+				\endfirsthead
+
+				\multicolumn{3}{c}%
+				{{\bfseries \tablename\ \thetable{} -- continued from previous page}} \\\\
+				\hline \multicolumn{1}{|p{7cm}|}{\textbf{HGVS}} & \multicolumn{1}{p{5.5cm}|}{\textbf{Location Outcome Impact}} & \multicolumn{1}{p{1cm}|}{\textbf{VAF}} \\\\ \hline
+				\endhead
+
+				\hline \multicolumn{3}{|r|}{{Continued on next page}} \\\\ \hline
+				\endfoot
+
+				\hline \hline
+				\endlastfoot
+
+					" >> $TEXFILE
+					#awk -F "\t" '$9 == "PASS" {print $11" & "$13" & "$14" & \begin{left} "$12" \end{left} \\\\ \\hline"}' $FINALTXTFILE | sed "s/,/ /gi" | sed 's/_/\\_/gi' >> $TEXFILE
+					#awk -F "\t" '$9 == "PASS" {print $11" & "$13" & "$14" & \\hline "$12" \\\\ \\hline"}' $FINALTXTFILE | cut -d, -f1 | sed 's/_/\\_/gi' >> $TEXFILE
+					#awk -F "\t" '{split($8,H,",")} {V=$16*100} length(H[1])>50 {N=substr(H[1],1,47)"..." } length(H[1])<=50 {N=H[1]} $9 == "PASS" {print "N" & "$14"/"$15"} & "V"\\% \\\\ \\hline"}' $FINALTXTFILE | sed 's/_/\\_/gi' | sed 's/>/\\textgreater /gi' >> $TEXFILE
+					#awk -F "\t" '{split($8,H,",")} {split($15,Ol,",")} {V=$16*100} length(H[1])>50 {N=substr(H[1],1,47)"..." } length(H[1])<=50 {N=H[1]} {O=Ol[1]} $9 == "PASS" {print "{\\small "N"} & {\\small "$14"/"$O"} & {\\small "V"\\%} \\\\ \\hline"}' $FINALTXTFILE | sed 's/_/\\_/gi' | sed 's/>/\\textgreater /gi' >> $TEXFILE
+
+					#cat $FINALTXTFILE | sed 's/&/ /gi' | awk -F "\t" '{split($8,H,",")} {split($15,Ol,",")} {V=$16*100} length(H[1])>50 {N=substr(H[1],1,47)"..." } length(H[1])<=50 {N=H[1]} {O=Ol[1]} {L=$14} {I=$20} $9 == "PASS" {print "{\\small "N"} & {\\small "L" "O" "I"} & {\\small "V"\\%} \\\\ \\hline"}' | sed 's/_/\\_/gi' | sed 's/>/\\textgreater /gi' >> $TEXFILE
+
+					#echo "cat $FINALTXTFILE | awk -f $SCRIPT_DIR/tsv_extract.awk -F'\t' -v COLS='NOMEN,location,outcome,snpeff_impact,VAF_median,$PZFLAG_FIELD,#CHROM,POS,REF,ALT'"
+					#cat $FINALTXTFILE | awk -f $SCRIPT_DIR/tsv_extract.awk -F"\t" -v COLS="NOMEN,location,outcome,snpeff_impact,VAF_median,$PZFLAG_FIELD,#CHROM,POS,REF,ALT" -v DEFAULT_NA=""
+					#cat $FINALTXTFILE | awk -f $SCRIPT_DIR/tsv_extract.awk -F"\t" -v COLS="NOMEN,location,outcome,snpeff_impact,VAF_median,$PZFLAG_FIELD,#CHROM,POS,REF,ALT" -v DEFAULT_NA="" | sed 's/&/ /gi' | awk -F "\t" '{split($1,NOMEN,",")} {CHROMPOSREFALT=$7":"$8$9">"$10} length(NOMEN[1])==0 {NOMEN[1]=CHROMPOSREFALT} length(NOMEN[1])<=50 {HGVS=NOMEN[1]} length(NOMEN[1])>50 {HGVS=substr(NOMEN[1],1,47)"..." } {OUTPUT=$2} {LOCATION=$3} {IMPACT=$4} {VAF=$5*100} {PZFlag=$6} PZFlag == "PASS" {print "{\\small "HGVS"} & {\\small "LOCATION" "OUTPUT" "IMPACT"} & {\\small "VAF"\\%} \\\\ \\hline"}' | sed 's/_/\\_/gi' | sed 's/>/\\textgreater /gi'
+					#cat $FINALTXTFILE | awk -f $SCRIPT_DIR/tsv_extract.awk -F"\t" -v COLS="NOMEN,location,outcome,snpeff_impact,VAF_median,$PZFLAG_FIELD"
+
+					#cat $FINALTXTFILE | awk -f $SCRIPT_DIR/tsv_extract.awk -F"\t" -v COLS="NOMEN,location,outcome,snpeff_impact,VAF_median,$PZFLAG_FIELD" | sed 's/&/ /gi' | awk -F "\t" '{split($1,NOMEN,",")} length(NOMEN[1])<=50 {HGVS=NOMEN[1]} length(NOMEN[1])>50 {HGVS=substr(NOMEN[1],1,47)"..." } {OUTPUT=gsub(","," ",$2)} {LOCATION=gsub(","," ",$3)} {IMPACT=gsub(","," ",$4)} {VAF=$5*100} {PZFlag=$6} $PZFlag == "PASS" {print "{\\small "HGVS"} & {\\small "LOCATION" "OUTPUT" "IMPACT"} & {\\small "VAF"\\%} \\\\ \\hline"}' | sed 's/_/\\_/gi' | sed 's/>/\\textgreater /gi' >> $TEXFILE
+					head -n$(echo "$NB_VARIANT_LIMIT +1" | bc) $FINALTXTFILE | awk -f $SCRIPT_DIR/tsv_extract.awk -F"\t" -v COLS="NOMEN,location,outcome,snpeff_impact,VAF_median,$PZFLAG_FIELD,#CHROM,POS,REF,ALT" -v DEFAULT_NA="" | sed 's/&/ /gi' | awk -F "\t" '{split($1,NOMEN,",")} {CHROMPOSREFALT=$7":"$8$9">"$10} length(NOMEN[1])==0 {NOMEN[1]=CHROMPOSREFALT} length(NOMEN[1])<=50 {HGVS=NOMEN[1]} {HGVS=NOMEN[1]} length(NOMEN[1])>50 {HGVS=substr(NOMEN[1],1,47)"..." } {OUTPUT=$2} {LOCATION=$3} {IMPACT=$4} {VAF=$5*100} {PZFlag=$6} PZFlag == "PASS" {print "{\\small "HGVS"} & {\\small "LOCATION" "OUTPUT" "IMPACT"} & {\\small "VAF"\\%} \\\\ \\hline"}' | sed 's/_/\\_/gi' | sed 's/>/\\textgreater /gi' >> $TEXFILE
+
+				#substr($0,7,20)
+
+					#echo " \\\\ \hline";
+				echo "
+						\end{longtable}" >> $TEXFILE
+
+			fi;
+
+		done;
+
+	#fi;
+	#done
+
 fi;
+
+
+#######
+### Gene coverage section
+#########
+
+echo "\section{Gene Coverage}" >> $TEXFILE
+
+
+for aligner in `echo $ALIGNERS`
+do
+	for metrics in $(ls $RESULTS_FOLDER/$FLOWCELL/$SAMPLE/$SAMPLE.$aligner.bam.metrics/$SAMPLE*latex.txt 2>/dev/null)
+	do
+		if [ -s "${metrics}" ]
+		then
+
+				NB_ERROR_COVERED=$(grep "orange\|red\|yellow" ${metrics} | cut -d" " -f1 | sort -u | wc -l)
+				NB_GENES=$(grep "^#" ${metrics} -vc)
+				NB_FULL_COVERED=$(echo $(grep -v "orange\|red\|yellow" ${metrics} | cut -d" " -f1 | sort -u | wc -l)" -1 " | bc)
+
+				number_col=`awk -F'&' '{print NF; exit}' $metrics`
+				first=1
+				while read line
+				do
+					if [[ "$first" == "1" ]]
+					then
+						# table for genes coverage withUTR
+						echo "`echo $line | sed 's/#/\\\\tablefirsthead{\\\\hline \\\\multicolumn{1}{|c}{/' | sed 's/&/} \& \\\\multicolumn{1}{|p{1cm}|}{/g' | sed 's/$/} \\\\\\\\ \\\\hline}/'`" >> $TEXFILE
+						echo "`echo $line | sed 's/#/\\\\tablehead{\\\\hline \\\\multicolumn{'"${number_col}"'}{|l|}{\\\\small ... next} \\\\\\\\ \\\\hline \\\\multicolumn{1}{|c}{/' | sed 's/&/} \& \\\\multicolumn{1}{|p{1cm}|}{/g' | sed 's/$/} \\\\\\\\ \\\\hline}/'`" >> $TEXFILE
+						echo "\par
+\bottomcaption{Genes coverage statistics on reads aligned with $aligner from $SAMPLEID from `basename "${metrics}" | sed 's/\\_/\\\_/g'` file. Genes coverage was calculated with a padding of ${NB_BASES_AROUND} bases around the coordinates.}
+\begin{center}
+\small
+\begin{supertabular}{*{${number_col}}{|l}|}" >> $TEXFILE
+					else
+						echo "`echo $line | sed 's/$/ \\\\\\\\ \\\\hline/'`" >> $TEXFILE
+					fi
+				let "first=first+1"
+				done < ${metrics}
+				echo "\end{supertabular}
+				\end{center}"  >> $TEXFILE
+
+				echo "\begin{itemize}" >> $TEXFILE
+				echo "\item$NB_FULL_COVERED (out of $NB_GENES) genes fully covered" >> $TEXFILE
+				echo "\item$NB_ERROR_COVERED (out of $NB_GENES) genes not fully covered" >> $TEXFILE
+				echo "\end{itemize}" >> $TEXFILE
+
+		else
+			echo "${metrics} doesn't exists ! No coverage genes table write in the report."
+		fi
+	done
+done
+
+
+#######
+### COVERAGE PLUS section
+#########
+
+echo "\section{Coverage Annexe}" >> $TEXFILE
+
+# Targeted Region Coverage
+############################
+
+if ((1)); then
+
+for aligner in `echo $ALIGNERS`
+do
+	for metrics in $(ls $RESULTS_FOLDER/$FLOWCELL/$SAMPLE/$SAMPLE.$aligner.bam.metrics/$SAMPLE.$aligner.HsMetrics.per_target_coverage 2>/dev/null)
+	do
+		if [ -s "${metrics}" ]
+		then
+
+			echo "\begin{longtable}{|c|c|c|c|}
+
+				\hline \multicolumn{1}{|c|}{\textbf{Region}} & \multicolumn{1}{c|}{\textbf{Min}} & \multicolumn{1}{c|}{\textbf{Mean}} & \multicolumn{1}{c|}{\textbf{Max}}  \\\\ \hline
+				\endfirsthead
+
+				\multicolumn{4}{c}%
+				{{\bfseries \tablename\ \thetable{} -- continued from previous page}} \\\\
+				\hline \multicolumn{1}{|c|}{\textbf{Region}} & \multicolumn{1}{c|}{\textbf{Min}} & \multicolumn{1}{c|}{\textbf{Mean}} & \multicolumn{1}{c|}{\textbf{Max}} \\\\ \hline
+				\endhead
+
+				\hline \multicolumn{4}{|r|}{{Continued on next page}} \\\\ \hline
+				\endfoot
+
+				\hline
+				\endlastfoot
+				" >> $TEXFILE
+			#cat $COVERAGEFILESTATS_SAMTOOLS.summary.tmp.latex >> $TEXFILE
+
+			tail -n +2 ${metrics} |  sort -k5 | awk -F "\t" '{split($7,M1,".")} {Mean=M1[1]} length($5)>50 {N=substr($5,1,47)"..." } length($5)<=50 {N=$5} {O=Ol[1]} {print "{\\small "N"} & {\\small "$11"} & {\\small "Mean"} & {\\small "$12"} \\\\ \\hline"}' | sed 's/_/\\_/gi' | sed 's/>/\\textgreater /gi' >> $TEXFILE;
+
+			echo "
+				\caption{Coverage statistics on each targeted region (primers excluded if any) on $aligner on $SAMPLEID. Statistics were determined with PICARD on the $SAMPLEID.$aligner.bam file.} \label{tab:long} \\\\
+				\end{longtable}
+
+
+
+				" >> $TEXFILE
+
+
+		fi;
+	done;
+done;
+
+fi;
+
+echo "\\\\" >> $TEXFILE
+
+
+
+#AMPLICON Coverage
+###################
+
+if ((1)); then
+
+for aligner in `echo $ALIGNERS`
+do
+	for metrics in $(ls $RESULTS_FOLDER/$FLOWCELL/$SAMPLE/$SAMPLE.$aligner.bam.metrics/$SAMPLE.$aligner.amplicon_coverage 2>/dev/null)
+	do
+		if [ -s "${metrics}" ]
+		then
+
+			echo "\begin{longtable}{|c|c|c|c|}
+
+				\hline \multicolumn{1}{|c|}{\textbf{Region}} & \multicolumn{1}{c|}{\textbf{Min}} & \multicolumn{1}{c|}{\textbf{Mean}} & \multicolumn{1}{c|}{\textbf{Max}}  \\\\ \hline
+				\endfirsthead
+
+				\multicolumn{4}{c}%
+				{{\bfseries \tablename\ \thetable{} -- continued from previous page}} \\\\
+				\hline \multicolumn{1}{|c|}{\textbf{Region}} & \multicolumn{1}{c|}{\textbf{Min}} & \multicolumn{1}{c|}{\textbf{Mean}} & \multicolumn{1}{c|}{\textbf{Max}} \\\\ \hline
+				\endhead
+
+				\hline \multicolumn{4}{|r|}{{Continued on next page}} \\\\ \hline
+				\endfoot
+
+				\hline
+				\endlastfoot
+				" >> $TEXFILE
+			#cat $COVERAGEFILESTATS_SAMTOOLS.summary.tmp.latex >> $TEXFILE
+
+			tail -n +2 ${metrics} |  sort -k5 | awk -F "\t" '{split($7,M1,".")} {Mean=M1[1]} length($5)>50 {N=substr($5,1,47)"..." } length($5)<=50 {N=$5} {O=Ol[1]} {print "{\\small "N"} & {\\small "$11"} & {\\small "Mean"} & {\\small "$12"} \\\\ \\hline"}' | sed 's/_/\\_/gi' | sed 's/>/\\textgreater /gi' >> $TEXFILE;
+
+			echo "
+				\caption{Coverage statistics on each amplicon (primers excluded) on $aligner on $SAMPLEID. Statistics were determined with FATBAM/PICARD on the $SAMPLEID.$aligner.bam file.} \label{tab:long} \\\\
+				\end{longtable}
+
+
+
+				" >> $TEXFILE
+
+
+		fi;
+	done;
+done;
+
+fi;
+
+echo "\\\\" >> $TEXFILE
+echo "\\\\" >> $TEXFILE
+echo "\\vskip 0.5cm" >> $TEXFILE
+
+
 
 
 
@@ -984,5 +1044,3 @@ fi;
 #rm -f $STATSFILE
 #echo $REPORTDIR
 rm -rf $REPORTDIR
-
-
