@@ -23,15 +23,21 @@ function usage
 		 	-b, --bedfile-genes the bed file containing the coordinates of all the exons (5'UTR/3'UTR and CDS)
 		 	This option is required.
 		 	-c, --coverage-criteria the coverage criteria to calculte the percentage of bases cover more than this value (eg 100 for 100 X)
-		 	This option is required.
-		 	-n, --nb-bases-arounds The number of bases to look around the exons coordinates (eg 10)
-		 	This option is required.
+		 	This option is optional (default="1,30,100").
+			-n, --nb-bases-arounds The number of bases to look around the exons coordinates (eg 10)
+		 	This option is optional (default=0).
+			--dp_fail
+		 	This option is optional (default=30).
+			--dp_warn
+		 	This option is optional (default=100).
+			--dp_threshold
+		 	This option is optional (default=1).
 		 	-t, --bedtools Path to bedtools
 		 	This option is required.
 		 	-s, --samtools Path to samtools
 		 	This option is required.
 		 	--threads number of threads to use for the coverage calculation
-		 	This option is not required (default=1).
+		 	This option is optional (default=1).
 		 	-o, --output output file
 		 	This option is required.
 		 	-h, --help
@@ -65,6 +71,18 @@ do
 			;;
 		-n|--nb-bases-arounds)
 			NB_BASES_AROUND="$2"
+			shift 2
+			;;
+		--dp_fail)
+			DP_FAIL="$2"
+			shift 2
+			;;
+		--dp_warn)
+			DP_WARN="$2"
+			shift 2
+			;;
+		--dp_threshold)
+			DP_THRESHOLD="$2"
 			shift 2
 			;;
 		-t|--bedtools)
@@ -113,6 +131,15 @@ if [ -z "$COVERAGE_CRITERIA" ]; then
 fi;
 if [ -z "$NB_BASES_AROUND" ]; then
 	NB_BASES_AROUND=0
+fi;
+if [ -z "$DP_FAIL" ]; then
+	DP_FAIL=30
+fi;
+if [ -z "$DP_WARN" ]; then
+	DP_WARN=100
+fi;
+if [ -z "$DP_THRESHOLD" ]; then
+	DP_THRESHOLD=1
 fi;
 
 
@@ -261,9 +288,9 @@ paste $DP_HEADER $DP_LIST_FILE_LATEX  | sed 's/\t/ \& /gi' | sed 's/%/\\\\%/gi' 
 
 
 
-echo ""; head -n 20 ${OUTPUT}-all.txt
+#echo ""; head -n 20 ${OUTPUT}-all.txt
 
-awk -v DIR=$TMPDIR -v FAIL=300 -v WARN=1000 -v THRESHOLD=1 -F"\t" '
+awk -v DIR=$TMPDIR -v FAIL=$DP_FAIL -v WARN=$DP_WARNING -v THRESHOLD=$DP_THRESHOLD -F"\t" '
 length(THRESHOLD)==0 {THRESHOLD=1}
 {g=$6; gc=g; gsub(/\|/,"_",gc)}
 {a[g]++}
@@ -281,10 +308,12 @@ END {
 		print gene"\t"M[gene]"\t"D[gene]
 	}
 }' $BEDFILE_GENES_CUT.coverage_bases | sort >> $TMPDIR/$DP.genes_message;
+
+cp $TMPDIR/$DP.genes_message > ${OUTPUT}.msg
 #cat $TMPDIR/$DP.genes_message.tmp | cut -f3,4 >> $TMPDIR/$DP.genes_message;
 #" (accepted threshold "sprintf("%.2f", THRESHOLD)"%)"
 
-head -n 20 $TMPDIR/$DP.genes_message;
+#head -n 20 $TMPDIR/$DP.genes_message;
 
 rm -rf $TMPDIR $BEDFILE_GENES.coverage_bases
 

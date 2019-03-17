@@ -397,7 +397,7 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 			do \
 				if [ -e $$bedfile_genes ]; then \
 					bedfile_name=$$( basename $$bedfile_genes | sed "s/\.genes$$//" ); \
-					$(NGSscripts)/genesCoverage.sh -f $*.bam -b $$bedfile_genes -c "$(COVERAGE_CRITERIA)" -n $(NB_BASES_AROUND) -t $(BEDTOOLS) -u $(BEDTOOLS2) -s $(SAMTOOLS) --threads=$(THREADS) -o $(@D)/$$bedfile_name; \
+					$(NGSscripts)/genesCoverage.sh -f $*.bam -b $$bedfile_genes -c "$(COVERAGE_CRITERIA)" --dp_fail=30 --dp_warn=100 --dp_threshold=1 -n $(NB_BASES_AROUND) -t $(BEDTOOLS) -s $(SAMTOOLS) --threads=$(THREADS) -o $(@D)/$$bedfile_name; \
 					echo "#[$$(date)] BAM Metrics on Genes coverage with $$bedfile_name bedfile done" >> $@; \
 				else \
 					echo "#[$$(date)] BAM Metrics on Genes coverage with $$bedfile_name bedfile FAILED" >> $@; \
@@ -410,6 +410,8 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 		echo "#[$$(date)] BAM Metrics on Genes coverage not done because BAM_METRICS=0" >> $@; \
 	fi;
 	if [ ! -e $@ ]; then echo "#[$$(date)] BAM Metrics on Genes coverage FAILED" > $@; fi;
+
+	#$(NGSscripts)/genesCoverage.sh -f $*.bam -b $$bedfile_genes -c "$(COVERAGE_CRITERIA)" -n $(NB_BASES_AROUND) -t $(BEDTOOLS) -u $(BEDTOOLS2) -s $(SAMTOOLS) --threads=$(THREADS) -o $(@D)/$$bedfile_name; \
 
 
 %.bam.metrics/metrics.genes_OLD: %.bam %.bam.bai
