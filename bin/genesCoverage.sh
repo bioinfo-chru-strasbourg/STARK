@@ -28,8 +28,6 @@ function usage
 		 	This option is required.
 		 	-t, --bedtools Path to bedtools
 		 	This option is required.
-		 	-u, --bedtools2 Path to more recent bedtools
-		 	This option is required.
 		 	-s, --samtools Path to samtools
 		 	This option is required.
 		 	--threads number of threads to use for the coverage calculation
@@ -73,10 +71,6 @@ do
 			BEDTOOLS="$2"
 			shift 2
 			;;
-		-u|--bedtools2)
-			BEDTOOLS2="$2"
-			shift 2
-			;;
 		-s|--samtools)
 			SAMTOOLS="$2"
 			shift 2
@@ -106,13 +100,19 @@ done
 ####################################################################################################################################
 # Checking the input parameter
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-[ "$BAM_FILE" == "" ] || [ "$BEDFILE_GENES" == "" ] || [ "$COVERAGE_CRITERIA" == "" ] || [ "$NB_BASES_AROUND" == "" ] || [ "$BEDTOOLS" == "" ] || [ "$BEDTOOLS2" == "" ] || [ "$SAMTOOLS" == "" ] || [ "$OUTPUT" == "" ] && \
-	echo "Options --bam_file, --bedfile-genes, --coverage-criteria, --nb-bases-arounds, --output, --samtools --bedtools2 and --bedtools are required. " "Use -h or --help to display the help." && exit 1;
+[ "$BAM_FILE" == "" ] || [ "$BEDFILE_GENES" == "" ] || [ "$BEDTOOLS" == "" ] || [ "$SAMTOOLS" == "" ] || [ "$OUTPUT" == "" ] && \
+	echo "Options --bam_file, --bedfile-genes, --output, --samtools and --bedtools are required. " "Use -h or --help to display the help." && exit 1;
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 ## INPUT PARAMETERS
 if [ -z "$THREADS" ]; then
 	THREADS=1
+fi;
+if [ -z "$COVERAGE_CRITERIA" ]; then
+	COVERAGE_CRITERIA="1,30,100"
+fi;
+if [ -z "$NB_BASES_AROUND" ]; then
+	NB_BASES_AROUND=0
 fi;
 
 
@@ -120,16 +120,24 @@ BEDFILE_GENES_CUT=$BEDFILE_GENES.$RANDOM.cut
 
 if (($NB_BASES_AROUND)); then
 	# add of number of bases around the bed
-	awk -F"\t" -v x=$NB_BASES_AROUND '{ print $1"\t"$2-x"\t"$3+x"\t"$4 }' $BEDFILE_GENES > $BEDFILE_GENES.bases_arounds.bed; mv $BEDFILE_GENES.bases_arounds.bed $BEDFILE_GENES_CUT
+	awk -F"\t" -v x=$NB_BASES_AROUND '{ print $1"\t"$2-x"\t"$3+x"\t"$4"\t"$5 }' $BEDFILE_GENES > $BEDFILE_GENES.bases_arounds.bed; mv $BEDFILE_GENES.bases_arounds.bed $BEDFILE_GENES_CUT
 	# sort the bed file
-	cat  $BEDFILE_GENES_CUT | sort -k1,1 -k2,2n > $BEDFILE_GENES.sort.bed; mv $BEDFILE_GENES.sort.bed $BEDFILE_GENES_CUT
+	cat  $BEDFILE_GENES_CUT | sort -k1,1 -k2,2n > $BEDFILE_GENES.sort.bed;
+	mv $BEDFILE_GENES.sort.bed $BEDFILE_GENES_CUT
+	#echo ""; head $BEDFILE_GENES_CUT
 	# merge the overlapping coordinates of the bed file
-	cat $BEDFILE_GENES_CUT | $BEDTOOLS2/mergeBed -i - -c 4 -o distinct -delim "|" > $BEDFILE_GENES.merge.bed
+	#cat $BEDFILE_GENES_CUT | $BEDTOOLS2/mergeBed -i - -c 4 -o distinct -delim "|" > $BEDFILE_GENES.merge.bed
+	cat $BEDFILE_GENES_CUT | $BEDTOOLS merge -i - -c 4,5 -o distinct -delim "|" > $BEDFILE_GENES.merge.bed
 	mv $BEDFILE_GENES.merge.bed $BEDFILE_GENES_CUT
+	#echo ""; head $BEDFILE_GENES_CUT
 	#rm $BEDFILE_GENES.merge.bed
 else
 	cp $BEDFILE_GENES $BEDFILE_GENES_CUT
 fi;
+
+#echo ""; head $BEDFILE_GENES_CUT
+
+#exit 0
 # we recover the gene list from our bed file
 #list_genes=$( cut -f4 $BEDFILE_GENES | tr "\n" "" | sort | uniq )
 list_genes=$( cut -f4 $BEDFILE_GENES_CUT | sort | uniq  | tr "\n" " ")
@@ -166,7 +174,8 @@ $BEDFILE_GENES_CUT.$chr.bed: $BEDFILE_GENES_CUT
 	if [ ! -s $BEDFILE_GENES_CUT.$chr.bed ]; then touch $BEDFILE_GENES_CUT.$chr.bed; fi;
 
 $BEDFILE_GENES_CUT.$chr.coverage_bases: $BAM_FILE $BEDFILE_GENES_CUT.$chr.bed
-	-$SAMTOOLS view -uF 0x400 $BAM_FILE $chr | $BEDTOOLS/coverageBed -abam - -b $BEDFILE_GENES_CUT.$chr.bed -d > $BEDFILE_GENES_CUT.$chr.coverage_bases;
+	#-$SAMTOOLS view -uF 0x400 $BAM_FILE $chr | $BEDTOOLS/coverageBed -abam - -b $BEDFILE_GENES_CUT.$chr.bed -d > $BEDFILE_GENES_CUT.$chr.coverage_bases;
+	$SAMTOOLS depth $BAM_FILE -b $BEDFILE_GENES_CUT.$chr.bed -a -r $chr | awk -F\"\t\" '{print \$\$1\"\t\"\$\$2\"\t\"\$\$2\"\t+\t\"\$\$3}' | $BEDTOOLS intersect -b stdin -a $BEDFILE_GENES_CUT.$chr.bed -wb | awk -F\"\t\" '{print \$\$1\"\t\"\$\$7\"\t\"\$\$7\"\t+\t\"\$\$10\"\t\"\$\$5}' > $BEDFILE_GENES_CUT.$chr.coverage_bases;
 	if [ ! -s $BEDFILE_GENES_CUT.$chr.coverage_bases ]; then touch $BEDFILE_GENES_CUT.$chr.coverage_bases; fi;
 
 " >> $MK
@@ -183,12 +192,16 @@ echo "$BEDFILE_GENES_CUT.coverage_bases: $BEDFILE_GENES_CHR_COVERAGE_BASES_LIST
 #THREADS=1
 make -j $THREADS -f $MK $BEDFILE_GENES_CUT.coverage_bases #1>/dev/null 2>/dev/null
 
+#echo ""; head $BEDFILE_GENES_CUT.coverage_bases
+
+#exit 0
+
 
 ## OLD but OK
-if ((0)); then
-	echo "$SAMTOOLS view -uF 0x400 $BAM_FILE | $BEDTOOLS/coverageBed -abam - -b $BEDFILE_GENES.cut -d > $BEDFILE_GENES.coverage_bases"
-	$SAMTOOLS view -uF 0x400 $BAM_FILE | $BEDTOOLS/coverageBed -abam - -b $BEDFILE_GENES.cut -d > $BEDFILE_GENES.coverage_bases
-fi;
+#if ((0)); then
+#	echo "$SAMTOOLS view -uF 0x400 $BAM_FILE | $BEDTOOLS/coverageBed -abam - -b $BEDFILE_GENES.cut -d > $BEDFILE_GENES.coverage_bases"
+#	$SAMTOOLS view -uF 0x400 $BAM_FILE | $BEDTOOLS/coverageBed -abam - -b $BEDFILE_GENES.cut -d > $BEDFILE_GENES.coverage_bases
+#fi;
 
 
 
@@ -210,38 +223,70 @@ DP_LIST_FILE=""
 DP_LIST_FILE_LATEX=""
 #DP_LIST_FILE_LATEX_WARNING=""
 DP_HEADER=$TMPDIR/header.genes_stats;
+
+
 #for DP in $COVERAGE_CRITERIA; do
 for DP in $(echo $COVERAGE_CRITERIA | tr "," " "); do
 	HEADER1="#Gene\tNbases";
 	HEADER2="%bases >"$DP"X\tNbases <"$DP"X";
 	echo -e $HEADER2 > $TMPDIR/$DP.genes_stats;
-	#awk -v DIR=$TMPDIR -v DP=$DP -F"\t" '{g=$4; gc=g; gsub(/\|/,"_",gc)} {a[g]++} {b[g]=b[g]+0} $6>=DP{b[g]++} {c[g]=(b[g]/a[g])*100} {c2[g]=sprintf("%.2f", c[g])} {d[g]=a[g]-b[g]} {print g"\t"a[g]"\t"c2[g]"\t"d[g] > DIR"/file_"gc".csv"}' $BEDFILE_GENES_CUT.coverage_bases ;
-	#echo "awk -v DIR=$TMPDIR -v DP=$DP -F"\t" '{g=$4; gc=g; gsub(/\|/,"_",gc)} {a[g]++} {b[g]=b[g]+0} $6>=DP{b[g]++} {c[g]=(b[g]/a[g])*100} {c2[g]=sprintf("%.2f", c[g])} {d[g]=a[g]-b[g]} END  {print g"\t"a[g]"\t"c2[g]"\t"d[g] > DIR"/file_"gc".csv"}' $BEDFILE_GENES_CUT.coverage_bases"
-	#awk -v DIR=$TMPDIR -v DP=$DP -F"\t" '{g=$4; gc=g; gsub(/\|/,"_",gc)} {a[g]++} {b[g]=b[g]+0} $6>=DP{b[g]++} {c[g]=(b[g]/a[g])*100} {c2[g]=sprintf("%.2f", c[g])} {d[g]=a[g]-b[g]} END  {print g"\t"a[g]"\t"c2[g]"\t"d[g] > DIR"/file_"gc".csv"}' $BEDFILE_GENES_CUT.coverage_bases ;
-	awk -v DIR=$TMPDIR -v DP=$DP -F"\t" '{g=$4; gc=g; gsub(/\|/,"_",gc)} {a[g]++} {b[g]=b[g]+0} $6>=DP{b[g]++} {c[g]=(b[g]/a[g])*100} {c2[g]=sprintf("%.2f", c[g])} {d[g]=a[g]-b[g]} END { for (gene in a)  {print gene"\t"a[gene]"\t"c2[gene]"\t"d[gene] } }' $BEDFILE_GENES_CUT.coverage_bases | sort > $TMPDIR/$DP.genes_stats.tmp # OK new
+
+	awk -v DIR=$TMPDIR -v DP=$DP -F"\t" '
+	{g=$6; gc=g; gsub(/\|/,"_",gc)}
+	{a[g]++}
+	{b[g]=b[g]+0}
+	$5>=DP {b[g]++}
+	{c[g]=(b[g]/a[g])*100}
+	{c2[g]=sprintf("%.2f", c[g])}
+	{d[g]=a[g]-b[g]}
+	END {
+		for (gene in a) {
+			print gene"\t"a[gene]"\t"c2[gene]"\t"d[gene]
+		}
+	}' $BEDFILE_GENES_CUT.coverage_bases | sort > $TMPDIR/$DP.genes_stats.tmp # OK new
 	cat $TMPDIR/$DP.genes_stats.tmp | cut -f3,4 >> $TMPDIR/$DP.genes_stats;
-	#awk -v DIR=$TMPDIR -v DP=$DP -F"\t" '{g=$4; gc=g; gsub(/\|/,"_",gc)} {a[g]++} {b[g]=b[g]+0} $6>=DP{b[g]++} {c[g]=(b[g]/a[g])*100} {c2[g]=sprintf("%.2f", c[g])} {d[g]=a[g]-b[g]} END { for (gene in a)  {print gene"\t"a[gene]"\t"c2[gene]"\t"d[gene] } }' $BEDFILE_GENES_CUT.coverage_bases | sort | cut -f3,4 >> $TMPDIR/$DP.genes_stats
-	#tail -n 1 -q $TMPDIR/file_*.csv | cut -f3,4 >> $TMPDIR/$DP.genes_stats;
-	#find $TMPDIR -type f -name file_\*.csv | xargs tail -n 1 -q | cut -f3,4 >> $TMPDIR/$DP.genes_stats;
+
 	echo -e $HEADER2 > $TMPDIR/$DP.genes_stats.latex;
-	#echo -e $HEADER2 > $TMPDIR/$DP.genes_stats.warning.latex;
-	#tail -n 1 -q $TMPDIR/file_*.csv | cut -f3,4 | awk -F"\t" '{C="gray"} $1<95{C="orange"} $1<90{C="red"} {print "\\\\color{"C"}{\\\\databar{"$1"}}\t\\\\color{"C"}{"$2"}"}' >> $TMPDIR/$DP.genes_stats.latex;
+
 	cat $TMPDIR/$DP.genes_stats.tmp | cut -f3,4 | awk -F"\t" '{C="gray"} $1<100{C="yellow"} $1<95{C="orange"} $1<90{C="red"} {print "\\\\color{gray}{\\\\databar{"$1"}}\t\\\\color{"C"}{"$2"}"}' >> $TMPDIR/$DP.genes_stats.latex;
-	#tail -n 1 -q $TMPDIR/file_*.csv | cut -f3,4 | awk -F"\t" '{C="gray"} $1<95{C="orange"} $1<90{C="red"} $1<100{print "\\\\color{"C"}{\\\\databar{"$1"}}\t\\\\color{gray}{"$2"}"}' >> $TMPDIR/$DP.genes_stats.warning.latex;
-	#if [ ! -s $DP_HEADER ]; then echo -e $HEADER1 > $DP_HEADER; tail -n 1 -q $TMPDIR/*csv | cut -f1,2 >> $DP_HEADER; fi;
+
 	if [ ! -s $DP_HEADER ]; then echo -e $HEADER1 > $DP_HEADER; cat $TMPDIR/$DP.genes_stats.tmp | cut -f1,2 >> $DP_HEADER; fi;
 	DP_LIST_FILE="$DP_LIST_FILE $TMPDIR/$DP.genes_stats";
 	DP_LIST_FILE_LATEX="$DP_LIST_FILE_LATEX $TMPDIR/$DP.genes_stats.latex";
-	#DP_LIST_FILE_LATEX_WARNING="$DP_LIST_FILE_LATEX_WARNING $TMPDIR/$DP.genes_stats.warning.latex";
-	#rm $TMPDIR/*csv
-	#find $TMPDIR -type f -name \*.csv | xargs rm
 
 done;
 paste $DP_HEADER $DP_LIST_FILE > ${OUTPUT}-all.txt
 paste $DP_HEADER $DP_LIST_FILE_LATEX  | sed 's/\t/ \& /gi' | sed 's/%/\\\\%/gi' | sed 's/>/\\\\textgreater/gi' | sed 's/</\\\\textless/gi' > ${OUTPUT}-all-latex.txt
 #paste $DP_HEADER $DP_LIST_FILE_LATEX_WARNING  | sed 's/\t/ \& /gi' | sed 's/%/\\\\%/gi' | sed 's/>/\\\\textgreater/gi' | sed 's/</\\\\textless/gi' > ${OUTPUT}-warning-latex.txt
-rm -rf $TMPDIR $BEDFILE_GENES.coverage_bases
 
+
+
+echo ""; head -n 20 ${OUTPUT}-all.txt
+
+awk -v DIR=$TMPDIR -v FAIL=300 -v WARN=1000 -v THRESHOLD=1 -F"\t" '
+length(THRESHOLD)==0 {THRESHOLD=1}
+{g=$6; gc=g; gsub(/\|/,"_",gc)}
+{a[g]++}
+{bFAIL[g]=bFAIL[g]+0}
+$5>=FAIL {bFAIL[g]++}
+{cFAIL[g]=bFAIL[g]/a[g]}
+{bWARN[g]=bWARN[g]+0}
+$5>=WARN {bWARN[g]++}
+{cWARN[g]=bWARN[g]/a[g]}
+{M[g]="PASS"; D[g]="100% bases with DP >="WARN}
+cWARN[g]<THRESHOLD {M[g]="WARN"; D[g]="only "sprintf("%.2f", cWARN[g])"% bases with DP >="WARN}
+cFAIL[g]<THRESHOLD {M[g]="FAIL"; D[g]="only "sprintf("%.2f", cFAIL[g])"% bases with DP >="FAIL}
+END {
+	for (gene in a) {
+		print gene"\t"M[gene]"\t"D[gene]
+	}
+}' $BEDFILE_GENES_CUT.coverage_bases | sort >> $TMPDIR/$DP.genes_message;
+#cat $TMPDIR/$DP.genes_message.tmp | cut -f3,4 >> $TMPDIR/$DP.genes_message;
+#" (accepted threshold "sprintf("%.2f", THRESHOLD)"%)"
+
+head -n 20 $TMPDIR/$DP.genes_message;
+
+rm -rf $TMPDIR $BEDFILE_GENES.coverage_bases
 
 rm $BEDFILE_GENES_CUT*
 

@@ -212,7 +212,7 @@ TOOLS_LIST=$TOOLS_LIST" BOWTIE"
 
 # BEDTOOLS
 export BEDTOOLS=$NGS_TOOLS/bedtools/current/bin			# DIR
-export BEDTOOLS2=$NGS_TOOLS/bedtools/2.27.1/bin			# DIR
+export BEDTOOLS2=$NGS_TOOLS/bedtools/current/bin			# DIR
 export BEDTOOLS_VERSION=2.27.1					# VER
 export BEDTOOLS2_VERSION=2.27.1					# VER
 export BEDTOOLS_DESCRIPTION="a powerful toolset for genome arithmetic"
