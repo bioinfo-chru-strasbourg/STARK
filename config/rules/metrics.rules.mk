@@ -3,13 +3,14 @@
 # Author: Antony Le Bechec
 ############################
 # Release
-MK_RELEASE="0.9.4b"
-MK_DATE="29/09/2016"
+MK_RELEASE="0.9.5b"
+MK_DATE="17/03/2019"
 
 # Release note
 # 18/12/2015 - 0.9.2b : Force gzip metrics files
 # 23/09/2016 - 0.9.3b : Add BAM Check metrics.bam_check. Change PICARD version
 # 29/09/2016 - 0.9.4b : Add Amplicon coverage metrics.amplicon_coverage
+# 29/09/2016 - 0.9.5b : Chenge metrics.genes rule
 
 
 # TOOLS
@@ -30,26 +31,19 @@ METRICS_SNPEFF?=0
 
 GZ?=gzip
 
+DP_FAIL?=30
+DP_WARN?=100
+DP_THRESHOLD?=1
+
+
 # BED / INTERVALS for Metrics
 ###############################
 
 
 # INTERVAL from BED
 
-#%.from_manifest.intervals_bed: %.bam %.metrics.from_manifest.intervals
-#	-if [ "`grep ^ -c $*.metrics.from_manifest.intervals`" == "0" ]; then \
-#		$(BEDTOOLS)/bamToBed -i $< ; \
-#	else \
-#		$(SAMTOOLS) view -H $< > $@; \
-#		cat $*.metrics.from_manifest.intervals  | tr -d '\r' | sed -e "s/^M//" | tr ":-" "\\t" | awk '{print $$1"\t"$$2"\t"$$3"\t+\t"$$1":"$$2"-"$$3 }' >> $@; \
-#	fi;
-
-# BED from BAM
-
 %.bam.bed: %.bam %.bam.bai
 	#BAM.BED from BAM
-	#$(BEDTOOLS)/genomeCoverageBed -ibam $< -bg | $(BEDTOOLS)/mergeBed -n -i - > $@;
-	#+if [ ! -e $@ ] && (($$($(SAMTOOLS) idxstats $< | awk '{SUM+=$$3+$$4} END {print SUM}'))); then \
 	-+if ((1)); then \
 	if (($$($(SAMTOOLS) idxstats $< | awk '{SUM+=$$3+$$4} END {print SUM}'))); then \
 		rm -f $<.genomeCoverageBed.mk $<.genomeCoverageBed1.mk $<.genomeCoverageBed2.mk $<.genomeCoverageBed3.mk; \
@@ -72,8 +66,6 @@ GZ?=gzip
 
 # BED for metrics
 %.metrics.bam: %.bam
-	#-ln -s $< $@;
-	#if [ ! -L $@ ]; then cp $< $@; fi;
 	-ln -P $< $@;
 	if [ ! -e $@ ]; then cp $< $@; fi; # if ln des not work
 
@@ -220,7 +212,6 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 	else \
 		echo "#[$$(date)] COVERAGE with SAMTOOLS with a BED file not done due to a lack of region defined in BED '$*.withoutheader.for_metrics_bed'" >> $@; \
 	fi;
-
 	if (($(BAM_METRICS))); then \
 		#%.withoutheader.for_metrics_bed ; \
 		#Create directory ; \
@@ -380,10 +371,8 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 				echo "MANIFEST.bed to bedfile_genes_list : $bedfile_genes_list"; \
 				$(BEDTOOLS)/bedtools intersect -wb -a $${manifest}.bed -b $(REFSEQ_GENES) | cut -f8 | sort -u > $${manifest}.bed.intersect; \
 				sort -k5 $(REFSEQ_GENES) > $${manifest}.bed.refseq; \
-				join -1 1 -2 5 $${manifest}.bed.intersect $${manifest}.bed.refseq -o 2.1,2.2,2.3,2.5 | sort -u -k1,2 | tr " " "\t" > $$bedfile_genes_list; \
+				join -1 1 -2 5 $${manifest}.bed.intersect $${manifest}.bed.refseq -o 2.1,2.2,2.3,2.5 | sort -u -k1,2 | tr " " "\t" | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$4}' > $$bedfile_genes_list; \
 				rm -f $${manifest}.bed.intersect $${manifest}.bed.refseq; \
-				echo "join -1 1 -2 5 $${manifest}.bed.intersect $${manifest}.bed.refseq -o 2.1,2.2,2.3,2.5 | sort -u -k1,2 | tr " " "\t" > $$bedfile_genes_list;" ;\
-				#echo "join -1 1 -2 5 <( $(BEDTOOLS)/bedtools intersect -wb -a $${manifest}.bed -b $(REFSEQ_GENES) | cut -f9 | sort -u ) <( sort -k5 $(REFSEQ_GENES) ) -o 2.1,2.2,2.3,2.5 | sort -u -k1,2 | tr " " "\t" > $$bedfile_genes_list" ; \
 			else \
 				echo "#[$$(date)] BAM Metrics on Genes coverage not generate, No manifest found, ." >> $@; \
 			fi;\
@@ -397,7 +386,7 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 			do \
 				if [ -e $$bedfile_genes ]; then \
 					bedfile_name=$$( basename $$bedfile_genes | sed "s/\.genes$$//" ); \
-					$(NGSscripts)/genesCoverage.sh -f $*.bam -b $$bedfile_genes -c "$(COVERAGE_CRITERIA)" --dp_fail=30 --dp_warn=100 --dp_threshold=1 -n $(NB_BASES_AROUND) -t $(BEDTOOLS) -s $(SAMTOOLS) --threads=$(THREADS) -o $(@D)/$$bedfile_name; \
+					$(NGSscripts)/genesCoverage.sh -f $*.bam -b $$bedfile_genes -c "$(COVERAGE_CRITERIA)" --dp_fail=$(DP_FAIL) --dp_warn=$(DP_WARN) --dp_threshold=$(DP_THRESHOLD) -n $(NB_BASES_AROUND) -t $(BEDTOOLS)/bedtools -s $(SAMTOOLS) --threads=$(THREADS) -o $(@D)/$$bedfile_name; \
 					echo "#[$$(date)] BAM Metrics on Genes coverage with $$bedfile_name bedfile done" >> $@; \
 				else \
 					echo "#[$$(date)] BAM Metrics on Genes coverage with $$bedfile_name bedfile FAILED" >> $@; \
@@ -411,7 +400,9 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 	fi;
 	if [ ! -e $@ ]; then echo "#[$$(date)] BAM Metrics on Genes coverage FAILED" > $@; fi;
 
+
 	#$(NGSscripts)/genesCoverage.sh -f $*.bam -b $$bedfile_genes -c "$(COVERAGE_CRITERIA)" -n $(NB_BASES_AROUND) -t $(BEDTOOLS) -u $(BEDTOOLS2) -s $(SAMTOOLS) --threads=$(THREADS) -o $(@D)/$$bedfile_name; \
+	echo "join -1 1 -2 5 $${manifest}.bed.intersect $${manifest}.bed.refseq -o 2.1,2.2,2.3,2.5 | sort -u -k1,2 | tr " " "\t" | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$4}' > $$bedfile_genes_list;" ; \
 
 
 %.bam.metrics/metrics.genes_OLD: %.bam %.bam.bai

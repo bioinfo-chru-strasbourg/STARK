@@ -40,3 +40,10 @@ HOWARD_PRIORITIZATION_REPORT="TUMSOL,SOLIDTUMOR"
 
 # COVERAGE CRITERIA (default "1,30")
 COVERAGE_CRITERIA="1,300,1000"
+
+# COVERAGE DP THRESHOLD (default "30" "100" "1")
+# For gene coverage metrics
+# the criteria test if genes failed (or just warning) the coverage threshold
+DP_FAIL="300"	# fail DP threshold (default 30X)
+DP_WARN="1000"	# warn DP threshold (default 100X)
+DP_THRESHOLD="1" # threshold percentage of bases over the DP threshold

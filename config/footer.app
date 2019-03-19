@@ -268,6 +268,25 @@ if [ -z "$COVERAGE_CRITERIA" ]; then
 fi;
 export COVERAGE_CRITERIA
 
+# COVERAGE DP THRESHOLD (default "30" "100" "1")
+# For gene coverage metrics
+# the criteria test if genes failed (or just warning) the coverage threshold
+# fail DP threshold (default 30X)
+if [ -z "$DP_FAIL" ]; then
+	DP_FAIL="30"
+fi;
+export DP_FAIL
+# warn DP threshold (default 100X)
+if [ -z "$DP_WARN" ]; then
+	DP_WARN="100"
+fi;
+export DP_WARN
+# threshold percentage of bases over the DP threshold
+if [ -z "$DP_THRESHOLD" ]; then
+	DP_THRESHOLD="1"
+fi;
+export DP_THRESHOLD
+
 # NB_BASES_AROUND (default 0)
 # For gene coverage metrics
 # the number of bases to look around the exons from the given bed file

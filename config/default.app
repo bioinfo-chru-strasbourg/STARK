@@ -115,6 +115,13 @@ INTERVAL_PADDING=0
 #COVERAGE_CRITERIA="1,30"
 COVERAGE_CRITERIA="1,30,100"
 
+# COVERAGE DP THRESHOLD (default "30" "100" "1")
+# For gene coverage metrics
+# the criteria test if genes failed (or just warning) the coverage threshold
+DP_FAIL="30"	# fail DP threshold (default 30X)
+DP_WARN="100"	# warn DP threshold (default 100X)
+DP_THRESHOLD="1" # threshold percentage of bases over the DP threshold
+
 # NB_BASES_AROUND (default 0)
 # For gene coverage metrics
 # the number of bases to look around the exons from the given bed file

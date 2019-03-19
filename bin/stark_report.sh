@@ -555,9 +555,6 @@ fi
 
 	echo "\section{Coverage}" >> $TEXFILE
 
-
-
-
 for aligner in `echo $ALIGNERS`
 do
 
@@ -567,6 +564,7 @@ do
 	COVERAGEFILESTATS_ONREADS_SAMTOOLS="$RESULTS_FOLDER/$FLOWCELL/$SAMPLE/$SAMPLE.$aligner.bam.metrics/$SAMPLE.$aligner.on.nbreads"
 	COVERAGEFILESTATS_OFFREADS_SAMTOOLS="$RESULTS_FOLDER/$FLOWCELL/$SAMPLE/$SAMPLE.$aligner.bam.metrics/$SAMPLE.$aligner.off.nbreads"
 	COVERAGEFILESTATS_HSMETRICS="$RESULTS_FOLDER/$FLOWCELL/$SAMPLE/$SAMPLE.$aligner.bam.metrics/$SAMPLE.$aligner.HsMetrics"
+	COVERAGEFILESTATS_GENES_COVERAGE_MSG="$RESULTS_FOLDER/$FLOWCELL/$SAMPLE/$SAMPLE.$aligner.bam.metrics/$SAMPLE.msg"
 
 	# COVERAGE SUMMARY AVERAGE on all sequencing with SAMTOOLS
 	if [ -s $COVERAGEFILESTATS_SAMTOOLS ]; then
@@ -624,8 +622,6 @@ do
 
 	fi;
 
-
-
 	# COVERAGE SUMMARY with SAMTOOLS
 	if [ -s $COVERAGEFILESTATS_SAMTOOLS ]
 	then
@@ -671,12 +667,20 @@ do
 	fi;
 	#fi;
 
+	# COVERAGE SUMMARY with SAMTOOLS
+	if [ -s $COVERAGEFILESTATS_GENES_COVERAGE_MSG ]
+	then
+		echo "\begin{itemize}" >> $TEXFILE
+		echo "\item "$(awk -F"\t" '$2=="PASS" {print $1}' $COVERAGEFILESTATS_GENES_COVERAGE_MSG | wc -w)" genes passing the coverage threshold (more than "$(echo "$DP_THRESHOLD * 100" | bc)" percent bases with DP greater than $DP_WARN)" >> $TEXFILE
+		echo "\item "$(awk -F"\t" '$2=="WARN" {print $1}' $COVERAGEFILESTATS_GENES_COVERAGE_MSG | wc -w)" genes with a warning coverage (less than "$(echo "$DP_THRESHOLD * 100" | bc)" percent bases with DP greater than $DP_WARN) " >> $TEXFILE
+		echo $(awk -F"\t" '$2=="WARN" {print $1}' $COVERAGEFILESTATS_GENES_COVERAGE_MSG) >> $TEXFILE
+		echo "\item "$(awk -F"\t" '$2=="FAIL" {print $1}' $COVERAGEFILESTATS_GENES_COVERAGE_MSG | wc -w)" genes with a failed coverage (less than "$(echo "$DP_THRESHOLD * 100" | bc)" percent bases with DP greater than $DP_FAIL) " >> $TEXFILE
+		echo $(awk -F"\t" '$2=="FAIL" {print $1}' $COVERAGEFILESTATS_GENES_COVERAGE_MSG) >> $TEXFILE
+		echo "\end{itemize}" >> $TEXFILE
+	fi;
+
 
 done
-
-
-
-
 
 
 #rm  ${STATSFILE}
