@@ -7,8 +7,8 @@
 
 SCRIPT_NAME="LaunchSample"
 SCRIPT_DESCRIPTION="Launch a Sample Analysis"
-SCRIPT_RELEASE="0.9.6b"
-SCRIPT_DATE="27/10/2016"
+SCRIPT_RELEASE="0.9.6.1b"
+SCRIPT_DATE="19/03/2019"
 SCRIPT_AUTHOR="Antony Le Bechec"
 SCRIPT_COPYRIGHT="IRC"
 SCRIPT_LICENCE="GNU-GPL"
@@ -20,6 +20,7 @@ RELEASE_NOTES=$RELEASE_NOTES"# 0.9.4b-13/10/2015: Add Complete and Running flag 
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.5.1b-11/04/2016: Optimize Threads and modifiy options order\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.5.2b-13/04/2016: Adding reports process\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.6b-27/10/2016: Multi input FASTQ/BAM/CRAM/SAM and associated parameters\n";
+RELEASE_NOTES=$RELEASE_NOTES"# 0.9.6.1b-19/03/2019: Minor change on FASTQ/BAM/CRAM/SAM input\n";
 
 # Script folder
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -789,30 +790,39 @@ for RUU in $RUN_UNIQ; do
 
 			# BAM/CRAM/SAM
 			elif (($(echo $F | grep ".bam$\|.ubam$\|.cram$\|.ucram\|.sam$\|.usam$" -c))); then
-				echo "#[INFO] Create Input data from BAM/CRAM/SAM file"
-				# Other command with BEDTOOLS: bamToFastq [OPTIONS] -i <BAM> -fq <FASTQ> -fq2 <FASTQR2> -tags
-				$SAMTOOLS bam2fq $F -1 $RUN_SAMPLE_DIR/$S.R1.fastq -2 $RUN_SAMPLE_DIR/$S.R2.fastq 1>$RUN_SAMPLE_DIR/$S.R0.fastq 2>/dev/null;
-				if [ -s $RUN_SAMPLE_DIR/$S.R0.fastq ]; then
-					cat $RUN_SAMPLE_DIR/$S.R2.fastq $RUN_SAMPLE_DIR/$S.R0.fastq >> $RUN_SAMPLE_DIR/$S.R1.fastq;
-					> $RUN_SAMPLE_DIR/$S.R2.fastq;
 
+				# Generate FASTQ from BAM/SAM/CRAM
+				if ((1)); then
+					echo "#[INFO] Create Input data from BAM/CRAM/SAM file"
+					# Sort and FASTQ generation
+					TMP_INPUT_BAM=$TMP_FOLDER_TMP/INPUT_BAM_$RANDOM
+					mkdir -p $TMP_INPUT_BAM;
+					$SAMTOOLS sort -n --reference $REF -@ $THREADS $F -T $TMP_INPUT_BAM -O SAM 2>/dev/null | $SAMTOOLS bam2fq - -1 $RUN_SAMPLE_DIR/$S.R1.fastq.gz -2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz -@ $THREADS -c 0 2>/dev/null | $GZ -c 1> $RUN_SAMPLE_DIR/$S.R0.fastq.gz 2>/dev/null;
+					rm -rf $TMP_INPUT_BAM;
+					# Ff R0 not empty or number of reads differs between R1 and R2 > Single END
+					if (( $($UNGZ -c $RUN_SAMPLE_DIR/$S.R0.fastq.gz | head -n 1 | wc -l) )) \
+						|| (( $(diff <($UNGZ -c $RUN_SAMPLE_DIR/$S.R1.fastq.gz | paste - - - - | cut -f1 -d$'\t') <($UNGZ -c $RUN_SAMPLE_DIR/$S.R2.fastq.gz | paste - - - - | cut -f1 -d$'\t') | head -n 1 | wc -l) )); then
+						echo "#[WARNING] Read names or order differ between R1 and R2 fastq files, or R0 file is not empty. Reads are supposed not to be paired (Single-END). All reads in R1.";
+						$UNGZ -c $RUN_SAMPLE_DIR/$S.R2.fastq.gz $RUN_SAMPLE_DIR/$S.R0.fastq.gz >> $RUN_SAMPLE_DIR/$S.R1.fastq.gz;
+						$GZ < /dev/null > $RUN_SAMPLE_DIR/$S.R2.fastq.gz;
+					fi;
+					rm -f $RUN_SAMPLE_DIR/$S.R0.fastq.gz;
 				fi;
-				$COMPRESS $RUN_SAMPLE_DIR/$S.R1.fastq --fast -f -q 1>/dev/null 2>/dev/null;
-				$COMPRESS $RUN_SAMPLE_DIR/$S.R2.fastq --fast -f -q 1>/dev/null 2>/dev/null;
-				rm -f $RUN_SAMPLE_DIR/$S.R0.fastq;
+
+				# OLD version of Input datz from BAM/SAM/CRAM
 				if ((0)); then
-				if (($($SAMTOOLS view -c -f 1 $F -@ $THREADS))); then # Paired-End
-					#$SAMTOOLS bam2fq $F -1 $RUN_SAMPLE_DIR/$S.R1.fastq -2 $RUN_SAMPLE_DIR/$S.R2.fastq 1>$RUN_SAMPLE_DIR/$S.OTHERS.fastq 2>/dev/null;
-					$SAMTOOLS bam2fq $F -2 $RUN_SAMPLE_DIR/$S.R2.fastq 1>$RUN_SAMPLE_DIR/$S.R1.fastq 2>/dev/null;
-					#cat $RUN_SAMPLE_DIR/$S.OTHERS.fastq >> $RUN_SAMPLE_DIR/$S.R1.fastq
+					echo "#[INFO] Create Input data from BAM/CRAM/SAM file"
+					# Other command with BEDTOOLS: bamToFastq [OPTIONS] -i <BAM> -fq <FASTQ> -fq2 <FASTQR2> -tags
+					$SAMTOOLS bam2fq $F -1 $RUN_SAMPLE_DIR/$S.R1.fastq -2 $RUN_SAMPLE_DIR/$S.R2.fastq 1>$RUN_SAMPLE_DIR/$S.R0.fastq 2>/dev/null;
+					if [ -s $RUN_SAMPLE_DIR/$S.R0.fastq ]; then
+						cat $RUN_SAMPLE_DIR/$S.R2.fastq $RUN_SAMPLE_DIR/$S.R0.fastq >> $RUN_SAMPLE_DIR/$S.R1.fastq;
+						> $RUN_SAMPLE_DIR/$S.R2.fastq;
+					fi;
 					$COMPRESS $RUN_SAMPLE_DIR/$S.R1.fastq --fast -f -q 1>/dev/null 2>/dev/null;
 					$COMPRESS $RUN_SAMPLE_DIR/$S.R2.fastq --fast -f -q 1>/dev/null 2>/dev/null;
-					rm -f $RUN_SAMPLE_DIR/$S.OTHERS.fastq
-				else # Single-End
-					$SAMTOOLS bam2fq $F > $RUN_SAMPLE_DIR/$S.R1.fastq 2>/dev/null;
-					$COMPRESS $RUN_SAMPLE_DIR/$S.R1.fastq --fast -f -q 1>/dev/null 2>/dev/null;
+					rm -f $RUN_SAMPLE_DIR/$S.R0.fastq;
 				fi;
-				fi;
+
 			fi;
 		else
 			echo "#[INFO] Input file '$RUN_SAMPLE_DIR/$S.R1.fastq.gz' DOES exist"

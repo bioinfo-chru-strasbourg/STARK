@@ -30,6 +30,7 @@ MBQ_HC_HUSTUMSOL=17
 MBQ_UG_HUSTUMSOL=17
 #STAND_EMIT_CONF=20
 #STAND_CALL_CONF=20
+GATKHC_FLAGS_HUSTUMSOL_SHARED=--baq OFF --read_filter BadCigar --allow_potentially_misencoded_quality_scores --dontUseSoftClippedBases
 
 
 
@@ -73,7 +74,7 @@ GATKUG_HUSTUMSOL_FLAGS= -nct $(THREADS_GATKUG_HUSTUMSOL) -glm BOTH \
 DPMIN_HUSTUMSOL=30
 
 %.gatkUG_HUSTUMSOL.unfiltered.unrecalibrated.vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
-	
+
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKUG_HUSTUMSOL_FLAGS) \
 		-T UnifiedGenotyper \
 		-R `cat $*.genome` \
@@ -97,10 +98,10 @@ DPMIN_HUSTUMSOL=30
 MINPRUNING_SOLIDTUMOR?=20
 THREADS_GATKHC_HUSTUMSOL?=$(THREADS_GATK)
 maxReadsInRegionPerSample=8000
-GATKHC_HUSTUMSOL_FLAGS= -nct $(THREADS_GATKHC_HUSTUMSOL) -baq OFF -stand_call_conf 10 -dfrac $(DFRAC_HUSTUMSOL) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC_HUSTUMSOL) -rf BadCigar -minPruning $(MINPRUNING_SOLIDTUMOR) -allowPotentiallyMisencodedQuals
+GATKHC_HUSTUMSOL_FLAGS= -nct $(THREADS_GATKHC_HUSTUMSOL) -stand_call_conf 10 -dfrac $(DFRAC_HUSTUMSOL) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC_HUSTUMSOL) -minPruning $(MINPRUNING_SOLIDTUMOR) $(GATKHC_FLAGS_HUSTUMSOL_SHARED)
 
 %.gatkHC_HUSTUMSOL.unfiltered.unrecalibrated.vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
-	
+
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKHC_HUSTUMSOL_FLAGS) \
 		-T HaplotypeCaller \
 		-R `cat $*.genome` \
@@ -125,8 +126,3 @@ PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
 
 PIPELINES_COMMENT := "CALLER:gatkHC_HUSTUMSOL:GATK Haplotype Caller - designed for HUSTUMSOL variant discovery:GATKHC_SOLIDTUMOR_FLAGS='$(GATKHC_HUSTUMSOL_FLAGS)'"
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
-
-
-
-
-

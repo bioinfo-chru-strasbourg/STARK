@@ -30,6 +30,9 @@ RULES_APP="$RULES_APP $APP_FOLDER/HUSTUMSOL.rules.mk/*.rules.mk"
 
 # PIPELINES
 PIPELINES="bwamem.gatkHC_HUSTUMSOL.howard bwamem.gatkUG_HUSTUMSOL.howard bwamem.VarScan_HUSTUMSOL.howard bwamem.canoes.howard"
+#PIPELINES="bwamem.VarScan.howard bwamem.VarScan_HUSTUMSOL.howard"
+#bwamem.VarScan_HUSTUMSOL.howard
+#bwamem.VarScan.howard
 
 
 # HOWARD FILTER

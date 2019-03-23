@@ -122,7 +122,7 @@ HOWARD_CALCULATION?=VAF,NOMEN,VAF_STATS,VARTYPE
 
 
 ## MERGE OF GENERATED VCF
-%.merge.unsorted.vcf: %.final_variants_files_vcf_gz %.genome
+%.merge.vcf: %.final_variants_files_vcf_gz %.genome
 	# Generate pipeline name list
 	cat $< | rev | cut -d/ -f1 | rev | sed s/\.vcf.gz//gi | cut -d. -f2- > $@.pipelines #| tr '\n' '\t' | sed 's/\t$$//'
 	#echo "final_variants_files_vcf_gz:"; cat $<;
@@ -134,7 +134,7 @@ HOWARD_CALCULATION?=VAF,NOMEN,VAF_STATS,VARTYPE
 
 
 ## FULLE VCF: ANNOTATION OF A MERGE FILE
-%.full.vcf: %.merge.vcf %.transcripts
+%.full.unsorted.vcf: %.merge.vcf %.transcripts
 	# HOWARD annotation
 	+$(HOWARD) --input=$< --output=$@.tmp --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --annotation=$(HOWARD_ANNOTATION_REPORT) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS);
 	# HOWARD calculation and prioritization
@@ -149,7 +149,7 @@ HOWARD_CALCULATION?=VAF,NOMEN,VAF_STATS,VARTYPE
 
 
 ## FINAL VCF  RULE
-%.final.vcf: %.full.vcf
+%.final.unsorted.vcf: %.full.vcf
 	-rm -f $<.tmp.*
 	for S in $$(grep "^#CHROM" $< | cut -f10-); do \
 		$(BCFTOOLS) view -U -s $$S $< | sed '/^#CHROM/s/'$$S'/'$$(echo $(@F) | cut -d\. -f1)'/' > $<.tmp.$$S; \

@@ -4,8 +4,8 @@
 # Date: 04/05/2016
 # Author: Antony Le Bechec
 ############################
-MK_RELEASE="0.9.4.3b"
-MK_DATE="17/05/2016"
+MK_RELEASE="0.9.4.4b"
+MK_DATE="23/03/2019"
 
 # Release notes:
 # 0.9.1-24/04/2015: Add 'varscanlowfreqlowcovsnp' calling
@@ -16,23 +16,28 @@ MK_DATE="17/05/2016"
 # 0.9.4.1-03/05/2016: Bug correction, if empty VCF after calling. Add Release infos
 # 0.9.4.2-04/05/2016: Bug correction
 # 0.9.4.3-17/05/2016: Bug correction
+# 0.9.4.4-21/03/2019: Change parameters for mpileup by adding FATBAM Soft Clip to Q0
 
 
 # Parameters
 # VARSCAN
 VARSCAN?=$(NGSbin)/varscan.jar
+FATBAM?=/STARK/tools/fatbam/current/bin
+FATBAM_SOFTCLIPTOQ0?=$(FATBAM)/FATBAM.SoftClipToQ0.pl
 
 
 ####################
 # SAMTOOLS mpileup
 ####################
 
-MPILEUP_VARSCAN_OPTIONS= -E -d 10000000 -L 10000000 -C 50 -Q 10 -q 1 --output-tags SP,DP,DP4,DV # -B  -d 100000 -L 100000 -C200 
+MPILEUP_VARSCAN_OPTIONS= -E -d 10000000 -L 10000000 -C 50 -Q 10 -q 1 --output-tags SP,DP,DP4,DV,ADF,ADR,AD # -B  -d 100000 -L 100000 -C200
 
 
 %.bam.mpileup: %.bam %.bam.bai %.genome
 	#-$(SAMTOOLS) mpileup -f `cat $*.genome` $< $(MPILEUP_OPTIONS) -l $*.for_metrics.bed > $@
-	-$(SAMTOOLS) mpileup -f `cat $*.genome` $< $(MPILEUP_VARSCAN_OPTIONS) > $@
+	#-$(SAMTOOLS) mpileup -f `cat $*.genome` $< $(MPILEUP_VARSCAN_OPTIONS) > $@
+	$(SAMTOOLS) view $< -h | perl $(FATBAM_SOFTCLIPTOQ0) -v1 | $(SAMTOOLS) mpileup - -f `cat $*.genome` $(MPILEUP_VARSCAN_OPTIONS) > $@
+
 
 
 ####################
@@ -40,9 +45,9 @@ MPILEUP_VARSCAN_OPTIONS= -E -d 10000000 -L 10000000 -C 50 -Q 10 -q 1 --output-ta
 ####################
 
 VARSCAN_BOTH_OPTIONS= --min-var-freq 0.01 --min-reads2 2 --min-coverage 30 --p-value 1e-1
-VARSCAN_SNP_OPTIONS= $(VARSCAN_BOTH_OPTIONS) --min-avg-qual 30  
+VARSCAN_SNP_OPTIONS= $(VARSCAN_BOTH_OPTIONS) --min-avg-qual 30
 VARSCAN_INDEL_OPTIONS= $(VARSCAN_BOTH_OPTIONS) --min-avg-qual 10
-VARSCAN_FILTERS=--genotypeFilterExpression 'GQ < 200.0 && GQ >= 150' --genotypeFilterName 'LowGQ' --genotypeFilterExpression 'GQ < 150.0 && GQ >= 100' --genotypeFilterName 'VeryLowGQ'  --genotypeFilterExpression 'GQ < 100.0' --genotypeFilterName 'VeryVeryLowGQ' 
+VARSCAN_FILTERS=--genotypeFilterExpression 'GQ < 200.0 && GQ >= 150' --genotypeFilterName 'LowGQ' --genotypeFilterExpression 'GQ < 150.0 && GQ >= 100' --genotypeFilterName 'VeryLowGQ'  --genotypeFilterExpression 'GQ < 100.0' --genotypeFilterName 'VeryVeryLowGQ'
 VARSCAN_SNP_FILTERS=$(VARSCAN_FILTERS)
 VARSCAN_INDEL_FILTERS=$(VARSCAN_FILTERS)
 VARSCAN_TIMEOUT=3600 # 1 = 1sec, 60=1min, 3600=1h
@@ -64,7 +69,7 @@ VARSCAN_TIMEOUT=3600 # 1 = 1sec, 60=1min, 3600=1h
 	-if [ ! -s $@ ]; then cp $*.empty.vcf $@; fi;
 	-if [ ! -s $@ ]; then touch $@; fi;
 	# Remove intermediate files
-	-rm $@.unfiltered.vcf* 
+	-rm $@.unfiltered.vcf*
 	#-rm $*.empty.vcf
 	# Remove IDX
 	-rm $@.idx
@@ -87,7 +92,7 @@ VARSCAN_TIMEOUT=3600 # 1 = 1sec, 60=1min, 3600=1h
 	-if [ ! -s $@ ]; then cp $*.empty.vcf $@; fi;
 	-if [ ! -s $@ ]; then touch $@; fi;
 	# Remove intermediate files
-	-rm $@.unfiltered.vcf* 
+	-rm $@.unfiltered.vcf*
 	#-rm $*.empty.vcf
 	# Remove IDX
 	-rm $@.idx
@@ -103,9 +108,9 @@ VARSCAN_SOMATIC_DP=50
 VARSCAN_SOMATIC_PVAL=1e-1
 
 VARSCAN_SOMATIC_BOTH_OPTIONS= --min-var-freq $(VARSCAN_SOMATIC_VAF) --min-reads2 $(VARSCAN_SOMATIC_ALT) --min-coverage $(VARSCAN_SOMATIC_DP) --p-value $(VARSCAN_SOMATIC_PVAL)
-VARSCAN_SOMATIC_SNP_OPTIONS= $(VARSCAN_SOMATIC_BOTH_OPTIONS) --min-avg-qual 30 
-VARSCAN_SOMATIC_INDEL_OPTIONS= $(VARSCAN_SOMATIC_BOTH_OPTIONS) --min-avg-qual 10 
-VARSCAN_SOMATIC_FILTERS=--genotypeFilterExpression 'GQ < 20.0' --genotypeFilterName 'LowGQ'  
+VARSCAN_SOMATIC_SNP_OPTIONS= $(VARSCAN_SOMATIC_BOTH_OPTIONS) --min-avg-qual 30
+VARSCAN_SOMATIC_INDEL_OPTIONS= $(VARSCAN_SOMATIC_BOTH_OPTIONS) --min-avg-qual 10
+VARSCAN_SOMATIC_FILTERS=--genotypeFilterExpression 'GQ < 20.0' --genotypeFilterName 'LowGQ'
 #--genotypeFilterExpression "GQ < 200.0 && GQ >= 150" --genotypeFilterName "LowGQ" --genotypeFilterExpression "GQ < 150.0 && GQ >= 100" --genotypeFilterName "VeryLowGQ"  --genotypeFilterExpression "GQ < 100.0" --genotypeFilterName "VeryVeryLowGQ" --filterExpression "DP < 30" --filterName "LowCoverage" --filterExpression "DP < 10" --filterName "VeryLowCoverage"
 VARSCAN_SOMATIC_SNP_FILTERS=$(VARSCAN_SOMATIC_FILTERS)
 VARSCAN_SOMATIC_INDEL_FILTERS=$(VARSCAN_SOMATIC_FILTERS)
@@ -129,7 +134,7 @@ VARSCAN_SOMATIC_TIMEOUT=3600 # 1 = 1sec, 60=1min, 3600=1h
 	-if [ ! -s $@ ]; then cp $*.empty.vcf $@; fi;
 	-if [ ! -s $@ ]; then touch $@; fi;
 	# Remove intermediate files
-	-rm $@.unfiltered.vcf* 
+	-rm $@.unfiltered.vcf*
 	#-rm $*.empty.vcf
 	# Remove IDX
 	-rm $@.idx
@@ -152,12 +157,12 @@ VARSCAN_SOMATIC_TIMEOUT=3600 # 1 = 1sec, 60=1min, 3600=1h
 	-if [ ! -s $@ ]; then cp $*.empty.vcf $@; fi;
 	-if [ ! -s $@ ]; then touch $@; fi;
 	# Remove intermediate files
-	-rm $@.unfiltered.vcf* 
+	-rm $@.unfiltered.vcf*
 	#-rm $*.empty.vcf
 	# Remove IDX
 	-rm $@.idx
-	
-	
+
+
 #######################
 # VarScan EXOME_SOMATIC #
 #######################
@@ -168,9 +173,9 @@ VARSCAN_EXOME_SOMATIC_DP=50
 VARSCAN_EXOME_SOMATIC_PVAL=1e-1
 
 VARSCAN_EXOME_SOMATIC_BOTH_OPTIONS= --min-var-freq $(VARSCAN_EXOME_SOMATIC_VAF) --min-reads2 $(VARSCAN_EXOME_SOMATIC_ALT) --min-coverage $(VARSCAN_EXOME_SOMATIC_DP) --p-value $(VARSCAN_EXOME_SOMATIC_PVAL)
-VARSCAN_EXOME_SOMATIC_SNP_OPTIONS= $(VARSCAN_EXOME_SOMATIC_BOTH_OPTIONS) --min-avg-qual 30 
-VARSCAN_EXOME_SOMATIC_INDEL_OPTIONS= $(VARSCAN_EXOME_SOMATIC_BOTH_OPTIONS) --min-avg-qual 10 
-VARSCAN_EXOME_SOMATIC_FILTERS=--genotypeFilterExpression 'GQ < 20.0' --genotypeFilterName 'LowGQ'  
+VARSCAN_EXOME_SOMATIC_SNP_OPTIONS= $(VARSCAN_EXOME_SOMATIC_BOTH_OPTIONS) --min-avg-qual 30
+VARSCAN_EXOME_SOMATIC_INDEL_OPTIONS= $(VARSCAN_EXOME_SOMATIC_BOTH_OPTIONS) --min-avg-qual 10
+VARSCAN_EXOME_SOMATIC_FILTERS=--genotypeFilterExpression 'GQ < 20.0' --genotypeFilterName 'LowGQ'
 #--genotypeFilterExpression "GQ < 200.0 && GQ >= 150" --genotypeFilterName "LowGQ" --genotypeFilterExpression "GQ < 150.0 && GQ >= 100" --genotypeFilterName "VeryLowGQ"  --genotypeFilterExpression "GQ < 100.0" --genotypeFilterName "VeryVeryLowGQ" --filterExpression "DP < 30" --filterName "LowCoverage" --filterExpression "DP < 10" --filterName "VeryLowCoverage"
 VARSCAN_EXOME_SOMATIC_SNP_FILTERS=$(VARSCAN_EXOME_SOMATIC_FILTERS)
 VARSCAN_EXOME_SOMATIC_INDEL_FILTERS=$(VARSCAN_EXOME_SOMATIC_FILTERS)
@@ -194,7 +199,7 @@ VARSCAN_EXOME_SOMATIC_TIMEOUT=36000 # 1 = 1sec, 60=1min, 3600=1h
 	-if [ ! -s $@ ]; then cp $*.empty.vcf $@; fi;
 	-if [ ! -s $@ ]; then touch $@; fi;
 	# Remove intermediate files
-	-rm $@.unfiltered.vcf* 
+	-rm $@.unfiltered.vcf*
 	#-rm $*.empty.vcf
 	# Remove IDX
 	-rm $@.idx
@@ -217,12 +222,12 @@ VARSCAN_EXOME_SOMATIC_TIMEOUT=36000 # 1 = 1sec, 60=1min, 3600=1h
 	-if [ ! -s $@ ]; then cp $*.empty.vcf $@; fi;
 	-if [ ! -s $@ ]; then touch $@; fi;
 	# Remove intermediate files
-	-rm $@.unfiltered.vcf* 
+	-rm $@.unfiltered.vcf*
 	#-rm $*.empty.vcf
 	# Remove IDX
 	-rm $@.idx
-	
-	
+
+
 
 
 #######################
@@ -235,9 +240,9 @@ VARSCAN_HEMATOLOGY_DP=50
 VARSCAN_HEMATOLOGY_PVAL=1e-1
 
 VARSCAN_HEMATOLOGY_BOTH_OPTIONS= --min-var-freq $(VARSCAN_HEMATOLOGY_VAF) --min-reads2 $(VARSCAN_HEMATOLOGY_ALT) --min-coverage $(VARSCAN_HEMATOLOGY_DP) --p-value $(VARSCAN_HEMATOLOGY_PVAL)
-VARSCAN_HEMATOLOGY_SNP_OPTIONS= $(VARSCAN_HEMATOLOGY_BOTH_OPTIONS) --min-avg-qual 30 
-VARSCAN_HEMATOLOGY_INDEL_OPTIONS= $(VARSCAN_HEMATOLOGY_BOTH_OPTIONS) --min-avg-qual 10 
-VARSCAN_HEMATOLOGY_FILTERS=--genotypeFilterExpression 'GQ < 20.0' --genotypeFilterName 'LowGQ'  
+VARSCAN_HEMATOLOGY_SNP_OPTIONS= $(VARSCAN_HEMATOLOGY_BOTH_OPTIONS) --min-avg-qual 30
+VARSCAN_HEMATOLOGY_INDEL_OPTIONS= $(VARSCAN_HEMATOLOGY_BOTH_OPTIONS) --min-avg-qual 10
+VARSCAN_HEMATOLOGY_FILTERS=--genotypeFilterExpression 'GQ < 20.0' --genotypeFilterName 'LowGQ'
 #--genotypeFilterExpression "GQ < 200.0 && GQ >= 150" --genotypeFilterName "LowGQ" --genotypeFilterExpression "GQ < 150.0 && GQ >= 100" --genotypeFilterName "VeryLowGQ"  --genotypeFilterExpression "GQ < 100.0" --genotypeFilterName "VeryVeryLowGQ" --filterExpression "DP < 30" --filterName "LowCoverage" --filterExpression "DP < 10" --filterName "VeryLowCoverage"
 VARSCAN_HEMATOLOGY_SNP_FILTERS=$(VARSCAN_HEMATOLOGY_FILTERS)
 VARSCAN_HEMATOLOGY_INDEL_FILTERS=$(VARSCAN_HEMATOLOGY_FILTERS)
@@ -261,7 +266,7 @@ VARSCAN_HEMATOLOGY_TIMEOUT=3600 # 1 = 1sec, 60=1min, 3600=1h
 	-if [ ! -s $@ ]; then cp $*.empty.vcf $@; fi;
 	-if [ ! -s $@ ]; then touch $@; fi;
 	# Remove intermediate files
-	-rm $@.unfiltered.vcf* 
+	-rm $@.unfiltered.vcf*
 	#-rm $*.empty.vcf
 	# Remove IDX
 	-rm $@.idx
@@ -284,7 +289,7 @@ VARSCAN_HEMATOLOGY_TIMEOUT=3600 # 1 = 1sec, 60=1min, 3600=1h
 	-if [ ! -s $@ ]; then cp $*.empty.vcf $@; fi;
 	-if [ ! -s $@ ]; then touch $@; fi;
 	# Remove intermediate files
-	-rm $@.unfiltered.vcf* 
+	-rm $@.unfiltered.vcf*
 	#-rm $*.empty.vcf
 	# Remove IDX
 	-rm $@.idx
@@ -300,9 +305,9 @@ VARSCAN_SOLIDTUMOR_DP=30
 VARSCAN_SOLIDTUMOR_PVAL=1e-1
 
 VARSCAN_SOLIDTUMOR_BOTH_OPTIONS= --min-var-freq $(VARSCAN_SOLIDTUMOR_VAF) --min-reads2 $(VARSCAN_SOLIDTUMOR_ALT) --min-coverage $(VARSCAN_SOLIDTUMOR_DP) --p-value $(VARSCAN_SOLIDTUMOR_PVAL)
-VARSCAN_SOLIDTUMOR_SNP_OPTIONS= $(VARSCAN_SOLIDTUMOR_BOTH_OPTIONS) --min-avg-qual 30 
-VARSCAN_SOLIDTUMOR_INDEL_OPTIONS= $(VARSCAN_SOLIDTUMOR_BOTH_OPTIONS) --min-avg-qual 10 
-VARSCAN_SOLIDTUMOR_FILTERS=--genotypeFilterExpression 'GQ < 200.0 && GQ >= 150' --genotypeFilterName 'LowGQ' --genotypeFilterExpression 'GQ < 150.0 && GQ >= 100' --genotypeFilterName 'VeryLowGQ'  --genotypeFilterExpression 'GQ < 100.0' --genotypeFilterName 'VeryVeryLowGQ' 
+VARSCAN_SOLIDTUMOR_SNP_OPTIONS= $(VARSCAN_SOLIDTUMOR_BOTH_OPTIONS) --min-avg-qual 30
+VARSCAN_SOLIDTUMOR_INDEL_OPTIONS= $(VARSCAN_SOLIDTUMOR_BOTH_OPTIONS) --min-avg-qual 10
+VARSCAN_SOLIDTUMOR_FILTERS=--genotypeFilterExpression 'GQ < 200.0 && GQ >= 150' --genotypeFilterName 'LowGQ' --genotypeFilterExpression 'GQ < 150.0 && GQ >= 100' --genotypeFilterName 'VeryLowGQ'  --genotypeFilterExpression 'GQ < 100.0' --genotypeFilterName 'VeryVeryLowGQ'
 VARSCAN_SOLIDTUMOR_SNP_FILTERS=$(VARSCAN_SOLIDTUMOR_FILTERS)
 VARSCAN_SOLIDTUMOR_INDEL_FILTERS=$(VARSCAN_SOLIDTUMOR_FILTERS)
 VARSCAN_SOLIDTUMOR_TIMEOUT=3600 # 1 = 1sec, 60=1min, 3600=1h
@@ -325,7 +330,7 @@ VARSCAN_SOLIDTUMOR_TIMEOUT=3600 # 1 = 1sec, 60=1min, 3600=1h
 	-if [ ! -s $@ ]; then cp $*.empty.vcf $@; fi;
 	-if [ ! -s $@ ]; then touch $@; fi;
 	# Remove intermediate files
-	-rm $@.unfiltered.vcf* 
+	-rm $@.unfiltered.vcf*
 	#-rm $*.empty.vcf
 	# Remove IDX
 	-rm $@.idx
@@ -348,7 +353,7 @@ VARSCAN_SOLIDTUMOR_TIMEOUT=3600 # 1 = 1sec, 60=1min, 3600=1h
 	-if [ ! -s $@ ]; then cp $*.empty.vcf $@; fi;
 	-if [ ! -s $@ ]; then touch $@; fi;
 	# Remove intermediate files
-	-rm $@.unfiltered.vcf* 
+	-rm $@.unfiltered.vcf*
 	#-rm $*.empty.vcf
 	# Remove IDX
 	-rm $@.idx
@@ -383,8 +388,3 @@ PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
 
 PIPELINES_COMMENT := "CALLER:VarScan_HEMATOLOGY:SAMTOOLS/VARSCAN - design for HEMATOLOGY mutation, VAF\>$(VARSCAN_HEMATOLOGY_VAF) ALT\>$(VARSCAN_HEMATOLOGY_ALT) DP\>$(VARSCAN_HEMATOLOGY_DP) p-value\<$(VARSCAN_HEMATOLOGY_PVAL):MPILEUP_OPTIONS='$(MPILEUP_OPTIONS)', VARSCAN_HEMATOLOGY_BOTH_OPTIONS=$(VARSCAN_HEMATOLOGY_BOTH_OPTIONS)"
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
-
-
-
-
-

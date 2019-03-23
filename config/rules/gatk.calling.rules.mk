@@ -3,8 +3,8 @@
 # Author: Antony Le Bechec
 ############################
 # Release
-MK_RELEASE="0.9.3.5b"
-MK_DATE="04/05/2016"
+MK_RELEASE="0.9.3.7b"
+MK_DATE="22/03/2019"
 
 # Release note
 # 0.9.1beta-10/03/2015: change genome reference location, in the file %.genome
@@ -17,6 +17,7 @@ MK_DATE="04/05/2016"
 # 0.9.3.4b-03/05/2016: Modification of gatkUG_HUSHEMATO rule
 # 0.9.3.5b-04/05/2016: Rewrite rules and update release information
 # 0.9.3.6b-10/11/2017: adding gatkUG_ONCOGENET pipeline
+# 0.9.3.7b-22/03/2019: Add --dontUseSoftClippedBases for GATKHC
 
 
 # TOOLS
@@ -32,6 +33,8 @@ MBQ_HC=17
 MBQ_UG=17
 STAND_EMIT_CONF=20
 STAND_CALL_CONF=20
+GATKHC_FLAGS_SHARED=--baq OFF --read_filter BadCigar --allow_potentially_misencoded_quality_scores --dontUseSoftClippedBases
+
 
 
 #########################
@@ -379,7 +382,7 @@ DPMIN_ONCOGENET=4
 MINPRUNING?=4
 THREADS_GATKHC?=$(THREADS_GATK)
 maxReadsInRegionPerSample=250
-GATKHC_FLAGS= -nct $(THREADS_GATKHC) -baq OFF -stand_call_conf 10 -dfrac $(DFRAC) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC) -rf BadCigar -minPruning $(MINPRUNING) -allowPotentiallyMisencodedQuals
+GATKHC_FLAGS= -nct $(THREADS_GATKHC) -stand_call_conf 10 -dfrac $(DFRAC) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC) -minPruning $(MINPRUNING) $(GATKHC_FLAGS_SHARED)
 
 %.gatkHC.unfiltered.unrecalibrated.vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
 
@@ -409,7 +412,7 @@ DFRAC_HC_GERMLINE=1
 DPMIN_HC_GERMLINE=4
 
 
-GATKHC_GERMLINE_FLAGS= -nct $(THREADS_GATKHC_GERMLINE) -baq OFF -stand_call_conf $(STAND_CALL_CONF_HC_GERMLINE) -dfrac $(DFRAC_HC_GERMLINE) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample_HC_GERMLINE) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC_GERMLINE) -rf BadCigar -minPruning $(MINPRUNING_HC_GERMLINE) -allowPotentiallyMisencodedQuals
+GATKHC_GERMLINE_FLAGS= -nct $(THREADS_GATKHC_GERMLINE) -stand_call_conf $(STAND_CALL_CONF_HC_GERMLINE) -dfrac $(DFRAC_HC_GERMLINE) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample_HC_GERMLINE) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC_GERMLINE) -minPruning $(MINPRUNING_HC_GERMLINE)  $(GATKHC_FLAGS_SHARED)
 
 %.gatkHC_GERMLINE.unfiltered.unrecalibrated.vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKHC_GERMLINE_FLAGS) \
@@ -440,7 +443,7 @@ DFRAC_HC_EXOME=1
 DPMIN_HC_EXOME=4
 
 
-GATKHC_EXOME_FLAGS= -nct $(THREADS_GATKHC_EXOME) -baq OFF -stand_call_conf $(STAND_CALL_CONF_HC_EXOME) -dfrac $(DFRAC_HC_EXOME) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample_HC_EXOME) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC_EXOME) -rf BadCigar -minPruning $(MINPRUNING_HC_EXOME) -allowPotentiallyMisencodedQuals
+GATKHC_EXOME_FLAGS= -nct $(THREADS_GATKHC_EXOME) -stand_call_conf $(STAND_CALL_CONF_HC_EXOME) -dfrac $(DFRAC_HC_EXOME) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample_HC_EXOME) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC_EXOME) -minPruning $(MINPRUNING_HC_EXOME)  $(GATKHC_FLAGS_SHARED)
 
 %.gatkHC_EXOME.unfiltered.unrecalibrated.vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKHC_EXOME_FLAGS) \
@@ -471,7 +474,7 @@ DFRAC_HC_EXOME_SOMATIC=1
 DPMIN_HC_EXOME_SOMATIC=50
 
 
-GATKHC_EXOME_SOMATIC_FLAGS= -nct $(THREADS_GATKHC_EXOME_SOMATIC) -baq OFF -stand_call_conf $(STAND_CALL_CONF_HC_EXOME_SOMATIC) -dfrac $(DFRAC_HC_EXOME_SOMATIC) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample_HC_EXOME_SOMATIC) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC_EXOME_SOMATIC) -rf BadCigar -minPruning $(MINPRUNING_HC_EXOME_SOMATIC) -allowPotentiallyMisencodedQuals
+GATKHC_EXOME_SOMATIC_FLAGS= -nct $(THREADS_GATKHC_EXOME_SOMATIC) -stand_call_conf $(STAND_CALL_CONF_HC_EXOME_SOMATIC) -dfrac $(DFRAC_HC_EXOME_SOMATIC) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample_HC_EXOME_SOMATIC) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC_EXOME_SOMATIC) -minPruning $(MINPRUNING_HC_EXOME_SOMATIC)  $(GATKHC_FLAGS_SHARED)
 
 %.gatkHC_EXOME_SOMATIC.unfiltered.unrecalibrated.vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKHC_EXOME_SOMATIC_FLAGS) \
@@ -503,7 +506,7 @@ DFRAC_HC_GENOME=1
 DPMIN_HC_GENOME=4
 
 
-GATKHC_GENOME_FLAGS= -nct $(THREADS_GATKHC_GENOME) -baq OFF -stand_call_conf $(STAND_CALL_CONF_HC_GENOME) -dfrac $(DFRAC_HC_GENOME) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample_HC_GENOME) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC_GENOME) -rf BadCigar -minPruning $(MINPRUNING_HC_GENOME) -allowPotentiallyMisencodedQuals
+GATKHC_GENOME_FLAGS= -nct $(THREADS_GATKHC_GENOME) -stand_call_conf $(STAND_CALL_CONF_HC_GENOME) -dfrac $(DFRAC_HC_GENOME) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample_HC_GENOME) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC_GENOME) -minPruning $(MINPRUNING_HC_GENOME)  $(GATKHC_FLAGS_SHARED)
 
 %.gatkHC_GENOME.unfiltered.unrecalibrated.vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
 
@@ -529,7 +532,7 @@ GATKHC_GENOME_FLAGS= -nct $(THREADS_GATKHC_GENOME) -baq OFF -stand_call_conf $(S
 MINPRUNING_HEMATOLOGY?=20
 THREADS_GATKHC_HEMATOLOGY?=$(THREADS_GATK)
 maxReadsInRegionPerSample_HEMATOLOGY=1000
-GATKHC_HEMATOLOGY_FLAGS= -nct $(THREADS_GATKHC_HEMATOLOGY) -baq OFF -stand_call_conf 10 -dfrac $(DFRAC) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample_HEMATOLOGY) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC) -rf BadCigar -minPruning $(MINPRUNING_HEMATOLOGY) -allowPotentiallyMisencodedQuals
+GATKHC_HEMATOLOGY_FLAGS= -nct $(THREADS_GATKHC_HEMATOLOGY) -stand_call_conf 10 -dfrac $(DFRAC) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample_HEMATOLOGY) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC) -minPruning $(MINPRUNING_HEMATOLOGY)  $(GATKHC_FLAGS_SHARED)
 
 %.gatkHC_HEMATOLOGY.unfiltered.unrecalibrated.vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
 
@@ -553,7 +556,7 @@ GATKHC_HEMATOLOGY_FLAGS= -nct $(THREADS_GATKHC_HEMATOLOGY) -baq OFF -stand_call_
 MINPRUNING_SOLIDTUMOR?=20
 THREADS_GATKHC_SOLIDTUMOR?=$(THREADS_GATK)
 maxReadsInRegionPerSample_SOLIDTUMOR=1000
-GATKHC_SOLIDTUMOR_FLAGS= -nct $(THREADS_GATKHC_SOLIDTUMOR) -baq OFF -stand_call_conf 10 -dfrac $(DFRAC) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample_SOLIDTUMOR) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC) -rf BadCigar -minPruning $(MINPRUNING_SOLIDTUMOR) -allowPotentiallyMisencodedQuals
+GATKHC_SOLIDTUMOR_FLAGS= -nct $(THREADS_GATKHC_SOLIDTUMOR) -stand_call_conf 10 -dfrac $(DFRAC) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample_SOLIDTUMOR) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC) -minPruning $(MINPRUNING_SOLIDTUMOR)  $(GATKHC_FLAGS_SHARED)
 
 %.gatkHC_SOLIDTUMOR.unfiltered.unrecalibrated.vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
 
@@ -579,7 +582,7 @@ MBQ_HC_ONCOGENET=17
 MINPRUNING_ONCOGENET?=20
 THREADS_GATKHC_ONCOGENET?=$(THREADS_GATK)
 maxReadsInRegionPerSample=8000
-GATKHC_ONCOGENET_FLAGS= -nct $(THREADS_GATKHC_ONCOGENET) -baq OFF -stand_call_conf 10 -dfrac $(DFRAC_ONCOGENET) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC_ONCOGENET) -rf BadCigar -minPruning $(MINPRUNING_ONCOGENET) -allowPotentiallyMisencodedQuals
+GATKHC_ONCOGENET_FLAGS= -nct $(THREADS_GATKHC_ONCOGENET) -stand_call_conf 10 -dfrac $(DFRAC_ONCOGENET) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC_ONCOGENET) -minPruning $(MINPRUNING_ONCOGENET)  $(GATKHC_FLAGS_SHARED)
 
 %.gatkHC_ONCOGENET.unfiltered.unrecalibrated.vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
 

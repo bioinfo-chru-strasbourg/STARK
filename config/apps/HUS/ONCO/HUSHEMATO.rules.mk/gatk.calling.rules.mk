@@ -30,6 +30,7 @@ MBQ_HC_HUSHEMATO=17
 MBQ_UG_HUSHEMATO=17
 #STAND_EMIT_CONF=20
 #STAND_CALL_CONF=20
+GATKHC_FLAGS_HUSHEMATO__SHARED=--baq OFF --read_filter BadCigar --allow_potentially_misencoded_quality_scores --dontUseSoftClippedBases
 
 
 
@@ -72,7 +73,7 @@ GATKUG_HUSHEMATO_FLAGS= -nct $(THREADS_GATKUG_HUSHEMATO) -glm BOTH \
 DPMIN_HUSHEMATO=4
 
 %.gatkUG_HUSHEMATO.unfiltered.unrecalibrated.vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
-	
+
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKUG_HUSHEMATO_FLAGS) \
 		-T UnifiedGenotyper \
 		-R `cat $*.genome` \
@@ -107,7 +108,7 @@ GATKUG_HUSHEMATOHALOPLEX_FLAGS= -nct $(THREADS_GATKUG_HUSHEMATOHALOPLEX) -glm BO
 DPMIN_HUSHEMATOHALOPLEX=1
 
 %.gatkUG_HUSHEMATOHALOPLEX.unfiltered.unrecalibrated.vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
-	
+
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKUG_HUSHEMATOHALOPLEX_FLAGS) \
 		-T UnifiedGenotyper \
 		-R `cat $*.genome` \
@@ -129,10 +130,10 @@ DPMIN_HUSHEMATOHALOPLEX=1
 MINPRUNING_HUSHEMATO?=20
 THREADS_GATKHC_HUSHEMATO?=$(THREADS_GATK)
 maxReadsInRegionPerSample=8000
-GATKHC_HUSHEMATO_FLAGS= -nct $(THREADS_GATKHC_HUSHEMATO) -baq OFF -stand_call_conf 10 -dfrac $(DFRAC_HUSHEMATO) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC_HUSHEMATO) -rf BadCigar -minPruning $(MINPRUNING_HUSHEMATO) -allowPotentiallyMisencodedQuals
+GATKHC_HUSHEMATO_FLAGS= -nct $(THREADS_GATKHC_HUSHEMATO) -stand_call_conf 10 -dfrac $(DFRAC_HUSHEMATO) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC_HUSHEMATO) -minPruning $(MINPRUNING_HUSHEMATO) $(GATKHC_FLAGS_HUSHEMATO__SHARED)
 
 %.gatkHC_HUSHEMATO.unfiltered.unrecalibrated.vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
-	
+
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKHC_HUSHEMATO_FLAGS) \
 		-T HaplotypeCaller \
 		-R `cat $*.genome` \
@@ -159,8 +160,3 @@ PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
 
 PIPELINES_COMMENT := "CALLER:gatkHC_HUSHEMATO:GATK Haplotype Caller - designed for HUSHEMATO variant discovery:GATKHC_HUSHEMATO_FLAGS='$(GATKHC_HUSHEMATO_FLAGS)'"
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
-
-
-
-
-

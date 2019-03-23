@@ -1,6 +1,6 @@
 
 ##############################################################
-# Dockerfile Version:   1.8
+# Dockerfile Version:   1.8.1
 # Software:             STARK-BASE
 # Software Version:     0.9.18b
 # Software Website:     none
@@ -40,7 +40,7 @@
 FROM centos:7
 MAINTAINER Antony Le Bechec <antony.lebechec@gmail.com>
 LABEL Software="STARK-BASE" \
-	Version="1.3" \
+	Version="1.8.1" \
 	Website="none" \
 	Description="STARK-BASE" \
 	License="GNU Affero General Public License (AGPL)" \
@@ -279,8 +279,8 @@ RUN wget $TARBALL_LOCATION -O $TARBALL ; \
 ##########
 
 ENV TOOL_NAME=fatbam
-ENV TOOL_VERSION=0.9.9b
-ENV TARBALL_LOCATION=https://gitlab.bioinfo-diag.fr/Strasbourg/FATBAM/repository/0.9.9b
+ENV TOOL_VERSION=0.9.10b
+ENV TARBALL_LOCATION=https://gitlab.bioinfo-diag.fr/Strasbourg/FATBAM/repository/0.9.10b
 ENV TARBALL=archive.tar.gz
 ENV TARBALL_FOLDER=archive
 ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION

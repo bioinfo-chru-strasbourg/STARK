@@ -4,8 +4,8 @@
 # Date: 04/05/2016
 # Author: Antony Le Bechec
 ############################
-MK_RELEASE="0.9.4.3b"
-MK_DATE="17/05/2016"
+MK_RELEASE="0.9.4.4b"
+MK_DATE="21/03/2019"
 
 # Release notes:
 # 0.9.1-24/04/2015: Add 'varscanlowfreqlowcovsnp' calling
@@ -16,23 +16,28 @@ MK_DATE="17/05/2016"
 # 0.9.4.1-03/05/2016: Bug correction, if empty VCF after calling. Add Release infos
 # 0.9.4.2-04/05/2016: Bug correction
 # 0.9.4.3-17/05/2016: Bug correction
+# 0.9.4.4-21/03/2019: Change parameters for mpileup by adding FATBAM Soft Clip to Q0
 
 
 # Parameters
 # VARSCAN
 VARSCAN?=$(NGSbin)/varscan.jar
+FATBAM?=/STARK/tools/fatbam/current/bin
+FATBAM_SOFTCLIPTOQ0?=$(FATBAM)/FATBAM.SoftClipToQ0.pl
 
 
 ####################
 # SAMTOOLS mpileup
 ####################
 
-MPILEUP_VARSCAN_HUSTUMSOL_OPTIONS= -E -d 10000000 -L 10000000 -C 50 -Q 10 -q 1 --output-tags SP,DP,DP4,DV # -B  -d 100000 -L 100000 -C200 
+#MPILEUP_VARSCAN_HUSTUMSOL_OPTIONS= -E -d 10000000 -L 10000000 -C 50 -Q 10 -q 1 --output-tags SP,DP,DP4,DV # -B  -d 100000 -L 100000 -C200
+MPILEUP_VARSCAN_HUSTUMSOL_OPTIONS= -E -d 10000000 -L 10000000 -C 50 -Q 10 -q 1 --output-tags SP,DP,DP4,DV,ADF,ADR,AD # -B  -d 100000 -L 100000 -C200
 
 
 %.bam.HUSTUMSOL_mpileup: %.bam %.bam.bai %.genome
 	#-$(SAMTOOLS) mpileup -f `cat $*.genome` $< $(MPILEUP_OPTIONS) -l $*.for_metrics.bed > $@
-	-$(SAMTOOLS) mpileup -f `cat $*.genome` $< $(MPILEUP_VARSCAN_HUSTUMSOL_OPTIONS) > $@
+	$(SAMTOOLS) view $< -h | perl $(FATBAM_SOFTCLIPTOQ0) -v1 | $(SAMTOOLS) mpileup - -f `cat $*.genome` $(MPILEUP_VARSCAN_HUSTUMSOL_OPTIONS) > $@
+
 
 
 #######################
@@ -41,9 +46,9 @@ MPILEUP_VARSCAN_HUSTUMSOL_OPTIONS= -E -d 10000000 -L 10000000 -C 50 -Q 10 -q 1 -
 
 
 VARSCAN_HUSTUMSOL_BOTH_OPTIONS= --min-var-freq 0.01 --min-reads2 5 --min-coverage 30 --p-value 1e-1
-VARSCAN_HUSTUMSOL_SNP_OPTIONS= $(VARSCAN_HUSTUMSOL_BOTH_OPTIONS) --min-avg-qual 30 
-VARSCAN_HUSTUMSOL_INDEL_OPTIONS= $(VARSCAN_HUSTUMSOL_BOTH_OPTIONS) --min-avg-qual 10 
-VARSCAN_HUSTUMSOL_FILTERS=--genotypeFilterExpression 'GQ < 200.0 && GQ >= 150' --genotypeFilterName 'LowGQ' --genotypeFilterExpression 'GQ < 150.0 && GQ >= 100' --genotypeFilterName 'VeryLowGQ'  --genotypeFilterExpression 'GQ < 100.0' --genotypeFilterName 'VeryVeryLowGQ' 
+VARSCAN_HUSTUMSOL_SNP_OPTIONS= $(VARSCAN_HUSTUMSOL_BOTH_OPTIONS) --min-avg-qual 30
+VARSCAN_HUSTUMSOL_INDEL_OPTIONS= $(VARSCAN_HUSTUMSOL_BOTH_OPTIONS) --min-avg-qual 10
+VARSCAN_HUSTUMSOL_FILTERS=--genotypeFilterExpression 'GQ < 200.0 && GQ >= 150' --genotypeFilterName 'LowGQ' --genotypeFilterExpression 'GQ < 150.0 && GQ >= 100' --genotypeFilterName 'VeryLowGQ'  --genotypeFilterExpression 'GQ < 100.0' --genotypeFilterName 'VeryVeryLowGQ'
 VARSCAN_HUSTUMSOL_SNP_FILTERS=$(VARSCAN_HUSTUMSOL_FILTERS)
 VARSCAN_HUSTUMSOL_INDEL_FILTERS=$(VARSCAN_HUSTUMSOL_FILTERS)
 VARSCAN_HUSTUMSOL_TIMEOUT=3600 # 1 = 1sec, 60=1min, 3600=1h
@@ -66,7 +71,7 @@ VARSCAN_HUSTUMSOL_TIMEOUT=3600 # 1 = 1sec, 60=1min, 3600=1h
 	-if [ ! -s $@ ]; then cp $*.empty.vcf $@; fi;
 	-if [ ! -s $@ ]; then touch $@; fi;
 	# Remove intermediate files
-	-rm $@.unfiltered.vcf* 
+	-rm $@.unfiltered.vcf*
 	#-rm $*.empty.vcf
 	# Remove IDX
 	-rm $@.idx
@@ -90,7 +95,7 @@ VARSCAN_HUSTUMSOL_TIMEOUT=3600 # 1 = 1sec, 60=1min, 3600=1h
 	-if [ ! -s $@ ]; then cp $*.empty.vcf $@; fi;
 	-if [ ! -s $@ ]; then touch $@; fi;
 	# Remove intermediate files
-	-rm $@.unfiltered.vcf* 
+	-rm $@.unfiltered.vcf*
 	#-rm $*.empty.vcf
 	# Remove IDX
 	-rm $@.idx
@@ -132,8 +137,3 @@ RELEASE_CMD := $(shell echo "\#\# VARSCAN HUSTUMSOL: identify variants and gener
 
 PIPELINES_COMMENT := "CALLER:VarScan_HUSTUMSOL:SAMTOOLS/VARSCAN - design for HUSTUMSOL mutation, VAF\>0.01 ALT\>5 DP\>30 p-value\<1e-1:MPILEUP_VARSCAN_HUSTUMSOL_OPTIONS='$(MPILEUP_VARSCAN_HUSTUMSOL_OPTIONS)', VARSCAN_HUSTUMSOL_BOTH_OPTIONS=$(VARSCAN_HUSTUMSOL_BOTH_OPTIONS)"
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
-
-
-
-
-

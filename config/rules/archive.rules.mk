@@ -19,42 +19,52 @@ MEMORY?=1
 ## FASTQ from ILLUMINA ##
 
 
-
-#%.archive.cram: %.bams.list %.unaligned.bam %.genome
-#%.archive.bam: %.bams.list %.unaligned.bam %.genome
-#	#echo "BAMS_LIST: $< $$(cat $<)"
-#	if (($$(head -n 1 $< | wc -l))); then \
-#		echo "# BAM file archived : $$(basename $$(head -n 1 $< | wc -l)))" ; \
-#		$(SAMTOOLS) sort $$(head -n 1 $<) -@ $(THREADS_BY_SAMPLE) | $(SAMTOOLS) view -o $@ -O BAM -S -T `cat $*.genome` - -@ $(THREADS_BY_SAMPLE); \
-#	else \
-#		echo "# BAM file archived : $$(basename $*.unaligned.bam)" ; \
-#		$(SAMTOOLS) sort $*.unaligned.bam -@ $(THREADS_BY_SAMPLE) | $(SAMTOOLS) view -o $@ -O BAM -S -T `cat $*.genome` - -@ $(THREADS_BY_SAMPLE); \
-#	fi;
-
 %.archive.cram: %.bams.list %.genome %.R1.fastq.gz %.R2.fastq.gz
-	# Archive aligned BAM only if all original reads present. otherwise, FASTQ compressed into uBAM is archived
-	#echo "BAMS_LIST: $< $$(cat $<)"
+	#Archive aligned BAM only if all original reads present. otherwise, FASTQ compressed into uBAM is archived \
+	#echo "BAMS_LIST: $< $$(cat $<)" \
+	#SEPARATOR (to find aligner name), FILES_TRIED and VALID_CRAM_MSG are used for metrics file \
+	#The first valid cram is kept. \
+	FILES_TRIED=""; \
+	VALID_CRAM_MSG="NO CRAM could pass the validation"; \
 	if (($$(cat $< | wc -l))); then \
 		for b in $$(cat $< | grep "$*"); do \
-			echo "# BAM file to archived ? $$b" ; \
 			if [ ! -s $@ ]; then \
-				if [ "$$(zcat $*.R1.fastq.gz $*.R2.fastq.gz | echo $$((`wc -l`/4)) )" == "$$($(SAMTOOLS) view -c -F 0x0100 -@ $(THREADS_SAMTOOLS) $$b)" ]; then \
-					echo "# BAM file archived : $$b" ; \
-					#$(SAMTOOLS) sort -@ $(THREADS_BY_SAMPLE) -l $(BAM_COMPRESSION) -m $(MEMORY)G -T $@.SAMTOOLS_PREFIX -o $@ -O CRAM $$b ; \
-					$(SAMTOOLS) sort $$b -@ $(THREADS_BY_SAMPLE) -T $@.SAMTOOLS_PREFIX | $(SAMTOOLS) view -o $@ -O CRAM -S -T `cat $*.genome` - -@ $(THREADS_BY_SAMPLE) -h; \
+				echo "# BAM file to archived ? $$b" ; \
+				FILES_TRIED="$$FILES_TRIED $$b"; \
+				####Cram creation and test, from each bam in list. Cram is removed if test is failed \
+				#1) CRAM creation \
+				$(SAMTOOLS) view -h -@ $(THREADS_BY_SAMPLE) -O CRAM -T `cat $*.genome` $$b | $(SAMTOOLS) sort -l 9 -O CRAM -@ $(THREADS_BY_SAMPLE) -T $@.SAMTOOLS_PREFIX -o $*.archive.cram; \
+				echo "# BAM file archived : $$b" ; \
+				#2) Generate FASTQs from the new CRAM \
+				$(SAMTOOLS) bam2fq -@ $(THREADS_BY_SAMPLE) --reference `cat $*.genome` -1 $*.R1.fromCram.fastq -2 $*.R2.fromCram.fastq $*.archive.cram > $*.R0.fromCram.fastq; \
+				# If R0 not empty \
+				[ -s $*.R0.fromCram.fastq ] && echo "[WARNING] $*.R0.fromCram.fastq is not empty"; \
+				# IF Single End \
+				! (( $$($(UNGZ) -c $*.R2.fastq.gz | head -n 1 | wc -l) )) && echo "[WARNING] Single End detected ($*.R2.fastq.gz empty) " && cat $*.R2.fromCram.fastq $*.R0.fromCram.fastq >> $*.R1.fromCram.fastq && > $*.R2.fromCram.fastq; \
+				#3) sort original and fromCram FASTQs, md5 on each pair to check if identical content \
+				if [ "`$(UNGZ) -c $*.R1.fastq.gz | cut -f1 -d " " | paste - - - - | LC_COLLATE=C sort -S 100% -n -k1,1 -t " " | tr "\t" "\n" | md5sum`" == "`cat $*.R1.fromCram.fastq | cut -f1 -d " " | paste - - - - | LC_COLLATE=C sort -S 100% -n -k1,1 -t " " | tr "\t" "\n" | md5sum`" ] && [ "`$(UNGZ) -c $*.R2.fastq.gz | cut -f1 -d " " | paste - - - - | LC_COLLATE=C sort -S 100% -n -k1,1 -t " " | tr "\t" "\n" | md5sum`" == "`cat $*.R2.fromCram.fastq | cut -f1 -d " " | paste - - - - | LC_COLLATE=C sort -S 100% -n -k1,1 -t " " | tr "\t" "\n" | md5sum`" ]; then \
+					echo "$*.archive.cram contains as expected the same reads as $*.R1.fastq.gz and $*.R2.fastq.gz"; \
+					VALID_CRAM_MSG="CRAM created from $$b SUCCESSFULLY passed validation: contained the same reads as $*.R1.fastq.gz, $*.R2.fastq.gz"; \
+				else \
+					echo "$*.archive.cram does not contain the exact same reads as $*.R1.fastq.gz and $*.R2.fastq.gz and will be removed"; \
+					rm -f  $*.archive.cram; \
 				fi; \
+				# Cleaning fromCram \
+				rm $*.R1.fromCram.fastq $*.R2.fromCram.fastq $*.R0.fromCram.fastq; \
+				#### \
 			fi; \
 		done; \
-	fi;
-	if [ ! -s $@ ] && (($$(zcat $*.R1.fastq.gz $*.R2.fastq.gz | head -n 1 | wc -l))); then \
+	fi; \
+	if [ ! -s $@ ] && (($$($(UNGZ) -c $*.R1.fastq.gz $*.R2.fastq.gz | head -n 1 | wc -l))); then \
+		FILES_TRIED="$$FILES_TRIED $*.R1.fastq.gz $*.R2.fastq.gz"; \
 	#if ((1)); then \
 		# FASTQ to BAM \
 		#if [ -s $*.R2.fastq.gz ]; then \
-		if (($$(zcat $*.R2.fastq.gz | head -n 1 | wc -l))); then \
+		if (($$($(UNGZ) -c $*.R2.fastq.gz | head -n 1 | wc -l))); then \
 			echo "PAIRED-END" ; \
 			$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) FastqToSam $(PICARD_UNALIGNED_FLAGS) $(PICARD_UNALIGNED_NAME_FLAGS) FASTQ=$*.R1.fastq.gz FASTQ2=$*.R2.fastq.gz OUTPUT=$@.tmp SAMPLE_NAME=$(*F); \
 		else \
-			echo "SIGLE-END (NO reads in $*.R2.fastq.gz)" ; \
+			echo "SINGLE-END (NO reads in $*.R2.fastq.gz)" ; \
 			$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) FastqToSam $(PICARD_UNALIGNED_FLAGS) $(PICARD_UNALIGNED_NAME_FLAGS) FASTQ=$*.R1.fastq.gz OUTPUT=$@.tmp  SAMPLE_NAME=$(*F); \
 		fi; \
 		# Fix Mate Information BAM $@.tmp \
@@ -68,45 +78,33 @@ MEMORY?=1
 			exit 0; \
 		fi;  \
 		rm $@.tmp* $@.validation; \
-	fi;
+		####Same cram test as before. Cram is removed if test is failed \
+		$(SAMTOOLS) bam2fq -@ $(THREADS_BY_SAMPLE) --reference `cat $*.genome` -1 $*.R1.fromCram.fastq -2 $*.R2.fromCram.fastq $*.archive.cram > $*.R0.fromCram.fastq ; \
+		# If R0 not empty \
+		[ -s $*.R0.fromCram.fastq ] && echo "[WARNING] $*.R0.fromCram.fastq is not empty"; \
+		# IF Single End \
+		! (( $$($(UNGZ) -c $*.R2.fastq.gz | head -n 1 | wc -l) )) && echo "[WARNING] Single End detected ($*.R2.fastq.gz empty) " && cat $*.R2.fromCram.fastq $*.R0.fromCram.fastq >> $*.R1.fromCram.fastq && > $*.R2.fromCram.fastq; \
+		# sort original and fromCram FASTQs, md5 on each pair to check if identical content \
+		if [ "`$(UNGZ) -c $*.R1.fastq.gz | cut -f1 -d " " | paste - - - - | LC_COLLATE=C sort -S 100% -n -k1,1 -t " " | tr "\t" "\n" | md5sum`" == "`cat $*.R1.fromCram.fastq | cut -f1 -d " " | paste - - - - | LC_COLLATE=C sort -S 100% -n -k1,1 -t " " | tr "\t" "\n" | md5sum`" ] && [ "`$(UNGZ) -c $*.R2.fastq.gz | cut -f1 -d " " | paste - - - - | LC_COLLATE=C sort -S 100% -n -k1,1 -t " " | tr "\t" "\n" | md5sum`" == "`cat $*.R2.fromCram.fastq | cut -f1 -d " " | paste - - - - | LC_COLLATE=C sort -S 100% -n -k1,1 -t " " | tr "\t" "\n" | md5sum`" ]; then \
+			echo "$*.archive.cram contains as expected the same reads as $*.R1.fastq.gz and $*.R2.fastq.gz"; \
+			VALID_CRAM_MSG="CRAM created from $*.R1.fastq.gz, $*.R2.fastq.gz SUCCESSFULLY passed validation: contained the same reads as $*.R1.fastq.gz, $*.R2.fastq.gz"; \
+		else \
+			echo "$*.archive.cram does not contain the exact same reads as $*.R1.fastq.gz and $*.R2.fastq.gz and will be removed"; \
+			rm -f  $*.archive.cram; \
+		fi; \
+		rm $*.R1.fromCram.fastq $*.R2.fromCram.fastq $*.R0.fromCram.fastq; \
+		#### \
+	fi; \
 	if  [ ! -s $@ ]; then \
 		echo "[ERROR] Error in generation of Archive file '$@'!"; \
 		exit 1; \
-	fi;
-	
+	fi; \
+	#### METRICS \
+	mkdir -p "$*.archive.cram.metrics"; \
+	echo "Tried to generate CRAM from: $$FILES_TRIED" > $*.archive.cram.metrics/metrics; \
+	echo "$$VALID_CRAM_MSG" >> $*.archive.cram.metrics/metrics;
 
-%.archiveOLD2.cram: %.bams.list %.unaligned.bam %.genome
-	# Archive aligned BAM only if all original reads present. otherwise, unaligned BAM is archived
-	#echo "BAMS_LIST: $< $$(cat $<)"
-	if (($$(cat $< | wc -l))); then \
-		for b in $$(cat $<); do \
-			echo "# BAM file to archived ? $$b" ; \
-			if [ ! -s $@ ]; then \
-				if [ "$$($(SAMTOOLS) view -c -F 0x0100 -@ $(THREADS_SAMTOOLS) $*.unaligned.bam)" == "$$($(SAMTOOLS) view -c -F 0x0100 -@ $(THREADS_SAMTOOLS) $$b)" ]; then \
-					echo "# BAM file archived : $$b" ; \
-					#$(SAMTOOLS) sort -@ $(THREADS_BY_SAMPLE) -l $(BAM_COMPRESSION) -m $(MEMORY)G -T $@.SAMTOOLS_PREFIX -o $@ -O CRAM $$b ; \
-					$(SAMTOOLS) sort $$b -@ $(THREADS_BY_SAMPLE) -T $@.SAMTOOLS_PREFIX | $(SAMTOOLS) view -o $@ -O CRAM -S -T `cat $*.genome` - -@ $(THREADS_BY_SAMPLE); \
-				fi; \
-			fi; \
-		done; \
-	else \
-		echo "# BAM file archived : $*.unaligned.bam" ; \
-		$(SAMTOOLS) sort $*.unaligned.bam -@ $(THREADS_BY_SAMPLE) -T $@.SAMTOOLS_PREFIX | $(SAMTOOLS) view -o $@ -O CRAM -S -T `cat $*.genome` - -@ $(THREADS_BY_SAMPLE); \
-		#$(SAMTOOLS) sort $*.unaligned.bam -@ $(THREADS_BY_SAMPLE) | $(SAMTOOLS) view -o $@ -O CRAM -S -T `cat $*.genome` - -@ $(THREADS_BY_SAMPLE); \
-	fi;
-# -l $(BAM_COMPRESSION)
-
-	
-%.archiveOLD.cram: %.bams.list %.unaligned.bam %.genome
-	# Archive aligned BAM only if all original reads present. otherwise, unaligned BAM is archived
-	#echo "BAMS_LIST: $< $$(cat $<)"
-	if (($$(head -n 1 $< | wc -l))); then \
-		echo "# BAM file archived : $$(basename $$(head -n 1 $< | wc -l)))" ; \
-		$(SAMTOOLS) sort $$(head -n 1 $<) -@ $(THREADS_BY_SAMPLE) | $(SAMTOOLS) view -o $@ -O CRAM -S -T `cat $*.genome` - -@ $(THREADS_BY_SAMPLE); \
-	else \
-		echo "# BAM file archived : $$(basename $*.unaligned.bam)" ; \
-		$(SAMTOOLS) sort $*.unaligned.bam -@ $(THREADS_BY_SAMPLE) | $(SAMTOOLS) view -o $@ -O CRAM -S -T `cat $*.genome` - -@ $(THREADS_BY_SAMPLE); \
-	fi;
+	#if (($$($(UNGZ) -c $*.R2.fastq.gz | head -n 1 | wc -l))); then
 
 
 # CONFIG/RELEASE

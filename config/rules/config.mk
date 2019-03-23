@@ -11,15 +11,20 @@
 
 #NGS_SCRIPTS?=$(MK_DIR_PATH)
 NGSscripts?=$(NGS_SCRIPTS)
-NGSEnv?=/NGS
-ENV?=$(NGSscripts)/env.sh
+NGSEnv?=/tool/
+STARK_FOLDER_ROOT?=/tool
+STARK_FOLDER_CONFIG?=$(STARK_FOLDER_ROOT)/config
+STARK_FOLDER_BIN?=$(STARK_FOLDER_ROOT)/bin
+STARK_FOLDER_APPS?=$(STARK_FOLDER_CONFIG)/apps
+STARK_FOLDER_RULES?=$(STARK_FOLDER_CONFIG)/rules
+ENV?=$(STARK_FOLDER_CONFIG)/default.app
 #NGSscripts?=$(NGSEnv)/scripts
 #PWD=.
 
 
 # RELEASE FILE
-RELEASE_FILE?=$(shell source $(ENV); echo $$RELEASE_FILE)
-THREADS?=$(shell source $(ENV); echo $$THREADS)
+RELEASE_FILE?=$(shell source $(STARK_FOLDER_CONFIG)/config.app; source_app $(ENV); echo $$RELEASE_FILE)
+THREADS?=$(shell source $(STARK_FOLDER_CONFIG)/config.app; source_app $(ENV); echo $$THREADS)
 
 # THREAD Calculation
 #THREADS?=$(shell ls -d /sys/devices/system/cpu/cpu[[:digit:]]* | wc -w) # DYNAMIC

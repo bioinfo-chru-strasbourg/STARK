@@ -30,6 +30,7 @@ MBQ_HC_CPSGEN_MASTR=17
 MBQ_UG_CPSGEN_MASTR=17
 #STAND_EMIT_CONF=20
 #STAND_CALL_CONF=20
+GATKHC_FLAGS_HUSDIAGGEN__SHARED=--baq OFF --read_filter BadCigar --allow_potentially_misencoded_quality_scores --dontUseSoftClippedBases
 
 
 #########################
@@ -77,7 +78,7 @@ GATKUG_CPSGEN_MASTR_FLAGS= -nct $(GATKUG_THREADS_CPSGEN_MASTR) -glm BOTH \
 DPMIN_CPSGEN_MASTR=4
 
 %.gatkUG_CPSGEN_MASTR.unfiltered.unrecalibrated.vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
-	
+
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKUG_CPSGEN_MASTR_FLAGS) \
 		-T UnifiedGenotyper \
 		-R `cat $*.genome` \
@@ -100,10 +101,10 @@ DPMIN_CPSGEN_MASTR=4
 MINPRUNING_CPSGEN_MASTR?=20
 THREADS_GATKHC_CPSGEN_MASTR?=$(THREADS_GATK)
 maxReadsInRegionPerSample=8000
-GATKHC_CPSGEN_MASTR_FLAGS= -nct $(THREADS_GATKHC_CPSGEN_MASTR) -baq OFF -stand_call_conf 10 -dfrac $(DFRAC_CPSGEN_MASTR) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC_CPSGEN_MASTR) -rf BadCigar -minPruning $(MINPRUNING_CPSGEN_MASTR) -allowPotentiallyMisencodedQuals
+GATKHC_CPSGEN_MASTR_FLAGS= -nct $(THREADS_GATKHC_CPSGEN_MASTR) -stand_call_conf 10 -dfrac $(DFRAC_CPSGEN_MASTR) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC_CPSGEN_MASTR) -minPruning $(MINPRUNING_CPSGEN_MASTR) $(GATKHC_FLAGS_HUSDIAGGEN__SHARED)
 
 %.gatkHC_CPSGEN_MASTR.unfiltered.unrecalibrated.vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
-	
+
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKHC_CPSGEN_MASTR_FLAGS) \
 		-T HaplotypeCaller \
 		-R `cat $*.genome` \
@@ -129,7 +130,3 @@ PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
 
 PIPELINES_COMMENT := "CALLER:gatkHC_CPSGEN_MASTR:GATK Haplotype Caller - designed for CPSGEN_MASTR variant discovery:GATKHC_CPSGEN_MASTR_FLAGS='$(GATKHC_CPSGEN_MASTR_FLAGS)'"
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
-
-
-
-

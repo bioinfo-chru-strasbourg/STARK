@@ -16,6 +16,7 @@ MK_DATE="29/09/2016"
 # TOOLS
 #FATBAM?=$(NGSscripts)
 FATBAM_CLIPPING?=$(FATBAM)/FATBAM.clipping.sh
+FATBAM_SOFTCLIPTOQ0?=$(FATBAM)/FATBAM.SoftClipToQ0.pl
 CLIPPING?=1
 
 # OPTIONS
@@ -28,40 +29,26 @@ FATBAM_TMP_FOLDER?=$(TMP_FOLDER_TMP) # TMP_SYS_FOLDER ???
 	# Clipping
 	#+$(FATBAM_CLIPPING) --env=$(ENV) --bam=$< --manifest=$*.manifest --output=$@ --verbose --multithreading --threads=$(THREADS) --tmp=$(FATBAM_TMP_FOLDER)
 	+$(FATBAM_CLIPPING) --env=$(CONFIG_TOOLS) --ref=`cat $*.genome` --bam=$< --manifest=$*.manifest --output=$@ --verbose --multithreading --threads=$(THREADS) --tmp=$(FATBAM_TMP_FOLDER)
-	
-	# CHECK NUMBER of READS in BAM
-	if (($(BAM_CHECK_STEPS))); then \
-		#echo $$($(SAMTOOLS) view -c -@ $(THREADS_SAMTOOLS) -F 0x0100 $<)" READS for $<"; \
-		#echo $$($(SAMTOOLS) view -c -@ $(THREADS_SAMTOOLS) -F 0x0100 $@)" READS for $@"; \
-		#$(SAMTOOLS) idxstats $< | awk '{SUM+=$$3+$$4} END {print SUM}' \
-		#if [ ! -e $@.idx ]; then $(SAMTOOLS) index $@; fi; \
-		#if [ "$(SAMTOOLS) idxstats $< | awk '{SUM+=$$3+$$4} END {print SUM}'" != "$(SAMTOOLS) idxstats $@ | awk '{SUM+=$$3+$$4} END {print SUM}'" ]; then \
-		if [ "$$($(SAMTOOLS) view -c -F 0x0100 -@ $(THREADS_SAMTOOLS) $<)" != "$$($(SAMTOOLS) view -c -F 0x0100 -@ $(THREADS_SAMTOOLS) $@)" ]; then \
-			echo "# ERROR in Number of reads between $< and $@ !!!"; \
-			echo "# BCFTOOLS STATS for $<";  \
-			$(SAMTOOLS) index $<; \
-			$(SAMTOOLS) stats $< | grep ^SN; \
-			$(SAMTOOLS) idxstats $<; \
-			echo "# BCFTOOLS STATS for $@";  \
-			$(SAMTOOLS) index $@; \
-			$(SAMTOOLS) stats $@ | grep SN; \
-			$(SAMTOOLS) idxstats $@; \
-			exit 1; \
-		else \
-			echo "# Number of reads OK between $< and $@"; \
-		fi; \
-	fi;
 	#-rm $*.unclipped.*
 	-rm $*.clipping.*
-	
+
+
+
+# Change SoftClip to Quality 0
+%.softclippedtoq0.sam: %.bam %.bam.bai %.manifest %.genome
+	# Clipping
+	#+$(FATBAM_CLIPPING) --env=$(ENV) --bam=$< --manifest=$*.manifest --output=$@ --verbose --multithreading --threads=$(THREADS) --tmp=$(FATBAM_TMP_FOLDER)
+	$(SAMTOOLS) view $< -h | perl $(FATBAM_SOFTCLIPTOQ0) -v1 > $@
+
 
 
 # CONFIG/RELEASE
 RELEASE_COMMENT := "\#\# CLIPPING: FATBAM tool removes primers described in BED file from a BAM file. It parallelizes over chromosomes. Options: FATBAM='$(FATBAM)', FATBAM_CLIPPING='$(FATBAM_CLIPPING)', FATBAM_COVERAGE='$(FATBAM_COVERAGE)', FATBAM_OPTIONS='$(FATBAM_OPTIONS)'"
 RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
+RELEASE_COMMENT := "\#\# SOFTCLIPPEDTOQ0: FATBAM tool change softclipped base quality to 0."
+RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
-PIPELINES_COMMENT := "POST_ALIGNMENT:clipping:Prime Clipping for Amplicon sequencing"
+
+PIPELINES_COMMENT := "POST_ALIGNMENT:clipping:Primers Soft-Clipping for Amplicon sequencing"
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
-
-

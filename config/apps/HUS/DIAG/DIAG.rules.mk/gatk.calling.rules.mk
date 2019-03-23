@@ -31,6 +31,8 @@ MBQ_HC=10
 MBQ_UG=17
 STAND_EMIT_CONF=20
 STAND_CALL_CONF=20
+GATKHC_FLAGS_DIAG__SHARED=--baq OFF --read_filter BadCigar --allow_potentially_misencoded_quality_scores --dontUseSoftClippedBases
+
 
 
 #########################
@@ -76,7 +78,7 @@ GATKUG_DIAG_IP_FLAGS= -nct $(GATKUG_THREADS_DIAG_IP) -glm BOTH \
 # Minimum coverage for a variant called by gatkUG
 
 %.gatkUG_DIAG_IP.unfiltered.unrecalibrated.vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
-	
+
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKUG_DIAG_IP_FLAGS) \
 		-T UnifiedGenotyper \
 		-R `cat $*.genome` \
@@ -164,7 +166,7 @@ DFRAC_HC_DIAG_IP=1
 DPMIN_HC_DIAG_IP=4
 
 
-GATKHC_DIAG_IP_FLAGS= -nct $(THREADS_GATKHC_DIAG_IP) -baq OFF -stand_call_conf $(STAND_CALL_CONF_HC_DIAG_IP) -dfrac $(DFRAC_HC_DIAG_IP) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample_HC_DIAG_IP) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC_DIAG_IP) -rf BadCigar -minPruning $(MINPRUNING_HC_DIAG_IP) -allowPotentiallyMisencodedQuals
+GATKHC_DIAG_IP_FLAGS= -nct $(THREADS_GATKHC_DIAG_IP) -stand_call_conf $(STAND_CALL_CONF_HC_DIAG_IP) -dfrac $(DFRAC_HC_DIAG_IP) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample_HC_DIAG_IP) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC_DIAG_IP) -minPruning $(MINPRUNING_HC_DIAG_IP) $(GATKHC_FLAGS_DIAG__SHARED)
 
 %.gatkHC_DIAG_IP.unfiltered.unrecalibrated.vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKHC_DIAG_IP_FLAGS) \
@@ -195,7 +197,7 @@ DPMIN_HC_DIAG_MOSAIC=4
 STAND_EMIT_CONF_HC_DIAG_MOSAIC=30
 STAND_CALL_CONF_HC_DIAG_MOSAIC=30
 
-GATKHC_DIAG_MOSAIC_FLAGS= -nct $(THREADS_GATKHC_DIAG_MOSAIC) -baq OFF -stand_call_conf $(STAND_CALL_CONF_HC_DIAG_MOSAIC) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample_HC_DIAG_MOSAIC) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC_DIAG_MOSAIC) -rf BadCigar -minPruning $(MINPRUNING_HC_DIAG_MOSAIC) -allowPotentiallyMisencodedQuals
+GATKHC_DIAG_MOSAIC_FLAGS= -nct $(THREADS_GATKHC_DIAG_MOSAIC) -stand_call_conf $(STAND_CALL_CONF_HC_DIAG_MOSAIC) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample_HC_DIAG_MOSAIC) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC_DIAG_MOSAIC) -minPruning $(MINPRUNING_HC_DIAG_MOSAIC) $(GATKHC_FLAGS_DIAG__SHARED)
 
 %.gatkHC_DIAG_MOSAIC.unfiltered.unrecalibrated.vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
 	$(JAVA) $(JAVA_FLAGS_HC_DIAG_MOSAIC) -jar $(GATK) $(GATKHC_DIAG_MOSAIC_FLAGS) \
@@ -239,5 +241,3 @@ PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
 
 PIPELINES_COMMENT := "CALLER:gatkHC_DIAG_MOSAIC:GATK Haplotype Caller - designed for DIAG_MOSAIC discovery:GATKHC_DIAG_MOSAIC_FLAGS='$(GATKHC_DIAG_MOSAIC_FLAGS)', DPMIN_HC_DIAG_MOSAIC='$(DPMIN_HC_DIAG_MOSAIC)'"
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
-
-

@@ -212,6 +212,8 @@ fi;
 ENV=$(find_app "$APP" "$STARK_FOLDER_APPS")
 source_app "$APP" "$STARK_FOLDER_APPS"
 
+export ENV
+export APP
 
 # DEBUG
 #########
@@ -477,7 +479,7 @@ if (($PIPELINES_INFOS)); then
 	MAKEFILE_PARAM=$TMP_SYS_FOLDER/$RANDOM$RANDOM.param
 	touch $PIPELINES_INFOS $MAKEFILE_PARAM
 	#source $ENV;
-	make -e -f $STARK_FOLDER_BIN/NGSWorkflow.mk PARAM=$MAKEFILE_PARAM PIPELINES_INFOS=$PIPELINES_INFOS $PIPELINES_INFOS #1>/dev/null 2>/dev/null;
+	make -e -f $STARK_FOLDER_BIN/NGSWorkflow.mk PARAM=$MAKEFILE_PARAM PIPELINES_INFOS=$PIPELINES_INFOS $PIPELINES_INFOS 1>/dev/null 2>/dev/null;
 	sort -k1,2 $PIPELINES_INFOS | cut -d: -f1-3 | column -t -s ':'
 	#make -e -f $STARK_FOLDER_BIN/NGSWorkflow.mk PARAM=$MAKEFILE_PARAM RELEASE_INFOS=$PIPELINES_INFOS $PIPELINES_INFOS 1>/dev/null 2>/dev/null;
 	#cat $PIPELINES_INFOS

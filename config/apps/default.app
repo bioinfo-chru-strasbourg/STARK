@@ -120,7 +120,7 @@ COVERAGE_CRITERIA="1,30,100"
 # the criteria test if genes failed (or just warning) the coverage threshold
 DP_FAIL="30"	# fail DP threshold (default 30X)
 DP_WARN="100"	# warn DP threshold (default 100X)
-DP_THRESHOLD="1" # threshold percentage of bases over the DP threshold 
+DP_THRESHOLD="1" # threshold percentage of bases over the DP threshold
 
 # NB_BASES_AROUND (default 0)
 # For gene coverage metrics
@@ -234,5 +234,6 @@ HOWARD_PRIORITIZATION_REPORT=$HOWARD_PRIORITIZATION_DEFAULT # "default"
 # use ALL to show ALL "other" annotations
 # Default filter to prioritize/rank variant, Sort variant in the TXT using 2 fields, Order fields in variant ranking
 HOWARD_FIELDS="NOMEN,PZFlag,PZScore,PZComment,CNOMEN,PNOMEN,location,outcome,VAF_average,dbSNP,dbSNPNonFlagged,popfreq,snpeff_impact,ALL"
+HOWARD_SORT="PZFlag::DESC,PZScore:n:DESC"
 HOWARD_SORT_BY="PZFlag,PZScore"
 HOWARD_ORDER_BY="DESC,DESC"
