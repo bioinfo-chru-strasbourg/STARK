@@ -7,144 +7,205 @@
 
 SCRIPT_NAME="IlluminaRunDemultiplexing"
 SCRIPT_DESCRIPTION="Demultiplexing of an Illumina Run"
-SCRIPT_RELEASE="0.9.9b"
-SCRIPT_DATE="26/09/2016"
+SCRIPT_RELEASE="0.9.10b"
+SCRIPT_DATE="25/03/2019"
 SCRIPT_AUTHOR="Antony Le Bechec"
 SCRIPT_COPYRIGHT="IRC"
+SCRIPT_LICENCE="GNU-AGPL"
 
-echo "#######################################";
-echo "# $SCRIPT_NAME [$SCRIPT_RELEASE-$SCRIPT_DATE]";
-echo "# $SCRIPT_DESCRIPTION ";
-echo "# $SCRIPT_AUTHOR @ $SCRIPT_COPYRIGHT © ";
-echo "#######################################";
-
-# Realse note
+# Release note
 #RELEASE_NOTES="#\n"
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.7b-20/11/2015: Creation/ReFormating script\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.8b-26/11/2015: SampleSheet as input option. Add Manifest default folder to find Manifest file defined in SampleSheet\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.9b-26/09/2016: Cleaning Sample Name in the Sample Sheet by removing spaces.\n";
-
-# NOTES
-if [ "${1^^}" == "RELEASE" ] || [ "${1^^}" == "RELEASE_NOTES" ] || [ "${1^^}" == "NOTES" ]; then
-	echo "# RELEASE NOTES:";
-	echo -e $RELEASE_NOTES
-	exit 0;
-fi;
-
-
-# 1.1. Parameters
-##################
-
-NB_PARAMETERS=$#
-if [ $NB_PARAMETERS -eq 0 ] || [ "${1^^}" == "HELP" ]; then
-	echo "# Usage: "`basename $0`" <ENV> <RUN> <DEMULTIPLEXING_DIR> <DEMULTIPLEXING> <SAMPLESHEET> ";
-	echo "# ENV                   ENV file configuration";
-	echo "# RUN                   RUN to demultiplex";
-	echo "# DEMULTIPLEXING_DIR    Demultiplexing result Folder";
-	echo "# DEMULTIPLEXING        Launch demultiplexing (not available)";
-	echo "# SAMPLESHEET           SampleSheet to use";
-	exit 1;
-fi;
+RELEASE_NOTES=$RELEASE_NOTES"# 0.9.10b-25/03/2019: Cleaning Sample Name in the Sample Sheet by removing spaces.\n";
 
 # Script folder
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-# INPUT
-ENV=$1
-RUN=$2
-DEMULTIPLEXING_DIR=$3
-DEMULTIPLEXING=$4
-SAMPLESHEET=$5
+# Configuration
+ENV_CONFIG=$(find $SCRIPT_DIR/.. -name config.app)
+source $ENV_CONFIG
 
-# SET ENV
-#SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-#source $SCRIPT_DIR/env.sh
 
-# Input
+# Header
+function header () {
+	echo "#######################################";
+	echo "# $SCRIPT_NAME [$SCRIPT_RELEASE-$SCRIPT_DATE]";
+	echo "# $SCRIPT_DESCRIPTION ";
+	echo "# $SCRIPT_AUTHOR @ $SCRIPT_COPYRIGHT © $SCRIPT_LICENCE";
+	echo "#######################################";
+}
 
-if [ "$DEMULTIPLEXING_DIR" == "" ];
-then 
-	DEMULTIPLEXING_DIR=$DEMULTIPLEXING_FOLDER
+# Release
+function release () {
+	echo "# RELEASE NOTES:";
+	echo -e $RELEASE_NOTES
+}
+
+# Usage
+function usage {
+	echo "# USAGE: $(basename $0) --fastq=<FILE1,FILE2,...> [options...]";
+	echo "# -e|--application|--app|--env=<APP|FILE>     APP name or APP file configuration of the APPLICATION.";
+	echo "#                                             Must be in the STARK folder if relative path";
+	echo "#                                             Default: default.app if not defined";
+	echo "# -r|--run                                    RUN folder to demultiplex (mandatory)";
+	echo "#                                             Need SampleSheet.csv file and Illumina file/folder structure";
+	echo "# -o|--output|--demultiplex_folder=<FOLDER>   Output/Demultiplexing folder";
+	echo "#                                             Default: Defined in APP, or RUN folder itself";
+	echo "# -l|--samplesheet=<FILE>                     Illumina SampleSheet.csv file";
+	echo "#                                             Default: found in RUN folder";
+	echo "# -t|--threads=<INTEGER>                      Number of thread to use";
+	echo "#                                             Default: Defined in APP, or all cores in your system minus one";
+	echo "# -b|--barcode_mismatches=<INTEGER>           Number of barcode mismatches to use";
+	echo "#                                             Default: Defined in APP, or 1";
+
+	echo "# -v|--verbose                                VERBOSE option";
+	echo "# -d|--debug                                  DEBUG option";
+	echo "# -n|--release                                RELEASE option";
+	echo "# -h|--help                                   HELP option";
+	echo "#";
+}
+
+# header
+header;
+
+
+# USAGE exemple
+# ./launch.sample.sh -f "$DATA/SAMPLE/HORIZON/HORIZON.R1.fastq.gz,$DATA/SAMPLE/HORIZON/HORIZON.bam,$DATA/SAMPLE/TEST/TEST.cram" -q "$DATA/SAMPLE/HORIZON/HORIZON.R2.fastq.gz" -s "H1,H2" -r "test" -b "/home1/TOOLS/data/SAMPLE/HORIZON/HORIZON.manifest,/home1/TOOLS/data/SAMPLE/HORIZON/HORIZON.bed,/home1/TOOLS/data/SAMPLE/TEST/TEST.bed" --output="$DATA/RESULTS"
+# /home1/IRC/TOOLS/tools/stark/dev/STARK -f "$DATA/SAMPLE/HORIZON/HORIZON.R1.fastq.gz,$DATA/SAMPLE/HORIZON/HORIZON.bam,$DATA/SAMPLE/TEST/TEST.cram" -q "$DATA/SAMPLE/HORIZON/HORIZON.R2.fastq.gz" -s "H1,H2" -r "testH,testH,testT" -b "/home1/TOOLS/data/SAMPLE/HORIZON/HORIZON.manifest,/home1/TOOLS/data/SAMPLE/HORIZON/HORIZON.bed,/home1/TOOLS/data/SAMPLE/TEST/TEST.bed" -e env.HUSTUMSOL.sh --output="$DATA/RESULTS" --repository="$DATA/REPOSITORY"
+# /home1/IRC/TOOLS/tools/stark/dev/STARK -f $DATA/SAMPLE/TEST/TEST.cram -b /home1/TOOLS/data/SAMPLE/TEST/TEST.bed --output="$DATA/RESULTS" -r testT
+
+####################################################################################################################################
+# Getting parameters from the input
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+# ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
+ARGS=$(getopt -o "e:r:o:l:t:b:vdnh" --long "env:,app:,application:,run:,output:,demultiplex_folder:,samplesheet:,threads:,barcode_mismatches:,verbose,debug,release,help" -- "$@" 2> /dev/null)
+[ $? -ne 0 ] && \
+	echo "Error in the argument list." "Use -h or --help to display the help." >&2 && usage && \
+	exit 1
+eval set -- "$ARGS"
+
+PARAM=$@
+
+while true
+do
+	case "$1" in
+		-e|--env|--app|--application)
+			APP="$2"
+			shift 2
+			;;
+		-r|--run)
+			RUN="$2"
+			RUN=$(echo $RUN | tr "," " " | cut -f1)
+			shift 2
+			;;
+		-o|--output|--demultiplex_folder)
+			DEMULTIPLEXING_DIR_INPUT="$2"
+			shift 2
+			;;
+		-l|--samplesheet)
+			SAMPLESHEET_INPUT="$2" #"$(echo $2 | tr "\n" " ")"
+			shift 2
+			;;
+		-t|--threads)
+			THREADS_INPUT="$2"
+			shift 2
+			;;
+		-b|--barcode_mismatches)
+			BARCODE_MISMATCHES_INPUT="$2"
+			shift 2
+			;;
+		-v|--verbose)
+			VERBOSE=1
+			shift 1
+			;;
+		-d|--debug)
+			VERBOSE=1
+			DEBUG=1
+			shift 1
+			;;
+		-n|--release)
+			release;
+			exit 0
+			;;
+		-h|--help)
+			usage
+			exit 0
+			;;
+		--) shift
+			break
+			;;
+		*) 	echo "Option $1 is not recognized. " "Use -h or --help to display the help." && usage && \
+			exit 1
+			;;
+	esac
+done
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+####################################################################################################################################
+# Checking the input parameter
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+if [ "$RUN" == "" ]
+then
+	echo "Option --run is required. " "Use -h or --help to display the help." && usage && exit 1;
+fi
+
+# APPLICATION
+ENV=$(find_app "$APP" "$STARK_FOLDER_APPS")
+source_app "$APP" "$STARK_FOLDER_APPS"
+
+# RUN FOLDER_RUN
+[ ! -d $RUN ] && echo "#[ERROR] No RUN folder '$RUN'" && exit 0;
+echo "#[INFO] RUN folder: $RUN";
+RUN_NAME=$(basename $RUN)
+echo "#[INFO] RUN name: $RUN_NAME";
+
+# Demultiplexing folder
+[ "$DEMULTIPLEXING_DIR_INPUT" != "" ] && [ -d $DEMULTIPLEXING_DIR_INPUT ] && DEMULTIPLEXING_DIR=$DEMULTIPLEXING_DIR_INPUT
+[ ! -d $DEMULTIPLEXING_DIR ] && DEMULTIPLEXING_DIR=$DEMULTIPLEXING_FOLDER
+[ ! -d $DEMULTIPLEXING_DIR ] && DEMULTIPLEXING_DIR=$RUN
+[ ! -d $DEMULTIPLEXING_DIR ] && echo "#[ERROR] No Demultiplexing folder" && exit 0;
+echo "#[INFO] Demultiplexing folder: $DEMULTIPLEXING_DIR"
+
+# Find SampleSheet
+RUN_SAMPLESHEET=""
+# sampleSheet from Input
+[ ! -z $SAMPLESHEET_INPUT ] && [ -e $SAMPLESHEET_INPUT ] && RUN_SAMPLESHEET=$SAMPLESHEET_INPUT
+# sampleSheet within the RUN folder
+[ -z $RUN_SAMPLESHEET ] && RUN_SAMPLESHEET=$RUN/SampleSheet.csv
+# Echo
+[ ! -e $RUN_SAMPLESHEET ] && echo "#[ERROR] No SampleSheet for RUN '$RUN'" && exit 0;
+echo "#[INFO] SampleSheet: $RUN_SAMPLESHEET";
+
+# THREADS
+re='^[0-9]+$'
+CORES=$(ls -d /sys/devices/system/cpu/cpu[[:digit:]]* | wc -w)
+if ! [[ $THREADS =~ $re ]] || [ -z "$THREADS" ] || [ "$THREADS" == "" ] || [ $THREADS -gt $CORES ] ; then
+	CORES_FREE=1
+	THREADS=$(($CORES-$CORES_FREE))
 fi;
-
-if [ "$DEMULTIPLEXING" == "" ];
-then 
-	DEMULTIPLEXING=0
+if [[ $THREADS_INPUT =~ $re ]] && [ "$THREADS_INPUT" != "" ]; then
+	THREADS=$THREADS_INPUT;
 fi;
+echo "#[INFO] Threads: $THREADS";
 
-# ENV
-if [ -s $ENV ] && [ "$ENV" != "" ] && [ ! -d $ENV ]; then
-	ENV=$ENV;
-elif [ -s $SCRIPT_DIR/$ENV ] && [ "$ENV" != "" ] && [ ! -d $ENV ]; then
-	ENV=$SCRIPT_DIR/$ENV;
-elif [ "$ENV" == "" ] || [ ! -s $ENV ]; then
-	if [ -s $SCRIPT_DIR/"env.sh" ]; then
-		ENV=$SCRIPT_DIR/"env.sh";
-	else
-		ENV="";
-		echo "#[WARNING] NO ENV defined. Default ENV used."
-	fi;
+# BARCODE_MISMATCHES
+if ! [[ $BARCODE_MISMATCHES =~ $re ]] || [ -z "$BARCODE_MISMATCHES" ] || [ "$BARCODE_MISMATCHES" == "" ] ; then
+	BARCODE_MISMATCHES=1
 fi;
-
-# ENV
-#source $SCRIPT_DIR/env.sh
-if [ "$ENV" != "" ]; then
-	source $ENV;
+if [[ $BARCODE_MISMATCHES_INPUT =~ $re ]] && [ "$BARCODE_MISMATCHES_INPUT" != "" ]; then
+	BARCODE_MISMATCHES=$BARCODE_MISMATCHES_INPUT;
 fi;
+echo "#[INFO] Barcode Mismatches: $BARCODE_MISMATCHES";
 
 
 # Config
-NGS_DIR=$NGS_FOLDER
-NGS_BIN_DIR=$NGS_DIR/bin
-#CASAVA=$NGS_BIN_DIR/casava
-#BCL2FASTQ=$NGS_BIN_DIR/bcl2fastq
-#BCL2FASTQ=$CASAVA_BCLTOFASTQ #$BCL2FASTQ_BCL2FASTQ
-BCL2FASTQ=$BCL2FASTQ_BCLTOFASTQ
-#BCL2FASTQ=$CASAVA_BCLTOFASTQ
-#MISEQ_DIR=/media/miseq/MSR # /media/IRC/RAW/MSR
-#MISEQ_DIR=/media/IRC/RAW/MSR
-MISEQ_DIR=$MISEQ_FOLDER
-#DEMULTIPLEXING_DIR=/media/miseq/demultiplexing.test # /mediSampleSheeta/IRC/RES/...
-#DEMULTIPLEXING_DIR=/media/IRC/RES2/demultiplexing
-#DEMULTIPLEXING_DIR=$DEMULTIPLEXING_FOLDER
-MSR_SUBFOLDER=Data/Intensities/BaseCalls
-LOGFILE=$DEMULTIPLEXING_DIR/$RUN/demultiplexing.configuration.log
-CORES=$(ls -d /sys/devices/system/cpu/cpu[[:digit:]]* | wc -w ) # AUTO, otherwize #THREAD=12
-THREADS=$CORES
-CURRENT_DIR=`pwd`
-
-# Input Test
-if [ ! -d $MISEQ_DIR/$RUN ]; then
-	echo "#[`date`] ERROR: RUN '$RUN' missing! Folder '$MISEQ_DIR/$RUN' doesn't exist"
-	exit 1;
-fi
-
-SAMPLE_SHEET_MISEQ_ORIGINAL_DEFAULT=$MISEQ_DIR/$RUN/SampleSheet.csv
-#SAMPLE_SHEET_MISEQ_ORIGINAL=$MISEQ_DIR/$RUN/SampleSheet.csv
-if [ -s $SAMPLESHEET ]; then
-	SAMPLE_SHEET_MISEQ_ORIGINAL=$SAMPLESHEET;
-elif [ -s $SAMPLE_SHEET_MISEQ_ORIGINAL_DEFAULT ]; then
-	SAMPLE_SHEET_MISEQ_ORIGINAL=$SAMPLE_SHEET_MISEQ_ORIGINAL_DEFAULT;
-fi;
-
-if [ ! -e $SAMPLE_SHEET_MISEQ_ORIGINAL ]; then
-	echo "#[`date`] ERROR: SampleSheet.csv for RUN '$RUN' missing! File '$SAMPLE_SHEET_MISEQ_ORIGINAL' doesn't exist"
-	exit 1;
-fi
-
-
-# Main
-INPUT_DIR=$MISEQ_DIR/$RUN/$MSR_SUBFOLDER
-RUNFOLDER_DIR=$MISEQ_DIR/$RUN
-OUTPUT_DIR=$DEMULTIPLEXING_DIR/$RUN
-
-mkdir -p $OUTPUT_DIR
-
-# Create Sample Sheet, and options for BCL2FASTQ
-#SAMPLE_SHEET_MISEQ_ORIGINAL=$MISEQ_DIR/$RUN/SampleSheet.csv
-SAMPLE_SHEET_MISEQ=$OUTPUT_DIR/SampleSheet.csv
-#SAMPLE_SHEET_CASAVA=$OUTPUT_DIR/SampleSheet.casava.csv
-SAMPLE_SHEET_BCL2FASTQ=$OUTPUT_DIR/SampleSheet.bcl2fastq.csv
+LOGFILE=$DEMULTIPLEXING_DIR/$RUN_NAME/demultiplexing.configuration.log
+#RUNFOLDER_DIR=$RUN
+OUTPUT_DIR=$DEMULTIPLEXING_DIR/$RUN_NAME
+DEM_SAMPLESHEET=$OUTPUT_DIR/SampleSheet.csv
+#SAMPLE_SHEET_BCL2FASTQ=$OUTPUT_DIR/SampleSheet.bcl2fastq.csv
 MANIFESTS=$OUTPUT_DIR/manifests.txt
 MANIFESTS_LIST=$OUTPUT_DIR/manifests_list.txt
 INTERVALS=$OUTPUT_DIR/run.intervals
@@ -153,178 +214,108 @@ MASK=$OUTPUT_DIR/mask.txt
 ADAPTERS=$OUTPUT_DIR/adapters.txt
 MAKEFILE=$OUTPUT_DIR/Makefile
 
-echo "#[`date`] Demultiplexing Configuration log" >> $LOGFILE
 
-cp $SAMPLE_SHEET_MISEQ_ORIGINAL $SAMPLE_SHEET_MISEQ
+(($DEBUG)) && echo "#[INFO] BCL2FASTQ=$BCL2FASTQ"
+(($DEBUG)) && echo "#[INFO] BCL2FASTQ_BCLTOFASTQ=$BCL2FASTQ_BCLTOFASTQ"
+#(($DEBUG)) && echo "#[INFO] RUNFOLDER_DIR=$RUNFOLDER_DIR"
+(($DEBUG)) && echo "#[INFO] OUTPUT_DIR=$OUTPUT_DIR"
+(($DEBUG)) && echo "#[INFO] LOGFILE=$LOGFILE"
+#(($DEBUG)) && ls -l $OUTPUT_DIR
+#(($DEBUG)) && ls -l $DEM_SAMPLESHEET
 
-# Cleaning SampleSheet SampleName
-DATA_SECTION_LINE=$(grep "^\[Data\]" $SAMPLE_SHEET_MISEQ_ORIGINAL -n | awk -F: '{print $1}')
+# create Output/demultiplexing folder
+mkdir -p $OUTPUT_DIR
+
+# LOG
+echo "#[`date`] Demultiplexing Configuration log" > $LOGFILE
+
+# Copy and Cleaning SampleSheet SampleName
+# Empty SampleSheet
+(($VERBOSE)) && echo "#[INFO] Copy and Cleaning SampleSheet";
+> $DEM_SAMPLESHEET
+# Find header before DATA section
+DATA_SECTION_LINE=$(grep "^\[Data\]" $RUN_SAMPLESHEET -n | awk -F: '{print $1}')
 SAMPLE_SECTION_FIRST_LINE=$(($DATA_SECTION_LINE+1))
-# Print before DATA section
-head -n $SAMPLE_SECTION_FIRST_LINE $SAMPLE_SHEET_MISEQ_ORIGINAL > $SAMPLE_SHEET_MISEQ
+head -n $SAMPLE_SECTION_FIRST_LINE $RUN_SAMPLESHEET > $DEM_SAMPLESHEET
 # print DATA section and the rest
-tail -n $(($SAMPLE_SECTION_FIRST_LINE-$(grep ^ -c $SAMPLE_SHEET_MISEQ_ORIGINAL)))  $SAMPLE_SHEET_MISEQ_ORIGINAL | while read L; do
-  	if [ "$L" == "" ] || [[ $L =~ ^\[.*\] ]]; then
-  		echo $L >> $SAMPLE_SHEET_MISEQ;
-		#break;
-	else
-		echo $L | tr " " "_" >> $SAMPLE_SHEET_MISEQ;
-	fi;
-done;
-echo "#[`date`] COMMAND: SAMPLESHEET cleaning (Sample Name bad characters)" >> $LOGFILE
-$COMMAND >> $LOGFILE
-
-#cat $SAMPLE_SHEET_MISEQ
-#exit 0;
-
-
-# BCL2FASTQ Sample Sheet
-#COMMAND="$NGS_BIN_DIR/scripts/ElectricFancyFox.py $SAMPLE_SHEET_MISEQ $SAMPLE_SHEET_BCL2FASTQ bcl2fastqSampleSheet $RUN"
-COMMAND="$SCRIPT_DIR/ElectricFancyFox.py $SAMPLE_SHEET_MISEQ $SAMPLE_SHEET_BCL2FASTQ bcl2fastqSampleSheet $RUN"
-
-echo "#[`date`] COMMAND: $COMMAND" >> $LOGFILE
-$COMMAND >> $LOGFILE
+tail -n $(($SAMPLE_SECTION_FIRST_LINE-$(grep ^ -c $RUN_SAMPLESHEET))) $RUN_SAMPLESHEET | sed '/^[[:space:]]*$/d' | awk -F"," '{gsub(/ /,"_",$1)} {gsub(/ /,"_",$2)} {LINE=$1","$2} {for(i=3;i<=NF;++i)LINE=LINE","$i} {print LINE}' >> $DEM_SAMPLESHEET
+# LOG
+echo "#[`date`] COMMAND: $COMMAND" >> $LOGFILE && $COMMAND >> $LOGFILE
 
 # Manifests_list
-COMMAND="$SCRIPT_DIR/ElectricFancyFox.py $SAMPLE_SHEET_MISEQ $MANIFESTS_LIST manifests_list $RUN"
-echo "#[`date`] COMMAND: $COMMAND" >> $LOGFILE
-$COMMAND >> $LOGFILE
+(($VERBOSE)) && echo "#[INFO] Create manifests and indexes list file";
+COMMAND="$SCRIPT_DIR/ElectricFancyFox.py $DEM_SAMPLESHEET $MANIFESTS_LIST manifests_list $RUN"
+# LOG
+echo "#[`date`] COMMAND: $COMMAND" >> $LOGFILE && $COMMAND >> $LOGFILE
 
 # Manifests
-COMMAND="$SCRIPT_DIR/ElectricFancyFox.py $SAMPLE_SHEET_MISEQ $MANIFESTS manifests $RUN"
-echo "#[`date`] COMMAND: $COMMAND" >> $LOGFILE
-$COMMAND >> $LOGFILE
+(($VERBOSE)) && echo "#[INFO] Create manifests file and copy all manifests";
+COMMAND="$SCRIPT_DIR/ElectricFancyFox.py $DEM_SAMPLESHEET $MANIFESTS manifests $RUN"
+# LOG
+echo "#[`date`] COMMAND: $COMMAND" >> $LOGFILE && $COMMAND >> $LOGFILE
 
-# Copy manifests and create intervals
-if [ -e $INTERVALS ]; then
-	rm $INTERVALS
-fi
-if [ -e $OUTPUT_DIR/run.manifest ]; then
-	rm $OUTPUT_DIR/run.manifest
-fi
-
-if ((1)); then
-for MANIFEST in `cat $MANIFESTS | tr " " "|" | tr "," " "`; do
-	# Find manifest file
-	MANIFEST_FILE=`echo $MANIFEST | tr "|" " "`
-	# Copy manifest
-	if [ -e $MISEQ_DIR/$RUN/$MANIFEST_FILE ]; then
-		COMMAND="cp \"$MISEQ_DIR/$RUN/$MANIFEST_FILE\" $OUTPUT_DIR/  >> $LOGFILE"
-	elif [ -e $MANIFEST_FOLDER/$MANIFEST_FILE ]; then
-		COMMAND="cp \"$MANIFEST_FOLDER/$MANIFEST_FILE\" $OUTPUT_DIR/  >> $LOGFILE"
-	fi;
-	echo "#[`date`] COMMAND: $COMMAND" >> $LOGFILE
-	eval $COMMAND
-	#cp "$MISEQ_DIR/$RUN/$MANIFEST_FILE" $OUTPUT_DIR/ >> $LOGFILE
-	
-	#if [ -e "$OUTPUT_DIR/$MANIFEST_FILE" ]; then
-	#	ls -l "$OUTPUT_DIR/$MANIFEST_FILE" >> $LOGFILE;
-	#else
-	#	echo "[ERROR] in Manifest '$MANIFEST' copy" 
-	#fi;
-	if [ ! -e "$OUTPUT_DIR/$MANIFEST_FILE" ]; then
-		echo "[ERROR] in Manifest '$MANIFEST' copy" >> $LOGFILE;
-	fi;
-	# Add manifest to RUN intervals
-	COMMAND="$SCRIPT_DIR/manifest.pl --manifest=\"$OUTPUT_DIR/$MANIFEST_FILE\" --intervals=$INTERVALS.tmp"
-	echo "#[`date`] COMMAND: $COMMAND" >> $LOGFILE
-	$SCRIPT_DIR/manifest.pl --manifest="$OUTPUT_DIR/$MANIFEST_FILE" --intervals=$INTERVALS.tmp >> $LOGFILE
-	# Create run.interval
-	COMMAND="cat $INTERVALS.tmp >> $INTERVALS"
-	echo "#[`date`] COMMAND: $COMMAND" >> $LOGFILE
-	cat $INTERVALS.tmp >> $INTERVALS
-	# Remove temporary file run.interval.tmp
-	COMMAND="rm $INTERVALS.tmp"
-	echo "#[`date`] COMMAND: $COMMAND" >> $LOGFILE
-	rm $INTERVALS.tmp
-	# Create "run.manifest"
-	COMMAND="cp \"$OUTPUT_DIR/$MANIFEST_FILE\" $OUTPUT_DIR/run.manifest"
-	echo "#[`date`] COMMAND: $COMMAND" >> $LOGFILE
-	eval $COMMAND
-	
+# Copy Manifests
+for M in $(cat $MANIFESTS | tr "," " "); do
+	#(($VERBOSE)) && echo "#[INFO] Copy manifests '$M'";
+	[ -e $FOLDER_MANIFEST/$M ] && cp $FOLDER_MANIFEST/$M $OUTPUT_DIR/$M 2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy manifest '$M' from Manifest folder '$FOLDER_MANIFEST'";
+	[ -e $RUN/$M ] && cp $FOLDER_MANIFEST/$M $OUTPUT_DIR/$M  2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy manifest '$M' from RUN folder '$RUN' (replaced if already copied)";
+	# Genes
+	[ -e $FOLDER_MANIFEST/$M.genes ] && cp $FOLDER_MANIFEST/$M.genes $OUTPUT_DIR/$M.genes 2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy manifest.genes '$M.genes' from Manifest folder '$FOLDER_MANIFEST'";
+	[ -e $RUN/$M.genes ] && cp $FOLDER_MANIFEST/$M.genes $OUTPUT_DIR/$M.genes  2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy manifest.genes '$M.genes' from RUN folder '$RUN' (replaced if already copied)";
+	# Transcripts
+	[ -e $FOLDER_MANIFEST/$M.transcripts ] && cp $FOLDER_MANIFEST/$M.transcripts $OUTPUT_DIR/$M.transcripts 2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy manifest.transcripts '$M.transcripts' from Manifest folder '$FOLDER_MANIFEST'";
+	[ -e $RUN/$M.transcripts ] && cp $FOLDER_MANIFEST/$M.transcripts $OUTPUT_DIR/$M.transcripts  2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy manifest.transcripts '$M.transcripts' from RUN folder '$RUN' (replaced if already copied)";
 done;
-fi;
-
 
 # Reads Length file
-COMMAND="$SCRIPT_DIR/ElectricFancyFox.py $SAMPLE_SHEET_MISEQ $READS_LENGTH readsLength $RUN"
-echo "#[`date`] COMMAND: $COMMAND" >> $LOGFILE
-$COMMAND >> $LOGFILE
+(($VERBOSE)) && echo "#[INFO] Create Reads Length file";
+COMMAND="$SCRIPT_DIR/ElectricFancyFox.py $DEM_SAMPLESHEET $READS_LENGTH readsLength $RUN"
+# LOG
+echo "#[`date`] COMMAND: $COMMAND" >> $LOGFILE && $COMMAND >> $LOGFILE
 
 # BCL2FASTQ Mask option file
-COMMAND="$SCRIPT_DIR/ElectricFancyFox.py $SAMPLE_SHEET_MISEQ $MASK mask $RUN"
-echo "#[`date`] COMMAND: $COMMAND" >> $LOGFILE
-$COMMAND >> $LOGFILE
+(($VERBOSE)) && echo "#[INFO] BCL2FASTQ Mask option file";
+COMMAND="$SCRIPT_DIR/ElectricFancyFox.py $DEM_SAMPLESHEET $MASK mask $RUN"
+# LOG
+echo "#[`date`] COMMAND: $COMMAND" >> $LOGFILE && $COMMAND >> $LOGFILE
 
 # BCL2FASTQ Adapters
-COMMAND="$SCRIPT_DIR/ElectricFancyFox.py $SAMPLE_SHEET_MISEQ $ADAPTERS adapters $RUN"
-echo "#[`date`] COMMAND: $COMMAND" >> $LOGFILE
-$COMMAND >> $LOGFILE
+(($VERBOSE)) && echo "#[INFO] BCL2FASTQ Adapters file";
+COMMAND="$SCRIPT_DIR/ElectricFancyFox.py $DEM_SAMPLESHEET $ADAPTERS adapters $RUN"
+# LOG
+echo "#[`date`] COMMAND: $COMMAND" >> $LOGFILE && $COMMAND >> $LOGFILE
+
+# BCL2FASTQ Demultiplexing parameters
+NB_SAMPLE=$(tail -n $(($SAMPLE_SECTION_FIRST_LINE-$(grep ^ -c $RUN_SAMPLESHEET))) $RUN_SAMPLESHEET | sed '/^[[:space:]]*$/d' | sort -u | wc -l)
+WRITING_THREADS=$(($NB_SAMPLE>$THREADS?$THREADS:$NB_SAMPLE));
+ADAPTER_STRINGENCY=0.9
+FASTQ_COMPRESSION_LEVEL=4
+
+(($VERBOSE)) && echo "#[INFO] NB_SAMPLE="$NB_SAMPLE
+(($VERBOSE)) && echo "#[INFO] WRITING_THREADS="$WRITING_THREADS
+(($VERBOSE)) && echo "#[INFO] ADAPTER_STRINGENCY="$ADAPTER_STRINGENCY
+(($VERBOSE)) && echo "#[INFO] FASTQ_COMPRESSION_LEVEL="$FASTQ_COMPRESSION_LEVEL
 
 
-
-# Parameters from SampleSheet
-
-RUNS_SAMPLES=""
-NB_SAMPLE=0
-RUN_Investigator_Name=$(grep "Investigator Name" $SAMPLE_SHEET_MISEQ | tr -d "\r\n" | awk -F, '{print $2}')
-DATA_SECTION_LINE=$(grep "^\[Data\]" $SAMPLE_SHEET_MISEQ -n | awk -F: '{print $1}')
-SAMPLE_SECTION_FIRST_LINE=$(($DATA_SECTION_LINE+1))
-SAMPLE_LINES=$(tail -n $(($SAMPLE_SECTION_FIRST_LINE-$(grep ^ -c $SAMPLE_SHEET_MISEQ)))  $SAMPLE_SHEET_MISEQ)
-SAMPLE_PROJECT_COL=$(grep -i ^Sample_ID $SAMPLE_SHEET_MISEQ | tr -d '\r\n' | sed -e 's/,/\n/g' | grep -i -n Sample_Project | cut -d \: -f 1)
-for L in $(tail -n $(($SAMPLE_SECTION_FIRST_LINE-$(grep ^ -c $SAMPLE_SHEET_MISEQ)))  $SAMPLE_SHEET_MISEQ);
-do
-	if [ "$L" == "" ] || [[ $L =~ ^\[.*\] ]]; then
-		break;
-	else
-		((NB_SAMPLE++))
-		SAMPLE_ID=$(echo $L | awk -F, '{print $1}')
-		SAMPLE_PROJECT=$(echo $L | tr -d '\r\n' | cut -d \, -f $SAMPLE_PROJECT_COL )
-		if [ "$SAMPLE_PROJECT" == "" ]; then SAMPLE_PROJECT=$RUN_Investigator_Name; fi;
-		RUNS_SAMPLES="$RUNS_SAMPLES$RUN:$SAMPLE_ID:$RUN_Investigator_Name "
-	fi;
-done;
-
-# --writing-threads
-#WRITING_THREADS=1	# default
-WRITING_THREADS=$(($NB_SAMPLE>$CORES_TO_USE?$CORES_TO_USE:$NB_SAMPLE));
-
-if [ "$BARCODE_MISMATCHES" == "" ]; then
-	BARCODE_MISMATCHES="1"
-	echo "No barcode mismatches defined -> default used (1 mismatch)"
-fi
+#(($DEBUG)) && ls -l $DEM_SAMPLESHEET
+(($DEBUG)) && echo "" && echo "DEBUG"
+(($DEBUG)) && cat $LOGFILE
+(($DEBUG)) && ls -l $OUTPUT_DIR
+(($DEBUG)) && cat $DEM_SAMPLESHEET
+#(($DEBUG)) && cat $MANIFESTS_LIST
+#(($DEBUG)) && cat $MANIFESTS
 
 # Demultiplexing configuration
-ADAPTER_STRINGENCY=0.9 # default=0.9
-#COMMAND="$BCL2FASTQ --force --runfolder-dir $RUNFOLDER_DIR  --output-dir $OUTPUT_DIR --sample-sheet $SAMPLE_SHEET_BCL2FASTQ --use-bases-mask `cat $MASK` --adapter-sequence $ADAPTERS --fastq-cluster-count 0 --flowcell-id $RUN"
-COMMAND="$BCL2FASTQ --runfolder-dir $RUNFOLDER_DIR  --output-dir $OUTPUT_DIR --sample-sheet $SAMPLE_SHEET_MISEQ  --barcode-mismatches $BARCODE_MISMATCHES --fastq-compression-level 9 --no-lane-splitting -r $CORES_TO_USE -d $CORES_TO_USE  -w $WRITING_THREADS "
-#--use-bases-mask `cat $MASK` 
-# for bcl2fastq not casava : --adapter-stringency $ADAPTER_STRINGENCY 
-#COMMAND="$CASAVA/configureBcl2fastq --force --input-dir $INPUT_DIR  --output-dir $OUTPUT_DIR --sample-sheet $SAMPLE_SHEET_BCL2FASTQ --use-bases-mask `cat $MASK` --adapter-sequence $ADAPTERS --fastq-cluster-count 0 --mismatches 1 --flowcell-id $RUN"
+COMMAND="$BCL2FASTQ_BCLTOFASTQ --runfolder-dir $RUN  --output-dir $OUTPUT_DIR --sample-sheet $DEM_SAMPLESHEET --barcode-mismatches $BARCODE_MISMATCHES --fastq-compression-level $FASTQ_COMPRESSION_LEVEL -r $THREADS -p $THREADS -w $WRITING_THREADS --no-lane-splitting --create-fastq-for-index-reads"
 echo "#[`date`] COMMAND: " $COMMAND >> $LOGFILE
+(($DEBUG)) && echo "#[INFO] Command: "$COMMAND
 
-$COMMAND 1>>$LOGFILE 2>>$LOGFILE
- 
-touch $OUTPUT_DIR/Makefile
+#$COMMAND 1>>$LOGFILE 2>>$LOGFILE || echo "message" && echo "exit"
+$COMMAND 1>>$LOGFILE 2>>$LOGFILE || { echo "#[ERROR] Demultiplexing FAILED"; exit 1; }
 
-# Log
-#echo "#[`date`] COMMAND END: " $(tail -n 1 $LOGFILE) #>> $LOGFILE
-
+#touch $OUTPUT_DIR/Makefile
 
 # End file
 tail -n 1 $LOGFILE > $OUTPUT_DIR/STARKComplete.txt
 
-#/home1/IRC/TOOLS/tools/bcl2fastq/2.17.1.14/bin/bcl2fastq --runfolder-dir /home1/IRC/DATA/RAW/MSR/151030_M01656_0065_000000000-D0NKK --output-dir /home1/IRC/DATA/DEV/DEM/151030_M01656_0065_000000000-D0NKK --sample-sheet /home1/IRC/DATA/DEV/DEM/151030_M01656_0065_000000000-D0NKK/SampleSheet.csv --use-bases-mask Y251,I8,I8,Y251 --help
-
-
-# Demultiplexing
-#if [ $DEMULTIPLEXING -eq 1 ]; then
-#	#COMMAND="make -j 2 --directory=$OUTPUT_DIR -f $OUTPUT_DIR/Makefile"
-#	COMMAND="make -j $THREADS --directory=$OUTPUT_DIR -f $OUTPUT_DIR/Makefile"
-#	echo "#[`date`] COMMAND: " $COMMAND >> $LOGFILE
-#	$COMMAND 1>>$LOGFILE 2>>$LOGFILE
-#fi;
-
 exit 0;
-
-

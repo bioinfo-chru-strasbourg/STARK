@@ -11,9 +11,9 @@ SCRIPT_RELEASE="0.9.6.1b"
 SCRIPT_DATE="19/03/2019"
 SCRIPT_AUTHOR="Antony Le Bechec"
 SCRIPT_COPYRIGHT="IRC"
-SCRIPT_LICENCE="GNU-GPL"
+SCRIPT_LICENCE="GNU-AGPL"
 
-# Realse note
+# Release note
 #RELEASE_NOTES="#\n"
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.3b-09/10/2015: Add RUN configuration depending on Group and Project defined in RUN SampleSheet\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.4b-13/10/2015: Add Complete and Running flag files\n";
@@ -50,7 +50,7 @@ function usage {
 	echo "# USAGE: $(basename $0) --fastq=<FILE1,FILE2,...> [options...]";
 	echo "# -e|--application|--app|--env=<APP|FILE>     APP name or APP file configuration of the APPLICATION.";
 	echo "#                                             Must be in the STARK folder if relative path";
-	echo "#                                             Default: env.sh if not defined";
+	echo "#                                             Default: default.app if not defined";
 	echo "# -f|--fastq|--fastq_R1=<FILE1,FILE2,...>     List of FASTQ|BAM|SAM|CRAM (mandatory)";
 	echo "#                                             Formats: *fastq.gz|*fq.gz|*bam|*ubam|*cram|*ucram|*sam|*usam";
 	echo "# -q|--fastq_R2=<FILE1,FILE2,...>             List of corresponding FASTQ Read2 file (beware of correspondance).";
@@ -97,7 +97,7 @@ header;
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
-ARGS=$(getopt -o "e:f:q:b:j:m:s:r:o:u:p:t:ga:vdnh" --long "env:,app:,application:,fastq:,fastq_R1:,fastq_R2:,bed:,manifest:,genes:,transcripts:,sample:,run:,output:,results:,repository:,pipelines:,threads:,by_sample,adapters:,verbose,debug,release,help" -- "$@" 2> /dev/null)
+ARGS=$(getopt -o "e:f:q:b:j:m:s:r:o:u:p:t:ga:vdnh" --long "env:,app:,application:,fastq:,fastq_R1:,fastq_R2:,bed:,manifest:,genes:,transcripts:,sample:,run:,output:,json_dir:,results:,repository:,pipelines:,threads:,by_sample,adapters:,verbose,debug,release,help" -- "$@" 2> /dev/null)
 [ $? -ne 0 ] && \
 	echo "Error in the argument list." "Use -h or --help to display the help." >&2 && usage && \
 	exit 1
@@ -151,6 +151,10 @@ do
 			;;
 		-o|--output|--results)
 			OUTPUT="$2"
+			shift 2
+			;;
+		--json_dir)
+			JSON_DIR="$2"
 			shift 2
 			;;
 		-u|--repository)
@@ -219,21 +223,31 @@ PERMS="a+rwx"
 
 
 # FASTQ
+FASTQ_R1_RELOCATED=""
 for F in $FASTQ; do
-	if [ "$F" != "" ] && [ -e "$F" ]; then
-		F=$F;
+	#if [ "$F" != "" ] && [ -e "$F" ]; then
+	if [ -f "$F" ] || [ -f "$JSON_DIR/$F" ]; then
+		#F=$F;
 		(($DEBUG)) && echo "F=$F";
 		if ! (($(echo "$F" | grep ".fastq.gz$\|.fq.gz$\|.bam$\|.ubam$\|.cram$\|.ucram$" -c))); then
 			echo "[ERROR]! Format of input file '$F' Unknown! Please check file format (.fastq.gz|.fq.gz|.bam|.ubam|.cram|.ucram)";
 			exit 0;
 		fi
+		# Relocation
+		if [ -f "$F" ]; then
+			FASTQ_R1_RELOCATED="$FASTQ_R1_RELOCATED $F"
+	 	elif [ -f "$JSON_DIR/$F" ]; then
+			FASTQ_R1_RELOCATED="$FASTQ_R1_RELOCATED $JSON_DIR/$F"
+		fi;
 	else
 		echo "[ERROR] No input FASTQ '$F' file!";
 		exit 0;
 	fi;
 done;
+FASTQ=$FASTQ_R1_RELOCATED
 
 
+FASTQ_R2_RELOCATED=""
 for F in $FASTQ_R2; do
 	if [ "$F" != "" ] && [ -e "$F" ]; then
 		F=$F;
@@ -242,11 +256,18 @@ for F in $FASTQ_R2; do
 			echo "[ERROR]! Format of input file '$F' Unknown! Please check file format (.fastq.gz|.fq.gz|.bam|.ubam|.cram|.ucram)";
 			exit 0;
 		fi
+		# Relocation
+		if [ -f "$F" ]; then
+			FASTQ_R2_RELOCATED="$FASTQ_R2_RELOCATED $F"
+	 	elif [ -f "$JSON_DIR/$F" ]; then
+			FASTQ_R2_RELOCATED="$FASTQ_R2_RELOCATED $JSON_DIR/$F"
+		fi;
 	else
 		echo "[ERROR] No input FASTQ R2 '$F' file!";
 		exit 0;
 	fi;
 done;
+FASTQ_R2=$FASTQ_R2_RELOCATED
 
 
 
@@ -314,7 +335,7 @@ fi;
 #fi;
 
 # BEDFILE_GENES
-if [ "$BEDFILE_GENES_INPUT" != "" ] && [ -s $BEDFILE_GENES_INPUT ]; then
+if [ "$BEDFILE_GENES_INPUT" != "" ] && [ -s "$BEDFILE_GENES_INPUT" ]; then
 	BEDFILE_GENES=$BEDFILE_GENES_INPUT;
 fi;
 
@@ -375,7 +396,7 @@ TRANSCRIPTS_ARRAY=($TRANSCRIPTS);
 
 for F in $FASTQ; do
 	# Test FASTQ exists
-	if [ ! -e $F ]; then
+	if [ ! -f $F ] && [ ! -f $JSON_DIR/$F ]; then
 		echo "[ERROR] Input file '$F' does NOT exist! Please check input file --fastq (.fastq.gz|.fq.gz|.bam|.ubam|.cram|.ucram|.sam|.usam)";
 		exit 0;
 	fi;
@@ -385,7 +406,7 @@ for F in $FASTQ; do
 		exit 0;
 	fi;
 	# test FASTQ R2 exists
-	if [ "${FASTQ_R2_ARRAY[$NB_SAMPLE]}" != "" ] && [ ! -e "${FASTQ_R2_ARRAY[$NB_SAMPLE]}" ]; then
+	if [ "${FASTQ_R2_ARRAY[$NB_SAMPLE]}" != "" ] && [ ! -f "${FASTQ_R2_ARRAY[$NB_SAMPLE]}" ]; then
 		echo "[ERROR] Input file Read2 '${FASTQ_R2_ARRAY[$NB_SAMPLE]}' does NOT exist! Please check input file --fastq_R2 (.fastq.gz|.fq.gz)";
 		exit 0;
 	fi;
@@ -433,21 +454,21 @@ for F in $FASTQ; do
 	fi;
 
 	# BED
-	if [ "${BED_ARRAY[$NB_SAMPLE]}" == "" ] || [ ! -e "${BED_ARRAY[$NB_SAMPLE]}" ]; then
+	if [ "${BED_ARRAY[$NB_SAMPLE]}" == "" ] || [ ! -f "${BED_ARRAY[$NB_SAMPLE]}" ]; then
 		BED_CHECKED="$BED_CHECKED$BED_DEFAULT "
 	else
 		BED_CHECKED="$BED_CHECKED${BED_ARRAY[$NB_SAMPLE]} "
 	fi;
 
 	# BEDFILE_GENES
-	if [ "${BEDFILE_GENES_ARRAY[$NB_SAMPLE]}" == "" ] || [ ! -e "${BEDFILE_GENES_ARRAY[$NB_SAMPLE]}" ]; then
+	if [ "${BEDFILE_GENES_ARRAY[$NB_SAMPLE]}" == "" ] || [ ! -f "${BEDFILE_GENES_ARRAY[$NB_SAMPLE]}" ]; then
 		BEDFILE_GENES_CHECKED="$BEDFILE_GENES_CHECKED$BEDFILE_GENES_DEFAULT "
 	else
 		BEDFILE_GENES_CHECKED="$BEDFILE_GENES_CHECKED${BEDFILE_GENES_ARRAY[$NB_SAMPLE]} "
 	fi;
 
 	# TRANSCRIPTS
-	if [ "${TRANSCRIPTS_ARRAY[$NB_SAMPLE]}" == "" ] || [ ! -e "${TRANSCRIPTS_ARRAY[$NB_SAMPLE]}" ]; then
+	if [ "${TRANSCRIPTS_ARRAY[$NB_SAMPLE]}" == "" ] || [ ! -f "${TRANSCRIPTS_ARRAY[$NB_SAMPLE]}" ]; then
 		TRANSCRIPTS_CHECKED="$TRANSCRIPTS_CHECKED$TRANSCRIPTS_DEFAULT "
 	else
 		TRANSCRIPTS_CHECKED="$TRANSCRIPTS_CHECKED${TRANSCRIPTS_ARRAY[$NB_SAMPLE]} "
@@ -644,7 +665,7 @@ if [ -z "$APP_NAME" ]; then APP_NAME="UNKNOWN"; fi;
 
 
 #echo -e "FASTQ=$FASTQ\nFASTQ_R2=$FASTQ_R2\nSAMPLE=$SAMPLE\nRUN=$RUN\nINPUT$INPUT\nOUTPUT=$OUTPUT\n\n$PIPELINES\n$BED";
-if (($VERBOSE)); then
+if (($DEBUG)); then
 	echo -e "FASTQ $FASTQ\nFASTQ_R2 $FASTQ_R2\nSAMPLE $SAMPLE\nRUN $RUN\nBED $BED\nGENES $BEDFILE_GENES\nTRANSCRIPTS $TRANSCRIPTS\nINPUT $INPUT\nOUTPUT $OUTPUT\n\nPIPELINES $PIPELINES" | column -t;
 fi;
 
@@ -796,31 +817,18 @@ for RUU in $RUN_UNIQ; do
 					echo "#[INFO] Create Input data from BAM/CRAM/SAM file"
 					# Sort and FASTQ generation
 					TMP_INPUT_BAM=$TMP_FOLDER_TMP/INPUT_BAM_$RANDOM
-					mkdir -p $TMP_INPUT_BAM;
+					#mkdir -p $TMP_INPUT_BAM;
 					$SAMTOOLS sort -n --reference $REF -@ $THREADS $F -T $TMP_INPUT_BAM -O SAM 2>/dev/null | $SAMTOOLS bam2fq - -1 $RUN_SAMPLE_DIR/$S.R1.fastq.gz -2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz -@ $THREADS -c 0 2>/dev/null | $GZ -c 1> $RUN_SAMPLE_DIR/$S.R0.fastq.gz 2>/dev/null;
-					rm -rf $TMP_INPUT_BAM;
+					#rm -rf $TMP_INPUT_BAM;
+
 					# Ff R0 not empty or number of reads differs between R1 and R2 > Single END
 					if (( $($UNGZ -c $RUN_SAMPLE_DIR/$S.R0.fastq.gz | head -n 1 | wc -l) )) \
 						|| (( $(diff <($UNGZ -c $RUN_SAMPLE_DIR/$S.R1.fastq.gz | paste - - - - | cut -f1 -d$'\t') <($UNGZ -c $RUN_SAMPLE_DIR/$S.R2.fastq.gz | paste - - - - | cut -f1 -d$'\t') | head -n 1 | wc -l) )); then
-						echo "#[WARNING] Read names or order differ between R1 and R2 fastq files, or R0 file is not empty. Reads are supposed not to be paired (Single-END). All reads in R1.";
+						echo "#[WARNING] Read names or order differ between R1 and R2 fastq files, or R0 file is not empty. Reads are supposed not to be paired (Single-End). All reads in R1.";
 						$UNGZ -c $RUN_SAMPLE_DIR/$S.R2.fastq.gz $RUN_SAMPLE_DIR/$S.R0.fastq.gz >> $RUN_SAMPLE_DIR/$S.R1.fastq.gz;
 						$GZ < /dev/null > $RUN_SAMPLE_DIR/$S.R2.fastq.gz;
 					fi;
 					rm -f $RUN_SAMPLE_DIR/$S.R0.fastq.gz;
-				fi;
-
-				# OLD version of Input datz from BAM/SAM/CRAM
-				if ((0)); then
-					echo "#[INFO] Create Input data from BAM/CRAM/SAM file"
-					# Other command with BEDTOOLS: bamToFastq [OPTIONS] -i <BAM> -fq <FASTQ> -fq2 <FASTQR2> -tags
-					$SAMTOOLS bam2fq $F -1 $RUN_SAMPLE_DIR/$S.R1.fastq -2 $RUN_SAMPLE_DIR/$S.R2.fastq 1>$RUN_SAMPLE_DIR/$S.R0.fastq 2>/dev/null;
-					if [ -s $RUN_SAMPLE_DIR/$S.R0.fastq ]; then
-						cat $RUN_SAMPLE_DIR/$S.R2.fastq $RUN_SAMPLE_DIR/$S.R0.fastq >> $RUN_SAMPLE_DIR/$S.R1.fastq;
-						> $RUN_SAMPLE_DIR/$S.R2.fastq;
-					fi;
-					$COMPRESS $RUN_SAMPLE_DIR/$S.R1.fastq --fast -f -q 1>/dev/null 2>/dev/null;
-					$COMPRESS $RUN_SAMPLE_DIR/$S.R2.fastq --fast -f -q 1>/dev/null 2>/dev/null;
-					rm -f $RUN_SAMPLE_DIR/$S.R0.fastq;
 				fi;
 
 			fi;

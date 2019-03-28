@@ -13,7 +13,7 @@ def keyvalue(obj,key=""):
 			if hasattr(v, '__iter__'):
 				keyvalue(v,k)
 			else:
-				print '--%s=%s' % (k, str(v).strip())
+				print '--%s=%s' % (k, '"'+str(v).strip()+'"')
 	elif type(obj) == list:
 		list_concat=""
 		for v in obj:
@@ -23,7 +23,7 @@ def keyvalue(obj,key=""):
 			else:
 				if list_concat != "":
 					sep=","
-				list_concat=list_concat+sep+str(v).strip()
+				list_concat=list_concat+sep+'"'+str(v).strip()+'"'
 		if list_concat != "":
 			print "--"+key+"="+list_concat
 	else:
