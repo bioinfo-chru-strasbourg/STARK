@@ -169,6 +169,10 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 	echo $$(echo $$(basename $@) | awk -F"." '{print $$1}')"	?	?	?	?	0	0	0	?	?	0	?	0	0	0	0	0	?	?	?	0	?	?	?	?	1	?	0	0	0	0	0	0	0	?	0	0	0	0	0	0	0	0" >> $@
 
 
+PICARD_CollectHsMetrics_MINIMUM_MAPPING_QUALITY?="10"
+PICARD_CollectHsMetrics_MINIMUM_BASE_QUALITY?="10"
+PICARD_CollectHsMetrics_PARAM?=" --MINIMUM_MAPPING_QUALITY $(PICARD_CollectHsMetrics_MINIMUM_MAPPING_QUALITY) --MINIMUM_BASE_QUALITY $(PICARD_CollectHsMetrics_MINIMUM_BASE_QUALITY) "
+
 %.bam.metrics/metrics.picard: %.bam %.bam.bai %.for_metrics_bed %.3fields.for_metrics_bed %.empty.HsMetrics %.genome
 	#%.withoutheader.for_metrics_bed
 	#JAVA_MEMORY_BY_SAMPLE ???
@@ -180,12 +184,20 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 	-if [ -s $*.3fields.for_metrics_bed ]; then \
 		#$(JAVA) $(JAVA_FLAGS) -jar $(PICARDLIB)/CalculateHsMetrics.jar INPUT=$< OUTPUT=$(@D)/$(*F).HsMetrics BAIT_INTERVALS=$*.3fields.for_metrics_bed TARGET_INTERVALS=$*.3fields.for_metrics_bed VALIDATION_STRINGENCY=LENIENT 2>$(@D)/$(*F).HsMetrics.err; \
 		#$(JAVA) $(JAVA_FLAGS_BY_SAMPLE) -jar $(PICARD) CollectHsMetrics INPUT=$< OUTPUT=$(@D)/$(*F).HsMetrics R=`cat $*.genome` BAIT_INTERVALS=$*.3fields.for_metrics_bed TARGET_INTERVALS=$*.3fields.for_metrics_bed PER_TARGET_COVERAGE=$(@D)/$(*F).HsMetrics.per_target_coverage 2>$(@D)/$(*F).HsMetrics.err VALIDATION_STRINGENCY=LENIENT; \
-		$(JAVA) $(JAVA_FLAGS_BY_SAMPLE) -jar $(PICARD) CollectHsMetrics INPUT=$< OUTPUT=$(@D)/$(*F).HsMetrics R=`cat $*.genome` BAIT_INTERVALS=$*.for_metrics_bed TARGET_INTERVALS=$*.for_metrics_bed PER_TARGET_COVERAGE=$(@D)/$(*F).HsMetrics.per_target_coverage 2>$(@D)/$(*F).HsMetrics.err VALIDATION_STRINGENCY=LENIENT; \
+		$(JAVA) $(JAVA_FLAGS_BY_SAMPLE) -jar $(PICARD) CollectHsMetrics INPUT=$< OUTPUT=$(@D)/$(*F).HsMetrics R=`cat $*.genome` BAIT_INTERVALS=$*.for_metrics_bed TARGET_INTERVALS=$*.for_metrics_bed PER_TARGET_COVERAGE=$(@D)/$(*F).HsMetrics.per_target_coverage $(PICARD_CollectHsMetrics_PARAM) 2>$(@D)/$(*F).HsMetrics.err VALIDATION_STRINGENCY=LENIENT; \
 	fi;
 	# VALIDATION_STRINGENCY=LENIENT
 	if [ ! -s $(@D)/$(*F).HsMetrics ]; then cp $*.empty.HsMetrics $(@D)/$(*F).HsMetrics; echo "#[ERROR] BAM PICARD Metrics failed. Empty HsMetrics file generated. See '$(@D)/$(*F).HsMetrics.err'" >> $@; fi
 	echo "#[$$(date)] BAM PICARD Metrics done" >> $@
 
+
+
+
+SAMTOOLS_METRICS_VIEW_MAP_Q?=10
+SAMTOOLS_METRICS_VIEW_PARAM?= -M -F 1024 -F 4 -q $(SAMTOOLS_METRICS_VIEW_MAP_Q)
+SAMTOOLS_METRICS_DEPTH_base_q?=10
+SAMTOOLS_METRICS_DEPTH_map_q?=10
+SAMTOOLS_METRICS_DEPTH_PARAM?= -d 0 -q $(SAMTOOLS_METRICS_DEPTH_q) 
 
 # SAMTOOLS METRICS
 %.bam.metrics/metrics.samtools: %.bam %.bam.bai %.genome %.for_metrics_bed %.withoutheader.for_metrics_bed %.3fields.for_metrics_bed
@@ -196,9 +208,9 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 	if [ -s $*.withoutheader.for_metrics_bed ]; then \
 		#$(SAMTOOLS) depth -b $*.withoutheader.for_metrics_bed $< > $(@D)/$(*F).depthbed; \
 		# CLEAN BAM \
-		$(SAMTOOLS) view -F 1024 -F 4 -q 10 -h $<  -1 -@ $(THREADS) > $<.cleaned.bam ; \
+		$(SAMTOOLS) view $(SAMTOOLS_METRICS_VIEW_PARAM) -h $<  -1 -@ $(THREADS) > $<.cleaned.bam ; \
 		# DEPTHBED ON \
-		$(SAMTOOLS) depth -b $*.withoutheader.for_metrics_bed $<.cleaned.bam > $(@D)/$(*F).depthbed; \
+		$(SAMTOOLS) depth -b $*.withoutheader.for_metrics_bed $(SAMTOOLS_METRICS_DEPTH_PARAM) $<.cleaned.bam > $(@D)/$(*F).depthbed; \
 		# DEPTHBED OFF \
 		#$(BEDTOOLS)/intersectBed -abam $<.cleaned.bam -b $*.withoutheader.for_metrics_bed -v | $(SAMTOOLS) depth - > $(@D)/$(*F).off.depthbed; \
 		# ON NBReads \
@@ -335,16 +347,17 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 	# grep  -P $GENES_LIST /home1/TOOLS/db/RefSeq.hg19.be
 	mkdir -p $(@D);
 	touch $@;
-	+if (($(BAM_METRICS))) || [ -s $(BEDFILE_GENES) ] ; then \
+	+if (($(BAM_METRICS))) || [ "$(BEDFILE_GENES)" != "" ] ; then \
 		mkdir -p $(@D); \
 		touch $@; \
 		if [ -s `file=$$( echo $* | cut -d. -f1 ); echo "$$file.genes"` ] ; then \
 			echo "BEDFILE_GENES from SAMPLE.genes"; \
 			bedfile_genes_list=`file=$$( echo $* | cut -d. -f1 ); echo "$$file.genes"`; \
-		elif [ ! -z $(BEDFILE_GENES) ]; then \
-			echo "BEDFILE_GENES from BEDFILE_GENES variable "; \
+		#elif [ ! -z $(BEDFILE_GENES) ]; then \
+		elif [ "$(BEDFILE_GENES)" != "" ]; then \
+			echo "BEDFILE_GENES from BEDFILE_GENES variable. Use all files to generate metrics."; \
 			bedfile_genes_list=""; \
-			for bedfile_genes in $$(echo $(BEDFILE_GENES)); \
+			for bedfile_genes in $$(echo $(BEDFILE_GENES) | tr " " "\n" | sort -u); \
 			do \
 				bedfile_name=$$( basename $$bedfile_genes | sed "s/\.genes$$//" ); \
 				cp $$bedfile_genes $(@D)/$(*F)_$${bedfile_name}.bed; \

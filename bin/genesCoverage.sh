@@ -51,7 +51,7 @@ function usage
 ####################################################################################################################################
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ARGS=$(getopt -o "f:b:c:n:t:u:s:o:vh" --long "bam-file:,bedfile-genes:,coverage-criteria:,nb-bases-arounds:,dp_fail:,dp_warn:,dp_threshold:,bedtools:,samtools:,output:,threads:,verbose,help" -- "$@" 2> /dev/null)
+ARGS=$(getopt -o "f:b:c:n:t:u:s:o:vhd" --long "bam-file:,bedfile-genes:,coverage-criteria:,nb-bases-arounds:,dp_fail:,dp_warn:,dp_threshold:,bedtools:,samtools:,output:,threads:,verbose,debug,help" -- "$@" 2> /dev/null)
 [ $? -ne 0 ] && \
 	echo "Error in the argument list." "Use -h or --help to display the help." >&2 && \
 	exit 1
@@ -111,6 +111,10 @@ do
 			VERBOSE=1
 			shift 1
 			;;
+		-d|--debug)
+			DEBUG=1
+			shift 1
+			;;
 		--) shift
 			break
 			;;
@@ -151,29 +155,41 @@ if [ -z "$VERBOSE" ]; then
 	VERBOSE=0
 fi;
 
+(($DEBUG)) && echo $BEDFILE_GENES && head $BEDFILE_GENES
+
+
+
+BEDFILE_GENES_CHECKED=$BEDFILE_GENES.$RANDOM.checked
+
 # Add strand in bed file if only 4 column
 if [ "$(grep '^#' -v $BEDFILE_GENES | head -n 1  | awk -F'\t' '{print NF}')" == 4 ] || ! [[ "$(grep '^#' -v $BEDFILE_GENES | head -n 1 | awk -F'\t' '{print $4}')" =~ [+-] ]]; then
-	awk -F"\t" '{ print $1"\t"$2"\t"$3"\t+\t"$5 }' $BEDFILE_GENES > $BEDFILE_GENES.add_strand.bed; mv $BEDFILE_GENES.add_strand.bed $BEDFILE_GENES_CUT
+	awk -F"\t" '{ print $1"\t"$2"\t"$3"\t+\t"$4 }' $BEDFILE_GENES > $BEDFILE_GENES_CHECKED
+else
+	cp $BEDFILE_GENES $BEDFILE_GENES_CHECKED
 fi
 
-BEDFILE_GENES_CUT=$BEDFILE_GENES.$RANDOM.cut
+(($DEBUG)) && echo $BEDFILE_GENES_CHECKED && head $BEDFILE_GENES_CHECKED
+
+BEDFILE_GENES_CUT=$BEDFILE_GENES_CHECKED.$RANDOM.cut
 
 if (($NB_BASES_AROUND)); then
 	# add of number of bases around the bed
-	awk -F"\t" -v x=$NB_BASES_AROUND '{ print $1"\t"$2-x"\t"$3+x"\t"$4"\t"$5 }' $BEDFILE_GENES > $BEDFILE_GENES.bases_arounds.bed; mv $BEDFILE_GENES.bases_arounds.bed $BEDFILE_GENES_CUT
+	awk -F"\t" -v x=$NB_BASES_AROUND '{ print $1"\t"$2-x"\t"$3+x"\t"$4"\t"$5 }' $BEDFILE_GENES_CHECKED > $BEDFILE_GENES_CHECKED.bases_arounds.bed; mv $BEDFILE_GENES_CHECKED.bases_arounds.bed $BEDFILE_GENES_CUT
 	# sort the bed file
-	cat  $BEDFILE_GENES_CUT | sort -k1,1 -k2,2n > $BEDFILE_GENES.sort.bed;
-	mv $BEDFILE_GENES.sort.bed $BEDFILE_GENES_CUT
+	cat  $BEDFILE_GENES_CUT | sort -k1,1 -k2,2n > $BEDFILE_GENES_CHECKED.sort.bed;
+	mv $BEDFILE_GENES_CHECKED.sort.bed $BEDFILE_GENES_CUT
 	#echo ""; head $BEDFILE_GENES_CUT
 	# merge the overlapping coordinates of the bed file
 	#cat $BEDFILE_GENES_CUT | $BEDTOOLS2/mergeBed -i - -c 4 -o distinct -delim "|" > $BEDFILE_GENES.merge.bed
-	cat $BEDFILE_GENES_CUT | $BEDTOOLS merge -i - -c 4,5 -o distinct -delim "|" > $BEDFILE_GENES.merge.bed
-	mv $BEDFILE_GENES.merge.bed $BEDFILE_GENES_CUT
+	cat $BEDFILE_GENES_CUT | $BEDTOOLS merge -i - -c 4,5 -o distinct -delim "|" > $BEDFILE_GENES_CHECKED.merge.bed
+	mv $BEDFILE_GENES_CHECKED.merge.bed $BEDFILE_GENES_CUT
 	#echo ""; head $BEDFILE_GENES_CUT
 	#rm $BEDFILE_GENES.merge.bed
 else
-	cp $BEDFILE_GENES $BEDFILE_GENES_CUT
+	cp $BEDFILE_GENES_CHECKED $BEDFILE_GENES_CUT
 fi;
+
+(($DEBUG)) && echo $BEDFILE_GENES_CUT && head $BEDFILE_GENES_CUT
 
 #echo ""; head $BEDFILE_GENES_CUT
 
@@ -340,7 +356,7 @@ cp $TMPDIR/$DP.genes_message ${OUTPUT}.msg
 
 rm -rf $TMPDIR $BEDFILE_GENES.coverage_bases #${OUTPUT}.coverage_bases
 
-rm $BEDFILE_GENES_CUT*
+rm  $BEDFILE_GENES_CHECKED* $BEDFILE_GENES_CUT*
 
 
 exit 0;

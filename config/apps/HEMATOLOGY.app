@@ -3,7 +3,7 @@
 
 # DEFAULT ENV
 ######################
-source_app $CONFIG_DEFAULT_APP
+source_app $CONFIG_DEFAULT_APP,SOMATIC
 
 # APPLICATION INFOS
 #####################
@@ -18,3 +18,6 @@ APP_PROJECT=""
 
 # PIPELINES
 PIPELINES="bwamem.gatkUG_HEMATOLOGY.howard bwamem.VarScan_HEMATOLOGY.howard bwamem.itdseek.howard" #
+
+# POST ALIGNEMENT STEPS
+POST_ALIGNMENT_STEPS="sorting markduplicates realignment recalibration compress"

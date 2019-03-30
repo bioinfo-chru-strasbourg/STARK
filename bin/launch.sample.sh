@@ -97,9 +97,9 @@ header;
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
-ARGS=$(getopt -o "e:f:q:b:j:m:s:r:o:u:p:t:ga:vdnh" --long "env:,app:,application:,fastq:,fastq_R1:,fastq_R2:,bed:,manifest:,genes:,transcripts:,sample:,run:,output:,json_dir:,results:,repository:,pipelines:,threads:,by_sample,adapters:,verbose,debug,release,help" -- "$@" 2> /dev/null)
+ARGS=$(getopt -o "e:f:q:b:j:m:s:r:o:u:p:t:ga:vdnh" --long "env:,app:,application:,fastq:,fastq_R1:,fastq_R2:,bed:,manifest:,genes:,transcripts:,sample:,sample_list:,run:,runs_name:,analysis:,analysis_name:,output:,json_dir:,results:,repository:,pipelines:,threads:,no_header,by_sample,adapters:,verbose,debug,release,help" -- "$@" 2> /dev/null)
 [ $? -ne 0 ] && \
-	echo "Error in the argument list." "Use -h or --help to display the help." >&2 && usage && \
+	echo "#[ERROR] Error in the argument list." "Use -h or --help to display the help." >&2 && usage && \
 	exit 1
 eval set -- "$ARGS"
 
@@ -144,7 +144,22 @@ do
 			SAMPLE=$(echo $SAMPLE | tr "," " ")
 			shift 2
 			;;
+		--sample_list)
+			SAMPLE_LIST="$2"
+			SAMPLE_LIST=$(echo $SAMPLE_LIST | tr "," " ")
+			shift 2
+			;;
 		-r|--run)
+		#	RUN="$2"
+		#	RUN=$(echo $RUN | tr "," " ")
+			shift 2
+			;;
+		--runs_name)
+		#	RUN="$2"
+		#	RUN=$(echo $RUN | tr "," " ")
+			shift 2
+			;;
+		--analysis_name)
 			RUN="$2"
 			RUN=$(echo $RUN | tr "," " ")
 			shift 2
@@ -187,6 +202,10 @@ do
 			DEBUG=1
 			shift 1
 			;;
+		--no_header)
+			NO_HEADER=1
+			shift 1
+			;;
 		-n|--release)
 			release;
 			exit 0
@@ -198,7 +217,7 @@ do
 		--) shift
 			break
 			;;
-		*) 	echo "Option $1 is not recognized. " "Use -h or --help to display the help." && usage && \
+		*) 	echo "#[ERROR] Option $1 is not recognized. " "Use -h or --help to display the help." && usage && \
 			exit 1
 			;;
 	esac
@@ -335,7 +354,7 @@ fi;
 #fi;
 
 # BEDFILE_GENES
-if [ "$BEDFILE_GENES_INPUT" != "" ] && [ -s "$BEDFILE_GENES_INPUT" ]; then
+if [ "$BEDFILE_GENES_INPUT" != "" ]; then # && [ -s "$BEDFILE_GENES_INPUT" ]; then
 	BEDFILE_GENES=$BEDFILE_GENES_INPUT;
 fi;
 
@@ -351,8 +370,9 @@ if [ "$BEDFILE_GENES" != "" ]; then
 	BEDFILE_GENES_DEFAULT=$(echo $BEDFILE_GENES | cut -d" " -f1) #`date '+%Y%m%d-%H%M%S'`
 fi;
 
+
 # TRANSCRIPTS
-if [ "$TRANSCRIPTS_INPUT" != "" ] && [ -s $TRANSCRIPTS_INPUT ]; then
+if [ "$TRANSCRIPTS_INPUT" != "" ]; then # && [ -s $TRANSCRIPTS_INPUT ]; then
 	TRANSCRIPTS=$TRANSCRIPTS_INPUT;
 fi;
 
@@ -393,6 +413,7 @@ BEDFILE_GENES_ARRAY=($BEDFILE_GENES);
 TRANSCRIPTS_CHECKED=""
 TRANSCRIPTS_ARRAY=($TRANSCRIPTS);
 
+(($DEBUG)) && echo "#[INFO] FASTQ=$FASTQ";
 
 for F in $FASTQ; do
 	# Test FASTQ exists
@@ -478,6 +499,7 @@ for F in $FASTQ; do
 done;
 
 
+
 SAMPLE=$SAMPLE_CHECKED;
 RUN=$RUN_CHECKED;
 BED=$BED_CHECKED;
@@ -525,10 +547,6 @@ if (($BY_SAMPLE)); then
 	fi;
 fi;
 #echo "# Analysis of '$FASTQ'/'$FASTQ_R2'"
-
-
-
-
 
 
 # PIPELIENS PARAMETERS
@@ -667,6 +685,7 @@ if [ -z "$APP_NAME" ]; then APP_NAME="UNKNOWN"; fi;
 #echo -e "FASTQ=$FASTQ\nFASTQ_R2=$FASTQ_R2\nSAMPLE=$SAMPLE\nRUN=$RUN\nINPUT$INPUT\nOUTPUT=$OUTPUT\n\n$PIPELINES\n$BED";
 if (($DEBUG)); then
 	echo -e "FASTQ $FASTQ\nFASTQ_R2 $FASTQ_R2\nSAMPLE $SAMPLE\nRUN $RUN\nBED $BED\nGENES $BEDFILE_GENES\nTRANSCRIPTS $TRANSCRIPTS\nINPUT $INPUT\nOUTPUT $OUTPUT\n\nPIPELINES $PIPELINES" | column -t;
+	#exit 0;
 fi;
 
 SAMPLE_ARRAY=($SAMPLE);
@@ -723,6 +742,9 @@ for RUU in $RUN_UNIQ; do
 
 	I=0;
 	NB_SAMPLE=0;
+
+#echo $FASTQ; exit 0;
+
 	for F in $FASTQ; do
 
 
@@ -750,7 +772,7 @@ for RUU in $RUN_UNIQ; do
 
 		RUN_SAMPLE_DIR=$OUTPUT/$RU/$S
 
-		if (($VERBOSE)); then
+		if (($DEBUG)); then
 			echo "$F | $F_R2 | $S | $RU | $B | $PIPELINES | $INPUT | $OUTPUT | $RUN_SAMPLE_DIR ";
 			#((I++)); continue;
 		fi;
@@ -996,12 +1018,12 @@ for RUU in $RUN_UNIQ; do
 	#echo "# "
 	echo "#[INFO] *** CONFIGURATION"
 	#echo "#################"
+	echo "#[INFO] SAMPLES                   $S_LIST"
 	echo "#[INFO] FASTQ/BAM/CRAM            $F_LIST"
 	echo "#[INFO] FASTQ R2                  $Q_LIST"
 	echo "#[INFO] DESIGN                    $B_LIST"
 	echo "#[INFO] GENES                     $G_LIST"
 	echo "#[INFO] TRANSCRIPTS               $T_LIST"
-	echo "#[INFO] SAMPLES                   $S_LIST"
 	echo "#[INFO] RUN                       $RUU"
 	echo "#[INFO] APPLICATION               $APP_NAME"
 	echo "#[INFO] APPLICATION FILE          "$(echo $ENV | sed s#$STARK_FOLDER_APPS/##gi)

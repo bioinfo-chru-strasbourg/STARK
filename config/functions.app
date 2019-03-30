@@ -10,7 +10,7 @@ source_app () {
 # $2: APPS folder
 # return APP env file or default APP env file or null
 
-	local APP_LIST=$(echo $1 | tr "," " ") FOLDER_APPS=$2
+	local APP_LIST=$(echo $1 | tr "," " " | tr "+" " ") FOLDER_APPS=$2
 
 	if [ "$FOLDER_APPS" == "" ]; then FOLDER_APPS="$STARK_FOLDER_APPS"; fi
 	if [ "$FOLDER_APPS" == "" ]; then FOLDER_APPS=".."; fi
@@ -139,4 +139,18 @@ convertsecs() {
  ((m=(${1}%3600)/60))
  ((s=${1}%60))
  printf "%02d"h"%02d"m"%02d"s"\n" $h $m $s
+}
+
+list_include_item() {
+# list_include_item "$LIST" "$ITEM"
+	local list=$(echo "$1" | tr "," " ")
+	local item="$2"
+	if [[ $list =~ (^|[[:space:]])"$item"($|[[:space:]]) ]] ; then
+		# yes, list include item
+		result=0
+	else
+		result=1
+	fi
+	echo $return;
+	return $result;
 }

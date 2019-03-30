@@ -3,7 +3,7 @@
 
 # DEFAULT ENV
 ######################
-source_app $CONFIG_DEFAULT_APP
+source_app $CONFIG_DEFAULT_APP,SOMATIC
 
 # APPLICATION INFOS
 #####################
