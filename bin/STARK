@@ -43,35 +43,95 @@ function release () {
 
 # Usage
 function usage {
-	echo "# USAGE: $(basename $0) --runs=<RUN>|--fastq=<FASTQ>|--ana=<FILE> [options...]";
-	echo "# -e|--application|--app|--env=<APP|FILE>     APP name or APP file configuration of the APPLICATION.";
-	echo "#                                             Must be in the STARK APPS folder if relative path";
-	echo "#                                             Default: defined in the RUN SampleSheet, or default.app if not defined";
-	echo "# -f|--fastq|--fastq_R1=<FILE1,FILE2,...>     List of FASTQ|BAM|SAM|CRAM (mandatory if no --runs or --config options)";
-	echo "#                                             Formats: *fastq.gz|*fq.gz|*bam|*ubam|*cram|*ucram|*sam|*usam";
-	echo "# -r|--runs=<STRING1,STRING2,...>             List of RUNs to analyse, from Illumina sequencers (mandatory if no --fastq or --config options).";
-	echo "#                                             RUNS will be automatically searched in all ENV RUN folders, if necessary";
-	echo "#                                             Format: RUN1,RUN2...";
-	echo "# -w|--analysis|--json=<FILE>                 Config file in JSON format listing options (mandatory if no --fastq or --runs options).";
-	echo "# -l|--samplesheet=<FILE>                     Illumina SampleSheet.csv file";
-	echo "#                                             Default: found in RUN folder";
+	echo "# USAGE: $(basename $0) --analysis<FILE>|--runs=<RUN>|--fastq=<FASTQ> [options...]";
+	echo "";
+	echo "# Launch an analysis through (by order of priority):";
+	echo "# --analysis a configuration file ";
+	echo "# --fastq a list of sample files ";
+	echo "# --runs a list of runs folders ";
+	echo "";
+	echo "### Analysis configuration file ###";
+	echo "# --analysis=<FILE1,FILE2...>              List of configuration file in JSON format defining parameters (see below).";
+	echo "#                                          Format: { \"param1\":\"value1\", \"param2\":\"value2\"...}";
+	#echo "#                                          Examples:";
+	#echo "#                                          - SAMPLE Analysis";
+	#echo "#                                          { \"fastq\":\"sample1.R1.fastq,sample2.bam\",";
+	#echo "#                                            \"fastq_R2\":\"sample1.R2.fastq,\",";
+	#echo "#                                            \"bed\":\"sample1.manifest,sample2.bed\",";
+	#echo "#                                            \"application\":\"APP2\" }";
+	#echo "#                                          - RUN Analysis";
+	#echo "#                                          { \"run\":\"/path_of_my_runs/my_run:my_run1,run_name_folder_in_configured_runs_folder:my_run2\",";
+	#echo "#                                            \"bed\":\"my_run.bed,my_other_run.manifest\",";
+	#echo "#                                            \"application\":\"APP2\" }";
+	echo ""
 
+	echo "### SAMPLE Analysis ###";
+	echo "# --reads|--fastq_R1=<FILE1,FILE2...>      List of Reads files for each samples, in FASTQ|BAM|SAM|CRAM";
+	echo "#                                          Formats: *fastq.gz|*fq.gz|*bam|*ubam|*cram|*ucram|*sam|*usam";
+	echo "# --fastq_R2=<FILE1,FILE2...>              List of corresponding FASTQ Read2 file (beware of correspondance).";
+	echo "#                                          Format: (*fastq.gz|fq.gz)";
+	echo "# --sample=<STRING1,STRING2...>            List of corresponding SAMPLE Name";
+	echo "#                                          Automatically detected from input files.";
+	echo "# --analysis_name=<STRING>                 Analysis name.";
+	echo "#                                          Default: 'date' (format YYYYMMDD) for a SAMPLE list analysis .";
+	echo "# --adapters=<STRING>                      Adapters to trim.";
+	echo "# --by_sample                              Split analysis by SAMPLE, all threads on each sample, one by one.";
+	echo ""
 
-	echo "# -i|--application_infos                      Applications informations.";
-	echo "# -y|--pipelines_infos                        Pipelines informations.";
-	echo "# -g|--release_infos                          Pipelines with tools and databases information.";
-	echo "# -x|--tools_infos                            Tools release information.";
-	echo "# --databases_infos                           Databases information.";
+	echo "### RUN Analysis";
+	echo "# --runs=<STRING1,STRING2...>              List of RUNs to analyse, from Illumina sequencers (BCL) or from demultiplexing (FASTQ).";
+	echo "#                                          RUN can be a folder path, or the run folder in defined runs folders (see Application configuration)";
+	echo "#                                          Analysis name of each RUN can be defined using ':' after each RUN (default: run folder name)";
+	echo "#                                          Format: RUN1:RUN1_ANALYSIS_NAME,RUN2:RUN2_ANALYSIS_NAME...";
+	echo "#                                          Example: /path_of_my_runs/my_run:my_run1,run_name_folder_in_configured_runs_folder:my_run2";
+	echo "# --samplesheet=<FILE1,FILES2...>          List of corresponding Illumina SampleSheet.csv file to use with RUNS";
+	echo "#                                          Default: found in RUN folder";
+	echo "# --sample_list=<STRING1,STRING2...>       List of SAMPLE name in Illumina SampleSheet.csv to analyse";
+	echo "#                                          Default: all samples in the SampleSheet ";
+	echo "";
 
-	echo "# -v|--verbose                                VERBOSE option";
-	echo "# -d|--debug                                  DEBUG option";
-	echo "# -n|--release                                RELEASE option";
-	echo "# -h|--help                                   HELP option";
+	echo "### Other parameters ###";
+	echo "# --application=<STRING|FILE>              APP name or APP file configuration of the APPLICATION.";
+	echo "#                                          Must be in the STARK APPS folder if relative path";
+	echo "#                                          Default: defined in the RUN SampleSheet, or default.app if not defined";
+
+	echo "# --design=<FILE1,FILE2...>                List of corresponding design for SAMPLE analysis";
+	echo "#                                          OR force design for RUN analysis (use only one design).";
+	echo "#                                          If not *.bed file (BED format), considered as Illumina manifest.";
+	echo "#                                          Default: first BED or empty";
+	echo "# --genes=<FILE1,FILE2...>                 List of corresponding GENES files.";
+	echo "#                                          OR force GENES file for RUN analysis (use only one GENES file).";
+	echo "#                                          Format: BED (chr<TAB>start<TAB>stop<TAB>strand<TAB>gene_name).";
+	echo "#                                          Default first GENES file or empty";
+	echo "# --transcripts=<FILE1,FILE2...>           List of corresponding TRANSCRIPTS files.";
+	echo "#                                          OR force TRANSCRIPTS file for RUN analysis (use only one TRANSCRIPTS file).";
+	echo "#                                          Format: TSV (transcript<TAB>geneID).";
+	echo "#                                          Default first TRANSCRIPTS file or empty";
+
+	echo "# --results=<FOLDER>                       Output/results directory to generate RESULTS|RUN|SAMPLE|* files";
+	echo "#                                          Default: Defined in Application, or first --fastq file folder";
+	echo "# --repository=<FOLDER>                    Repository directory to generate REPOSITORY|RUN|SAMPLE|* specific files";
+	echo "#                                          Default: no copy in a repository for SAMPLE Analysis, defined in Application for RUN analysis";
+	echo "# --threads=<INTEGER>                      Number of thread to use";
+	echo "#                                          Default: all cores in your system minus one";
+	echo "";
+
+	echo "### Information parameters ###";
+	echo "# --application_infos                      Applications informations.";
+	echo "# --pipelines_infos                        Pipelines informations.";
+	echo "# --release_infos                          Pipelines with tools and databases information.";
+	echo "# --tools_infos                            Tools release information.";
+	echo "# --databases_infos                         Databases information.";
+
+	echo "# --verbose                                VERBOSE option";
+	echo "# --debug                                  DEBUG option";
+	echo "# --release                                RELEASE option";
+	echo "# --help                                   HELP option";
 	echo "#";
 	#echo -e "#\n# RUN Analysis\n################";
 	#$STARK_FOLDER_BIN/launch.sh -h | grep "# [ |-]";
-	echo -e "#\n# SAMPLE Analysis\n###################";
-	$STARK_FOLDER_BIN/launch.sample.sh -h | grep "# [ |-]";
+	#echo -e "#\n# SAMPLE Analysis\n###################";
+	#$STARK_FOLDER_BIN/launch.sample.sh -h | grep "# [ |-]";
 }
 
 
@@ -87,19 +147,26 @@ function usage {
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
-ARGS=$(getopt -o "e:r:f:l:s:w:t:iygxvdnh" --long "env:,app:,application:,runs:,fastq:,fastq_R1:,json:,analysis:,analysis_name:,json_dir:,samplesheet:,sample:,sample_list:,threads:,no_header,application_infos,applications_infos,pipelines_infos,release_infos,tools_infos,databases_infos,verbose,debug,release,help" -- "$@" 2> /dev/null)
+ARGS=$(getopt -o "a:b:e:r:f:q:g:j:m:l:s:w:t:o:u:iygxvdnh" --long "env:,app:,application:,runs:,fastq:,reads:,fastq_R1:,by_sample,fastq_R2:,adapters:,analysis:,analysis_name:,analysis_dir:,samplesheet:,sample:,sample_list:,design:,bed:,manifest:,genes:,transcripts:,threads:,output:,repository:,no_header,applications_infos,pipelines_infos,release_infos,tools_infos,databases_infos,verbose,debug,release,help" -- "$@" 2> /dev/null)
+#ARGS=$(getopt -o "e:r:f:l:w:t:iygxvdnh" --long "env:,app:,application:,runs:,fastq:,fastq_R1:,json:,ana:,analysis:,samplesheet:,threads:,application_infos,applications_infos,pipelines_infos,release_infos,tools_infos,databases_infos,verbose,debug,release,help" -- "$@" 2> /dev/null)
+#ARGS=$(getopt -o "e:r:f:l:s:w:t:iygxvdnh" --long "env:,app:,application:,runs:,fastq:,fastq_R1:,analysis:,analysis_name:,analysis_dir:,samplesheet:,sample:,sample_list:,threads:,no_header,application_infos,applications_infos,pipelines_infos,release_infos,tools_infos,databases_infos,verbose,debug,release,help" -- "$@" )
 # || [ -z $@ ]
 if [ $? -ne 0 ]; then
 	:
-	#echo $?
-	#usage;
-	#exit;
+	echo "#[ERROR] Error in the argument list:";
+	echo "#[ERROR] $@"
+	echo ""
+	usage;
+	exit;
 fi;
+
+
 PARAM=$@
 DEBUG=0
 VERBOSE=0
 #PARAM=$(echo $@ | tr "\n" " ")
 #echo $PARAM;
+#echo $ARGS;
 #PARAM=$(echo $ARGS | sed s/--//gi);
 #exit 0;
 
@@ -117,13 +184,21 @@ do
 			RUNS="$2"
 			shift 2
 			;;
+		-w|--analysis)
+			ANALYSIS="$2"
+			shift 2
+			;;
 		--analysis_name)
 			ANALYSIS_NAME="$2"
 			#ANALYSIS_NAME=$(echo $ANALYSIS_NAME | tr "," " ")
 			shift 2
 			;;
-		-f|--fastq|--fastq_R1)
+		-f|--reads|--fastq|--fastq_R1)
 			FASTQ=$2 #"$(echo $2 | tr "\n" " ")"
+			shift 2
+			;;
+		-q|--fastq_R2)
+			FASTQ_R2=$2 #"$(echo $2 | tr "\n" " ")"
 			shift 2
 			;;
 		-l|--samplesheet)
@@ -140,7 +215,30 @@ do
 			SAMPLE_LIST=$(echo $SAMPLE_LIST | tr "," " ")
 			shift 2
 			;;
-		-i|--application_infos|--applications_infos)
+		-b|--design|--bed|--manifest)
+			BED_INPUT="$2"
+			BED_INPUT=$(echo $BED_INPUT | tr "," " ")
+			shift 2
+			;;
+		-j|--genes)
+			BEDFILE_GENES_INPUT="$2"
+			BEDFILE_GENES_INPUT=$(echo $BEDFILE_GENES_INPUT | tr "," " ")
+			shift 2
+			;;
+		-m|--transcripts)
+			TRANSCRIPTS_INPUT="$2"
+			TRANSCRIPTS_INPUT=$(echo $TRANSCRIPTS_INPUT | tr "," " ")
+			shift 2
+			;;
+		-o|--output|--results)
+			OUTPUT="$2"
+			shift 2
+			;;
+		-u|--repository)
+			REPOSITORY="$2"
+			shift 2
+			;;
+		-i|--applications_infos)
 			APPLICATIONS_INFOS=1
 			shift 1
 			;;
@@ -160,12 +258,20 @@ do
 			DATABASES_INFOS=1
 			shift 1
 			;;
-		--json_dir)
-			JSON_DIR="$2"
+		--analysis_dir)
+			ANALYSIS_DIR="$2"
 			shift 2
+			;;
+		-g|--by_sample)
+			BY_SAMPLE=1
+			shift 1
 			;;
 		-t|--threads)
 			THREADS_INPUT="$2"
+			shift 2
+			;;
+		-a|--adapters)
+			ADAPTERS="$2"
 			shift 2
 			;;
 		-v|--verbose)
@@ -182,12 +288,9 @@ do
 			exit 0
 			;;
 		-h|--help)
+			HELP=1
 			usage
 			exit 0
-			;;
-		-w|--json|--analysis)
-			JSON="$2"
-			shift 2
 			;;
 		--no_header)
 			NO_HEADER=1
@@ -206,12 +309,11 @@ done
 # header
 (($NO_HEADER)) || header;
 
-
 ####################################################################################################################################
 # Checking the input parameter
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-if [ -z "$FASTQ" ] && [ -z "$RUNS" ] && [ -z "$JSON" ] && [ -z "$APPLICATIONS_INFOS" ] && [ -z "$PIPELINES_INFOS" ] && [ -z "$RELEASE_INFOS" ] && [ -z "$TOOLS_INFOS" ] && [ -z "$DATABASES_INFOS" ] && ((!$DEBUG)); then
-	echo "Option --runs or --fastq or --applications_infos or --pipelines_infos or --release_infos or --tools_infos is required. " "Use -h or --help to display the help." && usage && exit 1;
+if [ -z "$FASTQ" ] && [ -z "$RUNS" ] && [ -z "$ANALYSIS" ] && [ -z "$APPLICATIONS_INFOS" ] && [ -z "$PIPELINES_INFOS" ] && [ -z "$RELEASE_INFOS" ] && [ -z "$TOOLS_INFOS" ] && [ -z "$DATABASES_INFOS" ] && ((!$DEBUG)); then
+	echo "#[ERROR] Required parameter: --analysis, --runs, or --fastq. For informations --applications_infos, --pipelines_infos, --release_infos, --tools_infos. Use --help to display the help." && echo "" && usage && exit 1;
 fi
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -232,11 +334,18 @@ fi;
 # ENV
 #########
 
+#echo "APP=$APP"; exit;
+(($VERBOSE)) && [ ! -z "$APP" ] && echo "#[INFO] Search Application '$APP'"
+
 ENV=$(find_app "$APP" "$STARK_FOLDER_APPS")
 source_app "$APP" "$STARK_FOLDER_APPS"
 
 export ENV
 export APP
+
+(($VERBOSE)) && [ ! -z "$APP" ] && [ ! -z "$ENV" ] && echo "#[INFO] Application '$APP' found ('$ENV')"
+(($VERBOSE)) && [ ! -z "$APP" ] && [ -z "$ENV" ] && echo "#[INFO] Application '$APP' NOT found"
+
 
 #echo $APP; exit 0;
 
@@ -267,16 +376,22 @@ APP_DELIMITER="|"
 
 EXIT=0
 
+# PARAMETERS in ARRAYS
+
+# SAMPLESHEET
+SAMPLESHEET_INPUT_ARRAY=($(echo $SAMPLESHEET_INPUT | tr "," " "))
+
+
 
 # APPLICATIONS_INFOS
 #######
 
 if (($APPLICATIONS_INFOS)); then
 
-	if [ ! -e $SAMPLESHEET_INPUT ]; then
-		echo "#[ERROR] SampleSheet '$SAMPLESHEET_INPUT' does NOT exists."
-		exit 0;
-	fi;
+	#if [ ! -e $SAMPLESHEET_INPUT ]; then
+	#	echo "#[ERROR] SampleSheet '$SAMPLESHEET_INPUT' does NOT exists."
+	#	#exit 0;
+	#fi;
 
 
 	#SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -567,20 +682,23 @@ fi;
 ##########
 
 
-if [ "$JSON" != "" ]; then
+if [ "$ANALYSIS" != "" ]; then
 
-	(($DEBUG)) && echo "#[INFO] Config files '$JSON'"
+	echo "#[INFO] Test Analysis Configuration files"
 
-	for J in $(echo $JSON | tr "," " "); do
+	(($DEBUG)) && echo "#[INFO] Config files '$ANALYSIS'"
+
+	for J in $(echo $ANALYSIS | tr "," " "); do
 
 		if [ -f $J ]; then
 
 			echo "#[INFO] Config file '$J' does exists."
-			PARAM_JSON=$(echo "$PARAM " | sed "s/--analysis=[^ |$]*//gi" | sed "s/--json=[^ |$]*//gi" | sed "s/-w [^ |$]*//gi")
+			PARAM_ANALYSIS=$(echo "$PARAM " | sed "s/--analysis=[^ |$]*//gi" | sed "s/-w [^ |$]*//gi")
 
 			PARAM_STARK="$($STARK_FOLDER_BIN/json_to_options.py $J)"
-			JSON_DIR=$(dirname $J)
-			PARAM_STARK=" --json_dir=$JSON_DIR $PARAM_STARK"
+			#ANALYSIS_DIR=$(dirname $J)
+			ANALYSIS_DIR=$(cd "$( dirname $J )" && pwd)
+			PARAM_STARK=" --analysis_dir=$ANALYSIS_DIR $PARAM_STARK"
 			if [ $? -eq 0 ]; then
 			    (($DEBUG)) && echo "#[INFO] $PARAM_STARK"
 			else
@@ -588,19 +706,19 @@ if [ "$JSON" != "" ]; then
 			    exit 1;
 			fi
 
-			#CMD=$(echo $0" "$PARAM_STARK" $PARAM_JSON")
-			#CMD="$0 $PARAM_JSON $PARAM_STARK --no_header "
-			CMD="$0 $PARAM_STARK $PARAM_JSON --no_header "
+			#CMD=$(echo $0" "$PARAM_STARK" $PARAM_ANALYSIS")
+			#CMD="$0 $PARAM_ANALYSIS $PARAM_STARK --no_header "
+			CMD="$0 $PARAM_STARK $PARAM_ANALYSIS --no_header "
 			(($VERBOSE)) && echo "#[INFO] CMD="$(echo $CMD | tr "\n" " ")
 			(($VERBOSE)) && echo ""
 
-			eval $CMD;
+#			eval $CMD;
 			#exit 0
 			EXIT=1
 
 		elif [ "$J" != "" ]; then
 
-			echo "[WARNING] Analysis configuration file '$J' does NOT exist"
+			echo "#[WARNING] Analysis configuration file '$J' does NOT exist"
 
 		fi;
 
@@ -621,11 +739,11 @@ fi;
 if [ ! -z "$FASTQ" ]; then # && [ -e "$FASTQ" ]; then
 	# TEST FASTQs if exist
 
-	(($VERBOSE)) && echo "#[INFO] Test Samples Analysis"
+	echo "#[INFO] Test Samples Analysis"
 
 	FASTQ_EXISTS=1
 	for F in $(echo $FASTQ | tr "," " "); do
-		if [ -f $F ] || [ -f $JSON_DIR/$F ]; then
+		if [ -f $F ] || [ -f $ANALYSIS_DIR/$F ]; then
 			(($VERBOSE)) && echo "#[INFO] Input File '$F' exists"
 		else
 			echo "#[WARNING] Input File '$F' does NOT exist"
@@ -637,8 +755,10 @@ if [ ! -z "$FASTQ" ]; then # && [ -e "$FASTQ" ]; then
 	if (($FASTQ_EXISTS)); then
 		#echo -e "#\n# Launch SAMPLE Analysis '$FASTQ'\n#"; # $PARAM
 		echo "#[INFO] Start SAMPLE Analysis"
-		echo ""
-		$STARK_FOLDER_BIN/launch.sample.sh $PARAM
+		#echo "$PARAM"
+		CMD="$STARK_FOLDER_BIN/launch.sample.sh $PARAM"
+		echo "#[INFO] $CMD"
+		eval $CMD
 		echo ""
 		EXIT=1
 	else
@@ -655,8 +775,6 @@ fi;
 
 
 
-
-
 # RUN (if no FASTQ files)
 ##############################
 
@@ -666,7 +784,7 @@ fi;
 
 if [ ! -z "$RUNS" ]; then
 
-	(($VERBOSE)) && echo "#[INFO] Test Runs Analysis"
+	echo "#[INFO] Test Runs Analysis"
 
 	#RUNS_NAME_ARRAY=($RUNS_NAME)
 	#RUN_INDEX=0
@@ -680,7 +798,7 @@ if [ ! -z "$RUNS" ]; then
 		R=$(echo $RI | awk -F: '{print $1}')
 		RUN_NAME=$(echo $RI | awk -F: '{print $2}')
 		[ "$RUN_NAME" == "" ] && RUN_NAME=$(basename $R)
-		#echo "R=$R RUN_NAME=$RUN_NAME"; continue;
+		#echo "R=$R RUN_NAME=$RUN_NAME"; #continue;
 
 		#RUN_NAME=${RUNS_NAME_ARRAY[$RUN_INDEX]}
 		RUN_PATH=""
@@ -694,17 +812,19 @@ if [ ! -z "$RUNS" ]; then
 				[ -d $FR/$R ] && RUN_PATH="$RUN_PATH$FR/$R" && echo "#[INFO] Input RUN '$R' found in RUN folder '$FR'"
 			done;
 			[ $(echo $RUN_PATH | wc -w) -gt 1 ] && echo "#[ERROR] Input Run '$R' found in multiple RUN folders: $RUN_PATH" && echo "" && exit 0;
-			RUNS_TO_LAUNCH="$RUNS_TO_LAUNCH$RUN_PATH:$RUN_NAME "
+			[ ! -z "$RUN_PATH" ] && RUNS_TO_LAUNCH="$RUNS_TO_LAUNCH$RUN_PATH:$RUN_NAME "
 		fi;
 		#((RUN_INDEX++))
 	done;
 
 
-	echo "#[INFO] Input RUN to launch: $RUNS_TO_LAUNCH";
-	echo ""
-
 	# Launch FASTQs analmysis if all FASTQs exist
 	if (($(echo $RUNS_TO_LAUNCH | wc -w))); then
+
+		echo "#[INFO] Input RUN to launch: $RUNS_TO_LAUNCH";
+		echo ""
+
+		RI_NUM=0
 		for RI in $RUNS_TO_LAUNCH; do
 
 			R=$(echo $RI | awk -F: '{print $1}')
@@ -712,7 +832,7 @@ if [ ! -z "$RUNS" ]; then
 			R_NAME=$(echo $RI | awk -F: '{print $2}')
 			[ "$R_NAME" == "" ] && R_NAME=$(basename $R)
 
-
+			SAMPLESHEET_INPUT_RI=${SAMPLESHEET_INPUT_ARRAY[$RI_NUM]}
 
 			TMP_FOLDER_TMP_R=$TMP_FOLDER_TMP/$R$RANDOM
 			mkdir -p $TMP_FOLDER_TMP_R
@@ -737,7 +857,7 @@ if [ ! -z "$RUNS" ]; then
 				# Find SampleSheet
 				RUN_SAMPLESHEET=""
 				# sampleSheet from Input
-				[ ! -z $SAMPLESHEET_INPUT ] && [ -e $SAMPLESHEET_INPUT ] && RUN_SAMPLESHEET=$SAMPLESHEET_INPUT
+				[ ! -z $SAMPLESHEET_INPUT_RI ] && [ -e $SAMPLESHEET_INPUT_RI ] && RUN_SAMPLESHEET=$SAMPLESHEET_INPUT_RI
 				# sampleSheet within the RUN folder
 				[ -z $RUN_SAMPLESHEET ] && RUN_SAMPLESHEET=$R/SampleSheet.csv
 				# Echo
@@ -766,8 +886,7 @@ if [ ! -z "$RUNS" ]; then
 				#echo ""
 
 			#fi;
-			elif [ -f $R/SampleSheet.txt ] || [ -f $SAMPLESHEET_INPUT ]; then
-	#statements
+		elif [ -f $R/SampleSheet.csv ] || [ -f $SAMPLESHEET_INPUT_RI ]; then
 
 				echo "#[INFO] RUN '$R_NAME' is a demultiplexed folder (Fastq) including configuration file SampleSheet"
 
@@ -780,7 +899,7 @@ if [ ! -z "$RUNS" ]; then
 				# Find SampleSheet
 				RUN_SAMPLESHEET=""
 				# sampleSheet from Input
-				[ ! -z $SAMPLESHEET_INPUT ] && [ -e $SAMPLESHEET_INPUT ] &&  RUN_SAMPLESHEET=$SAMPLESHEET_INPUT
+				[ ! -z $SAMPLESHEET_INPUT_RI ] && [ -e $SAMPLESHEET_INPUT_RI ] &&  RUN_SAMPLESHEET=$SAMPLESHEET_INPUT_RI
 				# sampleSheet within the RUN folder
 				[ -z $RUN_SAMPLESHEET ] && RUN_SAMPLESHEET=$R/SampleSheet.csv
 				# Echo
@@ -936,16 +1055,22 @@ if [ ! -z "$RUNS" ]; then
 
 			fi
 
+			((RI_NUM++))
+
 			(($DEBUG)) && echo "$CMD"
 			eval $CMD  --no_header
 
 			echo ""
 
-
 		done;
 
 
 		EXIT=1
+
+	else
+
+		echo "#[WARNING] NO Input RUN to launch";
+
 	fi;
 
 

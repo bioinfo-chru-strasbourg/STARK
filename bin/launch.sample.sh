@@ -97,22 +97,25 @@ header;
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
-ARGS=$(getopt -o "e:f:q:b:j:m:s:r:o:u:p:t:ga:vdnh" --long "env:,app:,application:,fastq:,fastq_R1:,fastq_R2:,bed:,manifest:,genes:,transcripts:,sample:,sample_list:,run:,runs_name:,analysis:,analysis_name:,output:,json_dir:,results:,repository:,pipelines:,threads:,no_header,by_sample,adapters:,verbose,debug,release,help" -- "$@" 2> /dev/null)
+ARGS=$(getopt -o "e:f:q:b:j:m:s:r:o:u:p:t:ga:vdnh" --long "env:,app:,application:,reads:,fastq:,fastq_R1:,fastq_R2:,design:,bed:,manifest:,genes:,transcripts:,sample:,sample_list:,runs:,analysis:,analysis_name:,output:,analysis_dir:,results:,repository:,pipelines:,threads:,no_header,by_sample,adapters:,verbose,debug,release,help" -- "$@" 2> /dev/null)
 [ $? -ne 0 ] && \
 	echo "#[ERROR] Error in the argument list." "Use -h or --help to display the help." >&2 && usage && \
 	exit 1
 eval set -- "$ARGS"
 
+#echo $PARAM
 PARAM=$@
 
 while true
 do
+	#echo "$1=$2"
+	#echo "Eval opts";
 	case "$1" in
 		-e|--env|--app|--application)
 			APP="$2"
 			shift 2
 			;;
-		-f|--fastq|--fastq_R1)
+		-f|--reads|--fastq|--fastq_R1)
 			FASTQ="$2"
 			# transform RUNS list
 			FASTQ=$(echo $FASTQ | tr "," " ")
@@ -124,7 +127,7 @@ do
 			FASTQ_R2=$(echo $FASTQ_R2 | tr "," " ")
 			shift 2
 			;;
-		-b|--bed|--manifest)
+		-b|--design|--bed|--manifest)
 			BED_INPUT="$2"
 			BED_INPUT=$(echo $BED_INPUT | tr "," " ")
 			shift 2
@@ -149,16 +152,16 @@ do
 			SAMPLE_LIST=$(echo $SAMPLE_LIST | tr "," " ")
 			shift 2
 			;;
-		-r|--run)
+		#-r|--run)
 		#	RUN="$2"
 		#	RUN=$(echo $RUN | tr "," " ")
-			shift 2
-			;;
-		--runs_name)
+		#	shift 2
+		#	;;
+		#--runs_name)
 		#	RUN="$2"
 		#	RUN=$(echo $RUN | tr "," " ")
-			shift 2
-			;;
+		#	shift 2
+		#	;;
 		--analysis_name)
 			RUN="$2"
 			RUN=$(echo $RUN | tr "," " ")
@@ -168,8 +171,8 @@ do
 			OUTPUT="$2"
 			shift 2
 			;;
-		--json_dir)
-			JSON_DIR="$2"
+		--analysis_dir)
+			ANALYSIS_DIR="$2"
 			shift 2
 			;;
 		-u|--repository)
@@ -191,6 +194,10 @@ do
 			;;
 		-a|--adapters)
 			ADAPTERS="$2"
+			shift 2
+			;;
+		--runs)
+			#RUNS="$2"
 			shift 2
 			;;
 		-v|--verbose)
@@ -217,8 +224,7 @@ do
 		--) shift
 			break
 			;;
-		*) 	echo "#[ERROR] Option $1 is not recognized. " "Use -h or --help to display the help." && usage && \
-			exit 1
+		*) 	echo "#[WARNING] Option $1 is not recognized. Use -h or --help to display the help." && usage && exit 1
 			;;
 	esac
 done
@@ -245,7 +251,7 @@ PERMS="a+rwx"
 FASTQ_R1_RELOCATED=""
 for F in $FASTQ; do
 	#if [ "$F" != "" ] && [ -e "$F" ]; then
-	if [ -f "$F" ] || [ -f "$JSON_DIR/$F" ]; then
+	if [ -f "$F" ] || [ -f "$ANALYSIS_DIR/$F" ]; then
 		#F=$F;
 		(($DEBUG)) && echo "F=$F";
 		if ! (($(echo "$F" | grep ".fastq.gz$\|.fq.gz$\|.bam$\|.ubam$\|.cram$\|.ucram$" -c))); then
@@ -255,8 +261,8 @@ for F in $FASTQ; do
 		# Relocation
 		if [ -f "$F" ]; then
 			FASTQ_R1_RELOCATED="$FASTQ_R1_RELOCATED $F"
-	 	elif [ -f "$JSON_DIR/$F" ]; then
-			FASTQ_R1_RELOCATED="$FASTQ_R1_RELOCATED $JSON_DIR/$F"
+	 	elif [ -f "$ANALYSIS_DIR/$F" ]; then
+			FASTQ_R1_RELOCATED="$FASTQ_R1_RELOCATED $ANALYSIS_DIR/$F"
 		fi;
 	else
 		echo "[ERROR] No input FASTQ '$F' file!";
@@ -278,8 +284,8 @@ for F in $FASTQ_R2; do
 		# Relocation
 		if [ -f "$F" ]; then
 			FASTQ_R2_RELOCATED="$FASTQ_R2_RELOCATED $F"
-	 	elif [ -f "$JSON_DIR/$F" ]; then
-			FASTQ_R2_RELOCATED="$FASTQ_R2_RELOCATED $JSON_DIR/$F"
+	 	elif [ -f "$ANALYSIS_DIR/$F" ]; then
+			FASTQ_R2_RELOCATED="$FASTQ_R2_RELOCATED $ANALYSIS_DIR/$F"
 		fi;
 	else
 		echo "[ERROR] No input FASTQ R2 '$F' file!";
@@ -417,7 +423,7 @@ TRANSCRIPTS_ARRAY=($TRANSCRIPTS);
 
 for F in $FASTQ; do
 	# Test FASTQ exists
-	if [ ! -f $F ] && [ ! -f $JSON_DIR/$F ]; then
+	if [ ! -f $F ] && [ ! -f $ANALYSIS_DIR/$F ]; then
 		echo "[ERROR] Input file '$F' does NOT exist! Please check input file --fastq (.fastq.gz|.fq.gz|.bam|.ubam|.cram|.ucram|.sam|.usam)";
 		exit 0;
 	fi;
@@ -840,14 +846,15 @@ for RUU in $RUN_UNIQ; do
 					# Sort and FASTQ generation
 					TMP_INPUT_BAM=$TMP_FOLDER_TMP/INPUT_BAM_$RANDOM
 					#mkdir -p $TMP_INPUT_BAM;
-					$SAMTOOLS sort -n --reference $REF -@ $THREADS $F -T $TMP_INPUT_BAM -O SAM 2>/dev/null | $SAMTOOLS bam2fq - -1 $RUN_SAMPLE_DIR/$S.R1.fastq.gz -2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz -@ $THREADS -c 0 2>/dev/null | $GZ -c 1> $RUN_SAMPLE_DIR/$S.R0.fastq.gz 2>/dev/null;
+					$SAMTOOLS sort -n --reference $REF -@ $THREADS $F -T $TMP_INPUT_BAM -O SAM 2>/dev/null | $SAMTOOLS bam2fq - -1 $RUN_SAMPLE_DIR/$S.R1.fastq.gz -2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz -@ $THREADS -c 1 2>/dev/null | $GZ -c 1> $RUN_SAMPLE_DIR/$S.R0.fastq.gz 2>/dev/null;
 					#rm -rf $TMP_INPUT_BAM;
 
 					# Ff R0 not empty or number of reads differs between R1 and R2 > Single END
 					if (( $($UNGZ -c $RUN_SAMPLE_DIR/$S.R0.fastq.gz | head -n 1 | wc -l) )) \
 						|| (( $(diff <($UNGZ -c $RUN_SAMPLE_DIR/$S.R1.fastq.gz | paste - - - - | cut -f1 -d$'\t') <($UNGZ -c $RUN_SAMPLE_DIR/$S.R2.fastq.gz | paste - - - - | cut -f1 -d$'\t') | head -n 1 | wc -l) )); then
 						echo "#[WARNING] Read names or order differ between R1 and R2 fastq files, or R0 file is not empty. Reads are supposed not to be paired (Single-End). All reads in R1.";
-						$UNGZ -c $RUN_SAMPLE_DIR/$S.R2.fastq.gz $RUN_SAMPLE_DIR/$S.R0.fastq.gz >> $RUN_SAMPLE_DIR/$S.R1.fastq.gz;
+						#$UNGZ -c $RUN_SAMPLE_DIR/$S.R2.fastq.gz $RUN_SAMPLE_DIR/$S.R0.fastq.gz >> $RUN_SAMPLE_DIR/$S.R1.fastq.gz;
+						cat $RUN_SAMPLE_DIR/$S.R2.fastq.gz $RUN_SAMPLE_DIR/$S.R0.fastq.gz >> $RUN_SAMPLE_DIR/$S.R1.fastq.gz;
 						$GZ < /dev/null > $RUN_SAMPLE_DIR/$S.R2.fastq.gz;
 					fi;
 					rm -f $RUN_SAMPLE_DIR/$S.R0.fastq.gz;

@@ -197,7 +197,7 @@ SAMTOOLS_METRICS_VIEW_MAP_Q?=10
 SAMTOOLS_METRICS_VIEW_PARAM?= -M -F 1024 -F 4 -q $(SAMTOOLS_METRICS_VIEW_MAP_Q)
 SAMTOOLS_METRICS_DEPTH_base_q?=10
 SAMTOOLS_METRICS_DEPTH_map_q?=10
-SAMTOOLS_METRICS_DEPTH_PARAM?= -d 0 -q $(SAMTOOLS_METRICS_DEPTH_q) 
+SAMTOOLS_METRICS_DEPTH_PARAM?= -d 0 -q $(SAMTOOLS_METRICS_DEPTH_map_q)
 
 # SAMTOOLS METRICS
 %.bam.metrics/metrics.samtools: %.bam %.bam.bai %.genome %.for_metrics_bed %.withoutheader.for_metrics_bed %.3fields.for_metrics_bed
@@ -208,7 +208,7 @@ SAMTOOLS_METRICS_DEPTH_PARAM?= -d 0 -q $(SAMTOOLS_METRICS_DEPTH_q)
 	if [ -s $*.withoutheader.for_metrics_bed ]; then \
 		#$(SAMTOOLS) depth -b $*.withoutheader.for_metrics_bed $< > $(@D)/$(*F).depthbed; \
 		# CLEAN BAM \
-		$(SAMTOOLS) view $(SAMTOOLS_METRICS_VIEW_PARAM) -h $<  -1 -@ $(THREADS) > $<.cleaned.bam ; \
+		$(SAMTOOLS) view $(SAMTOOLS_METRICS_VIEW_PARAM) -h $< -1 -@ $(THREADS) > $<.cleaned.bam ; \
 		# DEPTHBED ON \
 		$(SAMTOOLS) depth -b $*.withoutheader.for_metrics_bed $(SAMTOOLS_METRICS_DEPTH_PARAM) $<.cleaned.bam > $(@D)/$(*F).depthbed; \
 		# DEPTHBED OFF \
@@ -234,14 +234,14 @@ SAMTOOLS_METRICS_DEPTH_PARAM?= -d 0 -q $(SAMTOOLS_METRICS_DEPTH_q)
 		# Coverage with SAMTOOLS and BETTOOLS ; \
 		if [ -s $*.withoutheader.for_metrics_bed ]; then \
 			#$(SAMTOOLS) depth -b $*.withoutheader.for_metrics_bed $< > $(@D)/$(*F).depthbed; \
-			$(SAMTOOLS) view -b $< -L $*.withoutheader.for_metrics_bed | $(BEDTOOLS)/genomeCoverageBed -ibam stdin -g `cat $*.genome` -dz > $(@D)/$(*F).genomeCoverageBedbed; \
+			$(SAMTOOLS) view -b $< -L $*.withoutheader.for_metrics_bed | $(SAMTOOLS) sort | $(BEDTOOLS)/genomeCoverageBed -ibam stdin -dz > $(@D)/$(*F).genomeCoverageBedbed; \
 		else \
 			echo "#[$$(date)] COVERAGE with SAMTOOLS and BEDTOOLS not done due to a lack of region defined in BED '$*.withoutheader.for_metrics_bed'" >> $@; \
 		fi; \
 		if [ "$(FULL_COVERAGE)" == "1" ]; then \
 			$(SAMTOOLS) depth $< > $(@D)/$(*F).depth; \
 			$(GZ) --best -f $(@D)/$(*F).depth; \
-			$(BEDTOOLS)/genomeCoverageBed -ibam $< -g `cat $*.genome` -dz > $(@D)/$(*F).genomeCoverageBed; \
+			$(BEDTOOLS)/genomeCoverageBed -ibam $< -dz > $(@D)/$(*F).genomeCoverageBed; \
 			$(GZ) --best -f $(@D)/$(*F).genomeCoverageBed; \
 		else \
 			echo "#[$$(date)] FULL COVERAGE with SAMTOOLS and BEDTOOLS not done due to option disabled." >> $@; \
@@ -255,6 +255,7 @@ SAMTOOLS_METRICS_DEPTH_PARAM?= -d 0 -q $(SAMTOOLS_METRICS_DEPTH_q)
 		echo "#[$$(date)] BAM BEDTOOLS not done because BAM_METRICS=0" >> $@ ; \
 	fi;
 
+#-g `cat $*.genome`
 
 # FASTQC METRICS
 
