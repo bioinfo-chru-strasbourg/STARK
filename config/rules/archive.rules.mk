@@ -19,7 +19,7 @@ MEMORY?=1
 ## FASTQ from ILLUMINA ##
 
 
-%.archive.cram: %.bams.list %.genome %.R1.fastq.gz %.R2.fastq.gz
+%.archive.cram: %.bams.list %.genome %.R1.fastq.gz %.R2.fastq.gz #%.R1.fastq.gz.format
 	#Archive aligned BAM only if all original reads present. otherwise, FASTQ compressed into uBAM is archived \
 	#echo "BAMS_LIST: $< $$(cat $<)" \
 	#SEPARATOR (to find aligner name), FILES_TRIED and VALID_CRAM_MSG are used for metrics file \
@@ -62,7 +62,7 @@ MEMORY?=1
 		#if [ -s $*.R2.fastq.gz ]; then \
 		if (($$($(UNGZ) -c $*.R2.fastq.gz | head -n 1 | wc -l))); then \
 			echo "PAIRED-END" ; \
-			$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) FastqToSam $(PICARD_UNALIGNED_FLAGS) $(PICARD_UNALIGNED_NAME_FLAGS) FASTQ=$*.R1.fastq.gz FASTQ2=$*.R2.fastq.gz OUTPUT=$@.tmp SAMPLE_NAME=$(*F); \
+			$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) FastqToSam $(PICARD_UNALIGNED_FLAGS) $(PICARD_UNALIGNED_NAME_FLAGS)  FASTQ=$*.R1.fastq.gz FASTQ2=$*.R2.fastq.gz OUTPUT=$@.tmp SAMPLE_NAME=$(*F); \
 		else \
 			echo "SINGLE-END (NO reads in $*.R2.fastq.gz)" ; \
 			$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) FastqToSam $(PICARD_UNALIGNED_FLAGS) $(PICARD_UNALIGNED_NAME_FLAGS) FASTQ=$*.R1.fastq.gz OUTPUT=$@.tmp  SAMPLE_NAME=$(*F); \

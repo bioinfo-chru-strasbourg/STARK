@@ -13,7 +13,7 @@ MK_DATE="06/09/2016"
 # mark duplicates with PICARD Tools
 #%.bam : %.markduplicates.bam
 %.bam : %.markduplicates.bam %.markduplicates.bam.bai
-	# Create Metrics Directory 
+	# Create Metrics Directory
 	mkdir -p $(@D) ;
 	# MarkDuplicates if BAM sorted
 	if (( $$($(SAMTOOLS) view -H $< | grep "^@HD.*VN:.*SO:coordinate" | wc -l))); then \
@@ -25,32 +25,11 @@ MK_DATE="06/09/2016"
 		#rm $<; \
 	else \
 		echo "Markduplicate not created" ; \
-	fi; \
-	# CHECK NUMBER of READS in BAM
-	if (($(BAM_CHECK_STEPS))); then \
-		#echo $$($(SAMTOOLS) view -c -@ $(THREADS_SAMTOOLS) -F 0x0100 $<)" READS for $<"; \
-		#echo $$($(SAMTOOLS) view -c -@ $(THREADS_SAMTOOLS) -F 0x0100 $@)" READS for $@"; \
-		#if [ ! -e $@.idx ]; then $(SAMTOOLS) index $@; fi; \
-		#if [ "$(SAMTOOLS) idxstats $< | awk '{SUM+=$$3+$$4} END {print SUM}'" != "$(SAMTOOLS) idxstats $@ | awk '{SUM+=$$3+$$4} END {print SUM}'" ]; then \
-		if [ "$$($(SAMTOOLS) view -c -F 0x0100 -@ $(THREADS_SAMTOOLS) $<)" != "$$($(SAMTOOLS) view -c -F 0x0100 -@ $(THREADS_SAMTOOLS) $@)" ]; then \
-			echo "# ERROR in Number of reads between $< and $@ !!!"; \
-			echo "# BCFTOOLS STATS for $<";  \
-			$(SAMTOOLS) index $<; \
-			$(SAMTOOLS) stats $< | grep ^SN; \
-			$(SAMTOOLS) idxstats $<; \
-			echo "# BCFTOOLS STATS for $@";  \
-			$(SAMTOOLS) index $@; \
-			$(SAMTOOLS) stats $@ | grep SN; \
-			$(SAMTOOLS) idxstats $@; \
-			exit 1; \
-		else \
-			echo "# Number of reads OK between $< and $@"; \
-		fi; \
 	fi;
 	-rm $<;
 
 %.bam : %.markduplicatesSAMTOOLS.bam %.markduplicatesSAMTOOLS.bam.bai
-	# Create Metrics Directory 
+	# Create Metrics Directory
 	mkdir -p $(@D) ;
 	# IF READS
 	if (($($(SAMTOOLS) idxstats $< | awk '{SUM+=$$3+$$4} END {print SUM}'))); then \
@@ -74,28 +53,8 @@ MK_DATE="06/09/2016"
 	else \
 		cp $< $@; \
 	fi;
-	# CHECK NUMBER of READS in BAM
-	if (($(BAM_CHECK_STEPS))); then \
-		#echo $$($(SAMTOOLS) view -c -@ $(THREADS_SAMTOOLS) -F 0x0100 $<)" READS for $<"; \
-		#echo $$($(SAMTOOLS) view -c -@ $(THREADS_SAMTOOLS) -F 0x0100 $@)" READS for $@"; \
-		#if [ ! -e $@.idx ]; then $(SAMTOOLS) index $@; fi; \
-		#if [ "$(SAMTOOLS) idxstats $< | awk '{SUM+=$$3+$$4} END {print SUM}'" != "$(SAMTOOLS) idxstats $@ | awk '{SUM+=$$3+$$4} END {print SUM}'" ]; then \
-		if [ "$$($(SAMTOOLS) view -c -F 0x0100 -@ $(THREADS_SAMTOOLS) $<)" != "$$($(SAMTOOLS) view -c -F 0x0100 -@ $(THREADS_SAMTOOLS) $@)" ]; then \
-			echo "# ERROR in Number of reads between $< and $@ !!!"; \
-			echo "# BCFTOOLS STATS for $<";  \
-			$(SAMTOOLS) index $<; \
-			$(SAMTOOLS) stats $< | grep ^SN; \
-			$(SAMTOOLS) idxstats $<; \
-			echo "# BCFTOOLS STATS for $@";  \
-			$(SAMTOOLS) index $@; \
-			$(SAMTOOLS) stats $@ | grep SN; \
-			$(SAMTOOLS) idxstats $@; \
-			exit 1; \
-		else \
-			echo "# Number of reads OK between $< and $@"; \
-		fi; \
-	fi;
-	-rm $<;
+	# clean
+	-rm -f $<;
 
 # MarkDuplicate Rule generic
 #%.markduplicatesPICARD.bam : %.markduplicates.bam
@@ -104,14 +63,14 @@ MK_DATE="06/09/2016"
 
 
 # Default MarkDuplicates Rule
-#%.markduplicates.bam: %.markduplicatesPICARD.bam: 
+#%.markduplicates.bam: %.markduplicatesPICARD.bam:
 #	mv $< $@;
 
 
 
 #%.markduplicates.bam : %.unmarkduplicates.bam
 #	mv $< $@
-#	
+#
 %.unMD.bam: %.unmarkduplicates.bam
 	mv $< $@
 
@@ -135,7 +94,3 @@ PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
 
 PIPELINES_COMMENT := "POST_ALIGNMENT:markduplicatesSAMTOOLS:Mark duplicated reads in BAM. With SAMTOOLS rmdup"
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
-
-
-
-

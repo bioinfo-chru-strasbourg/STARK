@@ -66,10 +66,12 @@ function usage {
 	echo ""
 
 	echo "### SAMPLE Analysis ###";
-	echo "# --reads|--fastq_R1=<FILE1,FILE2...>      List of Reads files for each samples, in FASTQ|BAM|SAM|CRAM";
-	echo "#                                          Formats: *fastq.gz|*fq.gz|*bam|*ubam|*cram|*ucram|*sam|*usam";
-	echo "# --fastq_R2=<FILE1,FILE2...>              List of corresponding FASTQ Read2 file (beware of correspondance).";
-	echo "#                                          Format: (*fastq.gz|fq.gz)";
+	echo "# --reads=<FILE1,FILE2...>                 List of Reads files";
+	echo "#                                          For each samples, allowed formats FASTQ|BAM|SAM|CRAM:";
+	echo "#                                          *fastq.gz|*fq.gz|*bam|*ubam|*cram|*ucram|*sam|*usam";
+	echo "# --fastq_R2=<FILE1,FILE2...>              List of Reads files with corresponding Paired-End Read2 (beware of correspondance).";
+	echo "#                                          For each samples, allowed formats FASTQ|BAM|SAM|CRAM:";
+	echo "#                                          *fastq.gz|*fq.gz";
 	echo "# --sample=<STRING1,STRING2...>            List of corresponding SAMPLE Name";
 	echo "#                                          Automatically detected from input files.";
 	echo "# --analysis_name=<STRING>                 Analysis name.";
@@ -79,7 +81,9 @@ function usage {
 	echo ""
 
 	echo "### RUN Analysis";
-	echo "# --runs=<STRING1,STRING2...>              List of RUNs to analyse, from Illumina sequencers (BCL) or from demultiplexing (FASTQ).";
+	echo "# --runs=<STRING1,STRING2...>              List of RUNs to analyse";
+	echo "#                                          From Illumina sequencers (BCL), demultiplexing (FASTQ), or any folder containing FASTQ|BAM|SAM|CRAM.";
+	echo "#                                          For folder containing FASTQ, corresponding Paired-End Read2 will be autodetected: /.*[._-])R1([._-].*/.*[._-])R2([._-].*/";
 	echo "#                                          RUN can be a folder path, or the run folder in defined runs folders (see Application configuration)";
 	echo "#                                          Analysis name of each RUN can be defined using ':' after each RUN (default: run folder name)";
 	echo "#                                          Format: RUN1:RUN1_ANALYSIS_NAME,RUN2:RUN2_ANALYSIS_NAME...";
@@ -347,10 +351,13 @@ export APP
 (($VERBOSE)) && [ ! -z "$APP" ] && [ -z "$ENV" ] && echo "#[INFO] Application '$APP' NOT found"
 
 
+
 #echo $APP; exit 0;
 
 # DEBUG
 #########
+EXEC=0
+
 if ((0)) && (($DEBUG)); then
 	echo $STARK_FOLDER_BIN
 	echo $STARK_FOLDER_APPS
@@ -712,7 +719,7 @@ if [ "$ANALYSIS" != "" ]; then
 			(($VERBOSE)) && echo "#[INFO] CMD="$(echo $CMD | tr "\n" " ")
 			(($VERBOSE)) && echo ""
 
-#			eval $CMD;
+			(($EXEC)) && eval $CMD;
 			#exit 0
 			EXIT=1
 
@@ -886,7 +893,7 @@ if [ ! -z "$RUNS" ]; then
 				#echo ""
 
 			#fi;
-		elif [ -f $R/SampleSheet.csv ] || [ -f $SAMPLESHEET_INPUT_RI ]; then
+		elif [ -f $R/SampleSheet.csv ] || [ -f "$SAMPLESHEET_INPUT_RI" ]; then
 
 				echo "#[INFO] RUN '$R_NAME' is a demultiplexed folder (Fastq) including configuration file SampleSheet"
 
@@ -903,6 +910,7 @@ if [ ! -z "$RUNS" ]; then
 				# sampleSheet within the RUN folder
 				[ -z $RUN_SAMPLESHEET ] && RUN_SAMPLESHEET=$R/SampleSheet.csv
 				# Echo
+(($DEBUG)) && echo "[ -f $R/SampleSheet.csv ] || [ -f $SAMPLESHEET_INPUT_RI ]";
 				[ ! -e $RUN_SAMPLESHEET ] && echo "#[ERROR] No SampleSheet for RUN '$R'" && exit 0;
 				echo "#[INFO] SampleSheet found for RUN '$R': $RUN_SAMPLESHEET";
 
@@ -1044,14 +1052,56 @@ if [ ! -z "$RUNS" ]; then
 				CMD="$STARK_FOLDER_BIN/STARK $PARAM --analysis=$ANALYSIS_FILES " #$APP_ONE_RUN_CONFIG_FILE_JSON " # --repository=$FOLDER_REPOSITORY
 				#CMD=""
 
-			elif $(find $R -name '*.fastq.gz' -or -name '*.sam' -or -name '*.bam' -or -name '*.cram' | wc -l); then
+			elif (($(find $R -name '*R1*fastq.gz' -or -name '*.sam' -or -name '*.bam' -or -name '*.cram' | wc -l))); then
 
 				echo "#[INFO] RUN '$R_NAME' is a samples folder (Fastq/bam/cram)"
 
-				find $R -name '*.fastq.gz' -or -name '*.sam' -or -name '*.bam' -or -name '*.cram'
+				FASTQ_R1=""
+				FASTQ_R2=""
 
-				CMD="$STARK_FOLDER_BIN/STARK $PARAM --samplesheet=UNKNOWN "
-				CMD=""
+				(($VERBOSE)) && echo "#[INFO] Search FASTQ Read1 (*R1*fastq.gz)"
+				for R1 in $(find $R -name '*R1*fastq.gz'); do
+					(($VERBOSE)) && echo "#[INFO] FASTQ Read1 found: $R1";
+					# find R2
+					#echo $R1 | sed s/[._-]R1[._-]/R2/gi
+
+					(($VERBOSE)) && echo "#[INFO] Search for *R2*fastq.gz"
+					re='(.*[._-])R1([._-].*)'
+					#if [[ $R1 =~ $re ]]; then
+					R2=""
+					if [[ $R1 =~ $re ]]; then
+						R2=${BASH_REMATCH[1]}"R2"${BASH_REMATCH[2]}
+				  	fi;
+			  		[ "$R2" != "" ] && [ -f $R2 ] && (($VERBOSE)) && echo "#[INFO] Corresponding FASTQ Read2 found: $R2"
+					#echo $R2
+
+					FASTQ_R1="$FASTQ_R1$R1,"
+					[ "$R2" != "" ] && [ -f $R2 ] && FASTQ_R2="$FASTQ_R2$R2"
+					FASTQ_R2="$FASTQ_R2,"
+
+				done;
+				#FASTQ_R1=$(echo $FASTQ_R1 | sed s/,$//)
+				#FASTQ_R2=$(echo $FASTQ_R2 | sed s/,$//)
+				(($DEBUG)) && echo "#[INFO] List FASTQ_R1: $FASTQ_R1"
+				(($DEBUG)) && echo "#[INFO] List FASTQ_R2: $FASTQ_R2"
+
+
+				(($VERBOSE)) && echo "#[INFO] Find *sam/*bam.*cram"
+
+				for R1 in $(find $R -name '*.sam' -or -name '*.bam' -or -name '*.cram'); do
+					(($VERBOSE)) && echo "#[INFO] SAM/BAM/CRAM found: $R1";
+
+					FASTQ_R1="$FASTQ_R1$R1,"
+					FASTQ_R2="$FASTQ_R2,"
+
+				done;
+				FASTQ_R1=$(echo $FASTQ_R1 | sed s/,$//)
+				FASTQ_R2=$(echo $FASTQ_R2 | sed s/,$//)
+				(($DEBUG)) && echo "#[INFO] List FASTQ_R1: $FASTQ_R1"
+				(($DEBUG)) && echo "#[INFO] List FASTQ_R2: $FASTQ_R2"
+
+				CMD="$STARK_FOLDER_BIN/STARK $PARAM --reads=$FASTQ_R1 --fastq_R2=$FASTQ_R2 "
+				#CMD=""
 
 			fi
 

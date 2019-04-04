@@ -20,14 +20,14 @@ SAMTOOLS?=$(NGSbin)/samtools
 # FLAGS and Options
 
 THREADS_RTC?=$(THREADS_BY_SAMPLE)
-GATKRealignerTargetCreatorFLAGS= -nt $(THREADS_RTC) #-nt 8 
+GATKRealignerTargetCreatorFLAGS= -nt $(THREADS_RTC) #-nt 8
 #GATKRealignerTargetCreatorOptions= -known $(KNOWN_ALLELES) -known $(VCFDBSNP)
 GATKRealignerTargetCreatorOptions= -known $(VCFDBSNP) -rf BadCigar -allowPotentiallyMisencodedQuals
-#-fixMisencodedQuals 
+#-fixMisencodedQuals
 
 # Create a .intervals file from the RealignerTargetCreator tool
 # for IndelRealigner (detect suspicious small indels regions)
-%.intervals: %.bam %.bam.bai %.genome %.from_manifest.intervals #$(KNOWN_ALLELES) $(KNOWN_ALLELES).idx %.genome 
+%.intervals: %.bam %.bam.bai %.genome %.from_manifest.intervals #$(KNOWN_ALLELES) $(KNOWN_ALLELES).idx %.genome
 	if [ "`grep ^ -c $*.from_manifest.intervals`" == "0" ]; then \
 		$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKRealignerTargetCreatorFLAGS) $(GATKRealignerTargetCreatorOptions) \
 		-T RealignerTargetCreator \
@@ -74,59 +74,10 @@ GATKRealignerTargetCreatorOptions= -known $(VCFDBSNP) -rf BadCigar -allowPotenti
 	else \
 		cp $< $@; \
 	fi;
-	if (($(BAM_CHECK_STEPS))); then \
-		if [ "$$($(SAMTOOLS) view -c -F 0x0100 -@ $(THREADS_SAMTOOLS) $<)" != "$$($(SAMTOOLS) view -c -F 0x0100 -@ $(THREADS_SAMTOOLS) $@)" ]; then \
-			echo "# ERROR in Number of reads between $< and $@ !!!"; \
-			echo "# BCFTOOLS STATS for $<.bam";  \
-			$(SAMTOOLS) index $<.bam; \
-			$(SAMTOOLS) stats $<.bam | grep SN; \
-			$(SAMTOOLS) idxstats $<.bam; \
-			echo "# BCFTOOLS STATS for $@";  \
-			$(SAMTOOLS) index $@; \
-			$(SAMTOOLS) stats $@ | grep SN; \
-			$(SAMTOOLS) idxstats $@; \
-			exit 1; \
-		else \
-			echo "# Number of reads OK between $< and $@"; \
-		fi; \
-	fi;
-	#-rm $^
-	#-rm $*.chr*.bai
-	-rm $*.realignment.bam $*.realignment.bam.bai $*.realignment.*
-	-rm -f $*.realignment*.mk
-	
+	# clean
+	-rm -f $*.realignment.bam $*.realignment.bam.bai $*.realignment.* $*.realignment*.mk
 
 
-
-# Merge BAM
-%.OLD.bam: %.chr1.bam %.chr2.bam %.chr3.bam %.chr4.bam \
-	%.chr5.bam %.chr6.bam %.chr7.bam %.chr8.bam %.chr9.bam \
-	%.chr10.bam %.chr11.bam %.chr12.bam %.chr13.bam %.chr14.bam %.chr15.bam \
-	%.chr16.bam %.chr17.bam %.chr18.bam %.chr19.bam %.chr20.bam %.chr21.bam %.chr22.bam \
-	%.chrX.bam %.chrY.bam %.chrM.bam %.unmapped.bam
-	$(SAMTOOLS) merge -f $@ $^ -@ $(THREADS_BY_SAMPLE)
-	# CHECK NUMBER of READS in BAM
-	#echo $$($(SAMTOOLS) view -c -@ $(THREADS_SAMTOOLS) -F 0x0100 $*.realignment.bam)" READS for $*.realignment.bam";
-	#echo $$($(SAMTOOLS) view -c -@ $(THREADS_SAMTOOLS) -F 0x0100 $@)" READS for $@";
-	if (($(BAM_CHECK_STEPS))); then \
-		if [ "$$($(SAMTOOLS) view -c -F 0x0100 -@ $(THREADS_SAMTOOLS) $*.realignment.bam)" != "$$($(SAMTOOLS) view -c -F 0x0100 -@ $(THREADS_SAMTOOLS) $@)" ]; then \
-			echo "# ERROR in Number of reads between $.realignment.bam and $@ !!!"; \
-			echo "# BCFTOOLS STATS for $*.realignment.bam";  \
-			$(SAMTOOLS) index $*.realignment.bam; \
-			$(SAMTOOLS) stats $*.realignment.bam | grep SN; \
-			$(SAMTOOLS) idxstats $*.realignment.bam; \
-			echo "# BCFTOOLS STATS for $@";  \
-			$(SAMTOOLS) index $@; \
-			$(SAMTOOLS) stats $@ | grep SN; \
-			$(SAMTOOLS) idxstats $@; \
-			exit 1; \
-		else \
-			echo "# Number of reads OK between $*.realignment.bam and $@"; \
-		fi; \
-	fi;
-	-rm $^
-	-rm $*.chr*.bai
-	-rm $*.realignment.bam $*.realignment.bam.bai $*.realignment.*
 
 
 # grep "^chr19:" /media/data2/RES/ALL/150306_M01658_0044_000000000-ABWBB/HL0052/HL0052.bwamem.unrecalibrated.unclipped.realignment.intervals | tr '\n' ',' | sed 's/,/ -L /g'
@@ -136,7 +87,7 @@ GATKIndelRealignerFLAGS=
 #GATKIndelRealignerOptions= -known $(VCFDBSNP) --LODThresholdForCleaning 2.0 -compress 0 --maxReadsForRealignment 20000 --maxReadsForConsensuses 120 --maxReadsInMemory 2000000 --maxConsensuses 30 -model USE_READS -allowPotentiallyMisencodedQuals
 GATKIndelRealignerOptions= -known $(VCFDBSNP) --LODThresholdForCleaning 2.0 -compress 0 --maxReadsForRealignment 50000 --maxReadsForConsensuses 120 --maxReadsInMemory 2000000 --maxConsensuses 30 -model USE_READS -allowPotentiallyMisencodedQuals -dfrac 1
 # --maxConsensuses 100 --maxReadsForConsensuses 500 # Too much ressources needed!!!
-#-fixMisencodedQuals 
+#-fixMisencodedQuals
 
 # Unmapped reads (0x04) and unmapped mate (0x08) > -f 0x012 or 12
 
@@ -229,4 +180,3 @@ RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
 PIPELINES_COMMENT := "POST_ALIGNMENT:realignment:Local Realignment of reads in BAM"
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
-
