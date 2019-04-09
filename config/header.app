@@ -44,6 +44,10 @@ FOLDER_RESULTS=/STARK/results
 # Results data can be copy in a repository folder. leave it blank for no copy
 FOLDER_REPOSITORY=/STARK/repository
 
+# ARCHIVE FOLDER
+# Results data can be copy in a archive folder. leave it blank for no copy
+FOLDER_ARCHIVE=/STARK/archive
+
 
 
 # VARIABLE INITIALISATION
@@ -75,3 +79,6 @@ BED=""
 HOWARD_PRIORITIZATION_DEFAULT="default"
 #ANNOVAR_DATABASES=""
 #SNPEFF_DATABASES=""
+
+# SYSTEM Config
+export LANG=C

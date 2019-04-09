@@ -43,16 +43,26 @@ function release () {
 
 # Usage
 function usage {
-	echo "# USAGE: $(basename $0) --analysis<FILE>|--runs=<RUN>|--fastq=<FASTQ> [options...]";
+	echo "# USAGE: $(basename $0) --analysis=<FILE>|--reads=<FASTQ>|--runs=<RUN> [options...]";
 	echo "";
-	echo "# Launch an analysis through (by order of priority):";
-	echo "# --analysis a configuration file ";
-	echo "# --fastq a list of sample files ";
-	echo "# --runs a list of runs folders ";
-	echo "";
-	echo "### Analysis configuration file ###";
-	echo "# --analysis=<FILE1,FILE2...>              List of configuration file in JSON format defining parameters (see below).";
-	echo "#                                          Format: { \"param1\":\"value1\", \"param2\":\"value2\"...}";
+	echo "### Launch an analysis through (by order of priority):";
+	#echo "# --analysis a configuration file ";
+	#echo "# --reads a list of sample files ";
+	#echo "# --runs a list of runs folders ";
+	#echo "";
+	#echo "### Analysis configuration file ###";
+	echo "# --analysis=<FILE1,FILE2...>              List of configuration file in JSON format defining options (see below).";
+	echo "#                                          Format: { \"option1\":\"value1\", \"option2\":\"value2\"...}";
+	echo "# --reads=<FILE1,FILE2...>                 List of Reads files";
+	echo "#                                          For each samples, allowed formats FASTQ|BAM|SAM|CRAM:";
+	echo "#                                          *fastq.gz|*fq.gz|*bam|*ubam|*cram|*ucram|*sam|*usam";
+	echo "# --runs=<STRING1,STRING2...>              List of RUNs to analyse";
+	echo "#                                          From Illumina sequencers (BCL), demultiplexing (FASTQ), or any folder containing FASTQ|BAM|SAM|CRAM.";
+	echo "#                                          For folder containing FASTQ, corresponding Paired-End Read2 will be autodetected: /.*[._-])R1([._-].*/.*[._-])R2([._-].*/";
+	echo "#                                          RUN can be a folder path, or the run folder in defined runs folders (see Application configuration)";
+	echo "#                                          Analysis name of each RUN can be defined using ':' after each RUN (default: run folder name)";
+	echo "#                                          Format: RUN1:RUN1_ANALYSIS_NAME,RUN2:RUN2_ANALYSIS_NAME...";
+	echo "#                                          Example: /path_of_my_runs/my_run:my_run1,run_name_folder_in_configured_runs_folder:my_run2";
 	#echo "#                                          Examples:";
 	#echo "#                                          - SAMPLE Analysis";
 	#echo "#                                          { \"fastq\":\"sample1.R1.fastq,sample2.bam\",";
@@ -65,40 +75,28 @@ function usage {
 	#echo "#                                            \"application\":\"APP2\" }";
 	echo ""
 
-	echo "### SAMPLE Analysis ###";
-	echo "# --reads=<FILE1,FILE2...>                 List of Reads files";
-	echo "#                                          For each samples, allowed formats FASTQ|BAM|SAM|CRAM:";
-	echo "#                                          *fastq.gz|*fq.gz|*bam|*ubam|*cram|*ucram|*sam|*usam";
+	echo "### SAMPLE Analysis options";
 	echo "# --fastq_R2=<FILE1,FILE2...>              List of Reads files with corresponding Paired-End Read2 (beware of correspondance).";
 	echo "#                                          For each samples, allowed formats FASTQ|BAM|SAM|CRAM:";
 	echo "#                                          *fastq.gz|*fq.gz";
 	echo "# --sample=<STRING1,STRING2...>            List of corresponding SAMPLE Name";
 	echo "#                                          Automatically detected from input files.";
-	echo "# --analysis_name=<STRING>                 Analysis name.";
-	echo "#                                          Default: 'date' (format YYYYMMDD) for a SAMPLE list analysis .";
-	echo "# --adapters=<STRING>                      Adapters to trim.";
-	echo "# --by_sample                              Split analysis by SAMPLE, all threads on each sample, one by one.";
+	#echo "# --adapters=<STRING>                      Adapters to trim.";
 	echo ""
 
-	echo "### RUN Analysis";
-	echo "# --runs=<STRING1,STRING2...>              List of RUNs to analyse";
-	echo "#                                          From Illumina sequencers (BCL), demultiplexing (FASTQ), or any folder containing FASTQ|BAM|SAM|CRAM.";
-	echo "#                                          For folder containing FASTQ, corresponding Paired-End Read2 will be autodetected: /.*[._-])R1([._-].*/.*[._-])R2([._-].*/";
-	echo "#                                          RUN can be a folder path, or the run folder in defined runs folders (see Application configuration)";
-	echo "#                                          Analysis name of each RUN can be defined using ':' after each RUN (default: run folder name)";
-	echo "#                                          Format: RUN1:RUN1_ANALYSIS_NAME,RUN2:RUN2_ANALYSIS_NAME...";
-	echo "#                                          Example: /path_of_my_runs/my_run:my_run1,run_name_folder_in_configured_runs_folder:my_run2";
+	echo "### RUN Analysis options";
 	echo "# --samplesheet=<FILE1,FILES2...>          List of corresponding Illumina SampleSheet.csv file to use with RUNS";
 	echo "#                                          Default: found in RUN folder";
-	echo "# --sample_list=<STRING1,STRING2...>       List of SAMPLE name in Illumina SampleSheet.csv to analyse";
+	echo "# --sample_filter=<STRING1,STRING2...>     List of SAMPLE name in Illumina SampleSheet.csv to analyse";
 	echo "#                                          Default: all samples in the SampleSheet ";
 	echo "";
 
-	echo "### Other parameters ###";
+	echo "### Other options";
+	echo "# --analysis_name=<STRING>                 Analysis name.";
+	echo "#                                          Default: 'date' (format YYYYMMDD) for a SAMPLE list analysis .";
 	echo "# --application=<STRING|FILE>              APP name or APP file configuration of the APPLICATION.";
 	echo "#                                          Must be in the STARK APPS folder if relative path";
 	echo "#                                          Default: defined in the RUN SampleSheet, or default.app if not defined";
-
 	echo "# --design=<FILE1,FILE2...>                List of corresponding design for SAMPLE analysis";
 	echo "#                                          OR force design for RUN analysis (use only one design).";
 	echo "#                                          If not *.bed file (BED format), considered as Illumina manifest.";
@@ -111,26 +109,28 @@ function usage {
 	echo "#                                          OR force TRANSCRIPTS file for RUN analysis (use only one TRANSCRIPTS file).";
 	echo "#                                          Format: TSV (transcript<TAB>geneID).";
 	echo "#                                          Default first TRANSCRIPTS file or empty";
-
 	echo "# --results=<FOLDER>                       Output/results directory to generate RESULTS|RUN|SAMPLE|* files";
 	echo "#                                          Default: Defined in Application, or first --fastq file folder";
-	echo "# --repository=<FOLDER>                    Repository directory to generate REPOSITORY|RUN|SAMPLE|* specific files";
-	echo "#                                          Default: no copy in a repository for SAMPLE Analysis, defined in Application for RUN analysis";
+	echo "# --repository=<FOLDER>                    Repository directory to generate GROUP|PROJECT|RUN|SAMPLE|* specific files";
+	echo "#                                          Default: no copy in a repository";
+	echo "# --archive=<FOLDER>                       Archive directory to generate GROUP|PROJECT|RUN|SAMPLE|* specific files";
+	echo "#                                          Default: no copy in a archive";
 	echo "# --threads=<INTEGER>                      Number of thread to use";
 	echo "#                                          Default: all cores in your system minus one";
+	echo "# --by_sample                              Split analysis by SAMPLE, all threads on each sample, one by one.";
 	echo "";
 
-	echo "### Information parameters ###";
+	echo "### Information options";
 	echo "# --application_infos                      Applications informations.";
 	echo "# --pipelines_infos                        Pipelines informations.";
 	echo "# --release_infos                          Pipelines with tools and databases information.";
 	echo "# --tools_infos                            Tools release information.";
-	echo "# --databases_infos                         Databases information.";
+	echo "# --databases_infos                        Databases information.";
 
-	echo "# --verbose                                VERBOSE option";
-	echo "# --debug                                  DEBUG option";
-	echo "# --release                                RELEASE option";
-	echo "# --help                                   HELP option";
+	echo "# --verbose                                VERBOSE";
+	echo "# --debug                                  DEBUG";
+	echo "# --release                                RELEASE";
+	echo "# --help                                   HELP";
 	echo "#";
 	#echo -e "#\n# RUN Analysis\n################";
 	#$STARK_FOLDER_BIN/launch.sh -h | grep "# [ |-]";
@@ -151,7 +151,7 @@ function usage {
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
-ARGS=$(getopt -o "a:b:e:r:f:q:g:j:m:l:s:w:t:o:u:iygxvdnh" --long "env:,app:,application:,runs:,fastq:,reads:,fastq_R1:,by_sample,fastq_R2:,adapters:,analysis:,analysis_name:,analysis_dir:,samplesheet:,sample:,sample_list:,design:,bed:,manifest:,genes:,transcripts:,threads:,output:,repository:,no_header,applications_infos,pipelines_infos,release_infos,tools_infos,databases_infos,verbose,debug,release,help" -- "$@" 2> /dev/null)
+ARGS=$(getopt -o "a:b:e:r:f:q:g:j:m:l:s:w:t:o:u:iygxvdnh" --long "env:,app:,application:,runs:,fastq:,reads:,fastq_R1:,by_sample,fastq_R2:,adapters:,analysis:,analysis_name:,analysis_dir:,samplesheet:,sample:,sample_filter:,design:,bed:,manifest:,genes:,transcripts:,threads:,output:,results:,repository:,archive:,no_header,applications_infos,pipelines_infos,release_infos,tools_infos,databases_infos,verbose,debug,release,help" -- "$@" 2> /dev/null)
 #ARGS=$(getopt -o "e:r:f:l:w:t:iygxvdnh" --long "env:,app:,application:,runs:,fastq:,fastq_R1:,json:,ana:,analysis:,samplesheet:,threads:,application_infos,applications_infos,pipelines_infos,release_infos,tools_infos,databases_infos,verbose,debug,release,help" -- "$@" 2> /dev/null)
 #ARGS=$(getopt -o "e:r:f:l:s:w:t:iygxvdnh" --long "env:,app:,application:,runs:,fastq:,fastq_R1:,analysis:,analysis_name:,analysis_dir:,samplesheet:,sample:,sample_list:,threads:,no_header,application_infos,applications_infos,pipelines_infos,release_infos,tools_infos,databases_infos,verbose,debug,release,help" -- "$@" )
 # || [ -z $@ ]
@@ -214,7 +214,7 @@ do
 			SAMPLE=$(echo $SAMPLE | tr "," " ")
 			shift 2
 			;;
-		--sample_list)
+		--sample_filter)
 			SAMPLE_LIST="$2"
 			SAMPLE_LIST=$(echo $SAMPLE_LIST | tr "," " ")
 			shift 2
@@ -240,6 +240,10 @@ do
 			;;
 		-u|--repository)
 			REPOSITORY="$2"
+			shift 2
+			;;
+		--archive)
+			ARCHIVE="$2"
 			shift 2
 			;;
 		-i|--applications_infos)
@@ -342,7 +346,7 @@ fi;
 (($VERBOSE)) && [ ! -z "$APP" ] && echo "#[INFO] Search Application '$APP'"
 
 ENV=$(find_app "$APP" "$STARK_FOLDER_APPS")
-source_app "$APP" "$STARK_FOLDER_APPS"
+source_app "$APP" "$STARK_FOLDER_APPS" 1
 
 export ENV
 export APP
@@ -351,12 +355,9 @@ export APP
 (($VERBOSE)) && [ ! -z "$APP" ] && [ -z "$ENV" ] && echo "#[INFO] Application '$APP' NOT found"
 
 
-
-#echo $APP; exit 0;
-
 # DEBUG
 #########
-EXEC=0
+EXEC=1
 
 if ((0)) && (($DEBUG)); then
 	echo $STARK_FOLDER_BIN

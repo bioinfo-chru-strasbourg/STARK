@@ -47,6 +47,10 @@ FOLDER_RESULTS=/STARK/results
 # Results data can be copy in a repository folder. leave it blank for no copy
 FOLDER_REPOSITORY=/STARK/repository
 
+# ARCHIVE FOLDER
+# Results data can be copy in a archive folder. leave it blank for no copy
+FOLDER_ARCHIVE=/STARK/archive
+
 
 # PARAMETERS
 ######################
@@ -237,3 +241,11 @@ HOWARD_FIELDS="NOMEN,PZFlag,PZScore,PZComment,CNOMEN,PNOMEN,location,outcome,VAF
 HOWARD_SORT="PZFlag::DESC,PZScore:n:DESC"
 HOWARD_SORT_BY="PZFlag,PZScore"
 HOWARD_ORDER_BY="DESC,DESC"
+
+
+# REPOSITORY and ARCHIVE
+# Copy files into folders for repository and archive
+# Repository files patterns to add
+REPOSITORY_FILE_PATTERNS=""
+# Archive files patterns to add
+ARCHIVE_FILE_PATTERNS=""

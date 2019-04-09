@@ -68,8 +68,10 @@ function usage {
 	echo "#                                             Default: date of first RUN of the list).";
 	echo "# -o|--output|--results=<FOLDER>              OUTPUT directory to generate OUTPUT|RUN|SAMPLE|* files";
 	echo "#                                             Default: Defined in ENV, or first --fastq file folder";
-	echo "# -u|--repository=<FOLDER>                    Repository directory to generate REPOSITORY|RUN|SAMPLE|* specific files (TODO)";
+	echo "# -u|--repository=<FOLDER>                    Repository directory to generate GROUP|PROJECT|RUN|SAMPLE|* specific files";
 	echo "#                                             Default: no copy in a repository";
+	echo "# --archive=<FOLDER>                          Archive directory to generate GROUP|PROJECT|RUN|SAMPLE|* specific files";
+	echo "#                                             Default: no copy in a archive";
 	echo "# -p|--pipelines=<STRING1,STRING2,...>        PIPELINES to launch, in the format ALIGNER.CALLER.ANNOTATOR, separated by a comma";
 	echo "#                                             Default: 'bwamem.gatkHC.howard'";
 	echo "# -t|--threads=<INTEGER>                      Number of thread to use";
@@ -97,7 +99,7 @@ header;
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
-ARGS=$(getopt -o "e:f:q:b:j:m:s:r:o:u:p:t:ga:vdnh" --long "env:,app:,application:,reads:,fastq:,fastq_R1:,fastq_R2:,design:,bed:,manifest:,genes:,transcripts:,sample:,sample_list:,runs:,analysis:,analysis_name:,output:,analysis_dir:,results:,repository:,pipelines:,threads:,no_header,by_sample,adapters:,verbose,debug,release,help" -- "$@" 2> /dev/null)
+ARGS=$(getopt -o "e:f:q:b:j:m:s:r:o:u:p:t:ga:vdnh" --long "env:,app:,application:,reads:,fastq:,fastq_R1:,fastq_R2:,design:,bed:,manifest:,genes:,transcripts:,sample:,sample_list:,runs:,analysis:,analysis_name:,output:,analysis_dir:,results:,repository:,archive:,pipelines:,threads:,no_header,by_sample,adapters:,verbose,debug,release,help" -- "$@" 2> /dev/null)
 [ $? -ne 0 ] && \
 	echo "#[ERROR] Error in the argument list." "Use -h or --help to display the help." >&2 && usage && \
 	exit 1
@@ -177,6 +179,10 @@ do
 			;;
 		-u|--repository)
 			REPOSITORY="$2"
+			shift 2
+			;;
+		--archive)
+			ARCHIVE="$2"
 			shift 2
 			;;
 		-p|--pipelines)
@@ -298,7 +304,7 @@ FASTQ_R2=$FASTQ_R2_RELOCATED
 
 
 ENV=$(find_app "$APP" "$STARK_FOLDER_APPS")
-source_app "$APP" "$STARK_FOLDER_APPS"
+source_app "$APP" "$STARK_FOLDER_APPS" 1
 
 if ((0)); then
 	echo "APP=$APP"
@@ -1105,7 +1111,8 @@ for RUU in $RUN_UNIQ; do
 			# COPY of run/sample
 			# List of folders
 			if [ "$REPOSITORY" != "" ] ; then
-				for RESULTS_FOLDER_COPY_FOLDER in $REPOSITORY; do
+				RESULTS_FOLDER_COPY_ALL=""
+				for RESULTS_FOLDER_COPY_FOLDER in $(echo $REPOSITORY | tr "," " " | tr " " "\n" | sort -u ); do #
 					#mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT;
 					if [ ! -d $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT ]; then
 						mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT;
@@ -1116,7 +1123,7 @@ for RUU in $RUN_UNIQ; do
 
 				done;
 			fi;
-			#RESULTS_SUBFOLDER_DATA="DATA"
+
 			# Copy
 			if [ "$RESULTS_FOLDER_COPY_ALL" != "$OUTPUT" ] && [ "$RESULTS_FOLDER_COPY_ALL" != "" ] ; then
 				for RESULTS_FOLDER_COPY_FOLDER in $RESULTS_FOLDER_COPY_ALL;
@@ -1135,7 +1142,7 @@ for RUU in $RUN_UNIQ; do
 					chmod $PERMS $RESULTS_FOLDER_COPY_FOLDER/$RUU/* 1>/dev/null 2>/dev/null
 					# Copy ROOT FILE PATTERNS
 					if [ $RESULTS_SUBFOLDER_DATA != "" ]; then
-						for ROOT_FILE_PATTERN in $RESULTS_SUBFOLDER_ROOT_FILE_PATTERNS; do
+						for ROOT_FILE_PATTERN in $REPOSITORY_FILE_PATTERNS; do
 
 							if [[ $ROOT_FILE_PATTERN =~ '$SAMPLE' ]]; then
 								eval ROOT_FILE_PATTERN_VAR=$(echo $ROOT_FILE_PATTERN | sed s/\$SAMPLE/\$S/gi)
@@ -1152,6 +1159,8 @@ for RUU in $RUN_UNIQ; do
 								#echo "L_SOURCE: $L_SOURCE";
 								#echo "F_TARGET: $F_TARGET";
 								#echo "D_TARGET: $D_TARGET";
+								(($VERBOSE)) && [ ! -f $F_SOURCE ] && echo "#[WARNING] file $F_SOURCE not found"
+								(($VERBOSE)) && [ -f $F_SOURCE ] && echo "#[INFO] Copy file $F_SOURCE to $F_TARGET"
 								if [ ! -e $F_TARGET ]; then
 									$COMMAND_LINK $L_SOURCE $F_TARGET 1>>$LOGFILE_RES_RUN_REPORT 2>>$LOGFILE_RES_RUN_REPORT
 								fi;
@@ -1159,10 +1168,75 @@ for RUU in $RUN_UNIQ; do
 									rm -f $F_TARGET
 									$COMMAND_COPY $F_SOURCE $F_TARGET 1>>$LOGFILE_RES_RUN_REPORT 2>>$LOGFILE_RES_RUN_REPORT
 								fi;
+
 							done;
 
 						done;
 					fi;
+
+					# CREATE CopyComplete file
+					echo "["`date '+%Y%m%d-%H%M%S'`"] Copy complete" >> $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/STARKCopyComplete.txt
+					chmod $PERMS $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/STARKCopyComplete.txt 1>/dev/null 2>/dev/null
+					RESULTS_FOLDER_COPY_FOLDER_RUU_STARKCopyComplete_list="$RESULTS_FOLDER_COPY_FOLDER_RUU_STARKCopyComplete_list $RESULTS_FOLDER_COPY_FOLDER/$RUU"
+
+				done;
+			fi;
+		fi;
+
+		# ARCHIVE
+		if ((1)); then
+			# COPY of run/sample
+			# List of folders
+			if [ "$ARCHIVE" != "" ] ; then
+				RESULTS_FOLDER_COPY_ALL=""
+				for RESULTS_FOLDER_COPY_FOLDER in $(echo $ARCHIVE | tr "," " " | tr " " "\n" | sort -u ); do
+					#mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT;
+					if [ ! -d $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT ]; then
+						mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT;
+					fi;
+					if [ -d $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT ]; then
+						RESULTS_FOLDER_COPY_ALL=$RESULTS_FOLDER_COPY_ALL" $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT";
+					fi;
+
+				done;
+			fi;
+
+			# Copy
+			if [ "$RESULTS_FOLDER_COPY_ALL" != "$OUTPUT" ] && [ "$RESULTS_FOLDER_COPY_ALL" != "" ] ; then
+				for RESULTS_FOLDER_COPY_FOLDER in $RESULTS_FOLDER_COPY_ALL;
+				do
+					echo "#[INFO] Copying '$RUU/$S' files from '$OUTPUT/$RUU/$S' to '$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S'..."
+
+					# Copy SAMPLE files
+					chmod $PERMS -R $OUTPUT/$RUU/$S 1>/dev/null 2>/dev/null
+					mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S
+					#chmod $PERMS -R $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA 1>/dev/null 2>/dev/null
+					#while ! $COMMAND_COPY $OUTPUT/$RUU/$S/* $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA 1>>$LOGFILE_RES_RUN_REPORT 2>>$LOGFILE_RES_RUN_REPORT ; do : ; done;
+					#$COMMAND_COPY $OUTPUT/$RUU/$S/* $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA 1>>$LOGFILE_RES_RUN_REPORT 2>>$LOGFILE_RES_RUN_REPORT
+					# Copy RUN files
+					#while ! nohup $COMMAND_COPY $(find $OUTPUT/$RUU -mindepth 1 -maxdepth 1 -type f) $RESULTS_FOLDER_COPY_FOLDER/$RUU 1>>$LOGFILE_RES_RUN_REPORT 2>>$LOGFILE_RES_RUN_REPORT ; do : ; done;
+					#$COMMAND_COPY $(find $OUTPUT/$RUU -mindepth 1 -maxdepth 1 -type f) $RESULTS_FOLDER_COPY_FOLDER/$RUU 1>>$LOGFILE_RES_RUN_REPORT 2>>$LOGFILE_RES_RUN_REPORT
+					#chmod $PERMS $RESULTS_FOLDER_COPY_FOLDER/$RUU/* 1>/dev/null 2>/dev/null
+					# Copy ROOT FILE PATTERNS
+					#if [ $RESULTS_SUBFOLDER_DATA != "" ]; then
+					for ROOT_FILE_PATTERN in $ARCHIVE_FILE_PATTERNS; do
+
+						if [[ $ROOT_FILE_PATTERN =~ '$SAMPLE' ]]; then
+							eval ROOT_FILE_PATTERN_VAR=$(echo $ROOT_FILE_PATTERN | sed s/\$SAMPLE/\$S/gi)
+						else
+							ROOT_FILE_PATTERN_VAR=$ROOT_FILE_PATTERN
+						fi;
+
+						#for F_SOURCE in $(ls $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA/$ROOT_FILE_PATTERN_VAR); do
+						for F_SOURCE in $(ls $OUTPUT/$RUU/$S/$ROOT_FILE_PATTERN_VAR 2>/dev/null); do
+							F_TARGET="$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/"$(basename $F_SOURCE)
+							(($VERBOSE)) && [ ! -f $F_SOURCE ] && echo "#[WARNING] file $F_SOURCE not found"
+							(($VERBOSE)) && [ -f $F_SOURCE ] && echo "#[INFO] Copy file $F_SOURCE to $F_TARGET"
+							$COMMAND_COPY $F_SOURCE $F_TARGET 1>>$LOGFILE_RES_RUN_REPORT 2>>$LOGFILE_RES_RUN_REPORT
+						done;
+
+					done;
+					#fi;
 
 					# CREATE CopyComplete file
 					echo "["`date '+%Y%m%d-%H%M%S'`"] Copy complete" >> $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/STARKCopyComplete.txt

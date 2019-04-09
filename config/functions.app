@@ -10,14 +10,16 @@ source_app () {
 # $2: APPS folder
 # return APP env file or default APP env file or null
 
-	local APP_LIST=$(echo $1 | tr "," " " | tr "+" " ") FOLDER_APPS=$2
+	local APP_LIST=$(echo $1 | tr "," " " | tr "+" " ") FOLDER_APPS=$2 VERBOSE=$3
+
+	local TMP_VERBOSE=$TMP_SYS_FOLDER/$RANDOM
 
 	if [ "$FOLDER_APPS" == "" ]; then FOLDER_APPS="$STARK_FOLDER_APPS"; fi
 	if [ "$FOLDER_APPS" == "" ]; then FOLDER_APPS=".."; fi
 
 	#echo "opt $APP_LIST F $FOLDER_APPS"
 
-	[ "$CONFIG_HEADER" != "" ] && [ -e "$CONFIG_HEADER" ] && source $CONFIG_HEADER #1>/dev/null 2>/dev/null;
+	[ "$CONFIG_HEADER" != "" ] && [ -e "$CONFIG_HEADER" ] && source $CONFIG_HEADER 1>>$TMP_VERBOSE 2>>$TMP_VERBOSE;
 
 	#source $(find_app "$APP_LIST" "$FOLDER_APPS")
 	local ENV=$(find_app "$APP_LIST" "$FOLDER_APPS")
@@ -40,7 +42,9 @@ source_app () {
 	#
 	#done;
 
-	[ "$CONFIG_FOOTER" != "" ] && [ -e "$CONFIG_FOOTER" ] && source $CONFIG_FOOTER #1>/dev/null 2>/dev/null;
+	[ "$CONFIG_FOOTER" != "" ] && [ -e "$CONFIG_FOOTER" ] && source $CONFIG_FOOTER 1>>$TMP_VERBOSE 2>>$TMP_VERBOSE;
+
+	(($VERBOSE)) && [ -f $TMP_VERBOSE ] && cat $TMP_VERBOSE && rm $TMP_VERBOSE;
 
 } # source_app
 
