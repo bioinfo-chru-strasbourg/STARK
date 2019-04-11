@@ -88,7 +88,8 @@ HOWARD_CALCULATION?=VAF,NOMEN,VAF_STATS,VARTYPE
 	echo "$(STARK_FOLDER_BIN)/stark_report.sh -f "`echo $$(basename $$(dirname $$(dirname $(@D))))`" -s "$(*F)" -e '$(ENV)' -i $$(echo $(PIPELINES) | tr " " ",") -d $(ANALYSIS_DATE) -r $(OUTDIR)"
 	#$(STARK_FOLDER_BIN)/stark_report.sh -f "`echo $$(basename $$(dirname $$(dirname $(@D))))`" -s "$(*F)" -e "$(ENV)" -i $$(echo $(PIPELINES) | tr " " ",") -d $(ANALYSIS_DATE) -r $(OUTDIR)
 	#$(STARK_FOLDER_BIN)/stark_report.sh -f "`echo $$(basename $$(dirname $$(dirname $(@D))))`" -s "$(*F)" -e "$(STARK_FOLDER_CONFIG)/config.app" -i $$(echo $(PIPELINES) | tr " " ",") -d $(ANALYSIS_DATE) -r $(OUTDIR)
-	$(STARK_FOLDER_BIN)/stark_report.sh -f "`echo $$(basename $$(dirname $$(dirname $(@D))))`" -s "$(*F)" -e "$(CONFIG_TOOLS)" -i $$(echo $(PIPELINES) | tr " " ",") -d $(ANALYSIS_DATE) -r $(OUTDIR)
+	#$(STARK_FOLDER_BIN)/stark_report.sh -f "`echo $$(basename $$(dirname $$(dirname $(@D))))`" -s "$(*F)" -e "$(CONFIG_TOOLS)" -i $$(echo $(PIPELINES) | tr " " ",") -d $(ANALYSIS_DATE) -r $(OUTDIR)
+	$(STARK_FOLDER_BIN)/stark_report.sh -f "`echo $$(basename $$(dirname $$(dirname $(@D))))`" -s "$(*F)" -e "$(APP)" -i $$(echo $(PIPELINES) | tr " " ",") -d $(ANALYSIS_DATE) -r $(OUTDIR)
 	#--env=$(CONFIG_TOOLS)
 
 

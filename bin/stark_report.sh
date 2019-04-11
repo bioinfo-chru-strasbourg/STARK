@@ -757,7 +757,7 @@ do
 				WARN & $(awk -F"\t" '$2=="WARN" {print $1}' $COVERAGEFILESTATS_GENES_COVERAGE_MSG | wc -w) genes$((($(awk -F"\t" '$2=="WARN" {print $1}' $COVERAGEFILESTATS_GENES_COVERAGE_MSG | wc -w))) && echo ": \textcolor{orange}{"$(awk -F"\t" '$2=="WARN" {print $1}' $COVERAGEFILESTATS_GENES_COVERAGE_MSG | tr "\n" " " | cut -f 1-$MAX_GENES -d " ")"}") $([ "$(awk -F"\t" '$2=="WARN" {print $1}' $COVERAGEFILESTATS_GENES_COVERAGE_MSG | wc -w)" -gt $MAX_GENES ] && echo "... (only the first $MAX_GENES)") \\hline
 				FAIL & $(awk -F"\t" '$2=="FAIL" {print $1}' $COVERAGEFILESTATS_GENES_COVERAGE_MSG | wc -w) genes$((($(awk -F"\t" '$2=="FAIL" {print $1}' $COVERAGEFILESTATS_GENES_COVERAGE_MSG | wc -w))) && echo ": \textcolor{red}{"$(awk -F"\t" '$2=="FAIL" {print $1}' $COVERAGEFILESTATS_GENES_COVERAGE_MSG | tr "\n" " " | cut -f 1-$MAX_GENES -d " ")"}") $([ "$(awk -F"\t" '$2=="FAIL" {print $1}' $COVERAGEFILESTATS_GENES_COVERAGE_MSG | wc -w)" -gt $MAX_GENES ] && echo "... (only the first $MAX_GENES)") \\hline
 
-				\caption{Gene Coverage for aligner '$aligner' with file '$(basename $COVERAGEFILESTATS_GENES_COVERAGE_MSG | sed s/.genes.msg$//)'. See file '"$(basename $COVERAGEFILESTATS_GENES_COVERAGE_MSG | sed 's/\_/\\\_/g')"' for more information. $GENES_COVERAGE_MSG_LEGEND} \label{tab:long}
+				\caption{Gene Coverage for aligner '$aligner' with file '"$(basename $COVERAGEFILESTATS_GENES_COVERAGE_MSG | sed s/.genes.msg$// | sed 's/\_/\\\_/g')"'. See file '"$(basename $COVERAGEFILESTATS_GENES_COVERAGE_MSG | sed 's/\_/\\\_/g')"' and Annexe for more information. $GENES_COVERAGE_MSG_LEGEND} \label{tab:long}
 				\end{longtable}
 
 				" >> $TEXFILE
