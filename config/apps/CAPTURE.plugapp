@@ -1,0 +1,20 @@
+#!/bin/bash
+## STARK application NO_ANNOTATION
+
+# DEFAULT ENV
+######################
+#source $CONFIG_DEFAULT_APP
+
+# APPLICATION INFOS
+#####################
+APP_NAME="CAPTURE"
+APP_RELEASE="1.0"
+APP_DESCRIPTION="PlugAPP for Capture sequencing"
+#APP_GROUP=""
+#APP_PROJECT=""
+
+# ANALYSIS PARAMETERS
+#######################
+
+# POST ALIGNEMENT STEPS
+POST_ALIGNMENT_STEPS="sorting markduplicates realignment recalibration compress"

@@ -3,7 +3,7 @@
 
 # DEFAULT ENV
 ######################
-source_app $CONFIG_DEFAULT_APP
+source_app $CONFIG_DEFAULT_APP,AMPLICON
 
 # APPLICATION INFOS
 #####################
@@ -20,4 +20,4 @@ APP_PROJECT=""
 PIPELINES="bwamem.itdseek.howard"
 
 # POST ALIGNEMENT STEPS (default "sorting realignment clipping compress")
-POST_ALIGNMENT_STEPS="sorting realignment recalibration clipping compress"
+#POST_ALIGNMENT_STEPS="sorting realignment recalibration clipping compress"

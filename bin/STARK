@@ -443,11 +443,8 @@ if (($APPLICATIONS_INFOS)); then
 		FOLDER_RESULTS=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $6}')
 		FOLDER_REPOSITORY=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $7}')
 		PIPELINES=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $8}')
-		POST_ALIGNMENT=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $9}')
+		POST_ALIGNMENT_STEPS=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $9}')
 		HOWARD_ANNOTATION_REPORT=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $10}')
-
-
-		#exit 0
 
 		[ -z "$APP_DESCRIPTION" ] && APP_DESCRIPTION="-";
 		[ -z "$APP_GROUP" ] && APP_GROUP="UNKNOWN";
@@ -464,17 +461,17 @@ if (($APPLICATIONS_INFOS)); then
 		echo "";
 		echo "#[INFO] $APP:$APP_RELEASE ["$(echo $ENV_DEF | sed s#$STARK_FOLDER_APPS/##)"] [$APP_TYPE] ";
 		#echo "#[INFO]    INFOS        $APP_INFOS";
-		echo "#[INFO]    DESCRIPTION        $APP_DESCRIPTION";
-		echo "#[INFO]    GROUP              $APP_GROUP";
-		echo "#[INFO]    PROJECT            $APP_PROJECT";
-		echo "#[INFO]    RUN                $FOLDER_RUN";
-		echo "#[INFO]    RESULTS            $FOLDER_RESULTS";
-		echo "#[INFO]    REPOSITORY         $FOLDER_REPOSITORY";
-		echo "#[INFO]    PIPELINES          $PIPELINES "
+		echo "#[INFO]    DESCRIPTION            $APP_DESCRIPTION";
+		echo "#[INFO]    GROUP                  $APP_GROUP";
+		echo "#[INFO]    PROJECT                $APP_PROJECT";
+		echo "#[INFO]    RUN                    $FOLDER_RUN";
+		echo "#[INFO]    RESULTS                $FOLDER_RESULTS";
+		echo "#[INFO]    REPOSITORY             $FOLDER_REPOSITORY";
+		echo "#[INFO]    PIPELINES              $PIPELINES "
 		#echo -e "#[INFO]       $(echo $PIPELINES | sed "s/ /\n#[INFO]       /gi")";
 		#echo "#[INFO]    POST_ALIGNMENT $POST_ALIGNMENT "
-		echo "#[INFO]    POST ALIGNMENT     $POST_ALIGNMENT_STEPS "
-		echo "#[INFO]    ANNOTATIONS        $HOWARD_ANNOTATION_REPORT "
+		echo "#[INFO]    POST ALIGNMENT STEPS   $POST_ALIGNMENT_STEPS "
+		echo "#[INFO]    ANNOTATIONS            $HOWARD_ANNOTATION_REPORT "
 		#fi;
 		RAW_LIST=$RAW_LIST" $FOLDER_RUN"
 

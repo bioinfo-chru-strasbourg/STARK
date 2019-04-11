@@ -77,18 +77,18 @@ PIPELINES="bwamem.gatkHC_DIAG_IP.howard bwamem.gatkUG_DIAG_IP.howard bwamem.cano
 # ALIGNERS (default "")
 # Aligners to use for the analysis
 # Example of available aligners: bwamem  bwasw bwaaln
-ALIGNERS="bwamem"
+#ALIGNERS="bwamem"
 
 # CALLERS (default "")
 # Callers to use for the analysis
 # Example of available callers: gatkHC gatkUG VarScan samtools
 #CALLERS="gatkHC_DIAG_IP gatkUG_DIAG_IP canoe"
-CALLERS="gatkHC_DIAG_IP gatkUG_DIAG_IP canoes"
+#CALLERS="gatkHC_DIAG_IP gatkUG_DIAG_IP canoes"
 
 # ANNOTATORS (default "")
 # Annotator to use for the analysis
 # Example of available annotators: howard snpeff
-ANNOTATORS="howard"
+#ANNOTATORS="howard"
 
 # BLANK samples
 # Used to reject for CNV analysis

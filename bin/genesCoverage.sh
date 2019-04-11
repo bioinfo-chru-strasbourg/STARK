@@ -314,11 +314,11 @@ for DP in $(echo $COVERAGE_CRITERIA | tr "," " "); do
 	DP_LIST_FILE_LATEX="$DP_LIST_FILE_LATEX $TMPDIR/$DP.genes_stats.latex";
 
 done;
-paste $DP_HEADER $DP_LIST_FILE > ${OUTPUT}-all.txt
-paste $DP_HEADER $DP_LIST_FILE_LATEX  | sed 's/\t/ \& /gi' | sed 's/%/\\\\%/gi' | sed 's/>/\\\\textgreater/gi' | sed 's/</\\\\textless/gi' > ${OUTPUT}-all-latex.txt
+paste $DP_HEADER $DP_LIST_FILE > ${OUTPUT}.genes.txt
+paste $DP_HEADER $DP_LIST_FILE_LATEX  | sed 's/\t/ \& /gi' | sed 's/%/\\\\%/gi' | sed 's/>/\\\\textgreater/gi' | sed 's/</\\\\textless/gi' > ${OUTPUT}.genes.latex
 #paste $DP_HEADER $DP_LIST_FILE_LATEX_WARNING  | sed 's/\t/ \& /gi' | sed 's/%/\\\\%/gi' | sed 's/>/\\\\textgreater/gi' | sed 's/</\\\\textless/gi' > ${OUTPUT}-warning-latex.txt
 
-(($VERBOSE)) && echo "" && head -n 20 ${OUTPUT}-all.txt
+(($VERBOSE)) && echo "" && head -n 20 ${OUTPUT}.genes.txt
 
 echo "#[INFO] Genes Coverage information messages"
 
@@ -341,18 +341,18 @@ END {
 	}
 }' ${OUTPUT}.coverage_bases | sort >> $TMPDIR/$DP.genes_message;
 
-cp $TMPDIR/$DP.genes_message ${OUTPUT}.msg
+cp $TMPDIR/$DP.genes_message ${OUTPUT}.genes.msg
 
 
 #cat $TMPDIR/$DP.genes_message.tmp | cut -f3,4 >> $TMPDIR/$DP.genes_message;
 #" (accepted threshold "sprintf("%.2f", THRESHOLD)"%)"
 
-(($VERBOSE)) && echo "" && head -n 20 ${OUTPUT}.msg;
+(($VERBOSE)) && echo "" && head -n 20 ${OUTPUT}.genes.msg;
 
 
-(($VERBOSE)) && echo "Genes with coverage passing: "$(awk -F"\t" '$2=="PASS" {print $1}' ${OUTPUT}.msg)
-(($VERBOSE)) && echo "Genes with coverage warning: "$(awk -F"\t" '$2=="WARN" {print $1" "}' ${OUTPUT}.msg)
-(($VERBOSE)) && echo "Genes with coverage failing: "$(awk -F"\t" '$2=="FAIL" {print $1}' ${OUTPUT}.msg)
+(($VERBOSE)) && echo "Genes with coverage passing: "$(awk -F"\t" '$2=="PASS" {print $1}' ${OUTPUT}.genes.msg)
+(($VERBOSE)) && echo "Genes with coverage warning: "$(awk -F"\t" '$2=="WARN" {print $1" "}' ${OUTPUT}.genes.msg)
+(($VERBOSE)) && echo "Genes with coverage failing: "$(awk -F"\t" '$2=="FAIL" {print $1}' ${OUTPUT}.genes.msg)
 
 rm -rf $TMPDIR $BEDFILE_GENES.coverage_bases #${OUTPUT}.coverage_bases
 

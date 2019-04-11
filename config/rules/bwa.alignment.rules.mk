@@ -33,7 +33,7 @@ POST_ALIGNMENT?=.unrecalibrated.unclipped.unrealigned.unsorted
 BWAMEM_FLAGS= mem -M -t $(THREADS_BWA)
 #-a
 
-%.bwamem$(POST_ALIGNMENT).bam: %.R1.fastq.gz %.R2.fastq.gz %.genome #check in the code 
+%.bwamem$(POST_ALIGNMENT).bam: %.R1.fastq.gz %.R2.fastq.gz %.genome #check in the code
 	# Read group
 	#$(SAMTOOLS) view $< -H | grep '@RG' | head -n 1 | sed 's/\t/\\t/gi' > $@.RG
 	echo "@RG\tID:1\tPL:ILLUMINA\tPU:PU\tLB:001\tSM:$(*F)" > $@.RG
@@ -55,7 +55,7 @@ BWAMEM_FLAGS= mem -M -t $(THREADS_BWA)
 	fi;
 	# AddOrReplaceReadGroups
 	#echo "# AddOrReplaceReadGroups %.bwamem.unrecalibrated.unclipped.unrealigned.unsorted.sam"
-	#$(JAVA) $(JAVA_FLAGS) -jar $(PICARDLIB)/AddOrReplaceReadGroups.jar $(PICARD_FLAGS) I=$@.tmp O=$@ RGSM=$(*F) 
+	#$(JAVA) $(JAVA_FLAGS) -jar $(PICARDLIB)/AddOrReplaceReadGroups.jar $(PICARD_FLAGS) I=$@.tmp O=$@ RGSM=$(*F)
 	if (($$($(SAMTOOLS) view $@.tmp -H | grep "^@RG" -c))); then \
 		echo "# BAM $@.tmp with read group"; \
 		mv $@.tmp $@; \
@@ -98,7 +98,7 @@ BWAMEM_FLAGS= mem -M -t $(THREADS_BWA)
 BWAMEM_FromUBAM_FLAGS= mem -Mp -t $(THREADS_BWA)
 #-a
 
-%.bwamem_FromUBAM$(POST_ALIGNMENT).sam: %.unaligned.bam %.genome #check in the code 
+%.bwamem_FromUBAM$(POST_ALIGNMENT).sam: %.unaligned.bam %.genome #check in the code
 	# Read group
 	$(SAMTOOLS) view $< -H | grep '@RG' | head -n 1 | sed 's/\t/\\t/gi' > $@.RG
 	if [ "`cat $@.RG`" != "" ]; then echo " -R "`cat $@.RG` > $@.RG; fi;
@@ -106,7 +106,7 @@ BWAMEM_FromUBAM_FLAGS= mem -Mp -t $(THREADS_BWA)
 	-$(SAMTOOLS) bam2fq $< | $(BWA) $(BWAMEM_FromUBAM_FLAGS) `cat $*.genome` `cat $@.RG` - > $@.tmp
 	# AddOrReplaceReadGroups
 	#echo "# AddOrReplaceReadGroups %.bwamem.unrecalibrated.unclipped.unrealigned.unsorted.sam"
-	#$(JAVA) $(JAVA_FLAGS) -jar $(PICARDLIB)/AddOrReplaceReadGroups.jar $(PICARD_FLAGS) I=$@.tmp O=$@ RGSM=$(*F) 
+	#$(JAVA) $(JAVA_FLAGS) -jar $(PICARDLIB)/AddOrReplaceReadGroups.jar $(PICARD_FLAGS) I=$@.tmp O=$@ RGSM=$(*F)
 	if (($$($(SAMTOOLS) view $@.tmp -H | grep "^@RG" -c))); then \
 		echo "# BAM $@.tmp with read group"; \
 		mv $@.tmp $@; \
@@ -114,26 +114,7 @@ BWAMEM_FromUBAM_FLAGS= mem -Mp -t $(THREADS_BWA)
 		echo "# BAM $@.tmp without read group"; \
 		$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) AddOrReplaceReadGroups $(PICARD_FLAGS) I=$@.tmp O=$@  COMPRESSION_LEVEL=1 RGSM=$(*F); \
 	fi;
-	#mv $@.tmp $@
-	# CHECK NUMBER of READS in BAM
-	if (($(BAM_CHECK_STEPS))); then \
-		#echo $$($(SAMTOOLS) view -c -@ $(THREADS_SAMTOOLS) -F 0x0100 $<)" READS for $<"; \
-		#echo $$($(SAMTOOLS) view -c -@ $(THREADS_SAMTOOLS) -F 0x0100 $@)" READS for $@"; \
-		if [ "$$($(SAMTOOLS) view -c -F 0x0100 -@ $(THREADS_SAMTOOLS) $<)" != "$$($(SAMTOOLS) view -c -F 0x0100 -@ $(THREADS_SAMTOOLS) $@)" ]; then \
-			echo "# ERROR in Number of reads between $< and $@ !!!"; \
-			echo "# BCFTOOLS STATS for $<";  \
-			$(SAMTOOLS) index $<; \
-			$(SAMTOOLS) stats $< | grep ^SN; \
-			$(SAMTOOLS) idxstats $<; \
-			echo "# BCFTOOLS STATS for $@";  \
-			$(SAMTOOLS) index $@; \
-			$(SAMTOOLS) stats $@ | grep SN; \
-			$(SAMTOOLS) idxstats $@; \
-			exit 1; \
-		else \
-			echo "# Number of reads OK between $< and $@"; \
-		fi; \
-	fi;
+	# clean
 	-rm $@.tmp $@.RG
 
 
@@ -147,7 +128,7 @@ BWAMEM_FromUBAM_FLAGS= mem -Mp -t $(THREADS_BWA)
 BWAMEM_FromFASTQ_FLAGS= mem -M -t $(THREADS_BWA)
 #-a
 
-%.bwamem_FromFASTQ$(POST_ALIGNMENT).bam: %.R1.fastq.gz %.R2.fastq.gz %.genome #check in the code 
+%.bwamem_FromFASTQ$(POST_ALIGNMENT).bam: %.R1.fastq.gz %.R2.fastq.gz %.genome #check in the code
 	# Read group
 	#$(SAMTOOLS) view $< -H | grep '@RG' | head -n 1 | sed 's/\t/\\t/gi' > $@.RG
 	echo "@RG\tID:1\tPL:ILLUMINA\tPU:PU\tLB:001\tSM:$(*F)" > $@.RG
@@ -163,7 +144,7 @@ BWAMEM_FromFASTQ_FLAGS= mem -M -t $(THREADS_BWA)
 	fi;
 	# AddOrReplaceReadGroups
 	#echo "# AddOrReplaceReadGroups %.bwamem.unrecalibrated.unclipped.unrealigned.unsorted.sam"
-	#$(JAVA) $(JAVA_FLAGS) -jar $(PICARDLIB)/AddOrReplaceReadGroups.jar $(PICARD_FLAGS) I=$@.tmp O=$@ RGSM=$(*F) 
+	#$(JAVA) $(JAVA_FLAGS) -jar $(PICARDLIB)/AddOrReplaceReadGroups.jar $(PICARD_FLAGS) I=$@.tmp O=$@ RGSM=$(*F)
 	if (($$($(SAMTOOLS) view $@.tmp -H | grep "^@RG" -c))); then \
 		echo "# BAM $@.tmp with read group"; \
 		mv $@.tmp $@; \
@@ -206,30 +187,12 @@ BWAMEM_FromFASTQ_FLAGS= mem -M -t $(THREADS_BWA)
 BWASAMPE_FLAGS=sampe -r '@RG\tID:$(*F)\tSM:$(*F)\tPL:Illumina' -a 600
 BWAALN_FLAGS=aln -t $(THREADS_BWA)
 
-%.bwaaln$(POST_ALIGNMENT).sam: %.unaligned.bam %.genome 
+%.bwaaln$(POST_ALIGNMENT).sam: %.unaligned.bam %.genome
 	# Alignment
 	$(BWA) $(BWAALN_FLAGS) `cat $*.genome` -b1 $*.unaligned.bam > $*.unaligned.bam.R1.sai
 	$(BWA) $(BWAALN_FLAGS) `cat $*.genome` -b2 $*.unaligned.bam > $*.unaligned.bam.R2.sai
 	$(BWA) $(BWASAMPE_FLAGS) `cat $*.genome` $*.unaligned.bam.R1.sai $*.unaligned.bam.R2.sai $*.unaligned.bam $*.unaligned.bam > $@
-	# CHECK NUMBER of READS in BAM
-	if (($(BAM_CHECK_STEPS))); then \
-		#echo $$($(SAMTOOLS) view -c -@ $(THREADS_SAMTOOLS) -F 0x0100 $<)" READS for $<"; \
-		#echo $$($(SAMTOOLS) view -c -@ $(THREADS_SAMTOOLS) -F 0x0100 $@)" READS for $@"; \
-		if [ "$$($(SAMTOOLS) view -c -F 0x0100 -@ $(THREADS_SAMTOOLS) $<)" != "$$($(SAMTOOLS) view -c -F 0x0100 -@ $(THREADS_SAMTOOLS) $@)" ]; then \
-			echo "# ERROR in Number of reads between $< and $@ !!!"; \
-			echo "# BCFTOOLS STATS for $<";  \
-			$(SAMTOOLS) index $<; \
-			$(SAMTOOLS) stats $< | grep ^SN; \
-			$(SAMTOOLS) idxstats $<; \
-			echo "# BCFTOOLS STATS for $@";  \
-			$(SAMTOOLS) index $@; \
-			$(SAMTOOLS) stats $@ | grep SN; \
-			$(SAMTOOLS) idxstats $@; \
-			exit 1; \
-		else \
-			echo "# Number of reads OK between $< and $@"; \
-		fi; \
-	fi;
+	# Clean
 	-rm -Rf $*.unaligned.bam.R1.sai $*.unaligned.bam.R2.sai
 
 
@@ -248,28 +211,9 @@ BWASW_FLAGS=bwasw -t $(THREADS_BWA)
 	if [ "`cat $@.RG`" != "" ]; then echo " -R "`cat $@.RG` > $@.RG; fi;
 	# Alignment
 	-$(SAMTOOLS) bam2fq $*.unaligned.bam | $(BWA) $(BWASW_FLAGS) `cat $*.genome` `cat $@.RG` - > $@.tmp
-	#$(JAVA) $(JAVA_FLAGS) -jar $(PICARDLIB)/AddOrReplaceReadGroups.jar $(PICARD_FLAGS) I=$@.tmp O=$@ RGSM=$(*F) 
+	#$(JAVA) $(JAVA_FLAGS) -jar $(PICARDLIB)/AddOrReplaceReadGroups.jar $(PICARD_FLAGS) I=$@.tmp O=$@ RGSM=$(*F)
 	$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) AddOrReplaceReadGroups $(PICARD_FLAGS) I=$@.tmp O=$@  COMPRESSION_LEVEL=1 RGSM=$(*F)
-	#mv $@.tmp $@
-	# CHECK NUMBER of READS in BAM
-	if (($(BAM_CHECK_STEPS))); then \
-		#echo $$($(SAMTOOLS) view -c -@ $(THREADS_SAMTOOLS) -F 0x0100 $<)" READS for $<"; \
-		#echo $$($(SAMTOOLS) view -c -@ $(THREADS_SAMTOOLS) -F 0x0100 $@)" READS for $@"; \
-		if [ "$$($(SAMTOOLS) view -c -F 0x0100 -@ $(THREADS_SAMTOOLS) $<)" != "$$($(SAMTOOLS) view -c -F 0x0100 -@ $(THREADS_SAMTOOLS) $@)" ]; then \
-			echo "# ERROR in Number of reads between $< and $@ !!!"; \
-			echo "# BCFTOOLS STATS for $<";  \
-			$(SAMTOOLS) index $<; \
-			$(SAMTOOLS) stats $< | grep ^SN; \
-			$(SAMTOOLS) idxstats $<; \
-			echo "# BCFTOOLS STATS for $@";  \
-			$(SAMTOOLS) index $@; \
-			$(SAMTOOLS) stats $@ | grep SN; \
-			$(SAMTOOLS) idxstats $@; \
-			exit 1; \
-		else \
-			echo "# Number of reads OK between $< and $@"; \
-		fi; \
-	fi;
+	# Clean
 	-rm $@.tmp $@.RG
 
 
@@ -293,11 +237,11 @@ RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
 
 # PIPELINES INFOS
-PIPELINES_COMMENT := "ALIGNER:bwamem:BWA MEM - Last powerful algorithm. From FASTQ files. BAM_CHECK_STEP switched off."
+PIPELINES_COMMENT := "ALIGNER:bwamem:BWA MEM - Last powerful algorithm. From FASTQ files."
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
 PIPELINES_COMMENT := "ALIGNER:bwamem_FromUBAM:BWA MEM - Last powerful algorithm from unaligned BAM files"
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
-PIPELINES_COMMENT := "ALIGNER:bwamem_FromFASTQ:BWA MEM - Last powerful algorithm from FASTQ files. Please switch off BAM_CHECK_STEP"
+PIPELINES_COMMENT := "ALIGNER:bwamem_FromFASTQ:BWA MEM - Last powerful algorithm from FASTQ files."
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
 PIPELINES_COMMENT := "ALIGNER:bwaaln:BWA ALN - First BWA algorithm"
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
@@ -305,6 +249,3 @@ PIPELINES_COMMENT := "ALIGNER:bwasw:BWA SW - Smith Watermann algorithm"
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
 
 #PIPELINES_COMMENT := "\#\#STEP_TYPE	STEP_NAME	STEP_DESCRIPTION2"
-
-
-

@@ -373,7 +373,7 @@ fi;
 BEDFILE_GENES_DEFAULT="";
 if [ "$BEDFILE_GENES" != "" ]; then
 	# Test BED files exist
-	for G in $BEDFILE_GENES; do
+	for G in $(echo $BEDFILE_GENES | tr "+" " "); do
 		if [ ! -e $G ]; then
 			echo "[ERROR] BEDFILE_GENES '$G' file DOES NOT exist!";
 			exit 0;
@@ -494,7 +494,8 @@ for F in $FASTQ; do
 	fi;
 
 	# BEDFILE_GENES
-	if [ "${BEDFILE_GENES_ARRAY[$NB_SAMPLE]}" == "" ] || [ ! -f "${BEDFILE_GENES_ARRAY[$NB_SAMPLE]}" ]; then
+	#if [ "${BEDFILE_GENES_ARRAY[$NB_SAMPLE]}" == "" ] || [ ! -f "${BEDFILE_GENES_ARRAY[$NB_SAMPLE]}" ]; then
+	if [ "${BEDFILE_GENES_ARRAY[$NB_SAMPLE]}" == "" ]; then
 		BEDFILE_GENES_CHECKED="$BEDFILE_GENES_CHECKED$BEDFILE_GENES_DEFAULT "
 	else
 		BEDFILE_GENES_CHECKED="$BEDFILE_GENES_CHECKED${BEDFILE_GENES_ARRAY[$NB_SAMPLE]} "
@@ -902,9 +903,14 @@ for RUU in $RUN_UNIQ; do
 		if [ -e $G ] && [ "$G" != "" ] && [ ! -e $RUN_SAMPLE_DIR/$S.genes ]; then
 			echo "#[INFO] Copy GENES file."
 			cp -p $G $RUN_SAMPLE_DIR/$S.genes;
+		elif [ "$G" != "" ] && [ ! -e $RUN_SAMPLE_DIR/$S.list.genes ]; then
+			echo "#[INFO] Create MIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes'."
+			> $RUN_SAMPLE_DIR/$S.list.genes;
+			for G_ONE in $(echo $G | tr "+" " "); do
+				cp -p $G_ONE $RUN_SAMPLE_DIR/$(basename $G_ONE);
+				echo $(basename $G_ONE) >> $RUN_SAMPLE_DIR/$S.list.genes
+			done;
 		fi;
-
-
 
 		# Copy TRANSCRIPTS
 

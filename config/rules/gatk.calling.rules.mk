@@ -313,6 +313,41 @@ DPMIN_SOLIDTUMOR=1
 
 
 
+##################
+# GATKUG_SOMATIC #
+##################
+
+# GATKUG_SOMATIC Flags
+THREADS_GATK?=$(THREADS_BY_SAMPLE)
+THREADS_GATKUG_SOMATIC?=$(THREADS_GATK)
+#GATKUG_SOMATIC_THREADS=4
+GATKUG_SOMATIC_FLAGS= -nct $(THREADS_GATKUG_SOMATIC) -glm BOTH \
+		-minIndelFrac 0.01 \
+		-minIndelCnt 2 \
+		-deletions 0.01 \
+		-baq OFF \
+		-stand_call_conf 10 -dfrac $(DFRAC) --dbsnp $(VCFDBSNP) -mbq $(MBQ_UG) -rf BadCigar -dt NONE \
+		-allowPotentiallyMisencodedQuals
+# Minimum coverage for a variant called by GATKUG_SOMATIC
+DPMIN_SOMATIC=1
+
+%.gatkUG_SOMATIC.unfiltered.unrecalibrated.vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
+
+	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKUG_SOMATIC_FLAGS) \
+		-T UnifiedGenotyper \
+		-R `cat $*.genome` \
+		$$(if [ "`grep ^ -c $*.from_manifest.intervals`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.intervals"; fi;) \
+		-I $< \
+		-ip $(INTERVAL_PADDING) \
+		-o $@.tmp;
+	-if [ ! -e $@.tmp ]; then cp $*.empty.vcf $@.tmp; fi;
+	-if [ ! -e $@.tmp ]; then touch $@.tmp; fi; 		# in case of no vcf creation, to not kill the pipeline
+	-$(VCFUTILS) varFilter -d $(DPMIN_SOMATIC) $@.tmp > $@ 		# filter on DP, cause UG is too relax, espacially because the clipping can generate few errors
+	-if [ ! -e $@ ]; then cp $@.tmp $@; fi; 		# in case of error in previous line
+	-rm -f $@.tmp $@.tmp.idx $@.idx
+
+
+
 
 
 ####################
@@ -460,9 +495,9 @@ GATKHC_EXOME_FLAGS= -nct $(THREADS_GATKHC_EXOME) -stand_call_conf $(STAND_CALL_C
 	-rm -f $@.tmp $@.tmp.idx $@.idx
 
 
-###################
+########################
 # gatkHC_EXOME_SOMATIC #
-###################
+########################
 
 MINPRUNING_HC_EXOME_SOMATIC?=4
 THREADS_GATKHC_EXOME_SOMATIC?=$(THREADS_GATK)
@@ -570,6 +605,32 @@ GATKHC_SOLIDTUMOR_FLAGS= -nct $(THREADS_GATKHC_SOLIDTUMOR) -stand_call_conf 10 -
 	-if [ ! -e $@ ]; then cp $*.empty.vcf $@; fi;
 	-if [ ! -e $@ ]; then touch $@; fi;
 	-rm -f $@.idx
+
+
+
+
+##################
+# gatkHC_SOMATIC #
+##################
+
+MINPRUNING_SOMATIC?=20
+THREADS_GATKHC_SOMATIC?=$(THREADS_GATK)
+maxReadsInRegionPerSample_SOMATIC=1000
+GATKHC_SOMATIC_FLAGS= -nct $(THREADS_GATKHC_SOMATIC) -stand_call_conf 10 -dfrac $(DFRAC) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample_SOMATIC) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC) -minPruning $(MINPRUNING_SOMATIC)  $(GATKHC_FLAGS_SHARED)
+
+%.gatkHC_SOMATIC.unfiltered.unrecalibrated.vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
+
+	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKHC_SOMATIC_FLAGS) \
+		-T HaplotypeCaller \
+		-R `cat $*.genome` \
+		$$(if [ "`grep ^ -c $*.from_manifest.intervals`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.intervals"; fi;) \
+		-I $< \
+		-ip $(INTERVAL_PADDING) \
+		-o $@;
+	-if [ ! -e $@ ]; then cp $*.empty.vcf $@; fi;
+	-if [ ! -e $@ ]; then touch $@; fi;
+	-rm -f $@.idx
+
 
 
 
@@ -746,6 +807,9 @@ RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 RELEASE_COMMENT := "\#\# CALLING GATKUG SOLIDTUMOR identify variants and generate *.gatkUG_SOLIDTUMOR.vcf files with parameters: GATKUG_SOLIDTUMOR_FLAGS='$(GATKUG_SOLIDTUMOR_FLAGS)', DPMIN_SOLIDTUMOR='$(DPMIN_SOLIDTUMOR)'"
 RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
+RELEASE_COMMENT := "\#\# CALLING GATKUG SOMATIC identify variants and generate *.gatkUG_SOMATIC.vcf files with parameters: GATKUG_SOMATIC_FLAGS='$(GATKUG_SOMATIC_FLAGS)', DPMIN_SOMATIC='$(DPMIN_SOMATIC)'"
+RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
+
 RELEASE_COMMENT := "\#\# CALLING GATKUG ONCOGENET identify variants and generate *.gatkUG_ONCOGENET.vcf files with parameters: GATKUG_ONCOGENET_FLAGS='$(GATKUG_ONCOGENET_FLAGS)', DPMIN_SOLIDTUMOR='$(DPMIN_ONCOGENET)'"
 RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
@@ -768,7 +832,7 @@ RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 RELEASE_COMMENT := "\#\# CALLING GATKHC HEMATOLOGY identify variants and generate *.gatkHC_HEMATOLOGY.vcf files with parameters: GATKHC_HEMATOLOGY_FLAGS='$(GATKHC_HEMATOLOGY_FLAGS)'"
 RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
-RELEASE_COMMENT := "\#\# CALLING GATKHC SOLDITUMOR identify variants and generate *.gatkHC_SOLDITUMOR.vcf files with parameters: GATKHC_SOLDITUMOR_FLAGS='$(GATKHC_SOLDITUMOR_FLAGS)'"
+RELEASE_COMMENT := "\#\# CALLING GATKHC SOLIDTUMOR identify variants and generate *.gatkHC_SOLIDTUMOR.vcf files with parameters: GATKHC_SOLIDTUMOR_FLAGS='$(GATKHC_SOLIDTUMOR_FLAGS)'"
 RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
 RELEASE_COMMENT := "\#\# CALLING GATKHC ONCOGENET identify variants and generate *.gatkHC_ONCOGENET.vcf files with parameters: GATKHC_ONCOGENET_FLAGS='$(GATKHC_ONCOGENET_FLAGS)'"
@@ -797,6 +861,9 @@ PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
 PIPELINES_COMMENT := "CALLER:gatkUG_SOLIDTUMOR:GATK Unified Genotyper - designed for SOLIDTUMOR variant discovery:GATKUG_SOLIDTUMOR_FLAGS='$(GATKUG_SOLIDTUMOR_FLAGS)', DPMIN_SOLIDTUMOR='$(DPMIN_SOLIDTUMOR)'"
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
 
+PIPELINES_COMMENT := "CALLER:gatkUG_SOMATIC:GATK Unified Genotyper - designed for SOMATIC variant discovery:GATKUG_SOMATIC_FLAGS='$(GATKUG_SOMATIC_FLAGS)', DPMIN_SOMATIC='$(DPMIN_SOMATIC)'"
+PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
+
 PIPELINES_COMMENT := "CALLER:gatkUG_ONCOGENET:GATK Unified Genotyper - designed for ONCOGENET variant discovery:GATKUG_ONCOGENET_FLAGS='$(GATKUG_ONCOGENET_FLAGS)', DPMIN_SOLIDTUMOR='$(DPMIN_ONCOGENET)'"
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
 
@@ -820,6 +887,9 @@ PIPELINES_COMMENT := "CALLER:gatkHC_HEMATOLOGY:GATK Haplotype Caller - designed 
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
 
 PIPELINES_COMMENT := "CALLER:gatkHC_SOLIDTUMOR:GATK Haplotype Caller - designed for SOLIDTUMOR variant discovery:GATKHC_SOLIDTUMOR_FLAGS='$(GATKHC_SOLIDTUMOR_FLAGS)'"
+PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
+
+PIPELINES_COMMENT := "CALLER:gatkHC_SOMATIC:GATK Haplotype Caller - designed for SOMATIC variant discovery:GATKHC_SOMATIC_FLAGS='$(GATKHC_SOMATIC_FLAGS)'"
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
 
 PIPELINES_COMMENT := "CALLER:gatkHC_ONCOGENET:GATK Haplotype Caller - designed for ONCOGENET variant discovery:GATKHC_ONCOGENET_FLAGS='$(GATKHC_ONCOGENET_FLAGS)'"

@@ -1,5 +1,5 @@
 #!/bin/bash
-## STARK application NO_ANNOTATION
+## STARK application SOMATIC_PARAMETERS
 
 # DEFAULT ENV
 ######################
@@ -7,9 +7,9 @@
 
 # APPLICATION INFOS
 #####################
-APP_NAME="AMPLICON"
+APP_NAME="SOMATIC_PARAMETERS"
 APP_RELEASE="1.0"
-APP_DESCRIPTION="PlugAPP for Amplicon sequencing"
+APP_DESCRIPTION="PlugAPP for specific parameters to detect Somatic mutation (no Markduplicate and apply clipping if Amplicon technology)"
 #APP_GROUP=""
 #APP_PROJECT=""
 
