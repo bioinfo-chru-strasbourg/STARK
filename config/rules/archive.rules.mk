@@ -36,7 +36,7 @@ MEMORY?=1
 				$(SAMTOOLS) view -h -@ $(THREADS_BY_SAMPLE) -O CRAM -T `cat $*.genome` $$b | $(SAMTOOLS) sort -l 9 -O CRAM -@ $(THREADS_BY_SAMPLE) -T $@.SAMTOOLS_PREFIX -o $*.archive.cram; \
 				echo "# BAM file archived : $$b" ; \
 				#2) Generate FASTQs from the new CRAM \
-				$(SAMTOOLS) bam2fq -@ $(THREADS_BY_SAMPLE) --reference `cat $*.genome` -1 $*.R1.fromCram.fastq -2 $*.R2.fromCram.fastq $*.archive.cram > $*.R0.fromCram.fastq; \
+				$(SAMTOOLS) bam2fq -@ $(THREADS_BY_SAMPLE) -O --reference `cat $*.genome` -1 $*.R1.fromCram.fastq -2 $*.R2.fromCram.fastq $*.archive.cram > $*.R0.fromCram.fastq; \
 				# If R0 not empty \
 				[ -s $*.R0.fromCram.fastq ] && echo "[WARNING] $*.R0.fromCram.fastq is not empty"; \
 				# IF Single End \

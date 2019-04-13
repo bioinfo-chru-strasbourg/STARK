@@ -151,13 +151,14 @@ done
 # Checking the input parameter
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 #[ "$FLOWCELL" == "" ] || [ "$PROJECT" == "" ] || [ "$SAMPLE" == "" ] || [ "$ENV" == "" ] || [ "$GROUP" == "" ] || [ "$USER" == "" ] || [ "$DATE" == "" ] &&
-[ "$FLOWCELL" == "" ] || [ "$SAMPLE" == "" ] || [ "$APP" == "" ] || [ "$DATE" == "" ] && \
+[ "$FLOWCELL" == "" ] || [ "$SAMPLE" == "" ] || [ "$DATE" == "" ] && \
 	echo "Options --flowcell, --project, --sample, --group, --user, --env and --date are required. " "Use -h or --help to display the help." && exit 1;
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 # source of environement file or exit
 #source $ENV || (echo "$ENV can't be sourced ! Exit." && exit 1);
+# || [ "$APP" == "" ]
 
 #for E in $ENV; do
 #	source $ENV || (echo "$ENV can't be sourced ! Exit." && exit 1);
@@ -578,11 +579,15 @@ do
 	COVERAGEFILESTATS_HSMETRICS="$RESULTS_FOLDER/$FLOWCELL/$SAMPLE/$SAMPLE.$aligner.bam.metrics/$SAMPLE.$aligner.HsMetrics"
 	COVERAGEFILESTATS_GENES_COVERAGE_MSG="$RESULTS_FOLDER/$FLOWCELL/$SAMPLE/$SAMPLE.$aligner.bam.metrics/$SAMPLE.msg"
 
+	COVERAGEFILESTATS_MARKDUPLICATES=$(ls $RESULTS_FOLDER/$FLOWCELL/$SAMPLE/$SAMPLE.$aligner*markduplicates.bam.metrics/$SAMPLE.$aligner*markDuplicates.metrics)
+	#(($DEBUG)) && echo $COVERAGEFILESTATS_MARKDUPLICATES;
+	#exit 0;
+
 	echo "\subsection{Mapping}" >> $TEXFILE
 
 
 
-	if [ -s $COVERAGEFILESTATS_STATFILE ]; then
+	if [ -f "$COVERAGEFILESTATS_STATFILE" ]; then
 		Total_qc_passed_reads=`grep "in total" $COVERAGEFILESTATS_STATFILE | cut -d"+" -f1 | sed 's/ //'`
 		#Percent_mapped_reads=`grep "mapped (" $STATFILE | cut -d"(" -f2 | sed 's/%:.*//'`
 		Percent_mapped_reads=`grep "mapped (" $COVERAGEFILESTATS_STATFILE | cut -d"(" -f2 | sed 's/[%:].*//'`
@@ -605,12 +610,12 @@ do
 	echo "\subsection{Design Coverage}" >> $TEXFILE
 
 	# COVERAGE SUMMARY AVERAGE on all sequencing with SAMTOOLS
-	if [ -s $COVERAGEFILESTATS_SAMTOOLS ]; then
+	if [ -f "$COVERAGEFILESTATS_SAMTOOLS" ]; then
 		COV_CALC=$( cat $COVERAGEFILESTATS_SAMTOOLS | awk '{SUM+=$3; LINES+=1} END {print SUM/LINES}' )
 		echo "\\\\ Sequencing coverage estimation on target ( total number of sequenced bases / number bases of target) : `echo "scale=2;($COV_CALC)/1" | bc` X" >> $TEXFILE
 	fi
 
-	if [ -s $COVERAGEFILESTATS_MARKDUPLICATESFILE ]; then
+	if [ -f "$COVERAGEFILESTATS_MARKDUPLICATESFILE" ]; then
 		READ_PAIRS_EXAMINED=`cat $COVERAGEFILESTATS_MARKDUPLICATESFILE | grep -A 2 "## METRICS CLASS" | tail -n 1 | cut -f3 | sed 's/,/./'`
 		PERCENT_DUPLICATION=`cat $COVERAGEFILESTATS_MARKDUPLICATESFILE | grep -A 2 "## METRICS CLASS" | tail -n 1 | cut -f8 | sed 's/,/./'`
 		echo "\begin{table}[!h]
@@ -628,7 +633,7 @@ do
 	fi;
 
 	# COVERAGE SUMMARY ON/OFF target with HsMetrics
-	if [ -s $COVERAGEFILESTATS_HSMETRICS ] && ((1)); then
+	if [ -f "$COVERAGEFILESTATS_HSMETRICS" ] && ((1)); then
 		PCT_SELECTED_BASES=$( C=1; for i in $(grep -v "#" $COVERAGEFILESTATS_HSMETRICS | sed '/^\s*$/d' | head -n 2) ; do if [ $i == "PCT_SELECTED_BASES" ] ; then break ; else C=$(( $C + 1 )) ; fi ; done ; grep -v "#" $COVERAGEFILESTATS_HSMETRICS | sed '/^\s*$/d'  | head -n2 | tail -n1 | cut -f$C | sed 's/,/./' )
 		PCT_OFF_BAIT=$( C=1; for i in $(grep -v "#" $COVERAGEFILESTATS_HSMETRICS | sed '/^\s*$/d' | head -n 2) ; do if [ $i == "PCT_OFF_BAIT" ] ; then break ; else C=$(( $C + 1 )) ; fi ; done ; grep -v "#" $COVERAGEFILESTATS_HSMETRICS | sed '/^\s*$/d'  | head -n2 | tail -n1 | cut -f$C | sed 's/,/./' )
 		#echo "PCT_SELECTED_BASES=$PCT_SELECTED_BASES PCT_OFF_BAIT=$PCT_OFF_BAIT"
@@ -651,7 +656,7 @@ do
 		fi;
 	fi;
 
-	if [ -e $COVERAGEFILESTATS_ONREADS_SAMTOOLS ] && [ -e $COVERAGEFILESTATS_OFFREADS_SAMTOOLS ]; then
+	if [ -f "$COVERAGEFILESTATS_ONREADS_SAMTOOLS" ] && [ -f "$COVERAGEFILESTATS_OFFREADS_SAMTOOLS" ]; then
 		READS_ON_TARGET=$(echo $(cat $COVERAGEFILESTATS_ONREADS_SAMTOOLS)" +0 " | bc);
 		READS_OFF_TARGET=$(echo $(cat $COVERAGEFILESTATS_OFFREADS_SAMTOOLS)" +0 " | bc);
 		READS_ALL_TARGET=$(echo "$READS_ON_TARGET+$READS_OFF_TARGET" | bc)
@@ -672,12 +677,10 @@ do
 
 		fi;
 
-
-
 	fi;
 
 	# COVERAGE SUMMARY with SAMTOOLS
-	if [ -s $COVERAGEFILESTATS_SAMTOOLS ] #&& ((0))
+	if [ -f "$COVERAGEFILESTATS_SAMTOOLS" ] #&& ((0))
 	then
 
 		if [ -z $COVS ]; then
@@ -724,6 +727,43 @@ do
 	#fi;
 
 
+	# COVERAGE SUMMARY with SAMTOOLS
+	if [ -f "$COVERAGEFILESTATS_MARKDUPLICATES" ] #&& ((0))
+	then
+
+		if ((1)); then
+
+			echo "\begin{table}[H]
+			\begin{center}
+			\begin{tabular}{|r|l|}
+			\hline
+			\textbf{Metrics} & \textbf{Value} \\\\
+			\hline " >> $TEXFILE
+			cat $COVERAGEFILESTATS_MARKDUPLICATES | grep "^#" -v | grep "^$" -v | awk 'BEGIN { FS=OFS="\t" }
+			{
+			    for (rowNr=1;rowNr<=NF;rowNr++) {
+			        cell[rowNr,NR] = $rowNr
+			    }
+			    maxRows = (NF > maxRows ? NF : maxRows)
+			    maxCols = NR
+			}
+			END {
+			    for (rowNr=1;rowNr<=maxRows;rowNr++) {
+			        for (colNr=1;colNr<=maxCols;colNr++) {
+			            printf "%s %s", cell[rowNr,colNr], (colNr < maxCols ? " & " : " \\\\ \\hline \n ")
+			        }
+			    }
+			}' | sed 's/\_/\\\_/g' >> $TEXFILE
+			echo "
+			\end{tabular}
+			\end{center}
+			\caption{\label{markduplicates_$aligner}Markduplicates statistics on $aligner for $SAMPLEID. Statistics were determined with GATK MarkDuplicates on the '"$(basename -- "$(dirname -- "$COVERAGEFILESTATS_MARKDUPLICATES")" | sed 's/.metrics$//g' | sed 's/\_/\\\_/g')"' file. See file '"$(basename $COVERAGEFILESTATS_MARKDUPLICATES | sed 's/\_/\\\_/g')"' for more information.}
+			\end{table}" >> $TEXFILE
+
+		fi;
+
+	fi;
+
 	echo "\subsection{Gene Coverage}" >> $TEXFILE
 
 	GENES_COVERAGE_MSG_LEGEND="PASS: genes passing the coverage threshold (more than "$(echo "$DP_THRESHOLD * 100" | bc)" percent bases with DP greater than $DP_WARN). WARN: genes with a warning coverage (less than "$(echo "$DP_THRESHOLD * 100" | bc)" percent bases with DP greater than $DP_WARN). FAIL: genes with a failed coverage (less than "$(echo "$DP_THRESHOLD * 100" | bc)" percent bases with DP greater than $DP_FAIL)."
@@ -734,7 +774,7 @@ do
 	for COVERAGEFILESTATS_GENES_COVERAGE_MSG in $(ls $RESULTS_FOLDER/$FLOWCELL/$SAMPLE/$SAMPLE.$aligner.bam.metrics/*.genes.msg 2>/dev/null)
 	do
 		#(($DEBUG)) && echo $COVERAGEFILESTATS_GENES_COVERAGE_MSG
-		if [ -s "$COVERAGEFILESTATS_GENES_COVERAGE_MSG" ]
+		if [ -f "$COVERAGEFILESTATS_GENES_COVERAGE_MSG" ]
 		then
 			MAX_GENES=50
 

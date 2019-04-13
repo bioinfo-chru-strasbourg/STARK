@@ -853,7 +853,7 @@ for RUU in $RUN_UNIQ; do
 					# Sort and FASTQ generation
 					TMP_INPUT_BAM=$TMP_FOLDER_TMP/INPUT_BAM_$RANDOM
 					#mkdir -p $TMP_INPUT_BAM;
-					$SAMTOOLS sort -n --reference $REF -@ $THREADS $F -T $TMP_INPUT_BAM -O SAM 2>/dev/null | $SAMTOOLS bam2fq - -1 $RUN_SAMPLE_DIR/$S.R1.fastq.gz -2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz -@ $THREADS -c 1 2>/dev/null | $GZ -c 1> $RUN_SAMPLE_DIR/$S.R0.fastq.gz 2>/dev/null;
+					$SAMTOOLS sort -n --reference $REF -@ $THREADS $F -T $TMP_INPUT_BAM -O SAM 2>/dev/null | $SAMTOOLS bam2fq - -1 $RUN_SAMPLE_DIR/$S.R1.fastq.gz -2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz -O -@ $THREADS -c 1 2>/dev/null | $GZ -c 1> $RUN_SAMPLE_DIR/$S.R0.fastq.gz 2>/dev/null;
 					#rm -rf $TMP_INPUT_BAM;
 
 					# Ff R0 not empty or number of reads differs between R1 and R2 > Single END
