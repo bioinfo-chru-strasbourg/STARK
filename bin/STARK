@@ -380,7 +380,7 @@ fi;
 
 # CONFIG
 
-APP_DELIMITER="|"
+TAG_DELIMITER="!"
 
 EXIT=0
 
@@ -871,7 +871,7 @@ if [ ! -z "$RUNS" ]; then
 
 				DEM_SAMPLESHEET=$DEMULTIPLEXING_FOLDER/$R_BASENAME/SampleSheet.csv
 				DEM_STARKCOMPLETE=$DEMULTIPLEXING_FOLDER/$R_BASENAME/STARKComplete.txt
-				DEM_MANIFEST_LIST=$DEMULTIPLEXING_FOLDER/$R_BASENAME/STARKComplete.txt
+				#DEM_MANIFEST_LIST=$DEMULTIPLEXING_FOLDER/$R_BASENAME/STARKComplete.txt
 
 				DEM_PARAM=""
 				(($VERBOSE)) && DEM_PARAM="$DEM_PARAM --verbose "
@@ -879,6 +879,8 @@ if [ ! -z "$RUNS" ]; then
 
 				[ -e $R/RTAComplete.txt ] && [ ! -e $DEM_STARKCOMPLETE ] && echo "#[INFO] Start Demultiplexing for RUN '$R'" && echo "" && \
 				$SCRIPT_DIR/demultiplexing.sh --app="$APP" --run=$R --demultiplex_folder=$DEMULTIPLEXING_FOLDER --samplesheet=$RUN_SAMPLESHEET --threads=$THREADS_INPUT $DEM_PARAM $DEM_PARAM #|| { echo "#[ERROR] Demultiplexing FAILED"; exit 1; }
+
+				#echo $SCRIPT_DIR/demultiplexing.sh --app="$APP" --run=$R --demultiplex_folder=$DEMULTIPLEXING_FOLDER --samplesheet=$RUN_SAMPLESHEET --threads=$THREADS_INPUT $DEM_PARAM $DEM_PARAM #|| { echo "#[ERROR] Demultiplexing FAILED"; exit 1; }
 
 				[ -e $DEM_STARKCOMPLETE ] && [ -e $DEM_SAMPLESHEET ] && echo "#[INFO] Demultiplexing completed"
 
@@ -908,7 +910,7 @@ if [ ! -z "$RUNS" ]; then
 				# sampleSheet within the RUN folder
 				[ -z $RUN_SAMPLESHEET ] && RUN_SAMPLESHEET=$R/SampleSheet.csv
 				# Echo
-(($DEBUG)) && echo "[ -f $R/SampleSheet.csv ] || [ -f $SAMPLESHEET_INPUT_RI ]";
+				(($DEBUG)) && echo "[ -f $R/SampleSheet.csv ] || [ -f $SAMPLESHEET_INPUT_RI ]";
 				[ ! -e $RUN_SAMPLESHEET ] && echo "#[ERROR] No SampleSheet for RUN '$R'" && exit 0;
 				echo "#[INFO] SampleSheet found for RUN '$R': $RUN_SAMPLESHEET";
 
@@ -920,7 +922,12 @@ if [ ! -z "$RUNS" ]; then
 				# Main application
 				#echo $RUN_SAMPLESHEET_TEST
 				INVESTIGATOR_NAME=$(grep "Investigator Name" $RUN_SAMPLESHEET | awk -F, '{print $2}')
-				MAIN_APP=$(grep "Investigator Name" $RUN_SAMPLESHEET | awk -F, '{print $2}' | awk -F$APP_DELIMITER '{print $1}' | tr " " "+" | tr "," "+")
+				MAIN_APP=$(grep "Investigator Name" $RUN_SAMPLESHEET | awk -F, '{print $2}' | awk -F"[$TAG_DELIMITER ]" '{print $1}' | tr " " "+" | tr "," "+")
+
+				# NEW APP extraction format
+				RUN_DESCRIPTION=$(grep "^Description" $RUN_SAMPLESHEET | awk -F, '{print $2}')
+				MAIN_APP=$(extract_tag "$RUN_DESCRIPTION" "APP" | tr " " "+")
+
 				#APP=$(grep "Investigator Name" $RUN_SAMPLESHEET_TEST | awk -F, '{print $2}' | awk -F$APP_DELIMITER '{print $1}')
 				#grep "Investigator Name" $RUN_SAMPLESHEET_TEST | awk -F, '{print $2}'
 				#grep "Investigator Name" $RUN_SAMPLESHEET_TEST | awk -F, '{print $2}' | awk -F$APP_DELIMITER '{print $1}'
@@ -940,9 +947,11 @@ if [ ! -z "$RUNS" ]; then
 				#awk '/Data/{y=1;next}y' $DEM_SAMPLESHEET | tr -d '\r' | sed 's/,/\t/g'
 				SAMPLE_PROJECT_FIELD=1;
 				MANIFEST_INDEX_FIELD=1;
+				SAMPLE_DESCRIPTION_FIELD=1;
 				C=1
 				#for i in $(awk '/Data/{y=1;next}y' $DEM_SAMPLESHEET | tr -d '\r' | sed 's/,/\t/g' | head -n 1) ; do
 				for i in $(cat $RUN_SAMPLESHEET | awk '/\[Data\]/,/\[[^Data]/' | grep "^\[" -v | sed '/^[[:space:]]*$/d' | tr -d '\r' | sed 's/,/\t/g' | head -n 1) ; do
+					[ $i == "Description" ] && SAMPLE_DESCRIPTION_FIELD=$C
 					[ $i == "Sample_Project" ] && SAMPLE_PROJECT_FIELD=$C
 					[ $i == "Manifest" ] && MANIFEST_INDEX_FIELD=$C
 					C=$(( $C + 1 )) ;
@@ -965,8 +974,11 @@ if [ ! -z "$RUNS" ]; then
 						SAMPLE_FASTQ_R1=$(find $R -name "$SAMPLE_FASTQ_R1_PATTERN")
 						SAMPLE_FASTQ_R2=$(find $R -name "$SAMPLE_FASTQ_R2_PATTERN")
 						# APP
-						SAMPLE_APP="$(echo $L | cut -d, -f$SAMPLE_PROJECT_FIELD | awk -F$APP_DELIMITER '{print $1}' | tr " " "+" | tr "," "+")"
-						[ -z $SAMPLE_APP ] && SAMPLE_APP=$MAIN_APP
+						#SAMPLE_APP="$(echo $L | cut -d, -f$SAMPLE_PROJECT_FIELD | awk -F[$TAG_DELIMITER ] '{print $1}' | tr " " "+" | tr "," "+")"
+						# NEW APP extraction format
+						SAMPLE_DESCRIPTION_FIELD_VALUE=$(echo $L | cut -d, -f$SAMPLE_DESCRIPTION_FIELD)
+						SAMPLE_APP=$(extract_tag "$SAMPLE_DESCRIPTION_FIELD_VALUE" "APP" | tr " " "+")
+						[ -z "$SAMPLE_APP" ] && SAMPLE_APP="$MAIN_APP"
 						[ ! -z $APP ] && SAMPLE_APP=$(echo $APP | tr " " "+" | tr "," "+") # Force APP if in parameters
 						#echo " APP=$APP MAIN_APP=$MAIN_APP SAMPLE_APP=$SAMPLE_APP"; exit 0;
 						# CONFIG_TAB
@@ -1026,20 +1038,22 @@ if [ ! -z "$RUNS" ]; then
 					echo "\"fastq_R1\":\""$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u | awk -F"," -v APP=$APP_ONE '$1==APP{print $4}' | tr '\n' ',' | sed s/,$//)"\"," >> $RUN_CONFIG_FILE
 					echo "\"fastq_R2\":\""$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u| awk -F"," -v APP=$APP_ONE '$1==APP{print $5}' | tr '\n' ',' | sed s/,$//)"\"," >> $RUN_CONFIG_FILE
 					# MANIFEST
-					echo "\"manifest\":\""$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u| awk -F"," -v APP=$APP_ONE '$1==APP{print $6}' | tr '\n' ',' | sed s/,$//)"\"," >> $RUN_CONFIG_FILE
+					echo "\"design\":\""$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u| awk -F"," -v APP=$APP_ONE '$1==APP{print $6}' | tr '\n' ',' | sed s/,$//)"\"," >> $RUN_CONFIG_FILE
 					# GENES
 					echo "\"genes\":\""$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u| awk -F"," -v APP=$APP_ONE '$1==APP{print $7}' | tr '\n' ',' | sed s/,$//)"\"," >> $RUN_CONFIG_FILE
-					# MANIFEST
+					# TRANSCRIPTS
 					echo "\"transcripts\":\""$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u| awk -F"," -v APP=$APP_ONE '$1==APP{print $8}' | tr '\n' ',' | sed s/,$//)"\"," >> $RUN_CONFIG_FILE
 
 					# REPOSITORY
-					echo "\"repository\":\"$FOLDER_REPOSITORY\"" >> $RUN_CONFIG_FILE
+					echo "\"repository\":\"$FOLDER_REPOSITORY\"," >> $RUN_CONFIG_FILE
+					# ARCHOVE
+					echo "\"archive\":\"$FOLDER_ARCHIVE\"" >> $RUN_CONFIG_FILE
 
 					#echo "\"comment\":\"Analysis for APP $APP_ONE\"" >> $RUN_CONFIG_FILE
 					echo "}" >> $RUN_CONFIG_FILE
 
 					(($DEBUG)) && echo "#[INFO] " && cat $RUN_CONFIG_FILE
-					(($DEBUG)) && echo "#[INFO] "&& $STARK_FOLDER_BIN/json_to_options.py $RUN_CONFIG_FILE
+					(($DEBUG)) && echo "#[INFO] " && $STARK_FOLDER_BIN/json_to_options.py $RUN_CONFIG_FILE
 
 					ANALYSIS_FILES="$ANALYSIS_FILES,$RUN_CONFIG_FILE"
 
@@ -1047,7 +1061,11 @@ if [ ! -z "$RUNS" ]; then
 
 				ANALYSIS_FILES=$(echo $ANALYSIS_FILES | sed s/^,//)
 
-				CMD="$STARK_FOLDER_BIN/STARK $PARAM --analysis=$ANALYSIS_FILES " #$APP_ONE_RUN_CONFIG_FILE_JSON " # --repository=$FOLDER_REPOSITORY
+				if [ "$ANALYSIS_FILES" != "" ]; then
+					CMD="$STARK_FOLDER_BIN/STARK $PARAM --analysis=$ANALYSIS_FILES " #$APP_ONE_RUN_CONFIG_FILE_JSON " # --repository=$FOLDER_REPOSITORY
+				else
+					echo "#[ERROR] No Samples to analyse " && exit 0;
+				fi;
 				#CMD=""
 
 			elif (($(find $R -name '*R1*fastq.gz' -or -name '*.sam' -or -name '*.bam' -or -name '*.cram' | wc -l))); then

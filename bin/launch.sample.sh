@@ -99,7 +99,7 @@ header;
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
-ARGS=$(getopt -o "e:f:q:b:j:m:s:r:o:u:p:t:ga:vdnh" --long "env:,app:,application:,reads:,fastq:,fastq_R1:,fastq_R2:,design:,bed:,manifest:,genes:,transcripts:,sample:,sample_list:,runs:,analysis:,analysis_name:,output:,analysis_dir:,results:,repository:,archive:,pipelines:,threads:,no_header,by_sample,adapters:,verbose,debug,release,help" -- "$@" 2> /dev/null)
+ARGS=$(getopt -o "e:f:q:b:j:m:s:r:o:u:p:t:ga:vdnh" --long "env:,app:,application:,reads:,fastq:,fastq_R1:,fastq_R2:,design:,bed:,manifest:,genes:,transcripts:,sample:,sample_list:,sample_filter:,runs:,analysis:,analysis_name:,output:,analysis_dir:,results:,repository:,archive:,pipelines:,threads:,no_header,by_sample,adapters:,verbose,debug,release,help" -- "$@" 2> /dev/null)
 [ $? -ne 0 ] && \
 	echo "#[ERROR] Error in the argument list." "Use -h or --help to display the help." >&2 && usage && \
 	exit 1
@@ -149,7 +149,7 @@ do
 			SAMPLE=$(echo $SAMPLE | tr "," " ")
 			shift 2
 			;;
-		--sample_list)
+		--sample_list|--sample_filter)
 			SAMPLE_LIST="$2"
 			SAMPLE_LIST=$(echo $SAMPLE_LIST | tr "," " ")
 			shift 2
@@ -419,7 +419,7 @@ SAMPLE_ARRAY=($SAMPLE);
 RUN_CHECKED=""
 RUN_ARRAY=($RUN);
 BED_CHECKED=""
-BED_ARRAY=($BED);
+BED_ARRAY=($BED_INPUT);
 BEDFILE_GENES_CHECKED=""
 BEDFILE_GENES_ARRAY=($BEDFILE_GENES);
 TRANSCRIPTS_CHECKED=""
@@ -1052,6 +1052,7 @@ for RUU in $RUN_UNIQ; do
 	echo "#[INFO] POST_ALIGNMENT            "$(echo $POST_ALIGNMENT | tr "." "\n" | tac | tr "\n" " " )""
 	echo "#[INFO] RESULTS                   $OUTPUT"
 	echo "#[INFO] REPOSITORY                $REPOSITORY"
+	echo "#[INFO] ARCHIVE                   $ARCHIVE"
 	echo "#[INFO] RELEASE INFOS             $RELEASE_RUN"
 	echo "#[INFO] MAKEFILE CONFIGURATION    $MAKEFILE_ANALYSIS_RUN"
 	echo "#[INFO] SHELL CONFIGURATION       $SHELL_ANALYSIS_RUN"
@@ -1134,7 +1135,7 @@ for RUU in $RUN_UNIQ; do
 			if [ "$RESULTS_FOLDER_COPY_ALL" != "$OUTPUT" ] && [ "$RESULTS_FOLDER_COPY_ALL" != "" ] ; then
 				for RESULTS_FOLDER_COPY_FOLDER in $RESULTS_FOLDER_COPY_ALL;
 				do
-					echo "#[INFO] Copying '$RUU/$S' files from '$OUTPUT/$RUU/$S' to '$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S'..."
+					echo "#[INFO] Copying '$RUU/$S' files from '$OUTPUT' to '$RESULTS_FOLDER_COPY_FOLDER'..."
 
 					# Copy SAMPLE files
 					chmod $PERMS -R $OUTPUT/$RUU/$S 1>/dev/null 2>/dev/null
@@ -1147,34 +1148,43 @@ for RUU in $RUN_UNIQ; do
 					$COMMAND_COPY $(find $OUTPUT/$RUU -mindepth 1 -maxdepth 1 -type f) $RESULTS_FOLDER_COPY_FOLDER/$RUU 1>>$LOGFILE_RES_RUN_REPORT 2>>$LOGFILE_RES_RUN_REPORT
 					chmod $PERMS $RESULTS_FOLDER_COPY_FOLDER/$RUU/* 1>/dev/null 2>/dev/null
 					# Copy ROOT FILE PATTERNS
+					#(($VERBOSE)) && echo "#[INFO] Copying REPOSITORY files patterns to $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S..."
+					echo "#[INFO] Copying REPOSITORY files patterns to $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S..."
 					if [ $RESULTS_SUBFOLDER_DATA != "" ]; then
 						for ROOT_FILE_PATTERN in $REPOSITORY_FILE_PATTERNS; do
 
 							if [[ $ROOT_FILE_PATTERN =~ '$SAMPLE' ]]; then
-								eval ROOT_FILE_PATTERN_VAR=$(echo $ROOT_FILE_PATTERN | sed s/\$SAMPLE/\$S/gi)
+								eval ROOT_FILE_PATTERN_VAR="/"$(echo $ROOT_FILE_PATTERN | sed s/\$SAMPLE/\$S/gi)
 							else
-								ROOT_FILE_PATTERN_VAR=$ROOT_FILE_PATTERN
+								ROOT_FILE_PATTERN_VAR="/$ROOT_FILE_PATTERN"
 							fi;
 
-							for F_SOURCE in $(ls $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA/$ROOT_FILE_PATTERN_VAR); do
+							for F_SOURCE in $(ls $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA$ROOT_FILE_PATTERN_VAR); do
 								#L_SOURCE=$(echo $F_SOURCE | sed s#$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/##g)
-								L_SOURCE=$F_SOURCE
+								#L_SOURCE=$F_SOURCE
 								F_TARGET="$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/"$(basename $F_SOURCE)
+								F_SOURCE_BASE=$(echo $F_SOURCE | sed "s#$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA/##")
+								F_TARGET_BASE=$(echo $F_TARGET | sed "s#$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/##")
 								#D_TARGET="$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/"
 								#echo "F_SOURCE: $F_SOURCE";
 								#echo "L_SOURCE: $L_SOURCE";
 								#echo "F_TARGET: $F_TARGET";
 								#echo "D_TARGET: $D_TARGET";
-								(($VERBOSE)) && [ ! -f $F_SOURCE ] && echo "#[WARNING] file $F_SOURCE not found"
-								(($VERBOSE)) && [ -f $F_SOURCE ] && echo "#[INFO] Copy file $F_SOURCE to $F_TARGET"
-								if [ ! -e $F_TARGET ]; then
-									$COMMAND_LINK $L_SOURCE $F_TARGET 1>>$LOGFILE_RES_RUN_REPORT 2>>$LOGFILE_RES_RUN_REPORT
+								#| sed s#/$T/test2/##
+								(($VERBOSE)) && [ ! -f $F_SOURCE ] && echo "#[WARNING] file $F_SOURCE_BASE not found"
+								if [ ! -f $F_TARGET ]; then
+									(($VERBOSE)) && [ -f $F_SOURCE ] && echo "#[INFO] Link file $F_SOURCE_BASE to $F_TARGET_BASE"
+									$COMMAND_LINK $F_SOURCE $F_TARGET 1>>$LOGFILE_RES_RUN_REPORT 2>>$LOGFILE_RES_RUN_REPORT
 								fi;
-								if [ ! -e $F_TARGET ]; then
+								if [ ! -f $F_TARGET ]; then
+									(($VERBOSE)) && echo "#[WARNING] Copy file $F_SOURCE_BASE to $F_TARGET_BASE FAILED"
 									rm -f $F_TARGET
+									(($VERBOSE)) && [ -f $F_SOURCE ] && echo "#[INFO] Copy file $F_SOURCE_BASE to $F_TARGET_BASE"
 									$COMMAND_COPY $F_SOURCE $F_TARGET 1>>$LOGFILE_RES_RUN_REPORT 2>>$LOGFILE_RES_RUN_REPORT
 								fi;
-
+								if [ ! -f $F_TARGET ]; then
+									(($VERBOSE)) && echo "#[ERROR] Copy file $F_SOURCE_BASE to $F_TARGET_BASE FAILED"
+								fi;
 							done;
 
 						done;
@@ -1211,7 +1221,8 @@ for RUU in $RUN_UNIQ; do
 			if [ "$RESULTS_FOLDER_COPY_ALL" != "$OUTPUT" ] && [ "$RESULTS_FOLDER_COPY_ALL" != "" ] ; then
 				for RESULTS_FOLDER_COPY_FOLDER in $RESULTS_FOLDER_COPY_ALL;
 				do
-					echo "#[INFO] Copying '$RUU/$S' files from '$OUTPUT/$RUU/$S' to '$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S'..."
+					#echo "#[INFO] Copying '$RUU/$S' files from '$OUTPUT/$RUU/$S' to '$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S'..."
+					echo "#[INFO] Copying ARCHIVE files patterns to $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S..."
 
 					# Copy SAMPLE files
 					chmod $PERMS -R $OUTPUT/$RUU/$S 1>/dev/null 2>/dev/null
@@ -1228,17 +1239,22 @@ for RUU in $RUN_UNIQ; do
 					for ROOT_FILE_PATTERN in $ARCHIVE_FILE_PATTERNS; do
 
 						if [[ $ROOT_FILE_PATTERN =~ '$SAMPLE' ]]; then
-							eval ROOT_FILE_PATTERN_VAR=$(echo $ROOT_FILE_PATTERN | sed s/\$SAMPLE/\$S/gi)
+							eval ROOT_FILE_PATTERN_VAR="/"$(echo $ROOT_FILE_PATTERN | sed s/\$SAMPLE/\$S/gi)
 						else
-							ROOT_FILE_PATTERN_VAR=$ROOT_FILE_PATTERN
+							ROOT_FILE_PATTERN_VAR="/$ROOT_FILE_PATTERN"
 						fi;
 
 						#for F_SOURCE in $(ls $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA/$ROOT_FILE_PATTERN_VAR); do
-						for F_SOURCE in $(ls $OUTPUT/$RUU/$S/$ROOT_FILE_PATTERN_VAR 2>/dev/null); do
+						for F_SOURCE in $(ls $OUTPUT/$RUU/$S$ROOT_FILE_PATTERN_VAR 2>/dev/null); do
 							F_TARGET="$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/"$(basename $F_SOURCE)
-							(($VERBOSE)) && [ ! -f $F_SOURCE ] && echo "#[WARNING] file $F_SOURCE not found"
-							(($VERBOSE)) && [ -f $F_SOURCE ] && echo "#[INFO] Copy file $F_SOURCE to $F_TARGET"
+							F_SOURCE_BASE=$(echo $F_SOURCE | sed "s#$OUTPUT/$RUU/$S/##")
+							F_TARGET_BASE=$(echo $F_TARGET | sed "s#$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/##")
+							(($VERBOSE)) && [ ! -f $F_SOURCE ] && echo "#[WARNING] file $F_SOURCE_BASE not found"
+							(($VERBOSE)) && [ -f $F_SOURCE ] && echo "#[INFO] Copy file $F_SOURCE_BASE to $F_TARGET_BASE"
 							$COMMAND_COPY $F_SOURCE $F_TARGET 1>>$LOGFILE_RES_RUN_REPORT 2>>$LOGFILE_RES_RUN_REPORT
+							if [ ! -f $F_TARGET ]; then
+								(($VERBOSE)) && echo "#[ERROR] Copy file $F_SOURCE_BASE to $F_TARGET_BASE FAILED"
+							fi;
 						done;
 
 					done;

@@ -256,9 +256,13 @@ echo "#[`date`] COMMAND: $COMMAND" >> $LOGFILE && $COMMAND >> $LOGFILE
 
 # Copy Manifests
 for M in $(cat $MANIFESTS | tr "," " "); do
-	#(($VERBOSE)) && echo "#[INFO] Copy manifests '$M'";
+	(($VERBOSE)) && echo "#[INFO] Copy manifests '$M'";
+	#echo $FOLDER_MANIFEST/$M
 	[ -e $FOLDER_MANIFEST/$M ] && cp $FOLDER_MANIFEST/$M $OUTPUT_DIR/$M 2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy manifest '$M' from Manifest folder '$FOLDER_MANIFEST'";
-	[ -e $RUN/$M ] && cp $FOLDER_MANIFEST/$M $OUTPUT_DIR/$M  2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy manifest '$M' from RUN folder '$RUN' (replaced if already copied)";
+	#echo $RUN/$M
+	#echo cp $RUN/$M $OUTPUT_DIR/$M
+	#cp $RUN/$M $OUTPUT_DIR/$M
+	[ -e $RUN/$M ] && cp $RUN/$M $OUTPUT_DIR/$M  2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy manifest '$M' from RUN folder '$RUN' (replaced if already copied)";
 	# Genes
 	[ -e $FOLDER_MANIFEST/$M.genes ] && cp $FOLDER_MANIFEST/$M.genes $OUTPUT_DIR/$M.genes 2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy manifest.genes '$M.genes' from Manifest folder '$FOLDER_MANIFEST'";
 	[ -e $RUN/$M.genes ] && cp $FOLDER_MANIFEST/$M.genes $OUTPUT_DIR/$M.genes  2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy manifest.genes '$M.genes' from RUN folder '$RUN' (replaced if already copied)";

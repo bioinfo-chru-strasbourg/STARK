@@ -44,12 +44,13 @@ DP_THRESHOLD?=1
 
 %.bam.bed: %.bam %.bam.bai
 	#BAM.BED from BAM
+	# samtools view P1335.bwamem.bam -b | /STARK/tools/bedtools/current/bin/bedtools genomecov -ibam stdin -bg | /STARK/tools/bedtools/current/bin/bedtools merge -i stdin
 	-+if ((1)); then \
 	if (($$($(SAMTOOLS) idxstats $< | awk '{SUM+=$$3+$$4} END {print SUM}'))); then \
 		rm -f $<.genomeCoverageBed.mk $<.genomeCoverageBed1.mk $<.genomeCoverageBed2.mk $<.genomeCoverageBed3.mk; \
 		for chr in $$($(SAMTOOLS) idxstats $< | grep -v "\*" | awk '{ if ($$3+$$4>0) print $$1 }'); do \
 			echo "$<.genomeCoverageBed.$$chr.bed: $<" >> $<.genomeCoverageBed1.mk; \
-			echo "	$(SAMTOOLS) view $< -b $$chr | $(BEDTOOLS)/genomeCoverageBed -ibam stdin -bg | $(BEDTOOLS)/mergeBed -n -i - > $<.genomeCoverageBed.$$chr.bed " >> $<.genomeCoverageBed1.mk; \
+			echo "	$(SAMTOOLS) view $< -b $$chr | $(BEDTOOLS)/genomeCoverageBed -ibam stdin -bg | $(BEDTOOLS)/mergeBed -i - > $<.genomeCoverageBed.$$chr.bed " >> $<.genomeCoverageBed1.mk; \
 			echo -n " $<.genomeCoverageBed.$$chr.bed" >> $<.genomeCoverageBed2.mk; \
 		done; \
 		echo -n "$@: " | cat - $<.genomeCoverageBed2.mk > $<.genomeCoverageBed3.mk; \

@@ -115,8 +115,8 @@ export RESULTS_SUBFOLDER_DATA="DATA";				# Copy sample results in a SUBFOLDER
 # Copy some sample results files in the root sample folder, if any SUBFOLDER defined
 #export RESULTS_SUBFOLDER_ROOT_FILE_PATTERNS=$RESULTS_SUBFOLDER_ROOT_FILE_PATTERNS' $SAMPLE.reports/$SAMPLE.final.vcf $SAMPLE.reports/$SAMPLE.full.vcf $SAMPLE.reports/$SAMPLE.final.txt $SAMPLE.reports/$SAMPLE.full.txt *.reports/*.report.pdf *.reports/latex*/*pdf';
 #export RESULTS_SUBFOLDER_ROOT_FILE_PATTERNS=$RESULTS_SUBFOLDER_ROOT_FILE_PATTERNS' $SAMPLE.reports/$SAMPLE.final.vcf $SAMPLE.reports/$SAMPLE.final.vcf.idx $SAMPLE.reports/$SAMPLE.final.vcf.gz $SAMPLE.reports/$SAMPLE.final.vcf.gz.tbi $SAMPLE.reports/$SAMPLE.full.vcf $SAMPLE.reports/$SAMPLE.full.vcf.idx $SAMPLE.reports/$SAMPLE.full.vcf.gz $SAMPLE.reports/$SAMPLE.full.vcf.gz.tbi $SAMPLE.reports/$SAMPLE.final.tsv $SAMPLE.reports/$SAMPLE.full.tsv *.reports/*.report.pdf $SAMPLE.bed';
-export REPOSITORY_FILE_PATTERNS=$(echo $REPOSITORY_FILE_PATTERNS' $SAMPLE.reports/$SAMPLE.final.vcf.gz $SAMPLE.reports/$SAMPLE.final.vcf.gz.tbi $SAMPLE.reports/$SAMPLE.final.tsv *.reports/*.report.pdf $SAMPLE.bed' | tr "," " " | tr " " "\n" | sort -u | tr "\n" " ");
-export ARCHIVE_FILE_PATTERNS=$(echo $ARCHIVE_FILE_PATTERNS' $SAMPLE.reports/$SAMPLE.final.vcf.gz $SAMPLE.reports/$SAMPLE.final.tsv *.reports/*.report.pdf $SAMPLE.bed $SAMPLE.manifest $SAMPLE.genes $SAMPLE.archive.cram' | tr "," " " | tr " " "\n" | sort -u | tr "\n" " ");
+export REPOSITORY_FILE_PATTERNS=$(echo $REPOSITORY_FILE_PATTERNS' $SAMPLE.reports/$SAMPLE.final.vcf.gz $SAMPLE.reports/$SAMPLE.final.vcf.gz.tbi $SAMPLE.reports/$SAMPLE.final.tsv $SAMPLE.reports/*.report.pdf $SAMPLE.bed' | tr "," " " | tr " " "\n" | sort -u | tr "\n" " ");
+export ARCHIVE_FILE_PATTERNS=$(echo $ARCHIVE_FILE_PATTERNS' $SAMPLE.reports/$SAMPLE.final.vcf.gz $SAMPLE.reports/$SAMPLE.final.tsv $SAMPLE.reports/*.report.pdf $SAMPLE.bed $SAMPLE.manifest $SAMPLE.genes $SAMPLE.archive.cram' | tr "," " " | tr " " "\n" | sort -u | tr "\n" " ");
 
 
 #Rules defined in the app

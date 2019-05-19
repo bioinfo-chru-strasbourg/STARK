@@ -4,6 +4,50 @@
 #################################
 
 
+
+extract_tag () {
+# Extract APP variable from STARK TAG List
+# $1 : STARK TAG List
+# format: "TYPE#TAG[#TAG]{ !}[TYPE#TAG[#TAG]]".
+# TYPE can be null. TAG null will not be considered. TAG can be separated by " " (:space:) or "!". Words without "#" will not be considered as TAG. TAG can be cumulative for a TYPE (TYPE#TAG1#TAG2)
+# e.g. "TYPE1#TAG1 TAG_TO_FIND#TAG_FOUND TAG_TO_FIND#TAG_FOUND2 TAG_TO_FIND2#TAG_FOUND3#TAG_FOUND4 #TAG2 TAG_NOT_CONSIDERED# Other word not considered as TAG")
+# $2 : TAGs to find. default "" ALL TAGs.
+# format: "TYPE{ ,}[TYPE]"
+# e.g. "TYPE1 TYPE2", "TYPE1,TYPE2"
+
+	#local TAG_STARK=$1 #$(echo $1 | tr "," " ")
+	local TAG_STARK=$(echo $1 | tr "!" " ")
+	local TAG_FILTER=$(echo $2 | tr "," " ")
+	local TAG_LIST=""
+	local TAG_TYPE=""
+	local TAG_VALUE=""
+
+	for T in $TAG_STARK; do
+
+		if (( $(echo $T | grep "#" -c) )); then
+			#echo $T
+			TYPE=$(echo "$T" | awk -F"#" '{print $1}' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+			TAG=$(echo "$T" | cut -d"#" -f2- | tr "#" " " | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+			if [ "$TAG" != "" ]; then
+				#echo "* $TYPE : $TAG"
+				if [ "$TAG_FILTER" == "" ]; then
+					TAG_LIST="$TAG_LIST $TAG"
+				else
+					for V in $TAG_FILTER; do
+						if [ "$V" == "$TYPE" ]; then
+							TAG_LIST="$TAG_LIST $TAG"
+						fi;
+					done;
+				fi;
+			fi;
+		fi;
+	done;
+	echo $TAG_LIST | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'
+	return 0;
+
+}
+
+
 source_app () {
 # source an env file from an application definition
 # $1: APP definition
@@ -80,7 +124,7 @@ find_app () {
 # return APP env file or default APP env file or null
 # Usage find_app "APP" "FOLDER_APPS"
 
-	local APP_LIST=$(echo $1 | tr "," " ") FOLDER_APPS=$2
+	local APP_LIST=$(echo $1 | tr "," " "  | tr "+" " ") FOLDER_APPS=$2
 
 	# default APP
 

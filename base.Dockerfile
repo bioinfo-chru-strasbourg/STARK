@@ -1,6 +1,6 @@
 
 ##############################################################
-# Dockerfile Version:   1.8.1
+# Dockerfile Version:   1.8.2
 # Software:             STARK-BASE
 # Software Version:     0.9.18b
 # Software Website:     none
@@ -40,7 +40,7 @@
 FROM centos:7
 MAINTAINER Antony Le Bechec <antony.lebechec@gmail.com>
 LABEL Software="STARK-BASE" \
-	Version="1.8.1" \
+	Version="1.8.2" \
 	Website="none" \
 	Description="STARK-BASE" \
 	License="GNU Affero General Public License (AGPL)" \
@@ -57,7 +57,7 @@ ENV TOOLS=$STARK_FOLDER/tools
 ENV DATA=$STARK_FOLDER/data
 ENV TOOL=$STARK_FOLDER/tool
 ENV DATABASES=$STARK_FOLDER/databases
-ENV YUM_INSTALL="autoconf automake bc bzip2 bzip2-devel curl gcc gcc-c++ git java java-1.8.0 lzma lzma-devel make ncurses-devel perl perl-Data-Dumper perl-Digest-MD5 perl-Switch perl-devel perl-Tk tbb-devel unzip wget which xz xz-devel zlib zlib-devel zlib2 zlib2-devel ghostscript enscript"
+ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git java java-1.8.0 lzma lzma-devel make ncurses-devel perl perl-Data-Dumper perl-Digest-MD5 perl-Switch perl-devel perl-Tk tbb-devel unzip wget which xz xz-devel zlib zlib-devel zlib2 zlib2-devel ghostscript enscript"
 ENV YUM_REMOVE="autoconf automake bzip2-devel lzma-devel ncurses-devel perl-devel tbb-devel xz-devel zlib-devel zlib2-devel"
 
 #epel-release R
@@ -111,7 +111,7 @@ RUN wget $TARBALL_LOCATION/$TARBALL ; \
 ##########
 
 ENV TOOL_NAME=htslib
-ENV TOOL_VERSION=1.8
+ENV TOOL_VERSION=1.9
 ENV TARBALL_LOCATION=https://github.com/samtools/$TOOL_NAME/releases/download/$TOOL_VERSION/
 ENV TARBALL=$TOOL_NAME-$TOOL_VERSION.tar.bz2
 ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
@@ -134,7 +134,7 @@ RUN wget $TARBALL_LOCATION/$TARBALL ; \
 ############
 
 ENV TOOL_NAME=bcftools
-ENV TOOL_VERSION=1.8
+ENV TOOL_VERSION=1.9
 ENV TARBALL_LOCATION=https://github.com/samtools/$TOOL_NAME/releases/download/$TOOL_VERSION/
 ENV TARBALL=$TOOL_NAME-$TOOL_VERSION.tar.bz2
 ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
@@ -432,7 +432,7 @@ RUN wget $JAR_LOCATION/$JAR ; \
 ############
 
 ENV TOOL_NAME=samtools
-ENV TOOL_VERSION=1.8
+ENV TOOL_VERSION=1.9
 ENV TARBALL_LOCATION=https://github.com/samtools/$TOOL_NAME/releases/download/$TOOL_VERSION/
 ENV TARBALL=$TOOL_NAME-$TOOL_VERSION.tar.bz2
 ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
