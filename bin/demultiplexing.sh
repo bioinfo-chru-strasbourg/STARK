@@ -264,7 +264,8 @@ for M in $(cat $MANIFESTS | tr "," " "); do
 	#cp $RUN/$M $OUTPUT_DIR/$M
 	[ -e $RUN/$M ] && cp $RUN/$M $OUTPUT_DIR/$M  2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy manifest '$M' from RUN folder '$RUN' (replaced if already copied)";
 	# Genes
-	[ -e $FOLDER_MANIFEST/$M.genes ] && cp $FOLDER_MANIFEST/$M.genes $OUTPUT_DIR/$M.genes 2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy manifest.genes '$M.genes' from Manifest folder '$FOLDER_MANIFEST'";
+	#[ -e $FOLDER_MANIFEST/$M.genes ] && cp $FOLDER_MANIFEST/$M.genes $OUTPUT_DIR/$M.genes 2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy manifest.genes '$M.genes' from Manifest folder '$FOLDER_MANIFEST'";
+	cp -f $FOLDER_MANIFEST/$M*.genes $OUTPUT_DIR/ 2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy manifest.genes '$M*.genes' from Manifest folder '$FOLDER_MANIFEST'";
 	[ -e $RUN/$M.genes ] && cp $FOLDER_MANIFEST/$M.genes $OUTPUT_DIR/$M.genes  2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy manifest.genes '$M.genes' from RUN folder '$RUN' (replaced if already copied)";
 	# Transcripts
 	[ -e $FOLDER_MANIFEST/$M.transcripts ] && cp $FOLDER_MANIFEST/$M.transcripts $OUTPUT_DIR/$M.transcripts 2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy manifest.transcripts '$M.transcripts' from Manifest folder '$FOLDER_MANIFEST'";

@@ -847,7 +847,7 @@ if [ ! -z "$RUNS" ]; then
 			# Test if RAW Folder or DEM Folder
 
 			# RUN with analysis JSON
-			if (($(find $R -name '*.analysis.json' | wc -l))); then
+			if (($(find $R -name '*analysis.json' | wc -l))); then
 
 				echo "#[INFO] RUN '$R_NAME' contains configuration files *analysis.json"
 
@@ -990,11 +990,11 @@ if [ ! -z "$RUNS" ]; then
 						MANIFEST_FILENAME=$(cat $RUN_SAMPLESHEET | awk '/\[Manifests\]/,/\[[^Manifest]/' | grep "^\[" -v | sed '/^[[:space:]]*$/d' | tr -d '\r' | awk -F, -v MANIFEST_ID=$MANIFEST_ID '$1==MANIFEST_ID{print $2}')
 						# Manifest File
 						[ -e $R/$MANIFEST_FILENAME ] && MANIFEST_FILE=$R/$MANIFEST_FILENAME && (($VERBOSE)) && echo "#[INFO] Manifest file found for sample '$SAMPLE_NAME': $MANIFEST_FILE" #|| echo "#[WARNING] Manifest file NOT found: $MANIFEST_FILENAME"
-						# Genes File
-						[ -e $R/$MANIFEST_FILENAME.genes ] && MANIFEST_GENES_FILE=$R/$MANIFEST_FILENAME.genes && (($VERBOSE)) &&  echo "#[INFO] Manifest Genes file found for sample '$SAMPLE_NAME': $MANIFEST_GENES_FILE" #|| echo "#[INFO] Manifest Genes file NOT found: $MANIFEST_FILENAME.genes"
 						# Transcripts File
 						[ -e $R/$MANIFEST_FILENAME.transcripts ] && MANIFEST_TRANSCRIPTS_FILE=$R/$MANIFEST_FILENAME.transcripts && (($VERBOSE)) &&  echo "#[INFO] Manifest Transcripts file found for sample '$SAMPLE_NAME': $MANIFEST_TRANSCRIPTS_FILE" #|| echo "#[INFO] Manifest Transcripts file NOT found: $MANIFEST_FILENAME.transcripts"
-
+						# Genes File
+						#[ -e $R/$MANIFEST_FILENAME.genes ] && MANIFEST_GENES_FILE=$R/$MANIFEST_FILENAME.genes && (($VERBOSE)) &&  echo "#[INFO] Manifest Genes file found for sample '$SAMPLE_NAME': $MANIFEST_GENES_FILE" #|| echo "#[INFO] Manifest Genes file NOT found: $MANIFEST_FILENAME.genes"
+						MANIFEST_GENES_FILE=$(ls "$R/$MANIFEST_FILENAME*.genes" 2>/dev/null | tr "\n" "+") && (($VERBOSE)) &&  echo "#[INFO] Manifest Genes file found for sample '$SAMPLE_NAME': $MANIFEST_GENES_FILE"
 						#echo "$SAMPLE_LIST" "$SAMPLE_NAME"
 
 						#	echo "SAMPLE_LIST '$SAMPLE_NAME' found in the list '$SAMPLE_LIST'"
