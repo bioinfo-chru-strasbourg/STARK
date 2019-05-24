@@ -99,7 +99,7 @@ header;
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
-ARGS=$(getopt -o "e:f:q:b:j:m:s:r:o:u:p:t:ga:vdnh" --long "env:,app:,application:,reads:,fastq:,fastq_R1:,fastq_R2:,design:,bed:,manifest:,genes:,transcripts:,sample:,sample_list:,sample_filter:,runs:,analysis:,analysis_name:,output:,analysis_dir:,results:,repository:,archive:,pipelines:,threads:,no_header,by_sample,adapters:,verbose,debug,release,help" -- "$@" 2> /dev/null)
+ARGS=$(getopt -o "e:f:q:b:j:m:s:r:o:u:p:t:ga:vdnh" --long "env:,app:,application:,reads:,fastq:,reads1:,reads:,fastq_R1:,fastq_R2:,reads2:,index1:,index2:,analysis_tag:,sample_tag:,other_files:,design:,bed:,manifest:,genes:,transcripts:,sample:,sample_list:,sample_filter:,runs:,analysis:,analysis_name:,output:,analysis_dir:,results:,repository:,archive:,pipelines:,threads:,no_header,by_sample,adapters:,verbose,debug,release,help" -- "$@" 2> /dev/null)
 [ $? -ne 0 ] && \
 	echo "#[ERROR] Error in the argument list." "Use -h or --help to display the help." >&2 && usage && \
 	exit 1
@@ -117,16 +117,28 @@ do
 			APP="$2"
 			shift 2
 			;;
-		-f|--reads|--fastq|--fastq_R1)
+		-f|--reads|--reads1|--fastq|--fastq_R1)
 			FASTQ="$2"
 			# transform RUNS list
 			FASTQ=$(echo $FASTQ | tr "," " ")
 			shift 2
 			;;
-		-q|--fastq_R2)
+		-q|--reads2|--fastq_R2)
 			FASTQ_R2="$2"
 			# transform RUNS list
 			FASTQ_R2=$(echo $FASTQ_R2 | tr "," " ")
+			shift 2
+			;;
+		--index1)
+			INDEX1=$2 #"$(echo $2 | tr "\n" " ")"
+			shift 2
+			;;
+		--index2)
+			INDEX2=$2 #"$(echo $2 | tr "\n" " ")"
+			shift 2
+			;;
+		--other_files)
+			OTHER_FILES=$2 #"$(echo $2 | tr "\n" " ")"
 			shift 2
 			;;
 		-b|--design|--bed|--manifest)
@@ -149,6 +161,11 @@ do
 			SAMPLE=$(echo $SAMPLE | tr "," " ")
 			shift 2
 			;;
+		--sample_tag)
+			SAMPLE_TAG="$2"
+			SAMPLE_TAG=$(echo $SAMPLE_TAG | tr "," " ")
+			shift 2
+			;;
 		--sample_list|--sample_filter)
 			SAMPLE_LIST="$2"
 			SAMPLE_LIST=$(echo $SAMPLE_LIST | tr "," " ")
@@ -167,6 +184,11 @@ do
 		--analysis_name)
 			RUN="$2"
 			RUN=$(echo $RUN | tr "," " ")
+			shift 2
+			;;
+		--analysis_tag)
+			ANALYSIS_TAG="$2"
+			#ANALYSIS_NAME=$(echo $ANALYSIS_NAME | tr "," " ")
 			shift 2
 			;;
 		-o|--output|--results)
@@ -424,6 +446,8 @@ BEDFILE_GENES_CHECKED=""
 BEDFILE_GENES_ARRAY=($BEDFILE_GENES);
 TRANSCRIPTS_CHECKED=""
 TRANSCRIPTS_ARRAY=($TRANSCRIPTS);
+SAMPLE_TAG_CHECKED=""
+SAMPLE_TAG_ARRAY=($SAMPLE_TAG);
 
 (($DEBUG)) && echo "#[INFO] FASTQ=$FASTQ";
 
@@ -507,6 +531,14 @@ for F in $FASTQ; do
 	else
 		TRANSCRIPTS_CHECKED="$TRANSCRIPTS_CHECKED${TRANSCRIPTS_ARRAY[$NB_SAMPLE]} "
 	fi;
+
+	# SAMPLE TAG
+	if [ "${SAMPLE_TAG_ARRAY[$NB_SAMPLE]}" == "" ] || [ ! -f "${SAMPLE_TAG_ARRAY[$NB_SAMPLE]}" ]; then
+		SAMPLE_TAG_CHECKED="$SAMPLE_TAG_CHECKED"
+	else
+		SAMPLE_TAG_CHECKED="$SAMPLE_TAG_CHECKED${SAMPLE_TAG_ARRAY[$NB_SAMPLE]} "
+	fi;
+
 
 	((NB_SAMPLE++))
 done;
@@ -767,6 +799,7 @@ for RUU in $RUN_UNIQ; do
 		B=${BED_ARRAY[$I]};
 		G=${BEDFILE_GENES_ARRAY[$I]};
 		T=${TRANSCRIPTS_ARRAY[$I]};
+		TAG=${SAMPLE_TAG_ARRAY[$I]};
 
 		#echo "$S $F $F_R2"; exit 0;
 
@@ -782,6 +815,7 @@ for RUU in $RUN_UNIQ; do
 		B_LIST="$B_LIST$B "
 		G_LIST="$G_LIST$G "
 		T_LIST="$T_LIST$T "
+		TAG_LIST="$TAG_LIST$TAG "
 
 		RUN_SAMPLE_DIR=$OUTPUT/$RU/$S
 
@@ -913,12 +947,19 @@ for RUU in $RUN_UNIQ; do
 		fi;
 
 		# Copy TRANSCRIPTS
-
 		if [ -e $T ] && [ "$T" != "" ] && [ ! -e $RUN_SAMPLE_DIR/$S.transcripts ]; then
 			echo "#[INFO] Copy TRANSCRIPTS file."
 			cp -p $T $RUN_SAMPLE_DIR/$S.transcripts;
 		fi;
 		#echo "$T"; exit 0;
+
+		# SAMPLE TAG
+		if [ ! -e $RUN_SAMPLE_DIR/$S.tag ]; then
+			echo "#[INFO] Create TAG file."
+			echo $TAG > $RUN_SAMPLE_DIR/$S.tag;
+		fi;
+		#echo "$T"; exit 0;
+
 
 		# SampleSheet
 		if ((1)); then

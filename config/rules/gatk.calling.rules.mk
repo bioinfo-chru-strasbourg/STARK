@@ -76,7 +76,7 @@ GATKUG_FLAGS= -nct $(THREADS_GATKUG) -glm BOTH \
 DPMIN=1
 
 %.gatkUG.unfiltered.unrecalibrated.vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
-
+	cp $*.from_manifest.intervals $*.from_manifest.intervals.copy
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKUG_FLAGS) \
 		-T UnifiedGenotyper \
 		-R `cat $*.genome` \

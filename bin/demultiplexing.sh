@@ -256,20 +256,53 @@ echo "#[`date`] COMMAND: $COMMAND" >> $LOGFILE && $COMMAND >> $LOGFILE
 
 # Copy Manifests
 for M in $(cat $MANIFESTS | tr "," " "); do
-	(($VERBOSE)) && echo "#[INFO] Copy manifests '$M'";
+	(($VERBOSE)) && echo "#[INFO] Copy manifests '$M' and related files";
+
 	#echo $FOLDER_MANIFEST/$M
-	[ -e $FOLDER_MANIFEST/$M ] && cp $FOLDER_MANIFEST/$M $OUTPUT_DIR/$M 2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy manifest '$M' from Manifest folder '$FOLDER_MANIFEST'";
+	#[ -e $FOLDER_MANIFEST/$M ] && cp $FOLDER_MANIFEST/$M $OUTPUT_DIR/$M 2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy manifest '$M' from Manifest folder '$FOLDER_MANIFEST'";
 	#echo $RUN/$M
 	#echo cp $RUN/$M $OUTPUT_DIR/$M
 	#cp $RUN/$M $OUTPUT_DIR/$M
-	[ -e $RUN/$M ] && cp $RUN/$M $OUTPUT_DIR/$M  2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy manifest '$M' from RUN folder '$RUN' (replaced if already copied)";
+	#[ -e $RUN/$M ] && cp $RUN/$M $OUTPUT_DIR/$M  2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy manifest '$M' from RUN folder '$RUN' (replaced if already copied)";
+
+	# Manifest File
+	if [ -e $RUN/$M ]; then
+		cp $RUN/$M $OUTPUT_DIR/$M  2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy manifest '$M' from RUN folder '$RUN'";
+	elif [ -e $FOLDER_MANIFEST/$M ]; then
+		cp $FOLDER_MANIFEST/$M $OUTPUT_DIR/$M 2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy manifest '$M' from Manifest folder '$FOLDER_MANIFEST'";
+	else
+		echo "#[WARNING] Manifest file NOT found"
+	fi;
+
 	# Genes
 	#[ -e $FOLDER_MANIFEST/$M.genes ] && cp $FOLDER_MANIFEST/$M.genes $OUTPUT_DIR/$M.genes 2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy manifest.genes '$M.genes' from Manifest folder '$FOLDER_MANIFEST'";
-	cp -f $FOLDER_MANIFEST/$M*.genes $OUTPUT_DIR/ 2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy manifest.genes '$M*.genes' from Manifest folder '$FOLDER_MANIFEST'";
-	[ -e $RUN/$M.genes ] && cp $FOLDER_MANIFEST/$M.genes $OUTPUT_DIR/$M.genes  2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy manifest.genes '$M.genes' from RUN folder '$RUN' (replaced if already copied)";
+	#cp -f $FOLDER_MANIFEST/$M*.genes $OUTPUT_DIR/ 2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy MANIFEST*.genes '$M*.genes' from Manifest folder '$FOLDER_MANIFEST'";
+	#[ -e $RUN/$M.genes ] && cp $FOLDER_MANIFEST/$M.genes $OUTPUT_DIR/$M.genes  2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy manifest.genes '$M.genes' from RUN folder '$RUN' (replaced if already copied)";
+	#cp -f $RUN/$M*.genes $OUTPUT_DIR/ 2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy MANIFEST*.genes '$M*.genes' from Manifest folder '$RUN' (replaced if already copied)";
+
+	if (($(ls "$RUN/$M*.genes" 2>/dev/null | wc -l))); then
+		cp -f $RUN/$M*.genes $OUTPUT_DIR/ 2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy MANIFEST*.genes '$M*.genes' from Manifest folder '$RUN'";
+	elif (($(ls "$FOLDER_MANIFEST/$M*.genes" 2>/dev/null | wc -l))); then
+		cp -f $FOLDER_MANIFEST/$M*.genes $OUTPUT_DIR/ 2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy MANIFEST*.genes '$M*.genes' from Manifest folder '$FOLDER_MANIFEST'";
+	else
+		echo "#[INFO] Manifest Genes file NOT found"
+	fi;
+
 	# Transcripts
-	[ -e $FOLDER_MANIFEST/$M.transcripts ] && cp $FOLDER_MANIFEST/$M.transcripts $OUTPUT_DIR/$M.transcripts 2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy manifest.transcripts '$M.transcripts' from Manifest folder '$FOLDER_MANIFEST'";
-	[ -e $RUN/$M.transcripts ] && cp $FOLDER_MANIFEST/$M.transcripts $OUTPUT_DIR/$M.transcripts  2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy manifest.transcripts '$M.transcripts' from RUN folder '$RUN' (replaced if already copied)";
+	#[ -e $FOLDER_MANIFEST/$M.transcripts ] && cp $FOLDER_MANIFEST/$M.transcripts $OUTPUT_DIR/$M.transcripts 2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy manifest.transcripts '$M.transcripts' from Manifest folder '$FOLDER_MANIFEST'";
+	#cp -f $FOLDER_MANIFEST/$M*.transcripts $OUTPUT_DIR/ 2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy MANIFEST*.transcripts '$M*.transcripts' from Transcripts folder '$FOLDER_MANIFEST'";
+	#[ -e $RUN/$M.transcripts ] && cp $FOLDER_MANIFEST/$M.transcripts $OUTPUT_DIR/$M.transcripts  2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy manifest.transcripts '$M.transcripts' from RUN folder '$RUN' (replaced if already copied)";
+	#cp -f $RUN/$M*.transcripts $OUTPUT_DIR/ 2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy MANIFEST*.transcipts '$M*.transcripts' from Transcripts folder '$RUN' (replaced if already copied)";
+
+	if (($(ls "$RUN/$M*.transcripts" 2>/dev/null | wc -l))); then
+		cp -f $RUN/$M*.transcripts $OUTPUT_DIR/ 2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy MANIFEST*.transcipts '$M*.transcripts' from Transcripts folder '$RUN' (replaced if already copied)";
+	elif (($(ls "$FOLDER_MANIFEST/$M*.transcripts" 2>/dev/null | wc -l))); then
+		cp -f $FOLDER_MANIFEST/$M*.transcripts $OUTPUT_DIR/ 2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy MANIFEST*.transcripts '$M*.transcripts' from Transcripts folder '$FOLDER_MANIFEST'";
+	else
+		echo "#[INFO] Manifest Transcripts file NOT found"
+	fi;
+
+
 done;
 
 # Reads Length file

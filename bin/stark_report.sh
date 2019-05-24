@@ -616,6 +616,8 @@ do
 	fi
 
 	if [ -f "$COVERAGEFILESTATS_MARKDUPLICATESFILE" ]; then
+		#READ_PAIRS_EXAMINED=`cat $COVERAGEFILESTATS_MARKDUPLICATESFILE | grep -A 2 "## METRICS CLASS" | tail -n 1 | cut -f3 | sed 's/,/./'`
+		#PERCENT_DUPLICATION=`cat $COVERAGEFILESTATS_MARKDUPLICATESFILE | grep -A 2 "## METRICS CLASS" | tail -n 1 | cut -f8 | sed 's/,/./'`
 		READ_PAIRS_EXAMINED=`cat $COVERAGEFILESTATS_MARKDUPLICATESFILE | grep -A 2 "## METRICS CLASS" | tail -n 1 | cut -f3 | sed 's/,/./'`
 		PERCENT_DUPLICATION=`cat $COVERAGEFILESTATS_MARKDUPLICATESFILE | grep -A 2 "## METRICS CLASS" | tail -n 1 | cut -f8 | sed 's/,/./'`
 		echo "\begin{table}[!h]
@@ -726,6 +728,46 @@ do
 	fi;
 	#fi;
 
+	# HSMETRICS
+	if ((0)); then
+	if [ -f "$COVERAGEFILESTATS_HSMETRICS" ] #&& ((0))
+	then
+
+		if ((1)); then
+
+			echo "\begin{table}[H]
+			\begin{center}
+			\begin{tabular}{|r|l|}
+			\hline
+			\textbf{Metrics} & \textbf{Value} \\\\
+			\hline " >> $TEXFILE
+			#cat $COVERAGEFILESTATS_MARKDUPLICATES | grep "^#" -v | grep "^$" -v | awk 'BEGIN { FS=OFS="\t" }
+			cat $COVERAGEFILESTATS_HSMETRICS | grep -A2 -P '## METRICS CLASS' | tail -n-2 | awk 'BEGIN { FS=OFS="\t" }
+			{
+				for (rowNr=1;rowNr<=NF;rowNr++) {
+					cell[rowNr,NR] = $rowNr
+				}
+				maxRows = (NF > maxRows ? NF : maxRows)
+				maxCols = NR
+			}
+			END {
+				for (rowNr=1;rowNr<=maxRows;rowNr++) {
+					for (colNr=1;colNr<=maxCols;colNr++) {
+						printf "%s %s", cell[rowNr,colNr], (colNr < maxCols ? " & " : " \\\\ \\hline \n ")
+					}
+				}
+			}' | sed 's/\_/\\\_/g' >> $TEXFILE
+			echo "
+			\end{tabular}
+			\end{center}
+			\caption{\label{hsmetrics_$aligner}HsMetrics statistics on $aligner for $SAMPLEID. Statistics were determined with PICARD on the '"$(basename -- "$(dirname -- "$COVERAGEFILESTATS_HSMETRICS")" | sed 's/.metrics$//g' | sed 's/\_/\\\_/g')"' file. See file '"$(basename $COVERAGEFILESTATS_HSMETRICS | sed 's/\_/\\\_/g')"' for more information.}
+			\end{table}" >> $TEXFILE
+
+		fi;
+
+	fi;
+	fi;
+
 
 	# COVERAGE SUMMARY with SAMTOOLS
 	if [ -f "$COVERAGEFILESTATS_MARKDUPLICATES" ] #&& ((0))
@@ -739,7 +781,8 @@ do
 			\hline
 			\textbf{Metrics} & \textbf{Value} \\\\
 			\hline " >> $TEXFILE
-			cat $COVERAGEFILESTATS_MARKDUPLICATES | grep "^#" -v | grep "^$" -v | awk 'BEGIN { FS=OFS="\t" }
+			#cat $COVERAGEFILESTATS_MARKDUPLICATES | grep "^#" -v | grep "^$" -v | awk 'BEGIN { FS=OFS="\t" }
+			cat $COVERAGEFILESTATS_MARKDUPLICATES | grep -A2 -P '## METRICS CLASS' | tail -n-2 | awk 'BEGIN { FS=OFS="\t" }
 			{
 			    for (rowNr=1;rowNr<=NF;rowNr++) {
 			        cell[rowNr,NR] = $rowNr

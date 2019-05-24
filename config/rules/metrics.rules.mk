@@ -71,7 +71,10 @@ DP_THRESHOLD?=1
 	if [ ! -e $@ ]; then cp $< $@; fi; # if ln des not work
 
 %.for_metrics_bed: %.bam %.bam.bai %.metrics.from_manifest.intervals %.metrics.bed %.metrics.region_clipped.bed %.bam.bed
-	echo "# Create Metrics BED... "
+	#echo "# Create Metrics BED... "
+	#echo "# Cat and copy metrics.bed $*.metrics.bed"
+	#cp $*.metrics.bed $*.metrics.bed.copy
+	#cat $*.metrics.bed
 	if [ "`grep ^ -c $*.metrics.bed`" == "0" ]; then \
 		echo "# No BED file provided... BED from the BAM file"; \
 		cp $*.bam.bed $@; \
@@ -96,6 +99,7 @@ DP_THRESHOLD?=1
 
 %.withoutheader.for_metrics_bed: %.for_metrics_bed
 	if [ -s $< ]; then \
+		echo "[INFO] File '$@' generated from '$<'"; \
 		grep -v ^@ $< > $@; \
 	fi;
 	if [ ! -e $@ ]; then touch $@; fi
@@ -104,6 +108,7 @@ DP_THRESHOLD?=1
 
 %.3fields.for_metrics_bed: %.for_metrics_bed #%.withoutheader.for_metrics_bed
 	if [ -s $< ]; then \
+		echo "[INFO] File '$@' generated from '$<'"; \
 		grep ^@ $< > $@; \
 		grep -v ^@ $< > $*.withoutheader.for_metrics_bed.3fields.bed; \
 		cat $*.withoutheader.for_metrics_bed.3fields.bed | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$1":"$$2"-"$$3}' >> $@; \
@@ -166,7 +171,8 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 # PICARD Metrics (DO NOT WORK, problem with bait file)
 
 %.empty.HsMetrics:
-	echo "BAIT_SET	GENOME_SIZE	BAIT_TERRITORY	TARGET_TERRITORY	BAIT_DESIGN_EFFICIENCY	TOTAL_READS	PF_READS	PF_UNIQUE_READS	PCT_PF_READS	PCT_PF_UQ_READS	PF_UQ_READS_ALIGNED	PCT_PF_UQ_READS_ALIGNED	PF_UQ_BASES_ALIGNED	ON_BAIT_BASES	NEAR_BAIT_BASES	OFF_BAIT_BASES	ON_TARGET_BASES	PCT_SELECTED_BASES	PCT_OFF_BAIT	ON_BAIT_VS_SELECTED	MEAN_BAIT_COVERAGE	MEAN_TARGET_COVERAGE	PCT_USABLE_BASES_ON_BAIT	PCT_USABLE_BASES_ON_TARGET	FOLD_ENRICHMENT	ZERO_CVG_TARGETS_PCT	FOLD_80_BASE_PENALTY	PCT_TARGET_BASES_2X	PCT_TARGET_BASES_10X	PCT_TARGET_BASES_20X	PCT_TARGET_BASES_30X	PCT_TARGET_BASES_40X	PCT_TARGET_BASES_50X	PCT_TARGET_BASES_100X	HS_LIBRARY_SIZE	HS_PENALTY_10X	HS_PENALTY_20X	HS_PENALTY_30X	HS_PENALTY_40X	HS_PENALTY_50X	HS_PENALTY_100X	AT_DROPOUT	GC_DROPOUT	SAMPLE	LIBRARY	READ_GROUP" > $@
+	echo "## METRICS CLASS	picard.analysis.directed.HsMetrics" > $@
+	echo "BAIT_SET	GENOME_SIZE	BAIT_TERRITORY	TARGET_TERRITORY	BAIT_DESIGN_EFFICIENCY	TOTAL_READS	PF_READS	PF_UNIQUE_READS	PCT_PF_READS	PCT_PF_UQ_READS	PF_UQ_READS_ALIGNED	PCT_PF_UQ_READS_ALIGNED	PF_UQ_BASES_ALIGNED	ON_BAIT_BASES	NEAR_BAIT_BASES	OFF_BAIT_BASES	ON_TARGET_BASES	PCT_SELECTED_BASES	PCT_OFF_BAIT	ON_BAIT_VS_SELECTED	MEAN_BAIT_COVERAGE	MEAN_TARGET_COVERAGE	PCT_USABLE_BASES_ON_BAIT	PCT_USABLE_BASES_ON_TARGET	FOLD_ENRICHMENT	ZERO_CVG_TARGETS_PCT	FOLD_80_BASE_PENALTY	PCT_TARGET_BASES_2X	PCT_TARGET_BASES_10X	PCT_TARGET_BASES_20X	PCT_TARGET_BASES_30X	PCT_TARGET_BASES_40X	PCT_TARGET_BASES_50X	PCT_TARGET_BASES_100X	HS_LIBRARY_SIZE	HS_PENALTY_10X	HS_PENALTY_20X	HS_PENALTY_30X	HS_PENALTY_40X	HS_PENALTY_50X	HS_PENALTY_100X	AT_DROPOUT	GC_DROPOUT	SAMPLE	LIBRARY	READ_GROUP" >> $@
 	echo $$(echo $$(basename $@) | awk -F"." '{print $$1}')"	?	?	?	?	0	0	0	?	?	0	?	0	0	0	0	0	?	?	?	0	?	?	?	?	1	?	0	0	0	0	0	0	0	?	0	0	0	0	0	0	0	0" >> $@
 
 
@@ -196,7 +202,8 @@ PICARD_CollectHsMetrics_PARAM?=MINIMUM_MAPPING_QUALITY=$(PICARD_CollectHsMetrics
 
 
 SAMTOOLS_METRICS_VIEW_MAP_Q?=10
-SAMTOOLS_METRICS_VIEW_PARAM?= -M -F 1024 -F 4 -q $(SAMTOOLS_METRICS_VIEW_MAP_Q)
+#SAMTOOLS_METRICS_VIEW_PARAM?= -M -F 1024 -F 4 -q $(SAMTOOLS_METRICS_VIEW_MAP_Q)
+SAMTOOLS_METRICS_VIEW_PARAM?= -F 1024 -F 4 -q $(SAMTOOLS_METRICS_VIEW_MAP_Q)
 SAMTOOLS_METRICS_DEPTH_base_q?=10
 SAMTOOLS_METRICS_DEPTH_map_q?=10
 SAMTOOLS_METRICS_DEPTH_PARAM?= -d 0 -q $(SAMTOOLS_METRICS_DEPTH_map_q)
@@ -212,7 +219,11 @@ SAMTOOLS_METRICS_DEPTH_PARAM?= -d 0 -q $(SAMTOOLS_METRICS_DEPTH_map_q)
 		# CLEAN BAM \
 		$(SAMTOOLS) view $(SAMTOOLS_METRICS_VIEW_PARAM) -h $< -1 -@ $(THREADS) > $<.cleaned.bam ; \
 		# DEPTHBED ON \
+		# OK ? $(SAMTOOLS) depth -b $*.withoutheader.for_metrics_bed $(SAMTOOLS_METRICS_DEPTH_PARAM) $<.cleaned.bam > $(@D)/$(*F).depthbed; \
+		#echo " withoutheader: "; \
+		#cat $*.withoutheader.for_metrics_bed; \
 		$(SAMTOOLS) depth -b $*.withoutheader.for_metrics_bed $(SAMTOOLS_METRICS_DEPTH_PARAM) $<.cleaned.bam > $(@D)/$(*F).depthbed; \
+		#$(SAMTOOLS) depth -b $*.for_metrics_bed $(SAMTOOLS_METRICS_DEPTH_PARAM) $<.cleaned.bam > $(@D)/$(*F).depthbed; \
 		# DEPTHBED OFF \
 		#$(BEDTOOLS)/intersectBed -abam $<.cleaned.bam -b $*.withoutheader.for_metrics_bed -v | $(SAMTOOLS) depth - > $(@D)/$(*F).off.depthbed; \
 		# ON NBReads \

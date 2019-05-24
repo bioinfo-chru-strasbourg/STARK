@@ -444,39 +444,63 @@ GATKRR_FLAGS=
 	# manifest to interval (not needed?)
 	#cat $<  | tr -d '\r' | sed -e "s/^M//" | awk -F"\t" '{print $$1":"$$2"-"$$3}' > $@
 	# try to extract from the bam if exists, in order to not call in the whome genome
-	-+if [ ! -s $< ] && [ -s $*.bam ]; then \
+	-+if [ -s $< ]; then \
+		cp $< $@.bed; \
+	elif [ -s $*.bam ]; then \
 		echo "# Generation of BED from BAM because bed/manifest is empty"; \
 		#$(BEDTOOLS)/bamToBed -i $*.bam  | $(BEDTOOLS)/bedtools sort -i - | $(BEDTOOLS)/mergeBed -n -i - > $*.bed; \
-		#$(BEDTOOLS)/genomeCoverageBed -ibam $*.bam -bg | $(BEDTOOLS)/mergeBed -n -i - > $*.bed; \
+		#$(BEDTOOLS)/genomeCoverageBed_for_intervals -ibam $*.bam -bg | $(BEDTOOLS)/mergeBed -n -i - > $*.bed; \
 		if (($$($(SAMTOOLS) idxstats $*.bam | awk '{SUM+=$$3+$$4} END {print SUM}'))); then \
-			rm -f $*.bam.genomeCoverageBed.mk $*.bam.genomeCoverageBed1.mk $*.bam.genomeCoverageBed2.mk $*.bam.genomeCoverageBed3.mk; \
+			rm -f $*.bam.genomeCoverageBed_for_intervals.mk $*.bam.genomeCoverageBed_for_intervals1.mk $*.bam.genomeCoverageBed_for_intervals2.mk $*.bam.genomeCoverageBed_for_intervals3.mk; \
 			for chr in $$($(SAMTOOLS) idxstats $*.bam | grep -v "\*" | awk '{ if ($$3+$$4>0) print $$1 }'); do \
-				echo "$*.bam.genomeCoverageBed.$$chr.bed: $*.bam" >> $*.bam.genomeCoverageBed1.mk; \
-				echo "	$(SAMTOOLS) view $*.bam -b $$chr | $(BEDTOOLS)/genomeCoverageBed -ibam stdin -bg | $(BEDTOOLS)/mergeBed -n -i - > $*.bam.genomeCoverageBed.$$chr.bed " >> $*.bam.genomeCoverageBed1.mk; \
-				echo -n " $*.bam.genomeCoverageBed.$$chr.bed" >> $*.bam.genomeCoverageBed2.mk; \
+				echo "$*.bam.genomeCoverageBed_for_intervals.$$chr.bed: $*.bam" >> $*.bam.genomeCoverageBed_for_intervals1.mk; \
+				#echo "	$(SAMTOOLS) view $*.bam -b $$chr | $(BEDTOOLS)/genomeCoverageBed_for_intervals -ibam stdin -bg | $(BEDTOOLS)/mergeBed -n -i - > $*.bam.genomeCoverageBed_for_intervals.$$chr.bed " >> $*.bam.genomeCoverageBed_for_intervals1.mk; \
+				echo "	$(SAMTOOLS) view $*.bam -b $$chr | $(BEDTOOLS)/genomeCoverageBed -ibam stdin -bg | $(BEDTOOLS)/mergeBed -i - > $*.bam.genomeCoverageBed_for_intervals.$$chr.bed " >> $*.bam.genomeCoverageBed_for_intervals1.mk; \
+				echo -n " $*.bam.genomeCoverageBed_for_intervals.$$chr.bed" >> $*.bam.genomeCoverageBed_for_intervals2.mk; \
 			done; \
-			echo -n "$*.bed: " | cat - $*.bam.genomeCoverageBed2.mk > $*.bam.genomeCoverageBed3.mk; \
-			echo ""  >> $*.bam.genomeCoverageBed3.mk; \
-			#echo "	cat $$^ > $$@ " >> $*.bam.genomeCoverageBed3.mk; \
-			echo "	cat $$^ > $*.bed " >> $*.bam.genomeCoverageBed3.mk; \
-			echo "	-rm -f $$^ " >> $*.bam.genomeCoverageBed3.mk; \
-			cat $*.bam.genomeCoverageBed1.mk $*.bam.genomeCoverageBed3.mk >> $*.bam.genomeCoverageBed.mk; \
-			echo "TESTgenomeCoverageBed: "; \
-			cat $*.bam.genomeCoverageBed.mk; \
-			make -i -f $*.bam.genomeCoverageBed.mk $*.bed -j $(THREADS)  1>/dev/null 2>/dev/null; \
-			rm $*.bam.genomeCoverageBed*.mk; \
+			echo -n "$@.bed: " | cat - $*.bam.genomeCoverageBed_for_intervals2.mk > $*.bam.genomeCoverageBed_for_intervals3.mk; \
+			echo ""  >> $*.bam.genomeCoverageBed_for_intervals3.mk; \
+			#echo "	cat $$^ > $$@ " >> $*.bam.genomeCoverageBed_for_intervals3.mk; \
+			echo "	cat $$^ " >> $*.bam.genomeCoverageBed_for_intervals3.mk; \
+			echo "	cat $$^ > $@.bed " >> $*.bam.genomeCoverageBed_for_intervals3.mk; \
+			#echo "	-rm -f $$^ " >> $*.bam.genomeCoverageBed_for_intervals3.mk; \
+			cat $*.bam.genomeCoverageBed_for_intervals1.mk $*.bam.genomeCoverageBed_for_intervals3.mk >> $*.bam.genomeCoverageBed_for_intervals.mk; \
+			#echo "TESTgenomeCoverageBed_for_intervals: "; \
+			#cat $*.bam.genomeCoverageBed_for_intervals.mk; \
+			#make -i -f $*.bam.genomeCoverageBed_for_intervals.mk $*.bed -j $(THREADS)  1>/dev/null 2>/dev/null; \
+			make -i -f $*.bam.genomeCoverageBed_for_intervals.mk $@.bed -j $(THREADS) ; \
+			#echo "$*.bed:" ; \
+			#cat $*.bed ; \
+			#echo "$@.bed:" ; \
+			#cat $@.bed ; \
+			rm $*.bam.genomeCoverageBed_for_intervals*.mk; \
 		fi; \
+	else \
+		echo "[ERROR] No intervals generated '$@'" ; \
 	fi;
+	#
 	# INTERVAL WITH PICARD
-	if [ -s $< ]; then \
-		$(JAVA) -jar $(PICARD) BedToIntervalList I=$< O=$@ SD=$$(cat $*.dict) ; \
+	if [ -s $@.bed ]; then \
+		echo "[INFO] Generate $@ from $@.bed with PICARD BedToIntervalList" ; \
+		$(JAVA) -jar $(PICARD) BedToIntervalList I=$@.bed O=$@ SD=$$(cat $*.dict) ; \
+		#echo "$@.bed:" ; \
+		#cat $@.bed ; \
+		#echo "$@:" ; \
+		#cat $@ ; \
 	fi;
 	# If error, try intervals with GREP/SED/AWK
-	if [ ! -s $@ ] && [ -s $< ]; then \
-		grep -v ^@ $<  | tr -d '\r' | sed -e "s/^M//" | awk -F"\t" '{print $$1":"$$2"-"$$3}' | sed s/:0-/:1-/gi > $@; \
+	if [ ! -s $@ ] && [ -s $@.bed ]; then \
+		echo "[INFO] Generate $@ from $@.bed with GREP/SED" ; \
+		grep -v ^@ $@.bed  | tr -d '\r' | sed -e "s/^M//" | awk -F"\t" '{print $$1":"$$2"-"$$3}' | sed s/:0-/:1-/gi > $@; \
+		#echo "$@.bed:" ; \
+		#cat $@.bed ; \
+		#echo "$@:" ; \
+		#cat $@ ; \
 	fi;
 	# touch
 	if [ ! -e $@ ]; then touch $@; fi;
+	# clean
+	#rm -f $@.bed;
 
 # Interval from BED
 %.bed.intervals: %.bed %.dict

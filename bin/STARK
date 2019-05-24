@@ -56,7 +56,7 @@ function usage {
 	echo "# --reads=<FILE1,FILE2...>                 List of Reads files";
 	echo "#                                          For each samples, allowed formats FASTQ|BAM|SAM|CRAM:";
 	echo "#                                          *fastq.gz|*fq.gz|*bam|*ubam|*cram|*ucram|*sam|*usam";
-	echo "# --runs=<STRING1,STRING2...>              List of RUNs to analyse";
+	echo "# --runs=<FOLDER1,FOLDER2...>              List of RUNs to analyse";
 	echo "#                                          From Illumina sequencers (BCL), demultiplexing (FASTQ), or any folder containing FASTQ|BAM|SAM|CRAM.";
 	echo "#                                          For folder containing FASTQ, corresponding Paired-End Read2 will be autodetected: /.*[._-])R1([._-].*/.*[._-])R2([._-].*/";
 	echo "#                                          RUN can be a folder path, or the run folder in defined runs folders (see Application configuration)";
@@ -76,11 +76,21 @@ function usage {
 	echo ""
 
 	echo "### SAMPLE Analysis options";
-	echo "# --fastq_R2=<FILE1,FILE2...>              List of Reads files with corresponding Paired-End Read2 (beware of correspondance).";
-	echo "#                                          For each samples, allowed formats FASTQ|BAM|SAM|CRAM:";
-	echo "#                                          *fastq.gz|*fq.gz";
 	echo "# --sample=<STRING1,STRING2...>            List of corresponding SAMPLE Name";
 	echo "#                                          Automatically detected from input files.";
+	echo "# --sample_tag=<STRING1,STRING2...>        List of corresponding SAMPLE Tags. TODO";
+	echo "#                                          Format: TYPE#TAG[#TAG]{!}[TYPE#TAG[#TAG]]";
+	echo "# --reads2=<FILE1,FILE2...>                List of Reads files with corresponding Paired-End Read2 (beware of correspondance).";
+	echo "#                                          For each samples, allowed formats FASTQ:";
+	echo "#                                          *fastq.gz|*fq.gz";
+	echo "# --index1=<FILE1,FILE2...>                List of corresponding Index1 files (beware of correspondance). TODO";
+	echo "#                                          For each samples, allowed formats FASTQ:";
+	echo "#                                          *fastq.gz|*fq.gz";
+	echo "# --index2=<FILE1,FILE2...>                List of corresponding Index2 files (beware of correspondance). TODO";
+	echo "#                                          For each samples, allowed formats FASTQ:";
+	echo "#                                          *fastq.gz|*fq.gz";
+	echo "# --other_files=<FILE1,FILE2...>           List of corresponding other files (beware of correspondance). TODO";
+	echo "#                                          Files will be copied into each SAMPLE folder";
 	#echo "# --adapters=<STRING>                      Adapters to trim.";
 	echo ""
 
@@ -94,6 +104,8 @@ function usage {
 	echo "### Other options";
 	echo "# --analysis_name=<STRING>                 Analysis name.";
 	echo "#                                          Default: 'date' (format YYYYMMDD) for a SAMPLE list analysis .";
+	echo "# --analysis_tag=<STRING1>                 List of ANALYSIS Tags. TODO";
+	echo "#                                          Format: TYPE#TAG[#TAG]{!}[TYPE#TAG[#TAG]]";
 	echo "# --application=<STRING|FILE>              APP name or APP file configuration of the APPLICATION.";
 	echo "#                                          Must be in the STARK APPS folder if relative path";
 	echo "#                                          Default: defined in the RUN SampleSheet, or default.app if not defined";
@@ -151,7 +163,7 @@ function usage {
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
-ARGS=$(getopt -o "a:b:e:r:f:q:g:j:m:l:s:w:t:o:u:iygxvdnh" --long "env:,app:,application:,runs:,fastq:,reads:,fastq_R1:,by_sample,fastq_R2:,adapters:,analysis:,analysis_name:,analysis_dir:,samplesheet:,sample:,sample_filter:,design:,bed:,manifest:,genes:,transcripts:,threads:,output:,results:,repository:,archive:,no_header,applications_infos,pipelines_infos,release_infos,tools_infos,databases_infos,verbose,debug,release,help" -- "$@" 2> /dev/null)
+ARGS=$(getopt -o "a:b:e:r:f:q:g:j:m:l:s:w:t:o:u:iygxvdnh" --long "env:,app:,application:,runs:,fastq:,reads:,reads1:,fastq_R1:,by_sample,fastq_R2:,reads2:,index1:,index2:,other_files:,analysis_tag:,sample_tag:,adapters:,analysis:,analysis_name:,analysis_dir:,samplesheet:,sample:,sample_filter:,design:,bed:,manifest:,genes:,transcripts:,threads:,output:,results:,repository:,archive:,no_header,applications_infos,pipelines_infos,release_infos,tools_infos,databases_infos,verbose,debug,release,help" -- "$@" 2> /dev/null)
 #ARGS=$(getopt -o "e:r:f:l:w:t:iygxvdnh" --long "env:,app:,application:,runs:,fastq:,fastq_R1:,json:,ana:,analysis:,samplesheet:,threads:,application_infos,applications_infos,pipelines_infos,release_infos,tools_infos,databases_infos,verbose,debug,release,help" -- "$@" 2> /dev/null)
 #ARGS=$(getopt -o "e:r:f:l:s:w:t:iygxvdnh" --long "env:,app:,application:,runs:,fastq:,fastq_R1:,analysis:,analysis_name:,analysis_dir:,samplesheet:,sample:,sample_list:,threads:,no_header,application_infos,applications_infos,pipelines_infos,release_infos,tools_infos,databases_infos,verbose,debug,release,help" -- "$@" )
 # || [ -z $@ ]
@@ -197,12 +209,29 @@ do
 			#ANALYSIS_NAME=$(echo $ANALYSIS_NAME | tr "," " ")
 			shift 2
 			;;
-		-f|--reads|--fastq|--fastq_R1)
+		--analysis_tag)
+			ANALYSIS_TAG="$2"
+			#ANALYSIS_NAME=$(echo $ANALYSIS_NAME | tr "," " ")
+			shift 2
+			;;
+		-f|--reads|--reads1|--fastq|--fastq_R1)
 			FASTQ=$2 #"$(echo $2 | tr "\n" " ")"
 			shift 2
 			;;
-		-q|--fastq_R2)
+		-q|--reads2|--fastq_R2)
 			FASTQ_R2=$2 #"$(echo $2 | tr "\n" " ")"
+			shift 2
+			;;
+		--index1)
+			INDEX1=$2 #"$(echo $2 | tr "\n" " ")"
+			shift 2
+			;;
+		--index2)
+			INDEX2=$2 #"$(echo $2 | tr "\n" " ")"
+			shift 2
+			;;
+		--other_files)
+			OTHER_FILES=$2 #"$(echo $2 | tr "\n" " ")"
 			shift 2
 			;;
 		-l|--samplesheet)
@@ -212,6 +241,10 @@ do
 		-s|--sample)
 			SAMPLE="$2"
 			SAMPLE=$(echo $SAMPLE | tr "," " ")
+			shift 2
+			;;
+		--sample_tag)
+			SAMPLE_TAG="$2"
 			shift 2
 			;;
 		--sample_filter)
@@ -924,6 +957,12 @@ if [ ! -z "$RUNS" ]; then
 				INVESTIGATOR_NAME=$(grep "Investigator Name" $RUN_SAMPLESHEET | awk -F, '{print $2}')
 				MAIN_APP=$(grep "Investigator Name" $RUN_SAMPLESHEET | awk -F, '{print $2}' | awk -F"[$TAG_DELIMITER ]" '{print $1}' | tr " " "+" | tr "," "+")
 
+
+				ANALYSIS_TAG_SAMPLESHEET=$(grep "Investigator Name" $RUN_SAMPLESHEET | cut -d, -f2- | tr "," "!" | tr " " "!"  | tr -d '\r')
+				if [ "$ANALYSIS_TAG" == "" ]; then
+					ANALYSIS_TAG=$ANALYSIS_TAG_SAMPLESHEET
+				fi;
+
 				# NEW APP extraction format
 				RUN_DESCRIPTION=$(grep "^Description" $RUN_SAMPLESHEET | awk -F, '{print $2}')
 				MAIN_APP=$(extract_tag "$RUN_DESCRIPTION" "APP" | tr " " "+")
@@ -977,29 +1016,49 @@ if [ ! -z "$RUNS" ]; then
 						#SAMPLE_APP="$(echo $L | cut -d, -f$SAMPLE_PROJECT_FIELD | awk -F[$TAG_DELIMITER ] '{print $1}' | tr " " "+" | tr "," "+")"
 						# NEW APP extraction format
 						SAMPLE_DESCRIPTION_FIELD_VALUE=$(echo $L | cut -d, -f$SAMPLE_DESCRIPTION_FIELD)
+						SAMPLE_TAG=$(echo $L | cut -d, -f$SAMPLE_DESCRIPTION_FIELD | tr " " "!")
 						SAMPLE_APP=$(extract_tag "$SAMPLE_DESCRIPTION_FIELD_VALUE" "APP" | tr " " "+")
 						[ -z "$SAMPLE_APP" ] && SAMPLE_APP="$MAIN_APP"
 						[ ! -z $APP ] && SAMPLE_APP=$(echo $APP | tr " " "+" | tr "," "+") # Force APP if in parameters
-						#echo " APP=$APP MAIN_APP=$MAIN_APP SAMPLE_APP=$SAMPLE_APP"; exit 0;
-						# CONFIG_TAB
-						#CONFIG_FILE_TAB=$R/$SAMPLE_APP.config.tab
+
 						CONFIG_FILE_TAB=$TMP_FOLDER_TMP_R/$SAMPLE_APP.config.tab
 						CONFIG_FILE_TAB_LIST=$(echo "$CONFIG_FILE_TAB_LIST$CONFIG_FILE_TAB " | tr " " "\n" | sort -u | tr "\n" " ")
+
 						# Manifest Name
 						MANIFEST_ID=$(echo $L | cut -d, -f$MANIFEST_INDEX_FIELD)
 						MANIFEST_FILENAME=$(cat $RUN_SAMPLESHEET | awk '/\[Manifests\]/,/\[[^Manifest]/' | grep "^\[" -v | sed '/^[[:space:]]*$/d' | tr -d '\r' | awk -F, -v MANIFEST_ID=$MANIFEST_ID '$1==MANIFEST_ID{print $2}')
+
 						# Manifest File
-						[ -e $R/$MANIFEST_FILENAME ] && MANIFEST_FILE=$R/$MANIFEST_FILENAME && (($VERBOSE)) && echo "#[INFO] Manifest file found for sample '$SAMPLE_NAME': $MANIFEST_FILE" #|| echo "#[WARNING] Manifest file NOT found: $MANIFEST_FILENAME"
-						# Transcripts File
-						[ -e $R/$MANIFEST_FILENAME.transcripts ] && MANIFEST_TRANSCRIPTS_FILE=$R/$MANIFEST_FILENAME.transcripts && (($VERBOSE)) &&  echo "#[INFO] Manifest Transcripts file found for sample '$SAMPLE_NAME': $MANIFEST_TRANSCRIPTS_FILE" #|| echo "#[INFO] Manifest Transcripts file NOT found: $MANIFEST_FILENAME.transcripts"
+						if [ -e $R/$MANIFEST_FILENAME ]; then
+							MANIFEST_FILE=$R/$MANIFEST_FILENAME && (($VERBOSE)) && echo "#[INFO] Manifest file found for sample '$SAMPLE_NAME': $MANIFEST_FILE"
+						elif [ -e $FOLDER_MANIFEST/$MANIFEST_FILENAME ]; then
+							MANIFEST_FILE=$FOLDER_MANIFEST/$MANIFEST_FILENAME && (($VERBOSE)) && echo "#[INFO] Manifest file found for sample '$SAMPLE_NAME': $MANIFEST_FILE"
+						else
+							echo "#[WARNING] Manifest file NOT found"
+						fi;
+
 						# Genes File
-						#[ -e $R/$MANIFEST_FILENAME.genes ] && MANIFEST_GENES_FILE=$R/$MANIFEST_FILENAME.genes && (($VERBOSE)) &&  echo "#[INFO] Manifest Genes file found for sample '$SAMPLE_NAME': $MANIFEST_GENES_FILE" #|| echo "#[INFO] Manifest Genes file NOT found: $MANIFEST_FILENAME.genes"
-						MANIFEST_GENES_FILE=$(ls "$R/$MANIFEST_FILENAME*.genes" 2>/dev/null | tr "\n" "+") && (($VERBOSE)) &&  echo "#[INFO] Manifest Genes file found for sample '$SAMPLE_NAME': $MANIFEST_GENES_FILE"
-						#echo "$SAMPLE_LIST" "$SAMPLE_NAME"
+						if (($(ls "$R/$MANIFEST_FILENAME*.genes" 2>/dev/null | wc -l))); then
+							MANIFEST_GENES_FILE=$(ls "$R/$MANIFEST_FILENAME*.genes" 2>/dev/null | tr "\n" "+") && (($VERBOSE)) &&  echo "#[INFO] Manifest Genes file found for sample '$SAMPLE_NAME': $MANIFEST_GENES_FILE"
+						elif (($(ls "$FOLDER_MANIFEST/$MANIFEST_FILENAME*.genes" 2>/dev/null | wc -l))); then
+							MANIFEST_GENES_FILE=$(ls "$FOLDER_MANIFEST/$MANIFEST_FILENAME*.genes" 2>/dev/null | tr "\n" "+") && (($VERBOSE)) &&  echo "#[INFO] Manifest Genes file found for sample '$SAMPLE_NAME': $MANIFEST_GENES_FILE"
+						else
+							echo "#[INFO] Manifest Genes file NOT found"
+						fi;
+
+						# Transcripts File
+						#MANIFEST_TRANSCRIPTS_FILE=$(ls "$R/$MANIFEST_FILENAME*.transcripts" 2>/dev/null | tr "\n" "+") && (($VERBOSE)) &&  echo "#[INFO] Manifest Transcripts file found for sample '$SAMPLE_NAME': $MANIFEST_TRANSCRIPTS_FILE"
+						if (($(ls "$R/$MANIFEST_FILENAME*.transcripts" 2>/dev/null | wc -l))); then
+							MANIFEST_TRANSCRIPTS_FILE=$(ls "$R/$MANIFEST_FILENAME*.transcripts" 2>/dev/null | tr "\n" "+") && (($VERBOSE)) &&  echo "#[INFO] Manifest Transcripts file found for sample '$SAMPLE_NAME': $MANIFEST_TRANSCRIPTS_FILE"
+						elif (($(ls "$FOLDER_MANIFEST/$MANIFEST_FILENAME*.transcripts" 2>/dev/null | wc -l))); then
+							MANIFEST_TRANSCRIPTS_FILE=$(ls "$FOLDER_MANIFEST/$MANIFEST_FILENAME*.transcripts" 2>/dev/null | tr "\n" "+") && (($VERBOSE)) &&  echo "#[INFO] Manifest Transcripts file found for sample '$SAMPLE_NAME': $MANIFEST_TRANSCRIPTS_FILE"
+						else
+							echo "#[INFO] Manifest Transcripts file NOT found"
+						fi;
 
 						#	echo "SAMPLE_LIST '$SAMPLE_NAME' found in the list '$SAMPLE_LIST'"
 						APP_LIST=$(echo "$APP_LIST $SAMPLE_APP" | tr " " "\n" | sort -u | tr "\n" " ")
-						echo "$SAMPLE_APP,$SAMPLE_ID,$SAMPLE_NAME,$SAMPLE_FASTQ_R1,$SAMPLE_FASTQ_R2,$MANIFEST_FILE,$MANIFEST_GENES_FILE,$MANIFEST_TRANSCRIPTS_FILE" >> $CONFIG_FILE_TAB
+						echo "$SAMPLE_APP,$SAMPLE_ID,$SAMPLE_NAME,$SAMPLE_FASTQ_R1,$SAMPLE_FASTQ_R2,$MANIFEST_FILE,$MANIFEST_GENES_FILE,$MANIFEST_TRANSCRIPTS_FILE,$SAMPLE_TAG" >> $CONFIG_FILE_TAB
 					#else
 					#	echo "SAMPLE_LIST '$SAMPLE_NAME' NOT found in the list '$SAMPLE_LIST'"
 					fi;
@@ -1032,11 +1091,16 @@ if [ ! -z "$RUNS" ]; then
 					echo "\"app\":\"$APP_ONE\"," >> $RUN_CONFIG_FILE
 					# RUN
 					echo "\"analysis_name\":\"$RUN_ANALYSIS_NAME\"," >> $RUN_CONFIG_FILE
+					# ANALYSIS TAG
+					#echo ${ANALYSIS_TAG}; exit 0;
+					echo "\"analysis_tag\":\"${ANALYSIS_TAG}\"," >> $RUN_CONFIG_FILE
 					# SAMPLE NAME
 					echo "\"sample\":\""$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u| awk -F"," -v APP=$APP_ONE '$1==APP{print $3}' | tr '\n' ',' | sed s/,$//)"\"," >> $RUN_CONFIG_FILE
+					# SAMPLE NAME
+					echo "\"sample_tag\":\""$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u| awk -F"," -v APP=$APP_ONE '$1==APP{print $9}' | tr '\n' ',' | sed s/,$//)"\"," >> $RUN_CONFIG_FILE
 					# FASTQ R1/R2
-					echo "\"fastq_R1\":\""$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u | awk -F"," -v APP=$APP_ONE '$1==APP{print $4}' | tr '\n' ',' | sed s/,$//)"\"," >> $RUN_CONFIG_FILE
-					echo "\"fastq_R2\":\""$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u| awk -F"," -v APP=$APP_ONE '$1==APP{print $5}' | tr '\n' ',' | sed s/,$//)"\"," >> $RUN_CONFIG_FILE
+					echo "\"reads1\":\""$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u | awk -F"," -v APP=$APP_ONE '$1==APP{print $4}' | tr '\n' ',' | sed s/,$//)"\"," >> $RUN_CONFIG_FILE
+					echo "\"reads2\":\""$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u| awk -F"," -v APP=$APP_ONE '$1==APP{print $5}' | tr '\n' ',' | sed s/,$//)"\"," >> $RUN_CONFIG_FILE
 					# MANIFEST
 					echo "\"design\":\""$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u| awk -F"," -v APP=$APP_ONE '$1==APP{print $6}' | tr '\n' ',' | sed s/,$//)"\"," >> $RUN_CONFIG_FILE
 					# GENES
