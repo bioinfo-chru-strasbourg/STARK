@@ -66,12 +66,13 @@ function usage {
 	echo "#                                             Automatically detected from input files.";
 	echo "# -r|--run=<STRING1,STRING2,...>              List of corresponding RUN Name";
 	echo "#                                             Default: date of first RUN of the list).";
-	echo "# -o|--output|--results=<FOLDER>              OUTPUT directory to generate OUTPUT|RUN|SAMPLE|* files";
-	echo "#                                             Default: Defined in ENV, or first --fastq file folder";
+	echo "# -o|--results=<FOLDER>                       RESULTS directory to generate RESULTS|RUN|SAMPLE|* files";
+	echo "#                                             Default: Defined in APP, or first --reads file folder";
 	echo "# -u|--repository=<FOLDER>                    Repository directory to generate GROUP|PROJECT|RUN|SAMPLE|* specific files";
 	echo "#                                             Default: no copy in a repository";
 	echo "# --archive=<FOLDER>                          Archive directory to generate GROUP|PROJECT|RUN|SAMPLE|* specific files";
 	echo "#                                             Default: no copy in a archive";
+	echo "# --databases=<FOLDER>                        Databases folder (requires STARK databases folder structure)";
 	echo "# -p|--pipelines=<STRING1,STRING2,...>        PIPELINES to launch, in the format ALIGNER.CALLER.ANNOTATOR, separated by a comma";
 	echo "#                                             Default: 'bwamem.gatkHC.howard'";
 	echo "# -t|--threads=<INTEGER>                      Number of thread to use";
@@ -99,7 +100,7 @@ header;
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
-ARGS=$(getopt -o "e:f:q:b:j:m:s:r:o:u:p:t:ga:vdnh" --long "env:,app:,application:,reads:,fastq:,reads1:,reads:,fastq_R1:,fastq_R2:,reads2:,index1:,index2:,analysis_tag:,sample_tag:,other_files:,design:,bed:,manifest:,genes:,transcripts:,sample:,sample_list:,sample_filter:,runs:,analysis:,analysis_name:,output:,analysis_dir:,results:,repository:,archive:,pipelines:,threads:,no_header,by_sample,adapters:,verbose,debug,release,help" -- "$@" 2> /dev/null)
+ARGS=$(getopt -o "e:f:q:b:j:m:s:r:o:u:p:t:ga:vdnh" --long "env:,app:,application:,reads:,fastq:,reads1:,reads:,fastq_R1:,fastq_R2:,reads2:,index1:,index2:,analysis_tag:,sample_tag:,other_files:,design:,bed:,manifest:,genes:,transcripts:,sample:,sample_list:,sample_filter:,runs:,demultiplexing:,demultiplexing_only,samplesheet:,analysis:,analysis_name:,output:,analysis_dir:,results:,repository:,archive:,databases:,input:,output:,tmp:,log:,pipelines:,threads:,no_header,by_sample,adapters:,verbose,debug,release,help" -- "$@" 2> /dev/null)
 [ $? -ne 0 ] && \
 	echo "#[ERROR] Error in the argument list." "Use -h or --help to display the help." >&2 && usage && \
 	exit 1
@@ -131,14 +132,17 @@ do
 			;;
 		--index1)
 			INDEX1=$2 #"$(echo $2 | tr "\n" " ")"
+			INDEX1=$(echo $INDEX1 | tr "," " ")
 			shift 2
 			;;
 		--index2)
 			INDEX2=$2 #"$(echo $2 | tr "\n" " ")"
+			INDEX2=$(echo $INDEX2 | tr "," " ")
 			shift 2
 			;;
 		--other_files)
 			OTHER_FILES=$2 #"$(echo $2 | tr "\n" " ")"
+			OTHER_FILES=$(echo $OTHER_FILES | tr "," " ")
 			shift 2
 			;;
 		-b|--design|--bed|--manifest)
@@ -191,10 +195,14 @@ do
 			#ANALYSIS_NAME=$(echo $ANALYSIS_NAME | tr "," " ")
 			shift 2
 			;;
-		-o|--output|--results)
-			OUTPUT="$2"
+		-l|--samplesheet)
+			SAMPLESHEET_INPUT="$2" #"$(echo $2 | tr "\n" " ")"
 			shift 2
 			;;
+		#-o|--output|--results)
+		#	OUTPUT="$2"
+		#	shift 2
+		#	;;
 		--analysis_dir)
 			ANALYSIS_DIR="$2"
 			shift 2
@@ -205,6 +213,34 @@ do
 			;;
 		--archive)
 			ARCHIVE="$2"
+			shift 2
+			;;
+		--databases)
+			DATABASES="$2"
+			shift 2
+			;;
+		--input)
+			INPUT="$2"
+			shift 2
+			;;
+		--output)
+			OUTPUT="$2"
+			shift 2
+			;;
+		-o|--results)
+			RESULTS="$2"
+			shift 2
+			;;
+		--demultiplexing)
+			DEMULTIPLEXING="$2" #"$(echo $2 | tr "\n" " ")"
+			shift 2
+			;;
+		--tmp)
+			TMP="$2"
+			shift 2
+			;;
+		--log)
+			LOG="$2"
 			shift 2
 			;;
 		-p|--pipelines)
@@ -248,6 +284,15 @@ do
 		-h|--help)
 			usage
 			exit 0
+			;;
+		# UNUSED
+		--demultiplexing)
+			DEMULTIPLEXING="$2" #"$(echo $2 | tr "\n" " ")"
+			shift 2
+			;;
+		--demultiplexing_only)
+			DEMULTIPLEXING_ONLY=1
+			shift 1
 			;;
 		--) shift
 			break
@@ -305,8 +350,8 @@ for F in $FASTQ_R2; do
 	if [ "$F" != "" ] && [ -e "$F" ]; then
 		F=$F;
 		(($DEBUG)) && echo "F=$F";
-		if ! (($(echo "$F" | grep ".fastq.gz$\|.fq.gz$\|.bam$\|.ubam$\|.cram$\|.ucram$" -c))); then
-			echo "[ERROR]! Format of input file '$F' Unknown! Please check file format (.fastq.gz|.fq.gz|.bam|.ubam|.cram|.ucram)";
+		if ! (($(echo "$F" | grep ".fastq.gz$\|.fq.gz$" -c))); then
+			echo "[ERROR]! Format of input file '$F' Unknown! Please check file format (.fastq.gz|.fq.gz)";
 			exit 0;
 		fi
 		# Relocation
@@ -322,6 +367,74 @@ for F in $FASTQ_R2; do
 done;
 FASTQ_R2=$FASTQ_R2_RELOCATED
 
+# INDEX
+INDEX1_RELOCATED=""
+for I1 in $INDEX1; do
+	if [ "$I1" != "" ] && [ -e "$I1" ]; then
+		#I1=$I1;
+		(($DEBUG)) && echo "I1=$I1";
+		if ! (($(echo "$I1" | grep ".fastq.gz$\|.fq.gz$" -c))); then
+			echo "[ERROR]! Format of input file '$I1' Unknown! Please check file format (.fastq.gz|.fq.gz)";
+			exit 0;
+		fi
+		# Relocation
+		if [ -f "$I1" ]; then
+			INDEX1_RELOCATED="$INDEX1_RELOCATED $I1"
+	 	elif [ -f "$ANALYSIS_DIR/$I1" ]; then
+			INDEX1_RELOCATED="$INDEX1_RELOCATED $ANALYSIS_DIR/$I1"
+		fi;
+	else
+		echo "[ERROR] No input INDEX1 '$I1' file!";
+		exit 0;
+	fi;
+done;
+INDEX1=$INDEX1_RELOCATED
+
+# INDEX
+INDEX2_RELOCATED=""
+for I2 in $INDEX2; do
+	if [ "$I2" != "" ] && [ -e "$I2" ]; then
+		#I2=$I2;
+		(($DEBUG)) && echo "I2=$I2";
+		if ! (($(echo "$I2" | grep ".fastq.gz$\|.fq.gz$" -c))); then
+			echo "[ERROR]! Format of input file '$I2' Unknown! Please check file format (.fastq.gz|.fq.gz)";
+			exit 0;
+		fi
+		# Relocation
+		if [ -f "$I2" ]; then
+			INDEX2_RELOCATED="$INDEX2_RELOCATED $I2"
+	 	elif [ -f "$ANALYSIS_DIR/$I2" ]; then
+			INDEX2_RELOCATED="$INDEX2_RELOCATED $ANALYSIS_DIR/$I2"
+		fi;
+	else
+		echo "[ERROR] No input INDEX2 '$I2' file!";
+		exit 0;
+	fi;
+done;
+INDEX2=$INDEX2_RELOCATED
+
+# OTHER_FILES
+OTHER_FILES_RELOCATED=""
+for OF in $(echo $OTHER_FILES | tr "+" " "); do
+	if [ "$OF" != "" ] && [ -e "$OF" ]; then
+		#OF=$OF;
+		(($DEBUG)) && echo "OF=$OF";
+		#if ! (($(echo "$OF" | grep ".fastq.gz$\|.fq.gz$" -c))); then
+		#	echo "[ERROR]! Format of input file '$OF' Unknown! Please check file format (.fastq.gz|.fq.gz)";
+		#	exit 0;
+		#fi
+		# Relocation
+		if [ -f "$OF" ]; then
+			OTHER_FILES_RELOCATED="$OTHER_FILES_RELOCATED+$OF"
+	 	elif [ -f "$ANALYSIS_DIR/$OF" ]; then
+			OTHER_FILES_RELOCATED="$OTHER_FILES_RELOCATED+$ANALYSIS_DIR/$OF"
+		fi;
+	else
+		echo "[ERROR] No input OTHER_FILES '$OF' file!";
+		exit 0;
+	fi;
+done;
+OTHER_FILES=$OTHER_FILES_RELOCATED
 
 
 
@@ -340,33 +453,6 @@ if ((0)); then
 fi;
 
 
-# SOURCE ENV if exists
-#if [ ! -z $ENV ] && [ -s $ENV ]; then
-#	echo "#[INFO] APPLICATION file '"$(echo $ENV | sed s#$STARK_FOLDER_APPS#APPS#)"' found."
-#	source $ENV;
-#else
-#	echo "#[ERROR] NO APPLICATION file '$ENV' found."
-#	exit 1
-#fi;
-
-
-# FASTQ
-#if [ "$FASTQ" != "" ] && [ -e "$FASTQ" ]; then
-#	FASTQ=$FASTQ;
-#	if ! (($(echo "$FASTQ" | grep ".fastq.gz$\|.fq.gz$\|.bam$\|.ubam$\|.cram$\|.ucram$" -c))); then
-#		echo "[ERROR] Format of input file '$FASTQ' Unknown! Please check file format (.fastq.gz|.fq.gz|.bam|.ubam|.cram|.ucram)";
-#		exit 0;
-#	fi
-#else
-#	echo "[ERROR] No input FASTQ '$FASTQ' file!";
-#	exit 0;
-#fi;
-
-
-# FASTQ_R2
-#if [ ! -e $FASTQ_R2 ]; then
-#	FASTQ_R2="";
-#fi;
 
 # BED
 BED_DEFAULT="";
@@ -381,11 +467,7 @@ if [ "$BED_INPUT" != "" ]; then
 	BED_DEFAULT=$(echo $BED_INPUT | cut -d" " -f1) #`date '+%Y%m%d-%H%M%S'`
 
 fi;
-# Test BED default file exists if not null
-#if [ "$BED_DEFAULT" != "" ] && [ ! -e "$BED_DEFAULT" ]; then
-#	echo "[ERROR] BED '$BED_DEFAULT' file DOES NOT exist!";
-#	exit 0;
-#fi;
+
 
 # BEDFILE_GENES
 if [ "$BEDFILE_GENES_INPUT" != "" ]; then # && [ -s "$BEDFILE_GENES_INPUT" ]; then
@@ -436,6 +518,12 @@ fi;
 NB_SAMPLE=0
 FASTQ_R2_ARRAY=($FASTQ_R2);
 FASTQ_R2_CHECKED=""
+INDEX1_ARRAY=($INDEX1);
+INDEX1_CHECKED=""
+INDEX2_ARRAY=($INDEX2);
+INDEX2_CHECKED=""
+OTHER_FILES_ARRAY=($OTHER_FILES);
+OTHER_FILES_CHECKED=""
 SAMPLE_CHECKED=""
 SAMPLE_ARRAY=($SAMPLE);
 RUN_CHECKED=""
@@ -448,25 +536,29 @@ TRANSCRIPTS_CHECKED=""
 TRANSCRIPTS_ARRAY=($TRANSCRIPTS);
 SAMPLE_TAG_CHECKED=""
 SAMPLE_TAG_ARRAY=($SAMPLE_TAG);
+ANALYSIS_TAG_CHECKED=""
+ANALYSIS_TAG_ARRAY=($ANALYSIS_TAG);
 
 (($DEBUG)) && echo "#[INFO] FASTQ=$FASTQ";
 
 for F in $FASTQ; do
 	# Test FASTQ exists
-	if [ ! -f $F ] && [ ! -f $ANALYSIS_DIR/$F ]; then
-		echo "[ERROR] Input file '$F' does NOT exist! Please check input file --fastq (.fastq.gz|.fq.gz|.bam|.ubam|.cram|.ucram|.sam|.usam)";
-		exit 0;
-	fi;
+	# Already tested with Relocation
+	#if [ ! -f $F ] && [ ! -f $ANALYSIS_DIR/$F ]; then
+	#	echo "[ERROR] Input file '$F' does NOT exist! Please check input file --reads (.fastq.gz|.fq.gz|.bam|.ubam|.cram|.ucram|.sam|.usam)";
+	#	exit 0;
+	#fi;
 	# Test FASTQ format
 	if ! (($(echo "$F" | grep ".fastq.gz$\|.fq.gz$\|.bam$\|.ubam$\|.cram$\|.ucram$\|.sam$\|.usam$" -c))); then
 		echo "[ERROR] Format of input file '$F' Unknown! Please check file format (.fastq.gz|.fq.gz|.bam|.ubam|.cram|.ucram|.sam|.usam)";
 		exit 0;
 	fi;
 	# test FASTQ R2 exists
-	if [ "${FASTQ_R2_ARRAY[$NB_SAMPLE]}" != "" ] && [ ! -f "${FASTQ_R2_ARRAY[$NB_SAMPLE]}" ]; then
-		echo "[ERROR] Input file Read2 '${FASTQ_R2_ARRAY[$NB_SAMPLE]}' does NOT exist! Please check input file --fastq_R2 (.fastq.gz|.fq.gz)";
-		exit 0;
-	fi;
+	# Already tested with Relocation
+	#if [ "${FASTQ_R2_ARRAY[$NB_SAMPLE]}" != "" ] && [ ! -f "${FASTQ_R2_ARRAY[$NB_SAMPLE]}" ]; then
+	#	echo "[ERROR] Input file Read2 '${FASTQ_R2_ARRAY[$NB_SAMPLE]}' does NOT exist! Please check input file --reads2 (.fastq.gz|.fq.gz)";
+	#	exit 0;
+	#fi;
 	# Test FASTQ R2 format if exists
 	if [ "${FASTQ_R2_ARRAY[$NB_SAMPLE]}" != "" ]; then
 		if ! (($(echo "${FASTQ_R2_ARRAY[$NB_SAMPLE]}" | grep ".fastq.gz$\|.fq.gz$" -c))); then
@@ -474,6 +566,21 @@ for F in $FASTQ; do
 			exit 0;
 		fi;
 	fi;
+	# test INDEX1 exists
+	# Already tested with Relocation
+	#if [ "${INDEX1_ARRAY[$NB_SAMPLE]}" != "" ] && [ ! -f "${INDEX1_ARRAY[$NB_SAMPLE]}" ]; then
+	#	echo "[ERROR] Input file Index1 '${INDEX1_ARRAY[$NB_SAMPLE]}' does NOT exist! Please check input file --index1 (.fastq.gz|.fq.gz)";
+	#	exit 0;
+	#fi;
+	# test INDEX2 exists
+	# Already tested with Relocation
+	#if [ "${INDEX2_ARRAY[$NB_SAMPLE]}" != "" ] && [ ! -f "${INDEX2_ARRAY[$NB_SAMPLE]}" ]; then
+	#	echo "[ERROR] Input file Index2 '${INDEX2_ARRAY[$NB_SAMPLE]}' does NOT exist! Please check input file --index2 (.fastq.gz|.fq.gz)";
+	#	exit 0;
+	#fi;
+	# test OTHER_FILES exists
+	# Already tested with Relocation
+
 	# SAMPLE
 	if [ "${SAMPLE_ARRAY[$NB_SAMPLE]}" == "" ]; then
 		#F_PATTERN=`basename $F | tr "." "_" | sed 's/\.R[12]\.\|_R[12]_\|_[12]_\|\.[12]\./_/gi' `
@@ -539,6 +646,13 @@ for F in $FASTQ; do
 		SAMPLE_TAG_CHECKED="$SAMPLE_TAG_CHECKED${SAMPLE_TAG_ARRAY[$NB_SAMPLE]} "
 	fi;
 
+	# ANALYSIS TAG
+	if [ "${ANALYSIS_TAG_ARRAY[$NB_SAMPLE]}" == "" ] || [ ! -f "${ANALYSIS_TAG_ARRAY[$NB_SAMPLE]}" ]; then
+		ANALYSIS_TAG_CHECKED="$SANALYSIS_TAG_CHECKED"
+	else
+		ANALYSIS_TAG_CHECKED="$ANALYSIS_TAG_CHECKED${ANALYSIS_TAG_ARRAY[$NB_SAMPLE]} "
+	fi;
+
 
 	((NB_SAMPLE++))
 done;
@@ -561,12 +675,14 @@ TRANSCRIPTS=$TRANSCRIPTS_CHECKED;
 # ARRAYS
 FASTQ_ARRAY=($FASTQ);
 FASTQ_R2_ARRAY=($FASTQ_R2);
+INDEX1_ARRAY=($INDEX1);
+INDEX2_ARRAY=($INDEX2);
+OTHER_FILES_ARRAY=($OTHER_FILES);
 SAMPLE_ARRAY=($SAMPLE);
 RUN_ARRAY=($RUN);
 BED_ARRAY=($BED);
 BEDFILE_GENES_ARRAY=($BEDFILE_GENES);
 TRANSCRIPTS_ARRAY=($TRANSCRIPTS);
-
 
 
 
@@ -585,7 +701,7 @@ if (($BY_SAMPLE)); then
 			if [ ! -z ${FASTQ_R2_ARRAY[$i]} ]; then q_var=" -q ${FASTQ_R2_ARRAY[$i]}"; fi;
 			#echo "$SCRIPT_DIR/$(basename $0) $PARAM_MULTI --fastq=$f --fastq_R2="${FASTQ_R2_ARRAY[$i]}" --sample="${SAMPLE_ARRAY[$i]}" --run="${RUN_ARRAY[$i]}" --bed="${BED_ARRAY[$i]}" ;"
 			#$SCRIPT_DIR/$(basename $0) $PARAM_MULTI --fastq=$f --fastq_R2="${FASTQ_R2_ARRAY[$i]}" --sample="${SAMPLE_ARRAY[$i]}" --run="${RUN_ARRAY[$i]}" --bed="${BED_ARRAY[$i]}" --bedfile_genes="${BEDFILE_GENES_ARRAY[$i]}"  --transcripts="${TRANSCRIPTS_ARRAY[$i]}" ;
-			$SCRIPT_DIR/$(basename $0) $PARAM_MULTI --fastq=$f --fastq_R2="${FASTQ_R2_ARRAY[$i]}" --sample="${SAMPLE_ARRAY[$i]}" --run="${RUN_ARRAY[$i]}" --bed="${BED_ARRAY[$i]}" --genes="${BEDFILE_GENES_ARRAY[$i]}"  --transcripts="${TRANSCRIPTS_ARRAY[$i]}" ;
+			$SCRIPT_DIR/$(basename $0) $PARAM_MULTI --reads=$f --reads2="${FASTQ_R2_ARRAY[$i]}" --index1="${INDEX1_ARRAY[$i]}" --index2="${INDEX2_ARRAY[$i]}" --other_files="${OTHER_FILES_ARRAY[$i]}" --sample="${SAMPLE_ARRAY[$i]}" --run="${RUN_ARRAY[$i]}" --bed="${BED_ARRAY[$i]}" --genes="${BEDFILE_GENES_ARRAY[$i]}"  --transcripts="${TRANSCRIPTS_ARRAY[$i]}" ;
 			((i++))
 		done;
 		exit 0;
@@ -605,18 +721,7 @@ if [ "$PIPELINES" == "" ]; then
 	PIPELINES="bwamem.gatkHC.howard"
 fi;
 
-if ((0)); then
-if [ "$PIPELINES" == "" ]; then
-	if [ "$PIPELINES_INPUT" == "" ]; then
-		#PIPELINES="bwamem.gatkHC.vap bwamem.gatkUG.vap"
-		#PIPELINES="bwamem.gatkUG.howard"
-		PIPELINES="bwamem.gatkHC.howard"
-		echo "#[WARNING] NO PIPELINES defined. Default PIPELINES '$PIPELINES' used."
-	else
-		PIPELINES=$PIPELINES_INPUT
-	fi;
-fi;
-fi;
+
 #DATE
 DATE_DAY=`date '+%Y%m%d'`
 DATE_MIN=`date '+%Y%m%d-%H%M%S'`
@@ -654,22 +759,22 @@ for F in $(echo $FASTQ | cut -d " " -f1); do
 done
 
 
-# DEFAULT OUTPUT
-# OUTPUT is 1/ the OUTPUT folder in option, OR 2/ FOLDER_RESULT in ENV, OR 3/ folder of the first FASTQ by default
-if [ -z "$OUTPUT" ]; then
-	#OUTPUT=$FOLDER_RESULTS
-	OUTPUT=$RESULTS_FOLDER
+# DEFAULT RESULTS
+# RESULTS is 1/ the RESULTS folder in option, OR 2/ FOLDER_RESULT in ENV, OR 3/ folder of the first FASTQ by default
+if [ -z "$RESULTS" ]; then
+	#RESULTS=$FOLDER_RESULTS
+	RESULTS=$RESULTS_FOLDER
 fi;
-if [ -z "$OUTPUT" ]; then
-	OUTPUT=$INPUT
+if [ -z "$RESULTS" ]; then
+	RESULTS=$INPUT
 fi;
 
-#echo "$FASTQ | $INPUT | $OUTPUT"; exit 0;
+#echo "$FASTQ | $INPUT | $RESULTS"; exit 0;
 
 
-# CREATE OUTPUT if necessary
-if [ ! -d "$OUTPUT" ]; then
-	mkdir -p $OUTPUT;
+# CREATE RESULTS if necessary
+if [ ! -d "$RESULTS" ]; then
+	mkdir -p $RESULTS;
 fi
 
 # JAVA OPTIONS
@@ -717,25 +822,18 @@ if [ -z "$APP_NAME" ]; then APP_NAME="UNKNOWN"; fi;
 
 
 
-#echo "ENV=$ENV";
-#echo "APP=$APP_NAME";
-#echo "APP_DEF=$APP_NAME_DEF";
-#echo "GROUP=$GROUP";
-#echo "PROJECT=$PROJECT";
-#echo -e "APP $APP_NAME \n SAMPLE_GROUP $SAMPLE_GROUP \n SAMPLE_PROJECT $SAMPLE_PROJECT \n SAMPLE_USER $SAMPLE_USER " | column -t;
-#exit 0;
-#mkdir -p $RUN_DIR
-
-
-#echo -e "FASTQ=$FASTQ\nFASTQ_R2=$FASTQ_R2\nSAMPLE=$SAMPLE\nRUN=$RUN\nINPUT$INPUT\nOUTPUT=$OUTPUT\n\n$PIPELINES\n$BED";
+#echo -e "FASTQ=$FASTQ\nFASTQ_R2=$FASTQ_R2\nSAMPLE=$SAMPLE\nRUN=$RUN\nINPUT$INPUT\nRESULTS=$RESULTS\n\n$PIPELINES\n$BED";
 if (($DEBUG)); then
-	echo -e "FASTQ $FASTQ\nFASTQ_R2 $FASTQ_R2\nSAMPLE $SAMPLE\nRUN $RUN\nBED $BED\nGENES $BEDFILE_GENES\nTRANSCRIPTS $TRANSCRIPTS\nINPUT $INPUT\nOUTPUT $OUTPUT\n\nPIPELINES $PIPELINES" | column -t;
+	echo -e "FASTQ $FASTQ\nFASTQ_R2 $FASTQ_R2\nSAMPLE $SAMPLE\nRUN $RUN\nBED $BED\nGENES $BEDFILE_GENES\nTRANSCRIPTS $TRANSCRIPTS\nINPUT $INPUT\nOUTPUT $OUTPUT\nRESULTS $RESULTS\n\nPIPELINES $PIPELINES" | column -t;
 	#exit 0;
 fi;
 
 SAMPLE_ARRAY=($SAMPLE);
 FASTQ_ARRAY=($FASTQ);
 FASTQ_R2_ARRAY=($FASTQ_R2);
+INDEX1_ARRAY=($INDEX1);
+INDEX2_ARRAY=($INDEX2);
+OTHER_FILES_ARRAY=($OTHER_FILES);
 RUN_ARRAY=($RUN);
 BED_ARRAY=($BED);
 BEDFILE_GENES_ARRAY=($BEDFILE_GENES);
@@ -752,20 +850,20 @@ echo "#[INFO] *** INPUT"
 for RUU in $RUN_UNIQ; do
 
 
-	#RUN_DIR=$OUTPUT/$RUN #$OUTPUT_RES_DIR/$RUN
-	MAKEFILE_ANALYSIS_RUN=$OUTPUT/$RUU/analysis.V$ANALYSIS_REF.param.mk
-	SHELL_ANALYSIS_RUN=$OUTPUT/$RUU/analysis.V$ANALYSIS_REF.param.sh
-	LOGFILE_RES_RUN=$OUTPUT/$RUU/analysis.V$ANALYSIS_REF.log
-	LOGFILE_RES_RUN_REPORT=$OUTPUT/$RUU/analysis.V$ANALYSIS_REF.report.log
-	#LOGFILE_RES_RUN=$OUTPUT/$RUU/run_analysis.log
-	#LOGFILE_RES_RUN_REPORT=$OUTPUT/$RUU/run_analysis.report.log
-	RELEASE_RUN=$OUTPUT/$RUU/analysis.V$ANALYSIS_REF.release
-	FINAL_REPORT_RUN=$OUTPUT/$RUU/analysis.V$ANALYSIS_REF.report
-	FINAL_REPORT_FULL_RUN=$OUTPUT/$RUU/analysis.V$ANALYSIS_REF.full.report
-	FINAL_REPORT_FULL_VCF=$OUTPUT/$RUU/$SAMPLE.V$ANALYSIS_REF.full.vcf
+	#RUN_DIR=$RESULTS/$RUN #$RESULTS_RES_DIR/$RUN
+	MAKEFILE_ANALYSIS_RUN=$RESULTS/$RUU/analysis.V$ANALYSIS_REF.param.mk
+	SHELL_ANALYSIS_RUN=$RESULTS/$RUU/analysis.V$ANALYSIS_REF.param.sh
+	LOGFILE_RES_RUN=$RESULTS/$RUU/analysis.V$ANALYSIS_REF.log
+	LOGFILE_RES_RUN_REPORT=$RESULTS/$RUU/analysis.V$ANALYSIS_REF.report.log
+	#LOGFILE_RES_RUN=$RESULTS/$RUU/run_analysis.log
+	#LOGFILE_RES_RUN_REPORT=$RESULTS/$RUU/run_analysis.report.log
+	RELEASE_RUN=$RESULTS/$RUU/analysis.V$ANALYSIS_REF.release
+	FINAL_REPORT_RUN=$RESULTS/$RUU/analysis.V$ANALYSIS_REF.report
+	FINAL_REPORT_FULL_RUN=$RESULTS/$RUU/analysis.V$ANALYSIS_REF.full.report
+	FINAL_REPORT_FULL_VCF=$RESULTS/$RUU/$SAMPLE.V$ANALYSIS_REF.full.vcf
 
 	# MKDIR & TOUCH
-	mkdir -p $OUTPUT/$RUU
+	mkdir -p $RESULTS/$RUU
 	touch $MAKEFILE_ANALYSIS_RUN
 	touch $SHELL_ANALYSIS_RUN
 	touch $LOGFILE_RES_RUN
@@ -779,10 +877,15 @@ for RUU in $RUN_UNIQ; do
 
 	F_LIST=""
 	Q_LIST=""
+	I1_LIST=""
+	I2_LIST=""
+	OF_LIST=""
 	S_LIST=""
 	B_LIST=""
 	G_LIST=""
 	T_LIST=""
+	TAG_LIST=""
+	ATAG_LIST=""
 
 
 	I=0;
@@ -796,10 +899,14 @@ for RUU in $RUN_UNIQ; do
 		S=${SAMPLE_ARRAY[$I]};
 		RU=${RUN_ARRAY[$I]};
 		F_R2=${FASTQ_R2_ARRAY[$I]};
+		I1=${INDEX1_ARRAY[$I]};
+		I2=${INDEX2_ARRAY[$I]};
+		OF=${OTHER_FILES_ARRAY[$I]};
 		B=${BED_ARRAY[$I]};
 		G=${BEDFILE_GENES_ARRAY[$I]};
 		T=${TRANSCRIPTS_ARRAY[$I]};
 		TAG=${SAMPLE_TAG_ARRAY[$I]};
+		ATAG=${ANALYSIS_TAG_ARRAY[$I]};
 
 		#echo "$S $F $F_R2"; exit 0;
 
@@ -811,16 +918,20 @@ for RUU in $RUN_UNIQ; do
 
 		F_LIST="$F_LIST$F "
 		Q_LIST="$Q_LIST$F_R2 "
+		I1_LIST="$I1_LIST$I1 "
+		I2_LIST="$I2_LIST$I2 "
+		OF_LIST="$OF_LIST$OF "
 		S_LIST="$S_LIST$S "
 		B_LIST="$B_LIST$B "
 		G_LIST="$G_LIST$G "
 		T_LIST="$T_LIST$T "
 		TAG_LIST="$TAG_LIST$TAG "
+		ATAG_LIST="$ATAG_LIST$ATAG "
 
-		RUN_SAMPLE_DIR=$OUTPUT/$RU/$S
+		RUN_SAMPLE_DIR=$RESULTS/$RU/$S
 
 		if (($DEBUG)); then
-			echo "$F | $F_R2 | $S | $RU | $B | $PIPELINES | $INPUT | $OUTPUT | $RUN_SAMPLE_DIR ";
+			echo "$F | $F_R2 | $I1 | $I2 | $OF | $S | $RU | $B | $G | $T | $PIPELINES | $INPUT | $RESULTS | $RUN_SAMPLE_DIR ";
 			#((I++)); continue;
 		fi;
 
@@ -828,7 +939,7 @@ for RUU in $RUN_UNIQ; do
 
 		# INFOS
 		echo "#[INFO] SAMPLE '$RU/$S' from file(s):"
-		echo "#[INFO] $F $F_R2 $B $G"
+		echo "#[INFO] $F $F_R2 $I1 $I2 $OF $B $G $T "
 
 		# Copy FASTQ
 		PICARD_FLAGS="COMPRESSION_LEVEL=1 MAX_RECORDS_IN_RAM=500000"
@@ -878,6 +989,21 @@ for RUU in $RUN_UNIQ; do
 					fi;
 				fi;
 
+				# INDEX1
+				if [ -s "$I1" ]; then
+					cp $I1 $RUN_SAMPLE_DIR/$S.I1.fastq.gz
+				else
+					touch $RUN_SAMPLE_DIR/$S.I1.fastq.gz
+				fi;
+
+				# INDEX2
+				if [ -s "$I2" ]; then
+					cp $I2 $RUN_SAMPLE_DIR/$S.I2.fastq.gz
+				else
+					touch $RUN_SAMPLE_DIR/$S.I2.fastq.gz
+				fi;
+
+
 			# BAM/CRAM/SAM
 			elif (($(echo $F | grep ".bam$\|.ubam$\|.cram$\|.ucram\|.sam$\|.usam$" -c))); then
 
@@ -906,7 +1032,15 @@ for RUU in $RUN_UNIQ; do
 			echo "#[INFO] Input file '$RUN_SAMPLE_DIR/$S.R1.fastq.gz' DOES exist"
 		fi;
 
+		# OTHER_FILES
+		if [ "$OF" != "" ]; then
+			echo "#[INFO] Copy OTHER FILES."
+			for OF_ONE in $(echo $OF | tr "+" " "); do
+				echo "#[INFO] Copy OTHER FILES: "$(basename $OF_ONE)"."
+				cp $OF_ONE $RUN_SAMPLE_DIR/$(basename $OF_ONE)
+			done;
 
+		fi;
 
 		# Copy BED
 		if [[ $B =~ .bed$ ]]; then
@@ -934,11 +1068,12 @@ for RUU in $RUN_UNIQ; do
 		fi;
 
 		# Copy BEDFILE_GENES
-		if [ -e $G ] && [ "$G" != "" ] && [ ! -e $RUN_SAMPLE_DIR/$S.genes ]; then
-			echo "#[INFO] Copy GENES file."
-			cp -p $G $RUN_SAMPLE_DIR/$S.genes;
-		elif [ "$G" != "" ] && [ ! -e $RUN_SAMPLE_DIR/$S.list.genes ]; then
-			echo "#[INFO] Create MIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes'."
+		#if [ -e $G ] && [ "$G" != "" ] && [ ! -e $RUN_SAMPLE_DIR/$S.genes ]; then
+		#	echo "#[INFO] Copy GENES file."
+		#	cp -p $G $RUN_SAMPLE_DIR/$S.genes;
+		#el
+		if [ "$G" != "" ] && [ ! -e $RUN_SAMPLE_DIR/$S.list.genes ]; then
+			echo "#[INFO] Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' and copy .genes files."
 			> $RUN_SAMPLE_DIR/$S.list.genes;
 			for G_ONE in $(echo $G | tr "+" " "); do
 				cp -p $G_ONE $RUN_SAMPLE_DIR/$(basename $G_ONE);
@@ -947,9 +1082,18 @@ for RUU in $RUN_UNIQ; do
 		fi;
 
 		# Copy TRANSCRIPTS
-		if [ -e $T ] && [ "$T" != "" ] && [ ! -e $RUN_SAMPLE_DIR/$S.transcripts ]; then
-			echo "#[INFO] Copy TRANSCRIPTS file."
-			cp -p $T $RUN_SAMPLE_DIR/$S.transcripts;
+		#if [ -e $T ] && [ "$T" != "" ] && [ ! -e $RUN_SAMPLE_DIR/$S.transcripts ]; then
+		#	echo "#[INFO] Copy TRANSCRIPTS file."
+		#	cp -p $T $RUN_SAMPLE_DIR/$S.transcripts;
+		#el
+		if [ "$T" != "" ] && [ ! -e $RUN_SAMPLE_DIR/$T.list.transcripts ]; then
+			echo "#[INFO] Create LIST.TRANSCRIPTS file '$RUN_SAMPLE_DIR/$S.list.transcripts' and concatenated file .transcripts"
+			echo $T | tr "+" " " > $RUN_SAMPLE_DIR/$S.list.transcripts;
+			cat $(echo $T | tr "+" " ") > $RUN_SAMPLE_DIR/$S.transcripts;
+			#for G_ONE in $(echo $G | tr "+" " "); do
+			#	cp -p $G_ONE $RUN_SAMPLE_DIR/$(basename $G_ONE);
+			#	echo $(basename $G_ONE) >> $RUN_SAMPLE_DIR/$S.list.genes
+			#done;
 		fi;
 		#echo "$T"; exit 0;
 
@@ -960,11 +1104,19 @@ for RUU in $RUN_UNIQ; do
 		fi;
 		#echo "$T"; exit 0;
 
+		# ANALYSIS TAG
+		if [ ! -e $RUN_SAMPLE_DIR/$S.analysis.tag ]; then
+			echo "#[INFO] Create Analysis TAG file."
+			echo $TAG > $RUN_SAMPLE_DIR/$S.analysis.tag;
+		fi;
+		#echo "$T"; exit 0;
+
 
 		# SampleSheet
 		if ((1)); then
 		if [ ! -e $RUN_SAMPLE_DIR/$S.SampleSheet.csv ]; then
 			echo "#[INFO] Copy SampleSheet."
+			[ -f "$SAMPLESHEET_INPUT" ] && cp $SAMPLESHEET_INPUT $RUN_SAMPLE_DIR/$S.SampleSheet.csv
 			touch $RUN_SAMPLE_DIR/$S.SampleSheet.csv;
 			if [ -e $RUN_SAMPLE_DIR/$S.manifest ]; then
 				touch -f $RUN_SAMPLE_DIR/$S.SampleSheet.csv -r $RUN_SAMPLE_DIR/$S.manifest;
@@ -1074,13 +1226,16 @@ for RUU in $RUN_UNIQ; do
 
 	#exit 0;
 
-	# OUTPUT
+	# RESULTS
 	#echo "# "
 	echo "#[INFO] *** CONFIGURATION"
 	#echo "#################"
 	echo "#[INFO] SAMPLES                   $S_LIST"
 	echo "#[INFO] FASTQ/BAM/CRAM            $F_LIST"
 	echo "#[INFO] FASTQ R2                  $Q_LIST"
+	echo "#[INFO] INDEX1                    $I1_LIST"
+	echo "#[INFO] INDEX2                    $I2_LIST"
+	echo "#[INFO] OTHER_FILES               $OF_LIST"
 	echo "#[INFO] DESIGN                    $B_LIST"
 	echo "#[INFO] GENES                     $G_LIST"
 	echo "#[INFO] TRANSCRIPTS               $T_LIST"
@@ -1091,7 +1246,7 @@ for RUU in $RUN_UNIQ; do
 	echo "#[INFO] PROJECT                   $SAMPLE_PROJECT"
 	echo "#[INFO] PIPELINES                 $PIPELINES"
 	echo "#[INFO] POST_ALIGNMENT            "$(echo $POST_ALIGNMENT | tr "." "\n" | tac | tr "\n" " " )""
-	echo "#[INFO] RESULTS                   $OUTPUT"
+	echo "#[INFO] RESULTS                   $RESULTS"
 	echo "#[INFO] REPOSITORY                $REPOSITORY"
 	echo "#[INFO] ARCHIVE                   $ARCHIVE"
 	echo "#[INFO] RELEASE INFOS             $RELEASE_RUN"
@@ -1111,9 +1266,9 @@ for RUU in $RUN_UNIQ; do
 	if [ "$STARK_QUEUED" == "" ]; then STARK_QUEUED=STARKQueued.txt; fi;
 	if [ "$STARK_RUNNING" == "" ]; then  STARK_RUNNING=STARKRunning.txt; fi;
 	if [ "$STARK_COMPLETE" == "" ]; then  STARK_COMPLETE=STARKComplete.txt; fi;
-	STARK_QUEUED_FILE=$OUTPUT/$RUU/$STARK_QUEUED
-	STARK_RUNNING_FILE=$OUTPUT/$RUU/$STARK_RUNNING
-	STARK_COMPLETE_FILE=$OUTPUT/$RUU/$STARK_COMPLETE
+	STARK_QUEUED_FILE=$RESULTS/$RUU/$STARK_QUEUED
+	STARK_RUNNING_FILE=$RESULTS/$RUU/$STARK_RUNNING
+	STARK_COMPLETE_FILE=$RESULTS/$RUU/$STARK_COMPLETE
 
 	# RUNNING
 	echo "#["`date '+%Y%m%d-%H%M%S'`"] RUN $RUN running with STARK ($STARK_VERSION)" > $STARK_RUNNING_FILE
@@ -1123,7 +1278,7 @@ for RUU in $RUN_UNIQ; do
 	THREADS_BY_SAMPLE=$THREADS; # Allocate all thread to the sample because no other sample analysed in parallele
 
 	echo "["`date '+%Y%m%d-%H%M%S'`"] Main Analysis Process for Analysis '$RELEASE_RUN' START" >>$LOGFILE_RES_RUN
-	make -k -j $THREADS -e ENV="$ENV" PARAM=$MAKEFILE_ANALYSIS_RUN $PARAMETERS $THREAD_PARAMETERS JAVA_MEMORY=$JAVA_MEMORY SNAPSHOT=0 VALIDATION=1 INPUT=$INPUT OUTDIR=$OUTPUT RELEASE=$RELEASE_RUN FINAL_REPORT=$FINAL_REPORT_RUN ANALYSIS_REF=$ANALYSIS_REF -f $NGS_SCRIPTS/NGSWorkflow.mk 1>>$LOGFILE_RES_RUN 2>>$LOGFILE_RES_RUN
+	make -k -j $THREADS -e ENV="$ENV" PARAM=$MAKEFILE_ANALYSIS_RUN $PARAMETERS $THREAD_PARAMETERS JAVA_MEMORY=$JAVA_MEMORY SNAPSHOT=0 VALIDATION=1 INPUT=$INPUT OUTDIR=$RESULTS RELEASE=$RELEASE_RUN FINAL_REPORT=$FINAL_REPORT_RUN ANALYSIS_REF=$ANALYSIS_REF -f $NGS_SCRIPTS/NGSWorkflow.mk 1>>$LOGFILE_RES_RUN 2>>$LOGFILE_RES_RUN
 	echo "["`date '+%Y%m%d-%H%M%S'`"] Main Analysis Process for Analysis '$RELEASE_RUN' END" >>$LOGFILE_RES_RUN
 
 	if (($(grep "\*\*\*" $LOGFILE_RES_RUN -c))); then
@@ -1150,9 +1305,9 @@ for RUU in $RUN_UNIQ; do
 		fi;
 
 		# Reporting
-		#echo "$NGS_SCRIPTS/stark_report.sh -r $OUTPUT -f $RUU -p $SAMPLE_PROJECT -g $SAMPLE_GROUP -u $SAMPLE_USER -s $S -e $ENV -d $ANALYSIS_REF"
+		#echo "$NGS_SCRIPTS/stark_report.sh -r $RESULTS -f $RUU -p $SAMPLE_PROJECT -g $SAMPLE_GROUP -u $SAMPLE_USER -s $S -e $ENV -d $ANALYSIS_REF"
 		#echo "["`date`"] Reporting RUN/SAMPLE '$RUU/$S'..."
-		#$NGS_SCRIPTS/stark_report.sh -r $OUTPUT -f $RUU -p $SAMPLE_PROJECT -g $SAMPLE_GROUP -u $SAMPLE_USER -s $S -e $ENV -i $(echo $PIPELINES | tr " " ",") -d $ANALYSIS_REF 1>>$LOGFILE_RES_RUN_REPORT 2>>$LOGFILE_RES_RUN_REPORT
+		#$NGS_SCRIPTS/stark_report.sh -r $RESULTS -f $RUU -p $SAMPLE_PROJECT -g $SAMPLE_GROUP -u $SAMPLE_USER -s $S -e $ENV -i $(echo $PIPELINES | tr " " ",") -d $ANALYSIS_REF 1>>$LOGFILE_RES_RUN_REPORT 2>>$LOGFILE_RES_RUN_REPORT
 
 		# REPOSITORY
 		if ((1)); then
@@ -1173,20 +1328,20 @@ for RUU in $RUN_UNIQ; do
 			fi;
 
 			# Copy
-			if [ "$RESULTS_FOLDER_COPY_ALL" != "$OUTPUT" ] && [ "$RESULTS_FOLDER_COPY_ALL" != "" ] ; then
+			if [ "$RESULTS_FOLDER_COPY_ALL" != "$RESULTS" ] && [ "$RESULTS_FOLDER_COPY_ALL" != "" ] ; then
 				for RESULTS_FOLDER_COPY_FOLDER in $RESULTS_FOLDER_COPY_ALL;
 				do
-					echo "#[INFO] Copying '$RUU/$S' files from '$OUTPUT' to '$RESULTS_FOLDER_COPY_FOLDER'..."
+					echo "#[INFO] Copying '$RUU/$S' files from '$RESULTS' to '$RESULTS_FOLDER_COPY_FOLDER'..."
 
 					# Copy SAMPLE files
-					chmod $PERMS -R $OUTPUT/$RUU/$S 1>/dev/null 2>/dev/null
+					chmod $PERMS -R $RESULTS/$RUU/$S 1>/dev/null 2>/dev/null
 					mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA
 					chmod $PERMS -R $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA 1>/dev/null 2>/dev/null
-					#while ! $COMMAND_COPY $OUTPUT/$RUU/$S/* $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA 1>>$LOGFILE_RES_RUN_REPORT 2>>$LOGFILE_RES_RUN_REPORT ; do : ; done;
-					$COMMAND_COPY $OUTPUT/$RUU/$S/* $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA 1>>$LOGFILE_RES_RUN_REPORT 2>>$LOGFILE_RES_RUN_REPORT
+					#while ! $COMMAND_COPY $RESULTS/$RUU/$S/* $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA 1>>$LOGFILE_RES_RUN_REPORT 2>>$LOGFILE_RES_RUN_REPORT ; do : ; done;
+					$COMMAND_COPY $RESULTS/$RUU/$S/* $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA 1>>$LOGFILE_RES_RUN_REPORT 2>>$LOGFILE_RES_RUN_REPORT
 					# Copy RUN files
-					#while ! nohup $COMMAND_COPY $(find $OUTPUT/$RUU -mindepth 1 -maxdepth 1 -type f) $RESULTS_FOLDER_COPY_FOLDER/$RUU 1>>$LOGFILE_RES_RUN_REPORT 2>>$LOGFILE_RES_RUN_REPORT ; do : ; done;
-					$COMMAND_COPY $(find $OUTPUT/$RUU -mindepth 1 -maxdepth 1 -type f) $RESULTS_FOLDER_COPY_FOLDER/$RUU 1>>$LOGFILE_RES_RUN_REPORT 2>>$LOGFILE_RES_RUN_REPORT
+					#while ! nohup $COMMAND_COPY $(find $RESULTS/$RUU -mindepth 1 -maxdepth 1 -type f) $RESULTS_FOLDER_COPY_FOLDER/$RUU 1>>$LOGFILE_RES_RUN_REPORT 2>>$LOGFILE_RES_RUN_REPORT ; do : ; done;
+					$COMMAND_COPY $(find $RESULTS/$RUU -mindepth 1 -maxdepth 1 -type f) $RESULTS_FOLDER_COPY_FOLDER/$RUU 1>>$LOGFILE_RES_RUN_REPORT 2>>$LOGFILE_RES_RUN_REPORT
 					chmod $PERMS $RESULTS_FOLDER_COPY_FOLDER/$RUU/* 1>/dev/null 2>/dev/null
 					# Copy ROOT FILE PATTERNS
 					#(($VERBOSE)) && echo "#[INFO] Copying REPOSITORY files patterns to $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S..."
@@ -1259,21 +1414,21 @@ for RUU in $RUN_UNIQ; do
 			fi;
 
 			# Copy
-			if [ "$RESULTS_FOLDER_COPY_ALL" != "$OUTPUT" ] && [ "$RESULTS_FOLDER_COPY_ALL" != "" ] ; then
+			if [ "$RESULTS_FOLDER_COPY_ALL" != "$RESULTS" ] && [ "$RESULTS_FOLDER_COPY_ALL" != "" ] ; then
 				for RESULTS_FOLDER_COPY_FOLDER in $RESULTS_FOLDER_COPY_ALL;
 				do
-					#echo "#[INFO] Copying '$RUU/$S' files from '$OUTPUT/$RUU/$S' to '$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S'..."
+					#echo "#[INFO] Copying '$RUU/$S' files from '$RESULTS/$RUU/$S' to '$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S'..."
 					echo "#[INFO] Copying ARCHIVE files patterns to $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S..."
 
 					# Copy SAMPLE files
-					chmod $PERMS -R $OUTPUT/$RUU/$S 1>/dev/null 2>/dev/null
+					chmod $PERMS -R $RESULTS/$RUU/$S 1>/dev/null 2>/dev/null
 					mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S
 					#chmod $PERMS -R $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA 1>/dev/null 2>/dev/null
-					#while ! $COMMAND_COPY $OUTPUT/$RUU/$S/* $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA 1>>$LOGFILE_RES_RUN_REPORT 2>>$LOGFILE_RES_RUN_REPORT ; do : ; done;
-					#$COMMAND_COPY $OUTPUT/$RUU/$S/* $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA 1>>$LOGFILE_RES_RUN_REPORT 2>>$LOGFILE_RES_RUN_REPORT
+					#while ! $COMMAND_COPY $RESULTS/$RUU/$S/* $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA 1>>$LOGFILE_RES_RUN_REPORT 2>>$LOGFILE_RES_RUN_REPORT ; do : ; done;
+					#$COMMAND_COPY $RESULTS/$RUU/$S/* $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA 1>>$LOGFILE_RES_RUN_REPORT 2>>$LOGFILE_RES_RUN_REPORT
 					# Copy RUN files
-					#while ! nohup $COMMAND_COPY $(find $OUTPUT/$RUU -mindepth 1 -maxdepth 1 -type f) $RESULTS_FOLDER_COPY_FOLDER/$RUU 1>>$LOGFILE_RES_RUN_REPORT 2>>$LOGFILE_RES_RUN_REPORT ; do : ; done;
-					#$COMMAND_COPY $(find $OUTPUT/$RUU -mindepth 1 -maxdepth 1 -type f) $RESULTS_FOLDER_COPY_FOLDER/$RUU 1>>$LOGFILE_RES_RUN_REPORT 2>>$LOGFILE_RES_RUN_REPORT
+					#while ! nohup $COMMAND_COPY $(find $RESULTS/$RUU -mindepth 1 -maxdepth 1 -type f) $RESULTS_FOLDER_COPY_FOLDER/$RUU 1>>$LOGFILE_RES_RUN_REPORT 2>>$LOGFILE_RES_RUN_REPORT ; do : ; done;
+					#$COMMAND_COPY $(find $RESULTS/$RUU -mindepth 1 -maxdepth 1 -type f) $RESULTS_FOLDER_COPY_FOLDER/$RUU 1>>$LOGFILE_RES_RUN_REPORT 2>>$LOGFILE_RES_RUN_REPORT
 					#chmod $PERMS $RESULTS_FOLDER_COPY_FOLDER/$RUU/* 1>/dev/null 2>/dev/null
 					# Copy ROOT FILE PATTERNS
 					#if [ $RESULTS_SUBFOLDER_DATA != "" ]; then
@@ -1286,9 +1441,9 @@ for RUU in $RUN_UNIQ; do
 						fi;
 
 						#for F_SOURCE in $(ls $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA/$ROOT_FILE_PATTERN_VAR); do
-						for F_SOURCE in $(ls $OUTPUT/$RUU/$S$ROOT_FILE_PATTERN_VAR 2>/dev/null); do
+						for F_SOURCE in $(ls $RESULTS/$RUU/$S$ROOT_FILE_PATTERN_VAR 2>/dev/null); do
 							F_TARGET="$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/"$(basename $F_SOURCE)
-							F_SOURCE_BASE=$(echo $F_SOURCE | sed "s#$OUTPUT/$RUU/$S/##")
+							F_SOURCE_BASE=$(echo $F_SOURCE | sed "s#$RESULTS/$RUU/$S/##")
 							F_TARGET_BASE=$(echo $F_TARGET | sed "s#$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/##")
 							(($VERBOSE)) && [ ! -f $F_SOURCE ] && echo "#[WARNING] file $F_SOURCE_BASE not found"
 							(($VERBOSE)) && [ -f $F_SOURCE ] && echo "#[INFO] Copy file $F_SOURCE_BASE to $F_TARGET_BASE"

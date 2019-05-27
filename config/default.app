@@ -26,30 +26,30 @@ FOLDER_TOOLS=/STARK/tools
 # db: Folder with mandatory databases: dbSNP database for variant calling, such as "dbsnp_138.hg19.vcf.gz" (mandatory, depending on ASSEMBLY), VCF databases for recalibration such as "dbsnp_137.hg19.vcf" (mandatory, depending on ASSEMBLY)
 FOLDER_DATABASES=/STARK/databases
 
-# RUN FOLDER
-# Illumina Sequencer repository Folder. Subfolder as runs
-FOLDER_RUN=/STARK/runs
 
-# MANIFEST FOLDER
+# INPUT FOLDER
+FOLDER_INPUT=/STARK/input
+# Illumina Sequencer repository Folder. Subfolder as runs
+#FOLDER_RUN=$FOLDER_INPUT/runs
 # Illumina Manifests repository.
 # Files to provide in the SampleSheet of each run
-FOLDER_MANIFEST=/STARK/manifests
+#FOLDER_MANIFEST=$FOLDER_INPUT/manifests
 
-# RESULTS FOLDER
+# OUTPUT FOLDER
 # All results will be generated in this folder :
+FOLDER_OUTPUT=/STARK/output
 # RES: RUN files such as BAM, VCF, metrics
+#FOLDER_RESULTS=$FOLDER_OUTPUT/results
 # DEM: Demultiplexing folder
+#FOLDER_DEMULTIPLEXING=$FOLDER_OUTPUT/demulitplexing
 # LOG: log files
+#FOLDER_LOG=$FOLDER_OUTPUT/log
 # TMP: temporary files
-FOLDER_RESULTS=/STARK/results
-
-# REPOSITORY FOLDER
+#FOLDER_TMP=$FOLDER_OUTPUT/tmp
 # Results data can be copy in a repository folder. leave it blank for no copy
-FOLDER_REPOSITORY=/STARK/repository
-
-# ARCHIVE FOLDER
+#FOLDER_REPOSITORY=$FOLDER_OUTPUT/repository
 # Results data can be copy in a archive folder. leave it blank for no copy
-FOLDER_ARCHIVE=/STARK/archive
+#FOLDER_ARCHIVE=$FOLDER_OUTPUT/archive
 
 
 # PARAMETERS
