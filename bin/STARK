@@ -78,18 +78,18 @@ function usage {
 	echo "### SAMPLE Analysis options";
 	echo "# --sample=<STRING1,STRING2...>            List of corresponding SAMPLE Name";
 	echo "#                                          Automatically detected from input files.";
-	echo "# --sample_tag=<STRING1,STRING2...>        List of corresponding SAMPLE Tags. TODO";
-	echo "#                                          Format: TYPE#TAG[#TAG]{!}[TYPE#TAG[#TAG]]";
+	echo "# --sample_tag=<STRING1,STRING2...>        List of corresponding SAMPLE Tags.";
+	echo "#                                          Format: [TYPE]#TAG[#TAG]{!}[[TYPE]#TAG[#TAG]]";
 	echo "# --reads2=<FILE1,FILE2...>                List of Reads files with corresponding Paired-End Read2 (beware of correspondance).";
 	echo "#                                          For each samples, allowed formats FASTQ:";
 	echo "#                                          *fastq.gz|*fq.gz";
-	echo "# --index1=<FILE1,FILE2...>                List of corresponding Index1 files (beware of correspondance). TODO";
+	echo "# --index1=<FILE1,FILE2...>                List of corresponding Index1 files (beware of correspondance).";
 	echo "#                                          For each samples, allowed formats FASTQ:";
 	echo "#                                          *fastq.gz|*fq.gz";
-	echo "# --index2=<FILE1,FILE2...>                List of corresponding Index2 files (beware of correspondance). TODO";
+	echo "# --index2=<FILE1,FILE2...>                List of corresponding Index2 files (beware of correspondance).";
 	echo "#                                          For each samples, allowed formats FASTQ:";
 	echo "#                                          *fastq.gz|*fq.gz";
-	echo "# --other_files=<FILE1,FILE2...>           List of corresponding other files (beware of correspondance). TODO";
+	echo "# --other_files=<FILE1,FILE2...>           List of corresponding other files (beware of correspondance).";
 	echo "#                                          Files will be copied into each SAMPLE folder";
 	#echo "# --adapters=<STRING>                      Adapters to trim.";
 	echo ""
@@ -117,6 +117,7 @@ function usage {
 	echo "# --archive=<FOLDER>                       Archive directory to generate GROUP|PROJECT|RUN|SAMPLE|* specific files";
 	echo "#                                          Default: no copy in a archive";
 	echo "# --databases=<FOLDER>                     Databases folder (requires STARK databases folder structure)";
+	echo "";
 
 	echo "### Other options";
 	echo "# --analysis_name=<STRING>                 Analysis name.";
