@@ -14,13 +14,21 @@ extract_tag () {
 # $2 : TAGs to find. default "" ALL TAGs.
 # format: "TYPE{ ,}[TYPE]"
 # e.g. "TYPE1 TYPE2", "TYPE1,TYPE2"
+# $3 : Extract mode type. default "" or "TAG" only TAG.
+# TAG: Extract only TAG (without TYPE, alla TAG separated)
+# #TAG: Extract only TAG (without TYPE, alla TAG separated)
+# TYPE#TAG: Extract TYPE#TAG TYPE#TAG...
+# TYPE#TAG#TAG: Extract TYPE#TAG#TAG...
 
 	#local TAG_STARK=$1 #$(echo $1 | tr "," " ")
 	local TAG_STARK=$(echo $1 | tr "!" " ")
 	local TAG_FILTER=$(echo $2 | tr "," " ")
+	local MODE=$3
 	local TAG_LIST=""
 	local TAG_TYPE=""
 	local TAG_VALUE=""
+
+	[ "$MODE" == "" ] && MODE="TAG"
 
 	for T in $TAG_STARK; do
 
@@ -28,14 +36,25 @@ extract_tag () {
 			#echo $T
 			TYPE=$(echo "$T" | awk -F"#" '{print $1}' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
 			TAG=$(echo "$T" | cut -d"#" -f2- | tr "#" " " | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+
+			# MODE
+			TAG_TO_EXTRACT=""
+			[ "$MODE" == "TAG" ] && TAG_TO_EXTRACT="$TAG"
+			[ "$MODE" == "#TAG" ] && TAG_TO_EXTRACT="#$TAG"
+			[ "$MODE" == "TYPE#TAG" ] && for T in $TAG; do TAG_TO_EXTRACT="$TAG_TO_EXTRACT$TYPE#$T "; done;
+			[ "$MODE" == "TYPE#TAG#TAG" ] && TAG_TO_EXTRACT=$(echo "$TAG_TO_EXTRACT$TYPE#$TAG" | tr " " "#")
+
 			if [ "$TAG" != "" ]; then
-				#echo "* $TYPE : $TAG"
+				echo "* $TYPE : $TAG"
+
+
+
 				if [ "$TAG_FILTER" == "" ]; then
-					TAG_LIST="$TAG_LIST $TAG"
+					TAG_LIST="$TAG_LIST $TAG_TO_EXTRACT"
 				else
 					for V in $TAG_FILTER; do
 						if [ "$V" == "$TYPE" ]; then
-							TAG_LIST="$TAG_LIST $TAG"
+							TAG_LIST="$TAG_LIST $TAG_TO_EXTRACT"
 						fi;
 					done;
 				fi;
