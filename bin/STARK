@@ -1112,33 +1112,38 @@ if [ ! -z "$RUNS" ]; then
 						fi;
 
 						# Genes File
-						if (($(ls "$R/$MANIFEST_FILENAME*.genes" 2>/dev/null | wc -l))); then
-							MANIFEST_GENES_FILE=$(ls "$R/$MANIFEST_FILENAME*.genes" 2>/dev/null | tr "\n" "+") && (($VERBOSE)) &&  echo "#[INFO] Manifest Genes file found for sample '$SAMPLE_NAME': $MANIFEST_GENES_FILE"
-						elif (($(ls "$FOLDER_MANIFEST/$MANIFEST_FILENAME*.genes" 2>/dev/null | wc -l))); then
-							MANIFEST_GENES_FILE=$(ls "$FOLDER_MANIFEST/$MANIFEST_FILENAME*.genes" 2>/dev/null | tr "\n" "+") && (($VERBOSE)) &&  echo "#[INFO] Manifest Genes file found for sample '$SAMPLE_NAME': $MANIFEST_GENES_FILE"
+						if (($(ls $R/$MANIFEST_FILENAME*.genes 2>/dev/null | wc -l))); then
+							MANIFEST_GENES_FILE=$(ls $R/$MANIFEST_FILENAME*.genes 2>/dev/null | tr "\n" "+") && (($VERBOSE)) &&  echo "#[INFO] Manifest Genes file found for sample '$SAMPLE_NAME': $MANIFEST_GENES_FILE"
+						elif (($(ls $FOLDER_MANIFEST/$MANIFEST_FILENAME*.genes 2>/dev/null | wc -l))); then
+							MANIFEST_GENES_FILE=$(ls $FOLDER_MANIFEST/$MANIFEST_FILENAME*.genes 2>/dev/null | tr "\n" "+") && (($VERBOSE)) &&  echo "#[INFO] Manifest Genes file found for sample '$SAMPLE_NAME': $MANIFEST_GENES_FILE"
 						else
 							echo "#[INFO] Manifest Genes file NOT found"
 						fi;
+						MANIFEST_GENES_FILE=$(echo $MANIFEST_GENES_FILE | sed "s/+$//")
 
 						# Transcripts File
 						#MANIFEST_TRANSCRIPTS_FILE=$(ls "$R/$MANIFEST_FILENAME*.transcripts" 2>/dev/null | tr "\n" "+") && (($VERBOSE)) &&  echo "#[INFO] Manifest Transcripts file found for sample '$SAMPLE_NAME': $MANIFEST_TRANSCRIPTS_FILE"
-						if (($(ls "$R/$MANIFEST_FILENAME*.transcripts" 2>/dev/null | wc -l))); then
-							MANIFEST_TRANSCRIPTS_FILE=$(ls "$R/$MANIFEST_FILENAME*.transcripts" 2>/dev/null | tr "\n" "+") && (($VERBOSE)) &&  echo "#[INFO] Manifest Transcripts file found for sample '$SAMPLE_NAME': $MANIFEST_TRANSCRIPTS_FILE"
-						elif (($(ls "$FOLDER_MANIFEST/$MANIFEST_FILENAME*.transcripts" 2>/dev/null | wc -l))); then
-							MANIFEST_TRANSCRIPTS_FILE=$(ls "$FOLDER_MANIFEST/$MANIFEST_FILENAME*.transcripts" 2>/dev/null | tr "\n" "+") && (($VERBOSE)) &&  echo "#[INFO] Manifest Transcripts file found for sample '$SAMPLE_NAME': $MANIFEST_TRANSCRIPTS_FILE"
+						if (($(ls $R/$MANIFEST_FILENAME*.transcripts 2>/dev/null | wc -l))); then
+							MANIFEST_TRANSCRIPTS_FILE=$(ls $R/$MANIFEST_FILENAME*.transcripts 2>/dev/null | tr "\n" "+") && (($VERBOSE)) &&  echo "#[INFO] Manifest Transcripts file found for sample '$SAMPLE_NAME': $MANIFEST_TRANSCRIPTS_FILE"
+						elif (($(ls $FOLDER_MANIFEST/$MANIFEST_FILENAME*.transcripts 2>/dev/null | wc -l))); then
+							MANIFEST_TRANSCRIPTS_FILE=$(ls $FOLDER_MANIFEST/$MANIFEST_FILENAME*.transcripts 2>/dev/null | tr "\n" "+") && (($VERBOSE)) &&  echo "#[INFO] Manifest Transcripts file found for sample '$SAMPLE_NAME': $MANIFEST_TRANSCRIPTS_FILE"
 						else
 							echo "#[INFO] Manifest Transcripts file NOT found"
 						fi;
+						MANIFEST_TRANSCRIPTS_FILE=$(echo $MANIFEST_TRANSCRIPTS_FILE | sed "s/+$//")
+
+						# OTHER FILES
+						#echo "find $R/Stats -name *"
+						OTHER_FILES="$R/Stats:$SAMPLE_NAME.demultiplexing/Stats+$R/Reports:$SAMPLE_NAME.demultiplexing/Reports"
 
 						#	echo "SAMPLE_LIST '$SAMPLE_NAME' found in the list '$SAMPLE_LIST'"
 						APP_LIST=$(echo "$APP_LIST $SAMPLE_APP" | tr " " "\n" | sort -u | tr "\n" " ")
-						echo "$SAMPLE_APP,$SAMPLE_ID,$SAMPLE_NAME,$SAMPLE_FASTQ_R1,$SAMPLE_FASTQ_R2,$SAMPLE_FASTQ_I1,$SAMPLE_FASTQ_I2,$MANIFEST_FILE,$MANIFEST_GENES_FILE,$MANIFEST_TRANSCRIPTS_FILE,$SAMPLE_TAG" >> $CONFIG_FILE_TAB
-					#else
-					#	echo "SAMPLE_LIST '$SAMPLE_NAME' NOT found in the list '$SAMPLE_LIST'"
+						echo "$SAMPLE_APP,$SAMPLE_ID,$SAMPLE_NAME,$SAMPLE_FASTQ_R1,$SAMPLE_FASTQ_R2,$SAMPLE_FASTQ_I1,$SAMPLE_FASTQ_I2,$MANIFEST_FILE,$MANIFEST_GENES_FILE,$MANIFEST_TRANSCRIPTS_FILE,$SAMPLE_TAG,$OTHER_FILES" >> $CONFIG_FILE_TAB
+						#echo "$SAMPLE_APP,$SAMPLE_ID,$SAMPLE_NAME,$SAMPLE_FASTQ_R1,$SAMPLE_FASTQ_R2,$SAMPLE_FASTQ_I1,$SAMPLE_FASTQ_I2,$MANIFEST_FILE,$MANIFEST_GENES_FILE,$MANIFEST_TRANSCRIPTS_FILE,$SAMPLE_TAG,$OTHER_FILES >> $CONFIG_FILE_TAB"
 					fi;
 
 				done;
-				#exit 0
+#exit 0;
 
 				#(($DEBUG)) && cat $RUN_CONFIG_FILE_TAB
 				#(($DEBUG)) && cat $R/*.config.tab | sort -u
@@ -1155,6 +1160,9 @@ if [ ! -z "$RUNS" ]; then
 				for APP_ONE_RUN_CONFIG_FILE in $(echo $CONFIG_FILE_TAB_LIST | tr " " "\n"); do
 					#echo "APP_ONE_RUN_CONFIG_FILE=$APP_ONE_RUN_CONFIG_FILE"
 					APP_ONE=$(basename $APP_ONE_RUN_CONFIG_FILE | sed s/.config.tab//)
+
+					SAMPLE_TEST=$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u | awk -F"," -v APP=$APP_ONE '$1==APP{print $3}' | tr '\n' ',' | sed s/,$//)
+					echo "SAMPLE_TEST="$SAMPLE_TEST
 					#echo "APP_ONE=$APP_ONE"
 					#RUN_CONFIG_FILE=$R/$APP_ONE.analysis.json
 					RUN_CONFIG_FILE=$TMP_FOLDER_TMP_R/$APP_ONE.analysis.json
@@ -1169,14 +1177,15 @@ if [ ! -z "$RUNS" ]; then
 					#echo ${ANALYSIS_TAG}; exit 0;
 					echo "\"analysis_tag\":\"${ANALYSIS_TAG}\"," >> $RUN_CONFIG_FILE
 					# SAMPLE NAME
-					echo "\"sample\":\""$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u| awk -F"," -v APP=$APP_ONE '$1==APP{print $3}' | tr '\n' ',' | sed s/,$//)"\"," >> $RUN_CONFIG_FILE
+					echo "\"sample\":\""$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u | awk -F"," -v APP=$APP_ONE '$1==APP{print $3}' | tr '\n' ',' | sed s/,$//)"\"," >> $RUN_CONFIG_FILE
 					# SAMPLE NAME
-					echo "\"sample_tag\":\""$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u| awk -F"," -v APP=$APP_ONE '$1==APP{print $11}' | tr '\n' ',' | sed s/,$//)"\"," >> $RUN_CONFIG_FILE
+					echo "\"sample_tag\":\""$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u | awk -F"," -v APP=$APP_ONE '$1==APP{print $11}' | tr '\n' ',' | sed s/,$//)"\"," >> $RUN_CONFIG_FILE
 					# FASTQ R1/R2
 					echo "\"reads1\":\""$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u | awk -F"," -v APP=$APP_ONE '$1==APP{print $4}' | tr '\n' ',' | sed s/,$//)"\"," >> $RUN_CONFIG_FILE
-					echo "\"reads2\":\""$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u| awk -F"," -v APP=$APP_ONE '$1==APP{print $5}' | tr '\n' ',' | sed s/,$//)"\"," >> $RUN_CONFIG_FILE
-					echo "\"index1\":\""$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u| awk -F"," -v APP=$APP_ONE '$1==APP{print $6}' | tr '\n' ',' | sed s/,$//)"\"," >> $RUN_CONFIG_FILE
-					echo "\"index2\":\""$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u| awk -F"," -v APP=$APP_ONE '$1==APP{print $7}' | tr '\n' ',' | sed s/,$//)"\"," >> $RUN_CONFIG_FILE
+					echo "\"reads2\":\""$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u | awk -F"," -v APP=$APP_ONE '$1==APP{print $5}' | tr '\n' ',' | sed s/,$//)"\"," >> $RUN_CONFIG_FILE
+					echo "\"index1\":\""$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u | awk -F"," -v APP=$APP_ONE '$1==APP{print $6}' | tr '\n' ',' | sed s/,$//)"\"," >> $RUN_CONFIG_FILE
+					echo "\"index2\":\""$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u | awk -F"," -v APP=$APP_ONE '$1==APP{print $7}' | tr '\n' ',' | sed s/,$//)"\"," >> $RUN_CONFIG_FILE
+					echo "\"other_files\":\""$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u| awk -F"," -v APP=$APP_ONE '$1==APP{print $12}' | tr '\n' ',' | sed s/,$//)"\"," >> $RUN_CONFIG_FILE
 					# MANIFEST
 					echo "\"design\":\""$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u| awk -F"," -v APP=$APP_ONE '$1==APP{print $8}' | tr '\n' ',' | sed s/,$//)"\"," >> $RUN_CONFIG_FILE
 					# GENES
@@ -1202,6 +1211,7 @@ if [ ! -z "$RUNS" ]; then
 
 				done;
 
+#exit 0;
 				ANALYSIS_FILES=$(echo $ANALYSIS_FILES | sed s/^,//)
 
 				if [ "$ANALYSIS_FILES" != "" ]; then

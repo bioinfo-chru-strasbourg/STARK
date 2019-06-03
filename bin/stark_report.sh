@@ -454,7 +454,6 @@ Bed: & ` echo $BED_NAME | sed 's/\\_/\\\_/g'` ` echo $BED_SOURCE | sed 's/\\_/\\
 \end{tabular}
 
 
-
 \section{Sequencing}
 FastQC performs analyses to assess the quality of the data. Informative controls are shown in Figure~\ref{quality} to~\ref{adapter}. Table~\ref{fastqc_recap} shows general information" >> $TEXFILE
 
@@ -807,6 +806,9 @@ do
 
 	fi;
 
+
+	if ((1)); then
+
 	echo "\subsection{Gene Coverage}" >> $TEXFILE
 
 	GENES_COVERAGE_MSG_LEGEND="PASS: genes passing the coverage threshold (more than "$(echo "$DP_THRESHOLD * 100" | bc)" percent bases with DP greater than $DP_WARN). WARN: genes with a warning coverage (less than "$(echo "$DP_THRESHOLD * 100" | bc)" percent bases with DP greater than $DP_WARN). FAIL: genes with a failed coverage (less than "$(echo "$DP_THRESHOLD * 100" | bc)" percent bases with DP greater than $DP_FAIL)."
@@ -814,39 +816,45 @@ do
 	#(($DEBUG)) && echo $aligner
 	#(($DEBUG)) && ls $RESULTS_FOLDER/$FLOWCELL/$SAMPLE/$SAMPLE.$aligner.bam.metrics/*.msg
 	#for metrics in $(ls $RESULTS_FOLDER/$FLOWCELL/$SAMPLE/$SAMPLE.$aligner.bam.metrics/*.genes.msg 2>/dev/null)
+	#I=0
+	#for COVERAGEFILESTATS_GENES_COVERAGE_MSG in $(ls $RESULTS_FOLDER/$FLOWCELL/$SAMPLE/$SAMPLE.$aligner.bam.metrics/*.genes.msg | tail -n 1 2>/dev/null)
 	for COVERAGEFILESTATS_GENES_COVERAGE_MSG in $(ls $RESULTS_FOLDER/$FLOWCELL/$SAMPLE/$SAMPLE.$aligner.bam.metrics/*.genes.msg 2>/dev/null)
 	do
 		#(($DEBUG)) && echo $COVERAGEFILESTATS_GENES_COVERAGE_MSG
 		if [ -f "$COVERAGEFILESTATS_GENES_COVERAGE_MSG" ]
 		then
 			MAX_GENES=50
+			#if (($I)); then
+			#	I=1
 
-			echo "\begin{longtable}{|r|p{12cm}|}
+				echo "\begin{longtable}{|r|p{12cm}|}
 
-				\hline \multicolumn{1}{|c|}{\textbf{Threshold}} & \multicolumn{1}{c|}{\textbf{Genes}}  \hline
-				\endfirsthead
+					\hline \multicolumn{1}{|c|}{\textbf{Threshold}} & \multicolumn{1}{c|}{\textbf{Genes}}  \hline
+					\endfirsthead
 
-				\multicolumn{2}{c}%
-				{{\bfseries \tablename\ \thetable{} -- continued from previous page}} \\\\
-				\hline \multicolumn{1}{|c|}{\textbf{Threshold}} & \multicolumn{1}{c|}{\textbf{Genes}} \hline
-				\endhead
+					\multicolumn{2}{c}%
+					{{\bfseries \tablename\ \thetable{} -- continued from previous page}} \\\\
+					\hline \multicolumn{1}{|c|}{\textbf{Threshold}} & \multicolumn{1}{c|}{\textbf{Genes}} \hline
+					\endhead
 
-				\hline \multicolumn{2}{|r|}{{Continued on next page}} \hline
-				\endfoot
+					\hline \multicolumn{2}{|r|}{{Continued on next page}} \hline
+					\endfoot
 
-				\endlastfoot
+					\endlastfoot
 
-				PASS & $(awk -F"\t" '$2=="PASS" {print $1}' $COVERAGEFILESTATS_GENES_COVERAGE_MSG | wc -w) genes$((($(awk -F"\t" '$2=="PASS" {print $1}' $COVERAGEFILESTATS_GENES_COVERAGE_MSG | wc -w))) && echo ": "$(awk -F"\t" '$2=="PASS" {print $1}' $COVERAGEFILESTATS_GENES_COVERAGE_MSG | tr "\n" " " | cut -f 1-$MAX_GENES -d " ")) $([ "$(awk -F"\t" '$2=="PASS" {print $1}' $COVERAGEFILESTATS_GENES_COVERAGE_MSG | wc -w)" -gt $MAX_GENES ] && echo "... (only the first $MAX_GENES)") \\hline
-				WARN & $(awk -F"\t" '$2=="WARN" {print $1}' $COVERAGEFILESTATS_GENES_COVERAGE_MSG | wc -w) genes$((($(awk -F"\t" '$2=="WARN" {print $1}' $COVERAGEFILESTATS_GENES_COVERAGE_MSG | wc -w))) && echo ": \textcolor{orange}{"$(awk -F"\t" '$2=="WARN" {print $1}' $COVERAGEFILESTATS_GENES_COVERAGE_MSG | tr "\n" " " | cut -f 1-$MAX_GENES -d " ")"}") $([ "$(awk -F"\t" '$2=="WARN" {print $1}' $COVERAGEFILESTATS_GENES_COVERAGE_MSG | wc -w)" -gt $MAX_GENES ] && echo "... (only the first $MAX_GENES)") \\hline
-				FAIL & $(awk -F"\t" '$2=="FAIL" {print $1}' $COVERAGEFILESTATS_GENES_COVERAGE_MSG | wc -w) genes$((($(awk -F"\t" '$2=="FAIL" {print $1}' $COVERAGEFILESTATS_GENES_COVERAGE_MSG | wc -w))) && echo ": \textcolor{red}{"$(awk -F"\t" '$2=="FAIL" {print $1}' $COVERAGEFILESTATS_GENES_COVERAGE_MSG | tr "\n" " " | cut -f 1-$MAX_GENES -d " ")"}") $([ "$(awk -F"\t" '$2=="FAIL" {print $1}' $COVERAGEFILESTATS_GENES_COVERAGE_MSG | wc -w)" -gt $MAX_GENES ] && echo "... (only the first $MAX_GENES)") \\hline
+					PASS & $(awk -F"\t" '$2=="PASS" {print $1}' $COVERAGEFILESTATS_GENES_COVERAGE_MSG | wc -w) genes$((($(awk -F"\t" '$2=="PASS" {print $1}' $COVERAGEFILESTATS_GENES_COVERAGE_MSG | wc -w))) && echo ": "$(awk -F"\t" '$2=="PASS" {print $1}' $COVERAGEFILESTATS_GENES_COVERAGE_MSG | sed 's/\_/\\\_/g' | tr "\n" " " | cut -f 1-$MAX_GENES -d " ")) $([ "$(awk -F"\t" '$2=="PASS" {print $1}' $COVERAGEFILESTATS_GENES_COVERAGE_MSG | wc -w)" -gt $MAX_GENES ] && echo "... (only the first $MAX_GENES)") \\hline
+					WARN & $(awk -F"\t" '$2=="WARN" {print $1}' $COVERAGEFILESTATS_GENES_COVERAGE_MSG | wc -w) genes$((($(awk -F"\t" '$2=="WARN" {print $1}' $COVERAGEFILESTATS_GENES_COVERAGE_MSG | wc -w))) && echo ": \textcolor{orange}{"$(awk -F"\t" '$2=="WARN" {print $1}' $COVERAGEFILESTATS_GENES_COVERAGE_MSG | sed 's/\_/\\\_/g' | tr "\n" " " | cut -f 1-$MAX_GENES -d " ")"}") $([ "$(awk -F"\t" '$2=="WARN" {print $1}' $COVERAGEFILESTATS_GENES_COVERAGE_MSG | wc -w)" -gt $MAX_GENES ] && echo "... (only the first $MAX_GENES)") \\hline
+					FAIL & $(awk -F"\t" '$2=="FAIL" {print $1}' $COVERAGEFILESTATS_GENES_COVERAGE_MSG | wc -w) genes$((($(awk -F"\t" '$2=="FAIL" {print $1}' $COVERAGEFILESTATS_GENES_COVERAGE_MSG | wc -w))) && echo ": \textcolor{red}{"$(awk -F"\t" '$2=="FAIL" {print $1}' $COVERAGEFILESTATS_GENES_COVERAGE_MSG | sed 's/\_/\\\_/g' | tr "\n" " " | cut -f 1-$MAX_GENES -d " ")"}") $([ "$(awk -F"\t" '$2=="FAIL" {print $1}' $COVERAGEFILESTATS_GENES_COVERAGE_MSG | wc -w)" -gt $MAX_GENES ] && echo "... (only the first $MAX_GENES)") \\hline
 
-				\caption{Gene Coverage for aligner '$aligner' with file '"$(basename $COVERAGEFILESTATS_GENES_COVERAGE_MSG | sed s/.genes.msg$// | sed 's/\_/\\\_/g')"'. See file '"$(basename $COVERAGEFILESTATS_GENES_COVERAGE_MSG | sed 's/\_/\\\_/g')"' and Annexe for more information. $GENES_COVERAGE_MSG_LEGEND} \label{tab:long}
-				\end{longtable}
+					\caption{Gene Coverage for aligner '$aligner' with file '"$(basename $COVERAGEFILESTATS_GENES_COVERAGE_MSG | sed s/.genes.msg$// | sed 's/\_/\\\_/g')"'. See file '"$(basename $COVERAGEFILESTATS_GENES_COVERAGE_MSG | sed 's/\_/\\\_/g')"' and Annexe for more information. $GENES_COVERAGE_MSG_LEGEND}
+					\end{longtable}
 
-				" >> $TEXFILE
-
+					" >> $TEXFILE
+			#fi;
 		fi;
 	done;
+
+	fi;
 
 
 done;
@@ -1035,6 +1043,120 @@ fi;
 echo "\section{Annexes}" >> $TEXFILE
 
 
+###
+# HsMetrics COMPLETE
+###
+
+
+# HSMETRICS
+if ((1)); then
+
+for aligner in `echo $ALIGNERS`
+do
+	COVERAGEFILESTATS_HSMETRICS="$RESULTS_FOLDER/$FLOWCELL/$SAMPLE/$SAMPLE.$aligner.bam.metrics/$SAMPLE.$aligner.HsMetrics"
+
+	if [ -f "$COVERAGEFILESTATS_HSMETRICS" ] #&& ((0))
+	then
+
+		if ((0)); then
+		echo "
+		% Please add the following required packages to your document preamble:
+		% \usepackage{longtable}
+		% Note: It may be necessary to compile the document several times to get a multi-page table to line up properly
+		\begin{longtable}[c]{|c|c|c|c|}
+		\caption{Caption above}
+		\label{tab:my-table}\\
+		\hline
+		\textbf{Col1} & \textbf{Col2} & \textbf{Col3} & \textbf{Col4} \\ \hline
+		\endfirsthead
+		%
+		\multicolumn{4}{c}%
+		{{\bfseries Table \thetable\ continued from previous page}} \\
+		\hline
+		\textbf{Col1} & \textbf{Col2} & \textbf{Col3} & \textbf{Col4} \\ \hline
+		\endhead
+		%
+		1             & 2             & 3             & 4             \\ \hline
+		5             & 6             & 7             & 8             \\ \hline
+		9             & 10            & 11            & END           \\ \hline
+		1             & 2             & 3             & 4             \\ \hline
+		5             & 6             & 7             & 8             \\ \hline
+		9             & 10            & 11            & END           \\ \hline
+		1             & 2             & 3             & 4             \\ \hline
+		5             & 6             & 7             & 8             \\ \hline
+		9             & 10            & 11            & END           \\ \hline
+		1             & 2             & 3             & 4             \\ \hline
+		5             & 6             & 7             & 8             \\ \hline
+		9             & 10            & 11            & END           \\ \hline
+		1             & 2             & 3             & 4             \\ \hline
+		5             & 6             & 7             & 8             \\ \hline
+		9             & 10            & 11            & END           \\ \hline
+		1             & 2             & 3             & 4             \\ \hline
+		5             & 6             & 7             & 8             \\ \hline
+		9             & 10            & 11            & END           \\ \hline
+		1             & 2             & 3             & 4             \\ \hline
+		5             & 6             & 7             & 8             \\ \hline
+		9             & 10            & 11            & END           \\ \hline
+		\end{longtable}
+
+		" >> $TEXFILE
+
+		fi;
+
+		if ((1)); then
+			echo "
+			% Please add the following required packages to your document preamble:
+			% \usepackage{longtable}
+			% Note: It may be necessary to compile the document several times to get a multi-page table to line up properly
+			\small
+			\begin{longtable}{|c|c|}
+			\hline
+			\textbf{Metrics} & \textbf{Value} \\ \hline
+			\endfirsthead
+			%
+			\hline
+			\textbf{Metrics} & \textbf{Value} \\ \hline
+			\endhead
+			%
+			\multicolumn{2}{r}{{Continued on next page}} \\
+			\endfoot
+			%
+			\endlastfoot
+			%
+			"$(
+				cat $COVERAGEFILESTATS_HSMETRICS | grep -A2 -P '## METRICS CLASS' | tail -n-2 | awk 'BEGIN { FS=OFS="\t" }
+				{
+					for (rowNr=1;rowNr<=NF;rowNr++) {
+						cell[rowNr,NR] = $rowNr
+					}
+					maxRows = (NF > maxRows ? NF : maxRows)
+					maxCols = NR
+				}
+				END {
+					for (rowNr=1;rowNr<=maxRows;rowNr++) {
+						for (colNr=1;colNr<=maxCols;colNr++) {
+							printf "%s %s", cell[rowNr,colNr], (colNr < maxCols ? " & " : " \\\\ \\hline \n ")
+						}
+					}
+				}' | sed 's/\_/\\\_/g'
+			)"
+			\caption{Coverage statistics on each targeted region (primers excluded if any) on $aligner on $SAMPLEID. Statistics were determined with PICARD on the $SAMPLEID.$aligner.bam file.}
+			\end{longtable}
+
+			" >> $TEXFILE
+		fi;
+
+	fi;
+
+done
+
+fi;
+
+
+
+
+
+
 #######
 ### Gene coverage section
 #########
@@ -1067,7 +1189,7 @@ do
 						echo "`echo $line | sed 's/#/\\\\tablefirsthead{\\\\hline \\\\multicolumn{1}{|c}{/' | sed 's/&/} \& \\\\multicolumn{1}{|p{1cm}|}{/g' | sed 's/$/} \\\\\\\\ \\\\hline}/'`" >> $TEXFILE
 						echo "`echo $line | sed 's/#/\\\\tablehead{\\\\hline \\\\multicolumn{'"${number_col}"'}{|l|}{\\\\small ... next} \\\\\\\\ \\\\hline \\\\multicolumn{1}{|c}{/' | sed 's/&/} \& \\\\multicolumn{1}{|p{1cm}|}{/g' | sed 's/$/} \\\\\\\\ \\\\hline}/'`" >> $TEXFILE
 						echo "\par
-\bottomcaption{Genes coverage statistics on reads aligned with $(basename "$aligner" | sed 's/\\_/\\\_/g') from $SAMPLEID from $(basename "${metrics}" | sed 's/\\_/\\\_/g') file. Genes coverage was calculated with a padding of ${NB_BASES_AROUND} bases around the coordinates.}
+\bottomcaption{Genes coverage statistics on reads aligned with $(basename "$aligner" | sed 's/\\_/\\\_/g') from $SAMPLEID from $(basename "${metrics}" | sed 's/_/\\_/gi') file. Genes coverage was calculated with a padding of ${NB_BASES_AROUND} bases around the coordinates.}
 \begin{center}
 \small
 \begin{supertabular}{*{${number_col}}{|l}|}" >> $TEXFILE
@@ -1104,33 +1226,33 @@ do
 		if [ -s "${metrics}" ]
 		then
 
-			echo "\begin{longtable}{|c|c|c|c|}
 
-				\hline \multicolumn{1}{|c|}{\textbf{Region}} & \multicolumn{1}{c|}{\textbf{Min}} & \multicolumn{1}{c|}{\textbf{Mean}} & \multicolumn{1}{c|}{\textbf{Max}}  \\\\ \hline
-				\endfirsthead
 
-				\multicolumn{4}{c}%
-				{{\bfseries \tablename\ \thetable{} -- continued from previous page}} \\\\
-				\hline \multicolumn{1}{|c|}{\textbf{Region}} & \multicolumn{1}{c|}{\textbf{Min}} & \multicolumn{1}{c|}{\textbf{Mean}} & \multicolumn{1}{c|}{\textbf{Max}} \\\\ \hline
-				\endhead
-
-				\hline \multicolumn{4}{|r|}{{Continued on next page}} \\\\ \hline
-				\endfoot
-
+			if ((1)); then
+				echo "
+				% Please add the following required packages to your document preamble:
+				% \usepackage{longtable}
+				% Note: It may be necessary to compile the document several times to get a multi-page table to line up properly
+				\begin{longtable}{|c|c|c|c|}
 				\hline
+				\textbf{Region} & \textbf{Min} & \textbf{Mean} & \textbf{Max} \\ \hline
+				\endfirsthead
+				%
+				\hline
+				\textbf{Region} & \textbf{Min} & \textbf{Mean} & \textbf{Max} \\ \hline
+				\endhead
+				%
+				\multicolumn{4}{r}{{Continued on next page}} \\
+				\endfoot
+				%
 				\endlastfoot
-				" >> $TEXFILE
-			#cat $COVERAGEFILESTATS_SAMTOOLS.summary.tmp.latex >> $TEXFILE
-
-			tail -n +2 ${metrics} |  sort -k5 | awk -F "\t" '{split($7,M1,".")} {Mean=M1[1]} length($5)>50 {N=substr($5,1,47)"..." } length($5)<=50 {N=$5} {O=Ol[1]} {print "{\\small "N"} & {\\small "$11"} & {\\small "Mean"} & {\\small "$12"} \\\\ \\hline"}' | sed 's/_/\\_/gi' | sed 's/>/\\textgreater /gi' >> $TEXFILE;
-
-			echo "
-				\caption{Coverage statistics on each targeted region (primers excluded if any) on $aligner on $SAMPLEID. Statistics were determined with PICARD on the $SAMPLEID.$aligner.bam file.} \label{tab:long} \\\\
+				%
+				"$(tail -n +2 ${metrics} |  sort -k5 | awk -F "\t" '{split($7,M1,".")} {Mean=M1[1]} length($5)>50 {N=substr($5,1,47)"..." } length($5)<=50 {N=$5} {O=Ol[1]} {print "{\\small "N"} & {\\small "$11"} & {\\small "Mean"} & {\\small "$12"} \\\\ \\hline"}' | sed 's/_/\\_/gi' | sed 's/>/\\textgreater /gi')"
+				\caption{Coverage statistics on each targeted region (primers excluded if any) on $aligner on $SAMPLEID. Statistics were determined with PICARD on the $SAMPLEID.$aligner.bam file.}
 				\end{longtable}
 
-
-
 				" >> $TEXFILE
+			fi;
 
 
 		fi;
@@ -1155,33 +1277,33 @@ do
 		if [ -s "${metrics}" ]
 		then
 
-			echo "\begin{longtable}{|c|c|c|c|}
-
-				\hline \multicolumn{1}{|c|}{\textbf{Region}} & \multicolumn{1}{c|}{\textbf{Min}} & \multicolumn{1}{c|}{\textbf{Mean}} & \multicolumn{1}{c|}{\textbf{Max}}  \\\\ \hline
-				\endfirsthead
-
-				\multicolumn{4}{c}%
-				{{\bfseries \tablename\ \thetable{} -- continued from previous page}} \\\\
-				\hline \multicolumn{1}{|c|}{\textbf{Region}} & \multicolumn{1}{c|}{\textbf{Min}} & \multicolumn{1}{c|}{\textbf{Mean}} & \multicolumn{1}{c|}{\textbf{Max}} \\\\ \hline
-				\endhead
-
-				\hline \multicolumn{4}{|r|}{{Continued on next page}} \\\\ \hline
-				\endfoot
-
+			if ((1)); then
+				echo "
+				% Please add the following required packages to your document preamble:
+				% \usepackage{longtable}
+				% Note: It may be necessary to compile the document several times to get a multi-page table to line up properly
+				\begin{longtable}{|c|c|c|c|}
 				\hline
+				\textbf{Region} & \textbf{Min} & \textbf{Mean} & \textbf{Max} \\ \hline
+				\endfirsthead
+				%
+				\hline
+				\textbf{Region} & \textbf{Min} & \textbf{Mean} & \textbf{Max} \\ \hline
+				\endhead
+				%
+				\multicolumn{4}{r}{{Continued on next page}} \\
+				\endfoot
+				%
 				\endlastfoot
-				" >> $TEXFILE
-			#cat $COVERAGEFILESTATS_SAMTOOLS.summary.tmp.latex >> $TEXFILE
-
-			tail -n +2 ${metrics} |  sort -k5 | awk -F "\t" '{split($7,M1,".")} {Mean=M1[1]} length($5)>50 {N=substr($5,1,47)"..." } length($5)<=50 {N=$5} {O=Ol[1]} {print "{\\small "N"} & {\\small "$11"} & {\\small "Mean"} & {\\small "$12"} \\\\ \\hline"}' | sed 's/_/\\_/gi' | sed 's/>/\\textgreater /gi' >> $TEXFILE;
-
-			echo "
-				\caption{Coverage statistics on each amplicon (primers excluded) on $aligner on $SAMPLEID. Statistics were determined with FATBAM/PICARD on the $SAMPLEID.$aligner.bam file.} \label{tab:long} \\\\
+				%
+				"$(tail -n +2 ${metrics} |  sort -k5 | awk -F "\t" '{split($7,M1,".")} {Mean=M1[1]} length($5)>50 {N=substr($5,1,47)"..." } length($5)<=50 {N=$5} {O=Ol[1]} {print "{\\small "N"} & {\\small "$11"} & {\\small "Mean"} & {\\small "$12"} \\\\ \\hline"}' | sed 's/_/\\_/gi' | sed 's/>/\\textgreater /gi')"
+				\caption{Coverage statistics on each targeted region (primers excluded if any) on $aligner on $SAMPLEID. Statistics were determined with PICARD on the $SAMPLEID.$aligner.bam file.}
 				\end{longtable}
 
-
-
 				" >> $TEXFILE
+			fi;
+
+
 
 
 		fi;
@@ -1207,10 +1329,15 @@ echo -ne "\t`echo "scale=0;($COV_CALC)/1" | bc` X\t`echo "scale=2;($PCT_TARGET_B
 echo "\end{itemize}" >> $TEXFILE
 
 echo "\end{document}" >> $TEXFILE
+
+
 # compilation and creation of the report in pdf format
 # because pdf latex write A LOT of messages during compilation, the option "-file-line-error" allows to do a grep command on the log to see only the ERRORS, with regexp ".*:[0-9]*:.*"
 $LATEX --output-format=pdf -interaction=nonstopmode -output-directory=$REPORTDIR -file-line-error $TEXFILE >> $LOGFILE
+#cat -n $TEXFILE
 $LATEX --output-format=pdf -interaction=nonstopmode -output-directory=$REPORTDIR -file-line-error $TEXFILE >> $LOGFILE
+#$LATEX --output-format=pdf -interaction=nonstopmode -output-directory=$REPORTDIR -file-line-error $TEXFILE >> $LOGFILE
+
 
 if [ ! -z $OUTPUT_PDFFILE ] && [ -e $PDFFILE ]; then
 	cp $PDFFILE $OUTPUT_PDFFILE;

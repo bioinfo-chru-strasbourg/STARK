@@ -51,9 +51,9 @@ function usage {
 	echo "# -e|--application|--app|--env=<APP|FILE>     APP name or APP file configuration of the APPLICATION.";
 	echo "#                                             Must be in the STARK folder if relative path";
 	echo "#                                             Default: default.app if not defined";
-	echo "# -f|--fastq|--fastq_R1=<FILE1,FILE2,...>     List of FASTQ|BAM|SAM|CRAM (mandatory)";
+	echo "# -f|--reads|--fastq_R1=<FILE1,FILE2,...>     List of FASTQ|BAM|SAM|CRAM (mandatory)";
 	echo "#                                             Formats: *fastq.gz|*fq.gz|*bam|*ubam|*cram|*ucram|*sam|*usam";
-	echo "# -q|--fastq_R2=<FILE1,FILE2,...>             List of corresponding FASTQ Read2 file (beware of correspondance).";
+	echo "# -q|--reads2|--fastq_R2=<FILE1,FILE2,...>    List of corresponding FASTQ Read2 file (beware of correspondance).";
 	echo "#                                             Format:  (*fastq.gz|fq.gz)";
 	echo "# -b|--bed|--manifest=<FILE1,FILE2,...>       List of corresponding BED files in BED format.";
 	echo "#                                             If not *.bed file, considered as Illumina manifest.";
@@ -415,28 +415,40 @@ INDEX2=$INDEX2_RELOCATED
 
 # OTHER_FILES
 OTHER_FILES_RELOCATED=""
-for OF in $(echo $OTHER_FILES | tr "+" " "); do
-	if [ "$OF" != "" ] && [ -e "$OF" ]; then
-		#OF=$OF;
-		(($DEBUG)) && echo "OF=$OF";
-		#if ! (($(echo "$OF" | grep ".fastq.gz$\|.fq.gz$" -c))); then
-		#	echo "[ERROR]! Format of input file '$OF' Unknown! Please check file format (.fastq.gz|.fq.gz)";
-		#	exit 0;
-		#fi
-		# Relocation
-		if [ -f "$OF" ]; then
-			OTHER_FILES_RELOCATED="$OTHER_FILES_RELOCATED+$OF"
-	 	elif [ -f "$ANALYSIS_DIR/$OF" ]; then
-			OTHER_FILES_RELOCATED="$OTHER_FILES_RELOCATED+$ANALYSIS_DIR/$OF"
+#(($DEBUG)) && echo "OTHER_FILES=$OTHER_FILES"
+#for OFCF in $(echo $OTHER_FILES | tr "+" " "); do
+for OFCF in $OTHER_FILES; do
+	#(($DEBUG)) && echo "OFCF=$OFCF"
+	OTHER_FILES_RELOCATED_ONE=""
+	for OFCF_ONE in $(echo $OFCF | tr "+" " "); do
+		#OFCF=$(echo $OFCF_ONE | tr "+" " ")
+
+		# Original other file
+		OF_ONE=$(echo $OFCF_ONE | awk -F: '{print $1}')
+		# Copy other file
+		CF_ONE=$(echo $OFCF_ONE | awk -F: '{print $2}')
+		if [ "$OF_ONE" != "" ] && [ -e "$OF_ONE" ]; then
+			#OF=$OF;
+			#(($DEBUG)) && echo "OF_ONE=$OF_ONE";
+			#(($DEBUG)) && echo "CF_ONE=$CF_ONE";
+			# Relocation
+			if [ -e "$OF_ONE" ]; then
+				OTHER_FILES_RELOCATED_ONE="$OTHER_FILES_RELOCATED_ONE+$OF_ONE"
+		 	elif [ -e "$ANALYSIS_DIR/$OF_ONE" ]; then
+				OTHER_FILES_RELOCATED_ONE="$OTHER_FILES_RELOCATED_ONE+$ANALYSIS_DIR/$OF_ONE"
+			fi;
+			[ "$CF_ONE" != "" ] && OTHER_FILES_RELOCATED_ONE="$OTHER_FILES_RELOCATED_ONE:$CF_ONE"
+		else
+			echo "[ERROR] No input OTHER_FILES '$OF_ONE' file!";
+			exit 0;
 		fi;
-	else
-		echo "[ERROR] No input OTHER_FILES '$OF' file!";
-		exit 0;
-	fi;
+	done;
+	OTHER_FILES_RELOCATED_ONE=$(echo $OTHER_FILES_RELOCATED_ONE | sed "s/^+//" )
+	OTHER_FILES_RELOCATED="$OTHER_FILES_RELOCATED $OTHER_FILES_RELOCATED_ONE"
 done;
+OTHER_FILES_RELOCATED=$(echo $OTHER_FILES_RELOCATED | sed "s/^,//" )
 OTHER_FILES=$OTHER_FILES_RELOCATED
-
-
+#echo "OTHER_FILES=$OTHER_FILES"; exit 0;
 
 ENV=$(find_app "$APP" "$STARK_FOLDER_APPS")
 source_app "$APP" "$STARK_FOLDER_APPS" 1
@@ -901,7 +913,7 @@ for RUU in $RUN_UNIQ; do
 		F_R2=${FASTQ_R2_ARRAY[$I]};
 		I1=${INDEX1_ARRAY[$I]};
 		I2=${INDEX2_ARRAY[$I]};
-		OF=${OTHER_FILES_ARRAY[$I]};
+		OFCF=${OTHER_FILES_ARRAY[$I]};
 		B=${BED_ARRAY[$I]};
 		G=${BEDFILE_GENES_ARRAY[$I]};
 		T=${TRANSCRIPTS_ARRAY[$I]};
@@ -920,7 +932,7 @@ for RUU in $RUN_UNIQ; do
 		Q_LIST="$Q_LIST$F_R2 "
 		I1_LIST="$I1_LIST$I1 "
 		I2_LIST="$I2_LIST$I2 "
-		OF_LIST="$OF_LIST$OF "
+		OFCF_LIST="$OFCF_LIST$OFCF "
 		S_LIST="$S_LIST$S "
 		B_LIST="$B_LIST$B "
 		G_LIST="$G_LIST$G "
@@ -931,7 +943,7 @@ for RUU in $RUN_UNIQ; do
 		RUN_SAMPLE_DIR=$RESULTS/$RU/$S
 
 		if (($DEBUG)); then
-			echo "$F | $F_R2 | $I1 | $I2 | $OF | $S | $RU | $B | $G | $T | $PIPELINES | $INPUT | $RESULTS | $RUN_SAMPLE_DIR ";
+			echo "$F | $F_R2 | $I1 | $I2 | $OFCF | $S | $RU | $B | $G | $T | $PIPELINES | $INPUT | $RESULTS | $RUN_SAMPLE_DIR ";
 			#((I++)); continue;
 		fi;
 
@@ -939,7 +951,7 @@ for RUU in $RUN_UNIQ; do
 
 		# INFOS
 		echo "#[INFO] SAMPLE '$RU/$S' from file(s):"
-		echo "#[INFO] $F $F_R2 $I1 $I2 $OF $B $G $T "
+		echo "#[INFO] $F $F_R2 $I1 $I2 $OFCF $B $G $T "
 
 		# Copy FASTQ
 		PICARD_FLAGS="COMPRESSION_LEVEL=1 MAX_RECORDS_IN_RAM=500000"
@@ -1033,11 +1045,24 @@ for RUU in $RUN_UNIQ; do
 		fi;
 
 		# OTHER_FILES
-		if [ "$OF" != "" ]; then
+		if [ "$OFCF" != "" ]; then
+
 			echo "#[INFO] Copy OTHER FILES."
-			for OF_ONE in $(echo $OF | tr "+" " "); do
-				echo "#[INFO] Copy OTHER FILES: "$(basename $OF_ONE)"."
-				cp $OF_ONE $RUN_SAMPLE_DIR/$(basename $OF_ONE)
+			for OFCF_ONE in $(echo $OFCF | tr "+" " "); do
+				# Original other file
+				OF=$(echo $OFCF_ONE | awk -F: '{print $1}')
+				# Copy other file
+				CF=$(echo $OFCF_ONE | awk -F: '{print $2}')
+				[ "$CF" == "" ] && CF=$(basename $OF)
+				echo "#[INFO] Copy OTHER FILES '$OF' to '$CF'."
+				#cp $OF_ONE $RUN_SAMPLE_DIR/$(basename $OF_ONE)
+				if [ -d $OF ]; then
+					mkdir -p $RUN_SAMPLE_DIR/$CF
+					cp -Rf $OF/* $RUN_SAMPLE_DIR/$CF/
+				else
+					mkdir -p $RUN_SAMPLE_DIR/$(dirname $CF)
+					cp $OF $RUN_SAMPLE_DIR/$CF
+				fi;
 			done;
 
 		fi;
@@ -1235,7 +1260,7 @@ for RUU in $RUN_UNIQ; do
 	echo "#[INFO] FASTQ R2                  $Q_LIST"
 	echo "#[INFO] INDEX1                    $I1_LIST"
 	echo "#[INFO] INDEX2                    $I2_LIST"
-	echo "#[INFO] OTHER_FILES               $OF_LIST"
+	echo "#[INFO] OTHER_FILES               $OFCF_LIST"
 	echo "#[INFO] DESIGN                    $B_LIST"
 	echo "#[INFO] GENES                     $G_LIST"
 	echo "#[INFO] TRANSCRIPTS               $T_LIST"

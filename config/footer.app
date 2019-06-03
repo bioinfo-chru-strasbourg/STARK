@@ -60,10 +60,13 @@ export STARK_FOLDER_RULES=$STARK_FOLDER_CONFIG/rules
 
 # FOLDER INFRASTRUCTURE
 
+# MAIN STARK FOLDER
+STARK_FOLDER_MAIN="/STARK"
+
 # INPUT FOLDER
 [ "$INPUT" != "" ] && FOLDER_INPUT=$INPUT && FOLDER_RUN="$FOLDER_INPUT/runs" && FOLDER_MANIFEST="$FOLDER_INPUT/manifests"
 if [ "$FOLDER_INPUT" == "" ]; then
-	FOLDER_INPUT="/STARK/input"
+	FOLDER_INPUT="$STARK_FOLDER_MAIN/input"
 fi;
 
 # RUN FOLDER
@@ -79,7 +82,7 @@ fi;
 [ "$OUTPUT" != "" ] && FOLDER_OUTPUT=$OUTPUT && FOLDER_RESULTS="$FOLDER_OUTPUT/results" && FOLDER_DEMULTIPLEXING="$FOLDER_OUTPUT/demultiplexing"  && FOLDER_LOG="$FOLDER_OUTPUT/log"  && FOLDER_TMP="$FOLDER_OUTPUT/tmp"
 
 if [ "$FOLDER_OUTPUT" == "" ]; then
-	FOLDER_OUTPUT="/STARK/output"
+	FOLDER_OUTPUT="$STARK_FOLDER_MAIN/output"
 fi;
 
 # RESULTS FOLDER
@@ -114,14 +117,13 @@ fi;
 # CONFIG FOLDERS
 
 if [ "$FOLDER_TOOLS" == "" ]; then
-	FOLDER_TOOLS="/STARK/tools"
+	FOLDER_TOOLS="$STARK_FOLDER_MAIN/tools"
 fi;
 
 [ "$DATABASES" != "" ] && [ -d $DATABASES ] && FOLDER_DATABASES=$DATABASES
 if [ "$FOLDER_DATABASES" == "" ]; then
-	FOLDER_DATABASES="/STARK/databases"
+	FOLDER_DATABASES="$STARK_FOLDER_MAIN/databases"
 fi;
-
 
 
 export MISEQ_FOLDER=$FOLDER_RUN				# MISEQ RAW folder
@@ -440,7 +442,9 @@ export BAM_COMPRESSION
 
 # Default annotation with HOWARD for HOWARD for intermediate VCF (for each caller) used by default with annotation rule "howard"
 if [ -z "$HOWARD_ANNOTATION" ]; then
-	HOWARD_ANNOTATION="core,symbol,location,outcome,hgvs,snpeff,snpeff_hgvs"
+	#HOWARD_ANNOTATION="core,symbol,location,outcome,hgvs,snpeff,snpeff_hgvs"
+	#HOWARD_ANNOTATION="core,snpeff_hgvs"
+	HOWARD_ANNOTATION="snpeff_split"
 	# ANNOTATINO FULL
 	#HOWARD_ANNOTATION="core,frequency,score,annotation,prediction,snpeff,snpeff_hgvs"
 fi;

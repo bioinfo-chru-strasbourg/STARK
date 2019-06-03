@@ -45,9 +45,7 @@ extract_tag () {
 			[ "$MODE" == "TYPE#TAG#TAG" ] && TAG_TO_EXTRACT=$(echo "$TAG_TO_EXTRACT$TYPE#$TAG" | tr " " "#")
 
 			if [ "$TAG" != "" ]; then
-				echo "* $TYPE : $TAG"
-
-
+				#echo "* $TYPE : $TAG"
 
 				if [ "$TAG_FILTER" == "" ]; then
 					TAG_LIST="$TAG_LIST $TAG_TO_EXTRACT"
@@ -105,9 +103,14 @@ source_app () {
 	#
 	#done;
 
+	# SOURCE
 	[ "$CONFIG_FOOTER" != "" ] && [ -e "$CONFIG_FOOTER" ] && source $CONFIG_FOOTER 1>>$TMP_VERBOSE 2>>$TMP_VERBOSE;
 
-	(($VERBOSE)) && [ -f $TMP_VERBOSE ] && cat $TMP_VERBOSE && rm $TMP_VERBOSE;
+	# VERBOSE
+	(($VERBOSE)) && [ -f $TMP_VERBOSE ] && cat $TMP_VERBOSE;
+
+	# CLEAN
+	rm -f $TMP_VERBOSE
 
 } # source_app
 

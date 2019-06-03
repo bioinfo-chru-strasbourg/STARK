@@ -7,8 +7,8 @@
 
 SCRIPT_NAME="STARKDatabases"
 SCRIPT_DESCRIPTION="STARK download and build databases"
-SCRIPT_RELEASE="0.9.2b"
-SCRIPT_DATE="21/12/2018"
+SCRIPT_RELEASE="0.9.3b"
+SCRIPT_DATE="31/05/2019"
 SCRIPT_AUTHOR="Antony Le Bechec"
 SCRIPT_COPYRIGHT="IRC"
 SCRIPT_LICENCE="GNU-GPL"
@@ -17,9 +17,14 @@ SCRIPT_LICENCE="GNU-GPL"
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9b-11/12/2018: Script creation\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.1b-12/12/2018: Change to Makefile\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.2b-21/12/2018: Add update, build, rebuild and threads options. Change dbsnp source\n";
+RELEASE_NOTES=$RELEASE_NOTES"# 0.9.3b-31/05/2019: Add APP configuration\n";
 
 # Script folder
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# Configuration
+ENV_CONFIG=$(find $SCRIPT_DIR/.. -name config.app)
+source $ENV_CONFIG 1>/dev/null 2>/dev/null
 
 # Header
 function header () {
@@ -38,18 +43,20 @@ function release () {
 # Usage
 function usage {
 	echo "# USAGE: $(basename $0) [options...]";
-	echo "# -e/--env/--app=<FILE>                       ENV file configuration of the APPLICATION, and dabases to use.";
-	echo "#                                             Must be in the STARK folder if relative path";
-	echo "#                                             Default: defined in the RUN SampleSheet, or env.sh if not defined";
-	echo "# -b/--build                                  Build all databases.";
-	echo "# -f/--rebuild                                Force Rebuild all databases.";
-	echo "# -u/--update                                 Update databases (latest dbSNP and HOWARD-ANNOVAR-snpEff databases) and build if needed.";
-	echo "# -t/--threads                                Number of threads (depend on system/proxy...).";
+	echo "# --application=<STRING|FILE>              APP name or APP file configuration of the APPLICATION.";
+	echo "#                                          Use 'default' for default application parameters ('APP/default.app').";
+	echo "#                                          Default: Default STARK parameters.";
+	echo "# --databases=<FOLDER>                     Databases folder (replace APP parameter)";
+	echo "#                                          Will generate STARK databases folder structure";
+	echo "# --build                                  Build all databases.";
+	echo "# --rebuild                                Force Rebuild all databases.";
+	echo "# --update                                 Update databases (latest dbSNP and HOWARD-ANNOVAR-snpEff databases) and build if needed.";
+	echo "# --threads                                Number of threads (depend on system/proxy...).";
 
-	echo "# -v/--verbose                                VERBOSE option";
-	echo "# -d/--debug                                  DEBUG option";
-	echo "# -n/--release                                RELEASE option";
-	echo "# -h/--help                                   HELP option";
+	echo "# --verbose                                VERBOSE option";
+	echo "# --debug                                  DEBUG option";
+	echo "# --release                                RELEASE option";
+	echo "# --help                                   HELP option";
 	echo "#";
 
 }
@@ -61,7 +68,7 @@ header;
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
-ARGS=$(getopt -o "e:bfut:vdnh" --long "env:,build,rebuild,update,threads:,verbose,debug,release,help" -- "$@" 2> /dev/null)
+ARGS=$(getopt -o "e:bfut:vdnh" --long "env:,app:,application:,databases:,build,rebuild,update,threads:,verbose,debug,release,help" -- "$@" 2> /dev/null)
 # || [ -z $@ ]
 
 PARAM=$@
@@ -76,8 +83,12 @@ do
 	#echo "$1=$2"
 	#echo "Eval opts";
 	case "$1" in
-		-e|--env|--app)
-			ENV="$2"
+		-e|--env|--app|--application)
+			APP="$2"
+			shift 2
+			;;
+		--databases)
+			DATABASES="$2"
 			shift 2
 			;;
 		-v|--verbose)
@@ -123,29 +134,45 @@ do
 done
 
 
+# ACTION
+##########
+
+ACTION=0
+[ $BUILD ] || [ $REBUILD ] || [ $UPDATE ] && ACTION=1;
+
+
+# DATABASES FOLDER
+####################
+
+[ ! -z $DATABASES ] && [ ! -d $DATABASES ] && mkdir -p $DATABASES && echo "[INFO] Create databases folder '$DATABASES' "
+
+
 # ENV
 #########
 
-if [ -s $ENV ] && [ "$ENV" != "" ] && [ ! -d $ENV ]; then
-	ENV=$ENV;
-elif [ -s $APPS/$ENV ] && [ "$ENV" != "" ] && [ ! -d $ENV ]; then
-	ENV=$APPS/$ENV;
-elif [ -s $SCRIPT_DIR/$ENV ] && [ "$ENV" != "" ] && [ ! -d $ENV ]; then
-	ENV=$SCRIPT_DIR/$ENV;
-elif [ "$ENV" == "" ] || [ ! -s $ENV ]; then
-	if [ -s $SCRIPT_DIR/"env.sh" ]; then
-		ENV=$SCRIPT_DIR/"env.sh";
-	else
-		ENV="";
-		echo "#[WARNING] NO ENV defined. Default ENV used."
-	fi;
-fi;
-# SOURCE ENV if exists
-if [ ! -z $ENV ] && [ -s $ENV ]; then
-	source $ENV;
+#echo "APP=$APP"; exit;
+(($VERBOSE)) && [ ! -z "$APP" ] && echo "#[INFO] Search Application '$APP'"
+
+ENV=$(find_app "$APP" "$STARK_FOLDER_APPS")
+source_app "$APP" "$STARK_FOLDER_APPS" 1
+APP_NAME=$(name_app "$APP" "$STARK_FOLDER_APPS");
+
+export ENV
+export APP
+
+(($VERBOSE)) && [ -z "$APP" ] && [ -z "$ENV" ] && echo "#[INFO] No Application provided. STARK default parameters will be used."
+(($VERBOSE)) && [ ! -z "$APP" ] && [ ! -z "$ENV" ] && echo "#[INFO] Application '$APP' found ('$ENV')"
+(($VERBOSE)) && [ ! -z "$APP" ] && [ -z "$ENV" ] && echo "#[INFO] Application '$APP' NOT found"
+
+if ((0)); then
+	echo "FOLDER_DATABASES=$FOLDER_DATABASES"
+	echo "ANNOVAR_DATABASES=$ANNOVAR_DATABASES"
+	echo "SNPEFF_DATABASES=$SNPEFF_DATABASES"
+	echo "FOLDER_DATABASES_ANNOVAR=$FOLDER_DATABASES_ANNOVAR"
+	echo "HOWARD_ANNOTATION=$HOWARD_ANNOTATION"
 fi;
 
-
+# CORES
 re='^[0-9]+$'
 CORES=$(ls -d /sys/devices/system/cpu/cpu[[:digit:]]* | wc -w)
 if ! [[ $THREADS =~ $re ]] || [ -z "$THREADS" ] || [ "$THREADS" == "" ] || [ $THREADS -gt $CORES ] ; then
@@ -272,6 +299,29 @@ fi;
 # GENOME INDEX
 ################
 
+
+## BOWTIE index
+
+if [ ! -e $(dirname $REF)/$ASSEMBLY.rev.1.bt2 ]; then
+
+	if [ "$BOWTIE" != "" ]; then
+
+	    echo ""
+	    echo "### BOWTIE GENOME $ASSEMBLY INDEX"
+	    echo "#"
+
+	    # MK
+	    echo "$(dirname $REF)/$ASSEMBLY.rev.1.bt2: $REF
+			$(dirname $BOWTIE)/bowtie2-build --threads $THREADS --packed $REF $(dirname $REF)/$ASSEMBLY ;
+	    " >> $MK
+
+		MK_ALL="$MK_ALL $(dirname $REF)/$ASSEMBLY.rev.1.bt2"
+
+	fi;
+
+fi;
+
+
 ## BWA index
 
 if [ ! -e $REF.bwt ]; then
@@ -338,26 +388,6 @@ if [ ! -e $(dirname $REF)/$ASSEMBLY.dict ]; then
 
 fi;
 
-## BOWTIE index
-
-if [ ! -e $(dirname $REF)/$ASSEMBLY.rev.1.bt2 ]; then
-
-	if [ "$BOWTIE" != "" ]; then
-
-	    echo ""
-	    echo "### BOWTIE GENOME $ASSEMBLY INDEX"
-	    echo "#"
-
-	    # MK
-	    echo "$(dirname $REF)/$ASSEMBLY.rev.1.bt2: $REF
-			$(dirname $BOWTIE)/bowtie2-build --threads $THREADS --packed $REF $(dirname $REF)/$ASSEMBLY ;
-	    " >> $MK
-
-		MK_ALL="$MK_ALL $(dirname $REF)/$ASSEMBLY.rev.1.bt2"
-
-	fi;
-
-fi;
 
 # REFSEQ_GENES
 ################
@@ -522,23 +552,10 @@ if [ ! -e $VCFDBSNP ] || (($UPDATE)); then
 		rm -rf $TMP_DATABASES_DOWNLOAD_FOLDER/$VCFDBSNP_FOLDER;
 	" >> $MK
 
-	if ((0)); then
-		echo "$VCFDBSNP: $DBFOLDER
-			mkdir -p $TMP_DATABASES_DOWNLOAD_FOLDER/$VCFDBSNP_FOLDER;
-			chmod 0775 $TMP_DATABASES_DOWNLOAD_FOLDER/$VCFDBSNP_FOLDER;
-			wget -S -c -O $TMP_DATABASES_DOWNLOAD_FOLDER/$VCFDBSNP_FOLDER/$VCFDBSNP_FILE.tbi $DBSNP_LATEST_FILE.tbi;
-			wget -S -c -O $TMP_DATABASES_DOWNLOAD_FOLDER/$VCFDBSNP_FOLDER/$VCFDBSNP_FILE $DBSNP_LATEST_FILE;
-			mkdir -p $VCFDBSNP_FOLDER
-			chmod 0775 $VCFDBSNP_FOLDER
-			$COPY_MODE_VCFDBSNP $TMP_DATABASES_DOWNLOAD_FOLDER/$VCFDBSNP_FOLDER/$VCFDBSNP_FILE.tbi $VCFDBSNP.tbi;
-			$COPY_MODE_VCFDBSNP $TMP_DATABASES_DOWNLOAD_FOLDER/$VCFDBSNP_FOLDER/$VCFDBSNP_FILE $VCFDBSNP;
-			rm -rf $TMP_DATABASES_DOWNLOAD_FOLDER/$VCFDBSNP_FOLDER;
-		" >> $MK
-	fi;
-
 	MK_ALL="$MK_ALL $VCFDBSNP"
 
 fi;
+
 
 # ANNOVAR and SNPEFF DATABASES
 ################################
@@ -600,14 +617,27 @@ if [ ! -e $DBFOLDER/HOWARD.download.complete ] || (($UPDATE)); then
 	#echo $JAVA_FLAGS
 
 	if [ "$SNPEFF" != "" ]; then
-		SNPEFF_CMD="$JAVA $JAVA_FLAGS -jar $SNPEFF download $ASSEMBLY -dataDir $TMP_DATABASES_DOWNLOAD_FOLDER/$SNPEFF_DATABASES 2>$TMP_DATABASES_DOWNLOAD_FOLDER/snpeff.err
-			if ((\$\$(grep 'ERROR while connecting to' $TMP_DATABASES_DOWNLOAD_FOLDER/snpeff.err -c))); then wget -O $TMP_DATABASES_DOWNLOAD_FOLDER/$SNPEFF_DATABASES/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip \$\$(grep 'ERROR while connecting to' err | cut -f2 | cut -d' ' -f5); unzip $TMP_DATABASES_DOWNLOAD_FOLDER/$SNPEFF_DATABASES/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip -d $TMP_DATABASES_DOWNLOAD_FOLDER/$SNPEFF_DATABASES/; mv $TMP_DATABASES_DOWNLOAD_FOLDER/$SNPEFF_DATABASES/data/* $TMP_DATABASES_DOWNLOAD_FOLDER/$SNPEFF_DATABASES// fi"
+		SNPEFF_CMD="$JAVA $JAVA_FLAGS -jar $SNPEFF download $ASSEMBLY -dataDir $TMP_DATABASES_DOWNLOAD_FOLDER/$SNPEFF_DATABASES 2>$TMP_DATABASES_DOWNLOAD_FOLDER/snpeff.err";
+		SNPEFF_CMD="$SNPEFF_CMD; if ((\$\$(grep 'ERROR while connecting to' $TMP_DATABASES_DOWNLOAD_FOLDER/snpeff.err -c))); then wget -O $TMP_DATABASES_DOWNLOAD_FOLDER/$SNPEFF_DATABASES/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip \$\$(grep 'ERROR while connecting to' err | cut -f2 | cut -d' ' -f5); unzip $TMP_DATABASES_DOWNLOAD_FOLDER/$SNPEFF_DATABASES/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip -d $TMP_DATABASES_DOWNLOAD_FOLDER/$SNPEFF_DATABASES/; mv $TMP_DATABASES_DOWNLOAD_FOLDER/$SNPEFF_DATABASES/data/* $TMP_DATABASES_DOWNLOAD_FOLDER/$SNPEFF_DATABASES/; fi"
 		echo "# CMD= $SNPEFF_CMD"
 		echo "#"
 	fi;
 
 	if [ "$HOWARD" != "" ]; then
-		HOWARD_CMD="$HOWARD --input=$HOWARDDIR/docs/example.vcf --output=$DBFOLDER/HOWARD.download.vcf  --annotation=$HOWARD_DB --annovar_folder=$ANNOVAR --annovar_databases=$TMP_DATABASES_DOWNLOAD_FOLDER/$ANNOVAR_DATABASES --config_annotation=$HOWARD_CONFIG_ANNOTATION --snpeff_jar=$SNPEFF --snpeff_databases=$TMP_DATABASES_DOWNLOAD_FOLDER/$SNPEFF_DATABASES --snpeff_threads=$THREADS --tmp=$TMP_DATABASES_DOWNLOAD_FOLDER/HOWARD --assembly=$ASSEMBLY --java=$JAVA --java_flags='\"$JAVA_FLAGS\"' --verbose --threads=1;"
+		if [ -e $HOWARD_FOLDER_DOCS/example.vcf ]; then
+			INPUT_VCF=$HOWARD_FOLDER_DOCS/example.vcf;
+		elif [ -e $HOWARD_FOLDER/docs/example.vcf ]; then
+			INPUT_VCF=$HOWARD_FOLDER/docs/example.vcf
+		elif [ -e $(dirname $HOWARD_FOLDER_BIN)/docs/example.vcf ]; then
+			INPUT_VCF=$(dirname $HOWARD_FOLDER_BIN)/docs/example.vcf
+		elif [ -e $(dirname $HOWARDDIR)/docs/example.vcf ]; then
+			INPUT_VCF=$(dirname $HOWARDDIR)/docs/example.vcf
+		elif [ -e $HOWARDDIR/docs/example.vcf ]; then
+			INPUT_VCF=$HOWARDDIR/docs/example.vcf
+		fi;
+		#INPUT_VCF=$HOWARDDIR/docs/example.vcf
+		HOWARD_CMD="$HOWARD --input=$INPUT_VCF --output=$DBFOLDER/HOWARD.download.vcf  --annotation=$HOWARD_DB --annovar_folder=$ANNOVAR --annovar_databases=$TMP_DATABASES_DOWNLOAD_FOLDER/$ANNOVAR_DATABASES --config_annotation=$HOWARD_CONFIG_ANNOTATION --snpeff_jar=$SNPEFF --snpeff_databases=$TMP_DATABASES_DOWNLOAD_FOLDER/$SNPEFF_DATABASES --snpeff_threads=$THREADS --tmp=$TMP_DATABASES_DOWNLOAD_FOLDER/HOWARD --assembly=$ASSEMBLY --java=$JAVA --java_flags='\"$JAVA_FLAGS\"' --verbose --threads=1 >$DBFOLDER/HOWARD.download.log;"
+		#HOWARD_CMD="$HOWARD --input=$INPUT_VCF --output=$DBFOLDER/HOWARD.download.vcf  --annotation=location --annovar_folder=$ANNOVAR --annovar_databases=$TMP_DATABASES_DOWNLOAD_FOLDER/$ANNOVAR_DATABASES --config_annotation=$HOWARD_CONFIG_ANNOTATION --snpeff_jar=$SNPEFF --snpeff_databases=$TMP_DATABASES_DOWNLOAD_FOLDER/$SNPEFF_DATABASES --snpeff_threads=$THREADS --tmp=$TMP_DATABASES_DOWNLOAD_FOLDER/HOWARD --assembly=$ASSEMBLY --java=$JAVA --java_flags='\"$JAVA_FLAGS\"' --verbose --threads=1 >$DBFOLDER/HOWARD.download.log;"
 		echo "# CMD= $HOWARD_CMD"
 		echo "#"
 	fi;
@@ -622,7 +652,7 @@ if [ ! -e $DBFOLDER/HOWARD.download.complete ] || (($UPDATE)); then
 		$HOWARD_CMD
 		$COPY_MODE_HOWARD $TMP_DATABASES_DOWNLOAD_FOLDER/$ANNOVAR_DATABASES/ $ANNOVAR_DATABASES/;
 		$COPY_MODE_HOWARD $TMP_DATABASES_DOWNLOAD_FOLDER/$SNPEFF_DATABASES/ $SNPEFF_DATABASES/;
-		if ! ((\$\$(grep -c '\*\*\*' $DBFOLDER/HOWARD.download.log))); then \
+		if ! ((\$\$(grep -c '\[ERROR\]' $DBFOLDER/HOWARD.download.log))); then \
 			echo '#[INFO] HOWARD download complete' > $DBFOLDER/HOWARD.download.complete ; \
 		fi;
 		rm -rf $TMP_DATABASES_DOWNLOAD_FOLDER/$ANNOVAR_DATABASES;
@@ -658,7 +688,7 @@ echo "## DATABASES INIT..."
 if (($BUILD)) || (($REBUILD)) || (($UPDATE)); then
 	if (($VERBOSE)) || (($DEBUG)); then
 		if (($DEBUG)); then
-			make -k -j $THREADS $MK_OPTION -d -f $MK all;
+			make -k -j $THREADS $MK_OPTION -s -f $MK all;
 		elif (($VERBOSE)); then
 			make -k -j $THREADS $MK_OPTION -s -f $MK all;
 		fi;

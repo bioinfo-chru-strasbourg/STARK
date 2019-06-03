@@ -296,12 +296,14 @@ TOOLS_LIST=$TOOLS_LIST" FATBAM"
 
 
 # HOWARD
-export HOWARD_FOLDER_BIN=$NGS_TOOLS/howard/current/bin			# DIR
-export HOWARD_FOLDER_CONFIG=$NGS_TOOLS/howard/current/config	# DIR
+export HOWARD_FOLDER=$NGS_TOOLS/howard/current			# DIR
+export HOWARD_FOLDER_BIN=$HOWARD_FOLDER/bin			# DIR
+export HOWARD_FOLDER_CONFIG=$HOWARD_FOLDER/config	# DIR
+export HOWARD_FOLDER_DOCS=$HOWARD_FOLDER/docs	# DIR
 export HOWARD_VERSION=0.9.14b				# VER
 export HOWARD=$HOWARD_FOLDER_BIN/HOWARD.sh			# BIN-SCRIPT
 export HOWARD_RELEASE=$HOWARD_VERSION
-export HOWARDDIR=HOWARD_FOLDER_BIN
+export HOWARDDIR=$HOWARD_FOLDER_BIN
 export HOWARD_DESCRIPTION="Highly Open and Valuable tool for Variant Annotation & Ranking"
 export HOWARD_REF="inhouse"
 # Configuration

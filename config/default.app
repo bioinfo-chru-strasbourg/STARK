@@ -17,18 +17,21 @@ APP_PROJECT=""
 # FOLDERS
 ###########
 
+# MAIN STARK FOLDER
+STARK_FOLDER_MAIN="/STARK"
+
 # TOOLS FOLDER
 # tools: All tools needed for STARK, and more, including STARK
-FOLDER_TOOLS=/STARK/tools
+FOLDER_TOOLS=$STARK_FOLDER_MAIN/tools
 
 # DATABASES FOLDER
 # genomes: All references genomes. format: $FOLDER_GENOMES/$ASSEMBLY/$ASSEMBLY.fa (with ASSEMBLY=hg19, hg38, mmu19...)
 # db: Folder with mandatory databases: dbSNP database for variant calling, such as "dbsnp_138.hg19.vcf.gz" (mandatory, depending on ASSEMBLY), VCF databases for recalibration such as "dbsnp_137.hg19.vcf" (mandatory, depending on ASSEMBLY)
-FOLDER_DATABASES=/STARK/databases
+FOLDER_DATABASES=$STARK_FOLDER_MAIN/databases
 
 
 # INPUT FOLDER
-FOLDER_INPUT=/STARK/input
+FOLDER_INPUT=$STARK_FOLDER_MAIN/input
 # Illumina Sequencer repository Folder. Subfolder as runs
 #FOLDER_RUN=$FOLDER_INPUT/runs
 # Illumina Manifests repository.
@@ -37,7 +40,7 @@ FOLDER_INPUT=/STARK/input
 
 # OUTPUT FOLDER
 # All results will be generated in this folder :
-FOLDER_OUTPUT=/STARK/output
+FOLDER_OUTPUT=$STARK_FOLDER_MAIN/output
 # RES: RUN files such as BAM, VCF, metrics
 #FOLDER_RESULTS=$FOLDER_OUTPUT/results
 # DEM: Demultiplexing folder
@@ -191,6 +194,13 @@ THREADS=AUTO
 
 
 # HOWARD ANNOTATION/PRIOTITIZATION/TRANSLATION CONFIGURATION
+
+
+# DATABASES FOLDER for HOWARD/ANNOVAR/SNPEFF
+# Define ANNOVAR and SNPEFF folders by default
+#FOLDER_DATABASES_ANNOVAR=$FOLDER_DATABASES/annovar
+#FOLDER_DATABASES_SNPEFF=$FOLDER_DATABASES/snpeff/current
+
 
 # HOWARD Configuration files for Annotation and Prioritization
 # Use APP_FOLDER if necessary
