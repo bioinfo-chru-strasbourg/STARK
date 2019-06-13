@@ -8,7 +8,7 @@ export ENV_DESCRIPTION="Stellar Tools for variants Analysis and RanKing"
 export ENV_RELEASE="0.9.18d"
 export ENV_DATE="14/01/2019"
 export ENV_AUTHOR="Antony Le Bechec/Amandine Velt/Sinthuja Pachchek/Vincent Zilliox/Samuel Nicaise"
-export ENV_COPYRIGHT="IRC"
+export ENV_COPYRIGHT="HUS"
 export ENV_LICENCE="GNU GPLA V3"
 
 export STARK_FOLDER_CONFIG="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"

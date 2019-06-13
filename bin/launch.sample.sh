@@ -315,7 +315,8 @@ fi
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 
-COMMAND_COPY="rsync -aucqpAXoghi --no-links --no-perms --no-owner --no-group" # "cp -auv" or "rsync -auv" # auvpAXog
+#COMMAND_COPY="rsync -aucqpAXoghi --no-links --no-perms --no-owner --no-group" # "cp -auv" or "rsync -auv" # auvpAXog
+COMMAND_COPY="rsync -auczqAXhi --no-links --no-perms --no-owner --no-group"
 COMMAND_LINK="ln " # "cp -auv" or "rsync -auv" # auvpAXog
 PERMS="a+rwx"
 
@@ -988,14 +989,17 @@ for RUU in $RUN_UNIQ; do
 					# Create FASTQ
 					#echo "#[INFO] FASTQ R1"
 					#cat $F > $RUN_SAMPLE_DIR/$S.R1.fastq.gz;
-					cp $F $RUN_SAMPLE_DIR/$S.R1.fastq.gz;
+
+					#cp $F $RUN_SAMPLE_DIR/$S.R1.fastq.gz;
+					$COMMAND_COPY $F $RUN_SAMPLE_DIR/$S.R1.fastq.gz;
 
 					#if [ -z $F_R2 ] && [ -e $F_R2 ]; then
 					if [ -s "$F_R2" ]; then # && [ -e $F_R2 ]; then
 						#echo "#[INFO] FASTQ R2 '$F_R2'"
 						#exit 0;
 						#cat $F_R2 >> $RUN_SAMPLE_DIR/$S.R2.fastq.gz;
-						cp $F_R2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz
+						#cp $F_R2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz
+						$COMMAND_COPY $F_R2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz
 					else
 						touch $RUN_SAMPLE_DIR/$S.R2.fastq.gz
 					fi;
@@ -1003,14 +1007,16 @@ for RUU in $RUN_UNIQ; do
 
 				# INDEX1
 				if [ -s "$I1" ]; then
-					cp $I1 $RUN_SAMPLE_DIR/$S.I1.fastq.gz
+					#cp $I1 $RUN_SAMPLE_DIR/$S.I1.fastq.gz
+					$COMMAND_COPY $I1 $RUN_SAMPLE_DIR/$S.I1.fastq.gz
 				else
 					touch $RUN_SAMPLE_DIR/$S.I1.fastq.gz
 				fi;
 
 				# INDEX2
 				if [ -s "$I2" ]; then
-					cp $I2 $RUN_SAMPLE_DIR/$S.I2.fastq.gz
+					#cp $I2 $RUN_SAMPLE_DIR/$S.I2.fastq.gz
+					$COMMAND_COPY $I2 $RUN_SAMPLE_DIR/$S.I2.fastq.gz
 				else
 					touch $RUN_SAMPLE_DIR/$S.I2.fastq.gz
 				fi;
@@ -1058,10 +1064,12 @@ for RUU in $RUN_UNIQ; do
 				#cp $OF_ONE $RUN_SAMPLE_DIR/$(basename $OF_ONE)
 				if [ -d $OF ]; then
 					mkdir -p $RUN_SAMPLE_DIR/$CF
-					cp -Rf $OF/* $RUN_SAMPLE_DIR/$CF/
+					#cp -Rf $OF/* $RUN_SAMPLE_DIR/$CF/
+					$COMMAND_COPY $OF/* $RUN_SAMPLE_DIR/$CF/
 				else
 					mkdir -p $RUN_SAMPLE_DIR/$(dirname $CF)
-					cp $OF $RUN_SAMPLE_DIR/$CF
+					#cp $OF $RUN_SAMPLE_DIR/$CF
+					$COMMAND_COPY $OF/* $RUN_SAMPLE_DIR/$CF/
 				fi;
 			done;
 
@@ -1071,8 +1079,10 @@ for RUU in $RUN_UNIQ; do
 		if [[ $B =~ .bed$ ]]; then
 			if [ -e $B ] && [ "$B" != "" ] && [ ! -e $RUN_SAMPLE_DIR/$S.bed ]; then
 				echo "#[INFO] Copy BED file."
-				cp -p $B $RUN_SAMPLE_DIR/$S.bed;
-				cp -p $B $RUN_SAMPLE_DIR/$S.metrics.bed;
+				#cp -p $B $RUN_SAMPLE_DIR/$S.bed;
+				#cp -p $B $RUN_SAMPLE_DIR/$S.metrics.bed;
+				$COMMAND_COPY $B $RUN_SAMPLE_DIR/$S.bed;
+				$COMMAND_COPY $B $RUN_SAMPLE_DIR/$S.metrics.bed;
 				touch $RUN_SAMPLE_DIR/$S.manifest;
 				touch $RUN_SAMPLE_DIR/$S.manifest -r $B;
 				touch $RUN_SAMPLE_DIR/$S.metrics.bed -r $B;
@@ -1083,7 +1093,8 @@ for RUU in $RUN_UNIQ; do
 		else
 			if [ -e $B ] && [ "$B" != "" ] && [ ! -e $RUN_SAMPLE_DIR/$S.manifest ]; then
 				echo "#[INFO] Copy Manifest file."
-				cp -p $B $RUN_SAMPLE_DIR/$S.manifest;
+				#cp -p $B $RUN_SAMPLE_DIR/$S.manifest;
+				$COMMAND_COPY -p $B $RUN_SAMPLE_DIR/$S.manifest;
 				touch $RUN_SAMPLE_DIR/$S.manifest -r $B;
 				#echo -e "\tfrom manifest file" > $RUN_SAMPLE_DIR/$S.bed_name
 				echo -e $(basename $B)"\tfrom option - manifest" > $RUN_SAMPLE_DIR/$S.bed_name
@@ -1101,10 +1112,12 @@ for RUU in $RUN_UNIQ; do
 			echo "#[INFO] Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' and copy .genes files."
 			> $RUN_SAMPLE_DIR/$S.list.genes;
 			for G_ONE in $(echo $G | tr "+" " "); do
-				cp -p $G_ONE $RUN_SAMPLE_DIR/$(basename $G_ONE);
+				#cp -p $G_ONE $RUN_SAMPLE_DIR/$(basename $G_ONE);
+				$COMMAND_COPY $G_ONE $RUN_SAMPLE_DIR/$(basename $G_ONE);
 				echo $(basename $G_ONE) >> $RUN_SAMPLE_DIR/$S.list.genes
 			done;
 		fi;
+		#exit 0
 
 		# Copy TRANSCRIPTS
 		#if [ -e $T ] && [ "$T" != "" ] && [ ! -e $RUN_SAMPLE_DIR/$S.transcripts ]; then
@@ -1132,7 +1145,7 @@ for RUU in $RUN_UNIQ; do
 		# ANALYSIS TAG
 		if [ ! -e $RUN_SAMPLE_DIR/$S.analysis.tag ]; then
 			echo "#[INFO] Create Analysis TAG file."
-			echo $TAG > $RUN_SAMPLE_DIR/$S.analysis.tag;
+			echo $ATAG > $RUN_SAMPLE_DIR/$S.analysis.tag;
 		fi;
 		#echo "$T"; exit 0;
 
@@ -1141,7 +1154,8 @@ for RUU in $RUN_UNIQ; do
 		if ((1)); then
 		if [ ! -e $RUN_SAMPLE_DIR/$S.SampleSheet.csv ]; then
 			echo "#[INFO] Copy SampleSheet."
-			[ -f "$SAMPLESHEET_INPUT" ] && cp $SAMPLESHEET_INPUT $RUN_SAMPLE_DIR/$S.SampleSheet.csv
+			#[ -f "$SAMPLESHEET_INPUT" ] && cp $SAMPLESHEET_INPUT $RUN_SAMPLE_DIR/$S.SampleSheet.csv
+			[ -f "$SAMPLESHEET_INPUT" ] && $COMMAND_COPY $SAMPLESHEET_INPUT $RUN_SAMPLE_DIR/$S.SampleSheet.csv
 			touch $RUN_SAMPLE_DIR/$S.SampleSheet.csv;
 			if [ -e $RUN_SAMPLE_DIR/$S.manifest ]; then
 				touch -f $RUN_SAMPLE_DIR/$S.SampleSheet.csv -r $RUN_SAMPLE_DIR/$S.manifest;

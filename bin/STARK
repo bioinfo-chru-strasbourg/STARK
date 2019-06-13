@@ -1028,14 +1028,17 @@ if [ ! -z "$RUNS" ]; then
 				MAIN_APP=$(grep "Investigator Name" $RUN_SAMPLESHEET | awk -F, '{print $2}' | awk -F"[$TAG_DELIMITER ]" '{print $1}' | tr " " "+" | tr "," "+")
 
 
-				ANALYSIS_TAG_SAMPLESHEET=$(grep "Investigator Name" $RUN_SAMPLESHEET | cut -d, -f2- | tr "," "!" | tr " " "!"  | tr -d '\r')
+				#ANALYSIS_TAG_SAMPLESHEET=$(grep "Investigator Name" $RUN_SAMPLESHEET | cut -d, -f2- | tr "," "!" | tr " " "!"  | tr -d '\r')
+				ANALYSIS_TAG_SAMPLESHEET=$(grep "^Description" $RUN_SAMPLESHEET | cut -d, -f2- | tr "," "!" | tr " " "!"  | tr -d '\r')
 				if [ "$ANALYSIS_TAG" == "" ]; then
 					ANALYSIS_TAG=$ANALYSIS_TAG_SAMPLESHEET
 				fi;
 
 				# NEW APP extraction format
-				RUN_DESCRIPTION=$(grep "^Description" $RUN_SAMPLESHEET | awk -F, '{print $2}')
-				MAIN_APP=$(extract_tag "$RUN_DESCRIPTION" "APP" | tr " " "+")
+				#RUN_DESCRIPTION=$(grep "^Description" $RUN_SAMPLESHEET | awk -F, '{print $2}')
+				#MAIN_APP=$(extract_tag "$RUN_DESCRIPTION" "APP" | tr " " "+")
+				MAIN_APP=$(extract_tag "$ANALYSIS_TAG" "APP" | tr " " "+")
+
 
 				#APP=$(grep "Investigator Name" $RUN_SAMPLESHEET_TEST | awk -F, '{print $2}' | awk -F$APP_DELIMITER '{print $1}')
 				#grep "Investigator Name" $RUN_SAMPLESHEET_TEST | awk -F, '{print $2}'
@@ -1113,9 +1116,9 @@ if [ ! -z "$RUNS" ]; then
 
 						# Genes File
 						if (($(ls $R/$MANIFEST_FILENAME*.genes 2>/dev/null | wc -l))); then
-							MANIFEST_GENES_FILE=$(ls $R/$MANIFEST_FILENAME*.genes 2>/dev/null | tr "\n" "+") && (($VERBOSE)) &&  echo "#[INFO] Manifest Genes file found for sample '$SAMPLE_NAME': $MANIFEST_GENES_FILE"
+							MANIFEST_GENES_FILE=$(ls $R/$MANIFEST_FILENAME*.genes 2>/dev/null | tr "\n" "+" | sed "s/+$//") && (($VERBOSE)) &&  echo "#[INFO] Manifest Genes file found for sample '$SAMPLE_NAME': $MANIFEST_GENES_FILE"
 						elif (($(ls $FOLDER_MANIFEST/$MANIFEST_FILENAME*.genes 2>/dev/null | wc -l))); then
-							MANIFEST_GENES_FILE=$(ls $FOLDER_MANIFEST/$MANIFEST_FILENAME*.genes 2>/dev/null | tr "\n" "+") && (($VERBOSE)) &&  echo "#[INFO] Manifest Genes file found for sample '$SAMPLE_NAME': $MANIFEST_GENES_FILE"
+							MANIFEST_GENES_FILE=$(ls $FOLDER_MANIFEST/$MANIFEST_FILENAME*.genes 2>/dev/null | tr "\n" "+" | sed "s/+$//") && (($VERBOSE)) &&  echo "#[INFO] Manifest Genes file found for sample '$SAMPLE_NAME': $MANIFEST_GENES_FILE"
 						else
 							echo "#[INFO] Manifest Genes file NOT found"
 						fi;
@@ -1162,7 +1165,7 @@ if [ ! -z "$RUNS" ]; then
 					APP_ONE=$(basename $APP_ONE_RUN_CONFIG_FILE | sed s/.config.tab//)
 
 					SAMPLE_TEST=$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u | awk -F"," -v APP=$APP_ONE '$1==APP{print $3}' | tr '\n' ',' | sed s/,$//)
-					echo "SAMPLE_TEST="$SAMPLE_TEST
+					#echo "SAMPLE_TEST="$SAMPLE_TEST
 					#echo "APP_ONE=$APP_ONE"
 					#RUN_CONFIG_FILE=$R/$APP_ONE.analysis.json
 					RUN_CONFIG_FILE=$TMP_FOLDER_TMP_R/$APP_ONE.analysis.json

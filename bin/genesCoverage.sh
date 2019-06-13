@@ -242,7 +242,7 @@ echo "$BEDFILE_GENES_CUT.coverage_bases: $BEDFILE_GENES_CHR_COVERAGE_BASES_LIST
 	cat $BEDFILE_GENES_CHR_COVERAGE_BASES_LIST > $BEDFILE_GENES_CUT.coverage_bases
 " >> $MK
 
-#cat $MK
+(($DEBUG)) && cat $MK
 
 
 #THREADS=1
@@ -356,7 +356,7 @@ cp $TMPDIR/$DP.genes_message ${OUTPUT}.genes.msg
 
 rm -rf $TMPDIR $BEDFILE_GENES.coverage_bases #${OUTPUT}.coverage_bases
 
-rm  $BEDFILE_GENES_CHECKED* $BEDFILE_GENES_CUT*
+rm -f $BEDFILE_GENES_CHECKED* $BEDFILE_GENES_CUT*
 
 
 exit 0;

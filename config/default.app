@@ -116,6 +116,9 @@ VARIANT_RECALIBRATION=0
 # Add some “padding” to the intervals used (manifest) in order to include the flanking regions (typically ~100 bp)
 INTERVAL_PADDING=0
 
+# COVERAGES for full design
+COVS="1,5,10,20,30,50,100,200,300"
+
 # COVERAGE CRITERIA (default "1,30")
 # For gene coverage metrics
 # the criteria to calculate the percent of bases over $COVERAGE_CRITERIA X (eg 30 for 30X)
