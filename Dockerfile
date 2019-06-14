@@ -9,7 +9,7 @@
 # Usage:                docker run [-v [DATA FOLDER]:/data -v [DATABASE_FOLDER]:/databases] stark-base:version
 ##############################################################
 
-##########
+########## 
 # README #
 ##########
 
