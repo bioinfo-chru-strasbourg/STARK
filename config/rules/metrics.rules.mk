@@ -320,60 +320,95 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 #################
 # FatsQC metrics and counts metrics
 
-%.fastqc/metrics: %.fastqc/metrics.fastqc %.fastqc/metrics.counts
-	cat $< > $@
+%.sequencing/metrics: %.sequencing/metrics.fastqc %.sequencing/metrics.counts %.sequencing/metrics.Q30  %.sequencing/metrics.infos
+	# create directory
+	mkdir -p $(@D)
+	cat $^ > $@
+	-rm -f $^
 
 
 
 # FastQC metrics
 ##################
 
-%.fastqc/metrics.fastqc: %.fastq.gz
+#%.fastqc/metrics.fastqc: %.fastq.gz
+%.sequencing/metrics.fastqc: %.fastq.gz
 	# create directory
 	mkdir -p $(@D)
 	# create link
-	ln -s $< $(@D)/$(*F).unaligned.fastq.gz
+	ln -s $< $(@D)/$(*F).fastq.gz
 	# touch target
 	touch $@;
 	# FASTQC
 	-if (($$(zcat $< | head -n 1 | wc -l))); then \
 		#$(FASTQC) $< --outdir=$(@D) --casava --extract; \
-		$(FASTQC) $(@D)/$(*F).unaligned.fastq.gz --outdir=$(@D) --casava --extract --threads $(THREADS_BY_SAMPLE) ; \
-		cp $(@D)/$(*F).unaligned_fastqc/fastqc_data.txt $*.fastqc/metrics.fastqc.txt; \
-		echo "#FASTQC done. See 'metrics.fastqc.txt' file." >> $@; \
+		$(FASTQC) $(@D)/$(*F).fastq.gz --outdir=$(@D) --casava --extract --threads $(THREADS_BY_SAMPLE) ; \
+		cp $(@D)/$(*F)_fastqc/fastqc_data.txt $(@D)/metrics.fastqc.txt; \
+		echo "#[INFO] FASTQC done. See 'metrics.fastqc.txt' file." >> $@; \
 	else \
-		echo "#FASTQC can't be launched. No Reads in the unaligned BAM file '$<'" >> $@; \
+		echo "#[ERROR] FASTQC can't be launched. No Reads in FASTQ file '$<'" >> $@; \
 	fi;
 	# create link
-	-rm -f $(@D)/$(*F).unaligned.fastq.gz
+	-rm -f $(@D)/$(*F).fastq.gz
+
+
+
+# Q30
+########
+
+%.sequencing/metrics.Q30: %.sequencing/metrics.fastqc
+	# create directory
+	mkdir -p $(@D)
+	cat $(@D)/metrics.fastqc.txt | awk '/>>Per sequence quality scores/,/>>END_MODULE/' | head -n -1 | tail -n+3 | awk '{s+=$$2}END{print s}' > $@.Q30_ALL;
+	cat $(@D)/metrics.fastqc.txt | awk '/>>Per sequence quality scores/,/>>END_MODULE/' | awk '/>>Per sequence quality scores/,/30\t/' | head -n -1 | tail -n+3 | awk '{s+=$$2}END{print s}' > $@.Q30_UNTIL;
+	echo -e "Q30\t"$$(echo "scale = 4; (($$(cat $@.Q30_ALL) - $$(cat $@.Q30_UNTIL)) / $$(cat $@.Q30_ALL) * 100)" | bc | sed s/[0]*$$//) > $@.txt;
+	echo "#[INFO] Q30 calculation done. See 'metrics.Q30.txt' file." > $@;
+	-rm -f $@.Q30_ALL $@.Q30_UNTIL
 
 
 
 # Reads Count
 ###############
 
-%.fastqc/metrics.counts: %.fastq.gz #%.fastqc/metrics.fastqc
+#%.fastqc/metrics.counts: %.fastq.gz #%.fastqc/metrics.fastqc
+%.sequencing/metrics.counts: %.fastq.gz #%.fastqc/metrics.fastqc
 	# create directory
 	mkdir -p $(@D)
 	-if (($$(zcat $< | head -n 1 | wc -l))); then \
 		# header \
-		echo "total unique %unique maxRead count_maxRead %count_maxRead" > $*.counts.tmp; \
+		echo "total unique %unique maxRead count_maxRead %count_maxRead" > $@.tmp; \
 		# Counts \
 		if [ $$(zcat $< | head -n 1 | wc -l) ]; then \
-			zcat $< | awk '{unique=0} ((NR-2)%4==0){read=$$1;total++;count[read]++}END{for(read in count){if(!max||count[read]>max) {max=count[read];maxRead=read};if(count[read]==1){unique++}};print total,unique,unique*100/total,maxRead,count[maxRead],count[maxRead]*100/total}' >> $*.counts.tmp; \
+			zcat $< | awk '{unique=0} ((NR-2)%4==0){read=$$1;total++;count[read]++}END{for(read in count){if(!max||count[read]>max) {max=count[read];maxRead=read};if(count[read]==1){unique++}};print total,unique,unique*100/total,maxRead,count[maxRead],count[maxRead]*100/total}' >> $@.tmp; \
 		else \
-			echo "0 0 - - - -" >> $*.counts.tmp; \
+			echo "0 0 - - - -" >> $@.tmp; \
 		fi; \
 		# transposition \
-		awk '{ for (i=1; i<=NF; i++)  {a[NR,i] = $$i} } NF>p { p = NF } END { for(j=1; j<=p; j++) { str=a[1,j]; for(i=2; i<=NR; i++){ str=str" "a[i,j]; } print str } }' $*.counts.tmp | tr " " "\t" > $*.fastqc/metrics.counts.txt; \
-		# Q30 \
+		awk '{ for (i=1; i<=NF; i++)  {a[NR,i] = $$i} } NF>p { p = NF } END { for(j=1; j<=p; j++) { str=a[1,j]; for(i=2; i<=NR; i++){ str=str" "a[i,j]; } print str } }' $@.tmp | tr " " "\t" > $@.txt; \
+		# nb bases \
+		echo -e "count_bases\t"$$(zcat $< | paste - - - - | cut -f4 | wc -c) >> $@.txt; \
 		# script \
 		# echo "" > $*.fastqc/metrics.counts.txt; \
-		echo "#FASTQ Counts done. See 'metrics.counts.txt' file." > $@; \
+		echo "#[INFO] FASTQ Counts done. See 'metrics.counts.txt' file." > $@; \
 	else \
-		echo "#FASTQ Counts ERROR. No reads in '$<'..." > $@; \
+		echo "#[ERROR] FASTQ Counts ERROR. No reads in '$<'..." > $@; \
 	fi;
-	-rm -f $*.counts.tmp
+	-rm -f $@.tmp
+
+
+
+# techno
+########
+
+%.sequencing/metrics.infos: %.manifest %.R2.fastq.gz
+	# create directory
+	mkdir -p $(@D)
+	touch $@.txt
+	echo -e $$((($$(zcat $*.R2.fastq.gz | head -n1 | wc -l))) && echo "mode\tPaired-End" || echo "mode\tSingle-End") >> $@.txt
+	echo -e $$((($$(grep "Amplicon Start" $*.manifest | grep -c "Upstream Probe Length"))) && echo "technology\tAmplicon" || echo "technology\tCapture") >> $@.txt
+	echo "#[INFO] SEQUENCING INFOS done. See 'metrics.infos.txt' file." > $@;
+	#-rm -f $@.*
+
 
 
 
