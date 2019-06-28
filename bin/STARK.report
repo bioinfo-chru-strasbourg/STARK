@@ -320,11 +320,11 @@ mkdir -p $HTMLDIR $OUTPUT_HTMLDIR
 # PIPELINES
 ##############
 
-ALIGNERS=$(echo $PIPELINES | tr " " "\n"  | cut -d. -f1 | sort | uniq | tr "\n" " ")
-CALLERS=$(echo $PIPELINES | tr " " "\n"  | cut -d. -f2 | sort | uniq | tr "\n" " ")
-ALIGNERS_CALLERS=$(echo $PIPELINES | tr " " "\n"  | cut -d. -f1-2 | sort | uniq | tr "\n" " ")
-ANNOTATORS=$(echo $PIPELINES | tr " " "\n"  | cut -d. -f3 | sort | uniq | tr "\n" " ")
-ALIGNERS_CALLERS_ANNOTATORS=$(echo $PIPELINES | tr " " "\n"  | cut -d. -f1-3 | sort | uniq | tr "\n" " ")
+ALIGNERS=$(echo $PIPELINES | tr " " "\n"  | cut -d. -f1 | sort | uniq | tr "\n" " " | sed "s/^ //" | sed "s/ $//")
+CALLERS=$(echo $PIPELINES | tr " " "\n"  | cut -d. -f2 | sort | uniq | tr "\n" " " | sed "s/^ //" | sed "s/ $//")
+ALIGNERS_CALLERS=$(echo $PIPELINES | tr " " "\n"  | cut -d. -f1-2 | sort | uniq | tr "\n" " " | sed "s/^ //" | sed "s/ $//")
+ANNOTATORS=$(echo $PIPELINES | tr " " "\n"  | cut -d. -f3 | sort | uniq | tr "\n" " " | sed "s/^ //" | sed "s/ $//")
+ALIGNERS_CALLERS_ANNOTATORS=$(echo $PIPELINES | tr " " "\n"  | cut -d. -f1-3 | sort | uniq | tr "\n" " " | sed "s/^ //" | sed "s/ $//")
 
 
 # SAMPLEID
@@ -379,6 +379,11 @@ if [ ! -z "$BED_SOURCE" ]; then
 	BED_SOURCE=" ($BED_SOURCE)";
 fi;
 
+
+# VARIABLES
+
+PAGE_BREAK_AFTER=' style="page-break-after: always;"'
+PAGE_BREAK_BEFORE=' style="page-break-before: always;"'
 
 
 ### DEBUG ###
@@ -510,6 +515,7 @@ echo '
 # MENU
 #######
 
+(($VERBOSE)) && echo "[INFO] MENU section"
 
 HTMLFILE_MENU=$HTMLFILE".menu"
 
@@ -584,6 +590,8 @@ export ENV_LICENCE="GNU GPLA V3"
 
 # TITLE
 ####################
+
+(($VERBOSE)) && echo "[INFO] TITLE section"
 
 HTMLFILE_TITLE=$HTMLFILE".title"
 
@@ -669,6 +677,9 @@ echo '
 # MAIN INFORMATION
 ####################
 
+(($VERBOSE)) && echo "[INFO] MAIN section"
+
+
 HTMLFILE_MAIN=$HTMLFILE".main"
 
 DESIGN_NAME=$(echo $MANIFEST_NAME"$(if [ "$MANIFEST_NAME" != "$BED_NAME" ]; then echo " / $BED_NAME"; fi)")
@@ -736,6 +747,9 @@ echo '
 
 # PLAN
 ##########
+
+(($VERBOSE)) && echo "[INFO] PLAN section"
+
 
 HTMLFILE_PLAN=$HTMLFILE".plan"
 
@@ -877,6 +891,7 @@ echo '
 							</div>
 						</div>
 					</div>
+
 				</div>
 			</div>
 	   </div>
@@ -891,6 +906,9 @@ echo '
 # SEQUENCING
 ##############
 
+(($VERBOSE)) && echo "[INFO] SEQUENCING section"
+
+
 HTMLFILE_SEQUENCING=$HTMLFILE".sequencing"
 
 # FILES
@@ -902,120 +920,609 @@ cp $PER_BASE_QUALITY_FILE $HTMLDIR/$(basename $PER_BASE_QUALITY_FILE)
 HTML_LOGO="$HTMLFOLDER/$(basename $LOGO)"
 PER_BASE_QUALITY_FILE_HTML="$HTMLFOLDER/$(basename $PER_BASE_QUALITY_FILE)"
 
-Filename=$(grep "Filename" $FASTQCDATA | cut -f2  | sed "s/\_/\\\_/gi")
-TotalSequences=`grep "Total Sequences" $FASTQCDATA | cut -f2`
-SequenceLength=`grep "Sequence length" $FASTQCDATA | cut -f2`
-SequenceLength_min=`grep "Sequence length" $FASTQCDATA | cut -f2 | cut -d- -f1`
-SequenceLength_max=`grep "Sequence length" $FASTQCDATA | cut -f2 | cut -d- -f2`
 
-if [ -s $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.fastqc/metrics.counts.txt ]; then
-	UniqueNumberReads=$(grep "^unique" $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.fastqc/metrics.counts.txt | cut -f2);
-	PercentUniqueNumberReads=$(grep "^%unique" $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.fastqc/metrics.counts.txt | cut -f2);
-elif [ -s $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.unaligned.bam ]; then
-	UniqueNumberReads=$( $SAMTOOLS view $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.unaligned.bam | cut -f10 | sort -T "$TMP_FOLDER_TMP" -u | wc -l )
-	PercentUniqueNumberReads=$( echo "scale=2; $UniqueNumberReads*100/$TotalSequences" | bc )
-else
-	UniqueNumberReads=$(zcat $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE*.fastq.gz 2>/dev/null | awk 'NR % 4 == 2' | sort -T "$TMP_FOLDER_TMP" -u | wc -l);
-	PercentUniqueNumberReads=$( echo "scale=2; $UniqueNumberReads*100/$TotalSequences" | bc )
-#else
-#	UniqueNumberReads=0
-fi;
+echo '
+<div class="progress1 pb-5">
+	<div class="title-wrap">
+		<div class="progressbar-title mbr-fonts-style display-7">
+			<p>
+				Total number of reads | '$TOTAL_SEQUENCES_HTML'
+			</p>
+		</div>
+		<div class="progress_value mbr-fonts-style display-7">
+			<span>100.00%</span>
+		</div>
+	</div>
+	<progress class="progress progress-primary " max="'$TOTAL_SEQUENCES'" value="'$TOTAL_SEQUENCES'">
+	</progress>
+</div>
+' > $HTMLFILE_SEQUENCING.total_sequences
 
 
+# ALIGNERS
+> $HTMLFILE_SEQUENCING.aligners
+for ALIGNER in $ALIGNERS; do
+
+	(($DEBUG)) && echo "ALIGNER: $ALIGNER";
+
+	# Files
+	DESIGN_FLAGSTAT="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.flagstat"
+	DESIGN_ON_TARGET="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$SAMPLE.$ALIGNER.design.bed.on.nbreads"
+
+	(($DEBUG)) && cat $DESIGN_FLAGSTAT;
+
+	# Uniq reads
+	UNIQ_READS=$(grep " duplicates" $DESIGN_FLAGSTAT | awk '{print '$TOTAL_SEQUENCES'-$1-$2}')
+	UNIQ_READS_HTML=$(echo $UNIQ_READS | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
+	UNIQ_READS_PERCENT=$(awk 'BEGIN{printf("%.2f\n",('$UNIQ_READS'/'$TOTAL_SEQUENCES')*100)}')
+
+	# Aligned reads
+	ALIGNED_READS=$(grep " mapped (" $DESIGN_FLAGSTAT | awk '{print $1+$2}')
+	ALIGNED_READS_HTML=$(echo $ALIGNED_READS | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
+	ALIGNED_READS_PERCENT=$(awk 'BEGIN{printf("%.2f\n",('$ALIGNED_READS'/'$TOTAL_SEQUENCES')*100)}')
+
+	# On target reads
+	ON_TARGET_READS=$(cat $DESIGN_ON_TARGET)
+	ON_TARGET_READS_HTML=$(echo $ON_TARGET_READS | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
+	ON_TARGET_READS_PERCENT=$(awk 'BEGIN{printf("%.2f\n",('$ON_TARGET_READS'/'$TOTAL_SEQUENCES')*100)}')
+
+
+	echo '
+
+
+		<div class="progress2 pb-5">
+			<div class="title-wrap">
+				<div class="progressbar-title mbr-fonts-style display-7">
+					<p>
+						'$ALIGNER' - Uniq reads | '$UNIQ_READS_HTML'
+					</p>
+				</div>
+				<div class="progress_value mbr-fonts-style display-7">
+					<span>'$UNIQ_READS_PERCENT'%</span>
+				</div>
+			</div>
+			<progress class="progress progress-primary" max="'$TOTAL_SEQUENCES'" value="'$UNIQ_READS'">
+			</progress>
+		</div>
+
+		<div class="progress3 pb-5">
+			<div class="title-wrap">
+				<div class="progressbar-title mbr-fonts-style display-7">
+					<p>
+						'$ALIGNER' - Aligned reads | '$ALIGNED_READS_HTML'
+					</p>
+				</div>
+				<div class="progress_value mbr-fonts-style display-7">
+					<span>'$ALIGNED_READS_PERCENT'%</span>
+				</div>
+			</div>
+			<progress class="progress progress-primary" max="'$TOTAL_SEQUENCES'" value="'$ALIGNED_READS'">
+			</progress>
+		</div>
+
+		<div class="progress4 pb-5">
+			<div class="title-wrap">
+				<div class="progressbar-title mbr-fonts-style display-7">
+					<p>
+						'$ALIGNER' - On target reads | '$ON_TARGET_READS_HTML'
+					</p>
+				</div>
+				<div class="progress_value mbr-fonts-style display-7">
+					<span>'$ON_TARGET_READS_PERCENT'%</span>
+				</div>
+			</div>
+			<progress class="progress progress-primary" max="'$TOTAL_SEQUENCES'" value="'$ON_TARGET_READS'">
+			</progress>
+		</div>
+
+	' >> $HTMLFILE_SEQUENCING.aligners
+
+done;
+
+#ALIGNERS_HTML=$(echo "$ALIGNERS al2" | sed "s/ /P/gi")
 
 echo '
 
-<section class="progress-bars2 cid-ru7OEG5hcO" id="progress-bars2-1n">
+<br><br>
+
+<section class="progress-bars2 cid-ru7OEG5hcO" id="progress-bars2-1n" '$PAGE_BREAK_BEFORE'>
 
 	<div class="container">
 		<h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">Sequencing &amp; Mapping</h2>
 
-		<h3 class="mbr-section-subtitle mbr-fonts-style display-5">Sequenced reads were mapped to the hg19 assembly version using bwamem aligner(s).<br>Statistics were determined with FastQC on fastq files, and Samtools flagstat on BAM file(s).<br>On target reads are uniq (no duplicates), with quality higer than 10, and aligned on the defined design.</h3>
+		<div class="row pt-1 mt-5">
 
-		<div class="row pt-5 mt-5">
 			<div class="col-md-6 text-elements">
+
 				<h4 class="section-content-title pb-3 align-left mbr-fonts-style display-5">Per base quality</h4>
 				<p class="section-content-text align-left mbr-fonts-style display-7">
 					<img src="'$PER_BASE_QUALITY_FILE_HTML'" width=100%>
 				</p>
+
 			</div>
+
 			<div class="progress_elements col-md-6">
 
 				<h4 class="section-content-title pb-3 align-left mbr-fonts-style display-5">Reads metrics</h4>
 
-				<div class="progress1 pb-5">
-					<div class="title-wrap">
-						<div class="progressbar-title mbr-fonts-style display-7">
-							<p>
-								Total number of reads - '$TOTAL_SEQUENCES_HTML'</p>
-						</div>
-						<div class="progress_value mbr-fonts-style display-7">
-							<div class="progressbar-number">
-							</div>
-							<span>%</span>
-						</div>
-					</div>
-					<progress class="progress progress-primary " max="'$TOTAL_SEQUENCES'" value="'$TOTAL_SEQUENCES'">
-					</progress>
-				</div>
+				'"$(cat $HTMLFILE_SEQUENCING.total_sequences)"'
 
-				<div class="progress2 pb-5">
-					<div class="title-wrap">
-						<div class="progressbar-title mbr-fonts-style display-7">
-							<p>
-								TODO Aligned reads (bwamem) - 220453</p>
-						</div>
-					<div class="progress_value mbr-fonts-style display-7">
-						<div class="progressbar-number">
-						</div>
-						<span>%</span>
-					</div>
-					</div>
-					<progress class="progress progress-primary" max="100" value="90">
-					</progress>
-				</div>
-
-				<div class="progress3 pb-5">
-					<div class="title-wrap">
-						<div class="progressbar-title mbr-fonts-style display-7">
-							<p>
-								TODO Uniq reads (bwamem) - 210836</p>
-						</div>
-					<div class="progress_value mbr-fonts-style display-7">
-						<div class="progressbar-number">
-						</div>
-						<span>%</span>
-					</div>
-					</div>
-					<progress class="progress progress-primary" max="100" value="80">
-					</progress>
-				</div>
-
-				<div class="progress4 pb-5">
-					<div class="title-wrap">
-						<div class="progressbar-title mbr-fonts-style display-7">
-							<p>
-								TODO On target reads (bwamem) - 200743</p>
-						</div>
-					<div class="progress_value mbr-fonts-style display-7">
-						<div class="progressbar-number">
-						</div>
-						<span>%</span>
-					</div>
-					</div>
-					<progress class="progress progress-primary" max="100" value="70">
-					</progress>
-				</div>
-
+				'"$(cat $HTMLFILE_SEQUENCING.aligners)"'
 
 			</div>
+
 		</div>
+
+		<br>
+		<p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
+			Sequenced reads were mapped to <strong>'$ASSEMBLY'</strong> assembly using aligner'$( [ $(echo $ALIGNERS | wc -w) -gt 1 ] && echo "s")': <strong>'$ALIGNERS'</strong>.
+			Reads statistics were determined with <strong>FastQC</strong> (fastq) and <strong>Samtools flagstat</strong> (BAM).
+			<strong>On target</strong> calculated on BAM for validation (uniq reads, with quality higher than 10, aligned on Target Design, and clipped overlapped bases).
+		</p>
+
 	</div>
 </section>
 
 ' > $HTMLFILE_SEQUENCING
 
 
+
+
+# COVERAGE
+############
+
+(($VERBOSE)) && echo "[INFO] COVERAGE section"
+
+
+HTMLFILE_COVERAGE=$HTMLFILE".coverage"
+
+HTMLFILE_GENES_PANEL=$HTMLFILE".genes_panel"
+
+# FLAGS
+PASS_FLAG_ICON='class="mbr-iconfont mbri-smile-face" style="color: rgb(0, 255, 0); fill: rgb(0, 255, 0);"'
+WARN_FLAG_ICON='class="mbr-iconfont mbri-sad-face" style="color: rgb(252, 161, 6); fill: rgb(252, 161, 6);"'
+FAIL_FLAG_ICON='class="mbr-iconfont mbri-sad-face" style="color: rgb(255, 0, 0); fill: rgb(255, 0, 0);"'
+
+
+# PARAM
+MINIMUM_DEPTH="30"
+EXPECTED_DEPTH="100"
+SEQUENCING_COVERAGE_THRESHOLD="1"
+DEPTH_COVERAGE_THRESHOLD="0.95"
+
+
+# GENES PANEL
+
+GENES_PANEL_NUM=1
+
+# GENES PANEL INFO
+GENES_PANEL_FILE="IFU176_EGFR18-21MASTR_Manifest_v130729.AmpliconManifest.by_gene.genes"
+GENES_PANEL_GENES_NUMBER="64"
+GENES_PANEL_BASES_NUMBER="23452"
+GENES_PANEL_ALIGNER="bwamem"
+
+# GENES PANEL SEQUENCING PANEL COVERAGE
+GENES_PANEL_SEQUENCING_PANEL_COVERAGE="1"
+GENES_PANEL_SEQUENCING_PANEL_COVERAGE_HTML=$(awk 'BEGIN{printf("%.1f\n",'$GENES_PANEL_SEQUENCING_PANEL_COVERAGE'*100)}')"%"
+#GENES_PANEL_SEQUENCING_PANEL_COVERAGE_MESSAGE="$GENES_PANEL_SEQUENCING_PANEL_COVERAGE"
+[ $GENES_PANEL_SEQUENCING_PANEL_COVERAGE_HTML == "100.0%" ] && GENES_PANEL_SEQUENCING_PANEL_COVERAGE_HTML="100%"
+(( $(echo "$GENES_PANEL_SEQUENCING_PANEL_COVERAGE >= $SEQUENCING_COVERAGE_THRESHOLD" |bc -l) )) && GENES_PANEL_SEQUENCING_PANEL_COVERAGE_FLAG=$PASS_FLAG_ICON || GENES_PANEL_SEQUENCING_PANEL_COVERAGE_FLAG=$FAIL_FLAG_ICON
+
+# GENES PANEL MINIMUM PANEL COVERAGE
+GENES_PANEL_MINIMUM_PANEL_COVERAGE="0.981"
+GENES_PANEL_MINIMUM_PANEL_COVERAGE_HTML=$(awk 'BEGIN{printf("%.1f\n",'$GENES_PANEL_MINIMUM_PANEL_COVERAGE'*100)}')"%"
+#GENES_PANEL_MINIMUM_PANEL_COVERAGE_MESSAGE="$GENES_PANEL_MINIMUM_PANEL_COVERAGE"
+[ $GENES_PANEL_MINIMUM_PANEL_COVERAGE_HTML == "100.0%" ] && GENES_PANEL_MINIMUM_PANEL_COVERAGE_HTML="100%"
+(( $(echo "$GENES_PANEL_MINIMUM_PANEL_COVERAGE >= $DEPTH_COVERAGE_THRESHOLD" |bc -l) )) && GENES_PANEL_MINIMUM_PANEL_COVERAGE_FLAG=$PASS_FLAG_ICON || GENES_PANEL_MINIMUM_PANEL_COVERAGE_FLAG=$FAIL_FLAG_ICON
+
+# GENES PANEL EXPECTED PANEL COVERAGE
+GENES_PANEL_EXPECTED_PANEL_COVERAGE="0.965"
+GENES_PANEL_EXPECTED_PANEL_COVERAGE_HTML=$(awk 'BEGIN{printf("%.1f\n",'$GENES_PANEL_EXPECTED_PANEL_COVERAGE'*100)}')"%"
+#GENES_PANEL_EXPECTED_PANEL_COVERAGE_MESSAGE="$GENES_PANEL_EXPECTED_PANEL_COVERAGE"
+[ $GENES_PANEL_EXPECTED_PANEL_COVERAGE_HTML == "100.0%" ] && GENES_PANEL_EXPECTED_PANEL_COVERAGE_HTML="100%"
+(( $(echo "$GENES_PANEL_EXPECTED_PANEL_COVERAGE >= $DEPTH_COVERAGE_THRESHOLD" |bc -l) )) && GENES_PANEL_EXPECTED_PANEL_COVERAGE_FLAG=$PASS_FLAG_ICON || GENES_PANEL_EXPECTED_PANEL_COVERAGE_FLAG=$WARN_FLAG_ICON
+
+# GENES PANEL FAIL GENES COVERAGE
+GENES_PANEL_FAIL_GENES_NUMBER="0"
+GENES_PANEL_FAIL_GENES_NUMBER_HTML=$GENES_PANEL_FAIL_GENES_NUMBER
+#GENES_PANEL_FAIL_GENES_NUMBER_MESSAGE="$GENES_PANEL_FAIL_GENES_NUMBER"
+(( $GENES_PANEL_FAIL_GENES_NUMBER )) && GENES_PANEL_FAIL_GENES_NUMBER_FLAG=$FAIL_FLAG_ICON || GENES_PANEL_FAIL_GENES_NUMBER_FLAG=$PASS_FLAG_ICON
+
+# GENES PANEL WARN GENES COVERAGE
+GENES_PANEL_WARN_GENES_NUMBER="0"
+GENES_PANEL_WARN_GENES_NUMBER_HTML=$GENES_PANEL_WARN_GENES_NUMBER
+#GENES_PANEL_WARN_GENES_NUMBER_MESSAGE="$GENES_PANEL_WARN_GENES_NUMBER"
+(( $GENES_PANEL_WARN_GENES_NUMBER )) && GENES_PANEL_WARN_GENES_NUMBER_FLAG=$WARN_FLAG_ICON || GENES_PANEL_WARN_GENES_NUMBER_FLAG=$PASS_FLAG_ICON
+
+# BREAK
+(( $(echo "$GENES_PANEL_NUM >= 2" |bc -l) )) && GENES_PANEL_BREAK=$PAGE_BREAK_BEFORE || GENES_PANEL_BREAK=""
+
+
+
+echo '
+
+	<br>
+	<h3 class="mbr-section-subtitle mbr-fonts-style display-5">
+		'$GENES_PANEL_FILE'
+	</h3>
+	<!--
+	<h3 class="mbr-section-subtitle mbr-fonts-style display-7">
+		X Gene Panel on <strong>bwamem</strong> aligner reads.
+		<strong>58 Genes</strong> are fully covered
+	</h3>
+	-->
+
+	<div class="container pt-4 mt-2">
+		<div class="media-container-row">
+
+			<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+				<div class="panel-item">
+					<div class="card-img pb-3">
+						<span class="mbr-iconfont mbri-info"></span>
+					</div>
+
+					<div class="card-text">
+						<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+							'$GENES_PANEL_GENES_NUMBER'
+						</h3>
+						<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+							Genes
+							<br>
+							Panel
+						</h4>
+						<p class="mbr-content-text mbr-fonts-style display-7">
+							'$GENES_PANEL_BASES_NUMBER' bases
+							<br>
+							'$GENES_PANEL_ALIGNER' aligner
+						</p>
+					</div>
+				</div>
+			</div>
+
+			<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+				<div class="panel-item">
+					<div class="card-img pb-3">
+						<span '$GENES_PANEL_SEQUENCING_PANEL_COVERAGE_FLAG'></span>
+					</div>
+
+					<div class="card-text">
+						<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+							'$GENES_PANEL_SEQUENCING_PANEL_COVERAGE_HTML'
+						</h3>
+						<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+							Sequencing
+							<br>
+							Panel coverage
+						</h4>
+						<p class="mbr-content-text mbr-fonts-style display-7">
+							Percentage of sequenced bases
+						</p>
+					</div>
+				</div>
+			</div>
+
+			<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+				<div class="panel-item">
+					<div class="card-img pb-3">
+						<span '$GENES_PANEL_MINIMUM_PANEL_COVERAGE_FLAG'></span>
+					</div>
+					<div class="card-text">
+						<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+							'$GENES_PANEL_MINIMUM_PANEL_COVERAGE_HTML'
+						</h3>
+						<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+							Minimum
+							<br>
+							Panel coverage
+						</h4>
+						<p class="mbr-content-text mbr-fonts-style display-7">
+							Percentage of bases with minimum depth
+						</p>
+					</div>
+				</div>
+			</div>
+
+			<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+				<div class="panel-item">
+					<div class="card-img pb-3">
+						<span '$GENES_PANEL_EXPECTED_PANEL_COVERAGE_FLAG'></span>
+					</div>
+
+					<div class="card-text">
+						<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+							'$GENES_PANEL_EXPECTED_PANEL_COVERAGE_HTML'
+						</h3>
+						<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+							Expected
+							<br>
+							Panel coverage
+						</h4>
+						<p class="mbr-content-text mbr-fonts-style display-7">
+							Percentage of bases with expected depth
+						</p>
+					</div>
+				</div>
+			</div>
+
+			<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+				<div class="panel-item">
+					<div class="card-img pb-3">
+						<span '$GENES_PANEL_FAIL_GENES_NUMBER_FLAG'></span>
+					</div>
+
+					<div class="card-texts">
+						 <h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+							'$GENES_PANEL_FAIL_GENES_NUMBER_HTML'
+						</h3>
+						<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+							Failed
+							<br>
+							Gene coverage
+						</h4>
+						<p class="mbr-content-text mbr-fonts-style display-7">
+							Number of genes with failed coverage
+						</p>
+					</div>
+				</div>
+			</div>
+
+			<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+				<div class="panel-item">
+					<div class="card-img pb-3">
+						<span '$GENES_PANEL_WARN_GENES_NUMBER_FLAG'></span>
+					</div>
+					<div class="card-text">
+						<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+							'$GENES_PANEL_WARN_GENES_NUMBER_HTML'
+						</h3>
+						<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+							Warning
+							<br>
+							Gene coverage
+						</h4>
+						<p class="mbr-content-text mbr-fonts-style display-7">
+							Number of genes with warning coverage
+						</p>
+				</div>
+			</div>
+
+		</div>
+	</div>
+
+' >> $HTMLFILE_GENES_PANEL
+
+
+if ((0)); then
+
+# GENES PANEL
+
+GENES_PANEL_NUM=2
+
+# GENES PANEL INFO
+GENES_PANEL_FILE="IFU176_EGFR18-21MASTR_Manifest_v130729.AmpliconManifest.by_exon.genes"
+GENES_PANEL_GENES_NUMBER="245"
+GENES_PANEL_BASES_NUMBER="23452"
+GENES_PANEL_ALIGNER="bwamem"
+
+# GENES PANEL SEQUENCING PANEL COVERAGE
+GENES_PANEL_SEQUENCING_PANEL_COVERAGE="0.98"
+GENES_PANEL_SEQUENCING_PANEL_COVERAGE_HTML=$(awk 'BEGIN{printf("%.1f\n",'$GENES_PANEL_SEQUENCING_PANEL_COVERAGE'*100)}')"%"
+#GENES_PANEL_SEQUENCING_PANEL_COVERAGE_MESSAGE="$GENES_PANEL_SEQUENCING_PANEL_COVERAGE"
+[ $GENES_PANEL_SEQUENCING_PANEL_COVERAGE_HTML == "100.0%" ] && GENES_PANEL_SEQUENCING_PANEL_COVERAGE_HTML="100%"
+(( $(echo "$GENES_PANEL_SEQUENCING_PANEL_COVERAGE >= $SEQUENCING_COVERAGE_THRESHOLD" |bc -l) )) && GENES_PANEL_SEQUENCING_PANEL_COVERAGE_FLAG=$PASS_FLAG_ICON || GENES_PANEL_SEQUENCING_PANEL_COVERAGE_FLAG=$FAIL_FLAG_ICON
+
+# GENES PANEL MINIMUM PANEL COVERAGE
+GENES_PANEL_MINIMUM_PANEL_COVERAGE="0.901"
+GENES_PANEL_MINIMUM_PANEL_COVERAGE_HTML=$(awk 'BEGIN{printf("%.1f\n",'$GENES_PANEL_MINIMUM_PANEL_COVERAGE'*100)}')"%"
+#GENES_PANEL_MINIMUM_PANEL_COVERAGE_MESSAGE="$GENES_PANEL_MINIMUM_PANEL_COVERAGE"
+[ $GENES_PANEL_MINIMUM_PANEL_COVERAGE_HTML == "100.0%" ] && GENES_PANEL_MINIMUM_PANEL_COVERAGE_HTML="100%"
+(( $(echo "$GENES_PANEL_MINIMUM_PANEL_COVERAGE >= $DEPTH_COVERAGE_THRESHOLD" |bc -l) )) && GENES_PANEL_MINIMUM_PANEL_COVERAGE_FLAG=$PASS_FLAG_ICON || GENES_PANEL_MINIMUM_PANEL_COVERAGE_FLAG=$FAIL_FLAG_ICON
+
+# GENES PANEL EXPECTED PANEL COVERAGE
+GENES_PANEL_EXPECTED_PANEL_COVERAGE="0.875"
+GENES_PANEL_EXPECTED_PANEL_COVERAGE_HTML=$(awk 'BEGIN{printf("%.1f\n",'$GENES_PANEL_EXPECTED_PANEL_COVERAGE'*100)}')"%"
+#GENES_PANEL_EXPECTED_PANEL_COVERAGE_MESSAGE="$GENES_PANEL_EXPECTED_PANEL_COVERAGE"
+[ $GENES_PANEL_EXPECTED_PANEL_COVERAGE_HTML == "100.0%" ] && GENES_PANEL_EXPECTED_PANEL_COVERAGE_HTML="100%"
+(( $(echo "$GENES_PANEL_EXPECTED_PANEL_COVERAGE >= $DEPTH_COVERAGE_THRESHOLD" |bc -l) )) && GENES_PANEL_EXPECTED_PANEL_COVERAGE_FLAG=$PASS_FLAG_ICON || GENES_PANEL_EXPECTED_PANEL_COVERAGE_FLAG=$WARN_FLAG_ICON
+
+# GENES PANEL FAIL GENES COVERAGE
+GENES_PANEL_FAIL_GENES_NUMBER="4"
+GENES_PANEL_FAIL_GENES_NUMBER_HTML=$GENES_PANEL_FAIL_GENES_NUMBER
+#GENES_PANEL_FAIL_GENES_NUMBER_MESSAGE="$GENES_PANEL_FAIL_GENES_NUMBER"
+(( $GENES_PANEL_FAIL_GENES_NUMBER )) && GENES_PANEL_FAIL_GENES_NUMBER_FLAG=$FAIL_FLAG_ICON || GENES_PANEL_FAIL_GENES_NUMBER_FLAG=$PASS_FLAG_ICON
+
+# GENES PANEL WARN GENES COVERAGE
+GENES_PANEL_WARN_GENES_NUMBER="6"
+GENES_PANEL_WARN_GENES_NUMBER_HTML=$GENES_PANEL_WARN_GENES_NUMBER
+#GENES_PANEL_WARN_GENES_NUMBER_MESSAGE="$GENES_PANEL_WARN_GENES_NUMBER"
+(( $GENES_PANEL_WARN_GENES_NUMBER )) && GENES_PANEL_WARN_GENES_NUMBER_FLAG=$WARN_FLAG_ICON || GENES_PANEL_WARN_GENES_NUMBER_FLAG=$PASS_FLAG_ICON
+
+# BREAK
+(( $(echo "$GENES_PANEL_NUM >= 2" |bc -l) )) && GENES_PANEL_BREAK=$PAGE_BREAK_BEFORE || GENES_PANEL_BREAK=""
+
+
+echo '
+
+	<br>
+	<h3 class="mbr-section-subtitle mbr-fonts-style display-5" '$GENES_PANEL_BREAK'>
+		'$GENES_PANEL_FILE'
+	</h3>
+	<!--
+	<h3 class="mbr-section-subtitle mbr-fonts-style display-7">
+		X Gene Panel on <strong>bwamem</strong> aligner reads.
+		<strong>58 Genes</strong> are fully covered
+	</h3>
+	-->
+
+	<div class="container pt-4 mt-2">
+		<div class="media-container-row">
+
+			<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+				<div class="panel-item">
+					<div class="card-img pb-3">
+						<span class="mbr-iconfont mbri-info"></span>
+					</div>
+
+					<div class="card-text">
+						<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+							'$GENES_PANEL_GENES_NUMBER'
+						</h3>
+						<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+							Genes
+							<br>
+							Panel
+						</h4>
+						<p class="mbr-content-text mbr-fonts-style display-7">
+							'$GENES_PANEL_BASES_NUMBER' bases
+							<br>
+							'$GENES_PANEL_ALIGNER' aligner
+						</p>
+					</div>
+				</div>
+			</div>
+
+			<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+				<div class="panel-item">
+					<div class="card-img pb-3">
+						<span '$GENES_PANEL_SEQUENCING_PANEL_COVERAGE_FLAG'></span>
+					</div>
+
+					<div class="card-text">
+						<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+							'$GENES_PANEL_SEQUENCING_PANEL_COVERAGE_HTML'
+						</h3>
+						<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+							Sequencing
+							<br>
+							Panel coverage
+						</h4>
+						<p class="mbr-content-text mbr-fonts-style display-7">
+							Percentage of sequenced bases
+						</p>
+					</div>
+				</div>
+			</div>
+
+			<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+				<div class="panel-item">
+					<div class="card-img pb-3">
+						<span '$GENES_PANEL_MINIMUM_PANEL_COVERAGE_FLAG'></span>
+					</div>
+					<div class="card-text">
+						<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+							'$GENES_PANEL_MINIMUM_PANEL_COVERAGE_HTML'
+						</h3>
+						<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+							Minimum
+							<br>
+							Panel coverage
+						</h4>
+						<p class="mbr-content-text mbr-fonts-style display-7">
+							Percentage of bases with minimum depth
+						</p>
+					</div>
+				</div>
+			</div>
+
+			<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+				<div class="panel-item">
+					<div class="card-img pb-3">
+						<span '$GENES_PANEL_EXPECTED_PANEL_COVERAGE_FLAG'></span>
+					</div>
+
+					<div class="card-text">
+						<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+							'$GENES_PANEL_EXPECTED_PANEL_COVERAGE_HTML'
+						</h3>
+						<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+							Expected
+							<br>
+							Panel coverage
+						</h4>
+						<p class="mbr-content-text mbr-fonts-style display-7">
+							Percentage of bases with expected depth
+						</p>
+					</div>
+				</div>
+			</div>
+
+			<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+				<div class="panel-item">
+					<div class="card-img pb-3">
+						<span '$GENES_PANEL_FAIL_GENES_NUMBER_FLAG'></span>
+					</div>
+
+					<div class="card-texts">
+						 <h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+							'$GENES_PANEL_FAIL_GENES_NUMBER_HTML'
+						</h3>
+						<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+							Failed
+							<br>
+							Gene coverage
+						</h4>
+						<p class="mbr-content-text mbr-fonts-style display-7">
+							Number of genes with failed coverage
+						</p>
+					</div>
+				</div>
+			</div>
+
+			<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+				<div class="panel-item">
+					<div class="card-img pb-3">
+						<span '$GENES_PANEL_WARN_GENES_NUMBER_FLAG'></span>
+					</div>
+					<div class="card-text">
+						<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+							'$GENES_PANEL_WARN_GENES_NUMBER_HTML'
+						</h3>
+						<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+							Warning
+							<br>
+							Gene coverage
+						</h4>
+						<p class="mbr-content-text mbr-fonts-style display-7">
+							Number of genes with warning coverage
+						</p>
+				</div>
+			</div>
+
+		</div>
+	</div>
+
+' >> $HTMLFILE_GENES_PANEL
+
+fi;
+
+
+echo '
+
+<br><br>
+<section class="counters1 counters cid-ru7OEH6r7i" id="counters1-1p" '$PAGE_BREAK_BEFORE'>
+
+
+    <div class="container">
+        <h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">
+            Depth &amp; Coverage TODO</h2>
+
+		'"$(cat $HTMLFILE_GENES_PANEL)"'
+
+		<br>
+		<p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
+			Depth and coverage generated with <strong>Samtools mpileup</strong> and <strong>Picard CollectHsMetrics</strong>
+			<br>
+			on BAM for validation (uniq reads, with quality higher than 10, aligned on Target Design, and clipped overlapped bases).
+			<br>
+			Minimum depth '$MINIMUM_DEPTH'X,
+			Expected depth '$EXPECTED_DEPTH'X,
+			Sequencing coverage threshold '$(awk 'BEGIN{printf("%.1f\n",'$SEQUENCING_COVERAGE_THRESHOLD'*100)}')'%,
+			Minimum & Expected depth coverage threshold '$(awk 'BEGIN{printf("%.1f\n",'$DEPTH_COVERAGE_THRESHOLD'*100)}')'%
+		</p>
+
+   </div>
+</section>
+' > $HTMLFILE_COVERAGE
 
 
 
@@ -1039,6 +1546,7 @@ echo '
 	'"$(cat $HTMLFILE_SUMMARY)"'
 	'"$(cat $HTMLFILE_PLAN)"'
 	'"$(cat $HTMLFILE_SEQUENCING)"'
+	'"$(cat $HTMLFILE_COVERAGE)"'
 	'"$(cat $HTMLFILE_SCRIPTS)"'
 ' > $HTMLFILE_BODY
 

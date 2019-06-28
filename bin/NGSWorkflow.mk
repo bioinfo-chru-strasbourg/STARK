@@ -125,7 +125,10 @@ FASTQC_METRICS=$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_S
 SEQUENCING_METRICS=$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).sequencing/metrics )
 
 
-CRAM=	$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).archive.cram ) \
+CRAM=	$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).archive.cram )
+
+JSON=	$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).launch.json )
+
 
 FINAL=$(SAMPLE) $(BAM) $(VCF) $(CRAM) $(SEQUENCING_METRICS) #$(FASTQC_METRICS)
 #$(UBAM)
@@ -171,7 +174,7 @@ endif
 # Load rules
 include $(RULES)
 
-all: $(FINAL) $(FINAL_REPORT) $(FINAL_REPORT_FILES) $(FINAL_REPORT).samples.vcf.gz $(FINAL_REPORT).samples.tsv #$(FINAL_REPORT_FULL) $(FINAL_REPORT_FULL_VCF)
+all: $(FINAL) $(FINAL_REPORT) $(FINAL_REPORT_FILES) $(FINAL_REPORT).samples.vcf.gz $(FINAL_REPORT).samples.tsv $(JSON) #$(FINAL_REPORT_FULL) $(FINAL_REPORT_FULL_VCF)
 	# List of files to generate
 	echo $^
 	# CLEANING

@@ -339,7 +339,7 @@ for F in $FASTQ; do
 			FASTQ_R1_RELOCATED="$FASTQ_R1_RELOCATED $ANALYSIS_DIR/$F"
 		fi;
 	else
-		echo "[ERROR] No input FASTQ '$F' file!";
+		echo "[ERROR] No input FASTQ/BAM/CRAM/SAM '$F' file!";
 		exit 0;
 	fi;
 done;
@@ -348,7 +348,8 @@ FASTQ=$FASTQ_R1_RELOCATED
 
 FASTQ_R2_RELOCATED=""
 for F in $FASTQ_R2; do
-	if [ "$F" != "" ] && [ -e "$F" ]; then
+	#if [ "$F" != "" ] && [ -e "$F" ]; then
+	if [ -f "$F" ] || [ -f "$ANALYSIS_DIR/$F" ]; then
 		F=$F;
 		(($DEBUG)) && echo "F=$F";
 		if ! (($(echo "$F" | grep ".fastq.gz$\|.fq.gz$" -c))); then
@@ -371,7 +372,8 @@ FASTQ_R2=$FASTQ_R2_RELOCATED
 # INDEX
 INDEX1_RELOCATED=""
 for I1 in $INDEX1; do
-	if [ "$I1" != "" ] && [ -e "$I1" ]; then
+	#if [ "$I1" != "" ] && [ -e "$I1" ]; then
+	if [ -f "$I1" ] || [ -f "$ANALYSIS_DIR/$I1" ]; then
 		#I1=$I1;
 		(($DEBUG)) && echo "I1=$I1";
 		if ! (($(echo "$I1" | grep ".fastq.gz$\|.fq.gz$" -c))); then
@@ -394,7 +396,8 @@ INDEX1=$INDEX1_RELOCATED
 # INDEX
 INDEX2_RELOCATED=""
 for I2 in $INDEX2; do
-	if [ "$I2" != "" ] && [ -e "$I2" ]; then
+	#if [ "$I2" != "" ] && [ -e "$I2" ]; then
+	if [ -f "$I2" ] || [ -f "$ANALYSIS_DIR/$I2" ]; then
 		#I2=$I2;
 		(($DEBUG)) && echo "I2=$I2";
 		if ! (($(echo "$I2" | grep ".fastq.gz$\|.fq.gz$" -c))); then
@@ -428,7 +431,8 @@ for OFCF in $OTHER_FILES; do
 		OF_ONE=$(echo $OFCF_ONE | awk -F: '{print $1}')
 		# Copy other file
 		CF_ONE=$(echo $OFCF_ONE | awk -F: '{print $2}')
-		if [ "$OF_ONE" != "" ] && [ -e "$OF_ONE" ]; then
+		#if [ "$OF_ONE" != "" ] && [ -e "$OF_ONE" ]; then
+		if [ -s "$OF_ONE" ] || [ -s "$ANALYSIS_DIR/$OF_ONE" ]; then
 			#OF=$OF;
 			#(($DEBUG)) && echo "OF_ONE=$OF_ONE";
 			#(($DEBUG)) && echo "CF_ONE=$CF_ONE";
@@ -469,18 +473,29 @@ fi;
 
 # BED
 BED_DEFAULT="";
+BED_RELOCATED=""
 if [ "$BED_INPUT" != "" ]; then
 	# Test BED files exist
 	for B in $BED_INPUT; do
-		if [ ! -e $B ]; then
+		#if [ ! -e $B ]; then
+		if [ -f "$B" ] || [ -f "$ANALYSIS_DIR/$B" ]; then
+			(($DEBUG)) && echo "B=$B";
+			# Relocation
+			if [ -f "$B" ]; then
+				BED_RELOCATED="$BED_RELOCATED $B"
+		 	elif [ -f "$ANALYSIS_DIR/$F" ]; then
+				BED_RELOCATED="$BED_RELOCATED $ANALYSIS_DIR/$B"
+			fi;
+		else
 			echo "[ERROR] BED '$B' file DOES NOT exist!";
 			exit 0;
 		fi;
 	done;
-	BED_DEFAULT=$(echo $BED_INPUT | cut -d" " -f1) #`date '+%Y%m%d-%H%M%S'`
+
 
 fi;
-
+BED_INPUT=$BED_RELOCATED
+BED_DEFAULT=$(echo $BED_INPUT | cut -d" " -f1) #`date '+%Y%m%d-%H%M%S'`
 
 # BEDFILE_GENES
 if [ "$BEDFILE_GENES_INPUT" != "" ]; then # && [ -s "$BEDFILE_GENES_INPUT" ]; then
@@ -488,16 +503,32 @@ if [ "$BEDFILE_GENES_INPUT" != "" ]; then # && [ -s "$BEDFILE_GENES_INPUT" ]; th
 fi;
 
 BEDFILE_GENES_DEFAULT="";
+BEDFILE_GENES_RELOCATED=""
 if [ "$BEDFILE_GENES" != "" ]; then
 	# Test BED files exist
-	for G in $(echo $BEDFILE_GENES | tr "+" " "); do
-		if [ ! -e $G ]; then
-			echo "[ERROR] BEDFILE_GENES '$G' file DOES NOT exist!";
-			exit 0;
-		fi;
+	#for G in $(echo $BEDFILE_GENES | tr "+" " "); do
+	for G_LIST_ONE in $(echo $BEDFILE_GENES); do
+		#if [ ! -e $G ]; then
+		BEDFILE_GENES_LIST=""
+		for G in $(echo $G_LIST_ONE | tr "+" " "); do
+			if [ -f "$G" ] || [ -f "$ANALYSIS_DIR/$G" ]; then
+				(($DEBUG)) && echo "G=$G";
+				# Relocation
+				if [ -f "$G" ]; then
+					BEDFILE_GENES_LIST="$BEDFILE_GENES_LIST+$G"
+			 	elif [ -f "$ANALYSIS_DIR/$G" ]; then
+					BEDFILE_GENES_LIST="$BEDFILE_GENES_LIST+$ANALYSIS_DIR/$G"
+				fi;
+			else
+				echo "[ERROR] BEDFILE_GENES '$G' file DOES NOT exist!";
+				exit 0;
+			fi;
+		done;
+		BEDFILE_GENES_RELOCATED="$BEDFILE_GENES_RELOCATED "$(echo $BEDFILE_GENES_LIST | sed "s/+$//" | sed "s/^+//")
 	done;
-	BEDFILE_GENES_DEFAULT=$(echo $BEDFILE_GENES | cut -d" " -f1) #`date '+%Y%m%d-%H%M%S'`
 fi;
+BEDFILE_GENES=$BEDFILE_GENES_RELOCATED
+BEDFILE_GENES_DEFAULT=$(echo $BEDFILE_GENES | cut -d" " -f1) #`date '+%Y%m%d-%H%M%S'`
 
 
 # TRANSCRIPTS
@@ -506,16 +537,32 @@ if [ "$TRANSCRIPTS_INPUT" != "" ]; then # && [ -s $TRANSCRIPTS_INPUT ]; then
 fi;
 
 TRANSCRIPTS_DEFAULT="";
+TRANSCRIPTS_RELOCATED=""
 if [ "$TRANSCRIPTS" != "" ]; then
 	# Test BED files exist
-	for T in $TRANSCRIPTS; do
-		if [ ! -e $T ]; then
-			echo "[ERROR] TRANSCRIPTS '$T' file DOES NOT exist!";
-			exit 0;
-		fi;
+	for T_LIST_ONE in $TRANSCRIPTS; do
+		#if [ ! -e $T ]; then
+		TRANSCRIPTS_LIST=""
+		for T in $(echo $T_LIST_ONE | tr "+" " "); do
+			if [ -f "$T" ] || [ -f "$ANALYSIS_DIR/$T" ]; then
+				(($DEBUG)) && echo "T=$T";
+				# Relocation
+				if [ -f "$T" ]; then
+					TRANSCRIPTS_LIST="$TRANSCRIPTS_LIST+$T"
+				elif [ -f "$ANALYSIS_DIR/$G" ]; then
+					TRANSCRIPTS_LIST="$TRANSCRIPTS_LIST+$ANALYSIS_DIR/$T"
+				fi;
+			else
+				echo "[ERROR] TRANSCRIPTS '$T' file DOES NOT exist!";
+				exit 0;
+			fi;
+		done;
+		TRANSCRIPTS_RELOCATED="$TRANSCRIPTS_RELOCATED "$(echo $TRANSCRIPTS_LIST | sed "s/+$//")
 	done;
-	TRANSCRIPTS_DEFAULT=$(echo $TRANSCRIPTS | cut -d" " -f1) #`date '+%Y%m%d-%H%M%S'`
+
 fi;
+TRANSCRIPTS=$TRANSCRIPTS_RELOCATED
+TRANSCRIPTS_DEFAULT=$(echo $TRANSCRIPTS | cut -d" " -f1) #`date '+%Y%m%d-%H%M%S'`
 
 
 # RUN
@@ -1113,10 +1160,13 @@ for RUU in $RUN_UNIQ; do
 			> $RUN_SAMPLE_DIR/$S.list.genes;
 			for G_ONE in $(echo $G | tr "+" " "); do
 				#cp -p $G_ONE $RUN_SAMPLE_DIR/$(basename $G_ONE);
-				$COMMAND_COPY $G_ONE $RUN_SAMPLE_DIR/$(basename $G_ONE);
-				echo $(basename $G_ONE) >> $RUN_SAMPLE_DIR/$S.list.genes
+				[ "${G_ONE##*.}" != "genes" ] && G_ONE_TARGET=$(basename $G_ONE)".genes" || G_ONE_TARGET=$(basename $G_ONE);
+				$COMMAND_COPY $G_ONE $RUN_SAMPLE_DIR/$S.$G_ONE_TARGET;
+				echo $S.$G_ONE_TARGET >> $RUN_SAMPLE_DIR/$S.list.genes
 			done;
 		fi;
+		#echo $RUN_SAMPLE_DIR/$S.list.genes
+		#cat $RUN_SAMPLE_DIR/$S.list.genes
 		#exit 0
 
 		# Copy TRANSCRIPTS
@@ -1126,7 +1176,7 @@ for RUU in $RUN_UNIQ; do
 		#el
 		if [ "$T" != "" ] && [ ! -e $RUN_SAMPLE_DIR/$T.list.transcripts ]; then
 			echo "#[INFO] Create LIST.TRANSCRIPTS file '$RUN_SAMPLE_DIR/$S.list.transcripts' and concatenated file .transcripts"
-			echo $T | tr "+" " " > $RUN_SAMPLE_DIR/$S.list.transcripts;
+			echo $T | tr "+" "\n" > $RUN_SAMPLE_DIR/$S.list.transcripts;
 			cat $(echo $T | tr "+" " ") > $RUN_SAMPLE_DIR/$S.transcripts;
 			#for G_ONE in $(echo $G | tr "+" " "); do
 			#	cp -p $G_ONE $RUN_SAMPLE_DIR/$(basename $G_ONE);

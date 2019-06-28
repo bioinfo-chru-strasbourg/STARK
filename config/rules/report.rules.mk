@@ -72,6 +72,22 @@ HOWARD_CALCULATION?=VAF,NOMEN,VAF_STATS,VARTYPE
 	echo "" >> $@
 
 
+
+%.launch.json: %.config %.archive.cram %.manifest %.bed %.list.genes %.tag
+	mkdir -p $(@D)
+	> $@
+	echo "{" >> $@;
+	echo "\"sample\": [\"$(*F)\"]," >> $@;
+	echo "\"reads\": [\"$(*F).archive.cram\"]," >> $@;
+	echo "\"design\": [\"$(*F).$$([[ -s $*.manifest ]] && echo 'manifest' || echo 'bed')\"]," >> $@;
+	if [ -s $*.list.genes ]; then echo "\"genes\": [\"$$(for g in $$(cat $*.list.genes); do basename $$g; done | tr '\n' '+' | sed s/+$$//gi)\"]," >> $@; fi;
+	if [ -s $*.transcripts ]; then echo "\"transcripts\": [\"$(*F).transcripts\"]," >> $@; fi;
+	# for g in $(cat P1408.list.genes); do basename $g; done | tr '\n' '+' | sed s/+$//gi
+	echo "\"sample_tag\": [\"$$(cat $*.tag | tr ' ' '!')\"]" >> $@;
+	echo "}" >> $@;
+
+
+
 ## Report for a SAMPLE
 %.$(ANALYSIS_DATE).report: $(FINAL) $(REPORT_FILES) %.$(ANALYSIS_DATE).config #$(REPORT_FILES) $(BAM) %.$(ANALYSIS_DATE).config
 	#%.$(ANALYSIS_DATE).report.summary %.$(ANALYSIS_DATE).report.variants %.$(ANALYSIS_DATE).config

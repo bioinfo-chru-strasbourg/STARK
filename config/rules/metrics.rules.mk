@@ -504,125 +504,62 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 %.list.genes: %.bed
 	mkdir -p $(@D);
 	#touch $@;
-	+if [ -s $$(sample=$$(basename $* | cut -d. -f1 ); echo "$(*D)/$$sample.list.genes") ] ; then \
-		echo "BEDFILE_GENES for $* from SAMPLE.list.genes in same directory"; \
-		for g in $$(sample=$$(basename $* | cut -d. -f1 ); cat "$(*D)/$$sample.list.genes"); do \
-			echo "BEDFILE_GENES for $* from SAMPLE.list.genes: $(*D)/$$g "; \
-			bedfile_genes_list="$$bedfile_genes_list $(*D)/$$g"; \
-		done; \
-	elif [ -s $$(sample=$$(basename $* | cut -d. -f1 ); echo "$$(dirname $(*D))/$$sample.list.genes") ] ; then \
-		echo "BEDFILE_GENES for $* from SAMPLE.list.genes from previous directory"; \
-		for g in $$(sample=$$(basename $* | cut -d. -f1 ); cat "$$(dirname $(*D))/$$sample.list.genes"); do \
-			echo "BEDFILE_GENES for $* from SAMPLE.list.genes: $$(dirname $(*D))/$$g "; \
-			bedfile_genes_list="$$bedfile_genes_list $$(dirname $(*D))/$$g"; \
-		done; \
-	elif [ -s `file=$$( echo $* | cut -d. -f1 ); echo "$$file.genes"` ] ; then \
-		echo "BEDFILE_GENES for $* from SAMPLE.genes"; \
-		bedfile_genes_list=`file=$$( echo $* | cut -d. -f1 ); echo "$$file.genes"`; \
-	#elif [ "$(BEDFILE_GENES)" != "" ]; then \
-	elif (( $$(echo $(BEDFILE_GENES) | wc -w) )); then \
-		echo "BEDFILE_GENES for $* from BEDFILE_GENES variable. Use all files to generate metrics."; \
-		bedfile_genes_list=""; \
-		for bedfile_genes in $$(echo $(BEDFILE_GENES) | tr "+" " " | tr " " "\n" | sort -u); \
-		do \
-			bedfile_name=$$( basename $$bedfile_genes | sed "s/\.genes$$//" ); \
-			cp $$bedfile_genes $(@D)/$(*F)_$${bedfile_name}.bed; \
-			bedfile_genes_list="$$bedfile_genes_list $(@D)/$(*F)_$${bedfile_name}.bed"; \
-		done; \
-	else \
-		echo "BEDFILE_GENES for $* generated from SAMPLE.manifest"; \
-		bedfile_genes_list=`file=$$( echo $* | cut -d. -f1 ); echo "$$file.genes_from_manifest"`; \
-		# ici on va faire une intersection avec le manifest et ce sera notre bed par defaut sil nexiste pas; \
-		bed=`file=$$( echo $* | cut -d. -f1 ); echo "$$file.bed"`; \
-		manifest=`file=$$( echo $* | cut -d. -f1 ); echo "$$file.manifest"`; \
-		if [ -s `echo "$$bed"` ] ; then \
-			#echo "genes from BED '$$bed'" >> $*.test; \
-			cut -f1,2,3 $${bed} > $${manifest}.bed ; \
-		elif [ -s `echo "$$manifest"` ] ; then \
-			# manifest to bed ; \
-			$(FATBAM_ManifestToBED) --input "$$manifest" --output "$${manifest}.bed_tmp" --output_type "region" | $(FATBAM_ManifestToBED) --input "$$manifest" --output "$${manifest}.bed_tmp" --output_type "region" --type=PCR; \
-			cut -f1,2,3 $${manifest}.bed_tmp > $${manifest}.bed ; \
-			rm $${manifest}.bed_tmp ; \
-		fi; \
-		if [ -s `echo "$${manifest}.bed"` ] ; then \
-			echo "MANIFEST.bed to bedfile_genes_list : $bedfile_genes_list"; \
-			$(BEDTOOLS)/bedtools intersect -wb -a $${manifest}.bed -b $(REFSEQ_GENES) | cut -f8 | sort -u > $${manifest}.bed.intersect; \
-			sort -k5 $(REFSEQ_GENES) > $${manifest}.bed.refseq; \
-			join -1 1 -2 5 $${manifest}.bed.intersect $${manifest}.bed.refseq -o 2.1,2.2,2.3,2.5 | sort -u -k1,2 | tr " " "\t" | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$4}' > $$bedfile_genes_list; \
-			rm -f $${manifest}.bed.intersect $${manifest}.bed.refseq; \
+	+if [ ! -s $@ ]; then \
+		if [ -s $$(sample=$$(basename $* | cut -d. -f1 ); echo "$(*D)/$$sample.list.genes") ] ; then \
+			echo "BEDFILE_GENES for $* from SAMPLE.list.genes in same directory"; \
+			for g in $$(sample=$$(basename $* | cut -d. -f1 ); cat "$(*D)/$$sample.list.genes"); do \
+				echo "BEDFILE_GENES for $* from SAMPLE.list.genes: $(*D)/$$g "; \
+				bedfile_genes_list="$$bedfile_genes_list $(*D)/$$g"; \
+			done; \
+		elif [ -s $$(sample=$$(basename $* | cut -d. -f1 ); echo "$$(dirname $(*D))/$$sample.list.genes") ] ; then \
+			echo "BEDFILE_GENES for $* from SAMPLE.list.genes from previous directory"; \
+			for g in $$(sample=$$(basename $* | cut -d. -f1 ); cat "$$(dirname $(*D))/$$sample.list.genes"); do \
+				echo "BEDFILE_GENES for $* from SAMPLE.list.genes: $$(dirname $(*D))/$$g "; \
+				bedfile_genes_list="$$bedfile_genes_list $$(dirname $(*D))/$$g"; \
+			done; \
+		elif [ -s `file=$$( echo $* | cut -d. -f1 ); echo "$$file.genes"` ] ; then \
+			echo "BEDFILE_GENES for $* from SAMPLE.genes"; \
+			bedfile_genes_list=`file=$$( echo $* | cut -d. -f1 ); echo "$$file.genes"`; \
+		#elif [ "$(BEDFILE_GENES)" != "" ]; then \
+		elif (( $$(echo $(BEDFILE_GENES) | wc -w) )); then \
+			echo "BEDFILE_GENES for $* from BEDFILE_GENES variable. Use all files to generate metrics."; \
+			bedfile_genes_list=""; \
+			for bedfile_genes in $$(echo $(BEDFILE_GENES) | tr "+" " " | tr " " "\n" | sort -u); \
+			do \
+				bedfile_name=$$( basename $$bedfile_genes | sed "s/\.genes$$//" ); \
+				cp $$bedfile_genes $(@D)/$(*F)_$${bedfile_name}.bed; \
+				bedfile_genes_list="$$bedfile_genes_list $(@D)/$(*F)_$${bedfile_name}.bed"; \
+			done; \
 		else \
-			echo "#[$$(date)] BAM Metrics on Genes coverage not generate, No manifest found, ." >> $@; \
-		fi;\
-	fi; \
-	touch $@; \
-	echo "bed_file list is : `echo $$bedfile_genes_list` "; \
-	echo $$bedfile_genes_list | tr " " "\n" > $@ ;
-
-
-
-
-%.list.genes.OK: %.bed
-	mkdir -p $(@D);
-	#touch $@;
-	+if [ -s `file=$$( echo $* | cut -d. -f1 ); echo "$$file.list.genes"` ] ; then \
-		echo "BEDFILE_GENES for $* from SAMPLE.list.genes"; \
-		for g in $$(file=$$( echo $* | cut -d. -f1 ); cat "$$file.list.genes"); do \
-			echo "BEDFILE_GENES for $* from SAMPLE.list.genes: $(*D)/$$g "; \
-			bedfile_genes_list="$$bedfile_genes_list $(*D)/$$g"; \
-		done; \
-	elif [ -s `file=$$( echo $* | cut -d. -f1 ); echo "$$file.list.genes"` ] ; then \
-		echo "BEDFILE_GENES for $* from SAMPLE.list.genes from previous directory"; \
-		for g in $$(file=$$( echo $* | cut -d. -f1 ); cat "$$file.list.genes"); do \
-			echo "BEDFILE_GENES for $* from SAMPLE.list.genes: $(*D)/$$g "; \
-			bedfile_genes_list="$$bedfile_genes_list $(*D)/$$g"; \
-		done; \
-	elif [ -s `file=$$( dirname $* | cut -d. -f1 ); echo "$$file.list.genes"` ] ; then \
-		echo "BEDFILE_GENES for $* from SAMPLE.list.genes from DIRNAME"; \
-		for g in $$(file=$$( dirname $* | cut -d. -f1 ); cat "$$file.list.genes"); do \
-			echo "BEDFILE_GENES for $* from SAMPLE.list.genes: $(*D)/$$g "; \
-			bedfile_genes_list="$$bedfile_genes_list $(*D)/$$g"; \
-		done; \
-	elif [ -s `file=$$( echo $* | cut -d. -f1 ); echo "$$file.genes"` ] ; then \
-		echo "BEDFILE_GENES for $* from SAMPLE.genes"; \
-		bedfile_genes_list=`file=$$( echo $* | cut -d. -f1 ); echo "$$file.genes"`; \
-	#elif [ "$(BEDFILE_GENES)" != "" ]; then \
-	elif (( $$(echo $(BEDFILE_GENES) | wc -w) )); then \
-		echo "BEDFILE_GENES for $* from BEDFILE_GENES variable. Use all files to generate metrics."; \
-		bedfile_genes_list=""; \
-		for bedfile_genes in $$(echo $(BEDFILE_GENES) | tr "+" " " | tr " " "\n" | sort -u); \
-		do \
-			bedfile_name=$$( basename $$bedfile_genes | sed "s/\.genes$$//" ); \
-			cp $$bedfile_genes $(@D)/$(*F)_$${bedfile_name}.bed; \
-			bedfile_genes_list="$$bedfile_genes_list $(@D)/$(*F)_$${bedfile_name}.bed"; \
-		done; \
-	else \
-		echo "BEDFILE_GENES for $* generated from SAMPLE.manifest"; \
-		bedfile_genes_list=`file=$$( echo $* | cut -d. -f1 ); echo "$$file.genes_from_manifest"`; \
-		# ici on va faire une intersection avec le manifest et ce sera notre bed par defaut sil nexiste pas; \
-		bed=`file=$$( echo $* | cut -d. -f1 ); echo "$$file.bed"`; \
-		manifest=`file=$$( echo $* | cut -d. -f1 ); echo "$$file.manifest"`; \
-		if [ -s `echo "$$bed"` ] ; then \
-			#echo "genes from BED '$$bed'" >> $*.test; \
-			cut -f1,2,3 $${bed} > $${manifest}.bed ; \
-		elif [ -s `echo "$$manifest"` ] ; then \
-			# manifest to bed ; \
-			$(FATBAM_ManifestToBED) --input "$$manifest" --output "$${manifest}.bed_tmp" --output_type "region" | $(FATBAM_ManifestToBED) --input "$$manifest" --output "$${manifest}.bed_tmp" --output_type "region" --type=PCR; \
-			cut -f1,2,3 $${manifest}.bed_tmp > $${manifest}.bed ; \
-			rm $${manifest}.bed_tmp ; \
+			echo "BEDFILE_GENES for $* generated from SAMPLE.manifest"; \
+			bedfile_genes_list=`file=$$( echo $* | cut -d. -f1 ); echo "$$file.genes_from_manifest"`; \
+			# ici on va faire une intersection avec le manifest et ce sera notre bed par defaut sil nexiste pas; \
+			bed=`file=$$( echo $* | cut -d. -f1 ); echo "$$file.bed"`; \
+			manifest=`file=$$( echo $* | cut -d. -f1 ); echo "$$file.manifest"`; \
+			if [ -s `echo "$$bed"` ] ; then \
+				#echo "genes from BED '$$bed'" >> $*.test; \
+				cut -f1,2,3 $${bed} > $${manifest}.bed ; \
+			elif [ -s `echo "$$manifest"` ] ; then \
+				# manifest to bed ; \
+				$(FATBAM_ManifestToBED) --input "$$manifest" --output "$${manifest}.bed_tmp" --output_type "region" | $(FATBAM_ManifestToBED) --input "$$manifest" --output "$${manifest}.bed_tmp" --output_type "region" --type=PCR; \
+				cut -f1,2,3 $${manifest}.bed_tmp > $${manifest}.bed ; \
+				rm $${manifest}.bed_tmp ; \
+			fi; \
+			if [ -s `echo "$${manifest}.bed"` ] ; then \
+				echo "MANIFEST.bed to bedfile_genes_list : $bedfile_genes_list"; \
+				$(BEDTOOLS)/bedtools intersect -wb -a $${manifest}.bed -b $(REFSEQ_GENES) | cut -f8 | sort -u > $${manifest}.bed.intersect; \
+				sort -k5 $(REFSEQ_GENES) > $${manifest}.bed.refseq; \
+				join -1 1 -2 5 $${manifest}.bed.intersect $${manifest}.bed.refseq -o 2.1,2.2,2.3,2.5 | sort -u -k1,2 | tr " " "\t" | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$4}' > $$bedfile_genes_list; \
+				rm -f $${manifest}.bed.intersect $${manifest}.bed.refseq; \
+			else \
+				echo "#[ERROR] Generating GENES failed"; \
+			fi;\
 		fi; \
-		if [ -s `echo "$${manifest}.bed"` ] ; then \
-			echo "MANIFEST.bed to bedfile_genes_list : $bedfile_genes_list"; \
-			$(BEDTOOLS)/bedtools intersect -wb -a $${manifest}.bed -b $(REFSEQ_GENES) | cut -f8 | sort -u > $${manifest}.bed.intersect; \
-			sort -k5 $(REFSEQ_GENES) > $${manifest}.bed.refseq; \
-			join -1 1 -2 5 $${manifest}.bed.intersect $${manifest}.bed.refseq -o 2.1,2.2,2.3,2.5 | sort -u -k1,2 | tr " " "\t" | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$4}' > $$bedfile_genes_list; \
-			rm -f $${manifest}.bed.intersect $${manifest}.bed.refseq; \
-		else \
-			echo "#[$$(date)] BAM Metrics on Genes coverage not generate, No manifest found, ." >> $@; \
-		fi;\
-	fi; \
-	touch $@; \
-	echo "bed_file list is : `echo $$bedfile_genes_list` "; \
-	echo $$bedfile_genes_list | tr " " "\n" > $@ ;
+		echo "bed_file list is : `echo $$bedfile_genes_list` "; \
+		echo $$bedfile_genes_list | tr " " "\n" > $@ ; \
+	else \
+		echo "BEDFILE_GENES exists!!! "; \
+	fi;
 
 
 
