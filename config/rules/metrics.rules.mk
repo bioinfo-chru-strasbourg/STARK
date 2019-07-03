@@ -25,30 +25,46 @@ GZ?=gzip
 BED?=
 PRIMER_BED?=
 BAM_METRICS?=1
+FULL_COVERAGE?=0
 
 FATBAM_TMP_FOLDER?=$(TMP_FOLDER_TMP)
 
 METRICS_SNPEFF?=0
 
 
-
 # Coverage
-DP_FAIL?=30
-DP_WARN?=100
-DP_THRESHOLD?=1
-COVS?=1,5,10,20,30,50,100,200,300
+MINIMUM_DEPTH?=30
+EXPECTED_DEPTH?=100
+DEPTH_COVERAGE_THRESHOLD?=1
+COVERAGE_CRITERIA?=1,5,10,20,30,50,100,200,300
+
+
+
+# GLOBAL VARIABLES
+METRICS_MINIMUM_MAPPING_QUALITY?=10
+METRICS_MINIMUM_BASE_QUALITY?=10
+CLIP_OVERLAPPING_READS?=1
+
 
 # SAMTOOLS
-SAMTOOLS_METRICS_VIEW_MAP_Q?=10
-SAMTOOLS_METRICS_VIEW_PARAM?= -F 1024 -F 4 -q $(SAMTOOLS_METRICS_VIEW_MAP_Q)
-SAMTOOLS_METRICS_DEPTH_base_q?=10
-SAMTOOLS_METRICS_DEPTH_map_q?=10
-SAMTOOLS_METRICS_DEPTH_PARAM?= -d 0 -q $(SAMTOOLS_METRICS_DEPTH_map_q)
+SAMTOOLS_METRICS_DEPTH_base_q?=$(METRICS_MINIMUM_BASE_QUALITY)
+SAMTOOLS_METRICS_DEPTH_map_q?=$(METRICS_MINIMUM_MAPPING_QUALITY)
+SAMTOOLS_METRICS_DEPTH_PARAM?= -d $(SAMTOOLS_METRICS_DEPTH_base_q) -q $(SAMTOOLS_METRICS_DEPTH_map_q)
+
+SAMTOOLS_METRICS_VIEW_PARAM?= -F 0x4 -F 0x100 -F 0x200 -F 0x400 -q $(SAMTOOLS_METRICS_DEPTH_map_q)
+
+SAMTOOLS_METRICS_MPILEUP_DEPTH_base_q?=$(METRICS_MINIMUM_BASE_QUALITY)
+SAMTOOLS_METRICS_MPILEUP_DEPTH_map_q?=$(METRICS_MINIMUM_MAPPING_QUALITY)
+SAMTOOLS_METRICS_MPILEUP_DEPTH_max_depth?=100000000
+SAMTOOLS_METRICS_MPILEUP_DEPTH_adjust_MQ?=0
+SAMTOOLS_METRICS_MPILEUP_DEPTH_excl_flags?=--excl-flags UNMAP,SECONDARY,QCFAIL,DUP
+SAMTOOLS_METRICS_MPILEUP_DEPTH_count_orphans?=--count-orphans
+SAMTOOLS_METRICS_MPILEUP_PARAM?= $(SAMTOOLS_METRICS_MPILEUP_DEPTH_excl_flags) --min-BQ $(SAMTOOLS_METRICS_MPILEUP_DEPTH_base_q) --min-MQ $(SAMTOOLS_METRICS_MPILEUP_DEPTH_map_q) --max-depth $(SAMTOOLS_METRICS_MPILEUP_DEPTH_max_depth) --adjust-MQ $(SAMTOOLS_METRICS_MPILEUP_DEPTH_adjust_MQ) $(SAMTOOLS_METRICS_MPILEUP_DEPTH_count_orphans) $$(if ! (( $(CLIP_OVERLAPPING_READS) )); then echo " -x "; fi )
 
 # PICARD
 PICARD_CollectHsMetrics_MINIMUM_MAPPING_QUALITY?=10
 PICARD_CollectHsMetrics_MINIMUM_BASE_QUALITY?=10
-PICARD_CollectHsMetrics_PARAM?=MINIMUM_MAPPING_QUALITY=$(PICARD_CollectHsMetrics_MINIMUM_MAPPING_QUALITY) MINIMUM_BASE_QUALITY=$(PICARD_CollectHsMetrics_MINIMUM_BASE_QUALITY)
+PICARD_CollectHsMetrics_PARAM?=MINIMUM_MAPPING_QUALITY=$(PICARD_CollectHsMetrics_MINIMUM_MAPPING_QUALITY) MINIMUM_BASE_QUALITY=$(PICARD_CollectHsMetrics_MINIMUM_BASE_QUALITY) CLIP_OVERLAPPING_READS=$(CLIP_OVERLAPPING_READS)
 
 
 
@@ -179,12 +195,34 @@ PICARD_CollectHsMetrics_PARAM?=MINIMUM_MAPPING_QUALITY=$(PICARD_CollectHsMetrics
 # ALL METRICS
 ###############
 
-%.bam.metrics/metrics: %.bam.metrics/metrics.gatk %.bam.metrics/metrics.picard %.bam.metrics/metrics.samtools %.bam.metrics/metrics.regions_coverage %.bam.metrics/metrics.amplicon_coverage #%.bam.metrics/metrics.bam_check
+%.bam.metrics/metrics: %.bam.metrics/metrics.design %.bam.metrics/metrics.gatk %.bam.metrics/metrics.picard %.bam.metrics/metrics.samtools %.bam.metrics/metrics.regions_coverage %.bam.metrics/metrics.amplicon_coverage #%.bam.metrics/metrics.bam_check
 	#Create directory
 	mkdir -p $(@D)
 	cat $^ > $@
 	echo "#[$$(date)] BAM Metrics done" >> $@
 	-rm -f $*.for_metrics_bed
+
+
+
+# Design
+##########
+
+%.bam.metrics/metrics.design: %.list.genes %.design.bed
+	# Create directory
+	mkdir -p $(@D)
+	touch $@
+	# Foreach design and genes files
+	for one_bed in $$(cat $*.list.genes) $*.design.bed; do \
+		if [ -s $$one_bed ]; then \
+			cp $$one_bed $(@D)/$$(basename $$one_bed); \
+			if [ -s $(@D)/$$(basename $$one_bed) ]; then \
+				echo "#[INFO] COPY of design/genes '"$$(basename $$one_bed)"' done. See '$(@D)/$$(basename $$one_bed)'. " >> $@; \
+			else \
+				echo "#[INFO] COPY of design/genes '"$$(basename $$one_bed)"' failed. " >> $@; \
+			fi; \
+		fi; \
+	done;
+	[ ! -z $@ ] && echo "#[INFO] COPY of design/genes not done because not bed/genes files. " >> $@;
 
 
 
@@ -203,7 +241,8 @@ PICARD_CollectHsMetrics_PARAM?=MINIMUM_MAPPING_QUALITY=$(PICARD_CollectHsMetrics
 
 %.bam.metrics/metrics.amplicon_coverage: %.bam %.bam.bai %.manifest %.genome
 	mkdir -p $(@D) ;
-	-+$(FATBAM_COVERAGE) --env=$(CONFIG_TOOLS) --ref=`cat $*.genome`  --bam=$< --output=$(@D)/$(*F).amplicon_coverage --manifest=$*.manifest --multithreading --threads=$(THREADS) -v --tmp=$(FATBAM_TMP_FOLDER);
+	-+$(FATBAM_COVERAGE) --env=$(CONFIG_TOOLS) --ref=$$(cat $*.genome)  --bam=$< --output=$(@D)/$(*F).amplicon_coverage --manifest=$*.manifest --multithreading --threads=$(THREADS) -v --tmp=$(FATBAM_TMP_FOLDER) --verbose 1>$(@D)/$(*F).amplicon_coverage.log 2>$(@D)/$(*F).amplicon_coverage.err;
+	cat $(@D)/$(*F).amplicon_coverage.log $(@D)/$(*F).amplicon_coverage.err;
 	echo "#[$$(date)] BAM Amplicon Coverage Metrics done" > $@;
 
 
@@ -224,7 +263,7 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 		if [ ! -e $(@D)/$(*F) ]; then \
 			$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKDOC_FLAGS) \
 				-T DepthOfCoverage \
-				-R `cat $*.genome` \
+				-R $$(cat $*.genome) \
 				-o $(@D)/$(*F) \
 				-I $< \
 				-L $*.withoutheader.for_metrics_bed.gatk.bed; \
@@ -234,6 +273,19 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 	else \
 		echo "#[$$(date)] BAM GATK not done because BAM_METRICS=0" > $@; \
 	fi;
+
+
+
+
+
+# BAM Validation
+##################
+
+%.validation.bam: %.bam %.bam.bai #%.list.genes %.design.bed
+	# Create directory ;
+	mkdir -p $(@D);
+	# BAM Validation
+	$(SAMTOOLS) view $(SAMTOOLS_METRICS_VIEW_PARAM) -h $< -1 -@ $(THREADS) > $@ ;
 
 
 
@@ -250,69 +302,208 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 # PICARD Metrics
 ##################
 
-%.bam.metrics/metrics.picard: %.bam %.bam.bai %.3fields.for_metrics_bed %.empty.HsMetrics %.genome %.design.bed.intervals
+%.bam.metrics/metrics.picard: %.validation.bam %.validation.bam.bai %.empty.HsMetrics %.genome %.list.genes %.design.bed %.dict
 	# Create directory
 	mkdir -p $(@D)
 	touch $@
 	# Picard Metrics needs BED with Header and 3+3 fields!!!
-	-if [ -s $*.3fields.for_metrics_bed ]; then \
-		#$(JAVA) $(JAVA_FLAGS_BY_SAMPLE) -jar $(PICARD) CollectHsMetrics INPUT=$< OUTPUT=$(@D)/$(*F).HsMetrics R=`cat $*.genome` BAIT_INTERVALS=$*.3fields.for_metrics_bed TARGET_INTERVALS=$*.3fields.for_metrics_bed PER_TARGET_COVERAGE=$(@D)/$(*F).HsMetrics.per_target_coverage $(PICARD_CollectHsMetrics_PARAM) 2>$(@D)/$(*F).HsMetrics.err VALIDATION_STRINGENCY=LENIENT; \
-		$(JAVA) $(JAVA_FLAGS_BY_SAMPLE) -jar $(PICARD) CollectHsMetrics INPUT=$< OUTPUT=$(@D)/$(*F).HsMetrics R=`cat $*.genome` BAIT_INTERVALS=$*.design.bed.intervals TARGET_INTERVALS=$*.design.bed.intervals PER_TARGET_COVERAGE=$(@D)/$(*F).HsMetrics.per_target_coverage $(PICARD_CollectHsMetrics_PARAM) 2>$(@D)/$(*F).HsMetrics.err VALIDATION_STRINGENCY=LENIENT; \
-	fi;
-	if [ ! -s $(@D)/$(*F).HsMetrics ]; then cp $*.empty.HsMetrics $(@D)/$(*F).HsMetrics; echo "#[ERROR] BAM PICARD Metrics failed. Empty HsMetrics file generated. See '$(@D)/$(*F).HsMetrics.err'" >> $@; fi
-	echo "#[$$(date)] BAM PICARD Metrics done" >> $@
+	for one_bed in $$(cat $*.list.genes) $*.design.bed; do \
+		if [ -s $$one_bed ]; then \
+			$(JAVA) $(JAVA_FLAGS_BY_SAMPLE) -jar $(PICARD) BedToIntervalList I=$$one_bed O=$(@D)/$(*F).$$(basename $$one_bed).interval SD=$$(cat $*.dict) ; \
+			$(JAVA) $(JAVA_FLAGS_BY_SAMPLE) -jar $(PICARD) CollectHsMetrics INPUT=$*.validation.bam OUTPUT=$(@D)/$(*F).$$(basename $$one_bed).HsMetrics R=$$(cat $*.genome) BAIT_INTERVALS=$(@D)/$(*F).$$(basename $$one_bed).interval TARGET_INTERVALS=$(@D)/$(*F).$$(basename $$one_bed).interval PER_TARGET_COVERAGE=$(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_target_coverage $(PICARD_CollectHsMetrics_PARAM) VALIDATION_STRINGENCY=SILENT 2>$(@D)/$(*F).$$(basename $$one_bed).HsMetrics.err ; \
+			rm $(@D)/$(*F).$$(basename $$one_bed).interval; \
+		fi; \
+		if [ ! -s $(@D)/$(*F).$$(basename $$one_bed).HsMetrics ]; then \
+			cp $*.empty.HsMetrics $(@D)/$(*F).$$(basename $$one_bed).HsMetrics; \
+			echo "#[ERROR] BAM PICARD Metrics failed. Empty HsMetrics file generated. See '$(@D)/$(*F).$$(basename $$one_bed).HsMetrics.err'" >> $@; \
+		else \
+			echo "#[INFO] BAM PICARD Metrics done. HsMetrics file generated. See '$(@D)/$(*F).$$(basename $$one_bed).HsMetrics'" >> $@; \
+		fi \
+	done;
+	echo "#[INFO] BAM PICARD Metrics done" >> $@
+
 
 
 
 # SAMTOOLS metrics
 ####################
 
-%.bam.metrics/metrics.samtools: %.bam %.bam.bai %.list.genes %.design.bed
+
+%.bam.metrics/metrics.samtools: %.bam.metrics/metrics.samtools.flagstat %.bam.metrics/metrics.samtools.idxstats %.bam.metrics/metrics.samtools.genomeCoverage %.bam.metrics/metrics.samtools.depth \
+	%.bam.metrics/metrics.samtools.depthbed.coverage %.bam.metrics/metrics.samtools.on.target %.bam.metrics/metrics.samtools.off.target %.bam.metrics/metrics.samtools.genomeCoverageBed
 	# Create directory ;
 	mkdir -p $(@D);
-	# CLEAN BAM
-	$(SAMTOOLS) view $(SAMTOOLS_METRICS_VIEW_PARAM) -h $< -1 -@ $(THREADS) > $<.cleaned.bam ;
-	# For all BED files for bedfile_genes in $$(cat $*.list.genes) $*.region_clipped.bed;
+	cat $^ > $@
+	echo "#[$$(date)] SAMTOOLS Metrics done" >> $@
+
+
+%.bam.metrics/metrics.samtools.flagstat: %.bam %.bam.bai
+	# Create directory ;
+	mkdir -p $(@D);
+	> $@;
+	$(SAMTOOLS) flagstat $< > $(@D)/$(*F).flagstat ;
+	if [ -s $(@D)/$(*F).flagstat ]; then \
+		echo "#[INFO] SAMTOOLS flagstat done. See '$(@D)/$(*F).flagstat'. " >> $@; \
+	else \
+		echo "#[INFO] SAMTOOLS flagstat failed. " >> $@; \
+	fi;
+
+
+%.bam.metrics/metrics.samtools.idxstats: %.bam %.bam.bai
+	# Create directory ;
+	mkdir -p $(@D);
+	> $@;
+	$(SAMTOOLS) idxstats $< > $(@D)/$(*F).idxstats ;
+	if [ -z $(@D)/$(*F).idxstats ]; then \
+		echo "#[INFO] SAMTOOLS idxstats done. See '$(@D)/$(*F).idxstats'. " >> $@; \
+	else \
+		echo "#[INFO] SAMTOOLS idxstats failed. " >> $@; \
+	fi;
+
+
+%.bam.metrics/metrics.samtools.genomeCoverage: %.bam %.bam.bai
+	# Create directory ;
+	mkdir -p $(@D);
+	> $@;
+	if (($(BAM_METRICS))); then \
+		if (($(FULL_COVERAGE))); then \
+			$(BEDTOOLS)/genomeCoverageBed -ibam $< -dz > $(@D)/$(*F).genomeCoverage; \
+			$(GZ) --best -f $(@D)/$(*F).genomeCoverage; \
+			if [ -s $(@D)/$(*F).genomeCoverage.gz ]; then \
+				echo "#[INFO] BEDTOOLS genomeCoverage done. See '$(@D)/$(*F).genomeCoverage.gz'. " >> $@; \
+			else \
+				echo "#[INFO] SAMTOOLS genomeCoverage failed. " >> $@; \
+			fi; \
+		else \
+			echo "#[INFO] SAMTOOLS genomeCoverage not done because FULL_COVERAGE=0. " >> $@; \
+		fi; \
+	else \
+		echo "#[INFO] SAMTOOLS genomeCoverage not done because BAM_METRICS=0. " >> $@; \
+	fi;
+
+
+%.bam.metrics/metrics.samtools.depth: %.bam %.bam.bai
+	# Create directory ;
+	mkdir -p $(@D);
+	> $@;
+	if (($(BAM_METRICS))); then \
+		if (($(FULL_COVERAGE))); then \
+			$(SAMTOOLS) mpileup $(SAMTOOLS_METRICS_MPILEUP_PARAM) $< | cut -f1,2,4 > $(@D)/$(*F).depth; \
+			$(GZ) --best -f $(@D)/$(*F).depth; \
+			if [ -s $(@D)/$(*F).idxstats.gz ]; then \
+				echo "#[INFO] SAMTOOLS depth done. See '$(@D)/$(*F).depth.gz'. " >> $@; \
+			else \
+				echo "#[INFO] SAMTOOLS depth failed. " >> $@; \
+			fi; \
+		else \
+			echo "#[INFO] SAMTOOLS depth not done because FULL_COVERAGE=0. " >> $@; \
+		fi; \
+	else \
+		echo "#[INFO] SAMTOOLS depth not done because BAM_METRICS=0. " >> $@; \
+	fi;
+
+
+%.bam.metrics/metrics.samtools.depthbed.coverage: %.validation.bam %.validation.bam.bai %.list.genes %.design.bed
+	# Create directory ;
+	mkdir -p $(@D);
+	> $@;
+	# For each BED GENES
 	for one_bed in $$(cat $*.list.genes) $*.design.bed; do \
 		# Test if BED exists \
 		if [ -e $$one_bed ]; then \
-			# DEPTHBED \
-			$(SAMTOOLS) depth -b $$one_bed $(SAMTOOLS_METRICS_DEPTH_PARAM) $<.cleaned.bam > $(@D)/$(*F).$$(basename $$one_bed).depthbed; \
-			# COVS \
-			cat $(@D)/$(*F).$$(basename $$one_bed).depthbed | awk -v MDP=$$(echo $(COVS) | tr "," "\n" | sort -n | tail -n 1)  '{SUM++} { if ($$3>MDP) {DP[MDP]++} else {DP[$$3]++} } END { for (i=MDP; i>=0; i-=1) {print i" "DP[i]" SUM"SUM}}' | sort -g -r | awk -v COVS=$(COVS) '{SUM+=$$2} {CUM[$$1]=SUM} {split(COVS,C,",")}  END  { for (j in C) {print C[j]" "CUM[C[j]]" SUM "(CUM[C[j]]/SUM)} }' | sort -g > $(@D)/$(*F).$$(basename $$one_bed).depthbed.covs; \
-			# ON NBReads \
-			$(SAMTOOLS) view -c $<.cleaned.bam -L $$one_bed > $(@D)/$(*F).$$(basename $$one_bed).on.nbreads; \
-			# OFF NBReads \
-			$(BEDTOOLS)/intersectBed -abam $<.cleaned.bam -b $$one_bed -v | $(SAMTOOLS) view -c - > $(@D)/$(*F).$$(basename $$one_bed).off.nbreads; \
-			if (($(BAM_METRICS))); then \
-				$(SAMTOOLS) view -b $< -L $$one_bed | $(SAMTOOLS) sort | $(BEDTOOLS)/genomeCoverageBed -ibam stdin -dz > $(@D)/$(*F).$$(basename $$one_bed).genomeCoverageBedbed; \
+			# depthbed generation \
+			$(SAMTOOLS) mpileup $(SAMTOOLS_METRICS_MPILEUP_PARAM) -l $$one_bed $< | cut -f1,2,4 > $(@D)/$(*F).$$(basename $$one_bed).depthbed; \
+			if [ -s $(@D)/$(*F).$$(basename $$one_bed).depthbed ]; then \
+				echo "#[INFO] SAMTOOLS depthbed with '"$$(basename $$one_bed)"' done. See '$(@D)/$(*F).$$(basename $$one_bed).depthbed'. " >> $@; \
 			else \
-				echo "#[$$(date)] COVERAGE with SAMTOOLS and BEDTOOLS not done due to a lack of region defined in BED '"$$(basename $$one_bed)"'" >> $@; \
+				echo "#[INFO] SAMTOOLS depthbed with '"$$(basename $$one_bed)"' failed. " >> $@; \
 			fi; \
-			echo "#[$$(date)] COVERAGE with SAMTOOLS with BED file '"$$(basename $$one_bed)"', without duplicates reads and reads with quality mapping < 10" >> $@; \
+			# coverage generation \
+			cat $(@D)/$(*F).$$(basename $$one_bed).depthbed | \
+			awk -v MDP=$$(echo $(COVERAGE_CRITERIA) | tr "," "\n" | sort -n | tail -n 1)  '{SUM++} { if ($$3>MDP) {DP[MDP]++} else {DP[$$3]++} } END { for (i=MDP; i>=0; i-=1) {print i" "DP[i]" SUM"SUM}}' | \
+			sort -g -r | awk -v COVERAGE_CRITERIA=$(COVERAGE_CRITERIA) '{SUM+=$$2} {CUM[$$1]=SUM} {split(COVERAGE_CRITERIA,C,",")} END { for (j in C) {print C[j]" "CUM[C[j]]" SUM "(CUM[C[j]]/SUM)} }' | \
+			sort -g > $(@D)/$(*F).$$(basename $$one_bed).coverage; \
+			echo "#[INFO] SAMTOOLS depthbed and coverage with '"$$(basename $$one_bed)"' done. See '$(@D)/$(*F).$$(basename $$one_bed).depthbed' and  '$(@D)/$(*F).$$(basename $$one_bed).coverage'. " >> $@; \
+			if [ -s $(@D)/$(*F).$$(basename $$one_bed).coverage ]; then \
+				echo "#[INFO] SAMTOOLS coverage with '"$$(basename $$one_bed)"' done. See '$(@D)/$(*F).$$(basename $$one_bed).coverage'. " >> $@; \
+			else \
+				echo "#[INFO] SAMTOOLS coverage with '"$$(basename $$one_bed)"' failed. " >> $@; \
+			fi; \
 		else \
-			echo "#[$$(date)] COVERAGE with SAMTOOLS with a BED file not done due to a lack of region defined in BED '"$$(basename $$one_bed)"'" >> $@; \
+			echo "#[INFO] SAMTOOLS depthbed and coverage with '"$$(basename $$one_bed)"' failed, because no '"$$(basename $$one_bed)"'." >> $@; \
 		fi; \
 	done;
-	# Clean Clean
-	rm -f $<.cleaned.bam;
-	# STATS on BAM
-	$(SAMTOOLS) flagstat $< > $(@D)/$(*F).flagstat ;
-	$(SAMTOOLS) idxstats $< > $(@D)/$(*F).idxstats ;
-	# Add full BAM metrics
-	if (($(BAM_METRICS))); then \
-		if [ "$(FULL_COVERAGE)" == "1" ]; then \
-			$(SAMTOOLS) depth $< > $(@D)/$(*F).depth; \
-			$(GZ) --best -f $(@D)/$(*F).depth; \
-			$(BEDTOOLS)/genomeCoverageBed -ibam $< -dz > $(@D)/$(*F).genomeCoverageBed; \
-			$(GZ) --best -f $(@D)/$(*F).genomeCoverageBed; \
+	[ ! -z $@ ] && echo "#[INFO] SAMTOOLS depthbed and coverage not done because not bed/genes files. " >> $@;
+
+
+%.bam.metrics/metrics.samtools.on.target: %.validation.bam %.validation.bam.bai %.list.genes %.design.bed
+	# Create directory ;
+	mkdir -p $(@D);
+	> $@;
+	# For each BED GENES
+	for one_bed in $$(cat $*.list.genes) $*.design.bed; do \
+		# Test if BED exists \
+		if [ -e $$one_bed ]; then \
+			$(SAMTOOLS) view -c $*.validation.bam -L $$one_bed > $(@D)/$(*F).$$(basename $$one_bed).on.target; \
+			if [ -s $(@D)/$(*F).$$(basename $$one_bed).coverage ]; then \
+				echo "#[INFO] ON TARGET with '"$$(basename $$one_bed)"' done. Number of reads aligned within the regions defined in the BED. See '$(@D)/$(*F).$$(basename $$one_bed).on.target'. " >> $@; \
+			else \
+				echo "#[INFO] ON TARGET with '"$$(basename $$one_bed)"' failed. " >> $@; \
+			fi; \
 		else \
-			echo "#[$$(date)] FULL COVERAGE with SAMTOOLS and BEDTOOLS not done due to option disabled." >> $@; \
+			echo "#[INFO] ON TARGET with '"$$(basename $$one_bed)"' failed, because no '"$$(basename $$one_bed)"'." >> $@; \
 		fi; \
-		echo "#[$$(date)] BAM SAMTOOLS/BEDTOOLS Metrics done" >> $@ ; \
+	done;
+	[ ! -z $@ ] && echo "#[INFO] ON TARGET not done because not bed/genes files. " >> $@;
+
+
+%.bam.metrics/metrics.samtools.off.target: %.validation.bam %.validation.bam.bai %.list.genes %.design.bed
+	# Create directory ;
+	mkdir -p $(@D);
+	> $@;
+	# For each BED GENES
+	for one_bed in $$(cat $*.list.genes) $*.design.bed; do \
+		# Test if BED exists \
+		if [ -e $$one_bed ]; then \
+			$(BEDTOOLS)/intersectBed -abam $*.validation.bam -b $$one_bed -v | $(SAMTOOLS) view -c - > $(@D)/$(*F).$$(basename $$one_bed).off.nbreads; \
+			if [ -s $(@D)/$(*F).$$(basename $$one_bed).coverage ]; then \
+				echo "#[INFO] OFF TARGET with '"$$(basename $$one_bed)"' done. Number of reads aligned not in the regions defined in the BED. See '$(@D)/$(*F).$$(basename $$one_bed).off.target'. " >> $@; \
+			else \
+				echo "#[INFO] OFF TARGET with '"$$(basename $$one_bed)"' failed." >> $@; \
+			fi; \
+		else \
+			echo "#[INFO] OFF TARGET with '"$$(basename $$one_bed)"' failed, because no '"$$(basename $$one_bed)"'." >> $@; \
+		fi; \
+	done;
+	[ ! -z $@ ] && echo "#[INFO] OFF TARGET not done because not bed/genes files. " >> $@;
+
+
+
+%.bam.metrics/metrics.samtools.genomeCoverageBed: %.validation.bam %.validation.bam.bai %.list.genes %.design.bed
+	# Create directory ;
+	mkdir -p $(@D);
+	> $@;
+	if (($(BAM_METRICS))); then \
+		# For each BED GENES \
+		for one_bed in $$(cat $*.list.genes) $*.design.bed; do \
+			# Test if BED exists \
+			if [ -e $$one_bed ]; then \
+				$(SAMTOOLS) view -b $*.validation.bam -L $$one_bed | $(SAMTOOLS) sort | $(BEDTOOLS)/genomeCoverageBed -ibam stdin -dz > $(@D)/$(*F).$$(basename $$one_bed).genomeCoverageBedbed; \
+				if [ -s $(@D)/$(*F).$$(basename $$one_bed).coverage ]; then \
+					echo "#[INFO] BEDTOOLS genomeCoverage with '"$$(basename $$one_bed)"' done. See '$(@D)/$(*F).$$(basename $$one_bed).genomeCoverageBedbed'. " >> $@; \
+				else \
+					echo "#[INFO] BEDTOOLS genomeCoverage with '"$$(basename $$one_bed)"' failed" >> $@; \
+				fi; \
+			else \
+				echo "#[INFO] BEDTOOLS genomeCoverage with '"$$(basename $$one_bed)"' failed, because no '"$$(basename $$one_bed)"'. " >> $@; \
+			fi; \
+		done; \
+		[ ! -z test ] && "#[INFO] BEDTOOLS genomeCoverage not done because not bed/genes files. " >> $@; \
 	else \
-		echo "#[$$(date)] BAM BEDTOOLS not done because BAM_METRICS=0" >> $@ ; \
+		echo "#[INFO] BEDTOOLS genomeCoverage not done because BAM_METRICS=0. " >> $@; \
 	fi;
+
+
 
 
 
@@ -576,7 +767,7 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 				if [ -e $$one_bed ]; then \
 					#bedfile_name=$$( basename $$one_bed | sed "s/\.genes$$//" ); \
 					bedfile_name=$$( basename $$one_bed ); \
-					$(NGSscripts)/genesCoverage.sh -f $*.bam -b $$one_bed -c "$(COVERAGE_CRITERIA)" --dp_fail=$(DP_FAIL) --dp_warn=$(DP_WARN) --dp_threshold=$(DP_THRESHOLD) -n $(NB_BASES_AROUND) -t $(BEDTOOLS)/bedtools -s $(SAMTOOLS) --threads=$(THREADS) -o $(@D)/$(*F).$$bedfile_name; \
+					$(NGSscripts)/genesCoverage.sh -f $*.bam -b $$one_bed -c "$(COVERAGE_CRITERIA)" --dp_fail=$(MINIMUM_DEPTH) --dp_warn=$(EXPECTED_DEPTH) --dp_threshold=$(DEPTH_COVERAGE_THRESHOLD) -n $(NB_BASES_AROUND) -t $(BEDTOOLS)/bedtools -s $(SAMTOOLS) --threads=$(THREADS) -o $(@D)/$(*F).$$bedfile_name; \
 					echo "#[$$(date)] BAM Metrics on Regions coverage with $$bedfile_name BED file done" >> $@; \
 				else \
 					echo "#[$$(date)] BAM Metrics on Regions coverage with $$bedfile_name BED file FAILED" >> $@; \

@@ -37,5 +37,20 @@ HOWARD_PRIORITIZATION="HEMATO,HEMATOLOGY"
 HOWARD_PRIORITIZATION_MINIMAL="HEMATO,HEMATOLOGY"
 HOWARD_PRIORITIZATION_REPORT="HEMATO,HEMATOLOGY"
 
+# COVERAGE
+##############
+
 # COVERAGE CRITERIA (default "1,30")
-COVERAGE_CRITERIA="1,300,1000"
+# For gene coverage metrics
+# the criteria to calculate the percent of bases over $COVERAGE_CRITERIA X (eg 30 for 30X)
+#COVERAGE_CRITERIA="1,30"
+COVERAGE_CRITERIA="1,5,10,20,30,50,100,200,300,500,1000"
+
+# COVERAGE DP THRESHOLD (default "30" "100" "1")
+# For gene coverage metrics
+# the criteria test if genes failed (or just warning) the coverage threshold
+SEQUENCING_DEPTH="1" # Sequencing depth threshold
+SEQUENCING_COVERAGE_THRESHOLD="1" # Sequencing coverage threshold
+MINIMUM_DEPTH="100" # fail DP threshold (default 30X)
+EXPECTED_DEPTH="300" # warn DP threshold (default 100X)
+DEPTH_COVERAGE_THRESHOLD="1" # threshold percentage of bases over the DP threshold

@@ -317,28 +317,52 @@ export INTERVAL_PADDING
 # For gene coverage metrics
 # the criteria to calculate the percent of bases over $COVERAGE_CRITERIA X (eg 30 for 30X)
 if [ -z "$COVERAGE_CRITERIA" ]; then
-	COVERAGE_CRITERIA="1,30"
+	COVERAGE_CRITERIA="1,5,10,20,30,50,100,200,300"
 fi;
 export COVERAGE_CRITERIA
+
 
 # COVERAGE DP THRESHOLD (default "30" "100" "1")
 # For gene coverage metrics
 # the criteria test if genes failed (or just warning) the coverage threshold
+# Sequencing depth threshold
+if [ -z "$SEQUENCING_DEPTH" ]; then
+	SEQUENCING_DEPTH="1"
+fi;
+export SEQUENCING_DEPTH
+# Sequencing coverage threshold
+if [ -z "$SEQUENCING_COVERAGE_THRESHOLD" ]; then
+	SEQUENCING_COVERAGE_THRESHOLD="1"
+fi;
+export SEQUENCING_COVERAGE_THRESHOLD
 # fail DP threshold (default 30X)
-if [ -z "$DP_FAIL" ]; then
-	DP_FAIL="30"
+if [ -z "$MINIMUM_DEPTH" ]; then
+	MINIMUM_DEPTH="30"
 fi;
-export DP_FAIL
+export MINIMUM_DEPTH
 # warn DP threshold (default 100X)
-if [ -z "$DP_WARN" ]; then
-	DP_WARN="100"
+if [ -z "$EXPECTED_DEPTH" ]; then
+	EXPECTED_DEPTH="100"
 fi;
-export DP_WARN
+export EXPECTED_DEPTH
 # threshold percentage of bases over the DP threshold
-if [ -z "$DP_THRESHOLD" ]; then
-	DP_THRESHOLD="1"
+if [ -z "$DEPTH_COVERAGE_THRESHOLD" ]; then
+	DEPTH_COVERAGE_THRESHOLD="0.95"
 fi;
-export DP_THRESHOLD
+export DEPTH_COVERAGE_THRESHOLD
+
+
+# COVERAGE HARMONIZATION
+COVERAGE_CRITERIA=$(echo "$SEQUENCING_DEPTH,$MINIMUM_DEPTH,$EXPECTED_DEPTH,$COVERAGE_CRITERIA" | tr "," "\n" | tr " " "\n" | grep -v "^$" | sort -u -n | tr "\n" ","  | sed "s/,$//")
+
+
+# CLIP_OVERLAPPING_READS (default 1)
+# From PICARD: For paired reads, soft clip the 3' end of each read if necessary so that it does not extend past the 5' end of its mate
+if [ -z "$CLIP_OVERLAPPING_READS" ]; then
+	CLIP_OVERLAPPING_READS=1
+fi;
+export CLIP_OVERLAPPING_READS
+
 
 # NB_BASES_AROUND (default 0)
 # For gene coverage metrics

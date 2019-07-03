@@ -116,21 +116,25 @@ VARIANT_RECALIBRATION=0
 # Add some “padding” to the intervals used (manifest) in order to include the flanking regions (typically ~100 bp)
 INTERVAL_PADDING=0
 
-# COVERAGES for full design
-COVS="1,5,10,20,30,50,100,200,300"
 
 # COVERAGE CRITERIA (default "1,30")
 # For gene coverage metrics
 # the criteria to calculate the percent of bases over $COVERAGE_CRITERIA X (eg 30 for 30X)
 #COVERAGE_CRITERIA="1,30"
-COVERAGE_CRITERIA="1,30,100"
+COVERAGE_CRITERIA="1,5,10,20,30,50,100,200,300"
 
 # COVERAGE DP THRESHOLD (default "30" "100" "1")
 # For gene coverage metrics
 # the criteria test if genes failed (or just warning) the coverage threshold
-DP_FAIL="30"	# fail DP threshold (default 30X)
-DP_WARN="100"	# warn DP threshold (default 100X)
-DP_THRESHOLD="1" # threshold percentage of bases over the DP threshold
+SEQUENCING_DEPTH="1" # Sequencing depth threshold
+SEQUENCING_COVERAGE_THRESHOLD="1" # Sequencing coverage threshold
+MINIMUM_DEPTH="30" # fail DP threshold (default 30X)
+EXPECTED_DEPTH="100" # warn DP threshold (default 100X)
+DEPTH_COVERAGE_THRESHOLD="0.95" # threshold percentage of bases over the DP threshold
+
+# CLIP_OVERLAPPING_READS (default 1)
+# From PICARD: For paired reads, soft clip the 3' end of each read if necessary so that it does not extend past the 5' end of its mate
+CLIP_OVERLAPPING_READS=1
 
 # NB_BASES_AROUND (default 0)
 # For gene coverage metrics
@@ -230,7 +234,7 @@ HOWARD_CALCULATION="VARTYPE,NOMEN"
 # Default minimal calculation with HOWARD for final VCF report
 HOWARD_CALCULATION_MINIMAL="VARTYPE,NOMEN"
 # Default calculation with HOWARD for final VCF report
-HOWARD_CALCULATION_REPORT="FindByPipelines,GenotypeConcordance,VAF,VAF_STATS,CALLING_QUALITY,CALLING_QUALITY_EXPLODE,VARTYPE,NOMEN"
+HOWARD_CALCULATION_REPORT="FindByPipelines,GenotypeConcordance,VAF,VAF_STATS,CALLING_QUALITY,CALLING_QUALITY_EXPLODE,VARTYPE,NOMEN,BARCODE"
 
 
 # PRIORITIZATION
