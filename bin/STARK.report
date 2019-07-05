@@ -511,6 +511,15 @@ echo '
 ' > $HTMLFILE_SCRIPTS
 
 
+# PLAN
+##########
+
+#(($VERBOSE)) && echo "[INFO] PLAN section"
+
+HTMLFILE_PLAN_LINKS=$HTMLFILE".plan.links"
+
+> $HTMLFILE_PLAN_LINKS
+
 
 # SECTIONS
 ############
@@ -719,7 +728,7 @@ echo '
                     <p class="mbr-text mbr-fonts-style display-7">
 						'$APP_DESCRIPTION'<br>
 						Application designed for <strong>'$GROUP'</strong> group and <strong>'$PROJECT'</strong> project, with <strong>'$ASSEMBLY'</strong> assembly.
-						Analysis performed by <strong>'$ENV_NAME':'$ENV_RELEASE'</strong>.<br>
+						Analysis performed by <strong>'$ENV_NAME':'$ENV_RELEASE'</strong> with databases release <strong>'$DATABASES_RELEASE'</strong>.<br>
 					</p>
                 </div>
             </div>
@@ -749,38 +758,13 @@ echo '
 
 
 
-# PLAN
-##########
-
-(($VERBOSE)) && echo "[INFO] PLAN section"
-
-
-HTMLFILE_PLAN=$HTMLFILE".plan"
-
-
-echo '
-<section class="mbr-section content8 cid-ruitEAjBmu" id="content8-1z">
-    <div class="container">
-        <div class="media-container-row title">
-            <div class="col-12 col-md-40">
-                <div class="mbr-section-btn align-center">
-				<a class="btn btn-primary-outline display-4" href="#counters1-1m">Results summary</a>
-				<a class="btn btn-primary-outline display-4" href="#progress-bars2-1n">Sequencing &amp; Mapping</a>
-				<a class="btn btn-primary-outline display-4" href="#counters1-1p">Depth &amp; Coverage</a>
-                <a class="btn btn-primary-outline display-4" href="#progress-bars3-1r">Variant Calling</a>
-				<a class="btn btn-primary-outline display-4" href="#counters1-1u">Variant Annotation</a>
-				<a class="btn btn-primary-outline display-4" href="#counters1-1u">Annexes</a></div>
-            </div>
-        </div>
-    </div>
-</section>
-' > $HTMLFILE_PLAN
-
-
 # SUMMARY
 ##############
 
 HTMLFILE_SUMMARY=$HTMLFILE".summary"
+
+SECTION_NAME="Results Summary"
+SECTION_ID="results_summary"
 
 # FILES
 FASTQR1="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.R1.fastq.gz"
@@ -824,15 +808,19 @@ ANNOTATORS_HTML="$ANNOTATORS_NUMBER annotator"$([ $ANNOTATORS_NUMBER -gt 1 ] && 
 PIPELINES_HTML="<strong>$PIPELINES_NUMBER pipeline"$([ $PIPELINES_NUMBER -gt 1 ] && echo "s")"</strong>"
 ALIGNERS_CALLERS_ANNOTATORS_HTML="($ALIGNERS_HTML, $CALLERS_HTML, $ANNOTATORS_HTML)"
 
+
+# PLAN
+echo '<a class="btn btn-primary-outline display-4" href="#'$SECTION_ID'">'$SECTION_NAME'</a>' >> $HTMLFILE_PLAN_LINKS
+
+
 echo '
 
-
-	<section class="counters1 counters cid-ru7OEFnzpz" id="counters1-1m" '$PAGE_BREAK_BEFORE'>
+	<section class="counters1 counters cid-ru7OEFnzpz" id="'$SECTION_ID'" '$PAGE_BREAK_BEFORE'>
 	<br>
 
 		<div class="container">
 			<h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">
-				Results summary</h2>
+				'$SECTION_NAME'</h2>
 			<h3 class="mbr-section-subtitle mbr-fonts-style display-5">
 
 				<!--Main information of results, on sequenced reads, quality of bases on all reads, total number of genes targeted, and total number of variants found-->
@@ -919,6 +907,9 @@ echo '
 
 
 HTMLFILE_SEQUENCING=$HTMLFILE".sequencing"
+
+SECTION_NAME="Sequencing &amp; Mapping"
+SECTION_ID="sequencing_mapping"
 
 # FILES
 FASTQCDATA="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.sequencing/metrics.fastqc.txt"
@@ -1029,16 +1020,19 @@ for ALIGNER in $ALIGNERS; do
 
 done;
 
-#ALIGNERS_HTML=$(echo "$ALIGNERS al2" | sed "s/ /P/gi")
+
+# PLAN
+echo '<a class="btn btn-primary-outline display-4" href="#'$SECTION_ID'">'$SECTION_NAME'</a>' >> $HTMLFILE_PLAN_LINKS
+
 
 echo '
 
-	<section class="progress-bars2 cid-ru7OEG5hcO" id="progress-bars2-1n" '$PAGE_BREAK_BEFORE'>
+	<section class="progress-bars2 cid-ru7OEG5hcO" id="'$SECTION_ID'" '$PAGE_BREAK_BEFORE'>
 	<br>
 
 		<div class="container">
 			<h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">
-				Sequencing &amp; Mapping
+				'$SECTION_NAME'
 			</h2>
 
 			<p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
@@ -1086,9 +1080,10 @@ echo '
 
 (($VERBOSE)) && echo "[INFO] COVERAGE section"
 
-
 HTMLFILE_COVERAGE=$HTMLFILE".coverage"
 
+SECTION_NAME="Depth &amp; Coverage"
+SECTION_ID="depth_coverage"
 
 # FLAGS
 PASS_FLAG_ICON='class="mbr-iconfont mbri-smile-face" style="color: rgb(0, 255, 0); fill: rgb(0, 255, 0);"'
@@ -1117,9 +1112,11 @@ for ALIGNER in $ALIGNERS; do
 		if [ "$GENES_PANEL" == "$TARGET_DESIGN_NAME" ]; then
 			GENES_PANEL_NAME="Target Design"
 			GENE_PANEL_NAME_HTML="$GENES_PANEL_NAME"
+			GENE_PANEL_TYPE_HTML="Target<br>Regions"
 		else
 			GENES_PANEL_NAME=$(echo $GENES_PANEL | sed "s/^$SAMPLE.//" | sed "s/.genes$//")
 			GENE_PANEL_NAME_HTML="Gene Panel<br>$GENES_PANEL_NAME"
+			GENE_PANEL_TYPE_HTML="Gene<br>Panel"
 		fi;
 
 
@@ -1207,11 +1204,9 @@ for ALIGNER in $ALIGNERS; do
 									'$GENES_PANEL_GENES_NUMBER_HTML'
 								</h3>
 								<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
-									Genes
+									'$GENE_PANEL_TYPE_HTML'
 									<br>
-									Panel
-									<br>
-
+									&nbsp;
 								</h4>
 								<p class="mbr-content-text mbr-fonts-style display-7">
 									'$GENES_PANEL_BASES_NUMBER_HTML' bases
@@ -1351,18 +1346,20 @@ for ALIGNER in $ALIGNERS; do
 
 
 done;
-#exit 0
 
+
+# PLAN
+echo '<a class="btn btn-primary-outline display-4" href="#'$SECTION_ID'">'$SECTION_NAME'</a>' >> $HTMLFILE_PLAN_LINKS
 
 
 echo '
 
-	<section class="counters1 counters cid-ru7OEH6r7i" id="counters1-1p" '$PAGE_BREAK_BEFORE'>
+	<section class="counters1 counters cid-ru7OEH6r7i" id="'$SECTION_ID'" '$PAGE_BREAK_BEFORE'>
 	<br>
 
 	    <div class="container">
 	        <h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">
-	            Depth &amp; Coverage
+	            '$SECTION_NAME'
 			</h2>
 
 			<p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
@@ -1370,10 +1367,10 @@ echo '
 				<br>
 				on BAM for validation (uniq reads, with quality higher than 10, aligned on Target Design, and clipped overlapped bases).
 				<br>
-				Minimum depth '$MINIMUM_DEPTH'X,
-				Expected depth '$EXPECTED_DEPTH'X,
-				Sequencing coverage threshold '$(awk 'BEGIN{printf("%.1f\n",'$SEQUENCING_COVERAGE_THRESHOLD'*100)}')'%,
-				Minimum & Expected depth coverage threshold '$(awk 'BEGIN{printf("%.1f\n",'$DEPTH_COVERAGE_THRESHOLD'*100)}')'%
+				Minimum depth <strong>'$MINIMUM_DEPTH'X</strong>,
+				Expected depth <strong>'$EXPECTED_DEPTH'X</strong>,
+				Sequencing coverage threshold <strong>'$(awk 'BEGIN{printf("%.1f\n",'$SEQUENCING_COVERAGE_THRESHOLD'*100)}')'%</strong>,
+				Minimum & Expected depth coverage threshold <strong>'$(awk 'BEGIN{printf("%.1f\n",'$DEPTH_COVERAGE_THRESHOLD'*100)}')'%</strong>
 			</p>
 
 			'"$(cat $HTMLFILE_GENES_PANEL)"'
@@ -1388,12 +1385,361 @@ echo '
 
 
 
+# AMPLICON CLIPPING
+###################
+
+(($VERBOSE)) && echo "[INFO] AMPLICON CLIPPING section"
+
+HTMLFILE_AMPLICON_CLIPPING=$HTMLFILE".amplicon_clipping"
+
+SECTION_NAME="Amplicon Clipping"
+SECTION_ID="amplicon_clipping"
+
+# FLAGS
+PASS_FLAG_ICON='class="mbr-iconfont mbri-smile-face" style="color: rgb(0, 255, 0); fill: rgb(0, 255, 0);"'
+WARN_FLAG_ICON='class="mbr-iconfont mbri-sad-face" style="color: rgb(252, 161, 6); fill: rgb(252, 161, 6);"'
+FAIL_FLAG_ICON='class="mbr-iconfont mbri-sad-face" style="color: rgb(255, 0, 0); fill: rgb(255, 0, 0);"'
+
+
+# FILES
+HTMLFILE_AMPLICON_CLIPPING_ALIGNERS=$HTMLFILE".amplicon_clipping.aligners"
+
+GENES_PANEL_NUM=0
+
+for ALIGNER in $ALIGNERS; do
+
+	(($DEBUG)) && echo "ALIGNER: $ALIGNER";
+
+	((GENES_PANEL_NUM++))
+
+	# FILES
+	GENES_PANEL="$SAMPLE.$ALIGNER.design.bed"
+
+	GENES_PANEL_NAME="Target Design"
+	GENE_PANEL_NAME_HTML="$GENES_PANEL_NAME"
+	GENE_PANEL_TYPE_HTML="Target<br>Regions"
+
+	# FILES
+	GENES_PANEL_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$GENES_PANEL"
+	AMPLICON_COVERAGE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.amplicon_coverage"
+
+	#(($DEBUG)) && cat $GENES_PANEL_DEPTHBED_COVS
+
+	# GENES PANEL INFO
+	GENES_PANEL_GENES_NUMBER=$(cat $GENES_PANEL_FILE | grep -v "^#" | grep -v "^@" | cut -f5 | sort -u | wc -l)
+	GENES_PANEL_GENES_NUMBER_HTML=$(echo $GENES_PANEL_GENES_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
+
+	GENES_PANEL_REGIONS_NUMBER=$(cat $GENES_PANEL_FILE | grep -v "^#" | grep -v "^@" | wc -l)
+	GENES_PANEL_REGIONS_NUMBER_HTML=$(echo $GENES_PANEL_REGIONS_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
+
+	GENES_PANEL_BASES_NUMBER=$(cat $GENES_PANEL_FILE | grep -v "^#" | grep -v "^@" | awk '{for(i=$2;i<$3;i++) print $1"\t"i}' | sort -u | wc -l)
+	GENES_PANEL_BASES_NUMBER_HTML=$(echo $GENES_PANEL_BASES_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
+
+	GENES_PANEL_ALIGNER=$ALIGNER
+	GENES_PANEL_ALIGNER_HTML=$GENES_PANEL_ALIGNER
+
+
+	# AMPLICON COVERAGE
+	AMPLICON_COVERAGE_AVERAGE_DEPTH=$(tail -n +1 $AMPLICON_COVERAGE | awk -F"\t" '
+		BEGIN {
+			sum=0
+		}
+		{
+		    sum+=$7
+		    # The script should NOT print out a value for each line
+		}
+		# The END block is processed after the last line is read
+		END {
+		    # NR is a variable equal to the number of rows in the file
+		    printf("%.0f\n",sum/ NR)
+		    # Change this to print the Average instead of just the number of rows
+		}' )
+
+	(( $(echo "$AMPLICON_COVERAGE_AVERAGE_DEPTH >= $MINIMUM_DEPTH" | bc -l) )) && AMPLICON_COVERAGE_AVERAGE_DEPTH_FLAG=$PASS_FLAG_ICON || AMPLICON_COVERAGE_AVERAGE_DEPTH_FLAG=$FAIL_FLAG_ICON
+
+	AMPLICON_COVERAGE_FAIL_MINIMUM_DEPTH_NUMBER=$(tail -n +1 $AMPLICON_COVERAGE | awk -F"\t" '
+		BEGIN {
+			num=0
+		}
+		{
+		    if ($11<'$MINIMUM_DEPTH') {num+=1}
+		    # The script should NOT print out a value for each line
+		}
+		# The END block is processed after the last line is read
+		END {
+		    # NR is a variable equal to the number of rows in the file
+		    print num
+		    # Change this to print the Average instead of just the number of rows
+		}' )
+
+	(( $AMPLICON_COVERAGE_FAIL_MINIMUM_DEPTH_NUMBER )) && AMPLICON_COVERAGE_FAIL_MINIMUM_DEPTH_NUMBER_FLAG=$FAIL_FLAG_ICON || AMPLICON_COVERAGE_FAIL_MINIMUM_DEPTH_NUMBER_FLAG=$PASS_FLAG_ICON
+
+	AMPLICON_COVERAGE_WARN_MINIMUM_DEPTH_NUMBER=$(tail -n +1 $AMPLICON_COVERAGE | awk -F"\t" '
+		BEGIN {
+			num=0
+		}
+		{
+			if ($11<'$EXPECTED_DEPTH') {num+=1}
+			# The script should NOT print out a value for each line
+		}
+		# The END block is processed after the last line is read
+		END {
+			# NR is a variable equal to the number of rows in the file
+			print num
+			# Change this to print the Average instead of just the number of rows
+		}' )
+
+	(( $AMPLICON_COVERAGE_WARN_MINIMUM_DEPTH_NUMBER )) && AMPLICON_COVERAGE_WARN_MINIMUM_DEPTH_NUMBER_FLAG=$WARN_FLAG_ICON || AMPLICON_COVERAGE_WARN_MINIMUM_DEPTH_NUMBER_FLAG=$PASS_FLAG_ICON
+
+	AMPLICON_COVERAGE_FAIL_AVERAGE_DEPTH_NUMBER=$(tail -n +1 $AMPLICON_COVERAGE | awk -F"\t" '
+		BEGIN {
+			num=0
+		}
+		{
+			if ($7<'$MINIMUM_DEPTH') {num+=1}
+			# The script should NOT print out a value for each line
+		}
+		# The END block is processed after the last line is read
+		END {
+			# NR is a variable equal to the number of rows in the file
+			print num
+			# Change this to print the Average instead of just the number of rows
+		}' )
+
+	(( $AMPLICON_COVERAGE_FAIL_AVERAGE_DEPTH_NUMBER )) && AMPLICON_COVERAGE_FAIL_AVERAGE_DEPTH_NUMBER_FLAG=$FAIL_FLAG_ICON || AMPLICON_COVERAGE_FAIL_AVERAGE_DEPTH_NUMBER_FLAG=$PASS_FLAG_ICON
+
+	AMPLICON_COVERAGE_WARN_AVERAGE_DEPTH_NUMBER=$(tail -n +1 $AMPLICON_COVERAGE | awk -F"\t" '
+		BEGIN {
+			num=0
+		}
+		{
+			if ($7<'$EXPECTED_DEPTH') {num+=1}
+			# The script should NOT print out a value for each line
+		}
+		# The END block is processed after the last line is read
+		END {
+			# NR is a variable equal to the number of rows in the file
+			print num
+			# Change this to print the Average instead of just the number of rows
+		}' )
+
+	(( $AMPLICON_COVERAGE_WARN_AVERAGE_DEPTH_NUMBER )) && AMPLICON_COVERAGE_WARN_AVERAGE_DEPTH_NUMBER_FLAG=$WARN_FLAG_ICON || AMPLICON_COVERAGE_WARN_AVERAGE_DEPTH_NUMBER_FLAG=$PASS_FLAG_ICON
+
+
+	echo '
+
+		<h3 class="mbr-section-subtitle mbr-fonts-style display-5" '$GENES_PANEL_BREAK'>
+		<br>
+			'$GENE_PANEL_NAME_HTML'
+		</h3>
+
+		<div class="container pt-4 mt-2">
+			<div class="media-container-row">
+
+				<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+					<div class="panel-item">
+						<div class="card-img pb-3">
+							<span class="mbr-iconfont mbri-info"></span>
+						</div>
+
+						<div class="card-text">
+							<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+								'$GENES_PANEL_GENES_NUMBER_HTML'
+							</h3>
+							<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+								'$GENE_PANEL_TYPE_HTML'
+								<br>
+								&nbsp;
+							</h4>
+							<p class="mbr-content-text mbr-fonts-style display-7">
+								'$GENES_PANEL_BASES_NUMBER_HTML' bases
+								<br>
+								'$GENES_PANEL_REGIONS_NUMBER_HTML' regions
+								<br>
+								'$GENES_PANEL_ALIGNER_HTML' aligner
+							</p>
+						</div>
+					</div>
+				</div>
+
+				<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+					<div class="panel-item">
+						<div class="card-img pb-3">
+							<span '$AMPLICON_COVERAGE_AVERAGE_DEPTH_FLAG'></span>
+						</div>
+
+						<div class="card-text">
+							<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+								'$AMPLICON_COVERAGE_AVERAGE_DEPTH'
+							</h3>
+							<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+								Whole Design
+								<br>
+								Average Depth
+								<br>
+								'$MINIMUM_DEPTH'X
+							</h4>
+							<p class="mbr-content-text mbr-fonts-style display-7">
+								for all target regions
+								<br>
+								in the design
+							</p>
+						</div>
+					</div>
+				</div>
+
+				<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+					<div class="panel-item">
+						<div class="card-img pb-3">
+							<span '$AMPLICON_COVERAGE_FAIL_MINIMUM_DEPTH_NUMBER_FLAG'></span>
+						</div>
+
+						<div class="card-texts">
+							 <h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+								'$AMPLICON_COVERAGE_FAIL_MINIMUM_DEPTH_NUMBER'
+							</h3>
+							<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+								Failed Minimum
+								<br>
+								Amplicon Depth
+								<br>
+								'$MINIMUM_DEPTH'X
+							</h4>
+							<p class="mbr-content-text mbr-fonts-style display-7">
+								# of amplicon with failed minimum depth
+							</p>
+						</div>
+					</div>
+				</div>
+
+				<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+					<div class="panel-item">
+						<div class="card-img pb-3">
+							<span '$AMPLICON_COVERAGE_WARN_MINIMUM_DEPTH_NUMBER_FLAG'></span>
+						</div>
+						<div class="card-text">
+							<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+								'$AMPLICON_COVERAGE_WARN_MINIMUM_DEPTH_NUMBER'
+							</h3>
+							<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+								Warning Minimum
+								<br>
+								Amplicon Depth
+								<br>
+								'$EXPECTED_DEPTH'X
+							</h4>
+							<p class="mbr-content-text mbr-fonts-style display-7">
+								# of amplicon with warning minimum depth
+							</p>
+						</div>
+					</div>
+				</div>
+
+				<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+					<div class="panel-item">
+						<div class="card-img pb-3">
+							<span '$AMPLICON_COVERAGE_FAIL_AVERAGE_DEPTH_NUMBER_FLAG'></span>
+						</div>
+
+						<div class="card-texts">
+							 <h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+								'$AMPLICON_COVERAGE_FAIL_AVERAGE_DEPTH_NUMBER'
+							</h3>
+							<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+								Failed Average
+								<br>
+								Amplicon Depth
+								<br>
+								'$MINIMUM_DEPTH'X
+							</h4>
+							<p class="mbr-content-text mbr-fonts-style display-7">
+								# of amplicon with failed average depth
+							</p>
+						</div>
+					</div>
+				</div>
+
+				<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+					<div class="panel-item">
+						<div class="card-img pb-3">
+							<span '$AMPLICON_COVERAGE_WARN_AVERAGE_DEPTH_NUMBER_FLAG'></span>
+						</div>
+						<div class="card-text">
+							<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+								'$AMPLICON_COVERAGE_WARN_AVERAGE_DEPTH_NUMBER'
+							</h3>
+							<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+								Warning Average
+								<br>
+								Amplicon Depth
+								<br>
+								'$EXPECTED_DEPTH'X
+							</h4>
+							<p class="mbr-content-text mbr-fonts-style display-7">
+								# of amplicon with warning average depth
+							</p>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+	' >> $HTMLFILE_AMPLICON_CLIPPING_ALIGNERS
+
+
+
+
+done;
+
+
+if (($GENES_PANEL_NUM)); then
+
+	# PLAN
+	echo '<a class="btn btn-primary-outline display-4" href="#'$SECTION_ID'">'$SECTION_NAME'</a>' >> $HTMLFILE_PLAN_LINKS
+
+	echo '
+
+		<section class="counters1 counters cid-ru7OEH6r7i" id="'$SECTION_ID'" '$PAGE_BREAK_BEFORE'>
+		<br>
+
+		    <div class="container">
+		        <h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">
+		            '$SECTION_NAME'
+				</h2>
+
+				<p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
+					Amplicon clipping generated with <strong>FATBAM</strong> and depth metrics with <strong>Picard CollectHsMetrics</strong> on all <strong>Target Design</strong>
+					<br>
+					Minimum depth <strong>'$MINIMUM_DEPTH'X</strong>,
+					Expected depth <strong>'$EXPECTED_DEPTH'X</strong>
+				</p>
+
+				'"$(cat $HTMLFILE_AMPLICON_CLIPPING_ALIGNERS)"'
+
+
+
+		   </div>
+		</section>
+
+	' > $HTMLFILE_AMPLICON_CLIPPING
+
+else
+
+	> $HTMLFILE_AMPLICON_CLIPPING
+
+fi;
+
+
+
 # VARIANT CALLING
 ###################
 
 (($VERBOSE)) && echo "[INFO] VARIANT CALLING section"
 
 HTMLFILE_CALLING=$HTMLFILE".calling"
+
+SECTION_NAME="Variant Calling"
+SECTION_ID="variant_calling"
 
 ALIGNERS_NUMBER_HTML=$ALIGNERS_NUMBER" aligner"$( [ $ALIGNERS_NUMBER -gt 1 ] && echo "s" )
 CALLERS_NUMBER_HTML=$CALLERS_NUMBER" caller"$( [ $CALLERS_NUMBER -gt 1 ] && echo "s" )
@@ -1440,15 +1786,16 @@ for PIPELINE in $PIPELINES; do
 
 done;
 
-
+# PLAN
+echo '<a class="btn btn-primary-outline display-4" href="#'$SECTION_ID'">'$SECTION_NAME'</a>' >> $HTMLFILE_PLAN_LINKS
 
 echo '
 
-	<section class="progress-bars3 cid-ru7OEIGjX3" id="progress-bars3-1r" '$PAGE_BREAK_BEFORE'>
+	<section class="progress-bars3 cid-ru7OEIGjX3" id="'$SECTION_ID'" '$PAGE_BREAK_BEFORE'>
 	<br>
 	    <div class="container">
 	        <h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">
-				Variant Calling
+				'$SECTION_NAME'
 			</h2>
 
 			<p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
@@ -1465,6 +1812,35 @@ echo '
 
 ' > $HTMLFILE_CALLING
 
+
+
+
+
+
+
+# PLAN
+##########
+
+(($VERBOSE)) && echo "[INFO] PLAN section"
+
+
+HTMLFILE_PLAN=$HTMLFILE".plan"
+
+
+echo '
+<section class="mbr-section content8 cid-ruitEAjBmu" id="content8-1z">
+    <div class="container">
+        <div class="media-container-row title">
+            <div class="col-12 col-md-40">
+                <div class="mbr-section-btn align-center">
+				'$(cat $HTMLFILE_PLAN_LINKS)'
+				<!--<a class="btn btn-primary-outline display-4" href="#counters1-1u">Variant Annotation</a>-->
+				<a class="btn btn-primary-outline display-4" href="#counters1-1u">Annexes</a></div>
+            </div>
+        </div>
+    </div>
+</section>
+' > $HTMLFILE_PLAN
 
 
 
@@ -1489,6 +1865,7 @@ echo '
 	'"$(cat $HTMLFILE_SUMMARY)"'
 	'"$(cat $HTMLFILE_SEQUENCING)"'
 	'"$(cat $HTMLFILE_COVERAGE)"'
+	'"$(cat $HTMLFILE_AMPLICON_CLIPPING)"'
 	'"$(cat $HTMLFILE_CALLING)"'
 	'"$(cat $HTMLFILE_SCRIPTS)"'
 ' > $HTMLFILE_BODY
@@ -1555,6 +1932,11 @@ if [ "$OUTPUT_TYPE" == "html" ]; then
 
 fi;
 
+
+# GENERATE PDF
+################
+
+# xvfb-run wkhtmltopdf $OUTPUT_HTMLFILE $OUTPUT_HTMLFILE.pdf
 
 
 # cleaning

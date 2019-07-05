@@ -1159,8 +1159,10 @@ for RUU in $RUN_UNIQ; do
 			echo "#[INFO] Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' and copy .genes files."
 			> $RUN_SAMPLE_DIR/$S.list.genes;
 			for G_ONE in $(echo $G | tr "+" " "); do
-				#cp -p $G_ONE $RUN_SAMPLE_DIR/$(basename $G_ONE);
+				# add '.genes' extension if not exists
 				[ "${G_ONE##*.}" != "genes" ] && G_ONE_TARGET=$(basename $G_ONE)".genes" || G_ONE_TARGET=$(basename $G_ONE);
+				# remove Sample name (mainly in case of relauch)
+				G_ONE_TARGET=$(echo $G_ONE_TARGET | sed "s/$S\.//gi")
 				$COMMAND_COPY $G_ONE $RUN_SAMPLE_DIR/$S.$G_ONE_TARGET;
 				echo $S.$G_ONE_TARGET >> $RUN_SAMPLE_DIR/$S.list.genes
 			done;
@@ -1436,7 +1438,13 @@ for RUU in $RUN_UNIQ; do
 					#(($VERBOSE)) && echo "#[INFO] Copying REPOSITORY files patterns to $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S..."
 					echo "#[INFO] Copying REPOSITORY files patterns to $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S..."
 					if [ $RESULTS_SUBFOLDER_DATA != "" ]; then
-						for ROOT_FILE_PATTERN in $REPOSITORY_FILE_PATTERNS; do
+						for ROOT_FILE_PATTERN_INFO in $REPOSITORY_FILE_PATTERNS; do
+
+							ROOT_FILE_PATTERN=$(echo $ROOT_FILE_PATTERN_INFO | awk -F: '{print $1}')
+							ROOT_FILE_PATTERN_TYPE=$(echo $ROOT_FILE_PATTERN_INFO | awk -F: '{print $2}')
+
+							FILE_PATTERN_TYPE_LS=" ";
+							[ "$ROOT_FILE_PATTERN_TYPE" == "FOLDER" ] && FILE_PATTERN_TYPE_LS=" -d ";
 
 							if [[ $ROOT_FILE_PATTERN =~ '$SAMPLE' ]]; then
 								eval ROOT_FILE_PATTERN_VAR="/"$(echo $ROOT_FILE_PATTERN | sed s/\$SAMPLE/\$S/gi)
@@ -1444,30 +1452,35 @@ for RUU in $RUN_UNIQ; do
 								ROOT_FILE_PATTERN_VAR="/$ROOT_FILE_PATTERN"
 							fi;
 
-							for F_SOURCE in $(ls $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA$ROOT_FILE_PATTERN_VAR); do
+							for F_SOURCE in $(ls $FILE_PATTERN_TYPE_LS $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA$ROOT_FILE_PATTERN_VAR); do
 								#L_SOURCE=$(echo $F_SOURCE | sed s#$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/##g)
 								#L_SOURCE=$F_SOURCE
 								F_TARGET="$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/"$(basename $F_SOURCE)
 								F_SOURCE_BASE=$(echo $F_SOURCE | sed "s#$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA/##")
 								F_TARGET_BASE=$(echo $F_TARGET | sed "s#$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/##")
+
+								# IF FOLDER
+								[ "$ROOT_FILE_PATTERN_TYPE" == "FOLDER" ] && F_SOURCE=$F_SOURCE"/";
 								#D_TARGET="$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/"
 								#echo "F_SOURCE: $F_SOURCE";
 								#echo "L_SOURCE: $L_SOURCE";
 								#echo "F_TARGET: $F_TARGET";
 								#echo "D_TARGET: $D_TARGET";
 								#| sed s#/$T/test2/##
-								(($VERBOSE)) && [ ! -f $F_SOURCE ] && echo "#[WARNING] file $F_SOURCE_BASE not found"
-								if [ ! -f $F_TARGET ]; then
-									(($VERBOSE)) && [ -f $F_SOURCE ] && echo "#[INFO] Link file $F_SOURCE_BASE to $F_TARGET_BASE"
+								(($VERBOSE)) && [ ! -e $F_SOURCE ] && echo "#[WARNING] file $F_SOURCE_BASE not found"
+								if [ ! -e $F_TARGET ]; then
+									(($VERBOSE)) && [ -e $F_SOURCE ] && echo "#[INFO] Link file $F_SOURCE_BASE to $F_TARGET_BASE"
+									(($DEBUG)) && echo "#[INFO] $COMMAND_LINK $F_SOURCE $F_TARGET"
 									$COMMAND_LINK $F_SOURCE $F_TARGET 1>>$LOGFILE_RES_RUN_REPORT 2>>$LOGFILE_RES_RUN_REPORT
 								fi;
-								if [ ! -f $F_TARGET ]; then
-									(($VERBOSE)) && echo "#[WARNING] Copy file $F_SOURCE_BASE to $F_TARGET_BASE FAILED"
+								if [ ! -e $F_TARGET ]; then
+									(($VERBOSE)) && echo "#[WARNING] Link file $F_SOURCE_BASE to $F_TARGET_BASE FAILED"
 									rm -f $F_TARGET
-									(($VERBOSE)) && [ -f $F_SOURCE ] && echo "#[INFO] Copy file $F_SOURCE_BASE to $F_TARGET_BASE"
+									(($VERBOSE)) && [ -e $F_SOURCE ] && echo "#[INFO] Copy file $F_SOURCE_BASE to $F_TARGET_BASE"
+									(($DEBUG)) && echo "#[INFO] $COMMAND_COPY $F_SOURCE $F_TARGET"
 									$COMMAND_COPY $F_SOURCE $F_TARGET 1>>$LOGFILE_RES_RUN_REPORT 2>>$LOGFILE_RES_RUN_REPORT
 								fi;
-								if [ ! -f $F_TARGET ]; then
+								if [ ! -e $F_TARGET ]; then
 									(($VERBOSE)) && echo "#[ERROR] Copy file $F_SOURCE_BASE to $F_TARGET_BASE FAILED"
 								fi;
 							done;
@@ -1521,7 +1534,13 @@ for RUU in $RUN_UNIQ; do
 					#chmod $PERMS $RESULTS_FOLDER_COPY_FOLDER/$RUU/* 1>/dev/null 2>/dev/null
 					# Copy ROOT FILE PATTERNS
 					#if [ $RESULTS_SUBFOLDER_DATA != "" ]; then
-					for ROOT_FILE_PATTERN in $ARCHIVE_FILE_PATTERNS; do
+					for ROOT_FILE_PATTERN_INFO in $ARCHIVE_FILE_PATTERNS; do
+
+						ROOT_FILE_PATTERN=$(echo $ROOT_FILE_PATTERN_INFO | awk -F: '{print $1}')
+						ROOT_FILE_PATTERN_TYPE=$(echo $ROOT_FILE_PATTERN_INFO | awk -F: '{print $2}')
+
+						FILE_PATTERN_TYPE_LS=" ";
+						[ "$ROOT_FILE_PATTERN_TYPE" == "FOLDER" ] && FILE_PATTERN_TYPE_LS=" -d ";
 
 						if [[ $ROOT_FILE_PATTERN =~ '$SAMPLE' ]]; then
 							eval ROOT_FILE_PATTERN_VAR="/"$(echo $ROOT_FILE_PATTERN | sed s/\$SAMPLE/\$S/gi)
@@ -1530,14 +1549,20 @@ for RUU in $RUN_UNIQ; do
 						fi;
 
 						#for F_SOURCE in $(ls $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA/$ROOT_FILE_PATTERN_VAR); do
-						for F_SOURCE in $(ls $RESULTS/$RUU/$S$ROOT_FILE_PATTERN_VAR 2>/dev/null); do
-							F_TARGET="$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/"$(basename $F_SOURCE)
+						for F_SOURCE in $(ls $FILE_PATTERN_TYPE_LS $RESULTS/$RUU/$S$ROOT_FILE_PATTERN_VAR 2>/dev/null); do
 							F_SOURCE_BASE=$(echo $F_SOURCE | sed "s#$RESULTS/$RUU/$S/##")
+							#F_TARGET="$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/"$(basename $F_SOURCE)
+							F_TARGET="$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/"$(basename $F_SOURCE)
 							F_TARGET_BASE=$(echo $F_TARGET | sed "s#$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/##")
-							(($VERBOSE)) && [ ! -f $F_SOURCE ] && echo "#[WARNING] file $F_SOURCE_BASE not found"
-							(($VERBOSE)) && [ -f $F_SOURCE ] && echo "#[INFO] Copy file $F_SOURCE_BASE to $F_TARGET_BASE"
+
+							# IF FOLDER
+							[ "$ROOT_FILE_PATTERN_TYPE" == "FOLDER" ] && F_SOURCE=$F_SOURCE"/";
+
+							(($VERBOSE)) && [ ! -e $F_SOURCE ] && echo "#[WARNING] file $F_SOURCE_BASE not found"
+							(($VERBOSE)) && [ -e $F_SOURCE ] && echo "#[INFO] Copy file $F_SOURCE_BASE to $F_TARGET_BASE"
+							(($DEBUG)) && echo "#[INFO] $COMMAND_COPY $F_SOURCE $F_TARGET"
 							$COMMAND_COPY $F_SOURCE $F_TARGET 1>>$LOGFILE_RES_RUN_REPORT 2>>$LOGFILE_RES_RUN_REPORT
-							if [ ! -f $F_TARGET ]; then
+							if [ ! -e $F_TARGET ]; then
 								(($VERBOSE)) && echo "#[ERROR] Copy file $F_SOURCE_BASE to $F_TARGET_BASE FAILED"
 							fi;
 						done;

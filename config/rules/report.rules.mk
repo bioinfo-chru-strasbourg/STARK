@@ -80,7 +80,7 @@ HOWARD_CALCULATION?=VAF,NOMEN,VAF_STATS,VARTYPE
 	echo "\"sample\": [\"$(*F)\"]," >> $@;
 	echo "\"reads\": [\"$(*F).archive.cram\"]," >> $@;
 	echo "\"design\": [\"$(*F).$$([[ -s $*.manifest ]] && echo 'manifest' || echo 'bed')\"]," >> $@;
-	if [ -s $*.list.genes ]; then echo "\"genes\": [\"$$(for g in $$(cat $*.list.genes); do basename $$g; done | tr '\n' '+' | sed s/+$$//gi)\"]," >> $@; fi;
+	if [ -s $*.list.genes ]; then echo "\"genes\": [\""$$(for g in $$(cat $*.list.genes); do basename $$g; done | tr '\n' '+' | sed s/+$$//gi)"\"]," >> $@; fi;
 	if [ -s $*.transcripts ]; then echo "\"transcripts\": [\"$(*F).transcripts\"]," >> $@; fi;
 	# for g in $(cat P1408.list.genes); do basename $g; done | tr '\n' '+' | sed s/+$//gi
 	echo "\"sample_tag\": [\"$$(cat $*.tag | tr ' ' '!')\"]" >> $@;
@@ -183,5 +183,25 @@ HOWARD_CALCULATION?=VAF,NOMEN,VAF_STATS,VARTYPE
 	echo $(REPORT_FILES)
 	echo $(REPORT_FILES) | tr " " "\n" | tr "\t" "\n" | grep "final.vcf.gz$$" > $@.vcf_list
 	cat $@.vcf_list
-	$(BCFTOOLS) merge -l $@.vcf_list --info-rules - > $@
-	-rm -f $@.vcf_list
+	$(BCFTOOLS) merge -l $@.vcf_list --info-rules - > $@.merged;
+	+if [ "$(HOWARD_ANNOTATION_ANALYSIS)" != "" ]; then \
+		$(HOWARD) --input=$@.merged --output=$@.annotated --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --annotation=$(HOWARD_ANNOTATION_ANALYSIS) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS); \
+	else \
+		cp $@.merged $@.annotated; \
+	fi;
+	+if [ "$(HOWARD_CALCULATION_ANALYSIS)" != "" ]; then \
+		$(HOWARD) --input=$@.annotated --output=$@.calculated --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --calculation=$(HOWARD_CALCULATION_ANALYSIS) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --force; \
+	else \
+		cp $@.annotated $@.calculated; \
+	fi;
+	+if [ "$(HOWARD_PRIORITIZATION_ANALYSIS)" != "" ]; then \
+		$(HOWARD) --input=$@.calculated --output=$@.prioritized --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --prioritization=$(HOWARD_PRIORITIZATION_ANALYSIS) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --force; \
+	else \
+		cp $@.calculated $@.prioritized; \
+	fi;
+	cp $@.prioritized $@
+	-rm -f $@.*
+
+
+
+#

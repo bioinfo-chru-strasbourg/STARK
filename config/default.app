@@ -49,10 +49,12 @@ FOLDER_OUTPUT=$STARK_FOLDER_MAIN/output
 #FOLDER_LOG=$FOLDER_OUTPUT/log
 # TMP: temporary files
 #FOLDER_TMP=$FOLDER_OUTPUT/tmp
+
+# REPOSITORY and ARCHIVE folder
 # Results data can be copy in a repository folder. leave it blank for no copy
-#FOLDER_REPOSITORY=$FOLDER_OUTPUT/repository
+FOLDER_REPOSITORY=$FOLDER_OUTPUT/repository
 # Results data can be copy in a archive folder. leave it blank for no copy
-#FOLDER_ARCHIVE=$FOLDER_OUTPUT/archive
+FOLDER_ARCHIVE=$FOLDER_OUTPUT/archive
 
 
 # PARAMETERS
@@ -133,7 +135,7 @@ EXPECTED_DEPTH="100" # warn DP threshold (default 100X)
 DEPTH_COVERAGE_THRESHOLD="0.95" # threshold percentage of bases over the DP threshold
 
 # CLIP_OVERLAPPING_READS (default 1)
-# For paired reads, soft clip the 3' end of each read if necessary so that it does not extend past the 5' end of its mate
+# From PICARD: For paired reads, soft clip the 3' end of each read if necessary so that it does not extend past the 5' end of its mate
 CLIP_OVERLAPPING_READS=1
 
 # NB_BASES_AROUND (default 0)
@@ -225,7 +227,8 @@ HOWARD_ANNOTATION="core,snpeff_split"
 HOWARD_ANNOTATION_MINIMAL="core,snpeff_split"
 # Default annotation with HOWARD for report
 HOWARD_ANNOTATION_REPORT="core,frequency,score,annotation,prediction,snpeff,snpeff_hgvs,snpeff_split"
-#HOWARD_ANNOTATION_REPORT=""
+# Default annotation with HOWARD for whole analysis
+HOWARD_ANNOTATION_ANALYSIS="" # no more annotation
 
 
 # CALCULATION
@@ -235,6 +238,8 @@ HOWARD_CALCULATION="VARTYPE,NOMEN"
 HOWARD_CALCULATION_MINIMAL="VARTYPE,NOMEN"
 # Default calculation with HOWARD for final VCF report
 HOWARD_CALCULATION_REPORT="FindByPipelines,GenotypeConcordance,VAF,VAF_STATS,CALLING_QUALITY,CALLING_QUALITY_EXPLODE,VARTYPE,NOMEN,BARCODE"
+# Default calculation with HOWARD for whole analysis (calculation forced)
+HOWARD_CALCULATION_ANALYSIS="VAF_STATS,VARTYPE,NOMEN,BARCODE"
 
 
 # PRIORITIZATION
@@ -248,6 +253,8 @@ HOWARD_PRIORITIZATION=$HOWARD_PRIORITIZATION_DEFAULT # "default"
 HOWARD_PRIORITIZATION_MINIMAL=$HOWARD_PRIORITIZATION_DEFAULT # "default"
 # Default calculation with HOWARD for Report (full/final VCF)
 HOWARD_PRIORITIZATION_REPORT=$HOWARD_PRIORITIZATION_DEFAULT # "default"
+# Default calculation with HOWARD for whole analysis (calculation forced)
+HOWARD_PRIORITIZATION_ANALYSIS="" # "none"
 
 
 # TRANSLATION

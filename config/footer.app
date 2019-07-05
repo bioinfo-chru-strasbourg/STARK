@@ -109,10 +109,13 @@ if [ "$FOLDER_TMP" == "" ]; then
 	FOLDER_TMP="$FOLDER_OUTPUT/tmp"
 fi;
 
-# VALIDATION FOLDER
-#if [ "$FOLDER_VALIDATION" == "" ]; then
-#	FOLDER_VALIDATION="$FOLDER_OUTPUT/validation"
-#fi;
+# EXPORT FOLDER REPOSITORY
+export FOLDER_REPOSITORY
+echo "FOLDER_REPOSITORY=$FOLDER_REPOSITORY"
+
+# EXPORT FOLDER ARCHIVE
+export FOLDER_ARCHIVE
+
 
 # CONFIG FOLDERS
 
@@ -167,8 +170,8 @@ export RESULTS_SUBFOLDER_DATA="DATA";				# Copy sample results in a SUBFOLDER
 # Copy some sample results files in the root sample folder, if any SUBFOLDER defined
 #export RESULTS_SUBFOLDER_ROOT_FILE_PATTERNS=$RESULTS_SUBFOLDER_ROOT_FILE_PATTERNS' $SAMPLE.reports/$SAMPLE.final.vcf $SAMPLE.reports/$SAMPLE.full.vcf $SAMPLE.reports/$SAMPLE.final.txt $SAMPLE.reports/$SAMPLE.full.txt *.reports/*.report.pdf *.reports/latex*/*pdf';
 #export RESULTS_SUBFOLDER_ROOT_FILE_PATTERNS=$RESULTS_SUBFOLDER_ROOT_FILE_PATTERNS' $SAMPLE.reports/$SAMPLE.final.vcf $SAMPLE.reports/$SAMPLE.final.vcf.idx $SAMPLE.reports/$SAMPLE.final.vcf.gz $SAMPLE.reports/$SAMPLE.final.vcf.gz.tbi $SAMPLE.reports/$SAMPLE.full.vcf $SAMPLE.reports/$SAMPLE.full.vcf.idx $SAMPLE.reports/$SAMPLE.full.vcf.gz $SAMPLE.reports/$SAMPLE.full.vcf.gz.tbi $SAMPLE.reports/$SAMPLE.final.tsv $SAMPLE.reports/$SAMPLE.full.tsv *.reports/*.report.pdf $SAMPLE.bed';
-export REPOSITORY_FILE_PATTERNS=$(echo $REPOSITORY_FILE_PATTERNS' $SAMPLE.reports/$SAMPLE.final.vcf.gz $SAMPLE.reports/$SAMPLE.final.vcf.gz.tbi $SAMPLE.reports/$SAMPLE.final.tsv $SAMPLE.reports/*.report.pdf $SAMPLE.bed' | tr "," " " | tr " " "\n" | sort -u | tr "\n" " ");
-export ARCHIVE_FILE_PATTERNS=$(echo $ARCHIVE_FILE_PATTERNS' $SAMPLE.reports/$SAMPLE.final.vcf.gz $SAMPLE.reports/$SAMPLE.final.tsv $SAMPLE.reports/*.report.pdf $SAMPLE.bed $SAMPLE.manifest $SAMPLE*.genes $SAMPLE*.transcripts $SAMPLE*.tag $SAMPLE.launch.json $SAMPLE.archive.cram' | tr "," " " | tr " " "\n" | sort -u | tr "\n" " ");
+export REPOSITORY_FILE_PATTERNS=$(echo $REPOSITORY_FILE_PATTERNS' $SAMPLE.reports/$SAMPLE.final.vcf.gz $SAMPLE.reports/$SAMPLE.final.vcf.gz.tbi $SAMPLE.reports/$SAMPLE.final.tsv $SAMPLE.reports/*.report.pdf $SAMPLE.reports/*.report.html $SAMPLE.reports/*.report.html.folder:FOLDER $SAMPLE.bed' | tr "," " " | tr " " "\n" | sort -u | tr "\n" " ");
+export ARCHIVE_FILE_PATTERNS=$(echo $ARCHIVE_FILE_PATTERNS' $SAMPLE.reports/$SAMPLE.final.vcf.gz $SAMPLE.reports/$SAMPLE.final.tsv $SAMPLE.reports/*.report.pdf $SAMPLE.reports/*.report.html $SAMPLE.reports/*.report.html.folder:FOLDER $SAMPLE.bed $SAMPLE.manifest $SAMPLE*.genes $SAMPLE*.transcripts $SAMPLE*.tag $SAMPLE.launch.json $SAMPLE.archive.cram' | tr "," " " | tr " " "\n" | sort -u | tr "\n" " ");
 
 
 #Rules defined in the app
@@ -222,6 +225,11 @@ source $CONFIG_TOOLS
 
 #source $STARK_FOLDER_CONFIG/databases.app
 source $CONFIG_DATABASES
+
+# databases release
+DATABASES_RELEASE_FILE=$FOLDER_DATABASES/RELEASE
+[ -s $DATABASES_RELEASE_FILE ] && DATABASES_RELEASE=$(grep "^RELEASE" $DATABASES_RELEASE_FILE | cut -f2) || DATABASES_RELEASE="UNKNOWN";
+export DATABASES_RELEASE
 
 
 # PIPELINES
@@ -487,12 +495,19 @@ fi;
 export HOWARD_ANNOTATION_MINIMAL
 
 # REPORT
-
 # Default annotation with HOWARD for Report (/fullfinal VCF)
 if [ -z "$HOWARD_ANNOTATION_REPORT" ]; then
 	HOWARD_ANNOTATION_REPORT=$HOWARD_ANNOTATION
 fi;
 export HOWARD_ANNOTATION_REPORT
+
+# ANALYSIS
+# Default annotation with HOWARD for whole analysis (annotation NOT forced)
+if [ -z "$HOWARD_ANNOTATION_ANALYSIS" ]; then
+	HOWARD_ANNOTATION_ANALYSIS=$HOWARD_ANNOTATION
+fi;
+export HOWARD_ANNOTATION_ANALYSIS
+
 
 
 # CALCULATION
@@ -518,6 +533,14 @@ if [ -z "$HOWARD_CALCULATION_REPORT" ]; then
 	HOWARD_CALCULATION_REPORT=$HOWARD_CALCULATION
 fi;
 export HOWARD_CALCULATION_REPORT
+
+# ANALYSIS
+# Default calculation with HOWARD for whole analysis (prioritization forced)
+if [ -z "$HOWARD_CALCULATION_ANALYSIS" ]; then
+	HOWARD_CALCULATION_ANALYSIS=$HOWARD_CALCULATION
+fi;
+export HOWARD_CALCULATION_ANALYSIS
+
 
 
 # PRIORITIZATION
@@ -567,6 +590,18 @@ export HOWARD_PRIORITIZATION_REPORT
 #	HOWARD_PRIORITIZATION_REPORT=$HOWARD_PRIORITIZATION
 #fi;
 #export HOWARD_PRIORITIZATION_REPORT
+
+
+# ANALYSIS
+# Default filter to prioritize/rank variant for whole analysis (calculation forced)
+if [ -z "$HOWARD_PRIORITIZATION_ANALYSIS" ]; then
+	HOWARD_PRIORITIZATION_ANALYSIS=$HOWARD_PRIORITIZATION
+fi;
+if [ ! -z "$APP_NAME" ]; then
+	HOWARD_PRIORITIZATION_ANALYSIS="$HOWARD_PRIORITIZATION_ANALYSIS $APP_NAME"
+fi;
+HOWARD_PRIORITIZATION_ANALYSIS=$(echo $HOWARD_PRIORITIZATION_ANALYSIS | tr "," " " | tr " " "\n" | sort -u | tr "\n" "," | sed s/,$//)
+export HOWARD_PRIORITIZATION_ANALYSIS
 
 
 # TRANSLATION
