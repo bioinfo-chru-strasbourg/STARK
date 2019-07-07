@@ -22,8 +22,10 @@ function usage
 		 	This option is required.
 		 	-b, --bedfile-genes the bed file containing the coordinates of all the exons (5'UTR/3'UTR and CDS)
 		 	This option is required.
-		 	-c, --coverage-criteria the coverage criteria to calculte the percentage of bases cover more than this value (eg 100 for 100 X)
+			-c, --coverage-criteria the coverage criteria to calculte the percentage of bases cover more than this value (eg 100 for 100 X)
 		 	This option is optional (default="1,30,100").
+			--coverage-bases the coverage bases files in format "chr pos depth"
+		 	This option is optional (default generated with samtools depth from bam file).
 			-n, --nb-bases-arounds The number of bases to look around the exons coordinates (eg 10)
 		 	This option is optional (default=0).
 			--dp_fail
@@ -51,7 +53,7 @@ function usage
 ####################################################################################################################################
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ARGS=$(getopt -o "f:b:c:n:t:u:s:o:vhd" --long "bam-file:,bedfile-genes:,coverage-criteria:,nb-bases-arounds:,dp_fail:,dp_warn:,dp_threshold:,bedtools:,samtools:,output:,threads:,verbose,debug,help" -- "$@" 2> /dev/null)
+ARGS=$(getopt -o "f:b:c:n:t:u:s:o:vhd" --long "bam-file:,bedfile-genes:,coverage-criteria:,coverage-bases:,nb-bases-arounds:,dp_fail:,dp_warn:,dp_threshold:,bedtools:,samtools:,output:,threads:,verbose,debug,help" -- "$@" 2> /dev/null)
 [ $? -ne 0 ] && \
 	echo "Error in the argument list." "Use -h or --help to display the help." >&2 && \
 	exit 1
@@ -69,6 +71,10 @@ do
 			;;
 		-c|--coverage-criteria)
 			COVERAGE_CRITERIA="$2"
+			shift 2
+			;;
+		--coverage-bases)
+			COVERAGE_BASES="$2"
 			shift 2
 			;;
 		-n|--nb-bases-arounds)
@@ -155,6 +161,8 @@ if [ -z "$VERBOSE" ]; then
 	VERBOSE=0
 fi;
 
+PRECISION=9
+
 (($DEBUG)) && echo $BEDFILE_GENES && head $BEDFILE_GENES
 
 
@@ -211,6 +219,7 @@ samplename=$( basename $BAM_FILE | cut -d. -f1 )
 #grep -P "^$chr\t" $BEDFILE_GENES_CUT | head
 #exit 0;
 
+
 MK=$BEDFILE_GENES_CUT.mk
 
 echo "all: $BEDFILE_GENES_CUT.coverage_bases" > $MK
@@ -248,7 +257,14 @@ echo "$BEDFILE_GENES_CUT.coverage_bases: $BEDFILE_GENES_CHR_COVERAGE_BASES_LIST
 #THREADS=1
 if [ ! -e ${OUTPUT}.coverage_bases ]; then
 	echo "#[INFO] Coverage bases generation"
-	make -j $THREADS -f $MK $BEDFILE_GENES_CUT.coverage_bases #1>/dev/null 2>/dev/null
+
+	if  [ "$COVERAGE_BASES" != "" ] && [ -s $COVERAGE_BASES ]; then
+		echo "#[INFO] Coverage bases generation from Coverage Bases file"
+		cat $COVERAGE_BASES | awk -F"\t" '{print $1"\t"$2"\t"$2"\t+\t"$3}' | $BEDTOOLS intersect -b stdin -a $BEDFILE_GENES_CUT -wb | awk -F"\t" '{print $6"\t"$7"\t"$8"\t"$9"\t"$10"\t"$5}' > $BEDFILE_GENES_CUT.coverage_bases
+	else
+		echo "#[INFO] Coverage bases generation from samtools depth on BAM"
+		make -j $THREADS -f $MK $BEDFILE_GENES_CUT.coverage_bases #1>/dev/null 2>/dev/null
+	fi;
 	cp $BEDFILE_GENES_CUT.coverage_bases ${OUTPUT}.coverage_bases
 else
 	echo "#[INFO] Coverage stats already generated"
@@ -296,7 +312,7 @@ for DP in $(echo $COVERAGE_CRITERIA | tr "," " "); do
 	{b[g]=b[g]+0}
 	$5>=DP {b[g]++}
 	{c[g]=(b[g]/a[g])*100}
-	{c2[g]=sprintf("%.2f", c[g])}
+	{c2[g]=sprintf("%.'$PRECISION'f", c[g])}
 	{d[g]=a[g]-b[g]}
 	END {
 		for (gene in a) {
@@ -333,8 +349,8 @@ $5>=FAIL {bFAIL[g]++}
 $5>=WARN {bWARN[g]++}
 {cWARN[g]=bWARN[g]/a[g]}
 {M[g]="PASS"; D[g]="100% bases with DP >="WARN}
-cWARN[g]<THRESHOLD {M[g]="WARN"; D[g]="only "sprintf("%.2f", cWARN[g]*100)"% bases with DP >="WARN}
-cFAIL[g]<THRESHOLD {M[g]="FAIL"; D[g]="only "sprintf("%.2f", cFAIL[g]*100)"% bases with DP >="FAIL}
+cWARN[g]<THRESHOLD {M[g]="WARN"; D[g]="only "sprintf("%.'$PRECISION'f", cWARN[g]*100)"% bases with DP >="WARN}
+cFAIL[g]<THRESHOLD {M[g]="FAIL"; D[g]="only "sprintf("%.'$PRECISION'f", cFAIL[g]*100)"% bases with DP >="FAIL}
 END {
 	for (gene in a) {
 		print gene"\t"M[gene]"\t"D[gene]

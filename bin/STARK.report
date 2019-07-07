@@ -389,6 +389,14 @@ fi;
 PAGE_BREAK_AFTER=' style="page-break-after: always;"'
 PAGE_BREAK_BEFORE=' style="page-break-before: always;"'
 
+# BAM Validation texts
+#uniq reads, with quality higher than 10, aligned on Target Design, and clipped overlapped bases
+BAM_VALIDATION_TEXT_HTML='Minimum Mapping Quality >= '$METRICS_MINIMUM_MAPPING_QUALITY','
+BAM_VALIDATION_TEXT_HTML=$BAM_VALIDATION_TEXT_HTML' Minimum Base Quality >= '$METRICS_MINIMUM_BASE_QUALITY','
+(($CLIP_OVERLAPPING_READS)) && BAM_VALIDATION_TEXT_HTML=$BAM_VALIDATION_TEXT_HTML' Clipping overlapping reads,'
+[ "$METRICS_FLAGS" != "" ] && BAM_VALIDATION_TEXT_HTML=$BAM_VALIDATION_TEXT_HTML' exclude Reads with flags '$METRICS_FLAGS || BAM_VALIDATION_TEXT_HTML=$BAM_VALIDATION_TEXT_HTML' no Reads excluded'
+
+
 
 ### DEBUG ###
 
@@ -1038,7 +1046,7 @@ echo '
 			<p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
 				Sequenced reads were mapped to <strong>'$ASSEMBLY'</strong> assembly using aligner'$( [ $(echo $ALIGNERS | wc -w) -gt 1 ] && echo "s")': <strong>'$ALIGNERS'</strong>.
 				Reads statistics were determined with <strong>FastQC</strong> (fastq) and <strong>Samtools flagstat</strong> (BAM).
-				<strong>On target</strong> calculated on BAM for validation (uniq reads, with quality higher than 10, aligned on Target Design, and clipped overlapped bases).
+				<strong>On target</strong> calculated on BAM for validation ('$BAM_VALIDATION_TEXT_HTML').
 			</p>
 
 			<div class="row pt-1 mt-5">
@@ -1107,240 +1115,244 @@ for ALIGNER in $ALIGNERS; do
 
 	for GENES_PANEL in $TARGET_DESIGN_NAME $(cat $LIST_GENES_PANEL); do
 
-		((GENES_PANEL_NUM++))
-
-		if [ "$GENES_PANEL" == "$TARGET_DESIGN_NAME" ]; then
-			GENES_PANEL_NAME="Target Design"
-			GENE_PANEL_NAME_HTML="$GENES_PANEL_NAME"
-			GENE_PANEL_TYPE_HTML="Target<br>Regions"
-		else
-			GENES_PANEL_NAME=$(echo $GENES_PANEL | sed "s/^$SAMPLE.//" | sed "s/.genes$//")
-			GENE_PANEL_NAME_HTML="Gene Panel<br>$GENES_PANEL_NAME"
-			GENE_PANEL_TYPE_HTML="Gene<br>Panel"
-		fi;
-
-
-		(($DEBUG)) && echo "GENES_PANEL: $GENES_PANEL";
-		(($DEBUG)) && echo "GENES_PANEL_NAME: $GENES_PANEL_NAME";
-		(($DEBUG)) && echo "GENES_PANEL_NUM: "$GENES_PANEL_NUM
-
-
 		# FILES
 		GENES_PANEL_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$GENES_PANEL"
 		GENES_PANEL_GENES_MSG="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.genes.msg"
 		GENES_PANEL_DEPTHBED_COVS="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.coverage"
 
-		#(($DEBUG)) && cat $GENES_PANEL_DEPTHBED_COVS
+		if [ -s $GENES_PANEL_FILE ]; then
 
-		# GENES PANEL INFO
-		GENES_PANEL_GENES_NUMBER=$(cat $GENES_PANEL_FILE | grep -v "^#" | grep -v "^@" | cut -f5 | sort -u | wc -l)
-		GENES_PANEL_GENES_NUMBER_HTML=$(echo $GENES_PANEL_GENES_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
+			((GENES_PANEL_NUM++))
 
-		GENES_PANEL_REGIONS_NUMBER=$(cat $GENES_PANEL_FILE | grep -v "^#" | grep -v "^@" | wc -l)
-		GENES_PANEL_REGIONS_NUMBER_HTML=$(echo $GENES_PANEL_REGIONS_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
+			if [ "$GENES_PANEL" == "$TARGET_DESIGN_NAME" ]; then
+				GENES_PANEL_NAME="Target Design"
+				GENE_PANEL_NAME_HTML="$GENES_PANEL_NAME"
+				GENE_PANEL_TYPE_HTML="Target<br>Regions"
+			else
+				GENES_PANEL_NAME=$(echo $GENES_PANEL | sed "s/^$SAMPLE.//" | sed "s/.genes$//")
+				GENE_PANEL_NAME_HTML="Gene Panel<br>$GENES_PANEL_NAME"
+				GENE_PANEL_TYPE_HTML="Gene<br>Panel"
+			fi;
 
-		GENES_PANEL_BASES_NUMBER=$(cat $GENES_PANEL_FILE | grep -v "^#" | grep -v "^@" | awk '{for(i=$2;i<$3;i++) print $1"\t"i}' | sort -u | wc -l)
-		GENES_PANEL_BASES_NUMBER_HTML=$(echo $GENES_PANEL_BASES_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
 
-		GENES_PANEL_ALIGNER=$ALIGNER
-		GENES_PANEL_ALIGNER_HTML=$GENES_PANEL_ALIGNER
-
-		# GENES PANEL SEQUENCING PANEL COVERAGE
-		GENES_PANEL_SEQUENCING_PANEL_COVERAGE=$(grep "^$SEQUENCING_DEPTH " $GENES_PANEL_DEPTHBED_COVS | cut -d" " -f4)
-		GENES_PANEL_SEQUENCING_PANEL_COVERAGE_HTML=$(awk 'BEGIN{printf("%.1f\n",'$GENES_PANEL_SEQUENCING_PANEL_COVERAGE'*100)}')"%"
-		#GENES_PANEL_SEQUENCING_PANEL_COVERAGE_MESSAGE="$GENES_PANEL_SEQUENCING_PANEL_COVERAGE"
-		[ $GENES_PANEL_SEQUENCING_PANEL_COVERAGE_HTML == "100.0%" ] && GENES_PANEL_SEQUENCING_PANEL_COVERAGE_HTML="100%"
-		(( $(echo "$GENES_PANEL_SEQUENCING_PANEL_COVERAGE >= $SEQUENCING_COVERAGE_THRESHOLD" |bc -l) )) && GENES_PANEL_SEQUENCING_PANEL_COVERAGE_FLAG=$PASS_FLAG_ICON || GENES_PANEL_SEQUENCING_PANEL_COVERAGE_FLAG=$FAIL_FLAG_ICON
-
-		# GENES PANEL MINIMUM PANEL COVERAGE
-		GENES_PANEL_MINIMUM_PANEL_COVERAGE=$(grep "^$MINIMUM_DEPTH " $GENES_PANEL_DEPTHBED_COVS | cut -d" " -f4)
-		GENES_PANEL_MINIMUM_PANEL_COVERAGE_HTML=$(awk 'BEGIN{printf("%.1f\n",'$GENES_PANEL_MINIMUM_PANEL_COVERAGE'*100)}')"%"
-		#GENES_PANEL_MINIMUM_PANEL_COVERAGE_MESSAGE="$GENES_PANEL_MINIMUM_PANEL_COVERAGE"
-		[ $GENES_PANEL_MINIMUM_PANEL_COVERAGE_HTML == "100.0%" ] && GENES_PANEL_MINIMUM_PANEL_COVERAGE_HTML="100%"
-		(( $(echo "$GENES_PANEL_MINIMUM_PANEL_COVERAGE >= $DEPTH_COVERAGE_THRESHOLD" |bc -l) )) && GENES_PANEL_MINIMUM_PANEL_COVERAGE_FLAG=$PASS_FLAG_ICON || GENES_PANEL_MINIMUM_PANEL_COVERAGE_FLAG=$FAIL_FLAG_ICON
-
-		# GENES PANEL EXPECTED PANEL COVERAGE
-		GENES_PANEL_EXPECTED_PANEL_COVERAGE=$(grep "^$EXPECTED_DEPTH " $GENES_PANEL_DEPTHBED_COVS | cut -d" " -f4)
-		GENES_PANEL_EXPECTED_PANEL_COVERAGE_HTML=$(awk 'BEGIN{printf("%.1f\n",'$GENES_PANEL_EXPECTED_PANEL_COVERAGE'*100)}')"%"
-		#GENES_PANEL_EXPECTED_PANEL_COVERAGE_MESSAGE="$GENES_PANEL_EXPECTED_PANEL_COVERAGE"
-		[ $GENES_PANEL_EXPECTED_PANEL_COVERAGE_HTML == "100.0%" ] && GENES_PANEL_EXPECTED_PANEL_COVERAGE_HTML="100%"
-		(( $(echo "$GENES_PANEL_EXPECTED_PANEL_COVERAGE >= $DEPTH_COVERAGE_THRESHOLD" |bc -l) )) && GENES_PANEL_EXPECTED_PANEL_COVERAGE_FLAG=$PASS_FLAG_ICON || GENES_PANEL_EXPECTED_PANEL_COVERAGE_FLAG=$WARN_FLAG_ICON
-
-		# GENES PANEL FAIL GENES COVERAGE
-		GENES_PANEL_FAIL_GENES_NUMBER=$(cat $GENES_PANEL_GENES_MSG | cut -f2 | grep "^FAIL$" -c)
-		GENES_PANEL_FAIL_GENES_NUMBER_HTML=$GENES_PANEL_FAIL_GENES_NUMBER
-		#GENES_PANEL_FAIL_GENES_NUMBER_MESSAGE="$GENES_PANEL_FAIL_GENES_NUMBER"
-		(( $GENES_PANEL_FAIL_GENES_NUMBER )) && GENES_PANEL_FAIL_GENES_NUMBER_FLAG=$FAIL_FLAG_ICON || GENES_PANEL_FAIL_GENES_NUMBER_FLAG=$PASS_FLAG_ICON
-
-		# GENES PANEL WARN GENES COVERAGE
-		GENES_PANEL_WARN_GENES_NUMBER=$(cat $GENES_PANEL_GENES_MSG | cut -f2 | grep "^WARN$" -c)
-		GENES_PANEL_WARN_GENES_NUMBER_HTML=$GENES_PANEL_WARN_GENES_NUMBER
-		#GENES_PANEL_WARN_GENES_NUMBER_MESSAGE="$GENES_PANEL_WARN_GENES_NUMBER"
-		(( $GENES_PANEL_WARN_GENES_NUMBER )) && GENES_PANEL_WARN_GENES_NUMBER_FLAG=$WARN_FLAG_ICON || GENES_PANEL_WARN_GENES_NUMBER_FLAG=$PASS_FLAG_ICON
-
-		# BREAK
-		(( $(echo "$GENES_PANEL_NUM >= 2" |bc -l) )) && GENES_PANEL_BREAK=$PAGE_BREAK_BEFORE || GENES_PANEL_BREAK=""
+			(($DEBUG)) && echo "GENES_PANEL: $GENES_PANEL";
+			(($DEBUG)) && echo "GENES_PANEL_NAME: $GENES_PANEL_NAME";
+			(($DEBUG)) && echo "GENES_PANEL_NUM: "$GENES_PANEL_NUM
 
 
 
-		echo '
+			#(($DEBUG)) && cat $GENES_PANEL_DEPTHBED_COVS
 
-			<h3 class="mbr-section-subtitle mbr-fonts-style display-5" '$GENES_PANEL_BREAK'>
-			<br>
-				'$GENE_PANEL_NAME_HTML'
-			</h3>
+			# GENES PANEL INFO
+			GENES_PANEL_GENES_NUMBER=$(cat $GENES_PANEL_FILE | grep -v "^#" | grep -v "^@" | cut -f5 | sort -u | wc -l)
+			GENES_PANEL_GENES_NUMBER_HTML=$(echo $GENES_PANEL_GENES_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
 
-			<div class="container pt-4 mt-2">
-				<div class="media-container-row">
+			GENES_PANEL_REGIONS_NUMBER=$(cat $GENES_PANEL_FILE | grep -v "^#" | grep -v "^@" | wc -l)
+			GENES_PANEL_REGIONS_NUMBER_HTML=$(echo $GENES_PANEL_REGIONS_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
 
-					<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
-						<div class="panel-item">
-							<div class="card-img pb-3">
-								<span class="mbr-iconfont mbri-info"></span>
-							</div>
+			GENES_PANEL_BASES_NUMBER=$(cat $GENES_PANEL_FILE | grep -v "^#" | grep -v "^@" | awk '{for(i=$2;i<$3;i++) print $1"\t"i}' | sort -u | wc -l)
+			GENES_PANEL_BASES_NUMBER_HTML=$(echo $GENES_PANEL_BASES_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
 
-							<div class="card-text">
-								<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
-									'$GENES_PANEL_GENES_NUMBER_HTML'
-								</h3>
-								<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
-									'$GENE_PANEL_TYPE_HTML'
-									<br>
-									&nbsp;
-								</h4>
-								<p class="mbr-content-text mbr-fonts-style display-7">
-									'$GENES_PANEL_BASES_NUMBER_HTML' bases
-									<br>
-									'$GENES_PANEL_REGIONS_NUMBER_HTML' regions
-									<br>
-									'$GENES_PANEL_ALIGNER_HTML' aligner
-								</p>
-							</div>
-						</div>
-					</div>
+			GENES_PANEL_ALIGNER=$ALIGNER
+			GENES_PANEL_ALIGNER_HTML=$GENES_PANEL_ALIGNER
 
-					<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
-						<div class="panel-item">
-							<div class="card-img pb-3">
-								<span '$GENES_PANEL_SEQUENCING_PANEL_COVERAGE_FLAG'></span>
-							</div>
+			# GENES PANEL SEQUENCING PANEL COVERAGE
+			GENES_PANEL_SEQUENCING_PANEL_COVERAGE=$(grep "^$SEQUENCING_DEPTH " $GENES_PANEL_DEPTHBED_COVS | cut -d" " -f4)
+			GENES_PANEL_SEQUENCING_PANEL_COVERAGE_HTML=$(awk 'BEGIN{printf("%.1f\n",'$GENES_PANEL_SEQUENCING_PANEL_COVERAGE'*100)}')"%"
+			#GENES_PANEL_SEQUENCING_PANEL_COVERAGE_MESSAGE="$GENES_PANEL_SEQUENCING_PANEL_COVERAGE"
+			[ $GENES_PANEL_SEQUENCING_PANEL_COVERAGE_HTML == "100.0%" ] && GENES_PANEL_SEQUENCING_PANEL_COVERAGE_HTML="100%"
+			(( $(echo "$GENES_PANEL_SEQUENCING_PANEL_COVERAGE >= $SEQUENCING_COVERAGE_THRESHOLD" |bc -l) )) && GENES_PANEL_SEQUENCING_PANEL_COVERAGE_FLAG=$PASS_FLAG_ICON || GENES_PANEL_SEQUENCING_PANEL_COVERAGE_FLAG=$FAIL_FLAG_ICON
 
-							<div class="card-text">
-								<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
-									'$GENES_PANEL_SEQUENCING_PANEL_COVERAGE_HTML'
-								</h3>
-								<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
-									Sequencing
-									<br>
-									Panel coverage
-									<br>
-									'$SEQUENCING_DEPTH'X
-								</h4>
-								<p class="mbr-content-text mbr-fonts-style display-7">
-									% of sequenced bases
-								</p>
+			# GENES PANEL MINIMUM PANEL COVERAGE
+			GENES_PANEL_MINIMUM_PANEL_COVERAGE=$(grep "^$MINIMUM_DEPTH " $GENES_PANEL_DEPTHBED_COVS | cut -d" " -f4)
+			GENES_PANEL_MINIMUM_PANEL_COVERAGE_HTML=$(awk 'BEGIN{printf("%.1f\n",'$GENES_PANEL_MINIMUM_PANEL_COVERAGE'*100)}')"%"
+			#GENES_PANEL_MINIMUM_PANEL_COVERAGE_MESSAGE="$GENES_PANEL_MINIMUM_PANEL_COVERAGE"
+			[ $GENES_PANEL_MINIMUM_PANEL_COVERAGE_HTML == "100.0%" ] && GENES_PANEL_MINIMUM_PANEL_COVERAGE_HTML="100%"
+			(( $(echo "$GENES_PANEL_MINIMUM_PANEL_COVERAGE >= $DEPTH_COVERAGE_THRESHOLD" |bc -l) )) && GENES_PANEL_MINIMUM_PANEL_COVERAGE_FLAG=$PASS_FLAG_ICON || GENES_PANEL_MINIMUM_PANEL_COVERAGE_FLAG=$FAIL_FLAG_ICON
+
+			# GENES PANEL EXPECTED PANEL COVERAGE
+			GENES_PANEL_EXPECTED_PANEL_COVERAGE=$(grep "^$EXPECTED_DEPTH " $GENES_PANEL_DEPTHBED_COVS | cut -d" " -f4)
+			GENES_PANEL_EXPECTED_PANEL_COVERAGE_HTML=$(awk 'BEGIN{printf("%.1f\n",'$GENES_PANEL_EXPECTED_PANEL_COVERAGE'*100)}')"%"
+			#GENES_PANEL_EXPECTED_PANEL_COVERAGE_MESSAGE="$GENES_PANEL_EXPECTED_PANEL_COVERAGE"
+			[ $GENES_PANEL_EXPECTED_PANEL_COVERAGE_HTML == "100.0%" ] && GENES_PANEL_EXPECTED_PANEL_COVERAGE_HTML="100%"
+			(( $(echo "$GENES_PANEL_EXPECTED_PANEL_COVERAGE >= $DEPTH_COVERAGE_THRESHOLD" |bc -l) )) && GENES_PANEL_EXPECTED_PANEL_COVERAGE_FLAG=$PASS_FLAG_ICON || GENES_PANEL_EXPECTED_PANEL_COVERAGE_FLAG=$WARN_FLAG_ICON
+
+			# GENES PANEL FAIL GENES COVERAGE
+			GENES_PANEL_FAIL_GENES_NUMBER=$(cat $GENES_PANEL_GENES_MSG | cut -f2 | grep "^FAIL$" -c)
+			GENES_PANEL_FAIL_GENES_NUMBER_HTML=$GENES_PANEL_FAIL_GENES_NUMBER
+			#GENES_PANEL_FAIL_GENES_NUMBER_MESSAGE="$GENES_PANEL_FAIL_GENES_NUMBER"
+			(( $GENES_PANEL_FAIL_GENES_NUMBER )) && GENES_PANEL_FAIL_GENES_NUMBER_FLAG=$FAIL_FLAG_ICON || GENES_PANEL_FAIL_GENES_NUMBER_FLAG=$PASS_FLAG_ICON
+
+			# GENES PANEL WARN GENES COVERAGE
+			GENES_PANEL_WARN_GENES_NUMBER=$(cat $GENES_PANEL_GENES_MSG | cut -f2 | grep "^WARN$" -c)
+			GENES_PANEL_WARN_GENES_NUMBER_HTML=$GENES_PANEL_WARN_GENES_NUMBER
+			#GENES_PANEL_WARN_GENES_NUMBER_MESSAGE="$GENES_PANEL_WARN_GENES_NUMBER"
+			(( $GENES_PANEL_WARN_GENES_NUMBER )) && GENES_PANEL_WARN_GENES_NUMBER_FLAG=$WARN_FLAG_ICON || GENES_PANEL_WARN_GENES_NUMBER_FLAG=$PASS_FLAG_ICON
+
+			# BREAK
+			(( $(echo "$GENES_PANEL_NUM >= 2" |bc -l) )) && GENES_PANEL_BREAK=$PAGE_BREAK_BEFORE || GENES_PANEL_BREAK=""
+
+
+
+			echo '
+
+				<h3 class="mbr-section-subtitle mbr-fonts-style display-5" '$GENES_PANEL_BREAK'>
+				<br>
+					'$GENE_PANEL_NAME_HTML'
+				</h3>
+
+				<div class="container pt-4 mt-2">
+					<div class="media-container-row">
+
+						<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+							<div class="panel-item">
+								<div class="card-img pb-3">
+									<span class="mbr-iconfont mbri-info"></span>
+								</div>
+
+								<div class="card-text">
+									<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+										'$GENES_PANEL_GENES_NUMBER_HTML'
+									</h3>
+									<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+										'$GENE_PANEL_TYPE_HTML'
+										<br>
+										&nbsp;
+									</h4>
+									<p class="mbr-content-text mbr-fonts-style display-7">
+										'$GENES_PANEL_BASES_NUMBER_HTML' bases
+										<br>
+										'$GENES_PANEL_REGIONS_NUMBER_HTML' regions
+										<br>
+										'$GENES_PANEL_ALIGNER_HTML' aligner
+									</p>
+								</div>
 							</div>
 						</div>
-					</div>
 
-					<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
-						<div class="panel-item">
-							<div class="card-img pb-3">
-								<span '$GENES_PANEL_MINIMUM_PANEL_COVERAGE_FLAG'></span>
-							</div>
-							<div class="card-text">
-								<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
-									'$GENES_PANEL_MINIMUM_PANEL_COVERAGE_HTML'
-								</h3>
-								<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
-									Minimum
-									<br>
-									Panel coverage
-									<br>
-									'$MINIMUM_DEPTH'X
-								</h4>
-								<p class="mbr-content-text mbr-fonts-style display-7">
-									% of bases with minimum depth
-								</p>
-							</div>
-						</div>
-					</div>
+						<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+							<div class="panel-item">
+								<div class="card-img pb-3">
+									<span '$GENES_PANEL_SEQUENCING_PANEL_COVERAGE_FLAG'></span>
+								</div>
 
-					<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
-						<div class="panel-item">
-							<div class="card-img pb-3">
-								<span '$GENES_PANEL_EXPECTED_PANEL_COVERAGE_FLAG'></span>
-							</div>
-
-							<div class="card-text">
-								<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
-									'$GENES_PANEL_EXPECTED_PANEL_COVERAGE_HTML'
-								</h3>
-								<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
-									Expected
-									<br>
-									Panel coverage
-									<br>
-									'$EXPECTED_DEPTH'X
-								</h4>
-								<p class="mbr-content-text mbr-fonts-style display-7">
-									% of bases with expected depth
-								</p>
+								<div class="card-text">
+									<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+										'$GENES_PANEL_SEQUENCING_PANEL_COVERAGE_HTML'
+									</h3>
+									<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+										Sequencing
+										<br>
+										Panel coverage
+										<br>
+										'$SEQUENCING_DEPTH'X
+									</h4>
+									<p class="mbr-content-text mbr-fonts-style display-7">
+										% of sequenced bases
+									</p>
+								</div>
 							</div>
 						</div>
-					</div>
 
-					<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
-						<div class="panel-item">
-							<div class="card-img pb-3">
-								<span '$GENES_PANEL_FAIL_GENES_NUMBER_FLAG'></span>
-							</div>
-
-							<div class="card-texts">
-								 <h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
-									'$GENES_PANEL_FAIL_GENES_NUMBER_HTML'
-								</h3>
-								<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
-									Failed
-									<br>
-									Gene coverage
-									<br>
-									'$MINIMUM_DEPTH'X
-								</h4>
-								<p class="mbr-content-text mbr-fonts-style display-7">
-									# of genes with failed coverage
-								</p>
+						<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+							<div class="panel-item">
+								<div class="card-img pb-3">
+									<span '$GENES_PANEL_MINIMUM_PANEL_COVERAGE_FLAG'></span>
+								</div>
+								<div class="card-text">
+									<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+										'$GENES_PANEL_MINIMUM_PANEL_COVERAGE_HTML'
+									</h3>
+									<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+										Minimum
+										<br>
+										Panel coverage
+										<br>
+										'$MINIMUM_DEPTH'X
+									</h4>
+									<p class="mbr-content-text mbr-fonts-style display-7">
+										% of bases with minimum depth
+									</p>
+								</div>
 							</div>
 						</div>
-					</div>
 
-					<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
-						<div class="panel-item">
-							<div class="card-img pb-3">
-								<span '$GENES_PANEL_WARN_GENES_NUMBER_FLAG'></span>
+						<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+							<div class="panel-item">
+								<div class="card-img pb-3">
+									<span '$GENES_PANEL_EXPECTED_PANEL_COVERAGE_FLAG'></span>
+								</div>
+
+								<div class="card-text">
+									<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+										'$GENES_PANEL_EXPECTED_PANEL_COVERAGE_HTML'
+									</h3>
+									<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+										Expected
+										<br>
+										Panel coverage
+										<br>
+										'$EXPECTED_DEPTH'X
+									</h4>
+									<p class="mbr-content-text mbr-fonts-style display-7">
+										% of bases with expected depth
+									</p>
+								</div>
 							</div>
-							<div class="card-text">
-								<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
-									'$GENES_PANEL_WARN_GENES_NUMBER_HTML'
-								</h3>
-								<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
-									Warning
-									<br>
-									Gene coverage
-									<br>
-									'$EXPECTED_DEPTH'X
-								</h4>
-								<p class="mbr-content-text mbr-fonts-style display-7">
-									# of genes with warning coverage
-								</p>
 						</div>
-					</div>
 
+						<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+							<div class="panel-item">
+								<div class="card-img pb-3">
+									<span '$GENES_PANEL_FAIL_GENES_NUMBER_FLAG'></span>
+								</div>
+
+								<div class="card-texts">
+									 <h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+										'$GENES_PANEL_FAIL_GENES_NUMBER_HTML'
+									</h3>
+									<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+										Failed
+										<br>
+										Gene coverage
+										<br>
+										'$MINIMUM_DEPTH'X
+									</h4>
+									<p class="mbr-content-text mbr-fonts-style display-7">
+										# of genes with failed coverage
+									</p>
+								</div>
+							</div>
+						</div>
+
+						<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+							<div class="panel-item">
+								<div class="card-img pb-3">
+									<span '$GENES_PANEL_WARN_GENES_NUMBER_FLAG'></span>
+								</div>
+								<div class="card-text">
+									<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+										'$GENES_PANEL_WARN_GENES_NUMBER_HTML'
+									</h3>
+									<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+										Warning
+										<br>
+										Gene coverage
+										<br>
+										'$EXPECTED_DEPTH'X
+									</h4>
+									<p class="mbr-content-text mbr-fonts-style display-7">
+										# of genes with warning coverage
+									</p>
+							</div>
+						</div>
+
+					</div>
 				</div>
-			</div>
 
-		' >> $HTMLFILE_GENES_PANEL
+			' >> $HTMLFILE_GENES_PANEL
 
+		fi;
 
 	done;
 
@@ -1365,7 +1377,7 @@ echo '
 			<p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
 				Depth and coverage generated with <strong>Samtools mpileup</strong> and <strong>Picard CollectHsMetrics</strong>
 				<br>
-				on BAM for validation (uniq reads, with quality higher than 10, aligned on Target Design, and clipped overlapped bases).
+				on BAM for validation ('$BAM_VALIDATION_TEXT_HTML').
 				<br>
 				Minimum depth <strong>'$MINIMUM_DEPTH'X</strong>,
 				Expected depth <strong>'$EXPECTED_DEPTH'X</strong>,
@@ -1410,284 +1422,288 @@ for ALIGNER in $ALIGNERS; do
 
 	(($DEBUG)) && echo "ALIGNER: $ALIGNER";
 
-	((GENES_PANEL_NUM++))
-
 	# FILES
 	GENES_PANEL="$SAMPLE.$ALIGNER.design.bed"
-
-	GENES_PANEL_NAME="Target Design"
-	GENE_PANEL_NAME_HTML="$GENES_PANEL_NAME"
-	GENE_PANEL_TYPE_HTML="Target<br>Regions"
-
-	# FILES
 	GENES_PANEL_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$GENES_PANEL"
 	AMPLICON_COVERAGE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.amplicon_coverage"
 
-	#(($DEBUG)) && cat $GENES_PANEL_DEPTHBED_COVS
 
-	# GENES PANEL INFO
-	GENES_PANEL_GENES_NUMBER=$(cat $GENES_PANEL_FILE | grep -v "^#" | grep -v "^@" | cut -f5 | sort -u | wc -l)
-	GENES_PANEL_GENES_NUMBER_HTML=$(echo $GENES_PANEL_GENES_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
+	if [ -s $GENES_PANEL_FILE ] && [ -s $AMPLICON_COVERAGE ]; then
 
-	GENES_PANEL_REGIONS_NUMBER=$(cat $GENES_PANEL_FILE | grep -v "^#" | grep -v "^@" | wc -l)
-	GENES_PANEL_REGIONS_NUMBER_HTML=$(echo $GENES_PANEL_REGIONS_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
-
-	GENES_PANEL_BASES_NUMBER=$(cat $GENES_PANEL_FILE | grep -v "^#" | grep -v "^@" | awk '{for(i=$2;i<$3;i++) print $1"\t"i}' | sort -u | wc -l)
-	GENES_PANEL_BASES_NUMBER_HTML=$(echo $GENES_PANEL_BASES_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
-
-	GENES_PANEL_ALIGNER=$ALIGNER
-	GENES_PANEL_ALIGNER_HTML=$GENES_PANEL_ALIGNER
+		((GENES_PANEL_NUM++))
 
 
-	# AMPLICON COVERAGE
-	AMPLICON_COVERAGE_AVERAGE_DEPTH=$(tail -n +1 $AMPLICON_COVERAGE | awk -F"\t" '
-		BEGIN {
-			sum=0
-		}
-		{
-		    sum+=$7
-		    # The script should NOT print out a value for each line
-		}
-		# The END block is processed after the last line is read
-		END {
-		    # NR is a variable equal to the number of rows in the file
-		    printf("%.0f\n",sum/ NR)
-		    # Change this to print the Average instead of just the number of rows
-		}' )
-
-	(( $(echo "$AMPLICON_COVERAGE_AVERAGE_DEPTH >= $MINIMUM_DEPTH" | bc -l) )) && AMPLICON_COVERAGE_AVERAGE_DEPTH_FLAG=$PASS_FLAG_ICON || AMPLICON_COVERAGE_AVERAGE_DEPTH_FLAG=$FAIL_FLAG_ICON
-
-	AMPLICON_COVERAGE_FAIL_MINIMUM_DEPTH_NUMBER=$(tail -n +1 $AMPLICON_COVERAGE | awk -F"\t" '
-		BEGIN {
-			num=0
-		}
-		{
-		    if ($11<'$MINIMUM_DEPTH') {num+=1}
-		    # The script should NOT print out a value for each line
-		}
-		# The END block is processed after the last line is read
-		END {
-		    # NR is a variable equal to the number of rows in the file
-		    print num
-		    # Change this to print the Average instead of just the number of rows
-		}' )
-
-	(( $AMPLICON_COVERAGE_FAIL_MINIMUM_DEPTH_NUMBER )) && AMPLICON_COVERAGE_FAIL_MINIMUM_DEPTH_NUMBER_FLAG=$FAIL_FLAG_ICON || AMPLICON_COVERAGE_FAIL_MINIMUM_DEPTH_NUMBER_FLAG=$PASS_FLAG_ICON
-
-	AMPLICON_COVERAGE_WARN_MINIMUM_DEPTH_NUMBER=$(tail -n +1 $AMPLICON_COVERAGE | awk -F"\t" '
-		BEGIN {
-			num=0
-		}
-		{
-			if ($11<'$EXPECTED_DEPTH') {num+=1}
-			# The script should NOT print out a value for each line
-		}
-		# The END block is processed after the last line is read
-		END {
-			# NR is a variable equal to the number of rows in the file
-			print num
-			# Change this to print the Average instead of just the number of rows
-		}' )
-
-	(( $AMPLICON_COVERAGE_WARN_MINIMUM_DEPTH_NUMBER )) && AMPLICON_COVERAGE_WARN_MINIMUM_DEPTH_NUMBER_FLAG=$WARN_FLAG_ICON || AMPLICON_COVERAGE_WARN_MINIMUM_DEPTH_NUMBER_FLAG=$PASS_FLAG_ICON
-
-	AMPLICON_COVERAGE_FAIL_AVERAGE_DEPTH_NUMBER=$(tail -n +1 $AMPLICON_COVERAGE | awk -F"\t" '
-		BEGIN {
-			num=0
-		}
-		{
-			if ($7<'$MINIMUM_DEPTH') {num+=1}
-			# The script should NOT print out a value for each line
-		}
-		# The END block is processed after the last line is read
-		END {
-			# NR is a variable equal to the number of rows in the file
-			print num
-			# Change this to print the Average instead of just the number of rows
-		}' )
-
-	(( $AMPLICON_COVERAGE_FAIL_AVERAGE_DEPTH_NUMBER )) && AMPLICON_COVERAGE_FAIL_AVERAGE_DEPTH_NUMBER_FLAG=$FAIL_FLAG_ICON || AMPLICON_COVERAGE_FAIL_AVERAGE_DEPTH_NUMBER_FLAG=$PASS_FLAG_ICON
-
-	AMPLICON_COVERAGE_WARN_AVERAGE_DEPTH_NUMBER=$(tail -n +1 $AMPLICON_COVERAGE | awk -F"\t" '
-		BEGIN {
-			num=0
-		}
-		{
-			if ($7<'$EXPECTED_DEPTH') {num+=1}
-			# The script should NOT print out a value for each line
-		}
-		# The END block is processed after the last line is read
-		END {
-			# NR is a variable equal to the number of rows in the file
-			print num
-			# Change this to print the Average instead of just the number of rows
-		}' )
-
-	(( $AMPLICON_COVERAGE_WARN_AVERAGE_DEPTH_NUMBER )) && AMPLICON_COVERAGE_WARN_AVERAGE_DEPTH_NUMBER_FLAG=$WARN_FLAG_ICON || AMPLICON_COVERAGE_WARN_AVERAGE_DEPTH_NUMBER_FLAG=$PASS_FLAG_ICON
+		GENES_PANEL_NAME="Target Design"
+		GENE_PANEL_NAME_HTML="$GENES_PANEL_NAME"
+		GENE_PANEL_TYPE_HTML="Target<br>Regions"
 
 
-	echo '
+		#(($DEBUG)) && cat $GENES_PANEL_DEPTHBED_COVS
 
-		<h3 class="mbr-section-subtitle mbr-fonts-style display-5" '$GENES_PANEL_BREAK'>
-		<br>
-			'$GENE_PANEL_NAME_HTML'
-		</h3>
+		# GENES PANEL INFO
+		GENES_PANEL_GENES_NUMBER=$(cat $GENES_PANEL_FILE | grep -v "^#" | grep -v "^@" | cut -f5 | sort -u | wc -l)
+		GENES_PANEL_GENES_NUMBER_HTML=$(echo $GENES_PANEL_GENES_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
 
-		<div class="container pt-4 mt-2">
-			<div class="media-container-row">
+		GENES_PANEL_REGIONS_NUMBER=$(cat $GENES_PANEL_FILE | grep -v "^#" | grep -v "^@" | wc -l)
+		GENES_PANEL_REGIONS_NUMBER_HTML=$(echo $GENES_PANEL_REGIONS_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
 
-				<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
-					<div class="panel-item">
-						<div class="card-img pb-3">
-							<span class="mbr-iconfont mbri-info"></span>
-						</div>
+		GENES_PANEL_BASES_NUMBER=$(cat $GENES_PANEL_FILE | grep -v "^#" | grep -v "^@" | awk '{for(i=$2;i<$3;i++) print $1"\t"i}' | sort -u | wc -l)
+		GENES_PANEL_BASES_NUMBER_HTML=$(echo $GENES_PANEL_BASES_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
 
-						<div class="card-text">
-							<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
-								'$GENES_PANEL_GENES_NUMBER_HTML'
-							</h3>
-							<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
-								'$GENE_PANEL_TYPE_HTML'
-								<br>
-								&nbsp;
-							</h4>
-							<p class="mbr-content-text mbr-fonts-style display-7">
-								'$GENES_PANEL_BASES_NUMBER_HTML' bases
-								<br>
-								'$GENES_PANEL_REGIONS_NUMBER_HTML' regions
-								<br>
-								'$GENES_PANEL_ALIGNER_HTML' aligner
-							</p>
-						</div>
-					</div>
-				</div>
+		GENES_PANEL_ALIGNER=$ALIGNER
+		GENES_PANEL_ALIGNER_HTML=$GENES_PANEL_ALIGNER
 
-				<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
-					<div class="panel-item">
-						<div class="card-img pb-3">
-							<span '$AMPLICON_COVERAGE_AVERAGE_DEPTH_FLAG'></span>
-						</div>
 
-						<div class="card-text">
-							<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
-								'$AMPLICON_COVERAGE_AVERAGE_DEPTH'
-							</h3>
-							<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
-								Whole Design
-								<br>
-								Average Depth
-								<br>
-								'$MINIMUM_DEPTH'X
-							</h4>
-							<p class="mbr-content-text mbr-fonts-style display-7">
-								for all target regions
-								<br>
-								in the design
-							</p>
+		# AMPLICON COVERAGE
+		AMPLICON_COVERAGE_AVERAGE_DEPTH=$(tail -n +1 $AMPLICON_COVERAGE | awk -F"\t" '
+			BEGIN {
+				sum=0
+			}
+			{
+			    sum+=$7
+			    # The script should NOT print out a value for each line
+			}
+			# The END block is processed after the last line is read
+			END {
+			    # NR is a variable equal to the number of rows in the file
+			    printf("%.0f\n",sum/ NR)
+			    # Change this to print the Average instead of just the number of rows
+			}' )
+
+		(( $(echo "$AMPLICON_COVERAGE_AVERAGE_DEPTH >= $MINIMUM_DEPTH" | bc -l) )) && AMPLICON_COVERAGE_AVERAGE_DEPTH_FLAG=$PASS_FLAG_ICON || AMPLICON_COVERAGE_AVERAGE_DEPTH_FLAG=$FAIL_FLAG_ICON
+
+		AMPLICON_COVERAGE_FAIL_MINIMUM_DEPTH_NUMBER=$(tail -n +1 $AMPLICON_COVERAGE | awk -F"\t" '
+			BEGIN {
+				num=0
+			}
+			{
+			    if ($11<'$MINIMUM_DEPTH') {num+=1}
+			    # The script should NOT print out a value for each line
+			}
+			# The END block is processed after the last line is read
+			END {
+			    # NR is a variable equal to the number of rows in the file
+			    print num
+			    # Change this to print the Average instead of just the number of rows
+			}' )
+
+		(( $AMPLICON_COVERAGE_FAIL_MINIMUM_DEPTH_NUMBER )) && AMPLICON_COVERAGE_FAIL_MINIMUM_DEPTH_NUMBER_FLAG=$FAIL_FLAG_ICON || AMPLICON_COVERAGE_FAIL_MINIMUM_DEPTH_NUMBER_FLAG=$PASS_FLAG_ICON
+
+		AMPLICON_COVERAGE_WARN_MINIMUM_DEPTH_NUMBER=$(tail -n +1 $AMPLICON_COVERAGE | awk -F"\t" '
+			BEGIN {
+				num=0
+			}
+			{
+				if ($11<'$EXPECTED_DEPTH') {num+=1}
+				# The script should NOT print out a value for each line
+			}
+			# The END block is processed after the last line is read
+			END {
+				# NR is a variable equal to the number of rows in the file
+				print num
+				# Change this to print the Average instead of just the number of rows
+			}' )
+
+		(( $AMPLICON_COVERAGE_WARN_MINIMUM_DEPTH_NUMBER )) && AMPLICON_COVERAGE_WARN_MINIMUM_DEPTH_NUMBER_FLAG=$WARN_FLAG_ICON || AMPLICON_COVERAGE_WARN_MINIMUM_DEPTH_NUMBER_FLAG=$PASS_FLAG_ICON
+
+		AMPLICON_COVERAGE_FAIL_AVERAGE_DEPTH_NUMBER=$(tail -n +1 $AMPLICON_COVERAGE | awk -F"\t" '
+			BEGIN {
+				num=0
+			}
+			{
+				if ($7<'$MINIMUM_DEPTH') {num+=1}
+				# The script should NOT print out a value for each line
+			}
+			# The END block is processed after the last line is read
+			END {
+				# NR is a variable equal to the number of rows in the file
+				print num
+				# Change this to print the Average instead of just the number of rows
+			}' )
+
+		(( $AMPLICON_COVERAGE_FAIL_AVERAGE_DEPTH_NUMBER )) && AMPLICON_COVERAGE_FAIL_AVERAGE_DEPTH_NUMBER_FLAG=$FAIL_FLAG_ICON || AMPLICON_COVERAGE_FAIL_AVERAGE_DEPTH_NUMBER_FLAG=$PASS_FLAG_ICON
+
+		AMPLICON_COVERAGE_WARN_AVERAGE_DEPTH_NUMBER=$(tail -n +1 $AMPLICON_COVERAGE | awk -F"\t" '
+			BEGIN {
+				num=0
+			}
+			{
+				if ($7<'$EXPECTED_DEPTH') {num+=1}
+				# The script should NOT print out a value for each line
+			}
+			# The END block is processed after the last line is read
+			END {
+				# NR is a variable equal to the number of rows in the file
+				print num
+				# Change this to print the Average instead of just the number of rows
+			}' )
+
+		(( $AMPLICON_COVERAGE_WARN_AVERAGE_DEPTH_NUMBER )) && AMPLICON_COVERAGE_WARN_AVERAGE_DEPTH_NUMBER_FLAG=$WARN_FLAG_ICON || AMPLICON_COVERAGE_WARN_AVERAGE_DEPTH_NUMBER_FLAG=$PASS_FLAG_ICON
+
+		# BREAK
+		(( $(echo "$GENES_PANEL_NUM >= 2" |bc -l) )) && GENES_PANEL_BREAK=$PAGE_BREAK_BEFORE || GENES_PANEL_BREAK=""
+
+		echo '
+
+			<h3 class="mbr-section-subtitle mbr-fonts-style display-5" '$GENES_PANEL_BREAK'>
+			<br>
+				'$GENE_PANEL_NAME_HTML'
+			</h3>
+
+			<div class="container pt-4 mt-2">
+				<div class="media-container-row">
+
+					<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+						<div class="panel-item">
+							<div class="card-img pb-3">
+								<span class="mbr-iconfont mbri-info"></span>
+							</div>
+
+							<div class="card-text">
+								<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+									'$GENES_PANEL_GENES_NUMBER_HTML'
+								</h3>
+								<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+									'$GENE_PANEL_TYPE_HTML'
+									<br>
+									&nbsp;
+								</h4>
+								<p class="mbr-content-text mbr-fonts-style display-7">
+									'$GENES_PANEL_BASES_NUMBER_HTML' bases
+									<br>
+									'$GENES_PANEL_REGIONS_NUMBER_HTML' regions
+									<br>
+									'$GENES_PANEL_ALIGNER_HTML' aligner
+								</p>
+							</div>
 						</div>
 					</div>
-				</div>
 
-				<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
-					<div class="panel-item">
-						<div class="card-img pb-3">
-							<span '$AMPLICON_COVERAGE_FAIL_MINIMUM_DEPTH_NUMBER_FLAG'></span>
-						</div>
+					<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+						<div class="panel-item">
+							<div class="card-img pb-3">
+								<span '$AMPLICON_COVERAGE_AVERAGE_DEPTH_FLAG'></span>
+							</div>
 
-						<div class="card-texts">
-							 <h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
-								'$AMPLICON_COVERAGE_FAIL_MINIMUM_DEPTH_NUMBER'
-							</h3>
-							<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
-								Failed Minimum
-								<br>
-								Amplicon Depth
-								<br>
-								'$MINIMUM_DEPTH'X
-							</h4>
-							<p class="mbr-content-text mbr-fonts-style display-7">
-								# of amplicon with failed minimum depth
-							</p>
+							<div class="card-text">
+								<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+									'$AMPLICON_COVERAGE_AVERAGE_DEPTH'
+								</h3>
+								<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+									Whole Design
+									<br>
+									Average Depth
+									<br>
+									'$MINIMUM_DEPTH'X
+								</h4>
+								<p class="mbr-content-text mbr-fonts-style display-7">
+									for all target regions
+									<br>
+									in the design
+								</p>
+							</div>
 						</div>
 					</div>
-				</div>
 
-				<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
-					<div class="panel-item">
-						<div class="card-img pb-3">
-							<span '$AMPLICON_COVERAGE_WARN_MINIMUM_DEPTH_NUMBER_FLAG'></span>
-						</div>
-						<div class="card-text">
-							<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
-								'$AMPLICON_COVERAGE_WARN_MINIMUM_DEPTH_NUMBER'
-							</h3>
-							<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
-								Warning Minimum
-								<br>
-								Amplicon Depth
-								<br>
-								'$EXPECTED_DEPTH'X
-							</h4>
-							<p class="mbr-content-text mbr-fonts-style display-7">
-								# of amplicon with warning minimum depth
-							</p>
+					<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+						<div class="panel-item">
+							<div class="card-img pb-3">
+								<span '$AMPLICON_COVERAGE_FAIL_MINIMUM_DEPTH_NUMBER_FLAG'></span>
+							</div>
+
+							<div class="card-texts">
+								 <h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+									'$AMPLICON_COVERAGE_FAIL_MINIMUM_DEPTH_NUMBER'
+								</h3>
+								<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+									Failed Minimum
+									<br>
+									Amplicon Depth
+									<br>
+									'$MINIMUM_DEPTH'X
+								</h4>
+								<p class="mbr-content-text mbr-fonts-style display-7">
+									# of amplicon with failed minimum depth
+								</p>
+							</div>
 						</div>
 					</div>
-				</div>
 
-				<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
-					<div class="panel-item">
-						<div class="card-img pb-3">
-							<span '$AMPLICON_COVERAGE_FAIL_AVERAGE_DEPTH_NUMBER_FLAG'></span>
-						</div>
-
-						<div class="card-texts">
-							 <h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
-								'$AMPLICON_COVERAGE_FAIL_AVERAGE_DEPTH_NUMBER'
-							</h3>
-							<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
-								Failed Average
-								<br>
-								Amplicon Depth
-								<br>
-								'$MINIMUM_DEPTH'X
-							</h4>
-							<p class="mbr-content-text mbr-fonts-style display-7">
-								# of amplicon with failed average depth
-							</p>
+					<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+						<div class="panel-item">
+							<div class="card-img pb-3">
+								<span '$AMPLICON_COVERAGE_WARN_MINIMUM_DEPTH_NUMBER_FLAG'></span>
+							</div>
+							<div class="card-text">
+								<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+									'$AMPLICON_COVERAGE_WARN_MINIMUM_DEPTH_NUMBER'
+								</h3>
+								<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+									Warning Minimum
+									<br>
+									Amplicon Depth
+									<br>
+									'$EXPECTED_DEPTH'X
+								</h4>
+								<p class="mbr-content-text mbr-fonts-style display-7">
+									# of amplicon with warning minimum depth
+								</p>
+							</div>
 						</div>
 					</div>
-				</div>
 
-				<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
-					<div class="panel-item">
-						<div class="card-img pb-3">
-							<span '$AMPLICON_COVERAGE_WARN_AVERAGE_DEPTH_NUMBER_FLAG'></span>
+					<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+						<div class="panel-item">
+							<div class="card-img pb-3">
+								<span '$AMPLICON_COVERAGE_FAIL_AVERAGE_DEPTH_NUMBER_FLAG'></span>
+							</div>
+
+							<div class="card-texts">
+								 <h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+									'$AMPLICON_COVERAGE_FAIL_AVERAGE_DEPTH_NUMBER'
+								</h3>
+								<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+									Failed Average
+									<br>
+									Amplicon Depth
+									<br>
+									'$MINIMUM_DEPTH'X
+								</h4>
+								<p class="mbr-content-text mbr-fonts-style display-7">
+									# of amplicon with failed average depth
+								</p>
+							</div>
 						</div>
-						<div class="card-text">
-							<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
-								'$AMPLICON_COVERAGE_WARN_AVERAGE_DEPTH_NUMBER'
-							</h3>
-							<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
-								Warning Average
-								<br>
-								Amplicon Depth
-								<br>
-								'$EXPECTED_DEPTH'X
-							</h4>
-							<p class="mbr-content-text mbr-fonts-style display-7">
-								# of amplicon with warning average depth
-							</p>
+					</div>
+
+					<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+						<div class="panel-item">
+							<div class="card-img pb-3">
+								<span '$AMPLICON_COVERAGE_WARN_AVERAGE_DEPTH_NUMBER_FLAG'></span>
+							</div>
+							<div class="card-text">
+								<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+									'$AMPLICON_COVERAGE_WARN_AVERAGE_DEPTH_NUMBER'
+								</h3>
+								<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+									Warning Average
+									<br>
+									Amplicon Depth
+									<br>
+									'$EXPECTED_DEPTH'X
+								</h4>
+								<p class="mbr-content-text mbr-fonts-style display-7">
+									# of amplicon with warning average depth
+								</p>
+							</div>
 						</div>
 					</div>
 				</div>
 			</div>
-		</div>
 
-	' >> $HTMLFILE_AMPLICON_CLIPPING_ALIGNERS
+		' >> $HTMLFILE_AMPLICON_CLIPPING_ALIGNERS
 
-
-
+	fi;
 
 done;
 

@@ -40,30 +40,36 @@ COVERAGE_CRITERIA?=1,5,10,20,30,50,100,200,300
 
 
 
-# GLOBAL VARIABLES
-METRICS_MINIMUM_MAPPING_QUALITY?=10
-METRICS_MINIMUM_BASE_QUALITY?=10
+# GLOBAL METRICS VARIABLES
+METRICS_MINIMUM_MAPPING_QUALITY?=20
+METRICS_MINIMUM_BASE_QUALITY?=20
 CLIP_OVERLAPPING_READS?=1
+METRICS_FLAGS=UNMAP,SECONDARY,QCFAIL,DUP
+
+# GATK Guidelines
+# https://software.broadinstitute.org/gatk/documentation/tooldocs/4.0.5.1/picard_analysis_directed_CollectHsMetrics.php
 
 
 # SAMTOOLS
 SAMTOOLS_METRICS_DEPTH_base_q?=$(METRICS_MINIMUM_BASE_QUALITY)
 SAMTOOLS_METRICS_DEPTH_map_q?=$(METRICS_MINIMUM_MAPPING_QUALITY)
 SAMTOOLS_METRICS_DEPTH_PARAM?= -d $(SAMTOOLS_METRICS_DEPTH_base_q) -q $(SAMTOOLS_METRICS_DEPTH_map_q)
+SAMTOOLS_METRICS_FLAG_PARAM?= -F 0x4 -F 0x100 -F 0x200 -F 0x400
 
-SAMTOOLS_METRICS_VIEW_PARAM?= -F 0x4 -F 0x100 -F 0x200 -F 0x400 -q $(SAMTOOLS_METRICS_DEPTH_map_q)
+SAMTOOLS_METRICS_VIEW_PARAM?= $(SAMTOOLS_METRICS_FLAG_PARAM) -q $(SAMTOOLS_METRICS_DEPTH_map_q)
 
 SAMTOOLS_METRICS_MPILEUP_DEPTH_base_q?=$(METRICS_MINIMUM_BASE_QUALITY)
 SAMTOOLS_METRICS_MPILEUP_DEPTH_map_q?=$(METRICS_MINIMUM_MAPPING_QUALITY)
 SAMTOOLS_METRICS_MPILEUP_DEPTH_max_depth?=100000000
 SAMTOOLS_METRICS_MPILEUP_DEPTH_adjust_MQ?=0
-SAMTOOLS_METRICS_MPILEUP_DEPTH_excl_flags?=--excl-flags UNMAP,SECONDARY,QCFAIL,DUP
+SAMTOOLS_METRICS_MPILEUP_FLAGS?=$(METRICS_FLAGS)
+SAMTOOLS_METRICS_MPILEUP_DEPTH_excl_flags?=$(shell if [ "$(SAMTOOLS_METRICS_MPILEUP_FLAGS)" == "" ]; then echo ""; else echo "--excl-flags $(SAMTOOLS_METRICS_MPILEUP_FLAGS)"; fi;)
 SAMTOOLS_METRICS_MPILEUP_DEPTH_count_orphans?=--count-orphans
-SAMTOOLS_METRICS_MPILEUP_PARAM?= $(SAMTOOLS_METRICS_MPILEUP_DEPTH_excl_flags) --min-BQ $(SAMTOOLS_METRICS_MPILEUP_DEPTH_base_q) --min-MQ $(SAMTOOLS_METRICS_MPILEUP_DEPTH_map_q) --max-depth $(SAMTOOLS_METRICS_MPILEUP_DEPTH_max_depth) --adjust-MQ $(SAMTOOLS_METRICS_MPILEUP_DEPTH_adjust_MQ) $(SAMTOOLS_METRICS_MPILEUP_DEPTH_count_orphans) $$(if ! (( $(CLIP_OVERLAPPING_READS) )); then echo " -x "; fi )
+SAMTOOLS_METRICS_MPILEUP_PARAM?= $(SAMTOOLS_METRICS_MPILEUP_DEPTH_excl_flags) --min-BQ $(SAMTOOLS_METRICS_MPILEUP_DEPTH_base_q) --min-MQ $(SAMTOOLS_METRICS_MPILEUP_DEPTH_map_q) --max-depth $(SAMTOOLS_METRICS_MPILEUP_DEPTH_max_depth) --adjust-MQ $(SAMTOOLS_METRICS_MPILEUP_DEPTH_adjust_MQ) $(SAMTOOLS_METRICS_MPILEUP_DEPTH_count_orphans) $(shell if ! (( $(CLIP_OVERLAPPING_READS) )); then echo " -x "; fi )
 
 # PICARD
-PICARD_CollectHsMetrics_MINIMUM_MAPPING_QUALITY?=10
-PICARD_CollectHsMetrics_MINIMUM_BASE_QUALITY?=10
+PICARD_CollectHsMetrics_MINIMUM_MAPPING_QUALITY?=$(METRICS_MINIMUM_MAPPING_QUALITY)
+PICARD_CollectHsMetrics_MINIMUM_BASE_QUALITY?=$(METRICS_MINIMUM_BASE_QUALITY)
 PICARD_CollectHsMetrics_PARAM?=MINIMUM_MAPPING_QUALITY=$(PICARD_CollectHsMetrics_MINIMUM_MAPPING_QUALITY) MINIMUM_BASE_QUALITY=$(PICARD_CollectHsMetrics_MINIMUM_BASE_QUALITY) CLIP_OVERLAPPING_READS=$(CLIP_OVERLAPPING_READS)
 
 
@@ -412,7 +418,9 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 		# Test if BED exists \
 		if [ -e $$one_bed ]; then \
 			# depthbed generation \
-			$(SAMTOOLS) mpileup $(SAMTOOLS_METRICS_MPILEUP_PARAM) -l $$one_bed $< | cut -f1,2,4 > $(@D)/$(*F).$$(basename $$one_bed).depthbed; \
+			cat $$one_bed | awk -F"\t" '{print $$1"\t"$$2-1"\t"$$3"\t"$$4"\t"$$5}' > $$one_bed.0_based; \
+			$(SAMTOOLS) mpileup $(SAMTOOLS_METRICS_MPILEUP_PARAM) -aa -l $$one_bed.0_based $< | cut -f1,2,4 > $(@D)/$(*F).$$(basename $$one_bed).depthbed; \
+			rm -f $$one_bed.0_based; \
 			if [ -s $(@D)/$(*F).$$(basename $$one_bed).depthbed ]; then \
 				echo "#[INFO] SAMTOOLS depthbed with '"$$(basename $$one_bed)"' done. See '$(@D)/$(*F).$$(basename $$one_bed).depthbed'. " >> $@; \
 			else \
@@ -498,7 +506,7 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 				echo "#[INFO] BEDTOOLS genomeCoverage with '"$$(basename $$one_bed)"' failed, because no '"$$(basename $$one_bed)"'. " >> $@; \
 			fi; \
 		done; \
-		[ ! -z test ] && "#[INFO] BEDTOOLS genomeCoverage not done because not bed/genes files. " >> $@; \
+		[ ! -z $@ ] && echo "#[INFO] BEDTOOLS genomeCoverage not done because not bed/genes files. " >> $@; \
 	else \
 		echo "#[INFO] BEDTOOLS genomeCoverage not done because BAM_METRICS=0. " >> $@; \
 	fi;
@@ -692,7 +700,8 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 # List of Genes BED
 #####################
 
-%.list.genes: %.bed
+
+%.list.genes: %.bed %.manifest
 	mkdir -p $(@D);
 	#touch $@;
 	+if [ ! -s $@ ]; then \
@@ -723,28 +732,37 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 			done; \
 		else \
 			echo "BEDFILE_GENES for $* generated from SAMPLE.manifest"; \
-			bedfile_genes_list=`file=$$( echo $* | cut -d. -f1 ); echo "$$file.genes_from_manifest"`; \
+			bedfile_genes_list=`file=$$( echo $* | cut -d. -f1 ); echo "$$file.from_design.genes"`; \
 			# ici on va faire une intersection avec le manifest et ce sera notre bed par defaut sil nexiste pas; \
-			bed=`file=$$( echo $* | cut -d. -f1 ); echo "$$file.bed"`; \
-			manifest=`file=$$( echo $* | cut -d. -f1 ); echo "$$file.manifest"`; \
-			if [ -s `echo "$$bed"` ] ; then \
+			#bed=$$(sample=$$(basename $* | cut -d. -f1 ); echo "$(*D)/$$sample.bed"); \
+			#if [ ! -s $$(echo "$$bed") ] ; then \
+			#	bed=$$(sample=$$(basename $* | cut -d. -f1 ); echo "$$(dirname $(*D))/$$sample.bed"); \
+			#fi; \
+			#manifest=$$(sample=$$(basename $* | cut -d. -f1 ); echo "$(*D)/$$sample.manifest"); \
+			#if [ ! -s $$(echo "$$manifest") ] ; then \
+			#	manifest=$$(sample=$$(basename $* | cut -d. -f1 ); echo "$$(dirname $(*D))/$$sample.manifest"); \
+			#fi; \
+			#if [ -s `echo "$$bed"` ] ; then \
+			if [ -s $*.bed ] ; then \
 				#echo "genes from BED '$$bed'" >> $*.test; \
-				cut -f1,2,3 $${bed} > $${manifest}.bed ; \
-			elif [ -s `echo "$$manifest"` ] ; then \
+				cut -f1,2,3 $*.bed > $@.manifest.bed ; \
+			#elif [ -s `echo "$$manifest"` ] ; then \
+			elif [ -s $*.manifest ] ; then \
 				# manifest to bed ; \
-				$(FATBAM_ManifestToBED) --input "$$manifest" --output "$${manifest}.bed_tmp" --output_type "region" | $(FATBAM_ManifestToBED) --input "$$manifest" --output "$${manifest}.bed_tmp" --output_type "region" --type=PCR; \
-				cut -f1,2,3 $${manifest}.bed_tmp > $${manifest}.bed ; \
-				rm $${manifest}.bed_tmp ; \
+				$(FATBAM_ManifestToBED) --input "$*.manifest" --output "$@.manifest.bed.tmp" --output_type "region" --type=PCR; \
+				cut -f1,2,3 $@.manifest.bed.tmp > $@.manifest.bed ; \
+				#rm $@.manifest.bed.tmp ; \
 			fi; \
-			if [ -s `echo "$${manifest}.bed"` ] ; then \
+			if [ -s $@.manifest.bed ] ; then \
 				echo "MANIFEST.bed to bedfile_genes_list : $bedfile_genes_list"; \
-				$(BEDTOOLS)/bedtools intersect -wb -a $${manifest}.bed -b $(REFSEQ_GENES) | cut -f8 | sort -u > $${manifest}.bed.intersect; \
-				sort -k5 $(REFSEQ_GENES) > $${manifest}.bed.refseq; \
-				join -1 1 -2 5 $${manifest}.bed.intersect $${manifest}.bed.refseq -o 2.1,2.2,2.3,2.5 | sort -u -k1,2 | tr " " "\t" | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$4}' > $$bedfile_genes_list; \
-				rm -f $${manifest}.bed.intersect $${manifest}.bed.refseq; \
+				$(BEDTOOLS)/bedtools intersect -wb -a $@.manifest.bed -b $(REFSEQ_GENES) | cut -f8 | sort -u > $@.manifest.bed.intersect; \
+				sort -k5 $(REFSEQ_GENES) > $@.manifest.bed.refseq; \
+				join -1 1 -2 5 $@.manifest.bed.intersect $@.manifest.bed.refseq -o 2.1,2.2,2.3,2.5 | sort -u -k1,2 | tr " " "\t" | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$4}' > $$bedfile_genes_list; \
+				#rm -f $*.manifest.bed.intersect $*.manifest.bed.refseq; \
 			else \
 				echo "#[ERROR] Generating GENES failed"; \
 			fi;\
+			rm -f $@.manifest*; \
 		fi; \
 		echo "bed_file list is : `echo $$bedfile_genes_list` "; \
 		echo $$bedfile_genes_list | tr " " "\n" > $@ ; \
@@ -753,11 +771,10 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 	fi;
 
 
-
 # Regnions COVERAGE METRICS
 #############################
 
-%.bam.metrics/metrics.regions_coverage: %.bam %.bam.bai %.list.genes %.design.bed
+%.bam.metrics/metrics.regions_coverage: %.bam %.bam.bai %.list.genes %.design.bed %.bam.metrics/metrics.samtools.depthbed.coverage
 	mkdir -p $(@D);
 	touch $@;
 	+if (( 1 )) ; then \
@@ -767,7 +784,7 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 				if [ -e $$one_bed ]; then \
 					#bedfile_name=$$( basename $$one_bed | sed "s/\.genes$$//" ); \
 					bedfile_name=$$( basename $$one_bed ); \
-					$(NGSscripts)/genesCoverage.sh -f $*.bam -b $$one_bed -c "$(COVERAGE_CRITERIA)" --dp_fail=$(MINIMUM_DEPTH) --dp_warn=$(EXPECTED_DEPTH) --dp_threshold=$(DEPTH_COVERAGE_THRESHOLD) -n $(NB_BASES_AROUND) -t $(BEDTOOLS)/bedtools -s $(SAMTOOLS) --threads=$(THREADS) -o $(@D)/$(*F).$$bedfile_name; \
+					$(NGSscripts)/genesCoverage.sh -f $*.bam -b $$one_bed -c "$(COVERAGE_CRITERIA)" --coverage-bases=$(@D)/$(*F).$$bedfile_name.depthbed --dp_fail=$(MINIMUM_DEPTH) --dp_warn=$(EXPECTED_DEPTH) --dp_threshold=$(DEPTH_COVERAGE_THRESHOLD) -n $(NB_BASES_AROUND) -t $(BEDTOOLS)/bedtools -s $(SAMTOOLS) --threads=$(THREADS) -o $(@D)/$(*F).$$bedfile_name; \
 					echo "#[$$(date)] BAM Metrics on Regions coverage with $$bedfile_name BED file done" >> $@; \
 				else \
 					echo "#[$$(date)] BAM Metrics on Regions coverage with $$bedfile_name BED file FAILED" >> $@; \

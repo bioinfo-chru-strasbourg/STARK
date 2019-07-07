@@ -109,6 +109,25 @@ BARCODE_MISMATCHES=1
 # Performs BAM METRICS (1/TRUE/YES/Y or 0/FALSE/NO/N). Time and space consuming. Switch off for exome/genome for better perfomances
 BAM_METRICS=0
 
+# GLOBAL METRICS VARIABLES
+# Values for BAM metrics
+# Minimum mapping quality to consider in the metrics BAM
+METRICS_MINIMUM_MAPPING_QUALITY=20
+
+# Minimum bases quality to consider in the metrics BAM
+METRICS_MINIMUM_BASE_QUALITY=20
+
+# Clipping overlapping reads in the metrics BAM
+CLIP_OVERLAPPING_READS=1
+
+# Flagged reads in the metrics BAM (mpileup format)
+# default UNMAP,SECONDARY,QCFAIL,DUP
+METRICS_FLAGS="UNMAP,SECONDARY,QCFAIL,DUP"
+
+# Flagged reads in the metrics BAM (samtools format)
+# Generated from mpileup format (if empty)
+#SAMTOOLS_METRICS_FLAG_PARAM=" -F 0x4 -F 0x100 -F 0x200 -F 0x400"
+
 # VARIANT RECALIBRATION (default 0/FALSE/NO/N)
 # Performs Variant recalibration after Calling (1/TRUE/YES/Y or 0/FALSE/NO/N).
 # If the recalibration fail (usually due to lack of data for statistic calculation), nothing will be done

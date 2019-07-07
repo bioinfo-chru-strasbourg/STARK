@@ -22,7 +22,8 @@ SAMTOOLS?=$(NGSbin)/samtools
 THREADS_RTC?=$(THREADS_BY_SAMPLE)
 GATKRealignerTargetCreatorFLAGS= -nt $(THREADS_RTC) #-nt 8
 #GATKRealignerTargetCreatorOptions= -known $(KNOWN_ALLELES) -known $(VCFDBSNP)
-GATKRealignerTargetCreatorOptions= -known $(VCFDBSNP) -rf BadCigar -allowPotentiallyMisencodedQuals
+#GATKRealignerTargetCreatorOptions= -known $(VCFDBSNP) -rf BadCigar -allowPotentiallyMisencodedQuals
+GATKRealignerTargetCreatorOptions= -known $(VCFDBSNP) -allowPotentiallyMisencodedQuals
 #-fixMisencodedQuals
 
 # Create a .intervals file from the RealignerTargetCreator tool

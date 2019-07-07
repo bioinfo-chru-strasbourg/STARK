@@ -301,6 +301,50 @@ else
 fi;
 export BAM_METRICS
 
+
+# GLOBAL METRICS VARIABLES
+# Values for BAM metrics
+# Minimum mapping quality to consider in the metrics BAM
+if [ -z "$METRICS_MINIMUM_MAPPING_QUALITY" ] || ! [[ $METRICS_MINIMUM_MAPPING_QUALITY =~ ^[0-9]+$ ]]; then
+	METRICS_MINIMUM_MAPPING_QUALITY=20
+fi;
+export METRICS_MINIMUM_MAPPING_QUALITY
+
+# Minimum bases quality to consider in the metrics BAM
+if [ -z "$METRICS_MINIMUM_BASE_QUALITY" ] || ! [[ $METRICS_MINIMUM_BASE_QUALITY =~ ^[0-9]+$ ]]; then
+	METRICS_MINIMUM_BASE_QUALITY=20
+fi;
+export METRICS_MINIMUM_BASE_QUALITY
+
+# Clipping overlapping reads in the metrics BAM
+if [ -z "$CLIP_OVERLAPPING_READS" ]; then
+	CLIP_OVERLAPPING_READS=1
+fi;
+export CLIP_OVERLAPPING_READS
+
+# Flagged reads in the metrics BAM (mpileup format)
+# default UNMAP,SECONDARY,QCFAIL,DUP
+if [ -z "$METRICS_FLAGS" ]; then
+	METRICS_FLAGS="UNMAP,SECONDARY,QCFAIL,DUP"
+fi;
+METRICS_FLAGS=$(echo $METRICS_FLAGS | tr -d " ")
+export METRICS_FLAGS
+
+# Flagged reads in the metrics BAM (samtools format)
+# Generated from mpileup format (if empty)
+if [ -z "$SAMTOOLS_METRICS_FLAG_PARAM" ]; then
+	#SAMTOOLS_METRICS_FLAG_PARAM=" -F 0x4 -F 0x100 -F 0x200 -F 0x400"
+	SAMTOOLS_METRICS_FLAG_PARAM=""
+	for F in $(echo $METRICS_FLAGS | tr "," " "); do
+		[ "$F" == "UNMAP" ] && SAMTOOLS_METRICS_FLAG_PARAM=$SAMTOOLS_METRICS_FLAG_PARAM" -F 0x4 "
+		[ "$F" == "SECONDARY" ] && SAMTOOLS_METRICS_FLAG_PARAM=$SAMTOOLS_METRICS_FLAG_PARAM" -F 0x100 "
+		[ "$F" == "QCFAIL" ] && SAMTOOLS_METRICS_FLAG_PARAM=$SAMTOOLS_METRICS_FLAG_PARAM" -F 0x200 "
+		[ "$F" == "DUP" ] && SAMTOOLS_METRICS_FLAG_PARAM=$SAMTOOLS_METRICS_FLAG_PARAM" -F 0x400 "
+	done;
+fi;
+export SAMTOOLS_METRICS_FLAG_PARAM
+
+
 # VARIANT RECALIBRATION (default 0/FALSE/NO/N)
 # Performs Variant recalibration after Calling (1/TRUE/YES/Y or 0/FALSE/NO/N).
 # If the recalibration fail (usually due to lack of data for statistic calculation), nothing will be done
