@@ -128,7 +128,6 @@ METRICS_FLAGS="UNMAP,SECONDARY,QCFAIL,DUP"
 # Generated from mpileup format (if empty)
 #SAMTOOLS_METRICS_FLAG_PARAM=" -F 0x4 -F 0x100 -F 0x200 -F 0x400"
 
-
 # VARIANT RECALIBRATION (default 0/FALSE/NO/N)
 # Performs Variant recalibration after Calling (1/TRUE/YES/Y or 0/FALSE/NO/N).
 # If the recalibration fail (usually due to lack of data for statistic calculation), nothing will be done
@@ -285,6 +284,16 @@ HOWARD_FIELDS="NOMEN,PZFlag,PZScore,PZComment,CNOMEN,PNOMEN,location,outcome,VAF
 HOWARD_SORT="PZFlag::DESC,PZScore:n:DESC"
 HOWARD_SORT_BY="PZFlag,PZScore"
 HOWARD_ORDER_BY="DESC,DESC"
+# Minimal
+HOWARD_FIELDS_MINIMAL="NOMEN,PZFlag,PZScore,PZComment,location,outcome,VAF_average,dbSNP,popfreq,snpeff_impact"
+HOWARD_SORT_MINIMAL="PZFlag::DESC,PZScore:n:DESC"
+HOWARD_SORT_BY_MINIMAL="PZFlag,PZScore"
+HOWARD_ORDER_BY_MINIMAL="DESC,DESC"
+# REPORT
+HOWARD_FIELDS_REPORT="NOMEN,PZFlag,PZScore,PZComment,location,outcome,VAF_average,dbSNP,popfreq,snpeff_impact"
+HOWARD_SORT_REPORT="PZFlag::DESC,PZScore:n:DESC"
+HOWARD_SORT_BY_REPORT="PZFlag,PZScore"
+HOWARD_ORDER_BY_REPORT="DESC,DESC"
 
 
 # REPOSITORY and ARCHIVE

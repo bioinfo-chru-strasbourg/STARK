@@ -482,7 +482,9 @@ GATKRR_FLAGS=
 	# INTERVAL WITH PICARD
 	if [ -s $@.bed ]; then \
 		echo "[INFO] Generate $@ from $@.bed with PICARD BedToIntervalList" ; \
-		$(JAVA) -jar $(PICARD) BedToIntervalList I=$@.bed O=$@ SD=$$(cat $*.dict) ; \
+		cut $@.bed -f1-3,5 > $@.bed.4fields ; \
+		$(JAVA) -jar $(PICARD) BedToIntervalList I=$@.bed.4fields O=$@ SD=$$(cat $*.dict) ; \
+		rm $@.bed.4fields ; \
 		#echo "$@.bed:" ; \
 		#cat $@.bed ; \
 		#echo "$@:" ; \
@@ -508,7 +510,9 @@ GATKRR_FLAGS=
 	#cat $< | tr -d '\r' | sed -e "s/^M//" | awk -F"\t" '{print $$1":"$$2"-"$$3}' > $@
 	# INTERVAL WITH PICARD
 	if [ -s $< ]; then \
-		$(JAVA) -jar $(PICARD) BedToIntervalList I=$< O=$@ SD=$$(cat $*.dict) ; \
+		cut $< -f1-3,5 > $@.4fields ; \
+		$(JAVA) -jar $(PICARD) BedToIntervalList I=$@.4fields O=$@ SD=$$(cat $*.dict) ; \
+		rm $@.4fields ; \
 	fi;
 	# If error, try intervals with GREP/SED/AWK
 	if [ ! -s $@ ] && [ -s $< ]; then \

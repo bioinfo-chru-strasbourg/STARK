@@ -70,7 +70,7 @@ SAMTOOLS_METRICS_MPILEUP_PARAM?= $(SAMTOOLS_METRICS_MPILEUP_DEPTH_excl_flags) --
 # PICARD
 PICARD_CollectHsMetrics_MINIMUM_MAPPING_QUALITY?=$(METRICS_MINIMUM_MAPPING_QUALITY)
 PICARD_CollectHsMetrics_MINIMUM_BASE_QUALITY?=$(METRICS_MINIMUM_BASE_QUALITY)
-PICARD_CollectHsMetrics_PARAM?=MINIMUM_MAPPING_QUALITY=$(PICARD_CollectHsMetrics_MINIMUM_MAPPING_QUALITY) MINIMUM_BASE_QUALITY=$(PICARD_CollectHsMetrics_MINIMUM_BASE_QUALITY) CLIP_OVERLAPPING_READS=$(CLIP_OVERLAPPING_READS)
+PICARD_CollectHsMetrics_PARAM?=MINIMUM_MAPPING_QUALITY=$(PICARD_CollectHsMetrics_MINIMUM_MAPPING_QUALITY) MINIMUM_BASE_QUALITY=$(PICARD_CollectHsMetrics_MINIMUM_BASE_QUALITY) CLIP_OVERLAPPING_READS=$(shell if (( $(CLIP_OVERLAPPING_READS) )); then echo "true"; fi )
 
 
 
@@ -315,9 +315,10 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 	# Picard Metrics needs BED with Header and 3+3 fields!!!
 	for one_bed in $$(cat $*.list.genes) $*.design.bed; do \
 		if [ -s $$one_bed ]; then \
-			$(JAVA) $(JAVA_FLAGS_BY_SAMPLE) -jar $(PICARD) BedToIntervalList I=$$one_bed O=$(@D)/$(*F).$$(basename $$one_bed).interval SD=$$(cat $*.dict) ; \
+			cut $$one_bed -f1-3,5 > $(@D)/$(*F).$$(basename $$one_bed).4fields ; \
+			$(JAVA) $(JAVA_FLAGS_BY_SAMPLE) -jar $(PICARD) BedToIntervalList I=$(@D)/$(*F).$$(basename $$one_bed).4fields O=$(@D)/$(*F).$$(basename $$one_bed).interval SD=$$(cat $*.dict); \
 			$(JAVA) $(JAVA_FLAGS_BY_SAMPLE) -jar $(PICARD) CollectHsMetrics INPUT=$*.validation.bam OUTPUT=$(@D)/$(*F).$$(basename $$one_bed).HsMetrics R=$$(cat $*.genome) BAIT_INTERVALS=$(@D)/$(*F).$$(basename $$one_bed).interval TARGET_INTERVALS=$(@D)/$(*F).$$(basename $$one_bed).interval PER_TARGET_COVERAGE=$(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_target_coverage $(PICARD_CollectHsMetrics_PARAM) VALIDATION_STRINGENCY=SILENT 2>$(@D)/$(*F).$$(basename $$one_bed).HsMetrics.err ; \
-			rm $(@D)/$(*F).$$(basename $$one_bed).interval; \
+			rm $(@D)/$(*F).$$(basename $$one_bed).4fields $(@D)/$(*F).$$(basename $$one_bed).interval; \
 		fi; \
 		if [ ! -s $(@D)/$(*F).$$(basename $$one_bed).HsMetrics ]; then \
 			cp $*.empty.HsMetrics $(@D)/$(*F).$$(basename $$one_bed).HsMetrics; \
@@ -427,10 +428,11 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 				echo "#[INFO] SAMTOOLS depthbed with '"$$(basename $$one_bed)"' failed. " >> $@; \
 			fi; \
 			# coverage generation \
+			echo -e "#Depth\tCoveredBases\tTotalBases\tPercent" > $(@D)/$(*F).$$(basename $$one_bed).coverage; \
 			cat $(@D)/$(*F).$$(basename $$one_bed).depthbed | \
 			awk -v MDP=$$(echo $(COVERAGE_CRITERIA) | tr "," "\n" | sort -n | tail -n 1)  '{SUM++} { if ($$3>MDP) {DP[MDP]++} else {DP[$$3]++} } END { for (i=MDP; i>=0; i-=1) {print i" "DP[i]" SUM"SUM}}' | \
-			sort -g -r | awk -v COVERAGE_CRITERIA=$(COVERAGE_CRITERIA) '{SUM+=$$2} {CUM[$$1]=SUM} {split(COVERAGE_CRITERIA,C,",")} END { for (j in C) {print C[j]" "CUM[C[j]]" SUM "(CUM[C[j]]/SUM)} }' | \
-			sort -g > $(@D)/$(*F).$$(basename $$one_bed).coverage; \
+			sort -g -r | awk -v COVERAGE_CRITERIA=$(COVERAGE_CRITERIA) '{SUM+=$$2} {CUM[$$1]=SUM} {split(COVERAGE_CRITERIA,C,",")} END { for (j in C) {print C[j]"X\t"CUM[C[j]]"\t"SUM"\t"(CUM[C[j]]/SUM)} }' | \
+			sort -g >> $(@D)/$(*F).$$(basename $$one_bed).coverage; \
 			echo "#[INFO] SAMTOOLS depthbed and coverage with '"$$(basename $$one_bed)"' done. See '$(@D)/$(*F).$$(basename $$one_bed).depthbed' and  '$(@D)/$(*F).$$(basename $$one_bed).coverage'. " >> $@; \
 			if [ -s $(@D)/$(*F).$$(basename $$one_bed).coverage ]; then \
 				echo "#[INFO] SAMTOOLS coverage with '"$$(basename $$one_bed)"' done. See '$(@D)/$(*F).$$(basename $$one_bed).coverage'. " >> $@; \
@@ -687,11 +689,13 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 	cat $*.list.genes;
 	+for one_bed in $$(cat $*.list.genes); do \
 		cat "ONE_BED: "$$one_bed; \
-		$(BCFTOOLS) view $*.vcf.gz -R $$one_bed > $@.$$(basename $$one_bed).vcf; \
+		$(BCFTOOLS) view $*.vcf.gz -R $$one_bed | $(BCFTOOLS) norm --remove-duplicates > $@.$$(basename $$one_bed).vcf; \
 		$(BCFTOOLS) stats $@.$$(basename $$one_bed).vcf > $@.$$(basename $$one_bed).vcf.bcftools.stats; \
 		grep -v "^#" $@.$$(basename $$one_bed).vcf | cut -f8 | tr ";" "\n" | sort | uniq -c | sed "s/^      / /gi" | tr "=" " " | awk '{print $$2"\t"$$3"\t"$$1} {a[$$2]+=$$1} END { for (key in a) { print "#\t" key "\t" a[key] } }' | sort > $@.$$(basename $$one_bed).vcf.info_field.stats; \
+		$(HOWARD) --config=$(HOWARD_CONFIG) --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --format=tab  --fields="$(HOWARD_FIELDS)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)"  --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --input=$@.$$(basename $$one_bed).vcf --output=$@.$$(basename $$one_bed).tsv --force; \
+		$(HOWARD) --config=$(HOWARD_CONFIG) --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --format=tab  --fields="$(HOWARD_FIELDS_REPORT)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)"  --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --input=$@.$$(basename $$one_bed).vcf --output=$@.$$(basename $$one_bed).report.tsv --force; \
 		(($(METRICS_SNPEFF))) && $(HOWARD) --input=$@.$$(basename $$one_bed).vcf --output=$@.$$(basename $$one_bed).vcf.snpeff.vcf --snpeff_stats=$@.$$(basename $$one_bed).vcf.snpeff.html --annotation=null --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS)  --force ; \
-		echo "#[INFO] VCF filtered by '$$one_bed' done. See '$@.$$(basename $$one_bed).vcf' file, and stats '$@.$$(basename $$one_bed).vcf.*'" >> $@; \
+		echo "#[INFO] VCF filtered by '$$one_bed' done. See '$@.$$(basename $$one_bed).vcf' file, '$@.$$(basename $$one_bed).tsv' file, and stats '$@.$$(basename $$one_bed).vcf.*'" >> $@; \
 	done;
 
 
