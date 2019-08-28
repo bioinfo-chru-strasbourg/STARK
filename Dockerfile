@@ -9,7 +9,7 @@
 # Usage:                docker run [-v [DATA FOLDER]:/data -v [DATABASE_FOLDER]:/databases] stark-base:version
 ##############################################################
 
-########## 
+##########
 # README #
 ##########
 
@@ -89,7 +89,7 @@ ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 COPY . $TOOLS/$TOOL_NAME/$TOOL_VERSION/
 
 RUN mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin ; \
-		ln -s $TOOLS/$TOOL_NAME/$TOOL_VERSION/ $TOOLS/$TOOL_NAME/current ; \
+		ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ; \
 		ln -s $TOOLS/$TOOL_NAME/$TOOL_VERSION/ /tool ;
 
 

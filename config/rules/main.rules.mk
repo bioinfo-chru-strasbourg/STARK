@@ -3,8 +3,8 @@
 # Author: Antony Le Bechec
 ############################
 # Release
-MK_RELEASE="0.9.5b"
-MK_DATE="02/10/2018"
+MK_RELEASE="0.9.5.1b"
+MK_DATE="27/09/2019"
 
 # Release note
 # 10/03/2015-0.9.4beta: change genome reference location, in the file %.genome
@@ -16,6 +16,7 @@ MK_DATE="02/10/2018"
 # 29/09/2016-0.9.4.6b: Update PICARD to releasr picard.jar
 # 07/05/2018-0.9.4.7b: Add --force for translation vcf to txt
 # 02/10/2018-0.9.5b: Change HOWARD translation, prioritization and hard filtering. Change Manifest/bed link generation
+# 27/09/2019-0.9.5.1b: Change FATBAM to CAP tool
 
 # TOOLS
 IGVTOOLS?=$(NGSbin)/igvtools.jar
@@ -527,7 +528,7 @@ GATKRR_FLAGS=
 	-if [ -e "$(PRIMER_BED)" ]; then \
 		cp $(PRIMER_BED) $@; \
 	elif [ -s $< ]; then \
-		$(FATBAM_ManifestToBED) --input=$< --output=$@ --output_type=primer; \
+		$(CAP_ManifestToBED) --input=$< --output=$@ --output_type=primer; \
 	else \
 		touch $@; \
 	fi;
@@ -551,7 +552,7 @@ GATKRR_FLAGS=
 	elif [ -s $< ]; then \
 		echo "# BED for the sample generated from the manifest '$<'" ; \
 		rm -f $@.tmp $@.sorted.tmp; \
-		$(FATBAM_ManifestToBED) --input=$< --output=$@.tmp --output_type=region; \
+		$(CAP_ManifestToBED) --input=$< --output=$@.tmp --output_type=region; \
 		$(BEDTOOLS)/bedtools sort -i $@.tmp | $(BEDTOOLS)/bedtools merge -c 4 -o collapse  | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$4}' > $@; \
 		rm -f $@.tmp; \
 	elif [ -e "$(BED)" ] && [ "$(BED)" != "" ]; then \
@@ -642,7 +643,7 @@ GATKRR_FLAGS=
 	elif [ -s $< ]; then \
 		echo "# Region Clipped BED for the sample generated from the manifest '$<'" ; \
 		rm -f $@.tmp $@.sorted.tmp; \
-		$(FATBAM_ManifestToBED) --input=$< --output=$@.tmp --output_type=region_clipped; \
+		$(CAP_ManifestToBED) --input=$< --output=$@.tmp --output_type=region_clipped; \
 		$(BEDTOOLS)/bedtools sort -i $@.tmp | $(BEDTOOLS)/bedtools merge -c 4 -o collapse  | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$4}' > $@; \
 		rm -f $@.tmp; \
 	else \
@@ -666,7 +667,7 @@ GATKRR_FLAGS=
 
 
 # CONFIG/RELEASE
-RELEASE_COMMENT := "\#\# MAIN RULES '$(MK_RELEASE)' : basicaly to manage VCF, BAM, FASTQ... using SAMTOOLS, FASTQC GATK, PICARD, FATBAM, BWA, TABIX, IGV, HOWARD..."
+RELEASE_COMMENT := "\#\# MAIN RULES '$(MK_RELEASE)' : basicaly to manage VCF, BAM, FASTQ... using SAMTOOLS, FASTQC GATK, PICARD, CAP, BWA, TABIX, IGV, HOWARD..."
 RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
 

@@ -3,14 +3,16 @@
 # Author: Antony Le Bechec
 ############################
 # Release
-MK_RELEASE="0.9.5b"
-MK_DATE="17/03/2019"
+MK_RELEASE="0.9.5.1b"
+MK_DATE="27/09/2019"
 
 # Release note
 # 18/12/2015 - 0.9.2b : Force gzip metrics files
 # 23/09/2016 - 0.9.3b : Add BAM Check metrics.bam_check. Change PICARD version
 # 29/09/2016 - 0.9.4b : Add Amplicon coverage metrics.amplicon_coverage
 # 29/09/2016 - 0.9.5b : Chenge metrics.genes rule
+# 27/09/2019 - 0.9.5.1b: Change FATBAM to CAP tool, add HOWARD option
+
 
 
 # TOOLS
@@ -27,7 +29,7 @@ PRIMER_BED?=
 BAM_METRICS?=1
 FULL_COVERAGE?=0
 
-FATBAM_TMP_FOLDER?=$(TMP_FOLDER_TMP)
+CAP_TMP_FOLDER?=$(TMP_FOLDER_TMP)
 
 METRICS_SNPEFF?=0
 
@@ -70,7 +72,12 @@ SAMTOOLS_METRICS_MPILEUP_PARAM?= $(SAMTOOLS_METRICS_MPILEUP_DEPTH_excl_flags) --
 # PICARD
 PICARD_CollectHsMetrics_MINIMUM_MAPPING_QUALITY?=$(METRICS_MINIMUM_MAPPING_QUALITY)
 PICARD_CollectHsMetrics_MINIMUM_BASE_QUALITY?=$(METRICS_MINIMUM_BASE_QUALITY)
-PICARD_CollectHsMetrics_PARAM?=MINIMUM_MAPPING_QUALITY=$(PICARD_CollectHsMetrics_MINIMUM_MAPPING_QUALITY) MINIMUM_BASE_QUALITY=$(PICARD_CollectHsMetrics_MINIMUM_BASE_QUALITY) CLIP_OVERLAPPING_READS=$(shell if (( $(CLIP_OVERLAPPING_READS) )); then echo "true"; fi )
+PICARD_CollectHsMetrics_PARAM?=MINIMUM_MAPPING_QUALITY=$(PICARD_CollectHsMetrics_MINIMUM_MAPPING_QUALITY) MINIMUM_BASE_QUALITY=$(PICARD_CollectHsMetrics_MINIMUM_BASE_QUALITY) CLIP_OVERLAPPING_READS=$(shell if (( $(CLIP_OVERLAPPING_READS) )); then echo "true"; else echo "false"; fi )
+
+# CAP
+CAP_METRICS_OPTIONS_CLIP_OVERLAPPING_READS?=$(shell if (( $(CLIP_OVERLAPPING_READS) )); then echo " --clip_overlapping_reads "; fi )
+CAP_METRICS_OPTIONS?=$(CAP_METRICS_OPTIONS_CLIP_OVERLAPPING_READS)
+
 
 
 
@@ -243,12 +250,12 @@ PICARD_CollectHsMetrics_PARAM?=MINIMUM_MAPPING_QUALITY=$(PICARD_CollectHsMetrics
 
 # Amplicon metrics
 ####################
-# From FATBAM
+# From CAP
 
 %.bam.metrics/metrics.amplicon_coverage: %.bam %.bam.bai %.manifest %.genome
 	mkdir -p $(@D) ;
-	-+$(FATBAM_COVERAGE) --env=$(CONFIG_TOOLS) --ref=$$(cat $*.genome)  --bam=$< --output=$(@D)/$(*F).amplicon_coverage --manifest=$*.manifest --multithreading --threads=$(THREADS) -v --tmp=$(FATBAM_TMP_FOLDER) --verbose 1>$(@D)/$(*F).amplicon_coverage.log 2>$(@D)/$(*F).amplicon_coverage.err;
-	cat $(@D)/$(*F).amplicon_coverage.log $(@D)/$(*F).amplicon_coverage.err;
+	+$(CAP) --function=coverage --env=$(CONFIG_TOOLS) --ref=$$(cat $*.genome) --bam=$< --output=$(@D)/$(*F).amplicon_coverage --manifest=$*.manifest --threads=$(THREADS) $(CAP_METRICS_OPTIONS_CLIP_OVERLAPPING_READS) --bedtools=$(BEDTOOLS)/bedtools --verbose --tmp=$(CAP_TMP_FOLDER) 1>$(@D)/$(*F).amplicon_coverage.log 2>$(@D)/$(*F).amplicon_coverage.err;
+	#cat $(@D)/$(*F).amplicon_coverage.log $(@D)/$(*F).amplicon_coverage.err;
 	echo "#[$$(date)] BAM Amplicon Coverage Metrics done" > $@;
 
 
@@ -690,10 +697,10 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 	+for one_bed in $$(cat $*.list.genes); do \
 		cat "ONE_BED: "$$one_bed; \
 		$(BCFTOOLS) view $*.vcf.gz -R $$one_bed | $(BCFTOOLS) norm --remove-duplicates > $@.$$(basename $$one_bed).vcf; \
-		$(BCFTOOLS) stats $@.$$(basename $$one_bed).vcf > $@.$$(basename $$one_bed).vcf.bcftools.stats; \
-		grep -v "^#" $@.$$(basename $$one_bed).vcf | cut -f8 | tr ";" "\n" | sort | uniq -c | sed "s/^      / /gi" | tr "=" " " | awk '{print $$2"\t"$$3"\t"$$1} {a[$$2]+=$$1} END { for (key in a) { print "#\t" key "\t" a[key] } }' | sort > $@.$$(basename $$one_bed).vcf.info_field.stats; \
-		$(HOWARD) --config=$(HOWARD_CONFIG) --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --format=tab  --fields="$(HOWARD_FIELDS)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)"  --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --input=$@.$$(basename $$one_bed).vcf --output=$@.$$(basename $$one_bed).tsv --force; \
-		$(HOWARD) --config=$(HOWARD_CONFIG) --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --format=tab  --fields="$(HOWARD_FIELDS_REPORT)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)"  --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --input=$@.$$(basename $$one_bed).vcf --output=$@.$$(basename $$one_bed).report.tsv --force; \
+		#$(BCFTOOLS) stats $@.$$(basename $$one_bed).vcf > $@.$$(basename $$one_bed).vcf.bcftools.stats; \
+		#grep -v "^#" $@.$$(basename $$one_bed).vcf | cut -f8 | tr ";" "\n" | sort | uniq -c | sed "s/^      / /gi" | tr "=" " " | awk '{print $$2"\t"$$3"\t"$$1} {a[$$2]+=$$1} END { for (key in a) { print "#\t" key "\t" a[key] } }' | sort > $@.$$(basename $$one_bed).vcf.info_field.stats; \
+		$(HOWARD) --config=$(HOWARD_CONFIG) --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --translation=tab  --fields="$(HOWARD_FIELDS)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)"  --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --input=$@.$$(basename $$one_bed).vcf --output=$@.$$(basename $$one_bed).tsv --force; \
+		$(HOWARD) --config=$(HOWARD_CONFIG) --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --translation=tab  --fields="$(HOWARD_FIELDS_REPORT)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)"  --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --input=$@.$$(basename $$one_bed).vcf --output=$@.$$(basename $$one_bed).report.tsv --stats=$@.$$(basename $$one_bed).report.info_field.stats --bcftools_stats=$@.$$(basename $$one_bed).report.bcftools.stats --force; \
 		(($(METRICS_SNPEFF))) && $(HOWARD) --input=$@.$$(basename $$one_bed).vcf --output=$@.$$(basename $$one_bed).vcf.snpeff.vcf --snpeff_stats=$@.$$(basename $$one_bed).vcf.snpeff.html --annotation=null --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS)  --force ; \
 		echo "#[INFO] VCF filtered by '$$one_bed' done. See '$@.$$(basename $$one_bed).vcf' file, '$@.$$(basename $$one_bed).tsv' file, and stats '$@.$$(basename $$one_bed).vcf.*'" >> $@; \
 	done;
@@ -753,7 +760,7 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 			#elif [ -s `echo "$$manifest"` ] ; then \
 			elif [ -s $*.manifest ] ; then \
 				# manifest to bed ; \
-				$(FATBAM_ManifestToBED) --input "$*.manifest" --output "$@.manifest.bed.tmp" --output_type "region" --type=PCR; \
+				$(CAP_ManifestToBED) --input "$*.manifest" --output "$@.manifest.bed.tmp" --output_type "region" --type=PCR; \
 				cut -f1,2,3 $@.manifest.bed.tmp > $@.manifest.bed ; \
 				#rm $@.manifest.bed.tmp ; \
 			fi; \
@@ -802,6 +809,19 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 	fi;
 	if [ ! -e $@ ]; then echo "#[$$(date)] BAM Metrics on Regions coverage FAILED" > $@; fi;
 
+
+
+# Global run metrics (Sam)
+#############################
+%.reads.metrics: $(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(foreach PIPELINE,$(PIPELINES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).$(call aligner,$(PIPELINE)).bam.metrics/metrics ))
+	# creates different files in the run directory: \
+	# <run>.reads.metrics \
+	# <run>.genes.metrics \
+	# <run>.design.metrics \
+	# <run>.amplicon.metrics if applicable \
+	# see python script for documentation \
+	#$(PYTHON) $(STARK_FOLDER_BIN)/runmetrics.py --metricsFileList $$(echo $^ | tr " " ",") --outputPrefix $*. ;
+	touch $@;
 
 
 # BAM CHECK rule (deprecated)
@@ -890,5 +910,5 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 
 
 # CONFIG/RELEASE
-RELEASE_COMMENT := "\#\# MAIN RULES '$(MK_RELEASE)' : basicaly to manage VCF, BAM, FASTQ, METRICS, MANIFEST, INTERVAL, BED... using SAMTOOLS, FASTQC GATK, PICARD, FATBAM, BWA, TABIX, IGV..."
+RELEASE_COMMENT := "\#\# MAIN RULES '$(MK_RELEASE)' : basicaly to manage VCF, BAM, FASTQ, METRICS, MANIFEST, INTERVAL, BED... using SAMTOOLS, FASTQC GATK, PICARD, CAP, BWA, TABIX, IGV..."
 RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )

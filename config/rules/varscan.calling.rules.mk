@@ -4,8 +4,8 @@
 # Date: 04/05/2016
 # Author: Antony Le Bechec
 ############################
-MK_RELEASE="0.9.4.4b"
-MK_DATE="23/03/2019"
+MK_RELEASE="0.9.4.5"
+MK_DATE="27/09/2019"
 
 # Release notes:
 # 0.9.1-24/04/2015: Add 'varscanlowfreqlowcovsnp' calling
@@ -17,13 +17,15 @@ MK_DATE="23/03/2019"
 # 0.9.4.2-04/05/2016: Bug correction
 # 0.9.4.3-17/05/2016: Bug correction
 # 0.9.4.4-21/03/2019: Change parameters for mpileup by adding FATBAM Soft Clip to Q0
+# 0.9.4.5-27/09/2019: Change FATBAM to CAP tool
+
 
 
 # Parameters
 # VARSCAN
 VARSCAN?=$(NGSbin)/varscan.jar
-FATBAM?=/STARK/tools/fatbam/current/bin
-FATBAM_SOFTCLIPTOQ0?=$(FATBAM)/FATBAM.SoftClipToQ0.pl
+CAP?=/STARK/tools/cap/current/bin/CAP
+CAP_SOFTCLIPTOQ0?=$(CAP)/CAP.SoftClipToQ0.pl
 
 
 ####################
@@ -36,7 +38,7 @@ MPILEUP_VARSCAN_OPTIONS= -E -d 10000000 -L 10000000 -C 50 -Q 10 -q 1 --output-ta
 %.bam.mpileup: %.bam %.bam.bai %.genome
 	#-$(SAMTOOLS) mpileup -f `cat $*.genome` $< $(MPILEUP_OPTIONS) -l $*.for_metrics.bed > $@
 	#-$(SAMTOOLS) mpileup -f `cat $*.genome` $< $(MPILEUP_VARSCAN_OPTIONS) > $@
-	$(SAMTOOLS) view $< -h | perl $(FATBAM_SOFTCLIPTOQ0) -v1 | $(SAMTOOLS) mpileup - -f `cat $*.genome` $(MPILEUP_VARSCAN_OPTIONS) > $@
+	$(SAMTOOLS) view $< -h | perl $(CAP_SOFTCLIPTOQ0) -v1 | $(SAMTOOLS) mpileup - -f `cat $*.genome` $(MPILEUP_VARSCAN_OPTIONS) > $@
 
 
 

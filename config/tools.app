@@ -18,12 +18,20 @@ export GZIP=""				# PARAM GZIP
 # JAVA
 export JAVA=$NGS_TOOLS/java/current/bin/java						# BIN
 export JAVA_PATH=$NGS_TOOLS/java/current/bin						# BIN
-export JAVA_VERSION=1.8.0_65					# VER
+export JAVA_VERSION=current					# VER
 #export JAVA6=$NGS_TOOLS/java/1.6.0_45/bin/java			# BIN
 #export JAVA6_VERSION=1.6.0_45					# VER
 export JAVA_DESCRIPTION="A high-level programming language developed by Sun Microsystems"
 export JAVA_REF="http://java.com"
 TOOLS_LIST=$TOOLS_LIST" JAVA"
+
+# PYTHON
+export PYTHON=$NGS_TOOLS/python/current/bin/python					# BIN
+export PYTHON_PATH==$NGS_TOOLS/python/current/bin					# FOLDER
+export PYTHON_VERSION=current				# VER
+export PYTHON_DESCRIPTION="Python is a programming language that lets you work quickly and integrate systems more efficiently"
+export PYTHON_REF="http://python.com"
+TOOLS_LIST=$TOOLS_LIST" PYTHON"
 
 
 # CASAVA
@@ -280,28 +288,27 @@ export STARK_REF="inhouse"
 TOOLS_LIST=$TOOLS_LIST" STARK"
 
 
-# FATBAM
-#export FATBAM=$NGS_TOOLS/fatbam/0.9.6d/bin			# DIR
-export FATBAM=$NGS_TOOLS/fatbam/current/bin			# DIR
-#export FATBAM_VERSION=0.9.6d					# VER
-export FATBAM_VERSION=0.9.10b					# VER
-export FATBAM_CLIPPING=$FATBAM/FATBAM.clipping.sh		# BIN-SCRIPT
-export FATBAM_COVERAGE=$FATBAM/FATBAM.coverage.sh		# BIN-SCRIPT
-export FATBAM_SOFTCLIPTOQ0=$FATBAM/FATBAM.SoftClipToQ0.pl		# BIN-SCRIPT
-export FATBAM_ManifestToBED=$FATBAM/FATBAM.ManifestToBED.pl
-export CLIPPING=1						# Process clipping by default
-export FATBAM_DESCRIPTION="Clipping Amplicons' Primers"
-export FATBAM_REF="inhouse"
-TOOLS_LIST=$TOOLS_LIST" FATBAM"
+# CAP
+export CAP_FOLDER=$NGS_TOOLS/cap/current/bin			# DIR
+export CAP=$CAP_FOLDER/CAP								# BIN
+export CAP_VERSION=0.9.11b								# VER
+export CAP_SOFTCLIPTOQ0=$CAP_FOLDER/CAP.SoftClipToQ0.pl		# BIN-SCRIPT
+export CAP_SOFTCLIPTOQ0_VERSION=$CAP_VERSION			# VER
+export CAP_ManifestToBED=$CAP_FOLDER/CAP.ManifestToBED.pl		# BIN-SCRIPT
+export CAP_ManifestToBED_VERSION=$CAP_VERSION			# VER
+#export CLIPPING=1						# Process clipping by default
+export CAP_DESCRIPTION="Clipping Amplicons Primers"
+export CAP_REF="inhouse"
+TOOLS_LIST=$TOOLS_LIST" CAP"
 
 
 # HOWARD
-export HOWARD_FOLDER=$NGS_TOOLS/howard/current			# DIR
+export HOWARD_FOLDER=$NGS_TOOLS/howard/0.9.15b			# DIR
 export HOWARD_FOLDER_BIN=$HOWARD_FOLDER/bin			# DIR
 export HOWARD_FOLDER_CONFIG=$HOWARD_FOLDER/config	# DIR
 export HOWARD_FOLDER_DOCS=$HOWARD_FOLDER/docs	# DIR
-export HOWARD_VERSION=0.9.14b				# VER
-export HOWARD=$HOWARD_FOLDER_BIN/HOWARD.sh			# BIN-SCRIPT
+export HOWARD_VERSION=0.9.15b				# VER
+export HOWARD=$HOWARD_FOLDER_BIN/HOWARD			# BIN-SCRIPT
 export HOWARD_RELEASE=$HOWARD_VERSION
 export HOWARDDIR=$HOWARD_FOLDER_BIN
 export HOWARD_DESCRIPTION="Highly Open and Valuable tool for Variant Annotation & Ranking"

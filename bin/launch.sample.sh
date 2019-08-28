@@ -1141,22 +1141,22 @@ for RUU in $RUN_UNIQ; do
 						#export MANIFEST=$RUN_SAMPLE_DIR/$S.manifest;
 					fi;
 				fi;
-			elif (($(echo $F | grep ".bam$\|.ubam$\|.cram$\|.ucram\|.sam$\|.usam$" -c))); then
-				# Generate BED from BAM if exists
-				echo "#[INFO] Try to Generate BED file from BAM file."
-				$SAMTOOLS sort --reference $REF -@ $THREADS $F -T $TMP_INPUT_BAM -O BAM -l 0 2>/dev/null | $BEDTOOLS/bedtools bamtobed -i | $BEDTOOLS/bedtools merge | cut -f1,2,3 > $RUN_SAMPLE_DIR/$S.bed.tmp;
-				if [ -s $RUN_SAMPLE_DIR/$S.bed.tmp ]; then
-					echo "#[INFO] BED file generated from BAM file."
-					$COMMAND_COPY $RUN_SAMPLE_DIR/$S.bed.tmp $RUN_SAMPLE_DIR/$S.bed;
-					B=$RUN_SAMPLE_DIR/$S.bed
-					$COMMAND_COPY $B $RUN_SAMPLE_DIR/$S.metrics.bed;
-					touch $RUN_SAMPLE_DIR/$S.manifest;
-					touch $RUN_SAMPLE_DIR/$S.manifest -r $B;
-					touch $RUN_SAMPLE_DIR/$S.metrics.bed -r $B;
-					echo -e $(basename $B)"\tfrom input reads file" > $RUN_SAMPLE_DIR/$S.bed_name
-					echo -e $(basename $B)"\tfrom input reads file" > $RUN_SAMPLE_DIR/$S.manifest_name
-				fi;
-				rm -f $RUN_SAMPLE_DIR/$S.bed.tmp
+			#elif (($(echo $F | grep ".bam$\|.ubam$\|.cram$\|.ucram\|.sam$\|.usam$" -c))); then
+			#	# Generate BED from BAM if exists
+			#	echo "#[INFO] Try to Generate BED file from BAM file."
+			#	$SAMTOOLS sort --reference $REF -@ $THREADS $F -T $TMP_INPUT_BAM -O BAM -l 0 2>/dev/null | $BEDTOOLS/bedtools bamtobed -i | $BEDTOOLS/bedtools merge | cut -f1,2,3 > $RUN_SAMPLE_DIR/$S.bed.tmp;
+			#	if [ -s $RUN_SAMPLE_DIR/$S.bed.tmp ]; then
+			#		echo "#[INFO] BED file generated from BAM file."
+			#		$COMMAND_COPY $RUN_SAMPLE_DIR/$S.bed.tmp $RUN_SAMPLE_DIR/$S.bed;
+			#		B=$RUN_SAMPLE_DIR/$S.bed
+			#		$COMMAND_COPY $B $RUN_SAMPLE_DIR/$S.metrics.bed;
+			#		touch $RUN_SAMPLE_DIR/$S.manifest;
+			#		touch $RUN_SAMPLE_DIR/$S.manifest -r $B;
+			#		touch $RUN_SAMPLE_DIR/$S.metrics.bed -r $B;
+			#		echo -e $(basename $B)"\tfrom input reads file" > $RUN_SAMPLE_DIR/$S.bed_name
+			#		echo -e $(basename $B)"\tfrom input reads file" > $RUN_SAMPLE_DIR/$S.manifest_name
+			#	fi;
+			#	rm -f $RUN_SAMPLE_DIR/$S.bed.tmp
 			fi;
 		fi;
 
@@ -1167,10 +1167,12 @@ for RUU in $RUN_UNIQ; do
 		#el
 		# Name of LIST.GENES
 		BEDFILE_GENES_LIST_ONE=$RUN_SAMPLE_DIR/$S.list.genes
-		if [ ! -e $RUN_SAMPLE_DIR/$S.list.genes ]; then
+		#if [ ! -e $RUN_SAMPLE_DIR/$S.list.genes ]; then
+		if [ ! -e $BEDFILE_GENES_LIST_ONE ]; then
+			> $BEDFILE_GENES_LIST_ONE;
 			if [ "$G" != "" ]; then
 				echo "#[INFO] Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' and copy .genes files."
-				> $RUN_SAMPLE_DIR/$S.list.genes;
+				#> $RUN_SAMPLE_DIR/$S.list.genes;
 				for G_ONE in $(echo $G | tr "+" " "); do
 					# add '.genes' extension if not exists
 					[ "${G_ONE##*.}" != "genes" ] && G_ONE_TARGET=$(basename $G_ONE)".genes" || G_ONE_TARGET=$(basename $G_ONE);
@@ -1190,7 +1192,7 @@ for RUU in $RUN_UNIQ; do
 				if [[ $B =~ .bed$ ]]; then
 					cut -f1,2,3 $B > $BEDFILE_GENES_INTERMEDIATE ;
 				else
-					$FATBAM_ManifestToBED --input $B --output $BEDFILE_GENES_INTERMEDIATE.tmp --output_type "region" --type=PCR;
+					$CAP_ManifestToBED --input $B --output $BEDFILE_GENES_INTERMEDIATE.tmp --output_type "region" --type=PCR;
 					cut -f1,2,3 $BEDFILE_GENES_INTERMEDIATE.tmp > $BEDFILE_GENES_INTERMEDIATE;
 					rm -f $BEDFILE_GENES_INTERMEDIATE.tmp;
 				fi;
@@ -1215,8 +1217,12 @@ for RUU in $RUN_UNIQ; do
 				G=$BEDFILE_GENES_ONE
 
 			else
-				echo "#[INFO] No GENES and no Design file to create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes'. Generate empty LIST.GENES."
-				touch $BEDFILE_GENES_LIST_ONE
+				#echo "#[INFO] No GENES and no Design file to create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes'. Generate empty LIST.GENES."
+				echo "#[INFO] No GENES and no Design file to create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes'. Generate GENES with all NM transcript in RefSeq."
+				awk -F'\t' 'substr($6,1,2)=="NM" {print $0}' $REFSEQ_GENES > $RUN_SAMPLE_DIR/$S.refGene.bed
+				#$COMMAND_COPY $REFSEQ_GENES $RUN_SAMPLE_DIR/$(basename $REFSEQ_GENES);
+				echo $S.refGene.bed > $BEDFILE_GENES_LIST_ONE;
+				#touch $BEDFILE_GENES_LIST_ONE
 				#fi;
 			fi;
 		else

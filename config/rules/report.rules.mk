@@ -3,8 +3,8 @@
 # Author: Antony Le Bechec
 ############################
 # Release
-MK_RELEASE="0.9.4b"
-MK_DATE="02/10/2018"
+MK_RELEASE="0.9.4.1b"
+MK_DATE="27/09/2019"
 
 # Release note
 # 11/12/2015-0.9b: Create file
@@ -12,6 +12,7 @@ MK_DATE="02/10/2018"
 # 13/04/2016-0.9.2b: update full.vcf, final.vcf
 # 01/02/2018-0.9.3b: Add CALLING_QUALITY for rule generating full.vcf. Change pipeline name (remove sample name and vcf.gz extension)
 # 02/10/2018-0.9.4b: Change Howard annotation, replace VCFTOOLS with BCFTOOLS, merge with multiallele not allowed
+# 27/09/2019-0.9.4.1b: Add HOWARD NOMEN field option
 
 FONT?=Courier5 #Times-Roman8
 NGSscripts?=$(NGS_SCRIPTS)
@@ -27,7 +28,7 @@ HOWARD_ANNOTATION?=$(HOWARD)/VCFannotation.pl
 ANNOTATION_TYPE_MINIMAL?="Symbol,location,outcome,hgvs"
 ANNOVAR?=$(NGSscripts)
 HOWARD_CALCULATION?=VAF,NOMEN,VAF_STATS,VARTYPE
-
+HOWARD_NOMEN_FIELDS?="hgvs"
 
 
 # Analysis Summary
@@ -101,8 +102,8 @@ HOWARD_CALCULATION?=VAF,NOMEN,VAF_STATS,VARTYPE
 	-cp $*.$(ANALYSIS_DATE).config $*.$(ANALYSIS_DATE).config.txt
 
 	# STARK REPORT
-	echo "$(STARK_FOLDER_BIN)/stark_report.sh -f "`echo $$(basename $$(dirname $$(dirname $(@D))))`" -s "$(*F)" -e "$(ENV)" -i $$(echo $(PIPELINES) | tr " " ",") -d $(ANALYSIS_DATE) -r $(OUTDIR)"
-	$(STARK_FOLDER_BIN)/stark_report.sh -f "`echo $$(basename $$(dirname $$(dirname $(@D))))`" -s "$(*F)" -e "$(ENV)" -i $$(echo $(PIPELINES) | tr " " ",") -d $(ANALYSIS_DATE) -r $(OUTDIR)
+	#echo "$(STARK_FOLDER_BIN)/stark_report.sh -f "`echo $$(basename $$(dirname $$(dirname $(@D))))`" -s "$(*F)" -e "$(ENV)" -i $$(echo $(PIPELINES) | tr " " ",") -d $(ANALYSIS_DATE) -r $(OUTDIR)"
+	#$(STARK_FOLDER_BIN)/stark_report.sh -f "`echo $$(basename $$(dirname $$(dirname $(@D))))`" -s "$(*F)" -e "$(ENV)" -i $$(echo $(PIPELINES) | tr " " ",") -d $(ANALYSIS_DATE) -r $(OUTDIR)
 	$(STARK_FOLDER_BIN)/STARK.report -f "`echo $$(basename $$(dirname $$(dirname $(@D))))`" -s "$(*F)" -e "$(ENV)" -i $$(echo $(PIPELINES) | tr " " ",") -k $(ANALYSIS_DATE) -r $(OUTDIR)
 	#echo "$(STARK_FOLDER_BIN)/stark_report_html.sh -f "`echo $$(basename $$(dirname $$(dirname $(@D))))`" -s "$(*F)" -e "$(ENV)" -i $$(echo $(PIPELINES) | tr " " ",") -d $(ANALYSIS_DATE) -r $(OUTDIR)"
 	#$(STARK_FOLDER_BIN)/stark_report_html.sh -f "`echo $$(basename $$(dirname $$(dirname $(@D))))`" -s "$(*F)" -e "$(ENV)" -i $$(echo $(PIPELINES) | tr " " ",") -d $(ANALYSIS_DATE) -r $(OUTDIR)
@@ -150,15 +151,16 @@ HOWARD_CALCULATION?=VAF,NOMEN,VAF_STATS,VARTYPE
 	-rm -f $@.tmp* $@.pipelines
 
 
-## FULLE VCF: ANNOTATION OF A MERGE FILE
+## FULL VCF: ANNOTATION OF A MERGE FILE
 %.full.unsorted.vcf: %.merge.vcf %.transcripts
 	# HOWARD annotation
 	+$(HOWARD) --input=$< --output=$@.tmp --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --annotation=$(HOWARD_ANNOTATION_REPORT) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS);
 	# HOWARD calculation and prioritization
-	+$(HOWARD) --input=$@.tmp --output=$@  --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --calculation=$(HOWARD_CALCULATION_REPORT) --prioritization=$(HOWARD_PRIORITIZATION_REPORT) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --tmp=$(TMP_FOLDER_TMP)  --transcripts=$*.transcripts --force --multithreading --threads=$(THREADS) --env=$(CONFIG_TOOLS);
+	+$(HOWARD) --input=$@.tmp --output=$@  --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --calculation=$(HOWARD_CALCULATION_REPORT) --nomen_fields=$(HOWARD_NOMEN_FIELDS) --prioritization=$(HOWARD_PRIORITIZATION_REPORT) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --tmp=$(TMP_FOLDER_TMP)  --transcripts=$*.transcripts --force --multithreading --threads=$(THREADS) --env=$(CONFIG_TOOLS);
 	# cleaning
 	rm -rf $@.tmp
 
+## rehead full.vcf
 %.$(ANALYSIS_DATE).full.vcf: %.$(ANALYSIS_DATE).final_variants_files_vcf_gz %.full.vcf
 	cat $< | rev | cut -d/ -f1 | rev | sed s/\.vcf.gz//gi | cut -d. -f2- > $@.pipelines
 	$(BCFTOOLS) view -S $@.pipelines $*.full.vcf > $@
@@ -190,7 +192,7 @@ HOWARD_CALCULATION?=VAF,NOMEN,VAF_STATS,VARTYPE
 		cp $@.merged $@.annotated; \
 	fi;
 	+if [ "$(HOWARD_CALCULATION_ANALYSIS)" != "" ]; then \
-		$(HOWARD) --input=$@.annotated --output=$@.calculated --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --calculation=$(HOWARD_CALCULATION_ANALYSIS) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --force; \
+		$(HOWARD) --input=$@.annotated --output=$@.calculated --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --calculation=$(HOWARD_CALCULATION_ANALYSIS) --nomen_fields=$(HOWARD_NOMEN_FIELDS) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --force; \
 	else \
 		cp $@.annotated $@.calculated; \
 	fi;

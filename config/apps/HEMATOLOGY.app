@@ -21,3 +21,6 @@ PIPELINES="bwamem.gatkUG_HEMATOLOGY.howard bwamem.VarScan_HEMATOLOGY.howard bwam
 
 # POST ALIGNEMENT STEPS
 #POST_ALIGNMENT_STEPS="sorting markduplicates realignment recalibration compress"
+
+
+HOWARD_NOMEN_FIELDS="snpeff_hgvs"

@@ -1,6 +1,6 @@
 
 ##############################################################
-# Dockerfile Version:   1.8.2
+# Dockerfile Version:   1.9
 # Software:             STARK-BASE
 # Software Version:     0.9.18b
 # Software Website:     none
@@ -84,7 +84,7 @@ RUN yum update -y ; \
 
 ENV TOOL_NAME=annovar
 ENV TOOL_VERSION=2018Apr16
-ENV TARBALL_LOCATION=http://www.openbioinformatics.org/annovar/download/0wgxR2rIVP/
+ENV TARBALL_LOCATION=http://www.openbioinformatics.org/annovar/download/0wgxR2rIVP
 ENV TARBALL=annovar.latest.tar.gz
 ENV TARBALL_FOLDER=$TOOL_NAME
 ENV TOOL_DATABASE_FOLDER=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/databases/
@@ -100,7 +100,7 @@ RUN wget $TARBALL_LOCATION/$TARBALL ; \
     cp *.pl $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/ -R ; \
     cd ../ ; \
     rm -rf $TARBALL_FOLDER ; \
-    ln -s $TOOLS/$TOOL_NAME/$TOOL_VERSION $TOOLS/$TOOL_NAME/current ; \
+    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ; \
 	mkdir -p $TOOL_DATABASE_FOLDER_LINK ; \
 	mkdir -p $TOOL_DATABASE_FOLDER ; \
 	ln -s $TOOL_DATABASE_FOLDER_LINK $TOOL_DATABASE_FOLDER ;
@@ -123,7 +123,7 @@ RUN wget $TARBALL_LOCATION/$TARBALL ; \
     rm -rf $TARBALL ; \
     cd $TOOL_NAME-$TOOL_VERSION ; \
     make prefix=$TOOLS/$TOOL_NAME/$TOOL_VERSION install ; \
-	ln -s $TOOLS/$TOOL_NAME/$TOOL_VERSION $TOOLS/$TOOL_NAME/current ; \
+	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ; \
     cd ../ ; \
     rm -rf $TOOL_NAME-$TOOL_VERSION ;
 
@@ -146,7 +146,7 @@ RUN wget $TARBALL_LOCATION/$TARBALL ; \
     rm -rf $TARBALL ; \
     cd $TOOL_NAME-$TOOL_VERSION ; \
     make prefix=$TOOLS/$TOOL_NAME/$TOOL_VERSION install ; \
-	ln -s $TOOLS/$TOOL_NAME/$TOOL_VERSION $TOOLS/$TOOL_NAME/current ; \
+	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ; \
     cd ../ ; \
     rm -rf $TOOL_NAME-$TOOL_VERSION ;
 
@@ -174,7 +174,7 @@ RUN wget $ZIPBALL_LOCATION/$ZIPBALL ; \
     rm -f $RPM; \
     mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin ; \
     ln -s /usr/local/bin/bcl2fastq $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/bcl2fastq ; \
-    ln -s $TOOLS/$TOOL_NAME/$TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
+    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
 
 
 
@@ -197,7 +197,7 @@ RUN wget $TARBALL_LOCATION/$TARBALL ; \
     make prefix=$TOOLS/$TOOL_NAME/$TOOL_VERSION install ; \
     cd ../ ; \
     rm -rf $TARBALL_FOLDER ; \
-    ln -s $TOOLS/$TOOL_NAME/$TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
+    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
 
 
 
@@ -220,7 +220,7 @@ RUN git clone $GIT ; \
     rm -rf .git ; \
     cd ../ ;  \
     rm -rf $TOOL_NAME ; \
-    ln -s $TOOLS/$TOOL_NAME/$TOOL_VERSION/ $TOOLS/$TOOL_NAME/current ;
+    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
 
 
 
@@ -245,7 +245,7 @@ RUN wget $TARBALL_LOCATION -O $TARBALL ; \
     cp bwa $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin ; \
     cd ../ ; \
     rm -rf $TARBALL_NAME-$TOOL_VERSION ; \
-    ln -s $TOOLS/$TOOL_NAME/$TOOL_VERSION/ $TOOLS/$TOOL_NAME/current ;
+    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
 
 
 
@@ -270,17 +270,17 @@ RUN wget $TARBALL_LOCATION -O $TARBALL ; \
     cp -R * $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin ; \
     cd ../ ; \
 	rm -rf $TARBALL_NAME ; \
-    ln -s $TOOLS/$TOOL_NAME/$TOOL_VERSION/ $TOOLS/$TOOL_NAME/current ;
+    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
 
 
 
-##########
-# FATBAM #
-##########
+#######
+# CAP #
+#######
 
-ENV TOOL_NAME=fatbam
-ENV TOOL_VERSION=0.9.10b
-ENV TARBALL_LOCATION=https://gitlab.bioinfo-diag.fr/Strasbourg/FATBAM/repository/0.9.10b
+ENV TOOL_NAME=cap
+ENV TOOL_VERSION=0.9.11b
+ENV TARBALL_LOCATION=https://gitlab.bioinfo-diag.fr/Strasbourg/CAP/repository/0.9.11b
 ENV TARBALL=archive.tar.gz
 ENV TARBALL_FOLDER=archive
 ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
@@ -292,9 +292,8 @@ RUN wget $TARBALL_LOCATION/$TARBALL ; \
     mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/ ; \
     cp $(ls ${TOOL_NAME^^}-$TOOL_VERSION* -d)/* $TOOLS/$TOOL_NAME/$TOOL_VERSION/ -R ; \
     rm -rf $(ls ${TOOL_NAME^^}-$TOOL_VERSION* -d) ; \
-    ln -s $TOOLS/$TOOL_NAME/$TOOL_VERSION $TOOLS/$TOOL_NAME/current ; \
-    chmod 0775 $TOOLS/$TOOL_NAME/$TOOL_VERSION $TOOLS/$TOOL_NAME/current -R ; \
-    ln -s $TOOLS/$TOOL_NAME/$TOOL_VERSION/ $TOOLS/$TOOL_NAME/current ;
+    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ; \
+    chmod 0775 $TOOLS/$TOOL_NAME/$TOOL_VERSION $TOOLS/$TOOL_NAME/current -R ;
 
 
 
@@ -319,7 +318,7 @@ RUN wget $TARBALL_LOCATION -O $TARBALL ; \
     cp GenomeAnalysisTK.jar $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin ; \
 	cd ../ ; \
 	rm -rf $TARBALL_NAME ; \
-    ln -s $TOOLS/$TOOL_NAME/$TOOL_VERSION/ $TOOLS/$TOOL_NAME/current ;
+    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
 
 
 
@@ -328,11 +327,12 @@ RUN wget $TARBALL_LOCATION -O $TARBALL ; \
 ###########
 
 ENV TOOL_NAME=howard
-ENV TOOL_VERSION=0.9.14b
+ENV TOOL_VERSION=0.9.15b
 ENV TARBALL_LOCATION=https://gitlab.bioinfo-diag.fr/Strasbourg/HOWARD/repository/$TOOL_VERSION
 ENV TARBALL=archive.tar.gz
 ENV TARBALL_FOLDER=archive
-ENV TOOL_DATABASE_FOLDER=/home/TOOLS/databases
+ENV TOOL_DATABASE_FOLDER=/databases
+#ENV TOOL_TOOLS_FOLDER=/tools
 ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 
@@ -342,11 +342,10 @@ RUN wget $TARBALL_LOCATION/$TARBALL ; \
     mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/ ; \
     cp $(ls ${TOOL_NAME^^}-$TOOL_VERSION* -d)/* $TOOLS/$TOOL_NAME/$TOOL_VERSION/ -R ; \
     rm -rf $(ls ${TOOL_NAME^^}-$TOOL_VERSION* -d) ; \
-    ln -s $TOOLS/$TOOL_NAME/$TOOL_VERSION $TOOLS/$TOOL_NAME/current ; \
+    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ; \
     chmod 0775 $TOOLS/$TOOL_NAME/$TOOL_VERSION $TOOLS/$TOOL_NAME/current -R ; \
 	mkdir -p $DATABASES ; \
-	ln -s $DATABASES $TOOL_DATABASE_FOLDER ; \
-	ln -s $TOOLS/$TOOL_NAME/$TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
+	ln -s $DATABASES $TOOL_DATABASE_FOLDER ;
 
 
 
@@ -372,7 +371,7 @@ RUN wget $TARBALL_LOCATION -O $TARBALL ; \
     cp -R * $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin ; \
 	cd ../ ; \
 	rm -rf $TARBALL_FOLDER ; \
-    ln -s $TOOLS/$TOOL_NAME/$TOOL_VERSION/ $TOOLS/$TOOL_NAME/current ;
+    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
 
 
 
@@ -394,7 +393,7 @@ RUN wget $TARBALL_LOCATION/$TARBALL -O $TARBALL ; \
 	mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin ; \
 	cp $TARBALL_FOLDER/* $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin ; \
     rm -rf $TARBALL_FOLDER ; \
-    ln -s $TOOLS/$TOOL_NAME/$TOOL_VERSION/ $TOOLS/$TOOL_NAME/current ;
+    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
 
 
 
@@ -404,8 +403,22 @@ RUN wget $TARBALL_LOCATION/$TARBALL -O $TARBALL ; \
 
 ENV TOOL_NAME=java
 ENV TOOL_VERSION=current
+ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 RUN mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
 	ln -s /usr/bin/java $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/java ;
+
+
+
+##########
+# PYTHON #
+##########
+
+ENV TOOL_NAME=python
+ENV TOOL_VERSION=current
+ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+RUN mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
+	ln -s /usr/bin/python $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python ;
+
 
 
 
@@ -423,7 +436,7 @@ ENV PATH="$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH"
 RUN wget $JAR_LOCATION/$JAR ; \
     mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin ; \
     mv $JAR $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin ; \
-    ln -s $TOOLS/$TOOL_NAME/$TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
+    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
 
 
 
@@ -445,7 +458,7 @@ RUN wget $TARBALL_LOCATION/$TARBALL ; \
     make prefix=$TOOLS/$TOOL_NAME/$TOOL_VERSION install ; \
     cd ../ ; \
     rm -rf $TOOL_NAME-$TOOL_VERSION ; \
-    ln -s $TOOLS/$TOOL_NAME/$TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
+    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
 
 
 
@@ -471,7 +484,7 @@ RUN wget $TARBALL_LOCATION/$TARBALL ; \
     cp $TARBALL_FOLDER/*/*jar $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/ -R ; \
     cp $TARBALL_FOLDER/*/*.config $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/ -R ; \
     rm -rf $TARBALL_FOLDER ; \
-	ln -s $TOOLS/$TOOL_NAME/$TOOL_VERSION $TOOLS/$TOOL_NAME/current ; \
+	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ; \
 	mkdir -p $TOOL_DATABASE_FOLDER_LINK ; \
 	mkdir -p $TOOL_DATABASE_FOLDER ; \
 	ln -s $TOOL_DATABASE_FOLDER_LINK $TOOL_DATABASE_FOLDER ;
@@ -494,7 +507,7 @@ RUN wget $TARBALL_LOCATION -O $TARBALL ; \
     mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin ; \
 	cp $TARBALL $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin ; \
 	rm $TARBALL ; \
-    ln -s $TOOLS/$TOOL_NAME/$TOOL_VERSION/ $TOOLS/$TOOL_NAME/current ;
+    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
 
 
 
@@ -519,58 +532,7 @@ RUN git clone https://github.com/cgrlab/vcftools.git ; \
     make prefix=$TOOLS/$TOOL_NAME/$TOOL_VERSION install ; \
     cd ../ ; \
 	rm -rf TARBALL_NAME ; \
-    ln -s $TOOLS/$TOOL_NAME/$TOOL_VERSION/ $TOOLS/$TOOL_NAME/current ;
-
-
-
-#########
-# LATEX #
-#########
-
-ENV TOOL_NAME=texlive
-ENV TOOL_VERSION=current
-ENV TARBALL_LOCATION=http://mirror.ctan.org/systems/texlive/tlnet
-ENV TARBALL=install-tl-unx.tar.gz
-ENV TARBALL_FOLDER=install-tl-*
-ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-
-
-RUN wget $TARBALL_LOCATION/$TARBALL ; \
-    tar xf $TARBALL ; \
-    rm -rf $TARBALL ; \
-    cd $TARBALL_FOLDER ; \
-    mkdir -p $TOOLS/$TOOL_NAME/ ; \
-    echo 'I' | ./install-tl -scheme=scheme-basic ; \
-    cd ../ ; \
-    rm -rf $TARBALL_FOLDER ; \
-	mkdir -p $TOOLS/$TOOL_NAME/$(basename $(ls -d /usr/local/texlive/2*)) ; \
-    ln -s /usr/local/texlive/$(basename $(ls -d /usr/local/texlive/2*))/bin/x86_64-linux/ $TOOLS/$TOOL_NAME/$(basename $(ls -d /usr/local/texlive/2*))/bin ; \
-	ln -s $TOOLS/$TOOL_NAME/$(basename $(ls -d /usr/local/texlive/2*))/ $TOOLS/$TOOL_NAME/current ; \
-	$TOOLS/$TOOL_NAME/current/bin/tlmgr install tcolorbox ; \
-	$TOOLS/$TOOL_NAME/current/bin/tlmgr install trimspaces ; \
-	$TOOLS/$TOOL_NAME/current/bin/tlmgr install lastpage ; \
-	$TOOLS/$TOOL_NAME/current/bin/tlmgr install numprint ; \
-	$TOOLS/$TOOL_NAME/current/bin/tlmgr install multirow ; \
-	$TOOLS/$TOOL_NAME/current/bin/tlmgr install supertabular ; \
-	$TOOLS/$TOOL_NAME/current/bin/tlmgr install lipsum ; \
-	$TOOLS/$TOOL_NAME/current/bin/tlmgr install siunitx ; \
-	$TOOLS/$TOOL_NAME/current/bin/tlmgr install tocloft ; \
-	$TOOLS/$TOOL_NAME/current/bin/tlmgr install l3kernel ; \
-	$TOOLS/$TOOL_NAME/current/bin/tlmgr install l3packages ; \
-	$TOOLS/$TOOL_NAME/current/bin/tlmgr install fancybox ; \
-	$TOOLS/$TOOL_NAME/current/bin/tlmgr install listings ; \
-	$TOOLS/$TOOL_NAME/current/bin/tlmgr install xcolor ; \
-	$TOOLS/$TOOL_NAME/current/bin/tlmgr install pgf ; \
-	$TOOLS/$TOOL_NAME/current/bin/tlmgr install collcell ; \
-	$TOOLS/$TOOL_NAME/current/bin/tlmgr install etoolbox ; \
-	$TOOLS/$TOOL_NAME/current/bin/tlmgr install environ ; \
-	$TOOLS/$TOOL_NAME/current/bin/tlmgr install caption ; \
-	$TOOLS/$TOOL_NAME/current/bin/tlmgr install subfig ; \
-	$TOOLS/$TOOL_NAME/current/bin/tlmgr install float ; \
-	$TOOLS/$TOOL_NAME/current/bin/tlmgr install setspace ; \
-	$TOOLS/$TOOL_NAME/current/bin/tlmgr install fp ;
-
+    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
 
 
 

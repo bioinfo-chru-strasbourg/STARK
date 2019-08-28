@@ -128,6 +128,7 @@ METRICS_FLAGS="UNMAP,SECONDARY,QCFAIL,DUP"
 # Generated from mpileup format (if empty)
 #SAMTOOLS_METRICS_FLAG_PARAM=" -F 0x4 -F 0x100 -F 0x200 -F 0x400"
 
+
 # VARIANT RECALIBRATION (default 0/FALSE/NO/N)
 # Performs Variant recalibration after Calling (1/TRUE/YES/Y or 0/FALSE/NO/N).
 # If the recalibration fail (usually due to lack of data for statistic calculation), nothing will be done
@@ -259,6 +260,8 @@ HOWARD_CALCULATION_MINIMAL="VARTYPE,NOMEN"
 HOWARD_CALCULATION_REPORT="FindByPipelines,GenotypeConcordance,VAF,VAF_STATS,CALLING_QUALITY,CALLING_QUALITY_EXPLODE,VARTYPE,NOMEN,BARCODE"
 # Default calculation with HOWARD for whole analysis (calculation forced)
 HOWARD_CALCULATION_ANALYSIS="VAF_STATS,VARTYPE,NOMEN,BARCODE"
+# List of annotation fields to extract NOMEN annotation (default 'hgvs', see HOWARD docs)
+HOWARD_NOMEN_FIELDS="hgvs"
 
 
 # PRIORITIZATION

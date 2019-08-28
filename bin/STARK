@@ -980,7 +980,16 @@ if [ ! -z "$RUNS" ]; then
 				(($VERBOSE)) && DEM_PARAM="$DEM_PARAM --verbose "
 				(($DEBUG)) && DEM_PARAM="$DEM_PARAM --debug "
 
-				[ -e $R/RTAComplete.txt ] && [ ! -e $DEM_STARKCOMPLETE ] && echo "#[INFO] Start Demultiplexing for RUN '$R'" && echo "" && \
+				# Test if dem to do
+				DEM_TODO=0
+				# If no STARKComplete, no dem at all
+				[ -e $R/RTAComplete.txt ] && [ ! -e $DEM_STARKCOMPLETE ] && DEM_TODO=1
+				# If SampleSheet diff
+				[ ! -e $DEM_SAMPLESHEET ] || (( $(diff $RUN_SAMPLESHEET $DEM_SAMPLESHEET | head -n1 | wc -l ) )) && DEM_TODO=1
+
+
+				#[ -e $R/RTAComplete.txt ] && [ ! -e $DEM_STARKCOMPLETE ] && echo "#[INFO] Start Demultiplexing for RUN '$R'" && echo "" && \
+				(($DEM_TODO)) && echo "#[INFO] Start Demultiplexing for RUN '$R'" && echo "" && \
 				$SCRIPT_DIR/demultiplexing.sh --app="$APP" --run=$R --demultiplex_folder=$DEMULTIPLEXING_FOLDER --samplesheet=$RUN_SAMPLESHEET --threads=$THREADS_INPUT $DEM_PARAM $DEM_PARAM #|| { echo "#[ERROR] Demultiplexing FAILED"; exit 1; }
 
 				#echo $SCRIPT_DIR/demultiplexing.sh --app="$APP" --run=$R --demultiplex_folder=$DEMULTIPLEXING_FOLDER --samplesheet=$RUN_SAMPLESHEET --threads=$THREADS_INPUT $DEM_PARAM $DEM_PARAM #|| { echo "#[ERROR] Demultiplexing FAILED"; exit 1; }

@@ -585,6 +585,13 @@ fi;
 export HOWARD_CALCULATION_ANALYSIS
 
 
+# List of annotation fields to extract NOMEN annotation (default 'hgvs', see HOWARD docs)
+if [ -z "$HOWARD_NOMEN_FIELDS" ]; then
+	HOWARD_NOMEN_FIELDS="hgvs"
+fi;
+export HOWARD_NOMEN_FIELDS
+
+
 
 # PRIORITIZATION
 ###################
