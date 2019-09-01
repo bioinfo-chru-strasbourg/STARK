@@ -57,7 +57,7 @@ ENV TOOLS=$STARK_FOLDER/tools
 ENV DATA=$STARK_FOLDER/data
 ENV TOOL=$STARK_FOLDER/tool
 ENV DATABASES=$STARK_FOLDER/databases
-ENV YUM_INSTALL="gcc bc make wget perl-Switch perl-Digest-MD5 perl-Data-Dumper which zlib-devel zlib 	zlib2-devel zlib2 	bzip2-devel bzip2 	lzma-devel lzma 	xz-devel xz 	ncurses-devel 	unzip"
+ENV YUM_INSTALL="gcc bc make wget perl-Switch perl-Digest-MD5 perl-Data-Dumper which zlib-devel zlib 	zlib2-devel zlib2 	bzip2-devel bzip2 	lzma-devel lzma 	xz-devel xz 	ncurses-devel 	unzip crontabs at"
 ENV YUM_REMOVE="zlib-devel zlib2-devel bzip2-devel lzma-devel xz-devel ncurses-devel unzip gcc"
 
 
