@@ -57,8 +57,8 @@ ENV TOOLS=$STARK_FOLDER/tools
 ENV DATA=$STARK_FOLDER/data
 ENV TOOL=$STARK_FOLDER/tool
 ENV DATABASES=$STARK_FOLDER/databases
-ENV YUM_INSTALL="httpd httpd-tools php55w php55w-gd php55w-ldap php55w-mysql php55w-pdo php55w-pecl-apcu php55w-pgsql"
-ENV YUM_REMOVE="gcc"
+ENV YUM_INSTALL="gcc bc make wget perl-Switch perl-Digest-MD5 perl-Data-Dumper which zlib-devel zlib 	zlib2-devel zlib2 	bzip2-devel bzip2 	lzma-devel lzma 	xz-devel xz 	ncurses-devel 	unzip crontabs at"
+ENV YUM_REMOVE="zlib-devel zlib2-devel bzip2-devel lzma-devel xz-devel ncurses-devel unzip gcc"
 
 
 
@@ -75,28 +75,16 @@ ENV YUM_REMOVE="gcc"
 # STARK #
 #########
 
-#ENV TOOL_NAME=stark
-#ENV TOOL_VERSION=0.9.18d
-#ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
-#ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+ENV TOOL_NAME=stark
+ENV TOOL_VERSION=0.9.18d
+ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
+ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 
 #COPY . $TOOLS/$TOOL_NAME/$TOOL_VERSION/
 
-#RUN cp /tool/config/httpd/webtatic.repo /etc/yum.repos.d/webtatic.repo ;
+RUN cp /tool/config/httpd/webtatic.repo /etc/yum.repos.d/webtatic.repo ;
 
 
-
-
-##########
-# DOCKER #
-##########
-
-
-#RUN yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo && \
-#	yum install docker-ce docker-ce-cli containerd.io -y && \
-#	yum clean all ;
-
-RUN yum install docker -y && yum clean all
 
 
 ###############
@@ -109,55 +97,76 @@ RUN yum install docker -y && yum clean all
 #COPY conf/webtatic.repo /etc/yum.repos.d/webtatic.repo
 
 # install necessary packages
-RUN cp /tool/config/httpd/webtatic.repo /etc/yum.repos.d/webtatic.repo && \
-	yum upgrade -y && \
+RUN yum upgrade -y && \
 	yum updateinfo -y && \
-	yum install -y $YUM_INSTALL && \
+	yum install -y \
+	autoconf \
+	curl \
+	cyrus-sasl-lib \
+	gcc \
+	g++ \
+	httpd \
+	libc-dev \
+	libedit2 \
+	libxml2 \
+	make \
+	php55w \
+	php55w-gd \
+	php55w-ldap \
+	php55w-mysql \
+	php55w-pdo \
+	php55w-pecl-apcu \
+	php55w-pgsql \
+	pkg-config \
+	which \
+	xz-utils \
+	openssl-devel \
+	psmisc \
+	postfix \
+	ImageMagick \
+	ImageMagick-devel \
+	bc \
+	make \
+	wget \
+	ghostscript \
+	libgomp \
+	java \
+	enscript \
+	perl-Switch \
+	perl-Digest-MD5 \
+	perl-Data-Dumper \
+	which \
+	rsync \
+	wine \
+	zlib-devel zlib \
+    zlib2-devel zlib2 \
+    bzip2-devel bzip2 \
+    lzma-devel lzma \
+    xz-devel xz \
+    ncurses-devel \
+	$YUM_INSTALL \
+    && \
     yum clean all
 
 
+#################
+# JARVIS/VISION #
+#################
 
 
-################
-# TASK SPOOLER #
-################
-
-ENV TOOL_NAME=task-spooler
-ENV TOOL_VERSION=current
-ENV GIT=https://github.com/thomaspreece/task-spooler.git
+ENV TOOL_NAME=stark
+ENV TOOL_VERSION=0.9.18d
 ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 
-RUN git clone $GIT ; \
-    cd $TOOL_NAME ; \
-    make -j ; \
-    mkdir -p $DEST/bin ; \
-    cp ts $DEST/bin ; \
-    rm -rf .git ; \
-    cd ../ ;  \
-    rm -rf $TOOL_NAME ; \
-	mkdir /tmp/ts-tmp; \
-	chmod 0777 /tmp/ts-tmp; \
-	ln -s /tmp/ts-tmp/ /ts-tmp; \
-	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
-
-
-
-
-#################
-# STARK Sercice #
-#################
-
-
 # INSTALL
-RUN cp /tool/config/httpd/* /var/www/html/ && \
-	cp /tool/config/httpd/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh && \
-	cp /tool/config/httpd/httpd.conf /etc/httpd/conf/httpd.conf && \
-	cp /tool/config/httpd/php.ini /etc/php.ini && \
+RUN cp $TOOLS/$TOOL_NAME/$TOOL_VERSION/config/httpd/* /var/www/html/ && \
+	cp $TOOLS/$TOOL_NAME/$TOOL_VERSION/config/httpd/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh && \
+	cp $TOOLS/$TOOL_NAME/$TOOL_VERSION/config/httpd/httpd.conf /etc/httpd/conf/httpd.conf && \
+	cp $TOOLS/$TOOL_NAME/$TOOL_VERSION/config/httpd/php.ini /etc/php.ini && \
 	mkdir -p /var/www/html/tmp && \
-	mkdir /STARK/output && chmod -R 0777 /STARK/output && \
-	chmod -R 0777 /STARK/output && \
-	chmod -R 0777 /var/www/html;
+	chmod -R 0777 /var/www/html && \
+	chmod -R 0777 $TOOLS
 
 
 

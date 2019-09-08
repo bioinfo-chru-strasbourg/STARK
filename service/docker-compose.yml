@@ -1,0 +1,64 @@
+version: '3'
+
+
+services:
+
+    stark-base:
+        image: ${DOCKER_STARK_IMAGE_BASE}
+        build:
+            context: ../
+            dockerfile: Dockerfile
+
+
+    stark:
+        image: ${DOCKER_STARK_IMAGE}
+        build:
+            context: ../
+            dockerfile: Dockerfile
+        links:
+            - stark-base
+
+
+    stark-server-c:
+        image: stark-server-c
+        build:
+            context: ./server
+            dockerfile: Dockerfile
+        #env_file:
+        #    - .env
+        ports:
+            - ${DOCKER_STARK_SERVICE_PORT_RANGE}01:8000
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock
+            - analyses:/STARK/analyses
+        links:
+            - stark
+
+
+    stark-server-centos-c:
+        image: stark-server-centos-c
+        build:
+            context: ./server
+            dockerfile: centos.Dockerfile
+        #env_file:
+        #    - .env
+        ports:
+            - ${DOCKER_STARK_SERVICE_PORT_RANGE}02:8000
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock
+            - analyses:/STARK/analyses
+        links:
+            - stark
+
+
+#volumes:
+#    analyses: /Users/lebechea/Documents/NGS/DATA/ANALYSES:/STARK/analyses
+
+
+volumes:
+    analyses:
+        driver: local
+        driver_opts:
+            type: none
+            device: ${DOCKER_STARK_FOLDER_ANALYSES}
+            o: bind

@@ -18,8 +18,12 @@ $TS="$TS_ENV && $TS_BIN ";
 // INPUT JSON from GET POST or RAW POST
 $analysis_json=$_GET["analysis"].$_POST["analysis"].file_get_contents("php://input");
 
+// INPUT JSON from GET POST or RAW POST for DOCKER RUN
+$analysis_json_docker=$_GET["docker"].$_POST["docker"].file_get_contents("php://input");
+
 // INIT
 $jsonfile="";
+$jsonfile_docker="";
 
 
 // Create JSON file
@@ -38,6 +42,26 @@ if (is_file($analysis_json)) {
 	};
 };
 
+
+// Create JSON file
+if (is_file($analysis_json_docker)) {
+	#echo "JSON file: $analysis_json<br>";
+	$jsonfile_docker=$analysis_jsonfile;
+} else if($analysis_json_docker != "") {
+	#echo "JSON string: $analysis_json<br>";
+	$STARKAnalysis_dir="/tmp/STARKAnalysis.".rand();
+	mkdir($STARKAnalysis_dir);
+	$jsonfile_docker="$STARKAnalysis_dir/analysis.json";
+	$file = fopen($jsonfile, "w"); fwrite($file , $analysis_json_docker); fclose($file);
+	if (!is_file($jsonfile_docker)) {
+		echo "JSON file write failed";
+		exit(0);
+	};
+};
+
+
+print_r(getenv());
+exit(0)
 
 ##########
 # ACTION #
@@ -71,6 +95,13 @@ if(isset($_GET['id']) & isset($_GET['op'])) {
 // COMMAND STARK
 } else if($jsonfile != "") {
 	$command = 'bash -c "STARK --analysis='.$jsonfile.'"';
+	#echo "STARK Command $command";
+	#$command = base64_decode($command);
+	$id = $TS.' '.$command;
+	$out = exec($id);
+// COMMAND STARK for docker
+} else if($jsonfile != "") {
+	$command = 'bash -c "docker run stark --analysis='.$jsonfile.'"';
 	#echo "STARK Command $command";
 	#$command = base64_decode($command);
 	$id = $TS.' '.$command;

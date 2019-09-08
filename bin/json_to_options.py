@@ -13,9 +13,12 @@ def keyvalue(obj,key=""):
 			if hasattr(v, '__iter__'):
 				keyvalue(v,k)
 			else:
-				print '--%s=%s' % (k, '"'+str(v).strip()+'"')
+				if v == None or type(v) == bool:
+					print '--'+k
+				else:
+					print '--%s=%s' % (k, '"'+str(v).strip()+'"')
 	elif type(obj) == list:
-		list_concat=""
+		list_concat=None
 		for v in obj:
 			sep=""
 			if hasattr(v, '__iter__'):
@@ -23,9 +26,12 @@ def keyvalue(obj,key=""):
 			else:
 				if list_concat != "":
 					sep=","
-				list_concat=list_concat+sep+'"'+str(v).strip()+'"'
-		if list_concat != "":
-			print "--"+key+"="+list_concat
+				if v != None:
+					list_concat=list_concat+sep+str(v).strip()
+		if list_concat == None:
+			print "--"+key
+		else: #if list_concat != "":
+			print "--"+key+'="'+list_concat+'"'
 	else:
 		print obj
 
