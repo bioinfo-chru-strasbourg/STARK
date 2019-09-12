@@ -212,7 +212,7 @@ CAP_METRICS_OPTIONS?=$(CAP_METRICS_OPTIONS_CLIP_OVERLAPPING_READS)
 	#Create directory
 	mkdir -p $(@D)
 	cat $^ > $@
-	echo "#[$$(date)] BAM Metrics done" >> $@
+	echo "#[INFO] BAM Metrics done" >> $@
 	-rm -f $*.for_metrics_bed
 
 
@@ -256,7 +256,7 @@ CAP_METRICS_OPTIONS?=$(CAP_METRICS_OPTIONS_CLIP_OVERLAPPING_READS)
 	mkdir -p $(@D) ;
 	+$(CAP) --function=coverage --env=$(CONFIG_TOOLS) --ref=$$(cat $*.genome) --bam=$< --output=$(@D)/$(*F).amplicon_coverage --manifest=$*.manifest --threads=$(THREADS) $(CAP_METRICS_OPTIONS_CLIP_OVERLAPPING_READS) --bedtools=$(BEDTOOLS)/bedtools --verbose --tmp=$(CAP_TMP_FOLDER) 1>$(@D)/$(*F).amplicon_coverage.log 2>$(@D)/$(*F).amplicon_coverage.err;
 	#cat $(@D)/$(*F).amplicon_coverage.log $(@D)/$(*F).amplicon_coverage.err;
-	echo "#[$$(date)] BAM Amplicon Coverage Metrics done" > $@;
+	echo "#[INFO] BAM Amplicon Coverage Metrics done" > $@;
 
 
 
@@ -282,9 +282,9 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 				-L $*.withoutheader.for_metrics_bed.gatk.bed; \
 		fi; \
 		rm $*.withoutheader.for_metrics_bed.gatk.bed; \
-		echo "#[$$(date)] BAM GATK Metrics done" > $@; \
+		echo "#[INFO] BAM GATK Metrics done" > $@; \
 	else \
-		echo "#[$$(date)] BAM GATK not done because BAM_METRICS=0" > $@; \
+		echo "#[INFO] BAM GATK not done because BAM_METRICS=0" > $@; \
 	fi;
 
 
@@ -348,7 +348,7 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 	# Create directory ;
 	mkdir -p $(@D);
 	cat $^ > $@
-	echo "#[$$(date)] SAMTOOLS Metrics done" >> $@
+	echo "#[INFO] SAMTOOLS Metrics done" >> $@
 
 
 %.bam.metrics/metrics.samtools.flagstat: %.bam %.bam.bai
@@ -796,18 +796,18 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 					#bedfile_name=$$( basename $$one_bed | sed "s/\.genes$$//" ); \
 					bedfile_name=$$( basename $$one_bed ); \
 					$(NGSscripts)/genesCoverage.sh -f $*.bam -b $$one_bed -c "$(COVERAGE_CRITERIA)" --coverage-bases=$(@D)/$(*F).$$bedfile_name.depthbed --dp_fail=$(MINIMUM_DEPTH) --dp_warn=$(EXPECTED_DEPTH) --dp_threshold=$(DEPTH_COVERAGE_THRESHOLD) -n $(NB_BASES_AROUND) -t $(BEDTOOLS)/bedtools -s $(SAMTOOLS) --threads=$(THREADS) -o $(@D)/$(*F).$$bedfile_name; \
-					echo "#[$$(date)] BAM Metrics on Regions coverage with $$bedfile_name BED file done" >> $@; \
+					echo "#[INFO] BAM Metrics on Regions coverage with $$bedfile_name BED file done" >> $@; \
 				else \
-					echo "#[$$(date)] BAM Metrics on Regions coverage with $$bedfile_name BED file FAILED" >> $@; \
+					echo "#[INFO] BAM Metrics on Regions coverage with $$bedfile_name BED file FAILED" >> $@; \
 				fi; \
 			done; \
 		else \
-			echo "#[$$(date)] BAM Metrics on Regions coverage not generate because no BED list" >> $@; \
+			echo "#[INFO] BAM Metrics on Regions coverage not generate because no BED list" >> $@; \
 		fi; \
 	else \
-		echo "#[$$(date)] BAM Metrics on Regions coverage not done because BAM_METRICS=0" >> $@; \
+		echo "#[INFO] BAM Metrics on Regions coverage not done because BAM_METRICS=0" >> $@; \
 	fi;
-	if [ ! -e $@ ]; then echo "#[$$(date)] BAM Metrics on Regions coverage FAILED" > $@; fi;
+	if [ ! -e $@ ]; then echo "#[INFO] BAM Metrics on Regions coverage FAILED" > $@; fi;
 
 
 
@@ -860,7 +860,7 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 		echo "#[ERROR] No $$(cat $@.sample_pattern).R1.fastq.gz or $$(cat $@.sample_pattern).R2.fastq.gz" >>$(@D)/$(*F).bam_check; \
 	fi;
 	cat $(@D)/$(*F).bam_check;
-	echo "#[$$(date)] BAM Check done" > $@ ;
+	echo "#[INFO] BAM Check done" > $@ ;
 	#-rm -f $@.sample_pattern
 
 
@@ -905,7 +905,7 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 		echo "#[ERROR] No $$(cat $@.sample_pattern).unaligned.bam or $$(cat $@.sample_pattern).unaligned.bam.bai" >>$(@D)/$(*F).bam_check; \
 	fi;
 	cat $(@D)/$(*F).bam_check;
-	echo "#[$$(date)] BAM Check done" > $@ ;
+	echo "#[INFO] BAM Check done" > $@ ;
 	-rm $@.sample_pattern
 
 

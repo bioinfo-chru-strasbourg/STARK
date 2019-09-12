@@ -6,26 +6,36 @@ services:
     stark-base:
         image: ${DOCKER_STARK_IMAGE_BASE}
         build:
-            context: ../
-            dockerfile: Dockerfile
+            context: ${DOCKER_STARK_CONTEXT}
+            dockerfile: base-Dockerfile
 
 
     stark:
         image: ${DOCKER_STARK_IMAGE}
         build:
-            context: ../
+            context: ${DOCKER_STARK_CONTEXT}
             dockerfile: Dockerfile
         links:
             - stark-base
 
 
+    stark-databases:
+        image: ${DOCKER_STARK_IMAGE}
+        entrypoint: /tool/toolbox/get_databases.sh
+        command: --build
+        volumes:
+            - databases:/STARK/databases
+        links:
+            - stark
+
+
     stark-server-c:
         image: stark-server-c
         build:
-            context: ./server
+            context: ${DOCKER_STARK_CONTEXT}service/server
             dockerfile: Dockerfile
-        #env_file:
-        #    - .env
+        env_file:
+            - .env
         ports:
             - ${DOCKER_STARK_SERVICE_PORT_RANGE}01:8000
         volumes:
@@ -33,15 +43,16 @@ services:
             - analyses:/STARK/analyses
         links:
             - stark
+            - stark-databases
 
 
     stark-server-centos-c:
         image: stark-server-centos-c
         build:
-            context: ./server
+            context: ${DOCKER_STARK_CONTEXT}service/server
             dockerfile: centos.Dockerfile
-        #env_file:
-        #    - .env
+        env_file:
+            - .env
         ports:
             - ${DOCKER_STARK_SERVICE_PORT_RANGE}02:8000
         volumes:
@@ -49,6 +60,8 @@ services:
             - analyses:/STARK/analyses
         links:
             - stark
+            - stark-databases
+
 
 
 #volumes:
@@ -61,4 +74,10 @@ volumes:
         driver_opts:
             type: none
             device: ${DOCKER_STARK_FOLDER_ANALYSES}
+            o: bind
+    databases:
+        driver: local
+        driver_opts:
+            type: none
+            device: ${DOCKER_STARK_FOLDER_DATABASES}
             o: bind

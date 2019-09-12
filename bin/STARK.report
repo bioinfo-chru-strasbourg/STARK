@@ -175,6 +175,9 @@ fi
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
+#echo "test"
+#exit 0
+
 # APPLICATION
 ###############
 
@@ -729,7 +732,12 @@ BED="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.bed"
 MANIFEST="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.manifest"
 
 DESIGN_NUMBER_REGIONS=$(grep -vc "^#" $BED)
-DESIGN_NUMBER_BASES=$(cat $BED | awk '{for(i=$2;i<$3;i++) print $1"\t"i}' | sort -u | wc -l)
+#DESIGN_NUMBER_BASES=$(cat $BED | awk '{for(i=$2;i<$3;i++) print $1"\t"i}' | sort -u | wc -l)
+#$BEDTOOLS/bedtools sort -i $GENES_PANEL_FILE | $BEDTOOLS/bedtools merge -i -
+DESIGN_NUMBER_BASES=$($BEDTOOLS/bedtools sort -i $BED | $BEDTOOLS/bedtools merge -i - > $TMP_REPORT/merge_all_genes.bed; $BEDTOOLS/bedtools coverage -a $TMP_REPORT/merge_all_genes.bed  -b $TMP_REPORT/merge_all_genes.bed | awk -F '\t' 'BEGIN{sum = 0} {sum += $6} END {print sum}'; rm $TMP_REPORT/merge_all_genes.bed; )
+#echo $DESIGN_NUMBER_BASES
+GENES_BASES_HTML=$(echo $GENES_BASES_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
+
 
 # GENE PANEL
 LIST_GENE_PANEL="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.list.genes"
@@ -789,6 +797,8 @@ echo '
 # SUMMARY
 ##############
 
+(($VERBOSE)) && echo "#[INFO] SUMMARY section"
+
 HTMLFILE_SUMMARY=$HTMLFILE".summary"
 
 SECTION_NAME="Results Summary"
@@ -818,8 +828,18 @@ Q30_HTML=$(grep "^Q30" $SEQUENCING_Q30 | cut -f2)
 # GENES count
 GENES_NUMBER=$(cd $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/; cat $(cat $LIST_GENE_PANEL) | cut -f5 | sort -u | wc -l)
 
-GENES_BASES_NUMBER=$(cd $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/; cat $(cat $LIST_GENE_PANEL) | awk '{for(i=$2;i<$3;i++) print $1"\t"i}' | sort -u | wc -l)
+# BASES count
+#cat $LIST_GENE_PANEL | sed -z 's/\n/ -i /g' | sed 's/-i $//gi'
+#cd $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/;
+#cat $(cat $LIST_GENE_PANEL) | $BEDTOOLS/bedtools sort -i - | $BEDTOOLS/bedtools merge -i - | head
+#exit 0
+
+
+#GENES_BASES_NUMBER=$(cd $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/; $BEDTOOLS/bedtools merge -i $(cat $LIST_GENE_PANEL | sed -z 's/\n/ -i /g' | sed 's/-i $//gi') > $TMP_REPORT/merge_all_genes.bed; $BEDTOOLS/bedtools coverage -a $TMP_REPORT/merge_all_genes.bed  -b $TMP_REPORT/merge_all_genes.bed | awk -F '\t' 'BEGIN{sum = 0} {sum += $6} END {print sum}'; rm $TMP_REPORT/merge_all_genes.bed; )
+GENES_BASES_NUMBER=$(cd $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/; cat $(cat $LIST_GENE_PANEL) | $BEDTOOLS/bedtools sort -i - | $BEDTOOLS/bedtools merge -i - > $TMP_REPORT/merge_all_genes.bed; $BEDTOOLS/bedtools coverage -a $TMP_REPORT/merge_all_genes.bed  -b $TMP_REPORT/merge_all_genes.bed | awk -F '\t' 'BEGIN{sum = 0} {sum += $6} END {print sum}'; rm $TMP_REPORT/merge_all_genes.bed; )
 GENES_BASES_HTML=$(echo $GENES_BASES_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
+#echo $GENES_BASES_NUMBER
+
 
 # VARIANTS count
 FINAL_VCF="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.reports/$SAMPLE.final.vcf"
@@ -995,7 +1015,6 @@ for ALIGNER in $ALIGNERS; do
 	ON_TARGET_READS=$(cat $DESIGN_ON_TARGET)
 	ON_TARGET_READS_HTML=$(echo $ON_TARGET_READS | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
 	ON_TARGET_READS_PERCENT=$(awk 'BEGIN{printf("%.2f\n",('$ON_TARGET_READS'/'$TOTAL_SEQUENCES')*100)}')
-
 
 	echo '
 
@@ -1173,50 +1192,67 @@ for ALIGNER in $ALIGNERS; do
 			GENES_PANEL_REGIONS_NUMBER_HTML=$(echo $GENES_PANEL_REGIONS_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
 			[ "$GENES_PANEL" == "$TARGET_DESIGN_NAME" ] && GENES_PANEL_GENES_NUMBER=$GENES_PANEL_REGIONS_NUMBER && GENES_PANEL_GENES_NUMBER_HTML=$GENES_PANEL_REGIONS_NUMBER_HTML
 
-
-			GENES_PANEL_BASES_NUMBER=$(cat $GENES_PANEL_FILE | grep -v "^#" | grep -v "^@" | awk '{for(i=$2;i<$3;i++) print $1"\t"i}' | sort -u | wc -l)
+			#GENES_PANEL_BASES_NUMBER=$(cd $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/; $BEDTOOLS/bedtools merge -i $GENES_PANEL_FILE > $TMP_REPORT/merge_genes.bed; $BEDTOOLS/bedtools coverage -a $TMP_REPORT/merge_genes.bed  -b $TMP_REPORT/merge_genes.bed | awk -F '\t' '{sum += $6} END {print sum}'; rm $TMP_REPORT/merge_genes.bed; )
+			#GENES_BASES_NUMBER=$(cd $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/; cat $(cat $LIST_GENE_PANEL) | $BEDTOOLS/bedtools sort -i - | $BEDTOOLS/bedtools merge -i - > $TMP_REPORT/merge_all_genes.bed; $BEDTOOLS/bedtools coverage -a $TMP_REPORT/merge_all_genes.bed  -b $TMP_REPORT/merge_all_genes.bed | awk -F '\t' 'BEGIN{sum = 0} {sum += $6} END {print sum}'; rm $TMP_REPORT/merge_all_genes.bed; )
+			#GENES_PANEL_BASES_NUMBER=$($BEDTOOLS/bedtools merge -i $GENES_PANEL_FILE > $TMP_REPORT/merge_genes.bed; $BEDTOOLS/bedtools coverage -a $TMP_REPORT/merge_genes.bed  -b $TMP_REPORT/merge_genes.bed | awk -F '\t' 'BEGIN{sum = 0} {sum += $6} END {print sum}'; rm $TMP_REPORT/merge_genes.bed; )
+			GENES_PANEL_BASES_NUMBER=$($BEDTOOLS/bedtools sort -i $GENES_PANEL_FILE | $BEDTOOLS/bedtools merge -i - > $TMP_REPORT/merge_genes.bed; $BEDTOOLS/bedtools coverage -a $TMP_REPORT/merge_genes.bed  -b $TMP_REPORT/merge_genes.bed | awk -F '\t' 'BEGIN{sum = 0} {sum += $6} END {print sum}'; rm $TMP_REPORT/merge_genes.bed; )
 			GENES_PANEL_BASES_NUMBER_HTML=$(echo $GENES_PANEL_BASES_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
 
 			GENES_PANEL_ALIGNER=$ALIGNER
 			GENES_PANEL_ALIGNER_HTML=$GENES_PANEL_ALIGNER
 
 			# GENES PANEL SEQUENCING PANEL COVERAGE
-			GENES_PANEL_SEQUENCING_PANEL_COVERAGE=$(grep "^"$SEQUENCING_DEPTH"X" $GENES_PANEL_DEPTHBED_COVS | cut -f4)
+			GENES_PANEL_SEQUENCING_PANEL_COVERAGE=$( echo "scale=50; "$(echo $(grep "^"$SEQUENCING_DEPTH"X" $GENES_PANEL_DEPTHBED_COVS | cut -f4) | sed -E 's/([+-]?[0-9.]+)[eE]\+?(-?)([0-9]+)/(\1*10^\2\3)/g') | bc)
+			[ "$GENES_PANEL_SEQUENCING_PANEL_COVERAGE" == "" ] && GENES_PANEL_SEQUENCING_PANEL_COVERAGE=0
 			GENES_PANEL_SEQUENCING_PANEL_COVERAGE_HTML=$(awk 'BEGIN{printf("%.1f\n",'$GENES_PANEL_SEQUENCING_PANEL_COVERAGE'*100)}')"%"
 			#GENES_PANEL_SEQUENCING_PANEL_COVERAGE_MESSAGE="$GENES_PANEL_SEQUENCING_PANEL_COVERAGE"
 			[ $GENES_PANEL_SEQUENCING_PANEL_COVERAGE_HTML == "100.0%" ] && GENES_PANEL_SEQUENCING_PANEL_COVERAGE_HTML="100%"
-			(( $(echo "$GENES_PANEL_SEQUENCING_PANEL_COVERAGE >= $SEQUENCING_COVERAGE_THRESHOLD" |bc -l) )) && GENES_PANEL_SEQUENCING_PANEL_COVERAGE_FLAG=$PASS_FLAG_ICON || GENES_PANEL_SEQUENCING_PANEL_COVERAGE_FLAG=$FAIL_FLAG_ICON
+			(( $(echo "$GENES_PANEL_SEQUENCING_PANEL_COVERAGE >= $SEQUENCING_COVERAGE_THRESHOLD" | bc -l) )) && GENES_PANEL_SEQUENCING_PANEL_COVERAGE_FLAG=$PASS_FLAG_ICON || GENES_PANEL_SEQUENCING_PANEL_COVERAGE_FLAG=$FAIL_FLAG_ICON
 
 			# GENES PANEL MINIMUM PANEL COVERAGE
-			GENES_PANEL_MINIMUM_PANEL_COVERAGE=$(grep "^"$MINIMUM_DEPTH"X" $GENES_PANEL_DEPTHBED_COVS | cut -f4)
+			GENES_PANEL_MINIMUM_PANEL_COVERAGE=$( echo "scale=50; "$(echo $(grep "^"$MINIMUM_DEPTH"X" $GENES_PANEL_DEPTHBED_COVS | cut -f4) | sed -E 's/([+-]?[0-9.]+)[eE]\+?(-?)([0-9]+)/(\1*10^\2\3)/g') | bc)
+			[ "$GENES_PANEL_MINIMUM_PANEL_COVERAGE" == "" ] && GENES_PANEL_MINIMUM_PANEL_COVERAGE=0
 			GENES_PANEL_MINIMUM_PANEL_COVERAGE_HTML=$(awk 'BEGIN{printf("%.1f\n",'$GENES_PANEL_MINIMUM_PANEL_COVERAGE'*100)}')"%"
 			#GENES_PANEL_MINIMUM_PANEL_COVERAGE_MESSAGE="$GENES_PANEL_MINIMUM_PANEL_COVERAGE"
 			[ $GENES_PANEL_MINIMUM_PANEL_COVERAGE_HTML == "100.0%" ] && GENES_PANEL_MINIMUM_PANEL_COVERAGE_HTML="100%"
 			(( $(echo "$GENES_PANEL_MINIMUM_PANEL_COVERAGE >= $DEPTH_COVERAGE_THRESHOLD" |bc -l) )) && GENES_PANEL_MINIMUM_PANEL_COVERAGE_FLAG=$PASS_FLAG_ICON || GENES_PANEL_MINIMUM_PANEL_COVERAGE_FLAG=$FAIL_FLAG_ICON
 
 			# GENES PANEL EXPECTED PANEL COVERAGE
-			GENES_PANEL_EXPECTED_PANEL_COVERAGE=$(grep "^"$EXPECTED_DEPTH"X" $GENES_PANEL_DEPTHBED_COVS | cut -f4)
+			GENES_PANEL_EXPECTED_PANEL_COVERAGE=$( echo "scale=50; "$(echo $(grep "^"$EXPECTED_DEPTH"X" $GENES_PANEL_DEPTHBED_COVS | cut -f4) | sed -E 's/([+-]?[0-9.]+)[eE]\+?(-?)([0-9]+)/(\1*10^\2\3)/g') | bc)
+			[ "$GENES_PANEL_EXPECTED_PANEL_COVERAGE" == "" ] && GENES_PANEL_EXPECTED_PANEL_COVERAGE=0
 			GENES_PANEL_EXPECTED_PANEL_COVERAGE_HTML=$(awk 'BEGIN{printf("%.1f\n",'$GENES_PANEL_EXPECTED_PANEL_COVERAGE'*100)}')"%"
 			#GENES_PANEL_EXPECTED_PANEL_COVERAGE_MESSAGE="$GENES_PANEL_EXPECTED_PANEL_COVERAGE"
 			[ $GENES_PANEL_EXPECTED_PANEL_COVERAGE_HTML == "100.0%" ] && GENES_PANEL_EXPECTED_PANEL_COVERAGE_HTML="100%"
 			(( $(echo "$GENES_PANEL_EXPECTED_PANEL_COVERAGE >= $DEPTH_COVERAGE_THRESHOLD" |bc -l) )) && GENES_PANEL_EXPECTED_PANEL_COVERAGE_FLAG=$PASS_FLAG_ICON || GENES_PANEL_EXPECTED_PANEL_COVERAGE_FLAG=$WARN_FLAG_ICON
 
+			# GENES PANEL MISS GENES COVERAGE
+			GENES_PANEL_ALL_GENES_NUMBER=$(cat $GENES_PANEL_GENES_MSG | grep -v "^#" -c)
+			GENES_PANEL_ALL_GENES_NUMBER_HTML=$GENES_PANEL_ALL_GENES_NUMBER
+			GENES_PANEL_MISS_REGIONS_NUMBER=$(echo "$GENES_PANEL_GENES_NUMBER - $GENES_PANEL_ALL_GENES_NUMBER" | bc)
+			GENES_PANEL_MISS_REGIONS_NUMBER_HTML=""
+			(($GENES_PANEL_MISS_REGIONS_NUMBER)) && GENES_PANEL_MISS_REGIONS_NUMBER_HTML="<br><span '$FAIL_FLAG_ICON'>$GENES_PANEL_MISS_REGIONS_NUMBER missing genes</span>"
+
+			#GENES_PANEL_FAIL_GENES_NUMBER_MESSAGE="$GENES_PANEL_FAIL_GENES_NUMBER"
+			#(( $GENES_PANEL_FAIL_GENES_NUMBER )) && GENES_PANEL_FAIL_GENES_NUMBER_FLAG=$FAIL_FLAG_ICON || GENES_PANEL_FAIL_GENES_NUMBER_FLAG=$PASS_FLAG_ICON
+
 			# GENES PANEL FAIL GENES COVERAGE
-			GENES_PANEL_FAIL_GENES_NUMBER=$(cat $GENES_PANEL_GENES_MSG | cut -f2 | grep "^FAIL$" -c)
+			#GENES_PANEL_FAIL_GENES_NUMBER=$(cat $GENES_PANEL_GENES_MSG | cut -f2 | grep "^FAIL$" -c)
+			GENES_PANEL_FAIL_GENES_NUMBER=$(echo $(cat $GENES_PANEL_GENES_MSG | cut -f2 | grep "^FAIL$" -c)" + "$GENES_PANEL_MISS_REGIONS_NUMBER | bc)
 			GENES_PANEL_FAIL_GENES_NUMBER_HTML=$GENES_PANEL_FAIL_GENES_NUMBER
 			#GENES_PANEL_FAIL_GENES_NUMBER_MESSAGE="$GENES_PANEL_FAIL_GENES_NUMBER"
 			(( $GENES_PANEL_FAIL_GENES_NUMBER )) && GENES_PANEL_FAIL_GENES_NUMBER_FLAG=$FAIL_FLAG_ICON || GENES_PANEL_FAIL_GENES_NUMBER_FLAG=$PASS_FLAG_ICON
 
+
 			# GENES PANEL WARN GENES COVERAGE
 			#GENES_PANEL_WARN_GENES_NUMBER=$(cat $GENES_PANEL_GENES_MSG | cut -f2 | grep "^WARN$" -c)
-			GENES_PANEL_WARN_GENES_NUMBER=$(cat $GENES_PANEL_GENES_MSG | cut -f2 | grep -e "^WARN$" -e "^FAIL$" -c) #
+			#GENES_PANEL_WARN_GENES_NUMBER=$(cat $GENES_PANEL_GENES_MSG | cut -f2 | grep -e "^WARN$" -e "^FAIL$" -c) #
+			GENES_PANEL_WARN_GENES_NUMBER=$(echo $(cat $GENES_PANEL_GENES_MSG | cut -f2 | grep -e "^WARN$" -e "^FAIL$" -c)" + "$GENES_PANEL_MISS_REGIONS_NUMBER | bc)
 			GENES_PANEL_WARN_GENES_NUMBER_HTML=$GENES_PANEL_WARN_GENES_NUMBER
 			#GENES_PANEL_WARN_GENES_NUMBER_MESSAGE="$GENES_PANEL_WARN_GENES_NUMBER"
 			(( $GENES_PANEL_WARN_GENES_NUMBER )) && GENES_PANEL_WARN_GENES_NUMBER_FLAG=$WARN_FLAG_ICON || GENES_PANEL_WARN_GENES_NUMBER_FLAG=$PASS_FLAG_ICON
 
 			# BREAK
 			(( $(echo "$GENES_PANEL_NUM >= 2" |bc -l) )) && GENES_PANEL_BREAK=$PAGE_BREAK_BEFORE || GENES_PANEL_BREAK=""
-
 
 
 			echo '
@@ -1247,9 +1283,10 @@ for ALIGNER in $ALIGNERS; do
 									<p class="mbr-content-text mbr-fonts-style display-7">
 										'$GENES_PANEL_BASES_NUMBER_HTML' bases
 										<br>
-										'$GENES_PANEL_REGIONS_NUMBER_HTML' '$GENE_PANEL_TYPE_NAME_HTML's
+										'$GENES_PANEL_REGIONS_NUMBER_HTML' Regions
 										<br>
 										'$GENES_PANEL_ALIGNER_HTML' aligner
+										'$GENES_PANEL_MISS_REGIONS_NUMBER_HTML'
 									</p>
 								</div>
 							</div>
@@ -1381,7 +1418,6 @@ for ALIGNER in $ALIGNERS; do
 
 	done;
 
-
 done;
 
 
@@ -1462,7 +1498,6 @@ for ALIGNER in $ALIGNERS; do
 		GENE_PANEL_NAME_HTML="$GENES_PANEL_NAME"
 		GENE_PANEL_TYPE_HTML="Target<br>Regions"
 
-
 		#(($DEBUG)) && cat $GENES_PANEL_DEPTHBED_COVS
 
 		# GENES PANEL INFO
@@ -1473,7 +1508,10 @@ for ALIGNER in $ALIGNERS; do
 		GENES_PANEL_REGIONS_NUMBER_HTML=$(echo $GENES_PANEL_REGIONS_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
 		#[ "$GENES_PANEL_NAME" == "Target Design" ] && GENES_PANEL_GENES_NUMBER=$GENES_PANEL_REGIONS_NUMBER && GENES_PANEL_GENES_NUMBER_HTML=$GENES_PANEL_REGIONS_NUMBER_HTML
 
-		GENES_PANEL_BASES_NUMBER=$(cat $GENES_PANEL_FILE | grep -v "^#" | grep -v "^@" | awk '{for(i=$2;i<$3;i++) print $1"\t"i}' | sort -u | wc -l)
+
+		#GENES_PANEL_BASES_NUMBER=$(cd $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/; $BEDTOOLS/bedtools merge -i $GENES_PANEL_FILE > $TMP_REPORT/merge_genes.bed; $BEDTOOLS/bedtools coverage -a $TMP_REPORT/merge_genes.bed  -b $TMP_REPORT/merge_genes.bed | awk -F '\t' '{sum += $6} END {print sum}'; rm $TMP_REPORT/merge_genes.bed; )
+		GENES_PANEL_BASES_NUMBER=$($BEDTOOLS/bedtools sort -i $GENES_PANEL_FILE | $BEDTOOLS/bedtools merge -i - > $TMP_REPORT/merge_genes.bed; $BEDTOOLS/bedtools coverage -a $TMP_REPORT/merge_genes.bed  -b $TMP_REPORT/merge_genes.bed | awk -F '\t' 'BEGIN{sum = 0} {sum += $6} END {print sum}'; rm $TMP_REPORT/merge_genes.bed; )
+		#GENES_PANEL_BASES_NUMBER=$(cat $GENES_PANEL_FILE | grep -v "^#" | grep -v "^@" | awk '{for(i=$2;i<$3;i++) print $1"\t"i}' | sort -u | wc -l)
 		GENES_PANEL_BASES_NUMBER_HTML=$(echo $GENES_PANEL_BASES_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
 
 		GENES_PANEL_ALIGNER=$ALIGNER
@@ -1803,7 +1841,11 @@ for PIPELINE in $PIPELINES; do
 	VCF_BCFTOOLS_STATS="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$PIPELINE.vcf.metrics/metrics.bcftools.stats"
 
 	VARIANTS_PIPELINE_NUMBER=$(grep "number of records:" $VCF_BCFTOOLS_STATS | cut -f4)
-	VARIANTS_PIPELINE_PERCENT=$(awk 'BEGIN{printf("%.2f\n",('$VARIANTS_PIPELINE_NUMBER'/'$VARIANT_NUMBER')*100)}')"%"
+	if [ $VARIANT_NUMBER == "0" ]; then
+		VARIANTS_PIPELINE_PERCENT="0%"
+	else
+		VARIANTS_PIPELINE_PERCENT=$(awk 'BEGIN{printf("%.2f\n",('$VARIANTS_PIPELINE_NUMBER'/'$VARIANT_NUMBER')*100)}')"%"
+	fi;
 
 	echo '
 
@@ -1919,7 +1961,10 @@ for GENES_PANEL in "Target Design" $(cat $LIST_GENES_PANEL); do
 	GENES_PANEL_REGIONS_NUMBER_HTML=$(echo $GENES_PANEL_REGIONS_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
 	[ "$GENES_PANEL" == "Target Design" ] && GENES_PANEL_GENES_NUMBER=$GENES_PANEL_REGIONS_NUMBER && GENES_PANEL_GENES_NUMBER_HTML=$GENES_PANEL_REGIONS_NUMBER_HTML
 
-	GENES_PANEL_BASES_NUMBER=$(cat $GENES_PANEL_FILE | grep -v "^#" | grep -v "^@" | awk '{for(i=$2;i<$3;i++) print $1"\t"i}' | sort -u | wc -l)
+
+	#GENES_PANEL_BASES_NUMBER=$(cd $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/; $BEDTOOLS/bedtools merge -i $GENES_PANEL_FILE > $TMP_REPORT/merge_genes.bed; $BEDTOOLS/bedtools coverage -a $TMP_REPORT/merge_genes.bed  -b $TMP_REPORT/merge_genes.bed | awk -F '\t' '{sum += $6} END {print sum}'; rm $TMP_REPORT/merge_genes.bed; )
+	GENES_PANEL_BASES_NUMBER=$($BEDTOOLS/bedtools sort -i $GENES_PANEL_FILE | $BEDTOOLS/bedtools merge -i - > $TMP_REPORT/merge_genes.bed; $BEDTOOLS/bedtools coverage -a $TMP_REPORT/merge_genes.bed  -b $TMP_REPORT/merge_genes.bed | awk -F '\t' 'BEGIN{sum = 0} {sum += $6} END {print sum}'; rm $TMP_REPORT/merge_genes.bed; )
+	#GENES_PANEL_BASES_NUMBER=$(cat $GENES_PANEL_FILE | grep -v "^#" | grep -v "^@" | awk '{for(i=$2;i<$3;i++) print $1"\t"i}' | sort -u | wc -l)
 	GENES_PANEL_BASES_NUMBER_HTML=$(echo $GENES_PANEL_BASES_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
 
 	#GENES_PANEL_ALIGNER=$ALIGNER

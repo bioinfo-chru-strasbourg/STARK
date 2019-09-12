@@ -13,6 +13,22 @@ import string
 import random
 
 
+
+# VARIABLES
+if 'DOCKER_STARK_IMAGE' in os.environ:
+    docker_stark=os.environ['DOCKER_STARK_IMAGE']
+else:
+    docker_stark="stark"
+
+if 'TS' in os.environ:
+    ts=os.environ['TS']
+else:
+    ts=""
+
+
+
+
+
 # DEF
 
 def randomStringDigits(stringLength=6):
@@ -85,14 +101,20 @@ def stark_launch():
             #print docker_stark_folder_basename
             docker_mount+=" -v "+os.environ[docker_stark_folder]+":"+"/STARK/"+docker_stark_folder_basename
         #print docker_stark_folder
+    if 'DOCKER_STARK_FOLDER_MOUNT' in os.environ:
+        docker_mount+=" " + DOCKER_STARK_FOLDER_MOUNT + " "
     #print docker_mount
+
+
 
     docker_env=""
     if 'DOCKER_STARK_ENV' in os.environ:
         docker_env=os.environ['DOCKER_STARK_ENV']
 
+    analysisIDNAME='STARK.' + analysesID + '.' + analysesNAME
+
     # Docker name
-    docker_name=" --name " + analysesID + '.' + analysesNAME + " "
+    docker_name=" --name " + analysisIDNAME + " "
 
     # docker parameters
     docker_parameters=' --rm ' + docker_mount + ' ' + docker_env + ' ' + docker_name + ' '
@@ -107,15 +129,22 @@ def stark_launch():
     f.write(json_dump)
     f.close()
 
+
+    # TS
+    if ts != "":
+        ts_cmd=ts + ' -L ' + analysisIDNAME
+    else:
+        ts_cmd=""
+
     # Prepare and Launch TS Docker run command
-    myCmd = 'ts -L ' + analysesID + '.' + analysesNAME + ' docker run ' + docker_parameters + ' stark --analysis_name=' + analysesNAME + ' --analysis=' + analysisFILE #+ analysisLOGERR_PARAM
+    myCmd = ts_cmd + ' docker run ' + docker_parameters + ' ' + docker_stark + ' --analysis_name=' + analysesNAME + ' --analysis=' + analysisFILE #+ analysisLOGERR_PARAM
     print myCmd
     getCmd = subprocess.check_output(myCmd, shell=True);
     #return "Hello world from Distelli & Docker!"+json+getCmd
     if getCmd:
         return analysesID + '.' + analysesNAME, 200
     else:
-        return "KO"
+        return "KO", 400
 
 
 

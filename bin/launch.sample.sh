@@ -1120,7 +1120,9 @@ for RUU in $RUN_UNIQ; do
 						echo "#[INFO] Copy BED file."
 						#cp -p $B $RUN_SAMPLE_DIR/$S.bed;
 						#cp -p $B $RUN_SAMPLE_DIR/$S.metrics.bed;
-						$COMMAND_COPY $B $RUN_SAMPLE_DIR/$S.bed;
+						#$COMMAND_COPY $B $RUN_SAMPLE_DIR/$S.bed;
+						$BEDTOOLS/bedtools sort -i $B | $BEDTOOLS/bedtools merge -i - > $RUN_SAMPLE_DIR/$S.bed;
+						touch $RUN_SAMPLE_DIR/$S.bed -r $B;
 						$COMMAND_COPY $B $RUN_SAMPLE_DIR/$S.metrics.bed;
 						touch $RUN_SAMPLE_DIR/$S.manifest;
 						touch $RUN_SAMPLE_DIR/$S.manifest -r $B;
@@ -1178,7 +1180,8 @@ for RUU in $RUN_UNIQ; do
 					[ "${G_ONE##*.}" != "genes" ] && G_ONE_TARGET=$(basename $G_ONE)".genes" || G_ONE_TARGET=$(basename $G_ONE);
 					# remove Sample name (mainly in case of relauch)
 					G_ONE_TARGET=$(echo $G_ONE_TARGET | sed "s/$S\.//gi")
-					$COMMAND_COPY $G_ONE $RUN_SAMPLE_DIR/$S.$G_ONE_TARGET;
+					#$COMMAND_COPY $G_ONE $RUN_SAMPLE_DIR/$S.$G_ONE_TARGET;
+					$BEDTOOLS/bedtools sort -i $G_ONE | $BEDTOOLS/bedtools merge -i - > $RUN_SAMPLE_DIR/$S.$G_ONE_TARGET;
 					echo $S.$G_ONE_TARGET >> $BEDFILE_GENES_LIST_ONE
 				done;
 			elif [ -s $B ] && [ "$B" != "" ]; then
@@ -1190,10 +1193,12 @@ for RUU in $RUN_UNIQ; do
 				BEDFILE_GENES_ONE=$RUN_SAMPLE_DIR/$S.from_design.genes
 
 				if [[ $B =~ .bed$ ]]; then
-					cut -f1,2,3 $B > $BEDFILE_GENES_INTERMEDIATE ;
+					#cut -f1,2,3 $B > $BEDFILE_GENES_INTERMEDIATE;
+					$BEDTOOLS/bedtools sort -i $B | $BEDTOOLS/bedtools merge -i - | cut -f1,2,3 > $BEDFILE_GENES_INTERMEDIATE;
 				else
 					$CAP_ManifestToBED --input $B --output $BEDFILE_GENES_INTERMEDIATE.tmp --output_type "region" --type=PCR;
-					cut -f1,2,3 $BEDFILE_GENES_INTERMEDIATE.tmp > $BEDFILE_GENES_INTERMEDIATE;
+					#cut -f1,2,3 $BEDFILE_GENES_INTERMEDIATE.tmp > $BEDFILE_GENES_INTERMEDIATE;
+					$BEDTOOLS/bedtools sort -i $BEDFILE_GENES_INTERMEDIATE.tmp | $BEDTOOLS/bedtools merge -i - | cut -f1,2,3 > $BEDFILE_GENES_INTERMEDIATE;
 					rm -f $BEDFILE_GENES_INTERMEDIATE.tmp;
 				fi;
 
@@ -1216,14 +1221,14 @@ for RUU in $RUN_UNIQ; do
 				# ADD GENES in input files
 				G=$BEDFILE_GENES_ONE
 
-			else
-				#echo "#[INFO] No GENES and no Design file to create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes'. Generate empty LIST.GENES."
-				echo "#[INFO] No GENES and no Design file to create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes'. Generate GENES with all NM transcript in RefSeq."
-				awk -F'\t' 'substr($6,1,2)=="NM" {print $0}' $REFSEQ_GENES > $RUN_SAMPLE_DIR/$S.refGene.bed
-				#$COMMAND_COPY $REFSEQ_GENES $RUN_SAMPLE_DIR/$(basename $REFSEQ_GENES);
-				echo $S.refGene.bed > $BEDFILE_GENES_LIST_ONE;
-				#touch $BEDFILE_GENES_LIST_ONE
-				#fi;
+			#else
+			#	#echo "#[INFO] No GENES and no Design file to create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes'. Generate empty LIST.GENES."
+			#	echo "#[INFO] No GENES and no Design file to create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes'. Generate GENES with all NM transcript in RefSeq."
+			#	awk -F'\t' 'substr($6,1,2)=="NM" {print $0}' $REFSEQ_GENES > $RUN_SAMPLE_DIR/$S.refGene.bed
+			#	#$COMMAND_COPY $REFSEQ_GENES $RUN_SAMPLE_DIR/$(basename $REFSEQ_GENES);
+			#	echo $S.refGene.bed > $BEDFILE_GENES_LIST_ONE;
+			#	#touch $BEDFILE_GENES_LIST_ONE
+			#	#fi;
 			fi;
 		else
 			echo "#[INFO] LIST.GENES already exists."
