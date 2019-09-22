@@ -666,7 +666,7 @@ export HOWARD_PRIORITIZATION_ANALYSIS
 # DEFAULT
 # Fields to show after translation
 if [ -z $HOWARD_FIELDS ]; then
-	HOWARD_FIELDS="PZScore,PZFlag,PZComment,symbol,hgvs,location,outcome,AlleleFrequency,AD,dbSNP,dbSNPNonFlagged,popfreq,ALL"
+	HOWARD_FIELDS="NOMEN,PZFlag,PZScore,PZComment,CNOMEN,PNOMEN,location,outcome,snpeff_impact,VAF_average,dbSNP,dbSNPNonFlagged,popfreq,ALL"
 fi;
 export HOWARD_FIELDS
 # Sort variant in the TXT using 2 fields

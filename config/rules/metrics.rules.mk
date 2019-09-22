@@ -107,7 +107,7 @@ CAP_METRICS_OPTIONS?=$(CAP_METRICS_OPTIONS_CLIP_OVERLAPPING_READS)
 		#echo "	-rm -f \$^ " >> $<.genomeCoverageBed3.mk; \
 		cat $<.genomeCoverageBed1.mk $<.genomeCoverageBed3.mk >> $<.genomeCoverageBed.mk; \
 		make -j $(THREADS) -i -f $<.genomeCoverageBed.mk $@ 1>/dev/null 2>/dev/null; \
-		rm $<.genomeCoverageBed*.mk; \
+		rm $<.genomeCoverageBed*.mk*; \
 	fi; \
 	fi;
 
@@ -139,21 +139,24 @@ CAP_METRICS_OPTIONS?=$(CAP_METRICS_OPTIONS_CLIP_OVERLAPPING_READS)
 # Else generate BED from BAM
 
 %.for_metrics_bed: %.bam %.bam.bai %.metrics.from_manifest.intervals %.metrics.bed %.metrics.region_clipped.bed #%.bam.bed
-	if [ "`grep ^ -c $*.metrics.bed`" == "0" ] && [ "`grep ^ -c $*.metrics.region_clipped.bed`" == "0" ]; then \
+	+if [ "`grep ^ -c $*.metrics.bed`" == "0" ] && [ "`grep ^ -c $*.metrics.region_clipped.bed`" == "0" ]; then \
 		echo "# No BED file provided... BED from the BAM file"; \
 		if (($$($(SAMTOOLS) idxstats $< | awk '{SUM+=$$3+$$4} END {print SUM}'))); then \
 			rm -f $<.genomeCoverageBed.mk $<.genomeCoverageBed1.mk $<.genomeCoverageBed2.mk $<.genomeCoverageBed3.mk; \
 			for chr in $$($(SAMTOOLS) idxstats $< | grep -v "\*" | awk '{ if ($$3+$$4>0) print $$1 }'); do \
 				echo "$<.genomeCoverageBed.$$chr.bed: $<" >> $<.genomeCoverageBed1.mk; \
-				echo "	$(SAMTOOLS) view $< -b $$chr | $(BEDTOOLS)/genomeCoverageBed -ibam stdin -bg | $(BEDTOOLS)/mergeBed -i - > $<.genomeCoverageBed.$$chr.bed " >> $<.genomeCoverageBed1.mk; \
+				#echo "	$(SAMTOOLS) view $< -b "$$chr" | $(BEDTOOLS)/genomeCoverageBed -ibam stdin -bg | $(BEDTOOLS)/mergeBed -i - | awk -F'\t' '{print "'$$1"\t"$$2"\t"$$3"\t+\t\"$$1"_"$$2"_"$$3'"}' > $<.genomeCoverageBed."$$chr".bed " >> $<.genomeCoverageBed1.mk; \
+				echo "	$(SAMTOOLS) view $< -b "$$chr" | $(BEDTOOLS)/genomeCoverageBed -ibam stdin -bg | $(BEDTOOLS)/mergeBed -i - > $<.genomeCoverageBed."$$chr".bed " >> $<.genomeCoverageBed1.mk; \
 				echo -n " $<.genomeCoverageBed.$$chr.bed" >> $<.genomeCoverageBed2.mk; \
 			done; \
-			echo -n "$@: " | cat - $<.genomeCoverageBed2.mk > $<.genomeCoverageBed3.mk; \
+			echo -n "$@.tmp: " | cat - $<.genomeCoverageBed2.mk > $<.genomeCoverageBed3.mk; \
 			echo ""  >> $<.genomeCoverageBed3.mk; \
-			echo "	cat $$^ > $@ " >> $<.genomeCoverageBed3.mk; \
+			echo "	cat $$^ > $@.tmp " >> $<.genomeCoverageBed3.mk; \
 			echo "	-rm -f $$^ " >> $<.genomeCoverageBed3.mk; \
 			cat $<.genomeCoverageBed1.mk $<.genomeCoverageBed3.mk >> $<.genomeCoverageBed.mk; \
-			make -j $(THREADS) -i -f $<.genomeCoverageBed.mk $@ 1>/dev/null 2>/dev/null; \
+			make -j $(THREADS) -i -f $<.genomeCoverageBed.mk $@.tmp 1>$<.genomeCoverageBed.mk.log 2>$<.genomeCoverageBed.mk.err; \
+			awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$1"_"$$2"_"$$3}' $@.tmp > $@ ; \
+			#rm $@.tmp ; \
 			rm $<.genomeCoverageBed*.mk; \
 		fi; \
 	else \
@@ -694,9 +697,13 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 	> $@;
 	echo "LIST_GENES:"
 	cat $*.list.genes;
-	+for one_bed in $$(cat $*.list.genes); do \
-		cat "ONE_BED: "$$one_bed; \
-		$(BCFTOOLS) view $*.vcf.gz -R $$one_bed | $(BCFTOOLS) norm --remove-duplicates > $@.$$(basename $$one_bed).vcf; \
+	+for one_bed in $$(cat $*.list.genes) $*.design.bed; do \
+		#cat "ONE_BED: "$$one_bed; \
+		if [ -s $$one_bed ]; then \
+			$(BCFTOOLS) view $*.vcf.gz -R $$one_bed | $(BCFTOOLS) norm --remove-duplicates > $@.$$(basename $$one_bed).vcf; \
+		else \
+			$(BCFTOOLS) view $*.vcf.gz | $(BCFTOOLS) norm --remove-duplicates > $@.$$(basename $$one_bed).vcf; \
+		fi ; \
 		#$(BCFTOOLS) stats $@.$$(basename $$one_bed).vcf > $@.$$(basename $$one_bed).vcf.bcftools.stats; \
 		#grep -v "^#" $@.$$(basename $$one_bed).vcf | cut -f8 | tr ";" "\n" | sort | uniq -c | sed "s/^      / /gi" | tr "=" " " | awk '{print $$2"\t"$$3"\t"$$1} {a[$$2]+=$$1} END { for (key in a) { print "#\t" key "\t" a[key] } }' | sort > $@.$$(basename $$one_bed).vcf.info_field.stats; \
 		$(HOWARD) --config=$(HOWARD_CONFIG) --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --translation=tab  --fields="$(HOWARD_FIELDS)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)"  --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --input=$@.$$(basename $$one_bed).vcf --output=$@.$$(basename $$one_bed).tsv --force; \
@@ -712,7 +719,13 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 #####################
 
 
-%.list.genes: %.bed %.manifest
+%.bams.for_metrics_bed: $(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(foreach ALIGNER,$(ALIGNERS),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).$(ALIGNER).design.bed )) $(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(foreach PIPELINE,$(PIPELINES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).$(call aligner,$(PIPELINE)).design.bed ))
+	cat $^ | $(BEDTOOLS)/bedtools sort -i $B | $(BEDTOOLS)/bedtools merge -i - | cut -f1,2,3 > $@
+	echo "BAMS for_metrics_bed: $^"
+	#cp $@ $*.test
+
+
+%.list.genes: %.bed %.manifest %.bams.for_metrics_bed
 	mkdir -p $(@D);
 	#touch $@;
 	+if [ ! -s $@ ]; then \
@@ -742,28 +755,25 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 				bedfile_genes_list="$$bedfile_genes_list $(@D)/$(*F)_$${bedfile_name}.bed"; \
 			done; \
 		else \
-			echo "BEDFILE_GENES for $* generated from SAMPLE.manifest"; \
+			echo "BEDFILE_GENES for $* generated from SAMPLE.bed, SAMPLE.manifest or from BAMs"; \
 			bedfile_genes_list=`file=$$( echo $* | cut -d. -f1 ); echo "$$file.from_design.genes"`; \
-			# ici on va faire une intersection avec le manifest et ce sera notre bed par defaut sil nexiste pas; \
-			#bed=$$(sample=$$(basename $* | cut -d. -f1 ); echo "$(*D)/$$sample.bed"); \
-			#if [ ! -s $$(echo "$$bed") ] ; then \
-			#	bed=$$(sample=$$(basename $* | cut -d. -f1 ); echo "$$(dirname $(*D))/$$sample.bed"); \
-			#fi; \
-			#manifest=$$(sample=$$(basename $* | cut -d. -f1 ); echo "$(*D)/$$sample.manifest"); \
-			#if [ ! -s $$(echo "$$manifest") ] ; then \
-			#	manifest=$$(sample=$$(basename $* | cut -d. -f1 ); echo "$$(dirname $(*D))/$$sample.manifest"); \
-			#fi; \
-			#if [ -s `echo "$$bed"` ] ; then \
+			# Look for defined Design (bed or manifest) \
 			if [ -s $*.bed ] ; then \
 				#echo "genes from BED '$$bed'" >> $*.test; \
 				cut -f1,2,3 $*.bed > $@.manifest.bed ; \
+				bedfile_genes_list=`file=$$( echo $* | cut -d. -f1 ); echo "$$file.from_bed.genes"`; \
 			#elif [ -s `echo "$$manifest"` ] ; then \
 			elif [ -s $*.manifest ] ; then \
 				# manifest to bed ; \
 				$(CAP_ManifestToBED) --input "$*.manifest" --output "$@.manifest.bed.tmp" --output_type "region" --type=PCR; \
 				cut -f1,2,3 $@.manifest.bed.tmp > $@.manifest.bed ; \
+				bedfile_genes_list=`file=$$( echo $* | cut -d. -f1 ); echo "$$file.from_manifest.genes"`; \
 				#rm $@.manifest.bed.tmp ; \
+			elif [ -s $*.bams.for_metrics_bed ] ; then \
+				cut -f1,2,3 $*.bams.for_metrics_bed > $@.manifest.bed ; \
+				bedfile_genes_list=`file=$$( echo $* | cut -d. -f1 ); echo "$$file.from_alignments.genes"`; \
 			fi; \
+			# Generate BEDGENES \
 			if [ -s $@.manifest.bed ] ; then \
 				echo "MANIFEST.bed to bedfile_genes_list : $bedfile_genes_list"; \
 				$(BEDTOOLS)/bedtools intersect -wb -a $@.manifest.bed -b $(REFSEQ_GENES) | cut -f8 | sort -u > $@.manifest.bed.intersect; \
@@ -771,8 +781,11 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 				join -1 1 -2 5 $@.manifest.bed.intersect $@.manifest.bed.refseq -o 2.1,2.2,2.3,2.5 | sort -u -k1,2 | tr " " "\t" | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$4}' > $$bedfile_genes_list; \
 				#rm -f $*.manifest.bed.intersect $*.manifest.bed.refseq; \
 			else \
-				echo "#[ERROR] Generating GENES failed"; \
+				#echo "" > $$bedfile_genes_list ; \
+				#echo "#[ERROR] Generating GENES failed. GENES file empty"; \
+				echo "#[ERROR] Generating GENES failed."; \
 			fi;\
+			#bedfile_genes_list=$$(basename $$(echo $$bedfile_genes_list)); \
 			rm -f $@.manifest*; \
 		fi; \
 		echo "bed_file list is : `echo $$bedfile_genes_list` "; \

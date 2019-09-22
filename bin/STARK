@@ -795,7 +795,7 @@ if [ "$ANALYSIS" != "" ]; then
 			PARAM_STARK_TEST=0
 			PARAM_STARK="$($STARK_FOLDER_BIN/json_to_options.py $J)" && PARAM_STARK_TEST=1
 
-			! (($PARAM_STARK_TEST)) && echo "[ERROR] Config file '$J' malformed " && cat $J && exit 0;
+			! (($PARAM_STARK_TEST)) && echo "[ERROR] Config file '$J' malformed " && cat $J && exit 1;
 
 			#(($DEBUG)) && echo "[INFO] PARAM_STARK=$PARAM_STARK" && exit 0;
 
@@ -914,7 +914,7 @@ if [ ! -z "$RUNS" ]; then
 				(($DEBUG)) && echo "#[INFO] Search for RUN '$R' in RUN folder '$FR' ";
 				[ -d $FR/$R ] && RUN_PATH="$RUN_PATH$FR/$R" && echo "#[INFO] Input RUN '$R' found in RUN folder '$FR'"
 			done;
-			[ $(echo $RUN_PATH | wc -w) -gt 1 ] && echo "#[ERROR] Input Run '$R' found in multiple RUN folders: $RUN_PATH" && echo "" && exit 0;
+			[ $(echo $RUN_PATH | wc -w) -gt 1 ] && echo "#[ERROR] Input Run '$R' found in multiple RUN folders: $RUN_PATH" && echo "" && exit 1;
 			[ ! -z "$RUN_PATH" ] && RUNS_TO_LAUNCH="$RUNS_TO_LAUNCH$RUN_PATH:$RUN_NAME "
 		fi;
 		#((RUN_INDEX++))
@@ -964,7 +964,7 @@ if [ ! -z "$RUNS" ]; then
 				# sampleSheet within the RUN folder
 				[ -z $RUN_SAMPLESHEET ] && RUN_SAMPLESHEET=$R/SampleSheet.csv
 				# Echo
-				[ ! -e $RUN_SAMPLESHEET ] && echo "#[ERROR] No SampleSheet for RUN '$R'" && exit 0;
+				[ ! -e $RUN_SAMPLESHEET ] && echo "#[ERROR] No SampleSheet for RUN '$R'" && exit 1;
 				echo "#[INFO] SampleSheet found for RUN '$R': $RUN_SAMPLESHEET";
 
 				# DEMULTIPLEXING_FOLDER
@@ -1025,7 +1025,7 @@ if [ ! -z "$RUNS" ]; then
 				[ -z $RUN_SAMPLESHEET ] && RUN_SAMPLESHEET=$R/SampleSheet.csv
 				# Echo
 				#(($DEBUG)) && echo "[INFO] [ -f $R/SampleSheet.csv ] || [ -f $SAMPLESHEET_INPUT_RI ]";
-				[ ! -e $RUN_SAMPLESHEET ] && echo "#[ERROR] No SampleSheet for RUN '$R'" && exit 0;
+				[ ! -e $RUN_SAMPLESHEET ] && echo "#[ERROR] No SampleSheet for RUN '$R'" && exit 1;
 				echo "#[INFO] SampleSheet found for RUN '$R': $RUN_SAMPLESHEET";
 
 				# RUN_ANALYSIS_NAME
@@ -1157,7 +1157,6 @@ if [ ! -z "$RUNS" ]; then
 					fi;
 
 				done;
-#exit 0;
 
 				#(($DEBUG)) && cat $RUN_CONFIG_FILE_TAB
 				#(($DEBUG)) && cat $R/*.config.tab | sort -u
@@ -1244,13 +1243,12 @@ if [ ! -z "$RUNS" ]; then
 
 				done;
 
-#exit 0;
 				ANALYSIS_FILES=$(echo $ANALYSIS_FILES | sed s/^,//)
 
 				if [ "$ANALYSIS_FILES" != "" ]; then
 					CMD="$STARK_FOLDER_BIN/STARK $PARAM --analysis=$ANALYSIS_FILES " #$APP_ONE_RUN_CONFIG_FILE_JSON " # --repository=$FOLDER_REPOSITORY
 				else
-					echo "#[ERROR] No Samples to analyse " && exit 0;
+					echo "#[ERROR] No Samples to analyse " && exit 1;
 				fi;
 				#CMD=""
 
@@ -1330,7 +1328,6 @@ if [ ! -z "$RUNS" ]; then
 	#exit 0;
 fi;
 
-exit 0;
 # Break analysis
 if (($EXIT)); then
 	exit 0;

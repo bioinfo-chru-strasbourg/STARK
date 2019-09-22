@@ -182,7 +182,7 @@ fi
 ###############
 
 # Default APP
-[ -z $APP ] && APP="default";
+[ -z "$APP" ] && APP="default";
 
 
 #echo "APP=$APP"; exit;
@@ -242,6 +242,7 @@ if [ ! -z $TMP_FOLDER_TMP ]; then
 else
 	TMP_REPORT=/tmp;
 fi;
+
 
 if [ ! -z $NB_VARIANT_LIMIT ]; then
 	NB_VARIANT_LIMIT=$NB_VARIANT_LIMIT;
@@ -417,6 +418,17 @@ BAM_VALIDATION_TEXT_HTML=$BAM_VALIDATION_TEXT_HTML' Minimum Base Quality >= '$ME
 [ "$METRICS_FLAGS" != "" ] && BAM_VALIDATION_TEXT_HTML=$BAM_VALIDATION_TEXT_HTML' exclude Reads with flags '$METRICS_FLAGS || BAM_VALIDATION_TEXT_HTML=$BAM_VALIDATION_TEXT_HTML' no Reads excluded'
 
 
+# LIST_GENES_PANEL
+LIST_GENES_PANEL="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.list.genes"
+LIST_GENES_PANEL_BASENAME=$REPORTDIR/list.genes
+> $LIST_GENES_PANEL_BASENAME
+for GENES_PANEL in $(cat $LIST_GENES_PANEL); do
+	echo $(basename $GENES_PANEL) >> $LIST_GENES_PANEL_BASENAME
+done;
+
+#cat $LIST_GENES_PANEL_BASENAME
+
+#exit 0
 
 ### DEBUG ###
 
@@ -505,6 +517,13 @@ echo '
 	<link rel="stylesheet" href="'$HTMLFOLDER'/theme/css/style.css">
 	<link rel="stylesheet" href="'$HTMLFOLDER'/gallery/style.css">
 	<link rel="stylesheet" href="'$HTMLFOLDER'/mobirise/css/mbr-additional.css" type="text/css">
+
+	<style>
+		.table-wrapper {
+			overflow: auto;
+			max-height:800px;
+			}
+	</style>
 
 ' > $HTMLFILE_HEADER
 
@@ -734,7 +753,7 @@ MANIFEST="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.manifest"
 DESIGN_NUMBER_REGIONS=$(grep -vc "^#" $BED)
 #DESIGN_NUMBER_BASES=$(cat $BED | awk '{for(i=$2;i<$3;i++) print $1"\t"i}' | sort -u | wc -l)
 #$BEDTOOLS/bedtools sort -i $GENES_PANEL_FILE | $BEDTOOLS/bedtools merge -i -
-DESIGN_NUMBER_BASES=$($BEDTOOLS/bedtools sort -i $BED | $BEDTOOLS/bedtools merge -i - > $TMP_REPORT/merge_all_genes.bed; $BEDTOOLS/bedtools coverage -a $TMP_REPORT/merge_all_genes.bed  -b $TMP_REPORT/merge_all_genes.bed | awk -F '\t' 'BEGIN{sum = 0} {sum += $6} END {print sum}'; rm $TMP_REPORT/merge_all_genes.bed; )
+DESIGN_NUMBER_BASES=$($BEDTOOLS/bedtools sort -i $BED | $BEDTOOLS/bedtools merge -i - > $REPORTDIR/merge_all_genes.bed; $BEDTOOLS/bedtools coverage -a $REPORTDIR/merge_all_genes.bed  -b $REPORTDIR/merge_all_genes.bed | awk -F '\t' 'BEGIN{sum = 0} {sum += $6} END {print sum}'; rm $REPORTDIR/merge_all_genes.bed; )
 #echo $DESIGN_NUMBER_BASES
 GENES_BASES_HTML=$(echo $GENES_BASES_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
 
@@ -824,6 +843,7 @@ SEQUENCING_TECHNOLOGY_HTML=$(grep "^technology" $SEQUENCING_INFOS | cut -f2)
 
 # Q30
 Q30_HTML=$(grep "^Q30" $SEQUENCING_Q30 | cut -f2)
+[ "$Q30_HTML" == "" ] && Q30_HTML="?"
 
 # GENES count
 GENES_NUMBER=$(cd $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/; cat $(cat $LIST_GENE_PANEL) | cut -f5 | sort -u | wc -l)
@@ -835,8 +855,8 @@ GENES_NUMBER=$(cd $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/; cat $(cat $LIST_GENE_PANEL
 #exit 0
 
 
-#GENES_BASES_NUMBER=$(cd $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/; $BEDTOOLS/bedtools merge -i $(cat $LIST_GENE_PANEL | sed -z 's/\n/ -i /g' | sed 's/-i $//gi') > $TMP_REPORT/merge_all_genes.bed; $BEDTOOLS/bedtools coverage -a $TMP_REPORT/merge_all_genes.bed  -b $TMP_REPORT/merge_all_genes.bed | awk -F '\t' 'BEGIN{sum = 0} {sum += $6} END {print sum}'; rm $TMP_REPORT/merge_all_genes.bed; )
-GENES_BASES_NUMBER=$(cd $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/; cat $(cat $LIST_GENE_PANEL) | $BEDTOOLS/bedtools sort -i - | $BEDTOOLS/bedtools merge -i - > $TMP_REPORT/merge_all_genes.bed; $BEDTOOLS/bedtools coverage -a $TMP_REPORT/merge_all_genes.bed  -b $TMP_REPORT/merge_all_genes.bed | awk -F '\t' 'BEGIN{sum = 0} {sum += $6} END {print sum}'; rm $TMP_REPORT/merge_all_genes.bed; )
+#GENES_BASES_NUMBER=$(cd $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/; $BEDTOOLS/bedtools merge -i $(cat $LIST_GENE_PANEL | sed -z 's/\n/ -i /g' | sed 's/-i $//gi') > $REPORTDIR/merge_all_genes.bed; $BEDTOOLS/bedtools coverage -a $REPORTDIR/merge_all_genes.bed  -b $REPORTDIR/merge_all_genes.bed | awk -F '\t' 'BEGIN{sum = 0} {sum += $6} END {print sum}'; rm $REPORTDIR/merge_all_genes.bed; )
+GENES_BASES_NUMBER=$(cd $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/; cat $(cat $LIST_GENE_PANEL) | $BEDTOOLS/bedtools sort -i - | $BEDTOOLS/bedtools merge -i - > $REPORTDIR/merge_all_genes.bed; $BEDTOOLS/bedtools coverage -a $REPORTDIR/merge_all_genes.bed  -b $REPORTDIR/merge_all_genes.bed | awk -F '\t' 'BEGIN{sum = 0} {sum += $6} END {print sum}'; rm $REPORTDIR/merge_all_genes.bed; )
 GENES_BASES_HTML=$(echo $GENES_BASES_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
 #echo $GENES_BASES_NUMBER
 
@@ -1148,18 +1168,42 @@ for ALIGNER in $ALIGNERS; do
 	(($DEBUG)) && echo "ALIGNER: $ALIGNER";
 
 	# FILES
-	LIST_GENES_PANEL="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.list.genes"
+	#LIST_GENES_PANEL="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.list.genes"
 	#TARGET_DESIGN_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.design.bed"
 	TARGET_DESIGN_NAME="$SAMPLE.$ALIGNER.design.bed"
 
-	for GENES_PANEL in $TARGET_DESIGN_NAME $(cat $LIST_GENES_PANEL); do
+	#for GENES_PANEL in $TARGET_DESIGN_NAME $(cat $LIST_GENES_PANEL); do
+	for GENES_PANEL in $TARGET_DESIGN_NAME $(cat $LIST_GENES_PANEL_BASENAME); do
 
 		# FILES
 		GENES_PANEL_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$GENES_PANEL"
-		GENES_PANEL_GENES_MSG="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.genes.msg"
+		#GENES_PANEL_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$GENES_PANEL"
+		if [ -s $GENES_PANEL_FILE ]; then GENES_PANEL_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$GENES_PANEL"; fi;
+
+		#GENES_PANEL_GENES_MSG="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.genes.msg"
+		GENES_PANEL_GENES_TXT="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.genes.txt"
+		GENES_PANEL_GENES_PASS_TXT="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.genes.PASS.txt"
+		GENES_PANEL_GENES_WARN_TXT="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.genes.WARN.txt"
+		GENES_PANEL_GENES_FAIL_TXT="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.genes.FAIL.txt"
+		GENES_PANEL_GENES_FAIL_WARN_TXT="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.genes.FAIL.WARN.txt"
 		GENES_PANEL_DEPTHBED_COVS="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.coverage"
 
-		if [ -s $GENES_PANEL_FILE ]; then
+		#if [ ! -s $GENES_PANEL_GENES_MSG ]; then echo "NO file "$GENES_PANEL_GENES_MSG; fi;
+		#if [ ! -s $GENES_PANEL_GENES_TXT ]; then echo "NO file "$GENES_PANEL_GENES_TXT; fi;
+		#if [ ! -s $GENES_PANEL_GENES_PASS_TXT ]; then echo "NO file "$GENES_PANEL_GENES_PASS_TXT; fi;
+		#if [ ! -s $GENES_PANEL_GENES_WARN_TXT ]; then echo "NO file "$GENES_PANEL_GENES_WARN_TXT; fi;
+		#if [ ! -s $GENES_PANEL_GENES_FAIL_TXT ]; then echo "NO file "$GENES_PANEL_GENES_FAIL_TXT; fi;
+		#if [ ! -s $GENES_PANEL_GENES_FAIL_WARN_TXT ]; then echo "NO file "$GENES_PANEL_GENES_FAIL_WARN_TXT; fi;
+		#if [ ! -s $GENES_PANEL_DEPTHBED_COVS ]; then echo "NO file "$GENES_PANEL_DEPTHBED_COVS; fi;
+
+		#if [ -s $GENES_PANEL_FILE ]; then
+		if [ -e $GENES_PANEL_GENES_TXT ] \
+			&& [ -e $GENES_PANEL_GENES_PASS_TXT ] \
+			&& [ -e $GENES_PANEL_GENES_WARN_TXT ] \
+			&& [ -e $GENES_PANEL_GENES_FAIL_TXT ] \
+			&& [ -e $GENES_PANEL_GENES_FAIL_WARN_TXT ] \
+			&& [ -e $GENES_PANEL_DEPTHBED_COVS ] \
+			; then
 
 			((GENES_PANEL_NUM++))
 
@@ -1185,17 +1229,17 @@ for ALIGNER in $ALIGNERS; do
 			#(($DEBUG)) && cat $GENES_PANEL_DEPTHBED_COVS
 
 			# GENES PANEL INFO
-			GENES_PANEL_GENES_NUMBER=$(cat $GENES_PANEL_FILE | grep -v "^#" | grep -v "^@" | cut -f5 | sort -u | wc -l)
+			GENES_PANEL_GENES_NUMBER=$(cat $GENES_PANEL_FILE 2>/dev/null | grep -v "^#" | grep -v "^@" | cut -f5 | sort -u | wc -l)
 			GENES_PANEL_GENES_NUMBER_HTML=$(echo $GENES_PANEL_GENES_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
 
-			GENES_PANEL_REGIONS_NUMBER=$(cat $GENES_PANEL_FILE | grep -v "^#" | grep -v "^@" | wc -l)
+			GENES_PANEL_REGIONS_NUMBER=$(cat $GENES_PANEL_FILE 2>/dev/null | grep -v "^#" | grep -v "^@" | wc -l)
 			GENES_PANEL_REGIONS_NUMBER_HTML=$(echo $GENES_PANEL_REGIONS_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
 			[ "$GENES_PANEL" == "$TARGET_DESIGN_NAME" ] && GENES_PANEL_GENES_NUMBER=$GENES_PANEL_REGIONS_NUMBER && GENES_PANEL_GENES_NUMBER_HTML=$GENES_PANEL_REGIONS_NUMBER_HTML
 
-			#GENES_PANEL_BASES_NUMBER=$(cd $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/; $BEDTOOLS/bedtools merge -i $GENES_PANEL_FILE > $TMP_REPORT/merge_genes.bed; $BEDTOOLS/bedtools coverage -a $TMP_REPORT/merge_genes.bed  -b $TMP_REPORT/merge_genes.bed | awk -F '\t' '{sum += $6} END {print sum}'; rm $TMP_REPORT/merge_genes.bed; )
-			#GENES_BASES_NUMBER=$(cd $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/; cat $(cat $LIST_GENE_PANEL) | $BEDTOOLS/bedtools sort -i - | $BEDTOOLS/bedtools merge -i - > $TMP_REPORT/merge_all_genes.bed; $BEDTOOLS/bedtools coverage -a $TMP_REPORT/merge_all_genes.bed  -b $TMP_REPORT/merge_all_genes.bed | awk -F '\t' 'BEGIN{sum = 0} {sum += $6} END {print sum}'; rm $TMP_REPORT/merge_all_genes.bed; )
-			#GENES_PANEL_BASES_NUMBER=$($BEDTOOLS/bedtools merge -i $GENES_PANEL_FILE > $TMP_REPORT/merge_genes.bed; $BEDTOOLS/bedtools coverage -a $TMP_REPORT/merge_genes.bed  -b $TMP_REPORT/merge_genes.bed | awk -F '\t' 'BEGIN{sum = 0} {sum += $6} END {print sum}'; rm $TMP_REPORT/merge_genes.bed; )
-			GENES_PANEL_BASES_NUMBER=$($BEDTOOLS/bedtools sort -i $GENES_PANEL_FILE | $BEDTOOLS/bedtools merge -i - > $TMP_REPORT/merge_genes.bed; $BEDTOOLS/bedtools coverage -a $TMP_REPORT/merge_genes.bed  -b $TMP_REPORT/merge_genes.bed | awk -F '\t' 'BEGIN{sum = 0} {sum += $6} END {print sum}'; rm $TMP_REPORT/merge_genes.bed; )
+			#GENES_PANEL_BASES_NUMBER=$(cd $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/; $BEDTOOLS/bedtools merge -i $GENES_PANEL_FILE > $REPORTDIR/merge_genes.bed; $BEDTOOLS/bedtools coverage -a $REPORTDIR/merge_genes.bed  -b $REPORTDIR/merge_genes.bed | awk -F '\t' '{sum += $6} END {print sum}'; rm $REPORTDIR/merge_genes.bed; )
+			#GENES_BASES_NUMBER=$(cd $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/; cat $(cat $LIST_GENE_PANEL) | $BEDTOOLS/bedtools sort -i - | $BEDTOOLS/bedtools merge -i - > $REPORTDIR/merge_all_genes.bed; $BEDTOOLS/bedtools coverage -a $REPORTDIR/merge_all_genes.bed  -b $REPORTDIR/merge_all_genes.bed | awk -F '\t' 'BEGIN{sum = 0} {sum += $6} END {print sum}'; rm $REPORTDIR/merge_all_genes.bed; )
+			#GENES_PANEL_BASES_NUMBER=$($BEDTOOLS/bedtools merge -i $GENES_PANEL_FILE > $REPORTDIR/merge_genes.bed; $BEDTOOLS/bedtools coverage -a $REPORTDIR/merge_genes.bed  -b $REPORTDIR/merge_genes.bed | awk -F '\t' 'BEGIN{sum = 0} {sum += $6} END {print sum}'; rm $REPORTDIR/merge_genes.bed; )
+			GENES_PANEL_BASES_NUMBER=$($BEDTOOLS/bedtools sort -i $GENES_PANEL_FILE 2>/dev/null | $BEDTOOLS/bedtools merge -i - > $REPORTDIR/merge_genes.bed; $BEDTOOLS/bedtools coverage -a $REPORTDIR/merge_genes.bed  -b $REPORTDIR/merge_genes.bed | awk -F '\t' 'BEGIN{sum = 0} {sum += $6} END {print sum}'; rm $REPORTDIR/merge_genes.bed; )
 			GENES_PANEL_BASES_NUMBER_HTML=$(echo $GENES_PANEL_BASES_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
 
 			GENES_PANEL_ALIGNER=$ALIGNER
@@ -1226,9 +1270,10 @@ for ALIGNER in $ALIGNERS; do
 			(( $(echo "$GENES_PANEL_EXPECTED_PANEL_COVERAGE >= $DEPTH_COVERAGE_THRESHOLD" |bc -l) )) && GENES_PANEL_EXPECTED_PANEL_COVERAGE_FLAG=$PASS_FLAG_ICON || GENES_PANEL_EXPECTED_PANEL_COVERAGE_FLAG=$WARN_FLAG_ICON
 
 			# GENES PANEL MISS GENES COVERAGE
-			GENES_PANEL_ALL_GENES_NUMBER=$(cat $GENES_PANEL_GENES_MSG | grep -v "^#" -c)
+			GENES_PANEL_ALL_GENES_NUMBER=$(cat $GENES_PANEL_GENES_TXT | grep -v "^#" -c)
 			GENES_PANEL_ALL_GENES_NUMBER_HTML=$GENES_PANEL_ALL_GENES_NUMBER
 			GENES_PANEL_MISS_REGIONS_NUMBER=$(echo "$GENES_PANEL_GENES_NUMBER - $GENES_PANEL_ALL_GENES_NUMBER" | bc)
+			! (($GENES_PANEL_GENES_NUMBER)) && GENES_PANEL_MISS_REGIONS_NUMBER=0;
 			GENES_PANEL_MISS_REGIONS_NUMBER_HTML=""
 			(($GENES_PANEL_MISS_REGIONS_NUMBER)) && GENES_PANEL_MISS_REGIONS_NUMBER_HTML="<br><span '$FAIL_FLAG_ICON'>$GENES_PANEL_MISS_REGIONS_NUMBER missing genes</span>"
 
@@ -1237,7 +1282,8 @@ for ALIGNER in $ALIGNERS; do
 
 			# GENES PANEL FAIL GENES COVERAGE
 			#GENES_PANEL_FAIL_GENES_NUMBER=$(cat $GENES_PANEL_GENES_MSG | cut -f2 | grep "^FAIL$" -c)
-			GENES_PANEL_FAIL_GENES_NUMBER=$(echo $(cat $GENES_PANEL_GENES_MSG | cut -f2 | grep "^FAIL$" -c)" + "$GENES_PANEL_MISS_REGIONS_NUMBER | bc)
+			#GENES_PANEL_FAIL_GENES_NUMBER=$(echo $(cat $GENES_PANEL_GENES_FAIL_TXT | grep -v "^#" -c)" + "$GENES_PANEL_MISS_REGIONS_NUMBER | bc)
+			GENES_PANEL_FAIL_GENES_NUMBER=$(cat $GENES_PANEL_GENES_FAIL_TXT | grep -v "^#" -c)
 			GENES_PANEL_FAIL_GENES_NUMBER_HTML=$GENES_PANEL_FAIL_GENES_NUMBER
 			#GENES_PANEL_FAIL_GENES_NUMBER_MESSAGE="$GENES_PANEL_FAIL_GENES_NUMBER"
 			(( $GENES_PANEL_FAIL_GENES_NUMBER )) && GENES_PANEL_FAIL_GENES_NUMBER_FLAG=$FAIL_FLAG_ICON || GENES_PANEL_FAIL_GENES_NUMBER_FLAG=$PASS_FLAG_ICON
@@ -1246,7 +1292,8 @@ for ALIGNER in $ALIGNERS; do
 			# GENES PANEL WARN GENES COVERAGE
 			#GENES_PANEL_WARN_GENES_NUMBER=$(cat $GENES_PANEL_GENES_MSG | cut -f2 | grep "^WARN$" -c)
 			#GENES_PANEL_WARN_GENES_NUMBER=$(cat $GENES_PANEL_GENES_MSG | cut -f2 | grep -e "^WARN$" -e "^FAIL$" -c) #
-			GENES_PANEL_WARN_GENES_NUMBER=$(echo $(cat $GENES_PANEL_GENES_MSG | cut -f2 | grep -e "^WARN$" -e "^FAIL$" -c)" + "$GENES_PANEL_MISS_REGIONS_NUMBER | bc)
+			#GENES_PANEL_WARN_GENES_NUMBER=$(echo $(cat $GENES_PANEL_GENES_FAIL_WARN_TXT | grep -v "^#" -c)" + "$GENES_PANEL_MISS_REGIONS_NUMBER | bc)
+			GENES_PANEL_WARN_GENES_NUMBER=$(cat $GENES_PANEL_GENES_WARN_TXT | grep -v "^#" -c)
 			GENES_PANEL_WARN_GENES_NUMBER_HTML=$GENES_PANEL_WARN_GENES_NUMBER
 			#GENES_PANEL_WARN_GENES_NUMBER_MESSAGE="$GENES_PANEL_WARN_GENES_NUMBER"
 			(( $GENES_PANEL_WARN_GENES_NUMBER )) && GENES_PANEL_WARN_GENES_NUMBER_FLAG=$WARN_FLAG_ICON || GENES_PANEL_WARN_GENES_NUMBER_FLAG=$PASS_FLAG_ICON
@@ -1283,7 +1330,7 @@ for ALIGNER in $ALIGNERS; do
 									<p class="mbr-content-text mbr-fonts-style display-7">
 										'$GENES_PANEL_BASES_NUMBER_HTML' bases
 										<br>
-										'$GENES_PANEL_REGIONS_NUMBER_HTML' Regions
+										'$GENES_PANEL_REGIONS_NUMBER_HTML' regions
 										<br>
 										'$GENES_PANEL_ALIGNER_HTML' aligner
 										'$GENES_PANEL_MISS_REGIONS_NUMBER_HTML'
@@ -1486,10 +1533,14 @@ for ALIGNER in $ALIGNERS; do
 	# FILES
 	GENES_PANEL="$SAMPLE.$ALIGNER.design.bed"
 	GENES_PANEL_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$GENES_PANEL"
+	#GENES_PANEL_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$GENES_PANEL"
+	if [ -s $GENES_PANEL_FILE ]; then GENES_PANEL_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$GENES_PANEL"; fi;
+
 	AMPLICON_COVERAGE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.amplicon_coverage"
 
 
-	if [ -s $GENES_PANEL_FILE ] && [ -s $AMPLICON_COVERAGE ]; then
+	#if [ -s $GENES_PANEL_FILE ] && [ -s $AMPLICON_COVERAGE ]; then
+	if [ -s $AMPLICON_COVERAGE ]; then
 
 		((GENES_PANEL_NUM++))
 
@@ -1501,16 +1552,16 @@ for ALIGNER in $ALIGNERS; do
 		#(($DEBUG)) && cat $GENES_PANEL_DEPTHBED_COVS
 
 		# GENES PANEL INFO
-		GENES_PANEL_GENES_NUMBER=$(cat $GENES_PANEL_FILE | grep -v "^#" | grep -v "^@" | cut -f5 | sort -u | wc -l)
+		GENES_PANEL_GENES_NUMBER=$(cat $GENES_PANEL_FILE 2>/dev/null | grep -v "^#" | grep -v "^@" | cut -f5 | sort -u | wc -l)
 		GENES_PANEL_GENES_NUMBER_HTML=$(echo $GENES_PANEL_GENES_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
 
-		GENES_PANEL_REGIONS_NUMBER=$(cat $GENES_PANEL_FILE | grep -v "^#" | grep -v "^@" | wc -l)
+		GENES_PANEL_REGIONS_NUMBER=$(cat $GENES_PANEL_FILE 2>/dev/null | grep -v "^#" | grep -v "^@" | wc -l)
 		GENES_PANEL_REGIONS_NUMBER_HTML=$(echo $GENES_PANEL_REGIONS_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
 		#[ "$GENES_PANEL_NAME" == "Target Design" ] && GENES_PANEL_GENES_NUMBER=$GENES_PANEL_REGIONS_NUMBER && GENES_PANEL_GENES_NUMBER_HTML=$GENES_PANEL_REGIONS_NUMBER_HTML
 
 
-		#GENES_PANEL_BASES_NUMBER=$(cd $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/; $BEDTOOLS/bedtools merge -i $GENES_PANEL_FILE > $TMP_REPORT/merge_genes.bed; $BEDTOOLS/bedtools coverage -a $TMP_REPORT/merge_genes.bed  -b $TMP_REPORT/merge_genes.bed | awk -F '\t' '{sum += $6} END {print sum}'; rm $TMP_REPORT/merge_genes.bed; )
-		GENES_PANEL_BASES_NUMBER=$($BEDTOOLS/bedtools sort -i $GENES_PANEL_FILE | $BEDTOOLS/bedtools merge -i - > $TMP_REPORT/merge_genes.bed; $BEDTOOLS/bedtools coverage -a $TMP_REPORT/merge_genes.bed  -b $TMP_REPORT/merge_genes.bed | awk -F '\t' 'BEGIN{sum = 0} {sum += $6} END {print sum}'; rm $TMP_REPORT/merge_genes.bed; )
+		#GENES_PANEL_BASES_NUMBER=$(cd $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/; $BEDTOOLS/bedtools merge -i $GENES_PANEL_FILE > $REPORTDIR/merge_genes.bed; $BEDTOOLS/bedtools coverage -a $REPORTDIR/merge_genes.bed  -b $REPORTDIR/merge_genes.bed | awk -F '\t' '{sum += $6} END {print sum}'; rm $REPORTDIR/merge_genes.bed; )
+		GENES_PANEL_BASES_NUMBER=$($BEDTOOLS/bedtools sort -i $GENES_PANEL_FILE 2>/dev/null | $BEDTOOLS/bedtools merge -i - > $REPORTDIR/merge_genes.bed; $BEDTOOLS/bedtools coverage -a $REPORTDIR/merge_genes.bed  -b $REPORTDIR/merge_genes.bed | awk -F '\t' 'BEGIN{sum = 0} {sum += $6} END {print sum}'; rm $REPORTDIR/merge_genes.bed; )
 		#GENES_PANEL_BASES_NUMBER=$(cat $GENES_PANEL_FILE | grep -v "^#" | grep -v "^@" | awk '{for(i=$2;i<$3;i++) print $1"\t"i}' | sort -u | wc -l)
 		GENES_PANEL_BASES_NUMBER_HTML=$(echo $GENES_PANEL_BASES_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
 
@@ -1558,7 +1609,7 @@ for ALIGNER in $ALIGNERS; do
 				num=0
 			}
 			{
-				if ($11<'$EXPECTED_DEPTH') {num+=1}
+				if ($11>='$MINIMUM_DEPTH' && $11<'$EXPECTED_DEPTH') {num+=1}
 				# The script should NOT print out a value for each line
 			}
 			# The END block is processed after the last line is read
@@ -1592,7 +1643,7 @@ for ALIGNER in $ALIGNERS; do
 				num=0
 			}
 			{
-				if ($7<'$EXPECTED_DEPTH') {num+=1}
+				if ($7>='$MINIMUM_DEPTH' && $7<'$EXPECTED_DEPTH') {num+=1}
 				# The script should NOT print out a value for each line
 			}
 			# The END block is processed after the last line is read
@@ -1840,33 +1891,36 @@ for PIPELINE in $PIPELINES; do
 	VCF="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$PIPELINE.vcf"
 	VCF_BCFTOOLS_STATS="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$PIPELINE.vcf.metrics/metrics.bcftools.stats"
 
-	VARIANTS_PIPELINE_NUMBER=$(grep "number of records:" $VCF_BCFTOOLS_STATS | cut -f4)
-	if [ $VARIANT_NUMBER == "0" ]; then
-		VARIANTS_PIPELINE_PERCENT="0%"
-	else
-		VARIANTS_PIPELINE_PERCENT=$(awk 'BEGIN{printf("%.2f\n",('$VARIANTS_PIPELINE_NUMBER'/'$VARIANT_NUMBER')*100)}')"%"
-	fi;
+	if [ -s $VCF_BCFTOOLS_STATS ]; then
 
-	echo '
+		VARIANTS_PIPELINE_NUMBER=$(grep "number of records:" $VCF_BCFTOOLS_STATS | cut -f4)
+		if [ $VARIANT_NUMBER == "0" ]; then
+			VARIANTS_PIPELINE_PERCENT="0%"
+		else
+			VARIANTS_PIPELINE_PERCENT=$(awk 'BEGIN{printf("%.2f\n",('$VARIANTS_PIPELINE_NUMBER'/'$VARIANT_NUMBER')*100)}')"%"
+		fi;
 
-		<div class="card p-3 align-center">
-			<div class="wrap">
-				<div class="pie_progress progress1" role="progressbar" data-goal="'$VARIANTS_PIPELINE_PERCENT'">
-					<p class="pie_progress__number mbr-fonts-style display-5">'$VARIANTS_PIPELINE_NUMBER'</p>
+		echo '
+
+			<div class="card p-3 align-center">
+				<div class="wrap">
+					<div class="pie_progress progress1" role="progressbar" data-goal="'$VARIANTS_PIPELINE_PERCENT'">
+						<p class="pie_progress__number mbr-fonts-style display-5">'$VARIANTS_PIPELINE_NUMBER'</p>
+					</div>
+				</div>
+				<div class="mbr-crt-title pt-3">
+					<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+						'$VARIANTS_PIPELINE_NUMBER' variants
+					</h4>
+					<p class="mbr-content-text mbr-fonts-style display-7">
+						'$ALIGNERS_CALLERS_HTML'
+					</p>
 				</div>
 			</div>
-			<div class="mbr-crt-title pt-3">
-				<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
-					'$VARIANTS_PIPELINE_NUMBER' variants
-				</h4>
-				<p class="mbr-content-text mbr-fonts-style display-7">
-					'$ALIGNERS_CALLERS_HTML'
-				</p>
-			</div>
-		</div>
 
-	' >> $HTMLFILE_CALLING_PIPELINES
+		' >> $HTMLFILE_CALLING_PIPELINES
 
+	fi;
 
 done;
 
@@ -1916,14 +1970,15 @@ HTMLFILE_VARIANTS_STATS_GENES_PANEL=$HTMLFILE".variants.genes_panel"
 
 
 # FILES
-LIST_GENES_PANEL="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.list.genes"
+#LIST_GENES_PANEL="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.list.genes"
 #TARGET_DESIGN_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.design.bed"
 TARGET_DESIGN_NAME="$SAMPLE.$ALIGNER.design.bed"
 
 
 GENES_PANEL_NUM=0
 
-for GENES_PANEL in "Target Design" $(cat $LIST_GENES_PANEL); do
+#for GENES_PANEL in "Target Design" $(cat $LIST_GENES_PANEL); do # $LIST_GENES_PANEL_BASENAME
+for GENES_PANEL in "Target Design" $(cat $LIST_GENES_PANEL_BASENAME); do # $LIST_GENES_PANEL_BASENAME
 
 	((GENES_PANEL_NUM++))
 
@@ -1946,6 +2001,7 @@ for GENES_PANEL in "Target Design" $(cat $LIST_GENES_PANEL); do
 	#GENES_PANEL_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$GENES_PANEL"
 
 	# FILES
+	BCFTOOLS_STATS=""
 	if [ "$GENES_PANEL" == "Target Design" ]; then
 		BCFTOOLS_STATS=$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.bcftools.stats
 	else
@@ -1953,199 +2009,203 @@ for GENES_PANEL in "Target Design" $(cat $LIST_GENES_PANEL); do
 		BCFTOOLS_STATS=$(ls $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics*$GENES_PANEL*.bcftools.stats 2>/dev/null)
 	fi;
 
-	# GENES PANEL INFO
-	GENES_PANEL_GENES_NUMBER=$(cat $GENES_PANEL_FILE | grep -v "^#" | grep -v "^@" | cut -f5 | sort -u | wc -l)
-	GENES_PANEL_GENES_NUMBER_HTML=$(echo $GENES_PANEL_GENES_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
+	if [ "$BCFTOOLS_STATS" != "" ] && [ -s $BCFTOOLS_STATS ]; then
 
-	GENES_PANEL_REGIONS_NUMBER=$(cat $GENES_PANEL_FILE | grep -v "^#" | grep -v "^@" | wc -l)
-	GENES_PANEL_REGIONS_NUMBER_HTML=$(echo $GENES_PANEL_REGIONS_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
-	[ "$GENES_PANEL" == "Target Design" ] && GENES_PANEL_GENES_NUMBER=$GENES_PANEL_REGIONS_NUMBER && GENES_PANEL_GENES_NUMBER_HTML=$GENES_PANEL_REGIONS_NUMBER_HTML
+		# GENES PANEL INFO
+		GENES_PANEL_GENES_NUMBER=$(cat $GENES_PANEL_FILE | grep -v "^#" | grep -v "^@" | cut -f5 | sort -u | wc -l)
+		GENES_PANEL_GENES_NUMBER_HTML=$(echo $GENES_PANEL_GENES_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
 
-
-	#GENES_PANEL_BASES_NUMBER=$(cd $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/; $BEDTOOLS/bedtools merge -i $GENES_PANEL_FILE > $TMP_REPORT/merge_genes.bed; $BEDTOOLS/bedtools coverage -a $TMP_REPORT/merge_genes.bed  -b $TMP_REPORT/merge_genes.bed | awk -F '\t' '{sum += $6} END {print sum}'; rm $TMP_REPORT/merge_genes.bed; )
-	GENES_PANEL_BASES_NUMBER=$($BEDTOOLS/bedtools sort -i $GENES_PANEL_FILE | $BEDTOOLS/bedtools merge -i - > $TMP_REPORT/merge_genes.bed; $BEDTOOLS/bedtools coverage -a $TMP_REPORT/merge_genes.bed  -b $TMP_REPORT/merge_genes.bed | awk -F '\t' 'BEGIN{sum = 0} {sum += $6} END {print sum}'; rm $TMP_REPORT/merge_genes.bed; )
-	#GENES_PANEL_BASES_NUMBER=$(cat $GENES_PANEL_FILE | grep -v "^#" | grep -v "^@" | awk '{for(i=$2;i<$3;i++) print $1"\t"i}' | sort -u | wc -l)
-	GENES_PANEL_BASES_NUMBER_HTML=$(echo $GENES_PANEL_BASES_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
-
-	#GENES_PANEL_ALIGNER=$ALIGNER
-	#GENES_PANEL_ALIGNER_HTML=$GENES_PANEL_ALIGNER
-
-	#echo "GENES_PANEL: "$GENES_PANEL
-	#echo "BCFTOOLS_STATS: "$BCFTOOLS_STATS
+		GENES_PANEL_REGIONS_NUMBER=$(cat $GENES_PANEL_FILE | grep -v "^#" | grep -v "^@" | wc -l)
+		GENES_PANEL_REGIONS_NUMBER_HTML=$(echo $GENES_PANEL_REGIONS_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
+		[ "$GENES_PANEL" == "Target Design" ] && GENES_PANEL_GENES_NUMBER=$GENES_PANEL_REGIONS_NUMBER && GENES_PANEL_GENES_NUMBER_HTML=$GENES_PANEL_REGIONS_NUMBER_HTML
 
 
-	GENES_PANEL_TOTAL_VARIANT_NUMBER=$(grep "^SN	.*	number of records" $BCFTOOLS_STATS | awk -F"\t" '{print $4}')
-	GENES_PANEL_TOTAL_VARIANT_LEGEND=$(grep "^#   number of records   .." $BCFTOOLS_STATS | sed "s/^#   number of records   .. //gi")
+		#GENES_PANEL_BASES_NUMBER=$(cd $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/; $BEDTOOLS/bedtools merge -i $GENES_PANEL_FILE > $REPORTDIR/merge_genes.bed; $BEDTOOLS/bedtools coverage -a $REPORTDIR/merge_genes.bed  -b $REPORTDIR/merge_genes.bed | awk -F '\t' '{sum += $6} END {print sum}'; rm $REPORTDIR/merge_genes.bed; )
+		GENES_PANEL_BASES_NUMBER=$($BEDTOOLS/bedtools sort -i $GENES_PANEL_FILE | $BEDTOOLS/bedtools merge -i - > $REPORTDIR/merge_genes.bed; $BEDTOOLS/bedtools coverage -a $REPORTDIR/merge_genes.bed  -b $REPORTDIR/merge_genes.bed | awk -F '\t' 'BEGIN{sum = 0} {sum += $6} END {print sum}'; rm $REPORTDIR/merge_genes.bed; )
+		#GENES_PANEL_BASES_NUMBER=$(cat $GENES_PANEL_FILE | grep -v "^#" | grep -v "^@" | awk '{for(i=$2;i<$3;i++) print $1"\t"i}' | sort -u | wc -l)
+		GENES_PANEL_BASES_NUMBER_HTML=$(echo $GENES_PANEL_BASES_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
 
-	GENES_PANEL_SNPs_VARIANT_NUMBER=$(grep "^SN	.*	number of SNPs" $BCFTOOLS_STATS | awk -F"\t" '{print $4}')
-	GENES_PANEL_SNPs_VARIANT_LEGEND=$(grep "^#   number of SNPs   .." $BCFTOOLS_STATS | sed "s/^#   number of SNPs      .. //gi")
+		#GENES_PANEL_ALIGNER=$ALIGNER
+		#GENES_PANEL_ALIGNER_HTML=$GENES_PANEL_ALIGNER
 
-	GENES_PANEL_MNPs_VARIANT_NUMBER=$(grep "^SN	.*	number of MNPs" $BCFTOOLS_STATS | awk -F"\t" '{print $4}')
-	GENES_PANEL_MNPs_VARIANT_LEGEND=$(grep "^#   number of MNPs   .." $BCFTOOLS_STATS | sed "s/^#   number of MNPs      .. //gi")
-
-	GENES_PANEL_indels_VARIANT_NUMBER=$(grep "^SN	.*	number of indels" $BCFTOOLS_STATS | awk -F"\t" '{print $4}')
-	GENES_PANEL_indels_VARIANT_LEGEND=$(grep "^#   number of indels   .." $BCFTOOLS_STATS | sed "s/^#   number of indels    .. //gi")
-
-	GENES_PANEL_others_VARIANT_NUMBER=$(grep "^SN	.*	number of others" $BCFTOOLS_STATS | awk -F"\t" '{print $4}')
-	GENES_PANEL_others_VARIANT_LEGEND=$(grep "^#   number of others   .." $BCFTOOLS_STATS -A1 | sed "s/^#   number of others    .. //gi" | sed "s/^#                          //gi"  )
+		#echo "GENES_PANEL: "$GENES_PANEL
+		#echo "BCFTOOLS_STATS: "$BCFTOOLS_STATS
 
 
+		GENES_PANEL_TOTAL_VARIANT_NUMBER=$(grep "^SN	.*	number of records" $BCFTOOLS_STATS | awk -F"\t" '{print $4}')
+		GENES_PANEL_TOTAL_VARIANT_LEGEND=$(grep "^#   number of records   .." $BCFTOOLS_STATS | sed "s/^#   number of records   .. //gi")
 
-	#GENE_PANEL_NAME_HTML="$GENES_PANEL"
+		GENES_PANEL_SNPs_VARIANT_NUMBER=$(grep "^SN	.*	number of SNPs" $BCFTOOLS_STATS | awk -F"\t" '{print $4}')
+		GENES_PANEL_SNPs_VARIANT_LEGEND=$(grep "^#   number of SNPs   .." $BCFTOOLS_STATS | sed "s/^#   number of SNPs      .. //gi")
 
-	# BREAK
-	(( $(echo "$GENES_PANEL_NUM >= 2" | bc -l) )) && GENES_PANEL_BREAK=$PAGE_BREAK_BEFORE || GENES_PANEL_BREAK=""
+		GENES_PANEL_MNPs_VARIANT_NUMBER=$(grep "^SN	.*	number of MNPs" $BCFTOOLS_STATS | awk -F"\t" '{print $4}')
+		GENES_PANEL_MNPs_VARIANT_LEGEND=$(grep "^#   number of MNPs   .." $BCFTOOLS_STATS | sed "s/^#   number of MNPs      .. //gi")
 
-	echo '
+		GENES_PANEL_indels_VARIANT_NUMBER=$(grep "^SN	.*	number of indels" $BCFTOOLS_STATS | awk -F"\t" '{print $4}')
+		GENES_PANEL_indels_VARIANT_LEGEND=$(grep "^#   number of indels   .." $BCFTOOLS_STATS | sed "s/^#   number of indels    .. //gi")
 
-		<h3 class="mbr-section-subtitle mbr-fonts-style display-5" '$GENES_PANEL_BREAK'>
-		<br>
-			'$GENE_PANEL_NAME_HTML'
-		</h3>
+		GENES_PANEL_others_VARIANT_NUMBER=$(grep "^SN	.*	number of others" $BCFTOOLS_STATS | awk -F"\t" '{print $4}')
+		GENES_PANEL_others_VARIANT_LEGEND=$(grep "^#   number of others   .." $BCFTOOLS_STATS -A1 | sed "s/^#   number of others    .. //gi" | sed "s/^#                          //gi"  )
 
-		<div class="container pt-4 mt-2">
-			<div class="media-container-row">
 
-				<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
-					<div class="panel-item">
-						<div class="card-img pb-3">
-							<span class="mbr-iconfont mbri-info"></span>
-						</div>
 
-						<div class="card-text">
-							<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
-								'$GENES_PANEL_GENES_NUMBER_HTML'
-							</h3>
-							<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
-								'$GENE_PANEL_TYPE_HTML'
-							</h4>
-							<p class="mbr-content-text mbr-fonts-style display-7">
-								'$GENES_PANEL_BASES_NUMBER_HTML' bases
-								<br>
-								'$GENES_PANEL_REGIONS_NUMBER_HTML' '$GENE_PANEL_TYPE_NAME_HTML's
+		#GENE_PANEL_NAME_HTML="$GENES_PANEL"
 
-							</p>
-						</div>
-					</div>
-				</div>
+		# BREAK
+		(( $(echo "$GENES_PANEL_NUM >= 2" | bc -l) )) && GENES_PANEL_BREAK=$PAGE_BREAK_BEFORE || GENES_PANEL_BREAK=""
 
-				<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
-					<div class="panel-item">
-						<div class="card-img pb-3">
-							<span class="mbr-iconfont mbri-info"></span>
-						</div>
+		echo '
 
-						<div class="card-text">
-							<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
-								'$GENES_PANEL_TOTAL_VARIANT_NUMBER'
-							</h3>
-							<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
-								Total
-								<br>
-								Variants
-							</h4>
-							<p class="mbr-content-text mbr-fonts-style display-7">
-								'$GENES_PANEL_TOTAL_VARIANT_LEGEND'
-							</p>
+			<h3 class="mbr-section-subtitle mbr-fonts-style display-5" '$GENES_PANEL_BREAK'>
+			<br>
+				'$GENE_PANEL_NAME_HTML'
+			</h3>
+
+			<div class="container pt-4 mt-2">
+				<div class="media-container-row">
+
+					<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+						<div class="panel-item">
+							<div class="card-img pb-3">
+								<span class="mbr-iconfont mbri-info"></span>
+							</div>
+
+							<div class="card-text">
+								<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+									'$GENES_PANEL_GENES_NUMBER_HTML'
+								</h3>
+								<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+									'$GENE_PANEL_TYPE_HTML'
+								</h4>
+								<p class="mbr-content-text mbr-fonts-style display-7">
+									'$GENES_PANEL_BASES_NUMBER_HTML' bases
+									<br>
+									'$GENES_PANEL_REGIONS_NUMBER_HTML' Regions
+
+								</p>
+							</div>
 						</div>
 					</div>
-				</div>
 
-				<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
-					<div class="panel-item">
-						<div class="card-img pb-3">
-							<span class="mbr-iconfont mbri-info"></span>
-						</div>
+					<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+						<div class="panel-item">
+							<div class="card-img pb-3">
+								<span class="mbr-iconfont mbri-info"></span>
+							</div>
 
-						<div class="card-texts">
-							 <h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
-								'$GENES_PANEL_SNPs_VARIANT_NUMBER'
-							</h3>
-							<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
-								SNV
-								<br>
-								Variants
-							</h4>
-							<p class="mbr-content-text mbr-fonts-style display-7">
-								'$GENES_PANEL_SNPs_VARIANT_LEGEND'
-							</p>
-						</div>
-					</div>
-				</div>
-
-				<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
-					<div class="panel-item">
-						<div class="card-img pb-3">
-							<span class="mbr-iconfont mbri-info"></span>
-						</div>
-
-						<div class="card-texts">
-							 <h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
-								'$GENES_PANEL_MNPs_VARIANT_NUMBER'
-							</h3>
-							<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
-								MNP
-								<br>
-								Variants
-							</h4>
-							<p class="mbr-content-text mbr-fonts-style display-7">
-								'$GENES_PANEL_MNPs_VARIANT_LEGEND'
-							</p>
+							<div class="card-text">
+								<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+									'$GENES_PANEL_TOTAL_VARIANT_NUMBER'
+								</h3>
+								<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+									Total
+									<br>
+									Variants
+								</h4>
+								<p class="mbr-content-text mbr-fonts-style display-7">
+									'$GENES_PANEL_TOTAL_VARIANT_LEGEND'
+								</p>
+							</div>
 						</div>
 					</div>
-				</div>
 
+					<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+						<div class="panel-item">
+							<div class="card-img pb-3">
+								<span class="mbr-iconfont mbri-info"></span>
+							</div>
 
-				<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
-					<div class="panel-item">
-						<div class="card-img pb-3">
-							<span class="mbr-iconfont mbri-info"></span>
-						</div>
-
-						<div class="card-texts">
-							 <h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
-								'$GENES_PANEL_indels_VARIANT_NUMBER'
-							</h3>
-							<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
-								Indel
-								<br>
-								Variants
-							</h4>
-							<p class="mbr-content-text mbr-fonts-style display-7">
-								'$GENES_PANEL_indels_VARIANT_LEGEND'
-							</p>
-						</div>
-					</div>
-				</div>
-
-
-				<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
-					<div class="panel-item">
-						<div class="card-img pb-3">
-							<span class="mbr-iconfont mbri-info"></span>
-						</div>
-
-						<div class="card-texts">
-							 <h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
-								'$GENES_PANEL_others_VARIANT_NUMBER'
-							</h3>
-							<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
-								Other
-								<br>
-								Variants
-							</h4>
-							<p class="mbr-content-text mbr-fonts-style display-7">
-								'$GENES_PANEL_others_VARIANT_LEGEND'
-							</p>
+							<div class="card-texts">
+								 <h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+									'$GENES_PANEL_SNPs_VARIANT_NUMBER'
+								</h3>
+								<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+									SNV
+									<br>
+									Variants
+								</h4>
+								<p class="mbr-content-text mbr-fonts-style display-7">
+									'$GENES_PANEL_SNPs_VARIANT_LEGEND'
+								</p>
+							</div>
 						</div>
 					</div>
-				</div>
 
+					<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+						<div class="panel-item">
+							<div class="card-img pb-3">
+								<span class="mbr-iconfont mbri-info"></span>
+							</div>
+
+							<div class="card-texts">
+								 <h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+									'$GENES_PANEL_MNPs_VARIANT_NUMBER'
+								</h3>
+								<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+									MNP
+									<br>
+									Variants
+								</h4>
+								<p class="mbr-content-text mbr-fonts-style display-7">
+									'$GENES_PANEL_MNPs_VARIANT_LEGEND'
+								</p>
+							</div>
+						</div>
+					</div>
+
+
+					<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+						<div class="panel-item">
+							<div class="card-img pb-3">
+								<span class="mbr-iconfont mbri-info"></span>
+							</div>
+
+							<div class="card-texts">
+								 <h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+									'$GENES_PANEL_indels_VARIANT_NUMBER'
+								</h3>
+								<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+									Indel
+									<br>
+									Variants
+								</h4>
+								<p class="mbr-content-text mbr-fonts-style display-7">
+									'$GENES_PANEL_indels_VARIANT_LEGEND'
+								</p>
+							</div>
+						</div>
+					</div>
+
+
+					<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+						<div class="panel-item">
+							<div class="card-img pb-3">
+								<span class="mbr-iconfont mbri-info"></span>
+							</div>
+
+							<div class="card-texts">
+								 <h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+									'$GENES_PANEL_others_VARIANT_NUMBER'
+								</h3>
+								<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+									Other
+									<br>
+									Variants
+								</h4>
+								<p class="mbr-content-text mbr-fonts-style display-7">
+									'$GENES_PANEL_others_VARIANT_LEGEND'
+								</p>
+							</div>
+						</div>
+					</div>
+
+					</div>
 				</div>
 			</div>
-		</div>
 
-	' >> $HTMLFILE_VARIANTS_STATS_GENES_PANEL
+		' >> $HTMLFILE_VARIANTS_STATS_GENES_PANEL
+
+	fi;
 
 done;
 
@@ -2265,7 +2325,7 @@ for ALIGNER in $ALIGNERS; do
 	(($DEBUG)) && echo "ALIGNER: $ALIGNER";
 
 	# FILES
-	LIST_GENES_PANEL="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.list.genes"
+	#LIST_GENES_PANEL="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.list.genes"
 	#TARGET_DESIGN_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.design.bed"
 	TARGET_DESIGN_NAME="$SAMPLE.$ALIGNER.design.bed"
 
@@ -2280,19 +2340,24 @@ for ALIGNER in $ALIGNERS; do
 	if [ -s $GENES_PANEL_AMPLICON ]; then
 
 		#cat $GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH;
+		if ((0)); then
+			print_header=true
 
-		print_header=true
+			while read INPUT ; do
+				if $print_header;then
+					GENES_PANEL_AMPLICON_HTML=$GENES_PANEL_AMPLICON_HTML"<thead><tr class=\"table-heads\"><th class=\"head-item mbr-fonts-style display-7\">"$( echo -e "$INPUT" | tr ",;" " " | sed -e 's/\t/<\/th><th class=\"head-item mbr-fonts-style display-7\">/g')"</th></tr></thead><tbody>"
+					print_header=false
+				else
+					#echo "<tr><td>${INPUT//\t/</td><td>}</td></tr>" ;
+					GENES_PANEL_AMPLICON_HTML=$GENES_PANEL_AMPLICON_HTML"<tr><td class=\"body-item mbr-fonts-style display-7\">"$(echo -e "$INPUT" | tr ",;" " " | sed -e 's/\t/<\/td><td class=\"body-item mbr-fonts-style display-7\">/g')"</td></tr>"
+				fi;
+			done < $GENES_PANEL_AMPLICON ;
+			GENES_PANEL_AMPLICON_HTML=$GENES_PANEL_AMPLICON_HTML"</tbody>"
+		fi;
 
-		while read INPUT ; do
-			if $print_header;then
-				GENES_PANEL_AMPLICON_HTML=$GENES_PANEL_AMPLICON_HTML"<thead><tr class=\"table-heads\"><th class=\"head-item mbr-fonts-style display-7\">"$( echo -e "$INPUT" | tr ",;" " " | sed -e 's/\t/<\/th><th class=\"head-item mbr-fonts-style display-7\">/g')"</th></tr></thead><tbody>"
-				print_header=false
-			else
-				#echo "<tr><td>${INPUT//\t/</td><td>}</td></tr>" ;
-				GENES_PANEL_AMPLICON_HTML=$GENES_PANEL_AMPLICON_HTML"<tr><td class=\"body-item mbr-fonts-style display-7\">"$(echo -e "$INPUT" | tr ",;" " " | sed -e 's/\t/<\/td><td class=\"body-item mbr-fonts-style display-7\">/g')"</td></tr>"
-			fi;
-		done < $GENES_PANEL_AMPLICON ;
-		GENES_PANEL_AMPLICON_HTML=$GENES_PANEL_AMPLICON_HTML"</tbody>"
+		GENES_PANEL_AMPLICON_HTML=$(cat $GENES_PANEL_AMPLICON | tr "," " " | $STARK_FOLDER_BIN/csv_to_html.awk -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
+
+
 
 	fi;
 
@@ -2303,17 +2368,25 @@ for ALIGNER in $ALIGNERS; do
 
 
 
-	for GENES_PANEL in $TARGET_DESIGN_NAME $(cat $LIST_GENES_PANEL); do
+	#for GENES_PANEL in $TARGET_DESIGN_NAME $(cat $LIST_GENES_PANEL); do # LIST_GENES_PANEL_BASENAME
+	for GENES_PANEL in $TARGET_DESIGN_NAME $(cat $LIST_GENES_PANEL_BASENAME); do # LIST_GENES_PANEL_BASENAME
 
 		# FILES
 		GENES_PANEL_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$GENES_PANEL"
+		#GENES_PANEL_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$GENES_PANEL"
+		if [ -s $GENES_PANEL_FILE ]; then GENES_PANEL_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$GENES_PANEL"; fi;
+
 		GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.coverage"
 		GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.genes.txt"
 		GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.HsMetrics.per_target_coverage"
 
 
 
-		if [ -s $GENES_PANEL_FILE ]; then
+		#if [ -s $GENES_PANEL_FILE ]; then
+		if [ -s $GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE ] \
+			&& [ -s $GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE ] \
+			&& [ -s $GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH ] \
+		; then
 
 			((GENES_PANEL_NUM++))
 
@@ -2338,43 +2411,54 @@ for ALIGNER in $ALIGNERS; do
 
 				#cat $GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE;
 
-				print_header=true
-				GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML=""
-				#GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML="<tbody>"
-				while read INPUT ; do
-					#echo $INPUT
-				  	if $print_header;then
-					    GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML=$GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML"<thead><tr class=\"table-heads\"><th class=\"head-item mbr-fonts-style display-7\">"$(echo -e "$INPUT" | tr ",;" " " | sed -e 's/\t/<\/th><th class=\"head-item mbr-fonts-style display-7\">/g')"</th></tr></thead><tbody>"
-					    print_header=false
-					else
-				  		#echo "<tr><td>${INPUT//\t/</td><td>}</td></tr>" ;
-				  		GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML=$GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML"<tr><td class=\"body-item mbr-fonts-style display-7\">"$(echo -e "$INPUT" | tr ",;" " " | sed -e 's/\t/<\/td><td class=\"body-item mbr-fonts-style display-7\">/g')"</td></tr>"
-					fi;
-				done < $GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE ;
-				GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML=$GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML"</tbody>"
+				if ((0)); then
+					print_header=true
+					GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML=""
+					#GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML="<tbody>"
+					while read INPUT ; do
+						#echo $INPUT
+					  	if $print_header;then
+						    GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML=$GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML"<thead><tr class=\"table-heads\"><th class=\"head-item mbr-fonts-style display-7\">"$(echo -e "$INPUT" | tr ",;" " " | sed -e 's/\t/<\/th><th class=\"head-item mbr-fonts-style display-7\">/g')"</th></tr></thead><tbody>"
+						    print_header=false
+						else
+					  		#echo "<tr><td>${INPUT//\t/</td><td>}</td></tr>" ;
+					  		GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML=$GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML"<tr><td class=\"body-item mbr-fonts-style display-7\">"$(echo -e "$INPUT" | tr ",;" " " | sed -e 's/\t/<\/td><td class=\"body-item mbr-fonts-style display-7\">/g')"</td></tr>"
+						fi;
+					done < $GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE ;
+					GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML=$GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML"</tbody>"
+				fi;
+
+				GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML=$(cat $GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE | tr "," " " | $STARK_FOLDER_BIN/csv_to_html.awk -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
+				#echo $GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML
+				#GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML=""
 
 			fi;
 
 
-			# GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE
-			if [ -s $GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE ]; then
+			# GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE
+			if [ -s $GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE ]; then
 
-				#cat $GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE;
+				#cat $GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE;
 
-				print_header=true
-				GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML=""
-				#GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML="<tbody>"
-				while read INPUT ; do
-					#echo -e $INPUT
-					if $print_header;then
-						GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML=$GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML"<thead><tr class=\"table-heads\"><th class=\"head-item mbr-fonts-style display-7\">"$(echo -e "$INPUT" | tr ",;" " " | sed -e 's/\t/<\/th><th class=\"head-item mbr-fonts-style display-7\">/g')"</th></tr></thead><tbody>"
-						print_header=false
-					else
-						#echo "<tr><td>${INPUT//\t/</td><td>}</td></tr>" ;
-						GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML=$GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML"<tr><td class=\"body-item mbr-fonts-style display-7\">"$(echo -e "$INPUT" | tr ",;" " " | sed -e 's/\t/<\/td><td class=\"body-item mbr-fonts-style display-7\">/g')"</td></tr>"
-					fi;
-				done < $GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE ;
-				GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML=$GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML"</tbody>"
+				if ((0)); then
+					print_header=true
+					GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML=""
+					#GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML="<tbody>"
+					while read INPUT ; do
+						#echo -e $INPUT
+						if $print_header;then
+							GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML=$GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML"<thead><tr class=\"table-heads\"><th class=\"head-item mbr-fonts-style display-7\">"$(echo -e "$INPUT" | tr ",;" " " | sed -e 's/\t/<\/th><th class=\"head-item mbr-fonts-style display-7\">/g')"</th></tr></thead><tbody>"
+							print_header=false
+						else
+							#echo "<tr><td>${INPUT//\t/</td><td>}</td></tr>" ;
+							GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML=$GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML"<tr><td class=\"body-item mbr-fonts-style display-7\">"$(echo -e "$INPUT" | tr ",;" " " | sed -e 's/\t/<\/td><td class=\"body-item mbr-fonts-style display-7\">/g')"</td></tr>"
+						fi;
+					done < $GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE ;
+					GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML=$GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML"</tbody>"
+				fi;
+
+				GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML=$(cat $GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE | tr "," " " | $STARK_FOLDER_BIN/csv_to_html.awk -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
+
 
 			fi;
 
@@ -2383,18 +2467,23 @@ for ALIGNER in $ALIGNERS; do
 
 				#cat $GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH;
 
-				print_header=true
-				GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH_HTML=""
-				while read INPUT ; do
-				  	if $print_header;then
-					    GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH_HTML=$GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH_HTML"<thead><tr class=\"table-heads\"><th class=\"head-item mbr-fonts-style display-7\">"$( echo -e "$INPUT" | tr ",;" " " | sed -e 's/\t/<\/th><th class=\"head-item mbr-fonts-style display-7\">/g')"</th></tr></thead><tbody>"
-					    print_header=false
-					else
-				  		#echo "<tr><td>${INPUT//\t/</td><td>}</td></tr>" ;
-				  		GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH_HTML=$GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH_HTML"<tr><td class=\"body-item mbr-fonts-style display-7\">"$(echo -e "$INPUT" | tr ",;" " " | sed -e 's/\t/<\/td><td class=\"body-item mbr-fonts-style display-7\">/g')"</td></tr>"
-					fi;
-				done < $GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH ;
-				GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH_HTML=$GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH_HTML"</tbody>"
+				if ((0)); then
+					print_header=true
+					GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH_HTML=""
+					while read INPUT ; do
+					  	if $print_header;then
+						    GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH_HTML=$GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH_HTML"<thead><tr class=\"table-heads\"><th class=\"head-item mbr-fonts-style display-7\">"$( echo -e "$INPUT" | tr ",;" " " | sed -e 's/\t/<\/th><th class=\"head-item mbr-fonts-style display-7\">/g')"</th></tr></thead><tbody>"
+						    print_header=false
+						else
+					  		#echo "<tr><td>${INPUT//\t/</td><td>}</td></tr>" ;
+					  		GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH_HTML=$GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH_HTML"<tr><td class=\"body-item mbr-fonts-style display-7\">"$(echo -e "$INPUT" | tr ",;" " " | sed -e 's/\t/<\/td><td class=\"body-item mbr-fonts-style display-7\">/g')"</td></tr>"
+						fi;
+					done < $GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH ;
+					GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH_HTML=$GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH_HTML"</tbody>"
+				fi;
+
+				GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH_HTML=$(cat $GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH | tr "," " " | $STARK_FOLDER_BIN/csv_to_html.awk -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
+
 
 			fi;
 
@@ -2440,7 +2529,6 @@ for ALIGNER in $ALIGNERS; do
 					  	<table class="table isSearch" cellspacing="0">
 							'$GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML'
 					  	</table>
-
 					</div>
 
 					<div class="container table-info-container">
@@ -2497,7 +2585,6 @@ for ALIGNER in $ALIGNERS; do
 						<table class="table isSearch" cellspacing="0">
 							'$GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML'
 						</table>
-
 					</div>
 
 					<div class="container table-info-container">
@@ -2555,7 +2642,6 @@ for ALIGNER in $ALIGNERS; do
 						<table class="table isSearch" cellspacing="0">
 							'$GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH_HTML'
 						</table>
-
 					</div>
 
 					<div class="container table-info-container">
@@ -2619,7 +2705,6 @@ for ALIGNER in $ALIGNERS; do
 					<table class="table isSearch" cellspacing="0">
 						'$GENES_PANEL_AMPLICON_HTML'
 					</table>
-
 				</div>
 
 				<div class="container table-info-container">
@@ -2856,12 +2941,15 @@ GENES_PANEL_NUM=0
 
 
 	# FILES
-	LIST_GENES_PANEL="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.list.genes"
+	#LIST_GENES_PANEL="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.list.genes"
 	#TARGET_DESIGN_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.design.bed"
 	#TARGET_DESIGN_NAME="$SAMPLE.bed"
+	#TARGET_DESIGN_NAME="$SAMPLE.from_design.genes" # TEST.final.design.bed
+	TARGET_DESIGN_NAME="$SAMPLE.final.design.bed" # TEST.final.design.bed
 
 
-	for GENES_PANEL in $(cat $LIST_GENES_PANEL); do
+	#for GENES_PANEL in $TARGET_DESIGN_NAME $(cat $LIST_GENES_PANEL | grep -v "^$TARGET_DESIGN_NAME$"); do # LIST_GENES_PANEL_BASENAME
+	for GENES_PANEL in $TARGET_DESIGN_NAME $(cat $LIST_GENES_PANEL_BASENAME | grep -v "^$TARGET_DESIGN_NAME$"); do # LIST_GENES_PANEL_BASENAME
 
 		# FILES
 		GENES_PANEL_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$GENES_PANEL"
@@ -2876,7 +2964,7 @@ GENES_PANEL_NUM=0
 		#head -n 10 $GENES_PANEL_VCF
 
 
-		if [ -s $GENES_PANEL_FILE ]; then
+		if [ -s $GENES_PANEL_FILE ] || [ $GENES_PANEL == $TARGET_DESIGN_NAME ]; then
 
 			((GENES_PANEL_NUM++))
 
@@ -2902,7 +2990,7 @@ GENES_PANEL_NUM=0
 				#cat $GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE;
 
 
-				if [ ! -s $GENES_PANEL_MINIMAL_TSV ] || ((0)); then
+				if [ ! -s $GENES_PANEL_REPORT_TSV ] || ((0)); then
 					if [ "$HOWARD_FIELDS_REPORT" == "" ]; then
 						HOWARD_FIELDS_REPORT=$(echo $HOWARD_FIELDS | sed "s/ALL//")
 					fi;
@@ -2911,37 +2999,42 @@ GENES_PANEL_NUM=0
 					GENES_PANEL_REPORT_TSV=$HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.tmp
 				fi;
 
-				if ((0)); then
-					#cut -f 8- $GENES_PANEL_REPORT_TSV | rev | cut -f 3- | rev
-					cut -f 8- $GENES_PANEL_REPORT_TSV | rev | cut -f 3- | rev >$HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV
-					#cp $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.tmp $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV
-
-					#echo $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV
-					#cat $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV
-				elif ((1)); then
+				#if ((0)); then
+				#	#cut -f 8- $GENES_PANEL_REPORT_TSV | rev | cut -f 3- | rev
+				#	cut -f 8- $GENES_PANEL_REPORT_TSV | rev | cut -f 3- | rev >$HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV
+				#	#cp $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.tmp $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV
+				#
+				#	#echo $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV
+				#	#cat $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV
+				#elif ((1)); then
 					cut -f 8- $GENES_PANEL_REPORT_TSV | rev | cut -f 3- | rev >$HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.INFO
 					cut -f -7 $GENES_PANEL_REPORT_TSV >$HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.CHROMPOSREFALT
 					rev $GENES_PANEL_REPORT_TSV | cut -f -2 | rev >$HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.FORMATSAMPLE
 					paste $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.INFO $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.CHROMPOSREFALT $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.FORMATSAMPLE > $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV
-				else
-					HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV=$GENES_PANEL_REPORT_TSV
-				fi;
+				#else
+				#	HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV=$GENES_PANEL_REPORT_TSV
+				#fi;
 				#exit 0
+				if ((0)); then
+					print_header=true
+					GENES_PANEL_VARIANTS_HTML=""
+					#GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML="<tbody>"
+					while read INPUT ; do
+						#echo $INPUT
+					  	if $print_header;then
+						    GENES_PANEL_VARIANTS_HTML=$GENES_PANEL_VARIANTS_HTML"<thead><tr class=\"table-heads\"><th class=\"head-item mbr-fonts-style display-7\">"$(echo -e "$INPUT" | tr ",;" " " | sed -e 's/\t/<\/th><th class=\"head-item mbr-fonts-style display-7\">/g')"</th></tr></thead><tbody>"
+						    print_header=false
+						else
+					  		#echo "<tr><td>${INPUT//\t/</td><td>}</td></tr>" ;
+					  		GENES_PANEL_VARIANTS_HTML=$GENES_PANEL_VARIANTS_HTML"<tr><td class=\"body-item mbr-fonts-style display-7\">"$(echo -e "$INPUT" | tr ",;" " " | sed -e 's/\t/<\/td><td class=\"body-item mbr-fonts-style display-7\">/g')"</td></tr>"
+						fi;
+					done < $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV ;
+					GENES_PANEL_VARIANTS_HTML=$GENES_PANEL_VARIANTS_HTML"</tbody>"
+				fi;
 
-				print_header=true
-				GENES_PANEL_VARIANTS_HTML=""
-				#GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML="<tbody>"
-				while read INPUT ; do
-					#echo $INPUT
-				  	if $print_header;then
-					    GENES_PANEL_VARIANTS_HTML=$GENES_PANEL_VARIANTS_HTML"<thead><tr class=\"table-heads\"><th class=\"head-item mbr-fonts-style display-7\">"$(echo -e "$INPUT" | tr ",;" " " | sed -e 's/\t/<\/th><th class=\"head-item mbr-fonts-style display-7\">/g')"</th></tr></thead><tbody>"
-					    print_header=false
-					else
-				  		#echo "<tr><td>${INPUT//\t/</td><td>}</td></tr>" ;
-				  		GENES_PANEL_VARIANTS_HTML=$GENES_PANEL_VARIANTS_HTML"<tr><td class=\"body-item mbr-fonts-style display-7\">"$(echo -e "$INPUT" | tr ",;" " " | sed -e 's/\t/<\/td><td class=\"body-item mbr-fonts-style display-7\">/g')"</td></tr>"
-					fi;
-				done < $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV ;
-				GENES_PANEL_VARIANTS_HTML=$GENES_PANEL_VARIANTS_HTML"</tbody>"
+				GENES_PANEL_VARIANTS_HTML=$(cat $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV | tr "," " " | $STARK_FOLDER_BIN/csv_to_html.awk -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
+
+
 
 			fi;
 
@@ -2984,7 +3077,6 @@ GENES_PANEL_NUM=0
 					  	<table class="table isSearch" cellspacing="0">
 							'$GENES_PANEL_VARIANTS_HTML'
 					  	</table>
-
 					</div>
 
 					<div class="container table-info-container">

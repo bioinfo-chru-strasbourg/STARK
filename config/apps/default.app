@@ -27,7 +27,7 @@ FOLDER_TOOLS=$STARK_FOLDER_MAIN/tools
 # DATABASES FOLDER
 # genomes: All references genomes. format: $FOLDER_GENOMES/$ASSEMBLY/$ASSEMBLY.fa (with ASSEMBLY=hg19, hg38, mmu19...)
 # db: Folder with mandatory databases: dbSNP database for variant calling, such as "dbsnp_138.hg19.vcf.gz" (mandatory, depending on ASSEMBLY), VCF databases for recalibration such as "dbsnp_137.hg19.vcf" (mandatory, depending on ASSEMBLY)
-FOLDER_DATABASES=$STARK_FOLDER_MAIN/databases
+FOLDER_DATABASES=$STARK_FOLDER_MAIN/databases2
 
 
 # INPUT FOLDER
@@ -282,17 +282,17 @@ HOWARD_PRIORITIZATION_ANALYSIS="" # "none"
 # List of fields to show in the TSV file
 # use ALL to show ALL "other" annotations
 # Default filter to prioritize/rank variant, Sort variant in the TXT using 2 fields, Order fields in variant ranking
-HOWARD_FIELDS="NOMEN,PZFlag,PZScore,PZComment,CNOMEN,PNOMEN,location,outcome,VAF_average,dbSNP,dbSNPNonFlagged,popfreq,snpeff_impact,ALL"
+HOWARD_FIELDS="NOMEN,PZFlag,PZScore,PZComment,CNOMEN,PNOMEN,location,outcome,snpeff_impact,VAF_average,dbSNP,dbSNPNonFlagged,popfreq,ALL"
 HOWARD_SORT="PZFlag::DESC,PZScore:n:DESC"
 HOWARD_SORT_BY="PZFlag,PZScore"
 HOWARD_ORDER_BY="DESC,DESC"
 # Minimal
-HOWARD_FIELDS_MINIMAL="NOMEN,PZFlag,PZScore,PZComment,location,outcome,VAF_average,dbSNP,popfreq,snpeff_impact"
+HOWARD_FIELDS_MINIMAL="NOMEN,PZFlag,PZScore,PZComment,CNOMEN,PNOMEN,location,outcome,snpeff_impact,VAF_average,dbSNP,dbSNPNonFlagged,popfreq"
 HOWARD_SORT_MINIMAL="PZFlag::DESC,PZScore:n:DESC"
 HOWARD_SORT_BY_MINIMAL="PZFlag,PZScore"
 HOWARD_ORDER_BY_MINIMAL="DESC,DESC"
 # REPORT
-HOWARD_FIELDS_REPORT="NOMEN,PZFlag,PZScore,PZComment,location,outcome,VAF_average,dbSNP,popfreq,snpeff_impact"
+HOWARD_FIELDS_REPORT="NOMEN,PZFlag,PZScore,PZComment,CNOMEN,PNOMEN,location,outcome,snpeff_impact,VAF_average,dbSNP,dbSNPNonFlagged,popfreq"
 HOWARD_SORT_REPORT="PZFlag::DESC,PZScore:n:DESC"
 HOWARD_SORT_BY_REPORT="PZFlag,PZScore"
 HOWARD_ORDER_BY_REPORT="DESC,DESC"

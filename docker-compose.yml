@@ -22,7 +22,7 @@ services:
     stark-databases:
         image: ${DOCKER_STARK_IMAGE}
         entrypoint: /tool/toolbox/get_databases.sh
-        command: --build
+        command: --build --threads=${DOCKER_STARK_GET_DATABASES_THREADS} --additional_annotations=${DOCKER_STARK_GET_DATABASES_ADDITIONAL_ANNOTATIONS}
         volumes:
             - databases:/STARK/databases
         links:
@@ -37,7 +37,7 @@ services:
         env_file:
             - .env
         ports:
-            - ${DOCKER_STARK_SERVICE_PORT_RANGE}01:8000
+            - ${DOCKER_STARK_SERVICE_SERVER_PORT_HOST}01:${DOCKER_STARK_SERVICE_SERVER_PORT_INNER}
         volumes:
             - /var/run/docker.sock:/var/run/docker.sock
             - analyses:/STARK/analyses
@@ -54,7 +54,7 @@ services:
         env_file:
             - .env
         ports:
-            - ${DOCKER_STARK_SERVICE_PORT_RANGE}02:8000
+            - ${DOCKER_STARK_SERVICE_SERVER_PORT_HOST}02:${DOCKER_STARK_SERVICE_SERVER_PORT_INNER}
         volumes:
             - /var/run/docker.sock:/var/run/docker.sock
             - analyses:/STARK/analyses

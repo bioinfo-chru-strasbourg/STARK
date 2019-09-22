@@ -596,8 +596,9 @@ TRANSCRIPTS_CHECKED=""
 TRANSCRIPTS_ARRAY=($TRANSCRIPTS);
 SAMPLE_TAG_CHECKED=""
 SAMPLE_TAG_ARRAY=($SAMPLE_TAG);
-ANALYSIS_TAG_CHECKED=""
-ANALYSIS_TAG_ARRAY=($ANALYSIS_TAG);
+#ANALYSIS_TAG_CHECKED=""
+#ANALYSIS_TAG_ARRAY=($ANALYSIS_TAG);
+
 
 (($DEBUG)) && echo "#[INFO] FASTQ=$FASTQ";
 
@@ -707,17 +708,15 @@ for F in $FASTQ; do
 	fi;
 
 	# ANALYSIS TAG
-	if [ "${ANALYSIS_TAG_ARRAY[$NB_SAMPLE]}" == "" ] || [ ! -f "${ANALYSIS_TAG_ARRAY[$NB_SAMPLE]}" ]; then
-		ANALYSIS_TAG_CHECKED="$SANALYSIS_TAG_CHECKED"
-	else
-		ANALYSIS_TAG_CHECKED="$ANALYSIS_TAG_CHECKED${ANALYSIS_TAG_ARRAY[$NB_SAMPLE]} "
-	fi;
+	#if [ "${ANALYSIS_TAG_ARRAY[$NB_SAMPLE]}" == "" ] || [ ! -f "${ANALYSIS_TAG_ARRAY[$NB_SAMPLE]}" ]; then
+	#	ANALYSIS_TAG_CHECKED="$SANALYSIS_TAG_CHECKED"
+	#else
+	#	ANALYSIS_TAG_CHECKED="$ANALYSIS_TAG_CHECKED${ANALYSIS_TAG_ARRAY[$NB_SAMPLE]} "
+	#fi;
 
 
 	((NB_SAMPLE++))
 done;
-
-
 
 SAMPLE=$SAMPLE_CHECKED;
 RUN=$RUN_CHECKED;
@@ -945,7 +944,7 @@ for RUU in $RUN_UNIQ; do
 	G_LIST=""
 	T_LIST=""
 	TAG_LIST=""
-	ATAG_LIST=""
+	#ATAG_LIST=""
 
 
 	I=0;
@@ -966,7 +965,7 @@ for RUU in $RUN_UNIQ; do
 		G=${BEDFILE_GENES_ARRAY[$I]};
 		T=${TRANSCRIPTS_ARRAY[$I]};
 		TAG=${SAMPLE_TAG_ARRAY[$I]};
-		ATAG=${ANALYSIS_TAG_ARRAY[$I]};
+		#ATAG=${ANALYSIS_TAG_ARRAY[$I]};
 
 		#echo "$S $F $F_R2"; exit 0;
 
@@ -1117,11 +1116,20 @@ for RUU in $RUN_UNIQ; do
 			if [ "$B" != "" ]; then
 				if [[ $B =~ .bed$ ]]; then
 					if [ -e $B ] && [ "$B" != "" ] && [ ! -e $RUN_SAMPLE_DIR/$S.bed ]; then
-						echo "#[INFO] Copy BED file."
+						echo "#[INFO] Sort/Merge/Normalize BED file."
 						#cp -p $B $RUN_SAMPLE_DIR/$S.bed;
 						#cp -p $B $RUN_SAMPLE_DIR/$S.metrics.bed;
 						#$COMMAND_COPY $B $RUN_SAMPLE_DIR/$S.bed;
-						$BEDTOOLS/bedtools sort -i $B | $BEDTOOLS/bedtools merge -i - > $RUN_SAMPLE_DIR/$S.bed;
+						$BEDTOOLS/bedtools sort -i $B | $BEDTOOLS/bedtools merge -i - | awk -F"\t" '
+							{chr=$1}
+							{start=$2}
+							{stop=$3}
+							{strand=$4}
+							{gene=$5}
+							strand !~ /[+-]/ {strand="+"}
+							gene == "" { if ($4 !~ /[+-]/ && $4 != "") {gene=$4} else {gene=chr"_"start"_"stop} }
+							{print chr"\t"start"\t"stop"\t"strand"\t"gene}
+						' > $RUN_SAMPLE_DIR/$S.bed;
 						touch $RUN_SAMPLE_DIR/$S.bed -r $B;
 						$COMMAND_COPY $B $RUN_SAMPLE_DIR/$S.metrics.bed;
 						touch $RUN_SAMPLE_DIR/$S.manifest;
@@ -1171,7 +1179,10 @@ for RUU in $RUN_UNIQ; do
 		BEDFILE_GENES_LIST_ONE=$RUN_SAMPLE_DIR/$S.list.genes
 		#if [ ! -e $RUN_SAMPLE_DIR/$S.list.genes ]; then
 		if [ ! -e $BEDFILE_GENES_LIST_ONE ]; then
-			> $BEDFILE_GENES_LIST_ONE;
+			#> $BEDFILE_GENES_LIST_ONE;
+			# Add design in gene list
+			#[ -s $RUN_SAMPLE_DIR/$S.bed ] && echo "$S.bed" > $BEDFILE_GENES_LIST_ONE;
+			# Add Genes
 			if [ "$G" != "" ]; then
 				echo "#[INFO] Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' and copy .genes files."
 				#> $RUN_SAMPLE_DIR/$S.list.genes;
@@ -1181,7 +1192,8 @@ for RUU in $RUN_UNIQ; do
 					# remove Sample name (mainly in case of relauch)
 					G_ONE_TARGET=$(echo $G_ONE_TARGET | sed "s/$S\.//gi")
 					#$COMMAND_COPY $G_ONE $RUN_SAMPLE_DIR/$S.$G_ONE_TARGET;
-					$BEDTOOLS/bedtools sort -i $G_ONE | $BEDTOOLS/bedtools merge -i - > $RUN_SAMPLE_DIR/$S.$G_ONE_TARGET;
+					#$BEDTOOLS/bedtools sort -i $G_ONE | $BEDTOOLS/bedtools merge -i - > $RUN_SAMPLE_DIR/$S.$G_ONE_TARGET;
+					$BEDTOOLS/bedtools sort -i $G_ONE > $RUN_SAMPLE_DIR/$S.$G_ONE_TARGET;
 					echo $S.$G_ONE_TARGET >> $BEDFILE_GENES_LIST_ONE
 				done;
 			elif [ -s $B ] && [ "$B" != "" ]; then
@@ -1196,7 +1208,7 @@ for RUU in $RUN_UNIQ; do
 					#cut -f1,2,3 $B > $BEDFILE_GENES_INTERMEDIATE;
 					$BEDTOOLS/bedtools sort -i $B | $BEDTOOLS/bedtools merge -i - | cut -f1,2,3 > $BEDFILE_GENES_INTERMEDIATE;
 				else
-					$CAP_ManifestToBED --input $B --output $BEDFILE_GENES_INTERMEDIATE.tmp --output_type "region" --type=PCR;
+					$CAP_ManifestToBED --input $B --output $BEDFILE_GENES_INTERMEDIATE.tmp --output_type "region" --type=PCR 1>/dev/null;
 					#cut -f1,2,3 $BEDFILE_GENES_INTERMEDIATE.tmp > $BEDFILE_GENES_INTERMEDIATE;
 					$BEDTOOLS/bedtools sort -i $BEDFILE_GENES_INTERMEDIATE.tmp | $BEDTOOLS/bedtools merge -i - | cut -f1,2,3 > $BEDFILE_GENES_INTERMEDIATE;
 					rm -f $BEDFILE_GENES_INTERMEDIATE.tmp;
@@ -1221,6 +1233,18 @@ for RUU in $RUN_UNIQ; do
 				# ADD GENES in input files
 				G=$BEDFILE_GENES_ONE
 
+			# GENE LIST empty and cannot be generated
+			#else
+			#	#echo "#[INFO] No GENES and no Design file to create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes'. Generate empty LIST.GENES."
+			#	echo "#[INFO] No GENES and no Design file to create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes'. Generate empty GENES."
+			#	awk -F'\t' 'substr($6,1,2)=="NM" {print $0}' $REFSEQ_GENES > $RUN_SAMPLE_DIR/$S.refGene.bed
+			#	#$COMMAND_COPY $REFSEQ_GENES $RUN_SAMPLE_DIR/$(basename $REFSEQ_GENES);
+			#	echo "#[INFO] Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' as empty."
+			#	#echo "" > $BEDFILE_GENES_LIST_ONE;
+			#	#touch $BEDFILE_GENES_LIST_ONE
+			#	#fi;
+
+
 			#else
 			#	#echo "#[INFO] No GENES and no Design file to create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes'. Generate empty LIST.GENES."
 			#	echo "#[INFO] No GENES and no Design file to create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes'. Generate GENES with all NM transcript in RefSeq."
@@ -1230,6 +1254,8 @@ for RUU in $RUN_UNIQ; do
 			#	#touch $BEDFILE_GENES_LIST_ONE
 			#	#fi;
 			fi;
+
+
 		else
 			echo "#[INFO] LIST.GENES already exists."
 		fi;
@@ -1263,7 +1289,7 @@ for RUU in $RUN_UNIQ; do
 		# ANALYSIS TAG
 		if [ ! -e $RUN_SAMPLE_DIR/$S.analysis.tag ]; then
 			echo "#[INFO] Create Analysis TAG file."
-			echo $ATAG > $RUN_SAMPLE_DIR/$S.analysis.tag;
+			echo $ANALYSIS_TAG > $RUN_SAMPLE_DIR/$S.analysis.tag;
 		fi;
 		#echo "$T"; exit 0;
 
@@ -1292,7 +1318,7 @@ for RUU in $RUN_UNIQ; do
 		G_LIST="$G_LIST$G "
 		T_LIST="$T_LIST$T "
 		TAG_LIST="$TAG_LIST$TAG "
-		ATAG_LIST="$ATAG_LIST$ATAG "
+		#ATAG_LIST="$ATAG_LIST$ATAG "
 
 		# MAKEFILE_ANALYSIS_RUN
 		RUNS_SAMPLES="$RUNS_SAMPLES$RU:$S "
@@ -1399,7 +1425,11 @@ for RUU in $RUN_UNIQ; do
 	#echo "# "
 	echo "#[INFO] *** CONFIGURATION"
 	#echo "#################"
-	echo "#[INFO] SAMPLES                   $S_LIST"
+	echo "#[INFO] * ANALYSIS                "
+	echo "#[INFO] ANALYSIS NAME             $RUU"
+	echo "#[INFO] ANALYSIS TAG              $ANALYSIS_TAG"
+	echo "#[INFO] * SAMPLES                 "
+	echo "#[INFO] SAMPLE NAMES              $S_LIST"
 	echo "#[INFO] FASTQ/BAM/CRAM            $F_LIST"
 	echo "#[INFO] FASTQ R2                  $Q_LIST"
 	echo "#[INFO] INDEX1                    $I1_LIST"
@@ -1408,8 +1438,9 @@ for RUU in $RUN_UNIQ; do
 	echo "#[INFO] DESIGN                    $B_LIST"
 	echo "#[INFO] GENES                     $G_LIST"
 	echo "#[INFO] TRANSCRIPTS               $T_LIST"
-	echo "#[INFO] RUN                       $RUU"
-	echo "#[INFO] APPLICATION               $APP_NAME"
+	echo "#[INFO] SAMPLE_TAG                $TAG_LIST"
+	echo "#[INFO] * APPLICATION               "
+	echo "#[INFO] APPLICATION NAME          $APP_NAME"
 	echo "#[INFO] APPLICATION FILE          "$(echo $ENV | sed s#$STARK_FOLDER_APPS/##gi)
 	echo "#[INFO] GROUP                     $SAMPLE_GROUP"
 	echo "#[INFO] PROJECT                   $SAMPLE_PROJECT"

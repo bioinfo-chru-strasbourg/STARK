@@ -48,6 +48,9 @@ function usage {
 	echo "#                                          Default: Default STARK parameters.";
 	echo "# --databases=<FOLDER>                     Databases folder (replace APP parameter)";
 	echo "#                                          Will generate STARK databases folder structure";
+	echo "# --additional_annotations=<STRING>        Additional HOWARD annotations";
+	echo "#                                          Will download ANNOVAR and SNPEFF additional databases (beyond originally defined application)";
+	echo "#                                          Format: 'annotation1,annotation2,...'";
 	echo "# --build                                  Build all databases.";
 	echo "# --rebuild                                Force Rebuild all databases.";
 	echo "# --update                                 Update databases (latest dbSNP and HOWARD-ANNOVAR-snpEff databases) and build if needed.";
@@ -68,7 +71,7 @@ header;
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
-ARGS=$(getopt -o "e:bfut:vdnh" --long "env:,app:,application:,databases:,build,rebuild,update,threads:,verbose,debug,release,help" -- "$@" 2> /dev/null)
+ARGS=$(getopt -o "e:bfut:vdnh" --long "env:,app:,application:,databases:,additional_annotations:,build,rebuild,update,threads:,verbose,debug,release,help" -- "$@" 2> /dev/null)
 # || [ -z $@ ]
 
 PARAM=$@
@@ -89,6 +92,10 @@ do
 			;;
 		--databases)
 			DATABASES="$2"
+			shift 2
+			;;
+		--additional_annotations)
+			ADDITIONAL_ANNOTATIONS="$2"
 			shift 2
 			;;
 		-v|--verbose)
@@ -401,15 +408,18 @@ if [ ! -e $REFSEQ_GENES ]; then
 	# RefGenes TXT file
 	REFSEQ_GENES_URL="ftp://hgdownload.soe.ucsc.edu/goldenPath/$ASSEMBLY/database"
 	REFSEQ_GENES_TXT=$(echo $REFSEQ_GENES | sed 's/bed$/txt/g')
+	REFSEQ_GENES_GENES=$(echo $REFSEQ_GENES | sed 's/bed$/genes/g')
 
 	# REFSEQ_GENE folder
 	REFSEQ_GENES_FOLDER=$(dirname $REFSEQ_GENES)
 	REFSEQ_GENES_TXT_FILE=$(basename $REFSEQ_GENES_TXT)
+	REFSEQ_GENES_GENES_FILE=$(basename $REFSEQ_GENES_GENES)
 	REFSEQ_GENES_FILE=$(basename $REFSEQ_GENES)
 
 	# Update
 	if (($UPDATE)); then
 		if [ -e $REFSEQ_GENES_TXT ]; then mv -f $REFSEQ_GENES_TXT $REFSEQ_GENES_TXT.V$DATE; fi;
+		if [ -e $REFSEQ_GENES_GENES ]; then mv -f $REFSEQ_GENES_GENES $REFSEQ_GENES_GENES.V$DATE; fi;
 		if [ -e $REFSEQ_GENES ]; then mv -f $REFSEQ_GENES $REFSEQ_GENES.V$DATE; fi;
 	fi;
 	COPY_MODE_REFSEQ_GENES=$COPY_MODE_DEFAULT
@@ -417,34 +427,53 @@ if [ ! -e $REFSEQ_GENES ]; then
 	# OUTPUT
 	echo "# REFSEQ_GENES_URL=$REFSEQ_GENES_URL"
 	echo "# REFSEQ_GENES_TXT=$REFSEQ_GENES_TXT"
+	echo "# REFSEQ_GENES_GENES=$REFSEQ_GENES_GENES"
 
 	# Get refGene txt file
-	echo "$REFSEQ_GENES_TXT: $DBFOLDER
+	echo "$TMP_DATABASES_DOWNLOAD_FOLDER/$ASSEMBLY/$REFSEQ_GENES_TXT_FILE: $DBFOLDER
 		mkdir -p $TMP_DATABASES_DOWNLOAD_FOLDER/$ASSEMBLY/
 		wget -S -c -O $TMP_DATABASES_DOWNLOAD_FOLDER/$ASSEMBLY/refGene.txt.gz $REFSEQ_GENES_URL/refGene.txt.gz ;
 		mkdir -p $REFSEQ_GENES_FOLDER
 		chmod 0775 $REFSEQ_GENES_FOLDER
 		$GZ -dc  $TMP_DATABASES_DOWNLOAD_FOLDER/$ASSEMBLY/refGene.txt.gz > $TMP_DATABASES_DOWNLOAD_FOLDER/$ASSEMBLY/$REFSEQ_GENES_TXT_FILE
+	" >> $MK
+	# Copy in database folder
+	echo "$REFSEQ_GENES_TXT: $TMP_DATABASES_DOWNLOAD_FOLDER/$ASSEMBLY/$REFSEQ_GENES_TXT_FILE
 		$COPY_MODE_REFSEQ_GENES $TMP_DATABASES_DOWNLOAD_FOLDER/$ASSEMBLY/$REFSEQ_GENES_TXT_FILE $REFSEQ_GENES_TXT
 	" >> $MK
 
 	# Translate to refGene bed file
-	echo "$REFSEQ_GENES: $DBFOLDER $REFSEQ_GENES_TXT
+	echo "$TMP_DATABASES_DOWNLOAD_FOLDER/$ASSEMBLY/$REFSEQ_GENES_FILE: $DBFOLDER $TMP_DATABASES_DOWNLOAD_FOLDER/$ASSEMBLY/$REFSEQ_GENES_TXT_FILE
 		mkdir -p $TMP_DATABASES_DOWNLOAD_FOLDER/$ASSEMBLY
-		cat $REFSEQ_GENES_TXT | while IFS='' read -r line; do \
+		cat $TMP_DATABASES_DOWNLOAD_FOLDER/$ASSEMBLY/$REFSEQ_GENES_TXT_FILE | while IFS='' read -r line; do \
 			CHROM=\$\$(echo \$\$line | awk '{print \$\$3}' | cut -d\"_\" -f1); \
 			NM=\$\$(echo \$\$line | awk '{print \$\$2}'); \
-		    GENE=\$\$(echo \$\$line | awk '{print \$\$13}'); \
-		    STRAND=\$\$(echo \$\$line | awk '{print \$\$4}'); \
+			GENE=\$\$(echo \$\$line | awk '{print \$\$13}'); \
+			STRAND=\$\$(echo \$\$line | awk '{print \$\$4}'); \
 			echo \$\$line | awk '{print \$\$10}' | tr \",\" \"\\n\" | grep -v '^\$\$' > $TMP_DATABASES_DOWNLOAD_RAM/refGene.unsorted.bed.NM1 ; \
 			echo \$\$line | awk '{print \$\$11}' | tr \",\" \"\\n\" | grep -v '^\$\$' > $TMP_DATABASES_DOWNLOAD_RAM/refGene.unsorted.bed.NM2; \
 			paste $TMP_DATABASES_DOWNLOAD_RAM/refGene.unsorted.bed.NM1 $TMP_DATABASES_DOWNLOAD_RAM/refGene.unsorted.bed.NM2 | while read SS ; do \
-		    	echo -e \"\$\$CHROM\t\$\$SS\t\$\$STRAND\t\$\$GENE\t\$\$NM\" >> $TMP_DATABASES_DOWNLOAD_FOLDER/$ASSEMBLY/refGene.unsorted.bed; \
-		    done; \
+				echo -e \"\$\$CHROM\t\$\$SS\t\$\$STRAND\t\$\$GENE\t\$\$NM\" >> $TMP_DATABASES_DOWNLOAD_FOLDER/$ASSEMBLY/refGene.unsorted.bed; \
+			done; \
 		done
 		cat $TMP_DATABASES_DOWNLOAD_FOLDER/$ASSEMBLY/refGene.unsorted.bed | sort -k1,1V -k2,2n -k3,3n > $TMP_DATABASES_DOWNLOAD_FOLDER/$ASSEMBLY/$REFSEQ_GENES_FILE
-		$COPY_MODE_REFSEQ_GENES $TMP_DATABASES_DOWNLOAD_FOLDER/$ASSEMBLY/$REFSEQ_GENES_FILE $REFSEQ_GENES
 		rm -f $REFSEQ_GENES_TXT.NM1 $REFSEQ_GENES_TXT.NM2;
+	" >> $MK
+	# Copy in database folder
+	echo "$REFSEQ_GENES: $TMP_DATABASES_DOWNLOAD_FOLDER/$ASSEMBLY/$REFSEQ_GENES_FILE
+		$COPY_MODE_REFSEQ_GENES $TMP_DATABASES_DOWNLOAD_FOLDER/$ASSEMBLY/$REFSEQ_GENES_FILE $REFSEQ_GENES
+	" >> $MK
+
+
+	# Generates refGene genes file from bed file
+	echo "$TMP_DATABASES_DOWNLOAD_FOLDER/$ASSEMBLY/$REFSEQ_GENES_GENES_FILE: $DBFOLDER $TMP_DATABASES_DOWNLOAD_FOLDER/$ASSEMBLY/$REFSEQ_GENES_FILE
+		mkdir -p $TMP_DATABASES_DOWNLOAD_FOLDER/$ASSEMBLY
+		awk -F'\t' 'substr(\$\$6,1,2)=='NM' {print \$\$0}' $REFSEQ_GENES > $TMP_DATABASES_DOWNLOAD_FOLDER/$ASSEMBLY/$REFSEQ_GENES_GENES_FILE
+	" >> $MK
+
+	# Generates refGene genes file from bed file
+	echo "$REFSEQ_GENES_GENES: $DBFOLDER $TMP_DATABASES_DOWNLOAD_FOLDER/$ASSEMBLY/$REFSEQ_GENES_GENES_FILE
+		$COPY_MODE_REFSEQ_GENES $TMP_DATABASES_DOWNLOAD_FOLDER/$ASSEMBLY/$REFSEQ_GENES_GENES_FILE $REFSEQ_GENES_GENES
 	" >> $MK
 
 	MK_ALL="$MK_ALL $REFSEQ_GENES"
@@ -576,7 +605,7 @@ if [ ! -e $DBFOLDER/HOWARD.download.complete ] || (($UPDATE)); then
 
 	# DB to DOWNLOAD
 	#HOWARD_DB="ALL,snpeff" # ALL, CORE, snpeff $HOWARD_ANNOTATION
-	HOWARD_DB="$HOWARD_ANNOTATION,$HOWARD_ANNOTATION_REPORT,$HOWARD_ANNOTATION_MINIMAL" # ALL, CORE, snpeff $HOWARD_ANNOTATION
+	HOWARD_DB="$HOWARD_ANNOTATION,$HOWARD_ANNOTATION_REPORT,$HOWARD_ANNOTATION_MINIMAL,$ADDITIONAL_ANNOTATIONS" # ALL, CORE, snpeff $HOWARD_ANNOTATION
 
 	if [ ! -e "$HOWARD_CONFIG_ANNOTATION" ]; then
 		HOWARD_CONFIG_ANNOTATION=$HOWARDDIR/config.annotation.ini
@@ -636,7 +665,7 @@ if [ ! -e $DBFOLDER/HOWARD.download.complete ] || (($UPDATE)); then
 			INPUT_VCF=$HOWARDDIR/docs/example.vcf
 		fi;
 		#INPUT_VCF=$HOWARDDIR/docs/example.vcf
-		HOWARD_CMD="$HOWARD --input=$INPUT_VCF --output=$DBFOLDER/HOWARD.download.vcf  --annotation=$HOWARD_DB --annovar_folder=$ANNOVAR --annovar_databases=$TMP_DATABASES_DOWNLOAD_FOLDER/$ANNOVAR_DATABASES --config_annotation=$HOWARD_CONFIG_ANNOTATION --snpeff_jar=$SNPEFF --snpeff_databases=$TMP_DATABASES_DOWNLOAD_FOLDER/$SNPEFF_DATABASES --snpeff_threads=$THREADS --tmp=$TMP_DATABASES_DOWNLOAD_FOLDER/HOWARD --assembly=$ASSEMBLY --java=$JAVA --java_flags='\"$JAVA_FLAGS\"' --verbose --threads=1 >$DBFOLDER/HOWARD.download.log;"
+		HOWARD_CMD="$HOWARD --input=$INPUT_VCF --output=$DBFOLDER/HOWARD.download.vcf --env=$CONFIG_TOOLS --annotation=$HOWARD_DB --annovar_folder=$ANNOVAR --annovar_databases=$TMP_DATABASES_DOWNLOAD_FOLDER/$ANNOVAR_DATABASES --config_annotation=$HOWARD_CONFIG_ANNOTATION --snpeff_jar=$SNPEFF --snpeff_databases=$TMP_DATABASES_DOWNLOAD_FOLDER/$SNPEFF_DATABASES --snpeff_threads=$THREADS --tmp=$TMP_DATABASES_DOWNLOAD_FOLDER/HOWARD --assembly=$ASSEMBLY --java=$JAVA --java_flags='\"$JAVA_FLAGS\"' --verbose --threads=1 >$DBFOLDER/HOWARD.download.log;"
 		#HOWARD_CMD="$HOWARD --input=$INPUT_VCF --output=$DBFOLDER/HOWARD.download.vcf  --annotation=location --annovar_folder=$ANNOVAR --annovar_databases=$TMP_DATABASES_DOWNLOAD_FOLDER/$ANNOVAR_DATABASES --config_annotation=$HOWARD_CONFIG_ANNOTATION --snpeff_jar=$SNPEFF --snpeff_databases=$TMP_DATABASES_DOWNLOAD_FOLDER/$SNPEFF_DATABASES --snpeff_threads=$THREADS --tmp=$TMP_DATABASES_DOWNLOAD_FOLDER/HOWARD --assembly=$ASSEMBLY --java=$JAVA --java_flags='\"$JAVA_FLAGS\"' --verbose --threads=1 >$DBFOLDER/HOWARD.download.log;"
 		echo "# CMD= $HOWARD_CMD"
 		echo "#"
