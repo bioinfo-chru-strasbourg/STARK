@@ -1,7 +1,7 @@
 #!/bin/bash
 #################################
 ##
-## NGS environment
+## STARK
 ##
 #################################
 
@@ -145,7 +145,7 @@ function usage {
 	echo "";
 
 	echo "### Information options";
-	echo "# --application_infos                      Applications informations.";
+	echo "# --applications_infos                     Applications informations.";
 	echo "# --pipelines_infos                        Pipelines informations.";
 	echo "# --release_infos                          Pipelines with tools and databases information.";
 	echo "# --tools_infos                            Tools release information.";
@@ -994,7 +994,7 @@ if [ ! -z "$RUNS" ]; then
 
 				#echo $SCRIPT_DIR/demultiplexing.sh --app="$APP" --run=$R --demultiplex_folder=$DEMULTIPLEXING_FOLDER --samplesheet=$RUN_SAMPLESHEET --threads=$THREADS_INPUT $DEM_PARAM $DEM_PARAM #|| { echo "#[ERROR] Demultiplexing FAILED"; exit 1; }
 
-				[ -e $DEM_STARKCOMPLETE ] && [ -e $DEM_SAMPLESHEET ] && echo "#[INFO] Demultiplexing completed"
+				[ -e $DEM_STARKCOMPLETE ] && [ -e $DEM_SAMPLESHEET ] && echo "#[INFO] Demultiplexing completed" || exit 1 #echo "#[ERROR] Demultiplexing FAILED"
 
 				# Change RUN folder from RAW to DEM
 				RI="$DEMULTIPLEXING_FOLDER/$R_BASENAME:$R_NAME"

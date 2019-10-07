@@ -1430,6 +1430,7 @@ for RUU in $RUN_UNIQ; do
 	echo "#[INFO] ANALYSIS TAG              $ANALYSIS_TAG"
 	echo "#[INFO] * SAMPLES                 "
 	echo "#[INFO] SAMPLE NAMES              $S_LIST"
+	echo "#[INFO] SAMPLE TAG                $TAG_LIST"
 	echo "#[INFO] FASTQ/BAM/CRAM            $F_LIST"
 	echo "#[INFO] FASTQ R2                  $Q_LIST"
 	echo "#[INFO] INDEX1                    $I1_LIST"
@@ -1438,7 +1439,6 @@ for RUU in $RUN_UNIQ; do
 	echo "#[INFO] DESIGN                    $B_LIST"
 	echo "#[INFO] GENES                     $G_LIST"
 	echo "#[INFO] TRANSCRIPTS               $T_LIST"
-	echo "#[INFO] SAMPLE_TAG                $TAG_LIST"
 	echo "#[INFO] * APPLICATION               "
 	echo "#[INFO] APPLICATION NAME          $APP_NAME"
 	echo "#[INFO] APPLICATION FILE          "$(echo $ENV | sed s#$STARK_FOLDER_APPS/##gi)

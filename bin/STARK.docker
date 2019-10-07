@@ -1,0 +1,270 @@
+#!/bin/bash
+#################################
+##
+## STARK Docker
+##
+#################################
+
+SCRIPT_NAME="STARKDocker"
+SCRIPT_DESCRIPTION="STARK analysis with Docker"
+SCRIPT_RELEASE="0.9b"
+SCRIPT_DATE="25/09/2019"
+SCRIPT_AUTHOR="Antony Le Bechec"
+SCRIPT_COPYRIGHT="IRC"
+SCRIPT_LICENCE="GNU-AGPL"
+
+# Realse note
+RELEASE_NOTES=$RELEASE_NOTES"# 0.9b-25/09/2019: Script creation\n";
+
+# Script folder
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# Configuration
+ENV_CONFIG=$(find $SCRIPT_DIR/.. -name config.app)
+source $ENV_CONFIG 1>/dev/null 2>/dev/null
+
+
+# Header
+function header () {
+	#cat $STARK_FOLDER_DOCS/HEADER
+	echo "#######################################";
+	echo "# $SCRIPT_NAME [$SCRIPT_RELEASE-$SCRIPT_DATE]";
+	echo "# $SCRIPT_DESCRIPTION ";
+	echo "# $SCRIPT_AUTHOR @ $SCRIPT_COPYRIGHT © $SCRIPT_LICENCE";
+	echo "#######################################";
+}
+
+# Release
+function release () {
+	cat $STARK_FOLDER_DOCS/RELEASE_NOTES
+	#echo "# RELEASE NOTES:";
+	#echo -e $RELEASE_NOTES
+}
+
+# Usage
+function usage {
+	echo "# USAGE: $(basename $0) --docker-env-file=<FILE> [STARK command]";
+	echo "";
+	echo "### Launch STARK with Docker";
+	echo "# --docker-compose-file=<FILE>             Docker compose file.";
+	echo "#                                          Default: 'docker-compose.yml' if any, or ''";
+	echo "#                                          Warning: Docker env file '.env' in the Docker compose file folder will be used to build images and populate databases";
+	echo "# --docker-env-file=<FILE>                 Docker environment file.";
+	echo "#                                          Default: found in Docker compose file folder if any, or ''";
+	echo "# --docker-parameters=<STRING>             Docker parameters, added if Docker compose file and Docker env file exists.";
+	echo "#                                          Format: see Docker doc";
+	echo "#                                          Default: ''";
+	echo "# --docker-stark-image=<STRING>            Docker STARK image.";
+	echo "#                                          Default: found in Docker env file if any, or 'stark:latest'";
+	echo "# --docker-stark-container=<STRING>        Docker STARK container name. Start container as deamon/detached (if any) and execute command";
+	echo "#                                          Default: no container started";
+	echo "# --verbose                                Verbose mode";
+	echo "# --debug                                  Debug mode";
+	echo "# --release                                Release";
+	echo "# --help                                   Help";
+	echo "#";
+}
+
+
+
+####################################################################################################################################
+# Getting parameters from the input
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+# ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
+ARGS=$(getopt -o "vdnh" --long "docker-compose-file:,docker-env-file:,docker-parameters:,docker-stark-image:,docker-stark-container:,verbose,debug,release,help" -- "$@" 2> /dev/null)
+
+
+if [ $? -ne 0 ]; then
+	:
+	#echo "#[ERROR] Error in the argument list:";
+	#echo "#[ERROR] $@"
+	#echo ""
+	#usage;
+	#exit;
+fi;
+
+
+PARAM=$@
+DEBUG=0
+VERBOSE=0
+
+
+eval set -- "$ARGS"
+while true
+do
+	#echo "$1=$2"
+	#echo "Eval opts";
+	case "$1" in
+		--docker-compose-file)
+			DOCKER_COMPOSE_FILE="$2"
+			shift 2
+			;;
+		--docker-env-file)
+			DOCKER_ENV_FILE="$2"
+			shift 2
+			;;
+		--docker-parameters)
+			DOCKER_PARAMETERS="$2"
+			shift 2
+			;;
+		--docker-stark-image)
+			DOCKER_STARK_IMAGE="$2"
+			shift 2
+			;;
+		--docker-stark-container)
+			DOCKER_STARK_CONTAINER="$2"
+			shift 2
+			;;
+		-v|--verbose)
+			VERBOSE=1
+			shift 1
+			;;
+		-d|--debug)
+			VERBOSE=1
+			DEBUG=1
+			shift 1
+			;;
+		-n|--release)
+			header
+			release;
+			shift 1
+			#exit 0
+			;;
+		-h|--help)
+			HELP=1
+			header
+			usage
+			shift 1
+			#exit 0
+			;;
+		--) shift
+			break
+			;;
+		*)  #echo "# Option $1 is not recognized. " "Use -h or --help to display the help." && exit 1
+			;;
+	esac
+done
+
+
+# header
+(($NO_HEADER)) || header;
+
+# No Param
+[ "$PARAM" == "" ] && usage
+
+## PARAM & CMD
+# Clean parameters
+
+PARAM_CMD=$(echo "$PARAM " | sed "s/--docker-compose-file=[^ |$]*//g" | sed "s/--docker-env-file=[^ |$]*//g" | sed "s/--docker-parameters=[^ |$]*//g" | sed "s/--docker-stark-image=[^ |$]*//g" | sed "s/--docker-stark-container=[^ |$]*//g")
+
+
+
+## DOCKER
+# Test if Docker is installed
+
+! (( $(docker -v 2>/dev/null | grep "^Docker version" -c ) )) && echo "#[ERROR] Docker NOT found" && exit 1
+
+
+## DOCKER COMPOSE
+# Check docker compose file
+
+#[ ! -s $DOCKER_COMPOSE_FILE ] || [ ! -f "$DOCKER_COMPOSE_FILE" ] && [ -s "docker-compose.yml" ] && DOCKER_COMPOSE_FILE="docker-compose.yml";
+(($VERBOSE)) && echo "#[INFO] Docker compose file '$DOCKER_COMPOSE_FILE'"
+
+if [ -s "$DOCKER_COMPOSE_FILE" ]; then
+	(($VERBOSE)) && echo "#[INFO] Compose build with file '$DOCKER_COMPOSE_FILE' to build image (if necessary)"
+	DOCKER_CMD="docker-compose -f $DOCKER_COMPOSE_FILE --project-directory=$(dirname $DOCKER_COMPOSE_FILE) $DOCKER_STARK_IMAGE_ENV up --no-start stark stark-databases"
+	(($DEBUG)) && echo "[INFO] DOCKER CMD: $DOCKER_CMD"
+	eval $DOCKER_CMD
+fi;
+
+
+## DOCKER ENV
+# Check docker env file
+
+[ ! -s $DOCKER_ENV_FILE ] || [ ! -f "$DOCKER_ENV_FILE" ] && [ -s $(dirname "$DOCKER_COMPOSE_FILE")"/.env" ] && [ "$DOCKER_COMPOSE_FILE" != "" ] && DOCKER_ENV_FILE=$(dirname "$DOCKER_COMPOSE_FILE")"/.env";
+[ "$DOCKER_ENV_FILE" != "" ] && [ ! -f $DOCKER_ENV_FILE ] && (($VERBOSE)) && echo "#[ERROR] Input Docker env file '$DOCKER_ENV_FILE' NOT found" && exit 1
+(($VERBOSE)) && echo "#[INFO] Docker env file '$DOCKER_ENV_FILE'"
+
+if [ "$DOCKER_ENV_FILE" != "" ] && [ -s $DOCKER_ENV_FILE ]; then
+	source $DOCKER_ENV_FILE
+	DOCKER_CMD_PARAMETERS=$DOCKER_CMD_PARAMETERS" --env-file=$DOCKER_ENV_FILE "
+fi;
+
+
+## DOCKER STARK IMAGE
+# Check docker image
+
+[ -z $DOCKER_STARK_IMAGE ] && DOCKER_STARK_IMAGE="stark:latest"
+if [ "$DOCKER_STARK_IMAGE" != "" ]; then
+	if [[ "$(docker images -q $DOCKER_STARK_IMAGE | wc -l)" == "1" ]]; then
+		echo "#[ERROR] Docker STARK image '$DOCKER_STARK_IMAGE' NOT found" && exit 1
+	fi
+	(($VERBOSE)) && echo "#[INFO] Docker STARK image '$DOCKER_STARK_IMAGE'"
+fi;
+
+
+## DOCKER MOUNT
+# Create mount
+
+DOCKER_MOUNT=""
+for var in "${!DOCKER_STARK_FOLDER_@}"; do
+    #printf '%s=%s\n' "$var" "${!var}"
+	ONE_DOCKER_STARK_FOLDER_CONTAINER=$(echo ${var} | sed "s/^DOCKER_STARK_FOLDER_//g" | sed "s/_/\//g" | tr '[:upper:]' '[:lower:]' )
+	[ ! -d ${!var} ] && mkdir -p ${!var} && echo "#[INFO] Folder '${!var}' created"
+	[ -d ${!var} ] && [ "${!var}" != "" ] && DOCKER_MOUNT=$DOCKER_MOUNT" -v "${!var}":/STARK/"$ONE_DOCKER_STARK_FOLDER_CONTAINER #  echo "$var = ${!var}"
+done
+DOCKER_CMD_PARAMETERS=$DOCKER_CMD_PARAMETERS" $DOCKER_MOUNT "
+
+(($VERBOSE)) && echo "#[INFO] Docker mount '$DOCKER_MOUNT'"
+
+
+## DOCKER PARAMETERS
+# Create parameters
+
+DOCKER_PARAMETERS=$(echo $DOCKER_PARAMETERS | tr ";" " ")
+(($VERBOSE)) && echo "#[INFO] Docker parameters '$DOCKER_PARAMETERS'"
+
+DOCKER_CMD_PARAMETERS=$DOCKER_CMD_PARAMETERS" $DOCKER_PARAMETERS "
+
+
+## CONTAINER
+
+if [ "$DOCKER_STARK_CONTAINER" != "" ]; then
+	(($VERBOSE)) && echo "#[INFO] Docker container '$DOCKER_STARK_CONTAINER'"
+	if [ $(docker ps -a --filter="status=exited" --filter="name="$DOCKER_STARK_CONTAINER | wc -l) == "2" ]; then # If container stopped
+		(($VERBOSE)) && echo "#[INFO] Start Docker container '$DOCKER_STARK_CONTAINER'"
+		DOCKER_CMD="docker start $DOCKER_STARK_CONTAINER"
+		eval $DOCKER_CMD
+	elif [ $(docker ps -a --filter="status=running" --filter="name="$DOCKER_STARK_CONTAINER | wc -l) == "1" ]; then # If container not created
+		(($VERBOSE)) && echo "#[INFO] Create Docker container '$DOCKER_STARK_CONTAINER'"
+		#DOCKER_CMD="docker run $DOCKER_CMD_PARAMETERS --entrypoint=bash --name='$DOCKER_STARK_CONTAINER' -d -ti $DOCKER_STARK_IMAGE"
+		DOCKER_CMD="docker run $DOCKER_CMD_PARAMETERS --entrypoint=bash --name='$DOCKER_STARK_CONTAINER' -d -ti $DOCKER_STARK_IMAGE -c 'while true; do sleep 60; done'"
+		eval $DOCKER_CMD
+
+	else
+		(($VERBOSE)) && echo "#[INFO] Docker container '$DOCKER_STARK_CONTAINER' already created, started and running"
+	fi;
+	#echo $DOCKER_CMD
+	if [ $(docker ps --filter="name="$DOCKER_STARK_CONTAINER | wc -l) == "2" ]; then # If container not created
+		(($VERBOSE)) && echo "#[INFO] Docker execute command on docker container '$DOCKER_STARK_CONTAINER'"
+		echo ""
+		DOCKER_CMD="docker exec $DOCKER_STARK_CONTAINER STARK $PARAM_CMD"
+		eval $DOCKER_CMD
+	fi;
+	#echo $DOCKER_CMD
+	exit 0
+fi;
+#--entrypoint=bash;--name=STARKTEST2;-d;-ti
+#--entrypoint=bash --name=STARKTEST4 -d -ti
+
+
+### COMMAND
+# Create and execute command
+
+DOCKER_CMD="docker run $DOCKER_CMD_PARAMETERS $DOCKER_STARK_IMAGE $PARAM_CMD"
+(($DEBUG)) && echo "#[INFO] DOCKER CMD: $DOCKER_CMD"
+echo ""
+eval $DOCKER_CMD
+
+exit 0

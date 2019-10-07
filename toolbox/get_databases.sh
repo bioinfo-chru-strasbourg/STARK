@@ -468,7 +468,7 @@ if [ ! -e $REFSEQ_GENES ]; then
 	# Generates refGene genes file from bed file
 	echo "$TMP_DATABASES_DOWNLOAD_FOLDER/$ASSEMBLY/$REFSEQ_GENES_GENES_FILE: $DBFOLDER $TMP_DATABASES_DOWNLOAD_FOLDER/$ASSEMBLY/$REFSEQ_GENES_FILE
 		mkdir -p $TMP_DATABASES_DOWNLOAD_FOLDER/$ASSEMBLY
-		awk -F'\t' 'substr(\$\$6,1,2)=='NM' {print \$\$0}' $REFSEQ_GENES > $TMP_DATABASES_DOWNLOAD_FOLDER/$ASSEMBLY/$REFSEQ_GENES_GENES_FILE
+		awk -F'\t' 'substr(\$\$6,1,2)=='NM' {print \$\$0}' $REFSEQ_GENES | grep "$(grep "@SQ" $(dirname $REF)/$ASSEMBLY.dict | cut -f2 | cut -d: -f2 | tr '\n' ' ' | sed 's/chr/ -e ^chr/gi')" > $TMP_DATABASES_DOWNLOAD_FOLDER/$ASSEMBLY/$REFSEQ_GENES_GENES_FILE
 	" >> $MK
 
 	# Generates refGene genes file from bed file

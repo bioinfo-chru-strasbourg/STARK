@@ -30,58 +30,31 @@ POST_ALIGNMENT?=.unrecalibrated.unclipped.unrealigned.unsorted
 ## BWA MEM (Last powerful algorithm, including SW, HMM...)
 
 # Options
-BWAMEM_FLAGS= mem -M -t $(THREADS_BWA)
+BWAMEM_FLAGS?= mem -C -M -t $(THREADS_BWA)
+#BWAMEM_FLAGS?= mem -C -a -M -t $(THREADS_BWA)
+#BWAMEM_FLAGS?= mem -M -t $(THREADS_BWA)
 #-a
 
 %.bwamem$(POST_ALIGNMENT).bam: %.R1.fastq.gz %.R2.fastq.gz %.genome #check in the code
 	# Read group
-	#$(SAMTOOLS) view $< -H | grep '@RG' | head -n 1 | sed 's/\t/\\t/gi' > $@.RG
 	echo "@RG\tID:1\tPL:ILLUMINA\tPU:PU\tLB:001\tSM:$(*F)" > $@.RG
 	if [ "`cat $@.RG`" != "" ]; then echo " -R "`cat $@.RG` > $@.RG; fi;
 	# Alignment
 	if (($$(zcat $*.R2.fastq.gz | head -n 1 | wc -l))); then \
 		echo "BWA MEM Paired-End"; \
-		#echo "(BWA) $(BWAMEM_FLAGS) -M `cat $@.RG` `cat $*.genome` $*.R1.fastq.gz $*.R2.fastq.gz | $(SAMTOOLS) view -o $@.tmp -b -1 -S -T `cat $*.genome` - -@ $(THREADS_SAMTOOLS)"; exit 0; \
-		echo "$(BWA) $(BWAMEM_FLAGS) `cat $@.RG` `cat $*.genome` $*.R1.fastq.gz $*.R2.fastq.gz | $(SAMTOOLS) view -o $@.tmp -b -1 -S -T `cat $*.genome` - -@ $(THREADS_SAMTOOLS);"; \
-		#$(BWA) $(BWAMEM_FLAGS) `cat $@.RG` `cat $*.genome` $*.R1.fastq.gz $*.R2.fastq.gz | $(SAMTOOLS) sort - -l 1 -O BAM -o $@.tmp -T $@.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS); \
-		#$(SAMTOOLS) view -o $@.tmp -b -1 -S -T `cat $*.genome` - -@ $(THREADS_SAMTOOLS); \
-		#$(BWA) $(BWAMEM_FLAGS) `cat $@.RG` `cat $*.genome` $*.R1.fastq.gz $*.R2.fastq.gz | $(SAMTOOLS) view -o $@.tmp -b -1 -S -T `cat $*.genome` - -@ $(THREADS_SAMTOOLS); \
-		$(BWA) $(BWAMEM_FLAGS) `cat $@.RG` `cat $*.genome` $*.R1.fastq.gz $*.R2.fastq.gz | $(SAMTOOLS) view -b -1 -S -T `cat $*.genome` - -@ $(THREADS_SAMTOOLS) | $(SAMTOOLS) sort - -l 1 -O BAM -o $@.tmp -T $@.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS); \
+		echo "$(BWA) $(BWAMEM_FLAGS) `cat $@.RG` `cat $*.genome` $*.R1.fastq.gz $*.R2.fastq.gz | sed 's/[1-2]\:N\:0\:\([A-Z]*\)/BC\:Z\:\1/' | $(SAMTOOLS) view -o $@.tmp -b -1 -S -T `cat $*.genome` - -@ $(THREADS_SAMTOOLS);"; \
+		$(BWA) $(BWAMEM_FLAGS) `cat $@.RG` `cat $*.genome` $*.R1.fastq.gz $*.R2.fastq.gz | sed 's/[1-2]\:N\:0\:\([A-Z]*\)/BC\:Z\:\1/' | $(SAMTOOLS) view -b -1 -S -T `cat $*.genome` - -@ $(THREADS_SAMTOOLS) | $(SAMTOOLS) sort - -l 1 -O BAM -o $@.tmp -T $@.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS); \
 	else \
 		echo "BWA MEM Single-End"; \
-		#$(BWA) $(BWAMEM_FLAGS) `cat $@.RG` `cat $*.genome` $*.R1.fastq.gz | $(SAMTOOLS) sort - -l 1 -O BAM -o $@.tmp -T $@.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS); \
-		#$(BWA) $(BWAMEM_FLAGS) `cat $@.RG` `cat $*.genome` $*.R1.fastq.gz | $(SAMTOOLS) view -o $@.tmp -b -1 -S -T `cat $*.genome` - -@ $(THREADS_SAMTOOLS); \
-		$(BWA) $(BWAMEM_FLAGS) `cat $@.RG` `cat $*.genome` $*.R1.fastq.gz  | $(SAMTOOLS) view -b -1 -S -T `cat $*.genome` - -@ $(THREADS_SAMTOOLS) | $(SAMTOOLS) sort - -l 1 -O BAM -o $@.tmp -T $@.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS); \
+		$(BWA) $(BWAMEM_FLAGS) `cat $@.RG` `cat $*.genome` $*.R1.fastq.gz | sed 's/[1-2]\:N\:0\:\([A-Z]*\)/BC\:Z\:\1/' | $(SAMTOOLS) view -b -1 -S -T `cat $*.genome` - -@ $(THREADS_SAMTOOLS) | $(SAMTOOLS) sort - -l 1 -O BAM -o $@.tmp -T $@.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS); \
 	fi;
 	# AddOrReplaceReadGroups
-	#echo "# AddOrReplaceReadGroups %.bwamem.unrecalibrated.unclipped.unrealigned.unsorted.sam"
-	#$(JAVA) $(JAVA_FLAGS) -jar $(PICARDLIB)/AddOrReplaceReadGroups.jar $(PICARD_FLAGS) I=$@.tmp O=$@ RGSM=$(*F)
 	if (($$($(SAMTOOLS) view $@.tmp -H | grep "^@RG" -c))); then \
 		echo "# BAM $@.tmp with read group"; \
 		mv $@.tmp $@; \
 	else \
 		echo "# BAM $@.tmp without read group"; \
 		$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) AddOrReplaceReadGroups $(PICARD_FLAGS) I=$@.tmp O=$@  COMPRESSION_LEVEL=1 RGSM=$(*F); \
-	fi;
-	#mv $@.tmp $@
-	# CHECK NUMBER of READS in BAM
-	if ((0)); then \
-		#echo $$($(SAMTOOLS) view -c -@ $(THREADS_SAMTOOLS) -F 0x0100 $<)" READS for $<"; \
-		#echo $$($(SAMTOOLS) view -c -@ $(THREADS_SAMTOOLS) -F 0x0100 $@)" READS for $@"; \
-		if [ "$$($(SAMTOOLS) view -c -F 0x0100 -@ $(THREADS_SAMTOOLS) $<)" != "$$($(SAMTOOLS) view -c -F 0x0100 -@ $(THREADS_SAMTOOLS) $@)" ]; then \
-			echo "# ERROR in Number of reads between $< and $@ !!!"; \
-			echo "# BCFTOOLS STATS for $<";  \
-			$(SAMTOOLS) index $<; \
-			$(SAMTOOLS) stats $< | grep ^SN; \
-			$(SAMTOOLS) idxstats $<; \
-			echo "# BCFTOOLS STATS for $@";  \
-			$(SAMTOOLS) index $@; \
-			$(SAMTOOLS) stats $@ | grep SN; \
-			$(SAMTOOLS) idxstats $@; \
-			exit 1; \
-		else \
-			echo "# Number of reads OK between $< and $@"; \
-		fi; \
 	fi;
 	-rm $@.tmp $@.RG
 
@@ -95,7 +68,7 @@ BWAMEM_FLAGS= mem -M -t $(THREADS_BWA)
 ## BWA MEM (Last powerful algorithm, including SW, HMM...)
 
 # Options
-BWAMEM_FromUBAM_FLAGS= mem -Mp -t $(THREADS_BWA)
+BWAMEM_FromUBAM_FLAGS= mem -C -a -Mp -t $(THREADS_BWA)
 #-a
 
 %.bwamem_FromUBAM$(POST_ALIGNMENT).sam: %.unaligned.bam %.genome #check in the code
@@ -125,7 +98,7 @@ BWAMEM_FromUBAM_FLAGS= mem -Mp -t $(THREADS_BWA)
 ## BWA MEM (Last powerful algorithm, including SW, HMM...)
 
 # Options
-BWAMEM_FromFASTQ_FLAGS= mem -M -t $(THREADS_BWA)
+BWAMEM_FromFASTQ_FLAGS= mem -C -a -M -t $(THREADS_BWA)
 #-a
 
 %.bwamem_FromFASTQ$(POST_ALIGNMENT).bam: %.R1.fastq.gz %.R2.fastq.gz %.genome #check in the code
@@ -137,10 +110,10 @@ BWAMEM_FromFASTQ_FLAGS= mem -M -t $(THREADS_BWA)
 	if (($$(zcat $*.R2.fastq.gz | head -n 1 | wc -l))); then \
 		echo "BWA MEM Paired-End"; \
 		#echo "(BWA) $(BWAMEM_FromFASTQ_FLAGS) -M `cat $@.RG` `cat $*.genome` $*.R1.fastq.gz $*.R2.fastq.gz | $(SAMTOOLS) view -o $@.tmp -b -1 -S -T `cat $*.genome` - -@ $(THREADS_SAMTOOLS)"; exit 0; \
-		$(BWA) $(BWAMEM_FromFASTQ_FLAGS) `cat $@.RG` `cat $*.genome` $*.R1.fastq.gz $*.R2.fastq.gz | $(SAMTOOLS) view -o $@.tmp -b -1 -S -T `cat $*.genome` - -@ $(THREADS_SAMTOOLS); \
+		$(BWA) $(BWAMEM_FromFASTQ_FLAGS) `cat $@.RG` `cat $*.genome` $*.R1.fastq.gz $*.R2.fastq.gz | sed 's/[1-2]\:N\:0\:\([A-Z]*\)/BC\:Z\:\1/' | $(SAMTOOLS) view -o $@.tmp -b -1 -S -T `cat $*.genome` - -@ $(THREADS_SAMTOOLS); \
 	else \
 		echo "BWA MEM Single-End"; \
-		$(BWA) $(BWAMEM_FromFASTQ_FLAGS) `cat $@.RG` `cat $*.genome` $*.R1.fastq.gz | $(SAMTOOLS) view -o $@.tmp -b -1 -S -T `cat $*.genome` - -@ $(THREADS_SAMTOOLS); \
+		$(BWA) $(BWAMEM_FromFASTQ_FLAGS) `cat $@.RG` `cat $*.genome` $*.R1.fastq.gz | sed 's/[1-2]\:N\:0\:\([A-Z]*\)/BC\:Z\:\1/' | $(SAMTOOLS) view -o $@.tmp -b -1 -S -T `cat $*.genome` - -@ $(THREADS_SAMTOOLS); \
 	fi;
 	# AddOrReplaceReadGroups
 	#echo "# AddOrReplaceReadGroups %.bwamem.unrecalibrated.unclipped.unrealigned.unsorted.sam"

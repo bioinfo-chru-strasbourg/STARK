@@ -1,23 +1,45 @@
+#########
+# STARK #
+#########
+# Usage: docker-compose up
+
+
 version: '3'
 
 
+# SERVICES
+##########
+
 services:
 
-    stark-base:
-        image: ${DOCKER_STARK_IMAGE_BASE}
-        build:
-            context: ${DOCKER_STARK_CONTEXT}
-            dockerfile: base-Dockerfile
+    # STARK IMAGES
+    ##############
 
+    # STARK IMAGE
 
     stark:
         image: ${DOCKER_STARK_IMAGE}
         build:
             context: ${DOCKER_STARK_CONTEXT}
             dockerfile: Dockerfile
+            args:
+                - DOCKER_STARK_IMAGE_BASE=${DOCKER_STARK_IMAGE_BASE}
+        env_file:
+            - .env
         links:
             - stark-base
 
+    # STARK BASE IMAGE
+
+    stark-base:
+        image: ${DOCKER_STARK_IMAGE_BASE}
+        build:
+            context: ${DOCKER_STARK_CONTEXT}
+            dockerfile: base.Dockerfile
+        env_file:
+            - .env
+
+    # STARK DATABASES POPULATION
 
     stark-databases:
         image: ${DOCKER_STARK_IMAGE}
@@ -29,15 +51,20 @@ services:
             - stark
 
 
-    stark-server-c:
-        image: stark-server-c
+    # SERVICES
+    ##########
+
+    # STARK SERVICE SERVER
+
+    stark-server:
+        image: ${DOCKER_STARK_IMAGE_SERVICE_SERVER}
         build:
             context: ${DOCKER_STARK_CONTEXT}service/server
             dockerfile: Dockerfile
         env_file:
             - .env
         ports:
-            - ${DOCKER_STARK_SERVICE_SERVER_PORT_HOST}01:${DOCKER_STARK_SERVICE_SERVER_PORT_INNER}
+            - ${DOCKER_STARK_SERVICE_SERVER_PORT_HOST}:${DOCKER_STARK_SERVICE_SERVER_PORT_INNER}
         volumes:
             - /var/run/docker.sock:/var/run/docker.sock
             - analyses:/STARK/analyses
@@ -45,9 +72,10 @@ services:
             - stark
             - stark-databases
 
+    # STARK SERVICE SERVER CENTOS
 
-    stark-server-centos-c:
-        image: stark-server-centos-c
+    stark-server-centos:
+        image: ${DOCKER_STARK_IMAGE_SERVICE_SERVER}-centos
         build:
             context: ${DOCKER_STARK_CONTEXT}service/server
             dockerfile: centos.Dockerfile
@@ -63,18 +91,22 @@ services:
             - stark-databases
 
 
-
-#volumes:
-#    analyses: /Users/lebechea/Documents/NGS/DATA/ANALYSES:/STARK/analyses
-
+# VOLUMES
+#########
 
 volumes:
+
+    # ANALYSES
+
     analyses:
         driver: local
         driver_opts:
             type: none
             device: ${DOCKER_STARK_FOLDER_ANALYSES}
             o: bind
+
+    # DATABASES
+
     databases:
         driver: local
         driver_opts:

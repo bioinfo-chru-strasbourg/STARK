@@ -232,65 +232,97 @@ samplename=$( basename $BAM_FILE | cut -d. -f1 )
 ## COVERAZGE BASES calculation
 ################################
 
+if ((0)); then
+
+	MK=$BEDFILE_GENES_CUT.mk
+
+	echo "all: $BEDFILE_GENES_CUT.coverage_bases" > $MK
+
+	BEDFILE_GENES_CHR_COVERAGE_BASES_LIST=""
 
 
-MK=$BEDFILE_GENES_CUT.mk
+	if (($(cat $BEDFILE_GENES_CUT | cut -f1 | sort -u | wc -l))); then
+		for chr in $(cat $BEDFILE_GENES_CUT | cut -f1 | sort -u); do
+			#echo $chr;
+			BEDFILE_GENES_CHR_COVERAGE_BASES_LIST=$BEDFILE_GENES_CHR_COVERAGE_BASES_LIST" $BEDFILE_GENES_CUT.$chr.coverage_bases"
+			echo "
 
-echo "all: $BEDFILE_GENES_CUT.coverage_bases" > $MK
+	$BEDFILE_GENES_CUT.$chr.bed: $BEDFILE_GENES_CUT
+		-grep -P \"^$chr\\t\" $BEDFILE_GENES_CUT > $BEDFILE_GENES_CUT.$chr.bed
+		if [ ! -s $BEDFILE_GENES_CUT.$chr.bed ]; then touch $BEDFILE_GENES_CUT.$chr.bed; fi;
 
-BEDFILE_GENES_CHR_COVERAGE_BASES_LIST=""
-
-
-if (($(cat $BEDFILE_GENES_CUT | cut -f1 | sort -u | wc -l))); then
-	for chr in $(cat $BEDFILE_GENES_CUT | cut -f1 | sort -u); do
-		#echo $chr;
-		BEDFILE_GENES_CHR_COVERAGE_BASES_LIST=$BEDFILE_GENES_CHR_COVERAGE_BASES_LIST" $BEDFILE_GENES_CUT.$chr.coverage_bases"
-		echo "
-
-$BEDFILE_GENES_CUT.$chr.bed: $BEDFILE_GENES_CUT
-	-grep -P \"^$chr\\t\" $BEDFILE_GENES_CUT > $BEDFILE_GENES_CUT.$chr.bed
-	if [ ! -s $BEDFILE_GENES_CUT.$chr.bed ]; then touch $BEDFILE_GENES_CUT.$chr.bed; fi;
-
-		" >> $MK
+			" >> $MK
 
 
-		if  [ "$COVERAGE_BASES" != "" ] && [ -s $COVERAGE_BASES ]; then
-		# Coverage bases generation from Coverage Bases file
+			if  ((0)) && [ "$COVERAGE_BASES" != "" ] && [ -s $COVERAGE_BASES ]; then
+			# Coverage bases generation from Coverage Bases file
 
-		echo "
+			if [ "${COVERAGE_BASES##*.}" = "gz" ]; then
+				COVERAGE_BASES_VIEW=" $GZ -d -c "
+			else
+				COVERAGE_BASES_VIEW=" cat "
+			fi
 
-$BEDFILE_GENES_CUT.$chr.coverage_bases: $BAM_FILE $BEDFILE_GENES_CUT.$chr.bed
-	grep -P \"^$chr\\t\" $COVERAGE_BASES | sort $SORT_ORDER | awk -F\"\t\" '{print \$\$1\"\t\"\$\$2\"\t\"\$\$2\"\t+\t\"\$\$3}' | $BEDTOOLS intersect -b stdin -a $BEDFILE_GENES_CUT.$chr.bed -wb -sorted | awk -F\"\t\" '{print \$\$10\"\t\"\$\$5}' > $BEDFILE_GENES_CUT.$chr.coverage_bases;
-	if [ ! -s $BEDFILE_GENES_CUT.$chr.coverage_bases ]; then touch $BEDFILE_GENES_CUT.$chr.coverage_bases; fi;
+			echo "
 
-		" >> $MK
+	$BEDFILE_GENES_CUT.$chr.coverage_bases: $BAM_FILE $BEDFILE_GENES_CUT.$chr.bed
+		$COVERAGE_BASES_VIEW $COVERAGE_BASES | grep -P \"^$chr\\t\"  | sort $SORT_ORDER | awk -F\"\t\" '{print \$\$1\"\t\"\$\$2\"\t\"\$\$2\"\t+\t\"\$\$3}' | $BEDTOOLS intersect -b stdin -a $BEDFILE_GENES_CUT.$chr.bed -wb -sorted | awk -F\"\t\" '{print \$\$10\"\t\"\$\$5}' > $BEDFILE_GENES_CUT.$chr.coverage_bases;
+		if [ ! -s $BEDFILE_GENES_CUT.$chr.coverage_bases ]; then touch $BEDFILE_GENES_CUT.$chr.coverage_bases; fi;
 
-		else
-		# Coverage bases generation from samtools depth on BAM
-		echo "
+			" >> $MK
 
-$BEDFILE_GENES_CUT.$chr.coverage_bases: $BAM_FILE $BEDFILE_GENES_CUT.$chr.bed
-	$SAMTOOLS depth $BAM_FILE -b $BEDFILE_GENES_CUT.$chr.bed -a -r $chr -d 0 | sort $SORT_ORDER | awk -F\"\t\" '{print \$\$1\"\t\"\$\$2\"\t\"\$\$2\"\t+\t\"\$\$3}' | $BEDTOOLS intersect -b stdin -a $BEDFILE_GENES_CUT.$chr.bed -w -sorted | awk -F\"\t\" '{print \$\$10\"\t\"\$\$5}' > $BEDFILE_GENES_CUT.$chr.coverage_bases;
-	if [ ! -s $BEDFILE_GENES_CUT.$chr.coverage_bases ]; then touch $BEDFILE_GENES_CUT.$chr.coverage_bases; fi;
+			else
+			# Coverage bases generation from samtools depth on BAM
+			echo "
 
-		" >> $MK
-		fi;
-	#head $BEDFILE_GENES_CUT.$chr.coverage_bases
-done; fi;
+	$BEDFILE_GENES_CUT.$chr.coverage_bases: $BAM_FILE $BEDFILE_GENES_CUT.$chr.bed
+		cat $BEDFILE_GENES_CUT.$chr.bed | awk -F"\t" '{print \$\$1\"\t\"\$\$2-1\"\t\"\$\$3\"\t4\t\"\$\$5}' > $BEDFILE_GENES_CUT.$chr.bed.0_based;
+		$SAMTOOLS depth $BAM_FILE -b $BEDFILE_GENES_CUT.$chr.bed.0_based -a -r $chr -d 0 | sort $SORT_ORDER | awk -F\"\t\" '{print \$\$1\"\t\"\$\$2\"\t\"\$\$2\"\t+\t\"\$\$3}' | $BEDTOOLS intersect -b stdin -a $BEDFILE_GENES_CUT.$chr.bed -w -sorted | awk -F\"\t\" '{print \$\$10\"\t\"\$\$5}' > $BEDFILE_GENES_CUT.$chr.coverage_bases;
+		rm $BEDFILE_GENES_CUT.$chr.bed.0_based;
+		if [ ! -s $BEDFILE_GENES_CUT.$chr.coverage_bases ]; then touch $BEDFILE_GENES_CUT.$chr.coverage_bases; fi;
 
-echo "$BEDFILE_GENES_CUT.coverage_bases: $BEDFILE_GENES_CHR_COVERAGE_BASES_LIST
-	cat $BEDFILE_GENES_CHR_COVERAGE_BASES_LIST > $BEDFILE_GENES_CUT.coverage_bases
-" >> $MK
+			" >> $MK
+			fi;
+		#head $BEDFILE_GENES_CUT.$chr.coverage_bases
+	done; fi;
 
-(($DEBUG)) && cat $MK
+	echo "$BEDFILE_GENES_CUT.coverage_bases: $BEDFILE_GENES_CHR_COVERAGE_BASES_LIST
+		cat $BEDFILE_GENES_CHR_COVERAGE_BASES_LIST > $BEDFILE_GENES_CUT.coverage_bases
+	" >> $MK
+
+	(($DEBUG)) && cat $MK
 
 
-#THREADS=1
-time if [ ! -e ${OUTPUT}.coverage_bases ]; then
+
+	#cat $$one_bed | awk -F"\t" '{print $$1"\t"$$2-1"\t"$$3"\t"$$4"\t"$$5}' > $$one_bed.0_based; \
+	#$(SAMTOOLS) mpileup $(SAMTOOLS_METRICS_MPILEUP_PARAM) -aa -l $$one_bed.0_based $< | cut -f1,2,4
+
+	#THREADS=1
+	time if [ ! -e ${OUTPUT}.coverage_bases ]; then
+		echo "#[INFO] Coverage bases generation"
+		make -j $THREADS -f $MK $BEDFILE_GENES_CUT.coverage_bases 1>/dev/null 2>/dev/null
+	else
+		echo "#[INFO] Coverage stats already generated"
+	fi;
+
+fi;
+
+COVERAGE_BASES_VIEW=" cat "
+if  [ "$COVERAGE_BASES" != "" ] && [ -s $COVERAGE_BASES ]; then
+
+	if [ "${COVERAGE_BASES##*.}" = "gz" ]; then
+		COVERAGE_BASES_VIEW=" $GZ -d -c "
+	fi
+
+	echo "#[INFO] Coverage bases provided"
+	ln -s $COVERAGE_BASES $BEDFILE_GENES_CUT.coverage_bases
+
+
+else
+
 	echo "#[INFO] Coverage bases generation"
 	make -j $THREADS -f $MK $BEDFILE_GENES_CUT.coverage_bases 1>/dev/null 2>/dev/null
-else
-	echo "#[INFO] Coverage stats already generated"
+
 fi;
 
 
@@ -306,7 +338,8 @@ fi;
 if ((1)); then
 
 	echo "#[INFO] Genes Coverage stats calculation"
-	cat $BEDFILE_GENES_CUT.coverage_bases | awk -v FAIL=$DP_FAIL -v WARN=$DP_WARN -v THRESHOLD=$DP_THRESHOLD -v COVERAGE_CRITERIA=$COVERAGE_CRITERIA -v PRECISION=$PRECISION -F"\t" '
+	#$COVERAGE_BASES_VIEW $BEDFILE_GENES_CUT.coverage_bases | awk -v FAIL=$DP_FAIL -v WARN=$DP_WARN -v THRESHOLD=$DP_THRESHOLD -v COVERAGE_CRITERIA=$COVERAGE_CRITERIA -v PRECISION=$PRECISION -F"\t" '
+	$COVERAGE_BASES_VIEW $COVERAGE_BASES | awk -v FAIL=$DP_FAIL -v WARN=$DP_WARN -v THRESHOLD=$DP_THRESHOLD -v COVERAGE_CRITERIA=$COVERAGE_CRITERIA -v PRECISION=$PRECISION -F"\t" '
 	BEGIN {
 		{n=split(COVERAGE_CRITERIA,CC,",")}
 	}
@@ -331,7 +364,8 @@ if ((1)); then
 			printf "\t%Coverage "COV"X\t#Bases <"COV"X"
 		}
 		print ""
-		for (gene in nb_base) {
+		#for (gene in nb_base) {
+		for (gene in bases) {
 			GENE_HEAD=gene"\t"nb_base[gene]
 			GENE_COV=""
 			GENE_MSG="PASS"
@@ -367,6 +401,12 @@ if ((1)); then
 	# WARN file
 	grep "^#" ${OUTPUT}.genes.txt > ${OUTPUT}.genes.PASS.txt
 	cat ${OUTPUT}.genes.txt | awk -F'\t' '{ if ($3 == "PASS") {print $0} }' >> ${OUTPUT}.genes.PASS.txt
+
+	# MISS file
+	grep -v "^#" ${OUTPUT}.genes.txt | cut -f1 | sort -u > ${OUTPUT}.genes.FOUND.txt
+	grep -v "^#" $BEDFILE_GENES_CUT  | cut -f5 | sort -u > ${OUTPUT}.genes.CHECKED.txt
+	echo "#Gene" > ${OUTPUT}.genes.MISS.txt
+	diff ${OUTPUT}.genes.FOUND.txt ${OUTPUT}.genes.CHECKED.txt | grep "^>" | cut -d" " -f2 >> ${OUTPUT}.genes.MISS.txt
 
 
 fi;

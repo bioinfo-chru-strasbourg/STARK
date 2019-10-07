@@ -1,8 +1,8 @@
 
 ##############################################################
-# Dockerfile Version:   1.1
+# Dockerfile Version:   1.0
 # Software:             STARK
-# Software Version:     0.9.18d
+# Software Version:     0.9.18b
 # Software Website:     none
 # Licence:              GNU Affero General Public License (AGPL)
 # Description:          STARK
@@ -34,13 +34,21 @@
 
 
 ########
+# ARGS #
+#######
+
+ARG DOCKER_STARK_IMAGE_BASE=stark-base:latest
+
+
+
+########
 # FROM #
 ########
 
-FROM stark-base
+FROM $DOCKER_STARK_IMAGE_BASE
 MAINTAINER Antony Le Bechec <antony.lebechec@gmail.com>
 LABEL Software="STARK" \
-	Version="0.9.18d" \
+	Version="0.9.18b" \
 	Website="none" \
 	Description="STARK" \
 	License="GNU Affero General Public License (AGPL)" \
@@ -55,7 +63,8 @@ LABEL Software="STARK" \
 ENV STARK_FOLDER=/STARK
 ENV TOOLS=$STARK_FOLDER/tools
 ENV DATA=$STARK_FOLDER/data
-ENV TOOL=$STARK_FOLDER/tool
+ENV TOOL=/tool
+ENV MYAPPS=$STARK_FOLDER/myapps
 ENV DATABASES=$STARK_FOLDER/databases
 ENV YUM_INSTALL="bc htop"
 ENV YUM_REMOVE="null"
@@ -90,7 +99,8 @@ COPY . $TOOLS/$TOOL_NAME/$TOOL_VERSION/
 
 RUN mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin ; \
 		ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ; \
-		ln -s $TOOLS/$TOOL_NAME/$TOOL_VERSION/ /tool ;
+		ln -s $TOOLS/$TOOL_NAME/$TOOL_VERSION/ $TOOL ; \
+		ln -s $TOOLS/$TOOL_NAME/$TOOL_VERSION/config/apps/myapps/ $MYAPPS ;
 
 
 		#mkdir -p $DATABASES; \

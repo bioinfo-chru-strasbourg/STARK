@@ -927,6 +927,7 @@ echo '
 						</div>
 					</div>
 
+
 					<div class="card p-3 align-center col-12 col-md-6 col-lg-3">
 						<div class="panel-item p-3">
 							<div class="card-img pb-3">
@@ -1145,23 +1146,26 @@ echo '
 # COVERAGE
 ############
 
-(($VERBOSE)) && echo "#[INFO] COVERAGE section"
+(($VERBOSE)) && echo "#[INFO] DEPTH COVERAGE section"
 
 HTMLFILE_COVERAGE=$HTMLFILE".coverage"
+HTMLFILE_DEPTH=$HTMLFILE".depth"
 
-SECTION_NAME="Depth &amp; Coverage"
-SECTION_ID="depth_coverage"
 
 # FLAGS
 PASS_FLAG_ICON='class="mbr-iconfont mbri-smile-face" style="color: rgb(0, 255, 0); fill: rgb(0, 255, 0);"'
 WARN_FLAG_ICON='class="mbr-iconfont mbri-sad-face" style="color: rgb(252, 161, 6); fill: rgb(252, 161, 6);"'
 FAIL_FLAG_ICON='class="mbr-iconfont mbri-sad-face" style="color: rgb(255, 0, 0); fill: rgb(255, 0, 0);"'
+MISS_FLAG_ICON='class="mbr-iconfont mbri-sad-face" style="color: rgb(255, 0, 0); fill: rgb(255, 0, 0); font-weight:bold"'
 
 
 # FILES
-HTMLFILE_GENES_PANEL=$HTMLFILE".genes_panel"
+HTMLFILE_COVERAGE_ALIGNERS=$HTMLFILE".coverage.aligners"
+HTMLFILE_DEPTH_ALIGNERS=$HTMLFILE".depth.aligners"
 
-GENES_PANEL_NUM=0
+
+DEPTH_GENES_PANEL_NUM=0
+COVERAGE_GENES_PANEL_NUM=0
 
 for ALIGNER in $ALIGNERS; do
 
@@ -1171,14 +1175,312 @@ for ALIGNER in $ALIGNERS; do
 	#LIST_GENES_PANEL="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.list.genes"
 	#TARGET_DESIGN_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.design.bed"
 	TARGET_DESIGN_NAME="$SAMPLE.$ALIGNER.design.bed"
+	AMPLICON_DESIGN_NAME="$SAMPLE.manifest"
 
 	#for GENES_PANEL in $TARGET_DESIGN_NAME $(cat $LIST_GENES_PANEL); do
-	for GENES_PANEL in $TARGET_DESIGN_NAME $(cat $LIST_GENES_PANEL_BASENAME); do
+	for GENES_PANEL in $AMPLICON_DESIGN_NAME $TARGET_DESIGN_NAME $(cat $LIST_GENES_PANEL_BASENAME); do
+
 
 		# FILES
 		GENES_PANEL_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$GENES_PANEL"
 		#GENES_PANEL_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$GENES_PANEL"
-		if [ -s $GENES_PANEL_FILE ]; then GENES_PANEL_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$GENES_PANEL"; fi;
+		if [ ! -s $GENES_PANEL_FILE ]; then GENES_PANEL_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$GENES_PANEL"; fi;
+
+
+
+		if [ "$GENES_PANEL" == "$TARGET_DESIGN_NAME" ]; then
+			GENES_PANEL_NAME="Target Design"
+			GENE_PANEL_NAME_HTML="$GENES_PANEL_NAME"
+			GENE_PANEL_TYPE_HTML="Target<br>Regions"
+			GENE_PANEL_TYPE_NAME_HTML="Region"
+		elif [ "$GENES_PANEL" == "$AMPLICON_DESIGN_NAME" ]; then
+			GENES_PANEL_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$TARGET_DESIGN_NAME"
+			GENES_PANEL_NAME="Amplicon Design"
+			GENE_PANEL_NAME_HTML="$GENES_PANEL_NAME"
+			GENE_PANEL_TYPE_HTML="Amplicon<br>Regions"
+			GENE_PANEL_TYPE_NAME_HTML="Amplicon"
+			AMPLICON_TEXT_HTML="<br>Amplicon depth metrics generated with <strong>CAP</strong>"
+		else
+			GENES_PANEL_NAME=$(echo $GENES_PANEL | sed "s/^$SAMPLE.//" | sed "s/.genes$//")
+			GENE_PANEL_NAME_HTML="Gene Panel<br>$GENES_PANEL_NAME"
+			GENE_PANEL_TYPE_HTML="Gene<br>Panel"
+			GENE_PANEL_TYPE_NAME_HTML="Gene"
+		fi;
+
+
+		# GENES PANEL INFO
+		GENES_PANEL_GENES_NUMBER=$(cat $GENES_PANEL_FILE 2>/dev/null | grep -v "^#" | grep -v "^@" | cut -f5 | sort -u | wc -l)
+		GENES_PANEL_GENES_NUMBER_HTML=$(echo $GENES_PANEL_GENES_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
+
+		GENES_PANEL_REGIONS_NUMBER=$(cat $GENES_PANEL_FILE 2>/dev/null | grep -v "^#" | grep -v "^@" | wc -l)
+		GENES_PANEL_REGIONS_NUMBER_HTML=$(echo $GENES_PANEL_REGIONS_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
+		[ "$GENES_PANEL" == "$TARGET_DESIGN_NAME" ] && GENES_PANEL_GENES_NUMBER=$GENES_PANEL_REGIONS_NUMBER && GENES_PANEL_GENES_NUMBER_HTML=$GENES_PANEL_REGIONS_NUMBER_HTML
+
+		GENES_PANEL_BASES_NUMBER=$($BEDTOOLS/bedtools sort -i $GENES_PANEL_FILE 2>/dev/null | $BEDTOOLS/bedtools merge -i - > $REPORTDIR/merge_genes.bed; $BEDTOOLS/bedtools coverage -a $REPORTDIR/merge_genes.bed  -b $REPORTDIR/merge_genes.bed | awk -F '\t' 'BEGIN{sum = 0} {sum += $6} END {print sum}'; rm $REPORTDIR/merge_genes.bed; )
+		GENES_PANEL_BASES_NUMBER_HTML=$(echo $GENES_PANEL_BASES_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
+
+		GENES_PANEL_ALIGNER=$ALIGNER
+		GENES_PANEL_ALIGNER_HTML=$GENES_PANEL_ALIGNER
+
+
+
+		### DEPTH ###
+		#############
+
+		if [ "$GENES_PANEL" == "$AMPLICON_DESIGN_NAME" ]; then
+			DEPTH_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.amplicon_coverage"
+		else
+			DEPTH_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.HsMetrics.per_target_coverage"
+		fi;
+
+
+		if [ -s $DEPTH_FILE ]; then
+
+			((DEPTH_GENES_PANEL_NUM++))
+
+			(($DEBUG)) && echo "GENES_PANEL: $GENES_PANEL";
+			(($DEBUG)) && echo "GENES_PANEL_NAME: $GENES_PANEL_NAME";
+			(($DEBUG)) && echo "DEPTH_GENES_PANEL_NUM: "$DEPTH_GENES_PANEL_NUM
+
+			if (($DEBUG)); then
+				echo $DEPTH_FILE
+				echo $GENES_PANEL_FILE
+				[ -e $DEPTH_FILE ] && echo "exits"
+				head $GENES_PANEL_FILE
+			fi;
+
+
+			# AMPLICON COVERAGE
+			DEPTH_AVERAGE_DEPTH=$(tail -n +1 $DEPTH_FILE | awk -F"\t" '
+				BEGIN {
+					sum_bases=0
+					sum_depth=0
+				}
+				{
+					sum_bases+=$4
+					sum_depth+=($4*$9)
+					# The script should NOT print out a value for each line
+				}
+				# The END block is processed after the last line is read
+				END {
+					# NR is a variable equal to the number of rows in the file
+					printf("%.0f\n",sum_depth/sum_bases)
+					# Change this to print the Average instead of just the number of rows
+				}' )
+
+			(( $(echo "$DEPTH_AVERAGE_DEPTH >= $MINIMUM_DEPTH" | bc -l) )) && DEPTH_AVERAGE_DEPTH_FLAG=$PASS_FLAG_ICON || DEPTH_AVERAGE_DEPTH_FLAG=$FAIL_FLAG_ICON
+
+			# MIN
+			DEPTH_MISS_MINIMUM_DEPTH_NUMBER=$(cat $DEPTH_FILE | awk -F"\t" 'BEGIN {num=0} {if ($7=="MISS") {num++}} END {print num}')
+			(( $DEPTH_MISS_MINIMUM_DEPTH_NUMBER )) && DEPTH_MISS_MINIMUM_DEPTH_NUMBER_FLAG=$WARN_FLAG_ICON || DEPTH_MISS_MINIMUM_DEPTH_NUMBER_FLAG=$PASS_FLAG_ICON
+			DEPTH_FAIL_MINIMUM_DEPTH_NUMBER=$(cat $DEPTH_FILE | awk -F"\t" 'BEGIN {num='$DEPTH_MISS_MINIMUM_DEPTH_NUMBER'} {if ($7=="FAIL") {num++}} END {print num}')
+			(( $DEPTH_FAIL_MINIMUM_DEPTH_NUMBER )) && DEPTH_FAIL_MINIMUM_DEPTH_NUMBER_FLAG=$FAIL_FLAG_ICON || DEPTH_FAIL_MINIMUM_DEPTH_NUMBER_FLAG=$PASS_FLAG_ICON
+			DEPTH_WARN_MINIMUM_DEPTH_NUMBER=$(cat $DEPTH_FILE | awk -F"\t" 'BEGIN {num=0} {if ($7=="WARN") {num++}} END {print num}')
+			(( $DEPTH_WARN_MINIMUM_DEPTH_NUMBER )) && DEPTH_WARN_MINIMUM_DEPTH_NUMBER_FLAG=$WARN_FLAG_ICON || DEPTH_WARN_MINIMUM_DEPTH_NUMBER_FLAG=$PASS_FLAG_ICON
+			#DEPTH_MISS_MINIMUM_DEPTH_NUMBER=$(cat $DEPTH_FILE | awk -F"\t" 'BEGIN {num=0} {if ($7=="MISS") {num++}} END {print num}')
+
+			(($DEPTH_MISS_MINIMUM_DEPTH_NUMBER)) && DEPTH_MISS_MINIMUM_DEPTH_NUMBER_HTML="<br><span '$FAIL_FLAG_ICON'>including $DEPTH_MISS_MINIMUM_DEPTH_NUMBER $GENE_PANEL_TYPE_NAME_HTML(s)<br>partially sequenced</span>"
+
+
+			# AVERAGE
+			DEPTH_MISS_AVERAGE_DEPTH_NUMBER=$(cat $DEPTH_FILE | awk -F"\t" 'BEGIN {num=0} {if ($6=="MISS") {num++}} END {print num}')
+			(( $DEPTH_MISS_AVERAGE_DEPTH_NUMBER )) && DEPTH_MISS_AVERAGE_DEPTH_NUMBER_FLAG=$WARN_FLAG_ICON || DEPTH_MISS_AVERAGE_DEPTH_NUMBER_FLAG=$PASS_FLAG_ICON
+			DEPTH_FAIL_AVERAGE_DEPTH_NUMBER=$(cat $DEPTH_FILE | awk -F"\t" 'BEGIN {num=0} {if ($6=="FAIL") {num++}} END {print num}')
+			(( $DEPTH_FAIL_AVERAGE_DEPTH_NUMBER )) && DEPTH_FAIL_AVERAGE_DEPTH_NUMBER_FLAG=$FAIL_FLAG_ICON || DEPTH_FAIL_AVERAGE_DEPTH_NUMBER_FLAG=$PASS_FLAG_ICON
+			DEPTH_WARN_AVERAGE_DEPTH_NUMBER=$(cat $DEPTH_FILE | awk -F"\t" 'BEGIN {num=0} {if ($6=="WARN") {num++}} END {print num}')
+			(( $DEPTH_WARN_AVERAGE_DEPTH_NUMBER )) && DEPTH_WARN_AVERAGE_DEPTH_NUMBER_FLAG=$WARN_FLAG_ICON || DEPTH_WARN_AVERAGE_DEPTH_NUMBER_FLAG=$PASS_FLAG_ICON
+
+			(($DEPTH_MISS_AVERAGE_DEPTH_NUMBER)) && DEPTH_MISS_AVERAGE_DEPTH_NUMBER_HTML="<br><span '$FAIL_FLAG_ICON'>including $DEPTH_MISS_AVERAGE_DEPTH_NUMBER $GENE_PANEL_TYPE_NAME_HTML(s)<br>not sequenced</span>"
+
+			(($DEBUG)) && echo "
+
+				DEPTH_AVERAGE_DEPTH=$DEPTH_AVERAGE_DEPTH
+
+				DEPTH_FAIL_MINIMUM_DEPTH_NUMBER=$DEPTH_FAIL_MINIMUM_DEPTH_NUMBER
+				DEPTH_WARN_MINIMUM_DEPTH_NUMBER=$DEPTH_WARN_MINIMUM_DEPTH_NUMBER
+				DEPTH_MISS_MINIMUM_DEPTH_NUMBER=$DEPTH_MISS_MINIMUM_DEPTH_NUMBER
+
+				DEPTH_FAIL_AVERAGE_DEPTH_NUMBER=$DEPTH_FAIL_AVERAGE_DEPTH_NUMBER
+				DEPTH_WARN_AVERAGE_DEPTH_NUMBER=$DEPTH_WARN_AVERAGE_DEPTH_NUMBER
+				DEPTH_MISS_AVERAGE_DEPTH_NUMBER=$DEPTH_MISS_AVERAGE_DEPTH_NUMBER
+
+			"
+
+			# BREAK
+			(( $(echo "$DEPTH_GENES_PANEL_NUM >= 2" |bc -l) )) && GENES_PANEL_BREAK=$PAGE_BREAK_BEFORE || GENES_PANEL_BREAK=""
+
+			echo '
+
+				<h3 class="mbr-section-subtitle mbr-fonts-style display-5" '$GENES_PANEL_BREAK'>
+				<br>
+					'$GENE_PANEL_NAME_HTML'
+				</h3>
+
+				<div class="container pt-4 mt-2">
+					<div class="media-container-row">
+
+						<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+							<div class="panel-item">
+								<div class="card-img pb-3">
+									<span class="mbr-iconfont mbri-info"></span>
+								</div>
+
+								<div class="card-text">
+									<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+										'$GENES_PANEL_REGIONS_NUMBER_HTML'
+									</h3>
+									<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+										'$GENE_PANEL_TYPE_HTML'
+										<br>
+										&nbsp;
+									</h4>
+									<p class="mbr-content-text mbr-fonts-style display-7">
+										'$GENES_PANEL_BASES_NUMBER_HTML' bases
+										<br>
+										'$GENES_PANEL_REGIONS_NUMBER_HTML' regions
+										<br>
+										'$GENES_PANEL_ALIGNER_HTML' aligner
+									</p>
+								</div>
+							</div>
+						</div>
+
+						<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+							<div class="panel-item">
+								<div class="card-img pb-3">
+									<span '$DEPTH_AVERAGE_DEPTH_FLAG'></span>
+								</div>
+
+								<div class="card-text">
+									<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+										'$DEPTH_AVERAGE_DEPTH'
+									</h3>
+									<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+										Whole Design
+										<br>
+										Average Depth
+										<br>
+										'$MINIMUM_DEPTH'X
+									</h4>
+									<p class="mbr-content-text mbr-fonts-style display-7">
+										for all target regions
+										<br>
+										in the design
+									</p>
+								</div>
+							</div>
+						</div>
+
+						<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+							<div class="panel-item">
+								<div class="card-img pb-3">
+									<span '$DEPTH_FAIL_AVERAGE_DEPTH_NUMBER_FLAG'></span>
+								</div>
+
+								<div class="card-texts">
+									 <h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+										'$DEPTH_FAIL_AVERAGE_DEPTH_NUMBER'
+									</h3>
+									<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+										Failed Average
+										<br>
+										Amplicon Depth
+										<br>
+										'$MINIMUM_DEPTH'X
+									</h4>
+									<p class="mbr-content-text mbr-fonts-style display-7">
+										# of amplicon with failed average depth
+										'$DEPTH_MISS_AVERAGE_DEPTH_NUMBER_HTML'
+									</p>
+								</div>
+							</div>
+						</div>
+
+						<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+							<div class="panel-item">
+								<div class="card-img pb-3">
+									<span '$DEPTH_WARN_AVERAGE_DEPTH_NUMBER_FLAG'></span>
+								</div>
+								<div class="card-text">
+									<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+										'$DEPTH_WARN_AVERAGE_DEPTH_NUMBER'
+									</h3>
+									<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+										Warning Average
+										<br>
+										Amplicon Depth
+										<br>
+										'$EXPECTED_DEPTH'X
+									</h4>
+									<p class="mbr-content-text mbr-fonts-style display-7">
+										# of amplicon with warning average depth
+									</p>
+								</div>
+							</div>
+						</div>
+
+						<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+							<div class="panel-item">
+								<div class="card-img pb-3">
+									<span '$DEPTH_FAIL_MINIMUM_DEPTH_NUMBER_FLAG'></span>
+								</div>
+
+								<div class="card-texts">
+									 <h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+										'$DEPTH_FAIL_MINIMUM_DEPTH_NUMBER'
+									</h3>
+									<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+										Failed Minimum
+										<br>
+										Amplicon Depth
+										<br>
+										'$MINIMUM_DEPTH'X
+									</h4>
+									<p class="mbr-content-text mbr-fonts-style display-7">
+										# of amplicon with failed minimum depth
+										'$DEPTH_MISS_MINIMUM_DEPTH_NUMBER_HTML'
+									</p>
+								</div>
+							</div>
+						</div>
+
+						<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+							<div class="panel-item">
+								<div class="card-img pb-3">
+									<span '$DEPTH_WARN_MINIMUM_DEPTH_NUMBER_FLAG'></span>
+								</div>
+								<div class="card-text">
+									<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+										'$DEPTH_WARN_MINIMUM_DEPTH_NUMBER'
+									</h3>
+									<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+										Warning Minimum
+										<br>
+										Amplicon Depth
+										<br>
+										'$EXPECTED_DEPTH'X
+									</h4>
+									<p class="mbr-content-text mbr-fonts-style display-7">
+										# of amplicon with warning minimum depth
+									</p>
+								</div>
+							</div>
+						</div>
+
+					</div>
+				</div>
+
+			' >> $HTMLFILE_DEPTH_ALIGNERS
+
+		else
+
+			(($VERBOSE)) && echo "#[WARNING] DEPTH file '$DEPTH_FILE' not found or empty"
+
+		fi;
+
+
+		### COVERAGE ###
+		################
 
 		#GENES_PANEL_GENES_MSG="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.genes.msg"
 		GENES_PANEL_GENES_TXT="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.genes.txt"
@@ -1186,15 +1488,8 @@ for ALIGNER in $ALIGNERS; do
 		GENES_PANEL_GENES_WARN_TXT="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.genes.WARN.txt"
 		GENES_PANEL_GENES_FAIL_TXT="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.genes.FAIL.txt"
 		GENES_PANEL_GENES_FAIL_WARN_TXT="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.genes.FAIL.WARN.txt"
+		GENES_PANEL_GENES_MISS_TXT="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.genes.MISS.txt"
 		GENES_PANEL_DEPTHBED_COVS="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.coverage"
-
-		#if [ ! -s $GENES_PANEL_GENES_MSG ]; then echo "NO file "$GENES_PANEL_GENES_MSG; fi;
-		#if [ ! -s $GENES_PANEL_GENES_TXT ]; then echo "NO file "$GENES_PANEL_GENES_TXT; fi;
-		#if [ ! -s $GENES_PANEL_GENES_PASS_TXT ]; then echo "NO file "$GENES_PANEL_GENES_PASS_TXT; fi;
-		#if [ ! -s $GENES_PANEL_GENES_WARN_TXT ]; then echo "NO file "$GENES_PANEL_GENES_WARN_TXT; fi;
-		#if [ ! -s $GENES_PANEL_GENES_FAIL_TXT ]; then echo "NO file "$GENES_PANEL_GENES_FAIL_TXT; fi;
-		#if [ ! -s $GENES_PANEL_GENES_FAIL_WARN_TXT ]; then echo "NO file "$GENES_PANEL_GENES_FAIL_WARN_TXT; fi;
-		#if [ ! -s $GENES_PANEL_DEPTHBED_COVS ]; then echo "NO file "$GENES_PANEL_DEPTHBED_COVS; fi;
 
 		#if [ -s $GENES_PANEL_FILE ]; then
 		if [ -e $GENES_PANEL_GENES_TXT ] \
@@ -1205,45 +1500,8 @@ for ALIGNER in $ALIGNERS; do
 			&& [ -e $GENES_PANEL_DEPTHBED_COVS ] \
 			; then
 
-			((GENES_PANEL_NUM++))
+			((COVERAGE_GENES_PANEL_NUM++))
 
-			if [ "$GENES_PANEL" == "$TARGET_DESIGN_NAME" ]; then
-				GENES_PANEL_NAME="Target Design"
-				GENE_PANEL_NAME_HTML="$GENES_PANEL_NAME"
-				GENE_PANEL_TYPE_HTML="Target<br>Regions"
-				GENE_PANEL_TYPE_NAME_HTML="Region"
-			else
-				GENES_PANEL_NAME=$(echo $GENES_PANEL | sed "s/^$SAMPLE.//" | sed "s/.genes$//")
-				GENE_PANEL_NAME_HTML="Gene Panel<br>$GENES_PANEL_NAME"
-				GENE_PANEL_TYPE_HTML="Gene<br>Panel"
-				GENE_PANEL_TYPE_NAME_HTML="Gene"
-			fi;
-
-
-			(($DEBUG)) && echo "GENES_PANEL: $GENES_PANEL";
-			(($DEBUG)) && echo "GENES_PANEL_NAME: $GENES_PANEL_NAME";
-			(($DEBUG)) && echo "GENES_PANEL_NUM: "$GENES_PANEL_NUM
-
-
-
-			#(($DEBUG)) && cat $GENES_PANEL_DEPTHBED_COVS
-
-			# GENES PANEL INFO
-			GENES_PANEL_GENES_NUMBER=$(cat $GENES_PANEL_FILE 2>/dev/null | grep -v "^#" | grep -v "^@" | cut -f5 | sort -u | wc -l)
-			GENES_PANEL_GENES_NUMBER_HTML=$(echo $GENES_PANEL_GENES_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
-
-			GENES_PANEL_REGIONS_NUMBER=$(cat $GENES_PANEL_FILE 2>/dev/null | grep -v "^#" | grep -v "^@" | wc -l)
-			GENES_PANEL_REGIONS_NUMBER_HTML=$(echo $GENES_PANEL_REGIONS_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
-			[ "$GENES_PANEL" == "$TARGET_DESIGN_NAME" ] && GENES_PANEL_GENES_NUMBER=$GENES_PANEL_REGIONS_NUMBER && GENES_PANEL_GENES_NUMBER_HTML=$GENES_PANEL_REGIONS_NUMBER_HTML
-
-			#GENES_PANEL_BASES_NUMBER=$(cd $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/; $BEDTOOLS/bedtools merge -i $GENES_PANEL_FILE > $REPORTDIR/merge_genes.bed; $BEDTOOLS/bedtools coverage -a $REPORTDIR/merge_genes.bed  -b $REPORTDIR/merge_genes.bed | awk -F '\t' '{sum += $6} END {print sum}'; rm $REPORTDIR/merge_genes.bed; )
-			#GENES_BASES_NUMBER=$(cd $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/; cat $(cat $LIST_GENE_PANEL) | $BEDTOOLS/bedtools sort -i - | $BEDTOOLS/bedtools merge -i - > $REPORTDIR/merge_all_genes.bed; $BEDTOOLS/bedtools coverage -a $REPORTDIR/merge_all_genes.bed  -b $REPORTDIR/merge_all_genes.bed | awk -F '\t' 'BEGIN{sum = 0} {sum += $6} END {print sum}'; rm $REPORTDIR/merge_all_genes.bed; )
-			#GENES_PANEL_BASES_NUMBER=$($BEDTOOLS/bedtools merge -i $GENES_PANEL_FILE > $REPORTDIR/merge_genes.bed; $BEDTOOLS/bedtools coverage -a $REPORTDIR/merge_genes.bed  -b $REPORTDIR/merge_genes.bed | awk -F '\t' 'BEGIN{sum = 0} {sum += $6} END {print sum}'; rm $REPORTDIR/merge_genes.bed; )
-			GENES_PANEL_BASES_NUMBER=$($BEDTOOLS/bedtools sort -i $GENES_PANEL_FILE 2>/dev/null | $BEDTOOLS/bedtools merge -i - > $REPORTDIR/merge_genes.bed; $BEDTOOLS/bedtools coverage -a $REPORTDIR/merge_genes.bed  -b $REPORTDIR/merge_genes.bed | awk -F '\t' 'BEGIN{sum = 0} {sum += $6} END {print sum}'; rm $REPORTDIR/merge_genes.bed; )
-			GENES_PANEL_BASES_NUMBER_HTML=$(echo $GENES_PANEL_BASES_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
-
-			GENES_PANEL_ALIGNER=$ALIGNER
-			GENES_PANEL_ALIGNER_HTML=$GENES_PANEL_ALIGNER
 
 			# GENES PANEL SEQUENCING PANEL COVERAGE
 			GENES_PANEL_SEQUENCING_PANEL_COVERAGE=$( echo "scale=50; "$(echo $(grep "^"$SEQUENCING_DEPTH"X" $GENES_PANEL_DEPTHBED_COVS | cut -f4) | sed -E 's/([+-]?[0-9.]+)[eE]\+?(-?)([0-9]+)/(\1*10^\2\3)/g') | bc)
@@ -1270,12 +1528,12 @@ for ALIGNER in $ALIGNERS; do
 			(( $(echo "$GENES_PANEL_EXPECTED_PANEL_COVERAGE >= $DEPTH_COVERAGE_THRESHOLD" |bc -l) )) && GENES_PANEL_EXPECTED_PANEL_COVERAGE_FLAG=$PASS_FLAG_ICON || GENES_PANEL_EXPECTED_PANEL_COVERAGE_FLAG=$WARN_FLAG_ICON
 
 			# GENES PANEL MISS GENES COVERAGE
-			GENES_PANEL_ALL_GENES_NUMBER=$(cat $GENES_PANEL_GENES_TXT | grep -v "^#" -c)
-			GENES_PANEL_ALL_GENES_NUMBER_HTML=$GENES_PANEL_ALL_GENES_NUMBER
-			GENES_PANEL_MISS_REGIONS_NUMBER=$(echo "$GENES_PANEL_GENES_NUMBER - $GENES_PANEL_ALL_GENES_NUMBER" | bc)
-			! (($GENES_PANEL_GENES_NUMBER)) && GENES_PANEL_MISS_REGIONS_NUMBER=0;
+			GENES_PANEL_MISS_REGIONS_NUMBER=$(cat $GENES_PANEL_GENES_MISS_TXT | grep -v "^#" -c)
+			#GENES_PANEL_ALL_GENES_NUMBER_HTML=$GENES_PANEL_ALL_GENES_NUMBER
+			#GENES_PANEL_MISS_REGIONS_NUMBER=$(echo "$GENES_PANEL_GENES_NUMBER - $GENES_PANEL_ALL_GENES_NUMBER" | bc)
+			#! (($GENES_PANEL_GENES_NUMBER)) && GENES_PANEL_MISS_REGIONS_NUMBER=0;
 			GENES_PANEL_MISS_REGIONS_NUMBER_HTML=""
-			(($GENES_PANEL_MISS_REGIONS_NUMBER)) && GENES_PANEL_MISS_REGIONS_NUMBER_HTML="<br><span '$FAIL_FLAG_ICON'>$GENES_PANEL_MISS_REGIONS_NUMBER missing genes</span>"
+			(($GENES_PANEL_MISS_REGIONS_NUMBER)) && GENES_PANEL_MISS_REGIONS_NUMBER_HTML="<br><span '$FAIL_FLAG_ICON'>including $GENES_PANEL_MISS_REGIONS_NUMBER missing genes</span>"
 
 			#GENES_PANEL_FAIL_GENES_NUMBER_MESSAGE="$GENES_PANEL_FAIL_GENES_NUMBER"
 			#(( $GENES_PANEL_FAIL_GENES_NUMBER )) && GENES_PANEL_FAIL_GENES_NUMBER_FLAG=$FAIL_FLAG_ICON || GENES_PANEL_FAIL_GENES_NUMBER_FLAG=$PASS_FLAG_ICON
@@ -1283,7 +1541,7 @@ for ALIGNER in $ALIGNERS; do
 			# GENES PANEL FAIL GENES COVERAGE
 			#GENES_PANEL_FAIL_GENES_NUMBER=$(cat $GENES_PANEL_GENES_MSG | cut -f2 | grep "^FAIL$" -c)
 			#GENES_PANEL_FAIL_GENES_NUMBER=$(echo $(cat $GENES_PANEL_GENES_FAIL_TXT | grep -v "^#" -c)" + "$GENES_PANEL_MISS_REGIONS_NUMBER | bc)
-			GENES_PANEL_FAIL_GENES_NUMBER=$(cat $GENES_PANEL_GENES_FAIL_TXT | grep -v "^#" -c)
+			GENES_PANEL_FAIL_GENES_NUMBER=$(cat $GENES_PANEL_GENES_FAIL_TXT $GENES_PANEL_GENES_MISS_TXT | grep -v "^#" -c)
 			GENES_PANEL_FAIL_GENES_NUMBER_HTML=$GENES_PANEL_FAIL_GENES_NUMBER
 			#GENES_PANEL_FAIL_GENES_NUMBER_MESSAGE="$GENES_PANEL_FAIL_GENES_NUMBER"
 			(( $GENES_PANEL_FAIL_GENES_NUMBER )) && GENES_PANEL_FAIL_GENES_NUMBER_FLAG=$FAIL_FLAG_ICON || GENES_PANEL_FAIL_GENES_NUMBER_FLAG=$PASS_FLAG_ICON
@@ -1299,7 +1557,7 @@ for ALIGNER in $ALIGNERS; do
 			(( $GENES_PANEL_WARN_GENES_NUMBER )) && GENES_PANEL_WARN_GENES_NUMBER_FLAG=$WARN_FLAG_ICON || GENES_PANEL_WARN_GENES_NUMBER_FLAG=$PASS_FLAG_ICON
 
 			# BREAK
-			(( $(echo "$GENES_PANEL_NUM >= 2" |bc -l) )) && GENES_PANEL_BREAK=$PAGE_BREAK_BEFORE || GENES_PANEL_BREAK=""
+			(( $(echo "$COVERAGE_GENES_PANEL_NUM >= 2" |bc -l) )) && GENES_PANEL_BREAK=$PAGE_BREAK_BEFORE || GENES_PANEL_BREAK=""
 
 
 			echo '
@@ -1333,7 +1591,6 @@ for ALIGNER in $ALIGNERS; do
 										'$GENES_PANEL_REGIONS_NUMBER_HTML' regions
 										<br>
 										'$GENES_PANEL_ALIGNER_HTML' aligner
-										'$GENES_PANEL_MISS_REGIONS_NUMBER_HTML'
 									</p>
 								</div>
 							</div>
@@ -1429,6 +1686,7 @@ for ALIGNER in $ALIGNERS; do
 									</h4>
 									<p class="mbr-content-text mbr-fonts-style display-7">
 										# of '$GENE_PANEL_TYPE_NAME_HTML's with failed coverage
+										'$GENES_PANEL_MISS_REGIONS_NUMBER_HTML'
 									</p>
 								</div>
 							</div>
@@ -1459,51 +1717,106 @@ for ALIGNER in $ALIGNERS; do
 					</div>
 				</div>
 
-			' >> $HTMLFILE_GENES_PANEL
+			' >> $HTMLFILE_COVERAGE_ALIGNERS
 
 		fi;
+
 
 	done;
 
 done;
 
 
+
+
+### DEPTH
+###########
+
+SECTION_NAME="Targets & Genes Depth"
+SECTION_ID="depth"
+
 # PLAN
 echo '<a class="btn btn-primary-outline display-4" href="#'$SECTION_ID'">'$SECTION_NAME'</a>' >> $HTMLFILE_PLAN_LINKS
-
 
 echo '
 
 	<section class="counters1 counters cid-ru7OEH6r7i" id="'$SECTION_ID'" '$PAGE_BREAK_BEFORE'>
 	<br>
 
-	    <div class="container">
-	        <h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">
-	            '$SECTION_NAME'
+		<div class="container">
+			<h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">
+				'$SECTION_NAME'
 			</h2>
 
 			<p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
-				Depth and coverage generated with <strong>Samtools mpileup</strong> and <strong>Picard CollectHsMetrics</strong>
+				Depth metrics generated with <strong>Picard CollectHsMetrics</strong>
+				'$AMPLICON_TEXT_HTML'
 				<br>
-				on BAM for validation ('$BAM_VALIDATION_TEXT_HTML').
+				on BAM for validation
+				<br>
+				('$BAM_VALIDATION_TEXT_HTML').
 				<br>
 				Minimum depth <strong>'$MINIMUM_DEPTH'X</strong>,
-				Expected depth <strong>'$EXPECTED_DEPTH'X</strong>,
-				Sequencing coverage threshold <strong>'$(awk 'BEGIN{printf("%.1f\n",'$SEQUENCING_COVERAGE_THRESHOLD'*100)}')'%</strong>,
-				Minimum & Expected depth coverage threshold <strong>'$(awk 'BEGIN{printf("%.1f\n",'$DEPTH_COVERAGE_THRESHOLD'*100)}')'%</strong>
+				Expected depth <strong>'$EXPECTED_DEPTH'X</strong>
 			</p>
 
-			'"$(cat $HTMLFILE_GENES_PANEL)"'
+			'"$(cat $HTMLFILE_DEPTH_ALIGNERS)"'
 
 
 
 	   </div>
 	</section>
 
+' > $HTMLFILE_DEPTH
+
+
+
+
+### COVERAGE
+##############
+
+SECTION_NAME="Targets & Genes Coverage"
+SECTION_ID="coverage"
+
+# PLAN
+echo '<a class="btn btn-primary-outline display-4" href="#'$SECTION_ID'">'$SECTION_NAME'</a>' >> $HTMLFILE_PLAN_LINKS
+
+echo '
+
+   <section class="counters1 counters cid-ru7OEH6r7i" id="'$SECTION_ID'" '$PAGE_BREAK_BEFORE'>
+   <br>
+
+	   <div class="container">
+		   <h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">
+			   '$SECTION_NAME'
+		   </h2>
+
+		   <p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
+			   Coverage metrics generated with <strong>Samtools mpileup</strong>
+			   <br>
+			   on BAM for validation
+			   <br>
+			   ('$BAM_VALIDATION_TEXT_HTML').
+			   <br>
+			   Minimum depth <strong>'$MINIMUM_DEPTH'X</strong>,
+			   Expected depth <strong>'$EXPECTED_DEPTH'X</strong>,
+			   Sequencing coverage threshold <strong>'$(awk 'BEGIN{printf("%.1f\n",'$SEQUENCING_COVERAGE_THRESHOLD'*100)}')'%</strong>,
+			   Minimum & Expected depth coverage threshold <strong>'$(awk 'BEGIN{printf("%.1f\n",'$DEPTH_COVERAGE_THRESHOLD'*100)}')'%</strong>
+		   </p>
+
+		   '"$(cat $HTMLFILE_COVERAGE_ALIGNERS)"'
+
+
+
+	  </div>
+   </section>
+
 ' > $HTMLFILE_COVERAGE
 
 
 
+
+if ((0)); then
 
 # AMPLICON CLIPPING
 ###################
@@ -1512,7 +1825,7 @@ echo '
 
 HTMLFILE_AMPLICON_CLIPPING=$HTMLFILE".amplicon_clipping"
 
-SECTION_NAME="Amplicon Clipping"
+SECTION_NAME="Amplicons Depth"
 SECTION_ID="amplicon_clipping"
 
 # FLAGS
@@ -1537,7 +1850,7 @@ for ALIGNER in $ALIGNERS; do
 	if [ -s $GENES_PANEL_FILE ]; then GENES_PANEL_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$GENES_PANEL"; fi;
 
 	AMPLICON_COVERAGE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.amplicon_coverage"
-
+	#AMPLICON_COVERAGE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.P1439.bwamem.design.bed.HsMetrics.per_target_coverage"
 
 	#if [ -s $GENES_PANEL_FILE ] && [ -s $AMPLICON_COVERAGE ]; then
 	if [ -s $AMPLICON_COVERAGE ]; then
@@ -1572,88 +1885,39 @@ for ALIGNER in $ALIGNERS; do
 		# AMPLICON COVERAGE
 		AMPLICON_COVERAGE_AVERAGE_DEPTH=$(tail -n +1 $AMPLICON_COVERAGE | awk -F"\t" '
 			BEGIN {
-				sum=0
+				sum_bases=0
+				sum_depth=0
 			}
 			{
-			    sum+=$7
+				sum_bases+=$4
+				sum_depth+=($4*$9)
 			    # The script should NOT print out a value for each line
 			}
 			# The END block is processed after the last line is read
 			END {
 			    # NR is a variable equal to the number of rows in the file
-			    printf("%.0f\n",sum/ NR)
+			    printf("%.0f\n",sum_depth/sum_bases)
 			    # Change this to print the Average instead of just the number of rows
 			}' )
 
 		(( $(echo "$AMPLICON_COVERAGE_AVERAGE_DEPTH >= $MINIMUM_DEPTH" | bc -l) )) && AMPLICON_COVERAGE_AVERAGE_DEPTH_FLAG=$PASS_FLAG_ICON || AMPLICON_COVERAGE_AVERAGE_DEPTH_FLAG=$FAIL_FLAG_ICON
 
-		AMPLICON_COVERAGE_FAIL_MINIMUM_DEPTH_NUMBER=$(tail -n +1 $AMPLICON_COVERAGE | awk -F"\t" '
-			BEGIN {
-				num=0
-			}
-			{
-			    if ($11<'$MINIMUM_DEPTH') {num+=1}
-			    # The script should NOT print out a value for each line
-			}
-			# The END block is processed after the last line is read
-			END {
-			    # NR is a variable equal to the number of rows in the file
-			    print num
-			    # Change this to print the Average instead of just the number of rows
-			}' )
-
+		# MIN
+		AMPLICON_COVERAGE_FAIL_MINIMUM_DEPTH_NUMBER=$(cat $AMPLICON_COVERAGE | awk -F"\t" 'BEGIN {num=0} {if ($7=="FAIL") {num++}} END {print num}')
 		(( $AMPLICON_COVERAGE_FAIL_MINIMUM_DEPTH_NUMBER )) && AMPLICON_COVERAGE_FAIL_MINIMUM_DEPTH_NUMBER_FLAG=$FAIL_FLAG_ICON || AMPLICON_COVERAGE_FAIL_MINIMUM_DEPTH_NUMBER_FLAG=$PASS_FLAG_ICON
-
-		AMPLICON_COVERAGE_WARN_MINIMUM_DEPTH_NUMBER=$(tail -n +1 $AMPLICON_COVERAGE | awk -F"\t" '
-			BEGIN {
-				num=0
-			}
-			{
-				if ($11>='$MINIMUM_DEPTH' && $11<'$EXPECTED_DEPTH') {num+=1}
-				# The script should NOT print out a value for each line
-			}
-			# The END block is processed after the last line is read
-			END {
-				# NR is a variable equal to the number of rows in the file
-				print num
-				# Change this to print the Average instead of just the number of rows
-			}' )
-
+		AMPLICON_COVERAGE_WARN_MINIMUM_DEPTH_NUMBER=$(cat $AMPLICON_COVERAGE | awk -F"\t" 'BEGIN {num=0} {if ($7=="WARN") {num++}} END {print num}')
 		(( $AMPLICON_COVERAGE_WARN_MINIMUM_DEPTH_NUMBER )) && AMPLICON_COVERAGE_WARN_MINIMUM_DEPTH_NUMBER_FLAG=$WARN_FLAG_ICON || AMPLICON_COVERAGE_WARN_MINIMUM_DEPTH_NUMBER_FLAG=$PASS_FLAG_ICON
+		AMPLICON_COVERAGE_MISS_MINIMUM_DEPTH_NUMBER=$(cat $AMPLICON_COVERAGE | awk -F"\t" 'BEGIN {num=0} {if ($7=="MISS") {num++}} END {print num}')
 
-		AMPLICON_COVERAGE_FAIL_AVERAGE_DEPTH_NUMBER=$(tail -n +1 $AMPLICON_COVERAGE | awk -F"\t" '
-			BEGIN {
-				num=0
-			}
-			{
-				if ($7<'$MINIMUM_DEPTH') {num+=1}
-				# The script should NOT print out a value for each line
-			}
-			# The END block is processed after the last line is read
-			END {
-				# NR is a variable equal to the number of rows in the file
-				print num
-				# Change this to print the Average instead of just the number of rows
-			}' )
-
+		# AVERAGE
+		AMPLICON_COVERAGE_FAIL_AVERAGE_DEPTH_NUMBER=$(cat $AMPLICON_COVERAGE | awk -F"\t" 'BEGIN {num=0} {if ($6=="FAIL") {num++}} END {print num}')
 		(( $AMPLICON_COVERAGE_FAIL_AVERAGE_DEPTH_NUMBER )) && AMPLICON_COVERAGE_FAIL_AVERAGE_DEPTH_NUMBER_FLAG=$FAIL_FLAG_ICON || AMPLICON_COVERAGE_FAIL_AVERAGE_DEPTH_NUMBER_FLAG=$PASS_FLAG_ICON
-
-		AMPLICON_COVERAGE_WARN_AVERAGE_DEPTH_NUMBER=$(tail -n +1 $AMPLICON_COVERAGE | awk -F"\t" '
-			BEGIN {
-				num=0
-			}
-			{
-				if ($7>='$MINIMUM_DEPTH' && $7<'$EXPECTED_DEPTH') {num+=1}
-				# The script should NOT print out a value for each line
-			}
-			# The END block is processed after the last line is read
-			END {
-				# NR is a variable equal to the number of rows in the file
-				print num
-				# Change this to print the Average instead of just the number of rows
-			}' )
-
+		AMPLICON_COVERAGE_WARN_AVERAGE_DEPTH_NUMBER=$(cat $AMPLICON_COVERAGE | awk -F"\t" 'BEGIN {num=0} {if ($6=="WARN") {num++}} END {print num}')
 		(( $AMPLICON_COVERAGE_WARN_AVERAGE_DEPTH_NUMBER )) && AMPLICON_COVERAGE_WARN_AVERAGE_DEPTH_NUMBER_FLAG=$WARN_FLAG_ICON || AMPLICON_COVERAGE_WARN_AVERAGE_DEPTH_NUMBER_FLAG=$PASS_FLAG_ICON
+		AMPLICON_COVERAGE_MISS_AVERAGE_DEPTH_NUMBER=$(cat $AMPLICON_COVERAGE | awk -F"\t" 'BEGIN {num=0} {if ($6=="MISS") {num++}} END {print num}')
+
+		(($AMPLICON_COVERAGE_MISS_AVERAGE_DEPTH_NUMBER)) && AMPLICON_COVERAGE_MISS_AVERAGE_DEPTH_NUMBER_HTML="<br><span '$FAIL_FLAG_ICON'>$AMPLICON_COVERAGE_MISS_AVERAGE_DEPTH_NUMBER missing amplicons</span>"
+
 
 		# BREAK
 		(( $(echo "$GENES_PANEL_NUM >= 2" |bc -l) )) && GENES_PANEL_BREAK=$PAGE_BREAK_BEFORE || GENES_PANEL_BREAK=""
@@ -1823,44 +2087,49 @@ for ALIGNER in $ALIGNERS; do
 done;
 
 
-if (($GENES_PANEL_NUM)); then
+if ((1)); then
+	if (($GENES_PANEL_NUM)); then
 
-	# PLAN
-	echo '<a class="btn btn-primary-outline display-4" href="#'$SECTION_ID'">'$SECTION_NAME'</a>' >> $HTMLFILE_PLAN_LINKS
+		# PLAN
+		echo '<a class="btn btn-primary-outline display-4" href="#'$SECTION_ID'">'$SECTION_NAME'</a>' >> $HTMLFILE_PLAN_LINKS
 
-	echo '
+		echo '
 
-		<section class="counters1 counters cid-ru7OEH6r7i" id="'$SECTION_ID'" '$PAGE_BREAK_BEFORE'>
-		<br>
+			<section class="counters1 counters cid-ru7OEH6r7i" id="'$SECTION_ID'" '$PAGE_BREAK_BEFORE'>
+			<br>
 
-		    <div class="container">
-		        <h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">
-		            '$SECTION_NAME'
-				</h2>
+			    <div class="container">
+			        <h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">
+			            '$SECTION_NAME'
+					</h2>
 
-				<p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
-					Amplicon clipping generated with <strong>CAP</strong> and depth metrics with <strong>Picard CollectHsMetrics</strong> on all <strong>Target Design</strong>
-					<br>
-					Minimum depth <strong>'$MINIMUM_DEPTH'X</strong>,
-					Expected depth <strong>'$EXPECTED_DEPTH'X</strong>
-				</p>
+					<p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
+						Amplicon clipping generated with <strong>CAP</strong> and depth metrics with <strong>Picard CollectHsMetrics</strong> on all <strong>Target Design</strong>
+						<br>
+						Minimum depth <strong>'$MINIMUM_DEPTH'X</strong>,
+						Expected depth <strong>'$EXPECTED_DEPTH'X</strong>
+					</p>
 
-				'"$(cat $HTMLFILE_AMPLICON_CLIPPING_ALIGNERS)"'
+					'"$(cat $HTMLFILE_AMPLICON_CLIPPING_ALIGNERS)"'
 
 
 
-		   </div>
-		</section>
+			   </div>
+			</section>
 
-	' > $HTMLFILE_AMPLICON_CLIPPING
+		' > $HTMLFILE_AMPLICON_CLIPPING
 
-else
+	else
 
-	> $HTMLFILE_AMPLICON_CLIPPING
+		> $HTMLFILE_AMPLICON_CLIPPING
+
+	fi;
+fi
+
 
 fi;
 
-
+if ((0)); then
 
 # VARIANT CALLING
 ###################
@@ -1950,6 +2219,8 @@ echo '
 
 ' > $HTMLFILE_CALLING
 
+fi;
+
 
 
 if ((1)); then
@@ -1961,7 +2232,7 @@ if ((1)); then
 
 HTMLFILE_VARIANTS_STATS=$HTMLFILE".variants.stats"
 
-SECTION_NAME="Variant Stats"
+SECTION_NAME="Variants Report"
 SECTION_ID="variant_stats"
 
 
@@ -2286,6 +2557,7 @@ echo '
 
 HTMLFILE_ANNEX_COVERAGE=$HTMLFILE_ANNEX".coverage"
 HTMLFILE_ANNEX_GENES_COVERAGE=$HTMLFILE_ANNEX".genes_coverage"
+HTMLFILE_ANNEX_FLAGS=$HTMLFILE_ANNEX".flags"
 HTMLFILE_ANNEX_DEPTH=$HTMLFILE_ANNEX".depth"
 HTMLFILE_ANNEX_AMPLICON=$HTMLFILE_ANNEX".amplicon"
 
@@ -2302,9 +2574,10 @@ HTMLFILE_ANNEX_AMPLICON=$HTMLFILE_ANNEX".amplicon"
 
 # FILES
 HTMLFILE_ANNEX_GENES_PANEL_COVERAGE=$HTMLFILE_ANNEX".genes_panel_coverage"
-HTMLFILE_ANNEX_GENES_PANEL_GENES_COVERAGE=$HTMLFILE_ANNEX".genes_panel_genes_coverage"
 HTMLFILE_ANNEX_GENES_PANEL_DEPTH=$HTMLFILE_ANNEX".genes_panel_depth"
 HTMLFILE_ANNEX_GENES_PANEL_AMPLICON=$HTMLFILE_ANNEX".amplicon_clipping"
+HTMLFILE_ANNEX_GENES_PANEL_GENES_COVERAGE=$HTMLFILE_ANNEX".genes_panel_genes_coverage"
+HTMLFILE_ANNEX_GENES_PANEL_FLAGS=$HTMLFILE_ANNEX".genes_panel_flags"
 
 
 # LINKS
@@ -2314,6 +2587,8 @@ HTMLFILE_ANNEX_PLAN_LINKS_GENES_COVERAGE=$HTMLFILE_ANNEX_PLAN_LINKS".genes_cover
 > $HTMLFILE_ANNEX_PLAN_LINKS_GENES_COVERAGE
 HTMLFILE_ANNEX_PLAN_LINKS_DEPTH=$HTMLFILE_ANNEX_PLAN_LINKS".depth"
 > $HTMLFILE_ANNEX_PLAN_LINKS_DEPTH
+HTMLFILE_ANNEX_PLAN_LINKS_GENES_FLAGS=$HTMLFILE_ANNEX_PLAN_LINKS".genes_flags"
+> $HTMLFILE_ANNEX_PLAN_LINKS_GENES_FLAGS
 HTMLFILE_ANNEX_PLAN_LINKS_AMPLICON=$HTMLFILE_ANNEX_PLAN_LINKS".amplicon"
 > $HTMLFILE_ANNEX_PLAN_LINKS_AMPLICON
 
@@ -2357,15 +2632,82 @@ for ALIGNER in $ALIGNERS; do
 
 		GENES_PANEL_AMPLICON_HTML=$(cat $GENES_PANEL_AMPLICON | tr "," " " | $STARK_FOLDER_BIN/csv_to_html.awk -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
 
+		#AMPLICON_TEXT_HTML="Amplicon clipping generated with <strong>CAP</strong> and depth metrics with <strong>Picard CollectHsMetrics</strong> on all <strong>Target Design</strong>."
+		AMPLICON_TEXT_HTML="<br>Amplicon depth metrics generated with <strong>CAP</strong>"
+		# LINKS
+		#echo '<a class="btn display-4 mbr-section-subtitle mbr-fonts-style display-6 align-center" href="#AMPLICON-'$ALIGNER'"><small>Amplicon Design ('$ALIGNER')</small></a>' >> $HTMLFILE_ANNEX_PLAN_LINKS_AMPLICON
+		echo '<a class="btn display-4 mbr-section-subtitle mbr-fonts-style display-6 align-center" href="#AMPLICON-'$ALIGNER'"><small>Amplicon Design ('$ALIGNER')</small></a>' >> $HTMLFILE_ANNEX_PLAN_LINKS_DEPTH
 
 
 	fi;
 
 	#echo $GENES_PANEL_AMPLICON_HTML
 
-	# LINKS
-	echo '<a class="btn display-4 mbr-section-subtitle mbr-fonts-style display-6 align-center" href="#AMPLICON-'$ALIGNER'"><small>'$GENE_PANEL_NAME_HTML' ('$ALIGNER')</small></a>' >> $HTMLFILE_ANNEX_PLAN_LINKS_AMPLICON
 
+
+	if ((1)); then
+	if [ -s $GENES_PANEL_AMPLICON ]; then
+
+		echo '
+
+		<section class="section-table cid-ruiBoanIwc" id="AMPLICON-'$ALIGNER'">
+
+
+		  <div class="container container-table">
+
+			  <h3 class="mbr-section-subtitle mbr-fonts-style align-center mbr-light display-5" '$GENES_PANEL_BREAK'>
+			  <br>
+					Amplicon Design ('$ALIGNER')
+			  </h3>
+
+
+			  <div class="table-wrapper">
+				<div class="container">
+				  <div class="row search">
+					<div class="col-md-6"></div>
+					<div class="col-md-6">
+						<div class="dataTables_filter">
+						  <label class="searchInfo mbr-fonts-style display-7">Search:</label>
+						  <input class="form-control input-sm" disabled="">
+						</div>
+					</div>
+				  </div>
+				</div>
+
+				<div class="container scroll">
+					<table class="table isSearch" cellspacing="0">
+						'$GENES_PANEL_AMPLICON_HTML'
+					</table>
+				</div>
+
+				<div class="container table-info-container">
+				  <div class="row info">
+					<div class="col-md-6">
+					  <div class="dataTables_info mbr-fonts-style display-7">
+						<span class="infoBefore">Showing</span>
+						<span class="inactive infoRows"></span>
+						<span class="infoAfter">entries</span>
+						<span class="infoFilteredBefore">(filtered from</span>
+						<span class="inactive infoRows"></span>
+						<span class="infoFilteredAfter"> total entries)</span>
+					  </div>
+					</div>
+					<div class="col-md-6"></div>
+				  </div>
+				</div>
+
+
+			  </div>
+			</div>
+
+		</section>
+
+		' >> $HTMLFILE_ANNEX_GENES_PANEL_DEPTH
+		#' >> $HTMLFILE_ANNEX_GENES_PANEL_AMPLICON
+		#' >> $HTMLFILE_ANNEX_GENES_PANEL_DEPTH
+		#HTMLFILE_ANNEX_GENES_PANEL_DEPTH
+	fi;
+	fi;
 
 
 	#for GENES_PANEL in $TARGET_DESIGN_NAME $(cat $LIST_GENES_PANEL); do # LIST_GENES_PANEL_BASENAME
@@ -2379,14 +2721,19 @@ for ALIGNER in $ALIGNERS; do
 		GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.coverage"
 		GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.genes.txt"
 		GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.HsMetrics.per_target_coverage"
+		GENES_PANEL_GENES_FLAGS_PATTERN="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.genes"
+		#echo "PASS" && head $GENES_PANEL_GENES_FLAGS_PATTERN".PASS.txt"
+		#echo "WARN" && head $GENES_PANEL_GENES_FLAGS_PATTERN".WARN.txt"
+		#echo "FAIL" && head $GENES_PANEL_GENES_FLAGS_PATTERN".FAIL.txt"
+		#echo "MISS" && head $GENES_PANEL_GENES_FLAGS_PATTERN".MISS.txt"
 
 
 
 		#if [ -s $GENES_PANEL_FILE ]; then
 		if [ -s $GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE ] \
 			&& [ -s $GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE ] \
-			&& [ -s $GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH ] \
 		; then
+		#	&& [ -s $GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH ] \
 
 			((GENES_PANEL_NUM++))
 
@@ -2407,85 +2754,87 @@ for ALIGNER in $ALIGNERS; do
 
 
 			# GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE
+			GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML=""
 			if [ -s $GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE ]; then
-
-				#cat $GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE;
-
-				if ((0)); then
-					print_header=true
-					GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML=""
-					#GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML="<tbody>"
-					while read INPUT ; do
-						#echo $INPUT
-					  	if $print_header;then
-						    GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML=$GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML"<thead><tr class=\"table-heads\"><th class=\"head-item mbr-fonts-style display-7\">"$(echo -e "$INPUT" | tr ",;" " " | sed -e 's/\t/<\/th><th class=\"head-item mbr-fonts-style display-7\">/g')"</th></tr></thead><tbody>"
-						    print_header=false
-						else
-					  		#echo "<tr><td>${INPUT//\t/</td><td>}</td></tr>" ;
-					  		GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML=$GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML"<tr><td class=\"body-item mbr-fonts-style display-7\">"$(echo -e "$INPUT" | tr ",;" " " | sed -e 's/\t/<\/td><td class=\"body-item mbr-fonts-style display-7\">/g')"</td></tr>"
-						fi;
-					done < $GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE ;
-					GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML=$GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML"</tbody>"
-				fi;
-
 				GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML=$(cat $GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE | tr "," " " | $STARK_FOLDER_BIN/csv_to_html.awk -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
-				#echo $GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML
-				#GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML=""
-
 			fi;
 
-
 			# GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE
+			GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML=""
 			if [ -s $GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE ]; then
-
-				#cat $GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE;
-
-				if ((0)); then
-					print_header=true
-					GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML=""
-					#GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML="<tbody>"
-					while read INPUT ; do
-						#echo -e $INPUT
-						if $print_header;then
-							GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML=$GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML"<thead><tr class=\"table-heads\"><th class=\"head-item mbr-fonts-style display-7\">"$(echo -e "$INPUT" | tr ",;" " " | sed -e 's/\t/<\/th><th class=\"head-item mbr-fonts-style display-7\">/g')"</th></tr></thead><tbody>"
-							print_header=false
-						else
-							#echo "<tr><td>${INPUT//\t/</td><td>}</td></tr>" ;
-							GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML=$GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML"<tr><td class=\"body-item mbr-fonts-style display-7\">"$(echo -e "$INPUT" | tr ",;" " " | sed -e 's/\t/<\/td><td class=\"body-item mbr-fonts-style display-7\">/g')"</td></tr>"
-						fi;
-					done < $GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE ;
-					GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML=$GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML"</tbody>"
-				fi;
-
 				GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML=$(cat $GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE | tr "," " " | $STARK_FOLDER_BIN/csv_to_html.awk -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
-
-
 			fi;
 
 			# GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH
+			GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH_HTML=""
 			if [ -s $GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH ]; then
-
-				#cat $GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH;
-
-				if ((0)); then
-					print_header=true
-					GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH_HTML=""
-					while read INPUT ; do
-					  	if $print_header;then
-						    GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH_HTML=$GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH_HTML"<thead><tr class=\"table-heads\"><th class=\"head-item mbr-fonts-style display-7\">"$( echo -e "$INPUT" | tr ",;" " " | sed -e 's/\t/<\/th><th class=\"head-item mbr-fonts-style display-7\">/g')"</th></tr></thead><tbody>"
-						    print_header=false
-						else
-					  		#echo "<tr><td>${INPUT//\t/</td><td>}</td></tr>" ;
-					  		GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH_HTML=$GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH_HTML"<tr><td class=\"body-item mbr-fonts-style display-7\">"$(echo -e "$INPUT" | tr ",;" " " | sed -e 's/\t/<\/td><td class=\"body-item mbr-fonts-style display-7\">/g')"</td></tr>"
-						fi;
-					done < $GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH ;
-					GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH_HTML=$GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH_HTML"</tbody>"
-				fi;
-
 				GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH_HTML=$(cat $GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH | tr "," " " | $STARK_FOLDER_BIN/csv_to_html.awk -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
-
-
 			fi;
+
+			# FLAGS
+			# PASS
+			if [ -s $GENES_PANEL_GENES_FLAGS_PATTERN".PASS.txt" ]; then
+				GENES_PANEL_GENES_FLAGS_PATTERN_PASS_TABLE_HTML=$(cat $GENES_PANEL_GENES_FLAGS_PATTERN".PASS.txt" | grep "^#" -v | cut -f1)
+			fi;
+			# WARN
+			if [ -s $GENES_PANEL_GENES_FLAGS_PATTERN".WARN.txt" ]; then
+				GENES_PANEL_GENES_FLAGS_PATTERN_WARN_TABLE_HTML=$(cat $GENES_PANEL_GENES_FLAGS_PATTERN".WARN.txt" | grep "^#" -v | cut -f1)
+			fi;
+			# PASS
+			if [ -s $GENES_PANEL_GENES_FLAGS_PATTERN".FAIL.txt" ]; then
+				GENES_PANEL_GENES_FLAGS_PATTERN_FAIL_TABLE_HTML=$(cat $GENES_PANEL_GENES_FLAGS_PATTERN".FAIL.txt" | grep "^#" -v | cut -f1)
+			fi;
+			# PASS
+			if [ -s $GENES_PANEL_GENES_FLAGS_PATTERN".MISS.txt" ]; then
+				GENES_PANEL_GENES_FLAGS_PATTERN_MISS_TABLE_HTML=$(cat $GENES_PANEL_GENES_FLAGS_PATTERN".MISS.txt" | grep "^#" -v | cut -f1)
+			fi;
+
+
+			GENES_PANEL_GENES_FLAGS_HTML="
+					<thead>
+						<tr class='table-heads'>
+							<th class='head-item mbr-fonts-style display-7'>PASS</th>
+							<th class='head-item mbr-fonts-style display-7'>WARN</th>
+							<th class='head-item mbr-fonts-style display-7'>FAIL</th>
+							<th class='head-item mbr-fonts-style display-7'>MISS</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td class='body-item mbr-fonts-style display-7' $PASS_FLAG_ICON>$GENES_PANEL_GENES_FLAGS_PATTERN_PASS_TABLE_HTML</td>
+							<td class='body-item mbr-fonts-style display-7' $WARN_FLAG_ICON>$GENES_PANEL_GENES_FLAGS_PATTERN_WARN_TABLE_HTML</td>
+							<td class='body-item mbr-fonts-style display-7' $FAIL_FLAG_ICON>$GENES_PANEL_GENES_FLAGS_PATTERN_FAIL_TABLE_HTML</td>
+							<td class='body-item mbr-fonts-style display-7' $MISS_FLAG_ICON>$GENES_PANEL_GENES_FLAGS_PATTERN_MISS_TABLE_HTML</td>
+						</tr>
+					</tbody>
+			"
+
+			GENES_PANEL_GENES_FLAGS_HTML="
+					<thead>
+						<tr class='table-heads'>
+							<th class='head-item mbr-fonts-style display-7'>Flag</th>
+							<th class='head-item mbr-fonts-style display-7'>Genes</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td class='body-item mbr-fonts-style display-7' style='width:50px'>MISS</td>
+							<td class='body-item mbr-fonts-style display-7' $MISS_FLAG_ICON>$GENES_PANEL_GENES_FLAGS_PATTERN_MISS_TABLE_HTML</td>
+						</tr>
+						<tr>
+							<td class='body-item mbr-fonts-style display-7' style='width:50px'>FAIL</td>
+							<td class='body-item mbr-fonts-style display-7' $FAIL_FLAG_ICON>$GENES_PANEL_GENES_FLAGS_PATTERN_FAIL_TABLE_HTML</td>
+						</tr>
+						<tr>
+							<td class='body-item mbr-fonts-style display-7' style='width:50px'>WARN</td>
+							<td class='body-item mbr-fonts-style display-7' $WARN_FLAG_ICON>$GENES_PANEL_GENES_FLAGS_PATTERN_WARN_TABLE_HTML</td>
+						</tr>
+						<tr>
+							<td class='body-item mbr-fonts-style display-7' style='width:50px'>PASS</td>
+							<td class='body-item mbr-fonts-style display-7' $PASS_FLAG_ICON>$GENES_PANEL_GENES_FLAGS_PATTERN_PASS_TABLE_HTML</td>
+						</tr>
+					</tbody>
+			"
 
 
 			# BREAK
@@ -2497,6 +2846,7 @@ for ALIGNER in $ALIGNERS; do
 			echo '<a class="btn display-4 mbr-section-subtitle mbr-fonts-style display-6 align-center" href="#COVERAGE_'$GENES_PANEL'-'$ALIGNER'"><small>'$GENE_PANEL_NAME_HTML' ('$ALIGNER')</small></a>' >> $HTMLFILE_ANNEX_PLAN_LINKS_COVERAGE
 			echo '<a class="btn display-4 mbr-section-subtitle mbr-fonts-style display-6 align-center" href="#GENES_COVERAGE_'$GENES_PANEL'-'$ALIGNER'"><small>'$GENE_PANEL_NAME_HTML' ('$ALIGNER')</small></a>' >> $HTMLFILE_ANNEX_PLAN_LINKS_GENES_COVERAGE
 			echo '<a class="btn display-4 mbr-section-subtitle mbr-fonts-style display-6 align-center" href="#DEPTH_'$GENES_PANEL'-'$ALIGNER'"><small>'$GENE_PANEL_NAME_HTML' ('$ALIGNER')</small></a>' >> $HTMLFILE_ANNEX_PLAN_LINKS_DEPTH
+			echo '<a class="btn display-4 mbr-section-subtitle mbr-fonts-style display-6 align-center" href="#GENES_FLAGS_'$GENES_PANEL'-'$ALIGNER'"><small>'$GENE_PANEL_NAME_HTML' ('$ALIGNER')</small></a>' >> $HTMLFILE_ANNEX_PLAN_LINKS_GENES_FLAGS
 
 
 			echo '
@@ -2614,6 +2964,58 @@ for ALIGNER in $ALIGNERS; do
 
 			echo '
 
+			<section class="section-table cid-ruiBoanIwc" id="FLAGS_'$GENES_PANEL'-'$ALIGNER'">
+
+
+			  <div class="container container-table">
+
+				  <div class="table-wrapper">
+					<div class="container">
+					  <div class="row search">
+						<div class="col-md-6"></div>
+						<div class="col-md-6">
+							<div class="dataTables_filter">
+							  <label class="searchInfo mbr-fonts-style display-7">Search:</label>
+							  <input class="form-control input-sm" disabled="">
+							</div>
+						</div>
+					  </div>
+					</div>
+
+					<div class="container scroll">
+						<table class="table isSearch" cellspacing="0">
+							'$GENES_PANEL_GENES_FLAGS_HTML'
+						</table>
+					</div>
+
+					<div class="container table-info-container">
+					  <div class="row info">
+						<div class="col-md-6">
+						  <div class="dataTables_info mbr-fonts-style display-7">
+							<span class="infoBefore">Showing</span>
+							<span class="inactive infoRows"></span>
+							<span class="infoAfter">entries</span>
+							<span class="infoFilteredBefore">(filtered from</span>
+							<span class="inactive infoRows"></span>
+							<span class="infoFilteredAfter"> total entries)</span>
+						  </div>
+						</div>
+						<div class="col-md-6"></div>
+					  </div>
+					</div>
+
+
+				  </div>
+				</div>
+
+			</section>
+
+			' >> $HTMLFILE_ANNEX_GENES_PANEL_GENES_COVERAGE
+			#' >> $HTMLFILE_ANNEX_GENES_PANEL_FLAGS
+
+
+			echo '
+
 			<section class="section-table cid-ruiBoanIwc" id="DEPTH_'$GENES_PANEL'-'$ALIGNER'">
 
 
@@ -2667,77 +3069,21 @@ for ALIGNER in $ALIGNERS; do
 			</section>
 
 			' >> $HTMLFILE_ANNEX_GENES_PANEL_DEPTH
+			#' >> $HTMLFILE_ANNEX_GENES_PANEL_FLAGS
 
 		fi;
 
 	done;
 
 
-	if [ -s $GENES_PANEL_AMPLICON ]; then
 
-		echo '
-
-		<section class="section-table cid-ruiBoanIwc" id="AMPLICON-'$ALIGNER'">
-
-
-		  <div class="container container-table">
-
-			  <h3 class="mbr-section-subtitle mbr-fonts-style align-center mbr-light display-5" '$GENES_PANEL_BREAK'>
-			  <br>
-					Target Design ('$ALIGNER')
-			  </h3>
-
-
-			  <div class="table-wrapper">
-				<div class="container">
-				  <div class="row search">
-					<div class="col-md-6"></div>
-					<div class="col-md-6">
-						<div class="dataTables_filter">
-						  <label class="searchInfo mbr-fonts-style display-7">Search:</label>
-						  <input class="form-control input-sm" disabled="">
-						</div>
-					</div>
-				  </div>
-				</div>
-
-				<div class="container scroll">
-					<table class="table isSearch" cellspacing="0">
-						'$GENES_PANEL_AMPLICON_HTML'
-					</table>
-				</div>
-
-				<div class="container table-info-container">
-				  <div class="row info">
-					<div class="col-md-6">
-					  <div class="dataTables_info mbr-fonts-style display-7">
-						<span class="infoBefore">Showing</span>
-						<span class="inactive infoRows"></span>
-						<span class="infoAfter">entries</span>
-						<span class="infoFilteredBefore">(filtered from</span>
-						<span class="inactive infoRows"></span>
-						<span class="infoFilteredAfter"> total entries)</span>
-					  </div>
-					</div>
-					<div class="col-md-6"></div>
-				  </div>
-				</div>
-
-
-			  </div>
-			</div>
-
-		</section>
-
-		' >> $HTMLFILE_ANNEX_GENES_PANEL_AMPLICON
-	fi;
 
 
 done;
 
 
 
-SECTION_NAME="Coverage"
+SECTION_NAME="Global Coverage"
 SECTION_ID="annex_coverage"
 
 # PLAN
@@ -2781,51 +3127,8 @@ echo '
 
 
 
-SECTION_NAME="Target & Genes Coverage"
-SECTION_ID="annex_genes_coverage"
 
-# PLAN
-echo '<a class="btn btn-primary-outline display-4" href="#'$SECTION_ID'">'$SECTION_NAME'</a>' >> $HTMLFILE_ANNEX_PLAN_LINKS
-
-echo '
-
-	<section class="cid-ruiBoanIwc" id="'$SECTION_ID'" '$PAGE_BREAK_BEFORE'>
-	<br>
-
-	    <div class="container">
-	        <h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">
-	            '$SECTION_NAME'
-			</h2>
-
-			<p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
-				Coverage generated with <strong>Samtools mpileup</strong>
-				<br>
-				on BAM for validation ('$BAM_VALIDATION_TEXT_HTML').
-			</p>
-
-			<section class="mbr-section content8 cid-ruitEAjBmu" id="content8-1z">
-				<div class="container">
-					<div class="media-container-row title">
-						<div class="col-12 col-md-40">
-							<div class="mbr-section-btn align-center">
-							'$(cat $HTMLFILE_ANNEX_PLAN_LINKS_GENES_COVERAGE)'
-						</div>
-					</div>
-				</div>
-			</section>
-
-			'"$(cat $HTMLFILE_ANNEX_GENES_PANEL_GENES_COVERAGE)"'
-
-
-
-	   </div>
-	</section>
-
-' > $HTMLFILE_ANNEX_GENES_COVERAGE
-
-
-
-SECTION_NAME="Depth"
+SECTION_NAME="Targets & Genes Depth"
 SECTION_ID="annex_depth"
 
 # PLAN
@@ -2843,8 +3146,14 @@ echo '
 
 			<p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
 				Depth generated with <strong>Samtools mpileup</strong> and <strong>Picard CollectHsMetrics</strong>
+				'$AMPLICON_TEXT_HTML'
 				<br>
-				on BAM for validation ('$BAM_VALIDATION_TEXT_HTML').
+				on BAM for validation
+				<br>
+				('$BAM_VALIDATION_TEXT_HTML').
+				<br>
+				Minimum depth <strong>'$MINIMUM_DEPTH'X</strong>,
+				Expected depth <strong>'$EXPECTED_DEPTH'X</strong>
 			</p>
 
 			<section class="mbr-section content8 cid-ruitEAjBmu" id="content8-1z">
@@ -2869,54 +3178,110 @@ echo '
 
 
 
-SECTION_NAME="Amplicon Clipping"
-SECTION_ID="amplicon_clipping"
+if ((0)); then
+	SECTION_NAME="Amplicons Depth"
+	SECTION_ID="amplicon_clipping"
 
-#if (($GENES_PANEL_NUM)); then
-if [ -s $GENES_PANEL_AMPLICON ] && [ "$GENES_PANEL_AMPLICON_HTML" != "" ]; then
+	#if (($GENES_PANEL_NUM)); then
+	if [ -s $GENES_PANEL_AMPLICON ] && [ "$GENES_PANEL_AMPLICON_HTML" != "" ]; then
 
-	# PLAN
-	echo '<a class="btn btn-primary-outline display-4" href="#'$SECTION_ID'">'$SECTION_NAME'</a>' >> $HTMLFILE_ANNEX_PLAN_LINKS
+		# PLAN
+		echo '<a class="btn btn-primary-outline display-4" href="#'$SECTION_ID'">'$SECTION_NAME'</a>' >> $HTMLFILE_ANNEX_PLAN_LINKS
 
-	echo '
+		echo '
 
-		<section class="cid-ruiBoanIwc" id="'$SECTION_ID'" '$PAGE_BREAK_BEFORE'>
-		<br>
+			<section class="cid-ruiBoanIwc" id="'$SECTION_ID'" '$PAGE_BREAK_BEFORE'>
+			<br>
 
-		    <div class="container">
-		        <h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">
-		            '$SECTION_NAME'
-				</h2>
+			    <div class="container">
+			        <h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">
+			            '$SECTION_NAME'
+					</h2>
 
-				<p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
-				Amplicon clipping generated with <strong>CAP</strong> and depth metrics with <strong>Picard CollectHsMetrics</strong> on all <strong>Target Design</strong>.
-				</p>
+					<p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
+					Amplicon clipping generated with <strong>CAP</strong> and depth metrics with <strong>Picard CollectHsMetrics</strong> on all <strong>Target Design</strong>.
+					</p>
 
-				<section class="mbr-section content8 cid-ruitEAjBmu" id="content8-1z">
-					<div class="container">
-						<div class="media-container-row title">
-							<div class="col-12 col-md-40">
-								<div class="mbr-section-btn align-center">
-								'$(cat $HTMLFILE_ANNEX_PLAN_LINKS_AMPLICON)'
+					<section class="mbr-section content8 cid-ruitEAjBmu" id="content8-1z">
+						<div class="container">
+							<div class="media-container-row title">
+								<div class="col-12 col-md-40">
+									<div class="mbr-section-btn align-center">
+									'$(cat $HTMLFILE_ANNEX_PLAN_LINKS_AMPLICON)'
+								</div>
 							</div>
 						</div>
-					</div>
-				</section>
+					</section>
 
-				'"$(cat $HTMLFILE_ANNEX_GENES_PANEL_AMPLICON)"'
-
+					'"$(cat $HTMLFILE_ANNEX_GENES_PANEL_AMPLICON)"'
 
 
-		   </div>
-		</section>
 
-	' > $HTMLFILE_ANNEX_AMPLICON
+			   </div>
+			</section>
 
-else
+		' > $HTMLFILE_ANNEX_AMPLICON
 
-	> $HTMLFILE_ANNEX_AMPLICON
+	else
 
+		> $HTMLFILE_ANNEX_AMPLICON
+
+	fi;
 fi;
+
+
+SECTION_NAME="Targets & Genes Coverage"
+SECTION_ID="annex_genes_coverage"
+
+# PLAN
+echo '<a class="btn btn-primary-outline display-4" href="#'$SECTION_ID'">'$SECTION_NAME'</a>' >> $HTMLFILE_ANNEX_PLAN_LINKS
+
+echo '
+
+	<section class="cid-ruiBoanIwc" id="'$SECTION_ID'" '$PAGE_BREAK_BEFORE'>
+	<br>
+
+	    <div class="container">
+	        <h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">
+	            '$SECTION_NAME'
+			</h2>
+
+			<p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
+				Coverage generated with <strong>Samtools mpileup</strong>
+				<br>
+				on BAM for validation ('$BAM_VALIDATION_TEXT_HTML').
+				<br>
+				Genes flagged depending on Depth and Coverage thresholds:
+				<br>
+				Minimum depth <strong>'$MINIMUM_DEPTH'X</strong>,
+				Expected depth <strong>'$EXPECTED_DEPTH'X</strong>,
+				Sequencing coverage threshold <strong>'$(awk 'BEGIN{printf("%.1f\n",'$SEQUENCING_COVERAGE_THRESHOLD'*100)}')'%</strong>,
+				Minimum & Expected depth coverage threshold <strong>'$(awk 'BEGIN{printf("%.1f\n",'$DEPTH_COVERAGE_THRESHOLD'*100)}')'%</strong>
+			</p>
+
+			<section class="mbr-section content8 cid-ruitEAjBmu" id="content8-1z">
+				<div class="container">
+					<div class="media-container-row title">
+						<div class="col-12 col-md-40">
+							<div class="mbr-section-btn align-center">
+							'$(cat $HTMLFILE_ANNEX_PLAN_LINKS_GENES_COVERAGE)'
+						</div>
+					</div>
+				</div>
+			</section>
+
+			'"$(cat $HTMLFILE_ANNEX_GENES_PANEL_GENES_COVERAGE)"'
+
+
+
+
+
+	   </div>
+	</section>
+
+' > $HTMLFILE_ANNEX_GENES_COVERAGE
+
+#'"$(cat $HTMLFILE_ANNEX_GENES_PANEL_FLAGS)"'
 
 
 
@@ -2926,15 +3291,19 @@ fi;
 (($VERBOSE)) && echo "#[INFO] ANNEX VARIANTS section"
 
 HTMLFILE_ANNEX_VARIANTS=$HTMLFILE_ANNEX".variants"
+HTMLFILE_ANNEX_ANNOTATIONS=$HTMLFILE_ANNEX".annotations"
 
 # FILES
 HTMLFILE_ANNEX_GENES_PANEL_VARIANTS=$HTMLFILE_ANNEX".genes_panel_variants"
+HTMLFILE_ANNEX_GENES_PANEL_ANNOTATIONS=$HTMLFILE_ANNEX".genes_panel_annotations"
 HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV=$HTMLFILE_ANNEX".genes_panel_variants.tsv"
 
 
 # LINKS
 HTMLFILE_ANNEX_PLAN_LINKS_VARIANTS=$HTMLFILE_ANNEX_PLAN_LINKS".variants"
 > $HTMLFILE_ANNEX_PLAN_LINKS_VARIANTS
+HTMLFILE_ANNEX_PLAN_LINKS_ANNOTATIONS=$HTMLFILE_ANNEX_PLAN_LINKS".annotations"
+> $HTMLFILE_ANNEX_PLAN_LINKS_ANNOTATIONS
 
 
 GENES_PANEL_NUM=0
@@ -2959,9 +3328,9 @@ GENES_PANEL_NUM=0
 		GENES_PANEL_VCF="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.genes.$GENES_PANEL.vcf"
 		GENES_PANEL_TSV="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.genes.$GENES_PANEL.tsv"
 		GENES_PANEL_REPORT_TSV="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.genes.$GENES_PANEL.report.tsv"
-		GENES_PANEL_INFO_FIELD_STATS="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.genes.$GENES_PANEL.vcf.info_field.stats"
+		GENES_PANEL_INFO_FIELD_STATS="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.genes.$GENES_PANEL.report.info_field.stats"
 
-		#head -n 10 $GENES_PANEL_VCF
+		#cat $GENES_PANEL_INFO_FIELD_STATS | grep "^#" -v
 
 
 		if [ -s $GENES_PANEL_FILE ] || [ $GENES_PANEL == $TARGET_DESIGN_NAME ]; then
@@ -2984,67 +3353,39 @@ GENES_PANEL_NUM=0
 			(($DEBUG)) && echo "GENES_PANEL_NUM: "$GENES_PANEL_NUM
 
 
-			# GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE
+			# HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV
 			if [ -s $GENES_PANEL_VCF ]; then
-
-				#cat $GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE;
 
 
 				if [ ! -s $GENES_PANEL_REPORT_TSV ] || ((0)); then
 					if [ "$HOWARD_FIELDS_REPORT" == "" ]; then
 						HOWARD_FIELDS_REPORT=$(echo $HOWARD_FIELDS | sed "s/ALL//")
 					fi;
-					#$HOWARD --config=$HOWARD_CONFIG --config=$HOWARD_CONFIG --config_prioritization=$HOWARD_CONFIG_PRIORITIZATION --config_annotation=$HOWARD_CONFIG_ANNOTATION --pzfields="PZScore,PZFlag,PZComment,PZInfos" --format=tab  --fields="$HOWARD_FIELDS" --sort=$HOWARD_SORT --sort_by="$HOWARD_SORT_BY" --order_by="$HOWARD_ORDER_BY"  --multithreading --threads=$THREADS --snpeff_threads=$THREADS_BY_SAMPLE --tmp=$TMP_FOLDER_TMP --env=$CONFIG_TOOLS --input=$GENES_PANEL_VCF --output=$GENES_PANEL_TSV --force;
 					$HOWARD --config=$HOWARD_CONFIG --config=$HOWARD_CONFIG --config_prioritization=$HOWARD_CONFIG_PRIORITIZATION --config_annotation=$HOWARD_CONFIG_ANNOTATION --pzfields="PZScore,PZFlag,PZComment,PZInfos" --format=tab  --fields="$HOWARD_FIELDS_REPORT" --sort=$HOWARD_SORT --sort_by="$HOWARD_SORT_BY" --order_by="$HOWARD_ORDER_BY"  --multithreading --threads=$THREADS --snpeff_threads=$THREADS_BY_SAMPLE --tmp=$TMP_FOLDER_TMP --env=$CONFIG_TOOLS --input=$GENES_PANEL_VCF --output=$HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.tmp --force;
 					GENES_PANEL_REPORT_TSV=$HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.tmp
 				fi;
 
-				#if ((0)); then
-				#	#cut -f 8- $GENES_PANEL_REPORT_TSV | rev | cut -f 3- | rev
-				#	cut -f 8- $GENES_PANEL_REPORT_TSV | rev | cut -f 3- | rev >$HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV
-				#	#cp $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.tmp $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV
-				#
-				#	#echo $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV
-				#	#cat $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV
-				#elif ((1)); then
-					cut -f 8- $GENES_PANEL_REPORT_TSV | rev | cut -f 3- | rev >$HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.INFO
-					cut -f -7 $GENES_PANEL_REPORT_TSV >$HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.CHROMPOSREFALT
-					rev $GENES_PANEL_REPORT_TSV | cut -f -2 | rev >$HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.FORMATSAMPLE
-					paste $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.INFO $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.CHROMPOSREFALT $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.FORMATSAMPLE > $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV
-				#else
-				#	HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV=$GENES_PANEL_REPORT_TSV
-				#fi;
-				#exit 0
-				if ((0)); then
-					print_header=true
-					GENES_PANEL_VARIANTS_HTML=""
-					#GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML="<tbody>"
-					while read INPUT ; do
-						#echo $INPUT
-					  	if $print_header;then
-						    GENES_PANEL_VARIANTS_HTML=$GENES_PANEL_VARIANTS_HTML"<thead><tr class=\"table-heads\"><th class=\"head-item mbr-fonts-style display-7\">"$(echo -e "$INPUT" | tr ",;" " " | sed -e 's/\t/<\/th><th class=\"head-item mbr-fonts-style display-7\">/g')"</th></tr></thead><tbody>"
-						    print_header=false
-						else
-					  		#echo "<tr><td>${INPUT//\t/</td><td>}</td></tr>" ;
-					  		GENES_PANEL_VARIANTS_HTML=$GENES_PANEL_VARIANTS_HTML"<tr><td class=\"body-item mbr-fonts-style display-7\">"$(echo -e "$INPUT" | tr ",;" " " | sed -e 's/\t/<\/td><td class=\"body-item mbr-fonts-style display-7\">/g')"</td></tr>"
-						fi;
-					done < $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV ;
-					GENES_PANEL_VARIANTS_HTML=$GENES_PANEL_VARIANTS_HTML"</tbody>"
-				fi;
+				# Formating
+				cut -f 8- $GENES_PANEL_REPORT_TSV | rev | cut -f 3- | rev >$HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.INFO
+				cut -f -7 $GENES_PANEL_REPORT_TSV >$HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.CHROMPOSREFALT
+				rev $GENES_PANEL_REPORT_TSV | cut -f -2 | rev >$HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.FORMATSAMPLE
+				paste $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.INFO $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.CHROMPOSREFALT $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.FORMATSAMPLE > $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV
 
 				GENES_PANEL_VARIANTS_HTML=$(cat $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV | tr "," " " | $STARK_FOLDER_BIN/csv_to_html.awk -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
 
-
-
 			fi;
 
-			#echo $GENES_PANEL_VARIANTS_HTML
+			# GENES_PANEL_INFO_FIELD_STATS
+			echo "Annotation	Value	Count" > $HTMLFILE_ANNEX_GENES_PANEL_ANNOTATIONS.tmp
+			cat $GENES_PANEL_INFO_FIELD_STATS | grep "^#" -v >> $HTMLFILE_ANNEX_GENES_PANEL_ANNOTATIONS.tmp
+			GENES_PANEL_INFO_FIELD_STATS_HTML=$(cat $HTMLFILE_ANNEX_GENES_PANEL_ANNOTATIONS.tmp | tr "," " " | $STARK_FOLDER_BIN/csv_to_html.awk -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
 
 			# BREAK
 			(( $(echo "$GENES_PANEL_NUM >= 2" |bc -l) )) && GENES_PANEL_BREAK=$PAGE_BREAK_BEFORE || GENES_PANEL_BREAK=""
 
 			# PLAN
 			echo '<a class="btn display-4 mbr-section-subtitle mbr-fonts-style display-6 align-center" href="#VARIANTS_'$GENES_PANEL'"><small>'$GENE_PANEL_NAME_HTML'</small></a>' >> $HTMLFILE_ANNEX_PLAN_LINKS_VARIANTS
+			echo '<a class="btn display-4 mbr-section-subtitle mbr-fonts-style display-6 align-center" href="#ANNOTATIONS_'$GENES_PANEL'"><small>'$GENE_PANEL_NAME_HTML'</small></a>' >> $HTMLFILE_ANNEX_PLAN_LINKS_ANNOTATIONS
 
 
 			echo '
@@ -3103,6 +3444,65 @@ GENES_PANEL_NUM=0
 
 			' >> $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS
 
+
+			echo '
+
+			<section class="section-table cid-ruiBoanIwc" id="ANNOTATIONS_'$GENES_PANEL'" >
+
+
+			  <div class="container container-table">
+
+				  <h3 class="mbr-section-subtitle mbr-fonts-style align-center mbr-light display-5" '$GENES_PANEL_BREAK'>
+				  <br>
+					'$GENE_PANEL_NAME_HTML'
+				  </h3>
+
+
+				  <div class="table-wrapper">
+					<div class="container">
+					  <div class="row search">
+						<div class="col-md-6"></div>
+						<div class="col-md-6">
+							<div class="dataTables_filter">
+							  <label class="searchInfo mbr-fonts-style display-7">Search:</label>
+							  <input class="form-control input-sm" disabled="">
+							</div>
+						</div>
+					  </div>
+					</div>
+
+					<div class="container scroll">
+						<table class="table isSearch" cellspacing="0">
+							'$GENES_PANEL_INFO_FIELD_STATS_HTML'
+						</table>
+					</div>
+
+					<div class="container table-info-container">
+					  <div class="row info">
+						<div class="col-md-6">
+						  <div class="dataTables_info mbr-fonts-style display-7">
+							<span class="infoBefore">Showing</span>
+							<span class="inactive infoRows"></span>
+							<span class="infoAfter">entries</span>
+							<span class="infoFilteredBefore">(filtered from</span>
+							<span class="inactive infoRows"></span>
+							<span class="infoFilteredAfter"> total entries)</span>
+						  </div>
+						</div>
+						<div class="col-md-6"></div>
+					  </div>
+					</div>
+
+
+				  </div>
+				</div>
+
+			</section>
+
+			' >> $HTMLFILE_ANNEX_GENES_PANEL_ANNOTATIONS
+
+
+
 		fi;
 
 	done;
@@ -3112,7 +3512,7 @@ GENES_PANEL_NUM=0
 
 
 
-SECTION_NAME="Variants"
+SECTION_NAME="Variants Report"
 SECTION_ID="annex_variants"
 
 # PLAN
@@ -3155,6 +3555,53 @@ echo '
 	</section>
 
 ' > $HTMLFILE_ANNEX_VARIANTS
+
+
+
+
+SECTION_NAME="Annotations Report"
+SECTION_ID="annex_annotations"
+
+# PLAN
+echo '<a class="btn btn-primary-outline display-4" href="#'$SECTION_ID'">'$SECTION_NAME'</a>' >> $HTMLFILE_ANNEX_PLAN_LINKS
+
+echo '
+
+	<section class="cid-ruiBoanIwc" id="'$SECTION_ID'" '$PAGE_BREAK_BEFORE'>
+	<br>
+
+	    <div class="container">
+	        <h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">
+	            '$SECTION_NAME'
+			</h2>
+
+			<p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
+				Annotations from '$PIPELINES_NUMBER' pipelines:
+				<br>
+				'$(echo $ALIGNERS_CALLERS_ANNOTATORS | sed "s/ /<br>/gi")'
+				<br>
+
+			</p>
+
+			<section class="mbr-section content8 cid-ruitEAjBmu" id="content8-1z">
+			    <div class="container">
+			        <div class="media-container-row title">
+			            <div class="col-12 col-md-40">
+			                <div class="mbr-section-btn align-center">
+							'$(cat $HTMLFILE_ANNEX_PLAN_LINKS_ANNOTATIONS)'
+			            </div>
+			        </div>
+			    </div>
+			</section>
+
+			'"$(cat $HTMLFILE_ANNEX_GENES_PANEL_ANNOTATIONS)"'
+
+
+
+	   </div>
+	</section>
+
+' > $HTMLFILE_ANNEX_ANNOTATIONS
 
 
 
@@ -3209,13 +3656,14 @@ echo '
 	'"$(cat $HTMLFILE_PLAN)"'
 	'"$(cat $HTMLFILE_SUMMARY)"'
 	'"$(cat $HTMLFILE_SEQUENCING)"'
+	'"$(cat $HTMLFILE_DEPTH)"'
 	'"$(cat $HTMLFILE_COVERAGE)"'
-	'"$(cat $HTMLFILE_AMPLICON_CLIPPING)"'
-	'"$(cat $HTMLFILE_CALLING)"'
 	'"$(cat $HTMLFILE_VARIANTS_STATS)"'
 	'"$(cat $HTMLFILE_SCRIPTS)"'
 ' > $HTMLFILE_BODY
 
+#'"$(cat $HTMLFILE_AMPLICON_CLIPPING)"'
+#'"$(cat $HTMLFILE_CALLING)"'
 
 # ANNEX
 
@@ -3229,14 +3677,14 @@ echo '
 	'"$(cat $HTMLFILE_MAIN)"'
 	'"$(cat $HTMLFILE_ANNEX_PLAN)"'
 	'"$(cat $HTMLFILE_ANNEX_COVERAGE)"'
-	'"$(cat $HTMLFILE_ANNEX_GENES_COVERAGE)"'
 	'"$(cat $HTMLFILE_ANNEX_DEPTH)"'
-	'"$(cat $HTMLFILE_ANNEX_AMPLICON)"'
+	'"$(cat $HTMLFILE_ANNEX_GENES_COVERAGE)"'
 	'"$(cat $HTMLFILE_ANNEX_VARIANTS)"'
+	'"$(cat $HTMLFILE_ANNEX_ANNOTATIONS)"'
 	'"$(cat $HTMLFILE_SCRIPTS)"'
 ' > $HTMLFILE_ANNEX_BODY
 
-
+#'"$(cat $HTMLFILE_ANNEX_AMPLICON)"'
 
 # OUTPUT
 ##########
@@ -3306,7 +3754,16 @@ echo -ne '
 (($DEBUG)) && cat $HTMLFILE_ANNEX
 
 
+# MINIFY
+##########
 
+# Bad code
+if ((0)); then
+	cat $HTMLFILE | sed -e "s/^[ \t]*//g" -e ":a;N;$!ba;s/\n//g" > $HTMLFILE.minify
+	HTMLFILE=$HTMLFILE.minify
+	cat $HTMLFILE_ANNEX | sed -e "s/^[ \t]*//g" -e ":a;N;$!ba;s/\n//g" > $HTMLFILE_ANNEX.minify
+	HTMLFILE_ANNEX=$HTMLFILE_ANNEX.minify
+fi;
 
 
 # WRITE FILES

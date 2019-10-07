@@ -1,6 +1,6 @@
 
 ##############################################################
-# Dockerfile Version:   1.9
+# Dockerfile Version:   1.0
 # Software:             STARK-BASE
 # Software Version:     0.9.18b
 # Software Website:     none
@@ -34,13 +34,21 @@
 
 
 ########
+# ARGS #
+#######
+
+ARG THREADS=1
+
+
+
+########
 # FROM #
 ########
 
 FROM centos:7
 MAINTAINER Antony Le Bechec <antony.lebechec@gmail.com>
 LABEL Software="STARK-BASE" \
-	Version="1.8.2" \
+	Version="0.9.18b" \
 	Website="none" \
 	Description="STARK-BASE" \
 	License="GNU Affero General Public License (AGPL)" \
@@ -122,7 +130,7 @@ RUN wget $TARBALL_LOCATION/$TARBALL ; \
     tar xf $TARBALL ; \
     rm -rf $TARBALL ; \
     cd $TOOL_NAME-$TOOL_VERSION ; \
-    make prefix=$TOOLS/$TOOL_NAME/$TOOL_VERSION install ; \
+    make -j $THREADS prefix=$TOOLS/$TOOL_NAME/$TOOL_VERSION install ; \
 	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ; \
     cd ../ ; \
     rm -rf $TOOL_NAME-$TOOL_VERSION ;
@@ -145,7 +153,7 @@ RUN wget $TARBALL_LOCATION/$TARBALL ; \
     tar xf $TARBALL ; \
     rm -rf $TARBALL ; \
     cd $TOOL_NAME-$TOOL_VERSION ; \
-    make prefix=$TOOLS/$TOOL_NAME/$TOOL_VERSION install ; \
+    make -j $THREADS prefix=$TOOLS/$TOOL_NAME/$TOOL_VERSION install ; \
 	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ; \
     cd ../ ; \
     rm -rf $TOOL_NAME-$TOOL_VERSION ;
@@ -194,7 +202,7 @@ RUN wget $TARBALL_LOCATION/$TARBALL ; \
     tar xf $TARBALL ; \
     rm -rf $TARBALL ; \
     cd $TARBALL_FOLDER ; \
-    make prefix=$TOOLS/$TOOL_NAME/$TOOL_VERSION install ; \
+    make -j $THREADS prefix=$TOOLS/$TOOL_NAME/$TOOL_VERSION install ; \
     cd ../ ; \
     rm -rf $TARBALL_FOLDER ; \
     ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
@@ -213,7 +221,7 @@ ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 
 RUN git clone $GIT ; \
     cd $TOOL_NAME ; \
-    make -j ; \
+    make -j $THREADS ; \
     mkdir -p $DEST/bin ; \
     cp LICENSE MANUAL TUTORIAL VERSION NEWS AUTHORS $DEST ; \
     cp bowtie* $DEST/bin ; \
@@ -240,7 +248,7 @@ RUN wget $TARBALL_LOCATION -O $TARBALL ; \
     tar xf $TARBALL ; \
     rm -rf $TARBALL ; \
     cd $TARBALL_NAME-$TOOL_VERSION ; \
-    make ; \
+    make -j $THREADS; \
     mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin ; \
     cp bwa $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin ; \
     cd ../ ; \
@@ -455,7 +463,7 @@ RUN wget $TARBALL_LOCATION/$TARBALL ; \
     tar xf $TARBALL ; \
     rm -rf $TARBALL ; \
     cd $TOOL_NAME-$TOOL_VERSION ; \
-    make prefix=$TOOLS/$TOOL_NAME/$TOOL_VERSION install ; \
+    make -j $THREADS prefix=$TOOLS/$TOOL_NAME/$TOOL_VERSION install ; \
     cd ../ ; \
     rm -rf $TOOL_NAME-$TOOL_VERSION ; \
     ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
@@ -528,8 +536,8 @@ RUN git clone https://github.com/cgrlab/vcftools.git ; \
     git checkout tags/v0.1.14 ; \
     ./autogen.sh ; \
     ./configure ; \
-    make prefix=$TOOLS/$TOOL_NAME/$TOOL_VERSION ; \
-    make prefix=$TOOLS/$TOOL_NAME/$TOOL_VERSION install ; \
+    make -j $THREADS prefix=$TOOLS/$TOOL_NAME/$TOOL_VERSION ; \
+    make -j $THREADS prefix=$TOOLS/$TOOL_NAME/$TOOL_VERSION install ; \
     cd ../ ; \
 	rm -rf TARBALL_NAME ; \
     ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;

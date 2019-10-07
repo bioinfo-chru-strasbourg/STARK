@@ -441,7 +441,7 @@ GATKRR_FLAGS=
 
 
 # Interval from bed from manifest?
-%.from_manifest.intervals: %.bed %.bam %.bam.bai %.dict
+%.from_manifest.intervals: %.bed %.bam %.bam.bai %.bam.bed %.dict
 	# manifest to interval (not needed?)
 	#cat $<  | tr -d '\r' | sed -e "s/^M//" | awk -F"\t" '{print $$1":"$$2"-"$$3}' > $@
 	# try to extract from the bam if exists, in order to not call in the whome genome
@@ -451,6 +451,8 @@ GATKRR_FLAGS=
 		echo "# Generation of BED from BAM because bed/manifest is empty"; \
 		#$(BEDTOOLS)/bamToBed -i $*.bam  | $(BEDTOOLS)/bedtools sort -i - | $(BEDTOOLS)/mergeBed -n -i - > $*.bed; \
 		#$(BEDTOOLS)/genomeCoverageBed_for_intervals -ibam $*.bam -bg | $(BEDTOOLS)/mergeBed -n -i - > $*.bed; \
+		cp $*.bam.bed $@.bed ; \
+		if ((0)); then \
 		if (($$($(SAMTOOLS) idxstats $*.bam | awk '{SUM+=$$3+$$4} END {print SUM}'))); then \
 			rm -f $*.bam.genomeCoverageBed_for_intervals.mk $*.bam.genomeCoverageBed_for_intervals1.mk $*.bam.genomeCoverageBed_for_intervals2.mk $*.bam.genomeCoverageBed_for_intervals3.mk; \
 			for chr in $$($(SAMTOOLS) idxstats $*.bam | grep -v "\*" | awk '{ if ($$3+$$4>0) print $$1 }'); do \
@@ -479,6 +481,7 @@ GATKRR_FLAGS=
 			#cat $@.bed ; \
 			#rm $*.bam.genomeCoverageBed_for_intervals*.mk; \
 			rm $*.bam.genomeCoverageBed_for_intervals*; \
+		fi; \
 		fi; \
 	else \
 		echo "[ERROR] No intervals generated '$@'" ; \

@@ -59,7 +59,8 @@ VARSCAN_TIMEOUT=3600 # 1 = 1sec, 60=1min, 3600=1h
 		echo "# GENERATION of '$@' start: "`date`; \
 		sample=`basename $* | cut -d"." -f1`; \
 		echo $$sample > $*.SNP.sample.txt; \
-		timeout $(VARSCAN_TIMEOUT) cat $< | $(JAVA) -jar $(VARSCAN) mpileup2snp --output-vcf 1 $(VARSCAN_SNP_OPTIONS) --vcf-sample-list $*.SNP.sample.txt > $@.unfiltered.vcf; \
+		#timeout $(VARSCAN_TIMEOUT) cat $< | $(JAVA) -jar $(VARSCAN) mpileup2snp --output-vcf 1 $(VARSCAN_SNP_OPTIONS) --vcf-sample-list $*.SNP.sample.txt > $@.unfiltered.vcf; \
+		cat $< | $(JAVA) -jar $(VARSCAN) mpileup2snp --output-vcf 1 $(VARSCAN_SNP_OPTIONS) --vcf-sample-list $*.SNP.sample.txt > $@.unfiltered.vcf; \
 		rm -f $*.SNP.sample.txt; \
 		echo "# GENERATION of '$@' stop: "`date`; \
 	fi;
@@ -82,7 +83,8 @@ VARSCAN_TIMEOUT=3600 # 1 = 1sec, 60=1min, 3600=1h
 		echo "# GENERATION of '$@' start: "`date`; \
 		sample=`basename $* | cut -d"." -f1`; \
 		echo $$sample > $*.InDel.sample.txt; \
-		timeout $(VARSCAN_TIMEOUT) cat $< | $(JAVA) -jar $(VARSCAN) mpileup2indel --output-vcf 1 $(VARSCAN_INDEL_OPTIONS) --vcf-sample-list $*.InDel.sample.txt > $@.unfiltered.vcf; \
+		#timeout $(VARSCAN_TIMEOUT) cat $< | $(JAVA) -jar $(VARSCAN) mpileup2indel --output-vcf 1 $(VARSCAN_INDEL_OPTIONS) --vcf-sample-list $*.InDel.sample.txt > $@.unfiltered.vcf; \
+		cat $< | $(JAVA) -jar $(VARSCAN) mpileup2indel --output-vcf 1 $(VARSCAN_INDEL_OPTIONS) --vcf-sample-list $*.InDel.sample.txt > $@.unfiltered.vcf; \
 		rm -f $*.InDel.sample.txt; \
 		echo "# GENERATION of '$@' stop: "`date`; \
 	fi;
@@ -124,7 +126,8 @@ VARSCAN_SOMATIC_TIMEOUT=3600 # 1 = 1sec, 60=1min, 3600=1h
 		echo "# GENERATION of '$@' start: "`date`; \
 		sample=`basename $* | cut -d"." -f1`; \
 		echo $$sample > $*.SNP.sample.txt; \
-		timeout $(VARSCAN_TIMEOUT) cat $< | $(JAVA) -jar $(VARSCAN) mpileup2snp --output-vcf 1 $(VARSCAN_SOMATIC_SNP_OPTIONS) --vcf-sample-list $*.SNP.sample.txt > $@.unfiltered.vcf; \
+		#timeout $(VARSCAN_TIMEOUT) cat $< | $(JAVA) -jar $(VARSCAN) mpileup2snp --output-vcf 1 $(VARSCAN_SOMATIC_SNP_OPTIONS) --vcf-sample-list $*.SNP.sample.txt > $@.unfiltered.vcf; \
+		cat $< | $(JAVA) -jar $(VARSCAN) mpileup2snp --output-vcf 1 $(VARSCAN_SOMATIC_SNP_OPTIONS) --vcf-sample-list $*.SNP.sample.txt > $@.unfiltered.vcf; \
 		rm -f $*.SNP.sample.txt; \
 		echo "# GENERATION of '$@' stop: "`date`; \
 	fi;
@@ -147,7 +150,8 @@ VARSCAN_SOMATIC_TIMEOUT=3600 # 1 = 1sec, 60=1min, 3600=1h
 		echo "# GENERATION of '$@' start: "`date`; \
 		sample=`basename $* | cut -d"." -f1`; \
 		echo $$sample > $*.InDel.sample.txt; \
-		timeout $(VARSCAN_TIMEOUT) cat $< | $(JAVA) -jar $(VARSCAN) mpileup2indel --output-vcf 1 $(VARSCAN_SOMATIC_INDEL_OPTIONS) --vcf-sample-list $*.InDel.sample.txt > $@.unfiltered.vcf; \
+		#timeout $(VARSCAN_TIMEOUT) cat $< | $(JAVA) -jar $(VARSCAN) mpileup2indel --output-vcf 1 $(VARSCAN_SOMATIC_INDEL_OPTIONS) --vcf-sample-list $*.InDel.sample.txt > $@.unfiltered.vcf; \
+		cat $< | $(JAVA) -jar $(VARSCAN) mpileup2indel --output-vcf 1 $(VARSCAN_SOMATIC_INDEL_OPTIONS) --vcf-sample-list $*.InDel.sample.txt > $@.unfiltered.vcf; \
 		rm -f $*.InDel.sample.txt; \
 		echo "# GENERATION of '$@' stop: "`date`; \
 	fi;
@@ -189,7 +193,8 @@ VARSCAN_EXOME_SOMATIC_TIMEOUT=36000 # 1 = 1sec, 60=1min, 3600=1h
 		echo "# GENERATION of '$@' start: "`date`; \
 		sample=`basename $* | cut -d"." -f1`; \
 		echo $$sample > $*.SNP.sample.txt; \
-		timeout $(VARSCAN_TIMEOUT) cat $< | $(JAVA) -jar $(VARSCAN) mpileup2snp --output-vcf 1 $(VARSCAN_EXOME_SOMATIC_SNP_OPTIONS) --vcf-sample-list $*.SNP.sample.txt > $@.unfiltered.vcf; \
+		#timeout $(VARSCAN_TIMEOUT) cat $< | $(JAVA) -jar $(VARSCAN) mpileup2snp --output-vcf 1 $(VARSCAN_EXOME_SOMATIC_SNP_OPTIONS) --vcf-sample-list $*.SNP.sample.txt > $@.unfiltered.vcf; \
+		cat $< | $(JAVA) -jar $(VARSCAN) mpileup2snp --output-vcf 1 $(VARSCAN_EXOME_SOMATIC_SNP_OPTIONS) --vcf-sample-list $*.SNP.sample.txt > $@.unfiltered.vcf; \
 		rm -f $*.SNP.sample.txt; \
 		echo "# GENERATION of '$@' stop: "`date`; \
 	fi;
@@ -212,7 +217,8 @@ VARSCAN_EXOME_SOMATIC_TIMEOUT=36000 # 1 = 1sec, 60=1min, 3600=1h
 		echo "# GENERATION of '$@' start: "`date`; \
 		sample=`basename $* | cut -d"." -f1`; \
 		echo $$sample > $*.InDel.sample.txt; \
-		timeout $(VARSCAN_TIMEOUT) cat $< | $(JAVA) -jar $(VARSCAN) mpileup2indel --output-vcf 1 $(VARSCAN_EXOME_SOMATIC_INDEL_OPTIONS) --vcf-sample-list $*.InDel.sample.txt > $@.unfiltered.vcf; \
+		#timeout $(VARSCAN_TIMEOUT) cat $< | $(JAVA) -jar $(VARSCAN) mpileup2indel --output-vcf 1 $(VARSCAN_EXOME_SOMATIC_INDEL_OPTIONS) --vcf-sample-list $*.InDel.sample.txt > $@.unfiltered.vcf; \
+		cat $< | $(JAVA) -jar $(VARSCAN) mpileup2indel --output-vcf 1 $(VARSCAN_EXOME_SOMATIC_INDEL_OPTIONS) --vcf-sample-list $*.InDel.sample.txt > $@.unfiltered.vcf; \
 		rm -f $*.InDel.sample.txt; \
 		echo "# GENERATION of '$@' stop: "`date`; \
 	fi;
@@ -256,7 +262,8 @@ VARSCAN_HEMATOLOGY_TIMEOUT=3600 # 1 = 1sec, 60=1min, 3600=1h
 		echo "# GENERATION of '$@' start: "`date`; \
 		sample=`basename $* | cut -d"." -f1`; \
 		echo $$sample > $*.SNP.sample.txt; \
-		timeout $(VARSCAN_TIMEOUT) cat $< | $(JAVA) -jar $(VARSCAN) mpileup2snp --output-vcf 1 $(VARSCAN_HEMATOLOGY_SNP_OPTIONS) --vcf-sample-list $*.SNP.sample.txt > $@.unfiltered.vcf; \
+		#timeout $(VARSCAN_TIMEOUT) cat $< | $(JAVA) -jar $(VARSCAN) mpileup2snp --output-vcf 1 $(VARSCAN_HEMATOLOGY_SNP_OPTIONS) --vcf-sample-list $*.SNP.sample.txt > $@.unfiltered.vcf; \
+		cat $< | $(JAVA) -jar $(VARSCAN) mpileup2snp --output-vcf 1 $(VARSCAN_HEMATOLOGY_SNP_OPTIONS) --vcf-sample-list $*.SNP.sample.txt > $@.unfiltered.vcf; \
 		rm -f $*.SNP.sample.txt; \
 		echo "# GENERATION of '$@' stop: "`date`; \
 	fi;
@@ -279,7 +286,8 @@ VARSCAN_HEMATOLOGY_TIMEOUT=3600 # 1 = 1sec, 60=1min, 3600=1h
 		echo "# GENERATION of '$@' start: "`date`; \
 		sample=`basename $* | cut -d"." -f1`; \
 		echo $$sample > $*.InDel.sample.txt; \
-		timeout $(VARSCAN_TIMEOUT) cat $< | $(JAVA) -jar $(VARSCAN) mpileup2indel --output-vcf 1 $(VARSCAN_HEMATOLOGY_INDEL_OPTIONS) --vcf-sample-list $*.InDel.sample.txt > $@.unfiltered.vcf; \
+		#timeout $(VARSCAN_TIMEOUT) cat $< | $(JAVA) -jar $(VARSCAN) mpileup2indel --output-vcf 1 $(VARSCAN_HEMATOLOGY_INDEL_OPTIONS) --vcf-sample-list $*.InDel.sample.txt > $@.unfiltered.vcf; \
+		cat $< | $(JAVA) -jar $(VARSCAN) mpileup2indel --output-vcf 1 $(VARSCAN_HEMATOLOGY_INDEL_OPTIONS) --vcf-sample-list $*.InDel.sample.txt > $@.unfiltered.vcf; \
 		rm -f $*.InDel.sample.txt; \
 		echo "# GENERATION of '$@' stop: "`date`; \
 	fi;
@@ -320,7 +328,8 @@ VARSCAN_SOLIDTUMOR_TIMEOUT=3600 # 1 = 1sec, 60=1min, 3600=1h
 		echo "# GENERATION of '$@' start: "`date`; \
 		sample=`basename $* | cut -d"." -f1`; \
 		echo $$sample > $*.SNP.sample.txt; \
-		timeout $(VARSCAN_TIMEOUT) cat $< | $(JAVA) -jar $(VARSCAN) mpileup2snp --output-vcf 1 $(VARSCAN_SOLIDTUMOR_SNP_OPTIONS) --vcf-sample-list $*.SNP.sample.txt > $@.unfiltered.vcf; \
+		#timeout $(VARSCAN_TIMEOUT) cat $< | $(JAVA) -jar $(VARSCAN) mpileup2snp --output-vcf 1 $(VARSCAN_SOLIDTUMOR_SNP_OPTIONS) --vcf-sample-list $*.SNP.sample.txt > $@.unfiltered.vcf; \
+		cat $< | $(JAVA) -jar $(VARSCAN) mpileup2snp --output-vcf 1 $(VARSCAN_SOLIDTUMOR_SNP_OPTIONS) --vcf-sample-list $*.SNP.sample.txt > $@.unfiltered.vcf; \
 		rm -f $*.SNP.sample.txt; \
 		echo "# GENERATION of '$@' stop: "`date`; \
 	fi;
@@ -343,7 +352,8 @@ VARSCAN_SOLIDTUMOR_TIMEOUT=3600 # 1 = 1sec, 60=1min, 3600=1h
 		echo "# GENERATION of '$@' start: "`date`; \
 		sample=`basename $* | cut -d"." -f1`; \
 		echo $$sample > $*.InDel.sample.txt; \
-		timeout $(VARSCAN_TIMEOUT) cat $< | $(JAVA) -jar $(VARSCAN) mpileup2indel --output-vcf 1 $(VARSCAN_SOLIDTUMOR_INDEL_OPTIONS) --vcf-sample-list $*.InDel.sample.txt > $@.unfiltered.vcf; \
+		#timeout $(VARSCAN_TIMEOUT) cat $< | $(JAVA) -jar $(VARSCAN) mpileup2indel --output-vcf 1 $(VARSCAN_SOLIDTUMOR_INDEL_OPTIONS) --vcf-sample-list $*.InDel.sample.txt > $@.unfiltered.vcf; \
+		cat $< | $(JAVA) -jar $(VARSCAN) mpileup2indel --output-vcf 1 $(VARSCAN_SOLIDTUMOR_INDEL_OPTIONS) --vcf-sample-list $*.InDel.sample.txt > $@.unfiltered.vcf; \
 		rm -f $*.InDel.sample.txt; \
 		echo "# GENERATION of '$@' stop: "`date`; \
 	fi;
