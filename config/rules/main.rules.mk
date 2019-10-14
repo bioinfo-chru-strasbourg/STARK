@@ -257,7 +257,7 @@ GATKRR_FLAGS=
 	# 1. test if main manifest file (SAMPLE.manifest) exists (use for Sample analysis)
 	# 2. test if a manifest is found on SampleSheet (use for Run analysis)
 	# 3. test if a manifest is defined in the APP (as an environment variable)
-
+	#
 	-if [ -e $(@D)/`echo $$(basename $(@D))`.manifest ]; then \
 		echo "# MANIFEST for the sample '$(@D)/`echo $$(basename $(@D))`.manifest' exists" ; \
 		if  [ "$(@D)/`echo $$(basename $(@D))`.manifest" != "$@" ]; then \
@@ -285,7 +285,7 @@ GATKRR_FLAGS=
 	# Create MANIFEST file
 	# 1. test if main manifest name file (SAMPLE.manifest_name) exists (use for Sample analysis)
 	# 2. test if a manifest name is found on SampleSheet (use for Run analysis)
-
+	#
 	-if [ -e $(@D)/`echo $$(basename $(@D))`.manifest_name ]; then \
 		echo "# MANIFEST name for the sample '$(@D)/`echo $$(basename $(@D))`.manifest_name' exists" ; \
 		if  [ "$(@D)/`echo $$(basename $(@D))`.manifest_name" != "$@" ]; then \
@@ -547,7 +547,7 @@ GATKRR_FLAGS=
 	# 1. test if main bed file (SAMPLE.bed) exists (use for Sample analysis)
 	# 2. test if a bed can be generated from the manifest
 	# 3. test if a manifest is defined in the APP (as an environment variable)
-
+	#
 	-rm -f $@
 	-if [ -e $(@D)/`echo $$(basename $(@D))`.bed ]; then \
 		echo "# BED for the sample '$(@D)/`echo $$(basename $(@D))`.bed' exists" ; \
@@ -559,7 +559,7 @@ GATKRR_FLAGS=
 	elif [ -s $< ]; then \
 		echo "# BED for the sample generated from the manifest '$<'" ; \
 		rm -f $@.tmp $@.sorted.tmp; \
-		$(CAP_ManifestToBED) --input=$< --output=$@.tmp --output_type=region; \
+		$(CAP_ManifestToBED) --input=$< --output=$@.tmp --output_type=region_clipped; \
 		$(BEDTOOLS)/bedtools sort -i $@.tmp | $(BEDTOOLS)/bedtools merge -c 4 -o collapse  | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$4}' > $@; \
 		rm -f $@.tmp; \
 	elif [ -e "$(BED)" ] && [ "$(BED)" != "" ]; then \

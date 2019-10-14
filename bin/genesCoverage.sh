@@ -315,7 +315,8 @@ if  [ "$COVERAGE_BASES" != "" ] && [ -s $COVERAGE_BASES ]; then
 	fi
 
 	echo "#[INFO] Coverage bases provided"
-	ln -s $COVERAGE_BASES $BEDFILE_GENES_CUT.coverage_bases
+	#ln -s $COVERAGE_BASES $BEDFILE_GENES_CUT.coverage_bases
+	cp $COVERAGE_BASES $BEDFILE_GENES_CUT.coverage_bases
 
 
 else
@@ -325,9 +326,17 @@ else
 
 fi;
 
+#echo $BEDFILE_GENES_CUT.coverage_bases
+#ls -l $BEDFILE_GENES_CUT.coverage_bases
+#echo $COVERAGE_BASES_VIEW $BEDFILE_GENES_CUT.coverage_bases
+#$COVERAGE_BASES_VIEW $BEDFILE_GENES_CUT.coverage_bases | head
+#zcat $BEDFILE_GENES_CUT.coverage_bases | head
+#exit 0
 
-(($VERBOSE)) && echo "" && head -n 20 $BEDFILE_GENES_CUT.coverage_bases
+#$COVERAGE_BASES_VIEW $BEDFILE_GENES_CUT.coverage_bases | head
 
+(($VERBOSE)) && $COVERAGE_BASES_VIEW $BEDFILE_GENES_CUT.coverage_bases | head -n 20
+#exit 0
 
 #################################
 # coverage table to open in excel
@@ -344,14 +353,17 @@ if ((1)); then
 		{n=split(COVERAGE_CRITERIA,CC,",")}
 	}
 	{
-		{gene=$2}
-		{nb_base[gene]++}
+		{split($2,genes,"|")}
+		{for (j in genes) {nb_base[genes[j]]++}}
 		{dp=$1}
 		if (dp>0)
 		{ for (i = 1; i <= n; i++) {
 				COV=CC[i]
-				#{bases[gene][COV]=bases[gene][COV]+0}
-				if (dp>=COV) { bases[gene][COV]++ } else { break }
+				if (dp>=COV) {
+					for (j in genes) {bases[genes[j]][COV]++}
+				} else {
+					break
+				}
 			}
 		}
 	}
@@ -383,7 +395,8 @@ if ((1)); then
 		}
 	}' | sort > ${OUTPUT}.genes.txt
 
-	(($VERBOSE)) && echo "genes.txt" && head -n 20 ${OUTPUT}.genes.txt
+	#(($VERBOSE)) && echo "genes.txt" && head -n 20 ${OUTPUT}.genes.txt
+	(($VERBOSE)) && head -n 20 ${OUTPUT}.genes.txt
 
 
 	# FAIL file
@@ -412,9 +425,9 @@ if ((1)); then
 fi;
 
 
-(($VERBOSE)) && echo "Genes with coverage passing (max 20): "$(awk -F"\t" '$3=="PASS" {print $1}' ${OUTPUT}.genes.txt | head 20)
-(($VERBOSE)) && echo "Genes with coverage warning (max 20): "$(awk -F"\t" '$3=="WARN" {print $1" "}' ${OUTPUT}.genes.txt | head 20)
-(($VERBOSE)) && echo "Genes with coverage failing (max 20): "$(awk -F"\t" '$3=="FAIL" {print $1}' ${OUTPUT}.genes.txt | head 20)
+(($VERBOSE)) && echo "Genes with coverage passing (max 20): "$(awk -F"\t" '$3=="PASS" {print $1}' ${OUTPUT}.genes.txt | head -n 20)
+(($VERBOSE)) && echo "Genes with coverage warning (max 20): "$(awk -F"\t" '$3=="WARN" {print $1" "}' ${OUTPUT}.genes.txt | head -n 20)
+(($VERBOSE)) && echo "Genes with coverage failing (max 20): "$(awk -F"\t" '$3=="FAIL" {print $1}' ${OUTPUT}.genes.txt | head -n 20)
 
 #rm -rf $TMPDIR $BEDFILE_GENES.coverage_bases #${OUTPUT}.coverage_bases $BEDFILE_GENES_CUT.coverage_bases
 

@@ -72,6 +72,14 @@ BAM_METRICS?=1
 # BAM compression
 BAM_COMPRESSION?=5
 
+# POST_SEQUENCING
+POST_SEQUENCING?=
+
+# POST_ALIGNMENT
+POST_ALIGNMENT?=.unrecalibrated.unclipped.unrealigned.unsorted
+
+
+
 
 # HEADER
 #RELEASE_CMD := $(shell echo "\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#" >> $(RELEASE_INFOS) )

@@ -36,7 +36,7 @@ GZ?=gzip
 
 ## FASTQ from ILLUMINA ##
 
-%.fastq.gz: %.R1.fastq.gz %.R2.fastq.gz
+%.fastq.gz: %$(POST_SEQUENCING).R1.fastq.gz %$(POST_SEQUENCING).R2.fastq.gz
 	# Create directory
 	-mkdir -p $(@D)
 	# Contatenate all fastq.gz files
@@ -106,10 +106,10 @@ GZ?=gzip
 
 ## UNALIGNED BAM ###
 
-%.unaligned.bam: %.R1.fastq.gz %.R2.fastq.gz
+%.unaligned.bam: %$(POST_SEQUENCING).R1.fastq.gz %$(POST_SEQUENCING).R2.fastq.gz
 	# Creation of the output folder $(@D)
 	@mkdir -p $(@D)
-
+	#
 	# Test FASTQ content and archive file if necessary
 	# Other command with BEDTOOLS: bamToFastq [OPTIONS] -i <BAM> -fq <FASTQ> -fq2 <FASTQR2> -tags
 	if [ $$(zcat $^ | head -n 1 | wc -l) -lt 1 ] && [ -s $*.archive.cram ]; then \
@@ -122,7 +122,7 @@ GZ?=gzip
 		$(GZ) $*.R1.fastq --fast -f -q; \
 		$(GZ) $*.R2.fastq --fast -f -q; \
 	fi;
-
+	#
 	# If fastq not empty
 	if (($$(zcat $^ | head -n 1 | wc -l))); then \
 		# FASTQ to BAM \
@@ -149,7 +149,7 @@ GZ?=gzip
 		echo "[ERROR] Input file error. No Fastq files and no archive files. Error in generation of uBAM file '$@'!"; \
 		exit 1; \
 	fi;
-
+	#
 	# check if there are same number of reads in fastq and unaligned.bam files
 	#if [ "$$($(SAMTOOLS) view $@ -c)" == "$$(zcat $*.fastq.R1.gz $*.fastq.R2.gz | awk 'END{print NR/4}')" ]; then \
 	#	echo "# Conversion of  '$<' to '$@' OK"; \
@@ -158,13 +158,13 @@ GZ?=gzip
 	#	exit 1; \
 	#fi;
 	#if [ ! -s $@ ]; then echo "# ERROR in $@ generation"; exit 1; fi;
-
+	#
 	# cleaning
 	-rm $@.tmp* $@.validation
 
 
 
-%.unaligned.OK.bam: %.R1.fastq.gz %.R2.fastq.gz #%.fastq.gz
+%.unaligned.OK.bam: %$(POST_SEQUENCING).R1.fastq.gz %$(POST_SEQUENCING).R2.fastq.gz #%.fastq.gz
 	# Creation of the output folder $(@D)
 	@mkdir -p $(@D)
 	#ls -l $(@D)
@@ -183,11 +183,11 @@ GZ?=gzip
 	# Fix Mate Information BAM $@.tmp
 	#$(JAVA) $(JAVA_FLAGS) -jar $(PICARDLIB)/FixMateInformation.jar  $(PICARD_UNALIGNED_FLAGS) INPUT=$@.tmp;
 	$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) FixMateInformation  $(PICARD_UNALIGNED_FLAGS) INPUT=$@.tmp ASSUME_SORTED=true VALIDATION_STRINGENCY=STRICT ;
-
+	#
 	# VALIDATION_STRINGENCY=STRICT ???
 	# BAM Sorting and Compression
 	$(SAMTOOLS) sort -o $@ -l $(BAM_COMPRESSION) -@ $(THREADS_BY_SAMPLE) -T $@.SAMTOOLS.SORT $@.tmp;
-
+	#
 	# Validation BAM $@.tmp
 	#-$(JAVA) $(JAVA_FLAGS) -jar $(PICARDLIB)/ValidateSamFile.jar  $(PICARD_UNALIGNED_FLAGS) VALIDATE_INDEX=true I=$@.tmp ;
 	$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) ValidateSamFile $(PICARD_UNALIGNED_FLAGS)  VALIDATE_INDEX=true IGNORE_WARNINGS=true INDEX_VALIDATION_STRINGENCY=EXHAUSTIVE I=$@ > $@.validation;
@@ -195,7 +195,7 @@ GZ?=gzip
 		echo "[ERROR] Input file error. Generated uBAM file '$@' malformed!"; \
 		exit 0; \
 	fi;
-
+	#
 	# check if there are same number of reads in fastq and unaligned.bam files
 	#if [ "$$($(SAMTOOLS) view $@ -c)" == "$$(zcat $*.fastq.R1.gz $*.fastq.R2.gz | awk 'END{print NR/4}')" ]; then \
 	#	echo "# Conversion of  '$<' to '$@' OK"; \

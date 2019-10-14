@@ -27,7 +27,7 @@ FOLDER_TOOLS=$STARK_FOLDER_MAIN/tools
 # DATABASES FOLDER
 # genomes: All references genomes. format: $FOLDER_GENOMES/$ASSEMBLY/$ASSEMBLY.fa (with ASSEMBLY=hg19, hg38, mmu19...)
 # db: Folder with mandatory databases: dbSNP database for variant calling, such as "dbsnp_138.hg19.vcf.gz" (mandatory, depending on ASSEMBLY), VCF databases for recalibration such as "dbsnp_137.hg19.vcf" (mandatory, depending on ASSEMBLY)
-FOLDER_DATABASES=$STARK_FOLDER_MAIN/databases2
+FOLDER_DATABASES=$STARK_FOLDER_MAIN/databases
 
 
 # INPUT FOLDER
@@ -128,6 +128,7 @@ METRICS_FLAGS="UNMAP,SECONDARY,QCFAIL,DUP"
 # Generated from mpileup format (if empty)
 #SAMTOOLS_METRICS_FLAG_PARAM=" -F 0x4 -F 0x100 -F 0x200 -F 0x400"
 
+
 # VARIANT RECALIBRATION (default 0/FALSE/NO/N)
 # Performs Variant recalibration after Calling (1/TRUE/YES/Y or 0/FALSE/NO/N).
 # If the recalibration fail (usually due to lack of data for statistic calculation), nothing will be done
@@ -188,6 +189,25 @@ METRICS_SNPEFF=0
 PRIORITIZE_PIPELINES_LIST=""
 
 
+# POST SEQUENCING STEPS (default '')
+# All steps after sequeing and before alignment
+# This sequence correspond to the FASTQ file processing before the alignemnt (trimming, umi...)
+# Format: "step1 step2 step3"
+# Example: trimming umi_extract
+#    This sequence will generate files $ALIGNER.umi_extract.trimming*.fastq.gz
+#    Then, this FASTQ file will be 1/ trimmed, 2/ umi tagged
+# The steps are defined as makefiles rules
+# Check available steps by using the command: STARK --pipelines_infos
+# Available steps (not up-to-date):
+#    trimming: FASTQ trimming quality (TODO)
+#    umi_extract: extraction of UMI sequence and create BX:Z tag (TODO)
+# Usually:
+#    "umi_extract" for UMI technology
+#POST_SEQUENCING_STEPS="umi_extract"
+POST_SEQUENCING_STEPS=""
+
+
+
 # POST ALIGNEMENT STEPS (default "sorting realignment clipping compress")
 # All steps after alignement and before calling
 # This sequence correspond to the BAM file generated jsut after the alignemnt
@@ -197,17 +217,21 @@ PRIORITIZE_PIPELINES_LIST=""
 #    Then, this BAM file will be 1/ sorted, 2/ realigned, 3/ clipped and 4/ compressed
 # The steps are defined as makefiles rules
 # Check available steps by using the command: STARK --pipelines_infos
-# Available steps (not up-to-date:
+# Available steps (not up-to-date):
 #    sorting: BAM sorting
 #    compress: BAM compression (see $BAM_COMPRESSION variable)
 #    realignment: local realignment
+#    recalibration: reads recalibration
 #    markduplicates: BAM Mark Duplicates
+#    UMImarkduplicates: BAM Mark Duplicates for UMI sequences (TODO)
 #    clipping: BAM Clipping according to primer definition in manifest file, if any
 # Usually:
 #    "sorting realignment clipping compress" for Amplicon technology
 #    "sorting markduplicates realignment compress" for Capture technology
 #POST_ALIGNMENT_STEPS="sorting realignment recalibration clipping compress"
 POST_ALIGNMENT_STEPS="sorting markduplicates realignment recalibration compress"
+
+
 
 # BAM COMPRESSION
 # Final BAM copression level (unaligned.bam, ALIGNER.bam)

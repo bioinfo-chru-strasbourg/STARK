@@ -43,7 +43,7 @@ services:
 
     stark-databases:
         image: ${DOCKER_STARK_IMAGE}
-        entrypoint: /tool/toolbox/get_databases.sh
+        entrypoint: /tool/bin/get_databases.sh
         command: --build --threads=${DOCKER_STARK_GET_DATABASES_THREADS} --additional_annotations=${DOCKER_STARK_GET_DATABASES_ADDITIONAL_ANNOTATIONS}
         volumes:
             - databases:/STARK/databases

@@ -475,30 +475,66 @@ export METRICS_SNPEFF
 #PRIORITIZE_PIPELINES_LIST=""
 export PRIORITIZE_PIPELINES_LIST
 
-# POST ALIGNEMENT STEPS (default .uncompressed.unclipped.unrealigned.unsorted)
+
+
+
+# POST SEQUENCING STEPS (default '')
+# All steps after sequeing and before alignment
+# This sequence correspond to the FASTQ file processing before the alignemnt (trimming, umi...)
+# Format: "step1 step2 step3"
+# Example: trimming umi_extract
+#    This sequence will generate files $ALIGNER.umi_extract.trimming*.fastq.gz
+#    Then, this FASTQ file will be 1/ trimmed, 2/ umi tagged
+# The steps are defined as makefiles rules
+# Check available steps by using the command: STARK --pipelines_infos
+# Available steps (not up-to-date):
+#    trimming: FASTQ trimming quality (TODO)
+#    umi_extract: extraction of UMI sequence and create BX:Z tag (TODO)
+# Usually:
+#    "umi_extract" for UMI technology
+
+if [ -z "$POST_SEQUENCING_STEPS" ]; then
+	POST_SEQUENCING_STEPS=""
+fi;
+
+# Create POST_ALIGNEMENT variable
+[ "$POST_SEQUENCING_STEPS" != "" ] && POST_SEQUENCING="."$(echo $POST_SEQUENCING_STEPS | tr "," " " | tr "." " " | tr " " "\n" | sed '/^$/d' | tac  | tr "\n" " " | sed s/\.$//g | tr " " ".") || POST_SEQUENCING=""
+export POST_SEQUENCING
+
+
+
+
+
+# POST ALIGNEMENT STEPS (default "sorting realignment clipping compress")
 # All steps after alignement and before calling
 # This sequence correspond to the BAM file generated jsut after the alignemnt
-# Format: ".step3.step2.step1"
-# Example: .uncompressed.unrealigned.unsorted
-#    This sequence will generate the file $ALIGNER.uncompressed.unrealigned.unsorted.bam
-#    Then, this BAM file will be 1/ sorted, 2/ realigned and 3/ compressed
+# Format: "step1 step2 step3"
+# Example: "sorting realignment clipping compress"
+#    This sequence will generate the file $ALIGNER.compress.clipping.realigned.sorting.bam whose will be processed
+#    Then, this BAM file will be 1/ sorted, 2/ realigned, 3/ clipped and 4/ compressed
 # The steps are defined as makefiles rules
-# Available steps:
+# Check available steps by using the command: STARK --pipelines_infos
+# Available steps (not up-to-date):
 #    sorting: BAM sorting
 #    compress: BAM compression (see $BAM_COMPRESSION variable)
 #    realignment: local realignment
+#    recalibration: reads recalibration
 #    markduplicates: BAM Mark Duplicates
+#    UMImarkduplicates: BAM Mark Duplicates for UMI sequences (TODO)
 #    clipping: BAM Clipping according to primer definition in manifest file, if any
+# Usually:
+#    "sorting realignment clipping compress" for Amplicon technology
+#    "sorting markduplicates realignment compress" for Capture technology
+
 if [ -z "$POST_ALIGNMENT_STEPS" ]; then
-	POST_ALIGNMENT_STEPS="sorting realignment clipping compress" #.uncompressed.unclipped.unrealigned.unsorted
+	POST_ALIGNMENT_STEPS="sorting realignment clipping compress"
 fi;
-#echo $POST_ALIGNMENT;
+
 # Create POST_ALIGNEMENT variable
-#echo "."$(echo $(echo $test | tr "," " " | tr "." " " | tr " " "\n" | tac | tr "\n" " ") | tr " " ".")
-POST_ALIGNMENT="."$(echo $POST_ALIGNMENT_STEPS | tr "," " " | tr "." " " | tr " " "\n" | sed '/^$/d' | tac  | tr "\n" " " | sed s/\.$//g | tr " " ".")
-#echo $POST_ALIGNMENT;
-#exit 1;
+[ "$POST_ALIGNMENT_STEPS" != "" ] && POST_ALIGNMENT="."$(echo $POST_ALIGNMENT_STEPS | tr "," " " | tr "." " " | tr " " "\n" | sed '/^$/d' | tac  | tr "\n" " " | sed s/\.$//g | tr " " ".") || POST_ALIGNMENT=""
 export POST_ALIGNMENT
+
+
 
 # BAM COMPRESSION
 # Final BAM copression level (unaligned.bam, ALIGNER.bam)

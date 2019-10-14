@@ -557,7 +557,7 @@ if [ "$TRANSCRIPTS" != "" ]; then
 				exit 0;
 			fi;
 		done;
-		TRANSCRIPTS_RELOCATED="$TRANSCRIPTS_RELOCATED "$(echo $TRANSCRIPTS_LIST | sed "s/+$//")
+		TRANSCRIPTS_RELOCATED="$TRANSCRIPTS_RELOCATED "$(echo $TRANSCRIPTS_LIST | sed "s/+$//" | sed "s/^+//")
 	done;
 
 fi;
@@ -1193,7 +1193,7 @@ for RUU in $RUN_UNIQ; do
 					G_ONE_TARGET=$(echo $G_ONE_TARGET | sed "s/$S\.//gi")
 					#$COMMAND_COPY $G_ONE $RUN_SAMPLE_DIR/$S.$G_ONE_TARGET;
 					#$BEDTOOLS/bedtools sort -i $G_ONE | $BEDTOOLS/bedtools merge -i - > $RUN_SAMPLE_DIR/$S.$G_ONE_TARGET;
-					$BEDTOOLS/bedtools sort -i $G_ONE > $RUN_SAMPLE_DIR/$S.$G_ONE_TARGET;
+					$BEDTOOLS/bedtools sort -i $G_ONE | $STARK_FOLDER_BIN/bed_normalization.awk > $RUN_SAMPLE_DIR/$S.$G_ONE_TARGET;
 					echo $S.$G_ONE_TARGET >> $BEDFILE_GENES_LIST_ONE
 				done;
 			elif [ -s $B ] && [ "$B" != "" ]; then
@@ -1224,11 +1224,12 @@ for RUU in $RUN_UNIQ; do
 					#echo "MANIFEST.bed to bedfile_genes_list : $bedfile_genes_list";
 					$BEDTOOLS/bedtools intersect -wb -a $BEDFILE_GENES_INTERMEDIATE -b $REFSEQ_GENES | cut -f8 | sort -u > $BEDFILE_GENES_INTERMEDIATE.intersect;
 					sort -k5 $REFSEQ_GENES > $BEDFILE_GENES_INTERMEDIATE.refseq;
-					join -1 1 -2 5 $BEDFILE_GENES_INTERMEDIATE.intersect $BEDFILE_GENES_INTERMEDIATE.refseq -o 2.1,2.2,2.3,2.5 | sort -u -k1,2 | tr " " "\t" | awk -F"\t" '{print $1"\t"$2"\t"$3"\t+\t"$4}' > $BEDFILE_GENES_ONE;
+					join -1 1 -2 5 $BEDFILE_GENES_INTERMEDIATE.intersect $BEDFILE_GENES_INTERMEDIATE.refseq -o 2.1,2.2,2.3,2.5 | sort -u -k1,2 | tr " " "\t" | awk -F"\t" '{print $1"\t"$2"\t"$3"\t+\t"$4}' | $STARK_FOLDER_BIN/bed_normalization.awk > $BEDFILE_GENES_ONE;
 					echo $(basename $BEDFILE_GENES_ONE) > $BEDFILE_GENES_LIST_ONE;
 				else
 					(($VERBOSE)) && echo "#[ERROR] Generating GENES failed";
 				fi;
+
 				rm -f $BEDFILE_GENES_INTERMEDIATE*
 				# ADD GENES in input files
 				G=$BEDFILE_GENES_ONE
@@ -1244,7 +1245,6 @@ for RUU in $RUN_UNIQ; do
 			#	#touch $BEDFILE_GENES_LIST_ONE
 			#	#fi;
 
-
 			#else
 			#	#echo "#[INFO] No GENES and no Design file to create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes'. Generate empty LIST.GENES."
 			#	echo "#[INFO] No GENES and no Design file to create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes'. Generate GENES with all NM transcript in RefSeq."
@@ -1254,7 +1254,6 @@ for RUU in $RUN_UNIQ; do
 			#	#touch $BEDFILE_GENES_LIST_ONE
 			#	#fi;
 			fi;
-
 
 		else
 			echo "#[INFO] LIST.GENES already exists."

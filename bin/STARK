@@ -1127,9 +1127,9 @@ if [ ! -z "$RUNS" ]; then
 
 						# Genes File
 						if (($(ls $R/$MANIFEST_FILENAME*.genes 2>/dev/null | wc -l))); then
-							MANIFEST_GENES_FILE=$(ls $R/$MANIFEST_FILENAME*.genes 2>/dev/null | tr "\n" "+" | sed "s/+$//") && (($VERBOSE)) &&  echo "#[INFO] Manifest Genes file found for sample '$SAMPLE_NAME': $MANIFEST_GENES_FILE"
+							MANIFEST_GENES_FILE=$(ls $R/$MANIFEST_FILENAME*.genes 2>/dev/null | tr "\n" "+" | sed "s/+$//" | sed "s/^+//") && (($VERBOSE)) &&  echo "#[INFO] Manifest Genes file found for sample '$SAMPLE_NAME': $MANIFEST_GENES_FILE"
 						elif (($(ls $FOLDER_MANIFEST/$MANIFEST_FILENAME*.genes 2>/dev/null | wc -l))); then
-							MANIFEST_GENES_FILE=$(ls $FOLDER_MANIFEST/$MANIFEST_FILENAME*.genes 2>/dev/null | tr "\n" "+" | sed "s/+$//") && (($VERBOSE)) &&  echo "#[INFO] Manifest Genes file found for sample '$SAMPLE_NAME': $MANIFEST_GENES_FILE"
+							MANIFEST_GENES_FILE=$(ls $FOLDER_MANIFEST/$MANIFEST_FILENAME*.genes 2>/dev/null | tr "\n" "+" | sed "s/+$//" | sed "s/^+//") && (($VERBOSE)) &&  echo "#[INFO] Manifest Genes file found for sample '$SAMPLE_NAME': $MANIFEST_GENES_FILE"
 						else
 							echo "#[INFO] Manifest Genes file NOT found"
 						fi;
@@ -1138,9 +1138,9 @@ if [ ! -z "$RUNS" ]; then
 						# Transcripts File
 						#MANIFEST_TRANSCRIPTS_FILE=$(ls "$R/$MANIFEST_FILENAME*.transcripts" 2>/dev/null | tr "\n" "+") && (($VERBOSE)) &&  echo "#[INFO] Manifest Transcripts file found for sample '$SAMPLE_NAME': $MANIFEST_TRANSCRIPTS_FILE"
 						if (($(ls $R/$MANIFEST_FILENAME*.transcripts 2>/dev/null | wc -l))); then
-							MANIFEST_TRANSCRIPTS_FILE=$(ls $R/$MANIFEST_FILENAME*.transcripts 2>/dev/null | tr "\n" "+") && (($VERBOSE)) &&  echo "#[INFO] Manifest Transcripts file found for sample '$SAMPLE_NAME': $MANIFEST_TRANSCRIPTS_FILE"
+							MANIFEST_TRANSCRIPTS_FILE=$(ls $R/$MANIFEST_FILENAME*.transcripts 2>/dev/null | tr "\n" "+" | sed "s/+$//" | sed "s/^+//") && (($VERBOSE)) &&  echo "#[INFO] Manifest Transcripts file found for sample '$SAMPLE_NAME': $MANIFEST_TRANSCRIPTS_FILE"
 						elif (($(ls $FOLDER_MANIFEST/$MANIFEST_FILENAME*.transcripts 2>/dev/null | wc -l))); then
-							MANIFEST_TRANSCRIPTS_FILE=$(ls $FOLDER_MANIFEST/$MANIFEST_FILENAME*.transcripts 2>/dev/null | tr "\n" "+") && (($VERBOSE)) &&  echo "#[INFO] Manifest Transcripts file found for sample '$SAMPLE_NAME': $MANIFEST_TRANSCRIPTS_FILE"
+							MANIFEST_TRANSCRIPTS_FILE=$(ls $FOLDER_MANIFEST/$MANIFEST_FILENAME*.transcripts 2>/dev/null | tr "\n" "+" | sed "s/+$//" | sed "s/^+//") && (($VERBOSE)) &&  echo "#[INFO] Manifest Transcripts file found for sample '$SAMPLE_NAME': $MANIFEST_TRANSCRIPTS_FILE"
 						else
 							echo "#[INFO] Manifest Transcripts file NOT found"
 						fi;

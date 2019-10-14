@@ -19,10 +19,10 @@ PICARDLIB?=$(NGSbin)/picard-tools
 JAVA_FLAGS?= -Xmx16g
 PICARD_FLAGS=SORT_ORDER=coordinate RGLB=001 RGPL=Illumina RGPU=A3 VALIDATION_STRINGENCY=SILENT
 THREADS_BWA?=$(THREADS_BY_SAMPLE)
-POST_ALIGNMENT?=.unrecalibrated.unclipped.unrealigned.unsorted
+
 PICARD_UNALIGNED_FLAGS?=COMPRESSION_LEVEL=1 MAX_RECORDS_IN_RAM=500000
 
-%.bowtie$(POST_ALIGNMENT).sam: %.unaligned.bam %.genome 
+%.bowtie$(POST_ALIGNMENT).sam: %.unaligned.bam %.genome
 	# SAM TO FASTQ
 	$(JAVA) -jar $(PICARD) SamToFastq I=$< FASTQ=$@.R1.fastq SECOND_END_FASTQ=$@.R2.fastq UNPAIRED_FASTQ=$@.RU.fastq
 	# ALIGNMENT
@@ -39,8 +39,8 @@ PICARD_UNALIGNED_FLAGS?=COMPRESSION_LEVEL=1 MAX_RECORDS_IN_RAM=500000
 	# AddOrReplaceReadGroups
 	$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) AddOrReplaceReadGroups $(PICARD_FLAGS) I=$@.aligned.sam O=$@ RGSM=$(*F)
 	-rm -f $@.aligned.sam
-	
-	
+
+
 
 
 # CONFIG/RELEASE
@@ -52,6 +52,3 @@ PIPELINES_COMMENT := "ALIGNER:bowtie:BOWTIE - Bowtie alignment algorithm"
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
 
 #PIPELINES_COMMENT := "\#\#STEP_TYPE	STEP_NAME	STEP_DESCRIPTION2"
-
-
-

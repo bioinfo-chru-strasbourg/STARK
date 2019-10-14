@@ -19,7 +19,6 @@ PICARDLIB?=$(NGSbin)/picard-tools
 JAVA_FLAGS?= -Xmx16g
 PICARD_FLAGS?=SORT_ORDER=coordinate RGLB=001 RGPL=ILLUMINA RGPU=PU VALIDATION_STRINGENCY=SILENT
 THREADS_BWA?=$(THREADS_BY_SAMPLE)
-POST_ALIGNMENT?=.unrecalibrated.unclipped.unrealigned.unsorted
 
 
 
@@ -35,7 +34,7 @@ BWAMEM_FLAGS?= mem -C -M -t $(THREADS_BWA)
 #BWAMEM_FLAGS?= mem -M -t $(THREADS_BWA)
 #-a
 
-%.bwamem$(POST_ALIGNMENT).bam: %.R1.fastq.gz %.R2.fastq.gz %.genome #check in the code
+%.bwamem$(POST_ALIGNMENT).bam: %$(POST_SEQUENCING).R1.fastq.gz %$(POST_SEQUENCING).R2.fastq.gz %.genome #check in the code
 	# Read group
 	echo "@RG\tID:1\tPL:ILLUMINA\tPU:PU\tLB:001\tSM:$(*F)" > $@.RG
 	if [ "`cat $@.RG`" != "" ]; then echo " -R "`cat $@.RG` > $@.RG; fi;
@@ -101,7 +100,7 @@ BWAMEM_FromUBAM_FLAGS= mem -C -a -Mp -t $(THREADS_BWA)
 BWAMEM_FromFASTQ_FLAGS= mem -C -a -M -t $(THREADS_BWA)
 #-a
 
-%.bwamem_FromFASTQ$(POST_ALIGNMENT).bam: %.R1.fastq.gz %.R2.fastq.gz %.genome #check in the code
+%.bwamem_FromFASTQ$(POST_ALIGNMENT).bam: %$(POST_SEQUENCING).R1.fastq.gz %$(POST_SEQUENCING).R2.fastq.gz %.genome #check in the code
 	# Read group
 	#$(SAMTOOLS) view $< -H | grep '@RG' | head -n 1 | sed 's/\t/\\t/gi' > $@.RG
 	echo "@RG\tID:1\tPL:ILLUMINA\tPU:PU\tLB:001\tSM:$(*F)" > $@.RG
