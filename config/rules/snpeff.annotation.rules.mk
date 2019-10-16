@@ -15,7 +15,7 @@ SNPEFF?=$(NGSscripts)
 SNPEFF_CONFIG?=$(SNPEFF)/snpEff.config
 
 
-%.snpeff.vcf: %.norm.vcf
+%.snpeff$(POST_ANNOTATION).vcf: %.vcf
 	mkdir -p $@.stats
 	$(JAVA) -jar $(SNPEFF) $(ASSEMBLY) $< -v -stats $@.stats/$(@F).stats.html > $@ ;
 
@@ -28,4 +28,3 @@ RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 PIPELINES_COMMENT := "ANNOTATOR:snpeff:snpEff annotation"
 #MPILEUP_SAMTOOLS_OPTIONS='$(MPILEUP_SAMTOOLS_OPTIONS)',SAMTOOLS_FILTERS='$(SAMTOOLS_DP100_FILTERS)', SAMTOOLS_DP100_BCFTOOLS_FILTERS='$(SAMTOOLS_DP100_BCFTOOLS_FILTERS)'"
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
-

@@ -26,6 +26,8 @@ HOWARD_ANNOTATION="null"
 HOWARD_ANNOTATION_MINIMAL="null"
 # Default annotation with HOWARD for report
 HOWARD_ANNOTATION_REPORT="null"
+# Default annotation with HOWARD for whole analysis
+HOWARD_ANNOTATION_ANALYSIS="null" # no more annotation
 
 # CALCULATION
 # Default calculation with HOWARD for all VCF/pipelines

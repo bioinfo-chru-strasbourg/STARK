@@ -99,13 +99,13 @@ CAP_METRICS_OPTIONS?=$(CAP_METRICS_OPTIONS_CLIP_OVERLAPPING_READS)
 %.bam.bed: %.bam %.bam.bai
 	#BAM.BED from BAM
 	# samtools view P1335.bwamem.bam -b | /STARK/tools/bedtools/current/bin/bedtools genomecov -ibam stdin -bg | /STARK/tools/bedtools/current/bin/bedtools merge -i stdin
-	$(BEDTOOLS)/bedtools bamtobed -i $< | mergeBed -i - | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$1":"$$2"-"$$3}' > $@
+	$(BEDTOOLS) bamtobed -i $< | mergeBed -i - | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$1":"$$2"-"$$3}' > $@
 	-+if ((0)); then \
 	if (($$($(SAMTOOLS) idxstats $< | awk '{SUM+=$$3+$$4} END {print SUM}'))); then \
 		rm -f $<.genomeCoverageBed.mk $<.genomeCoverageBed1.mk $<.genomeCoverageBed2.mk $<.genomeCoverageBed3.mk; \
 		for chr in $$($(SAMTOOLS) idxstats $< | grep -v "\*" | awk '{ if ($$3+$$4>0) print $$1 }'); do \
 			echo "$<.genomeCoverageBed.$$chr.bed: $<" >> $<.genomeCoverageBed1.mk; \
-			echo "	$(SAMTOOLS) view $< -b $$chr | $(BEDTOOLS)/genomeCoverageBed -ibam stdin -bg | $(BEDTOOLS)/mergeBed -i - > $<.genomeCoverageBed.$$chr.bed " >> $<.genomeCoverageBed1.mk; \
+			echo "	$(SAMTOOLS) view $< -b $$chr | $(BEDTOOLS) genomecov -ibam stdin -bg | $(BEDTOOLS) merge -i - > $<.genomeCoverageBed.$$chr.bed " >> $<.genomeCoverageBed1.mk; \
 			echo -n " $<.genomeCoverageBed.$$chr.bed" >> $<.genomeCoverageBed2.mk; \
 		done; \
 		echo -n "$@: " | cat - $<.genomeCoverageBed2.mk > $<.genomeCoverageBed3.mk; \
@@ -134,7 +134,7 @@ CAP_METRICS_OPTIONS?=$(CAP_METRICS_OPTIONS_CLIP_OVERLAPPING_READS)
 # BAM for metrics
 ###################
 
-%.metrics.bam: %.bam
+%.metrics.bam: %.bam %.bam.bai
 	-ln -P $< $@;
 	if [ ! -e $@ ]; then cp $< $@; fi; # if ln des not work
 
@@ -156,7 +156,7 @@ CAP_METRICS_OPTIONS?=$(CAP_METRICS_OPTIONS_CLIP_OVERLAPPING_READS)
 				for chr in $$($(SAMTOOLS) idxstats $< | grep -v "\*" | awk '{ if ($$3+$$4>0) print $$1 }'); do \
 					echo "$<.genomeCoverageBed.$$chr.bed: $<" >> $<.genomeCoverageBed1.mk; \
 					#echo "	$(SAMTOOLS) view $< -b "$$chr" | $(BEDTOOLS)/genomeCoverageBed -ibam stdin -bg | $(BEDTOOLS)/mergeBed -i - | awk -F'\t' '{print "'$$1"\t"$$2"\t"$$3"\t+\t\"$$1"_"$$2"_"$$3'"}' > $<.genomeCoverageBed."$$chr".bed " >> $<.genomeCoverageBed1.mk; \
-					echo "	$(SAMTOOLS) view $< -b "$$chr" | $(BEDTOOLS)/genomeCoverageBed -ibam stdin -bg | $(BEDTOOLS)/mergeBed -i - > $<.genomeCoverageBed."$$chr".bed " >> $<.genomeCoverageBed1.mk; \
+					echo "	$(SAMTOOLS) view $< -b "$$chr" | $(BEDTOOLS) genomecov -ibam stdin -bg | $(BEDTOOLS) merge -i - > $<.genomeCoverageBed."$$chr".bed " >> $<.genomeCoverageBed1.mk; \
 					echo -n " $<.genomeCoverageBed.$$chr.bed" >> $<.genomeCoverageBed2.mk; \
 				done; \
 				echo -n "$@.tmp: " | cat - $<.genomeCoverageBed2.mk > $<.genomeCoverageBed3.mk; \
@@ -286,7 +286,7 @@ CAP_METRICS_OPTIONS?=$(CAP_METRICS_OPTIONS_CLIP_OVERLAPPING_READS)
 #%.bam.metrics/metrics.amplicon_coverage: %.bam %.bam.bai %.manifest %.genome
 %.bam.metrics/metrics.per_amplicon_coverage: %.validation.bam %.validation.bam.bai %.manifest %.genome
 	mkdir -p $(@D) ;
-	+$(CAP) --function=coverage --env=$(CONFIG_TOOLS) --ref=$$(cat $*.genome) --bam=$< --output=$(@D)/$(*F).HsMetrics.per_amplicon_coverage.tmp --manifest=$*.manifest --threads=$(THREADS) $(CAP_METRICS_OPTIONS_CLIP_OVERLAPPING_READS) --bedtools=$(BEDTOOLS)/bedtools --verbose --tmp=$(CAP_TMP_FOLDER) 1>$(@D)/$(*F).HsMetrics.per_amplicon_coverage.log 2>$(@D)/$(*F).HsMetrics.per_amplicon_coverage.err;
+	+$(CAP) --function=coverage --env=$(CONFIG_TOOLS) --ref=$$(cat $*.genome) --bam=$< --output=$(@D)/$(*F).HsMetrics.per_amplicon_coverage.tmp --manifest=$*.manifest --threads=$(THREADS) $(CAP_METRICS_OPTIONS_CLIP_OVERLAPPING_READS) --bedtools=$(BEDTOOLS) --verbose --tmp=$(CAP_TMP_FOLDER) 1>$(@D)/$(*F).HsMetrics.per_amplicon_coverage.log 2>$(@D)/$(*F).HsMetrics.per_amplicon_coverage.err;
 	awk -f $(STARK_FOLDER_BIN)/per_target_coverage_flag.awk -F"\t" -v EXPECTED_DEPTH=$(EXPECTED_DEPTH) -v MINIMUM_DEPTH=$(MINIMUM_DEPTH) $(@D)/$(*F).HsMetrics.per_amplicon_coverage.tmp > $(@D)/$(*F).HsMetrics.per_amplicon_coverage.flags; \
 	rm -f $(@D)/$(*F).HsMetrics.per_amplicon_coverage.tmp; \
 	#cat $(@D)/$(*F).amplicon_coverage.log $(@D)/$(*F).HsMetrics.per_amplicon_coverage.err;
@@ -409,7 +409,7 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 	> $@;
 	if (($(BAM_METRICS))); then \
 		if (($(FULL_COVERAGE))); then \
-			$(BEDTOOLS)/genomeCoverageBed -ibam $< -dz > $(@D)/$(*F).genomeCoverage; \
+			$(BEDTOOLS) genomecov -ibam $< -dz > $(@D)/$(*F).genomeCoverage; \
 			$(GZ) --best -f $(@D)/$(*F).genomeCoverage; \
 			if [ -s $(@D)/$(*F).genomeCoverage.gz ]; then \
 				echo "#[INFO] BEDTOOLS genomeCoverage done. See '$(@D)/$(*F).genomeCoverage.gz'. " >> $@; \
@@ -506,7 +506,7 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 	for one_bed in $$(cat $*.list.genes) $*.design.bed; do \
 		# Test if BED exists \
 		if [ -e $$one_bed ]; then \
-			$(BEDTOOLS)/intersectBed -abam $*.validation.bam -b $$one_bed -v | $(SAMTOOLS) view -c - > $(@D)/$(*F).$$(basename $$one_bed).off.nbreads; \
+			$(BEDTOOLS) intersect -abam $*.validation.bam -b $$one_bed -v | $(SAMTOOLS) view -c - > $(@D)/$(*F).$$(basename $$one_bed).off.nbreads; \
 			if [ -s $(@D)/$(*F).$$(basename $$one_bed).coverage ]; then \
 				echo "#[INFO] OFF TARGET with '"$$(basename $$one_bed)"' done. Number of reads aligned not in the regions defined in the BED. See '$(@D)/$(*F).$$(basename $$one_bed).off.target'. " >> $@; \
 			else \
@@ -529,7 +529,7 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 		for one_bed in $$(cat $*.list.genes) $*.design.bed; do \
 			# Test if BED exists \
 			if [ -e $$one_bed ]; then \
-				$(SAMTOOLS) view -b $*.validation.bam -L $$one_bed | $(SAMTOOLS) sort | $(BEDTOOLS)/genomeCoverageBed -ibam stdin -dz > $(@D)/$(*F).$$(basename $$one_bed).genomeCoverageBedbed; \
+				$(SAMTOOLS) view -b $*.validation.bam -L $$one_bed | $(SAMTOOLS) sort | $(BEDTOOLS) genomecov -ibam stdin -dz > $(@D)/$(*F).$$(basename $$one_bed).genomeCoverageBedbed; \
 				if [ -s $(@D)/$(*F).$$(basename $$one_bed).coverage ]; then \
 					echo "#[INFO] BEDTOOLS genomeCoverage with '"$$(basename $$one_bed)"' done. See '$(@D)/$(*F).$$(basename $$one_bed).genomeCoverageBedbed'. " >> $@; \
 				else \
@@ -741,7 +741,7 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 
 
 %.bams.for_metrics_bed: $(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(foreach ALIGNER,$(ALIGNERS),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).$(ALIGNER).design.bed )) $(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(foreach PIPELINE,$(PIPELINES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).$(call aligner,$(PIPELINE)).design.bed ))
-	cat $^ | $(BEDTOOLS)/bedtools sort -i - | $(BEDTOOLS)/bedtools merge -i - | cut -f1,2,3 > $@
+	cat $^ | $(BEDTOOLS) sort -i - | $(BEDTOOLS) merge -i - | cut -f1,2,3 > $@
 	echo "BAMS for_metrics_bed: $^"
 	#cp $@ $*.test
 
@@ -797,7 +797,7 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 			# Generate BEDGENES \
 			if [ -s $@.manifest.bed ] ; then \
 				echo "MANIFEST.bed to bedfile_genes_list : $bedfile_genes_list"; \
-				$(BEDTOOLS)/bedtools intersect -wb -a $@.manifest.bed -b $(REFSEQ_GENES) | cut -f8 | sort -u > $@.manifest.bed.intersect; \
+				$(BEDTOOLS) intersect -wb -a $@.manifest.bed -b $(REFSEQ_GENES) | cut -f8 | sort -u > $@.manifest.bed.intersect; \
 				sort -k5 $(REFSEQ_GENES) > $@.manifest.bed.refseq; \
 				join -1 1 -2 5 $@.manifest.bed.intersect $@.manifest.bed.refseq -o 2.1,2.2,2.3,2.5 | sort -u -k1,2 | tr " " "\t" | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$4}' > $$bedfile_genes_list; \
 				#rm -f $*.manifest.bed.intersect $*.manifest.bed.refseq; \
@@ -831,7 +831,7 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 					bedfile_name=$$( basename $$one_bed ); \
 					#$(@D)/$(*F).$$bedfile_name.HsMetrics.per_base_coverage ; \
 					$(UNGZ) -c $(@D)/$(*F).$$bedfile_name.HsMetrics.per_base_coverage.gz | awk 'NR!=1{print $$4"\t"$$3}' > $(@D)/$(*F).$$bedfile_name.HsMetrics.per_base_coverage.2cols ; \
-					$(NGSscripts)/genesCoverage.sh -f $*.bam -b $$one_bed -c "$(COVERAGE_CRITERIA)" --coverage-bases=$(@D)/$(*F).$$bedfile_name.HsMetrics.per_base_coverage.2cols --dp_fail=$(MINIMUM_DEPTH) --dp_warn=$(EXPECTED_DEPTH) --dp_threshold=$(DEPTH_COVERAGE_THRESHOLD) -n $(NB_BASES_AROUND) -t $(BEDTOOLS)/bedtools -s $(SAMTOOLS) --threads=$(THREADS) -o $(@D)/$(*F).$$bedfile_name; \
+					$(NGSscripts)/genesCoverage.sh -f $*.bam -b $$one_bed -c "$(COVERAGE_CRITERIA)" --coverage-bases=$(@D)/$(*F).$$bedfile_name.HsMetrics.per_base_coverage.2cols --dp_fail=$(MINIMUM_DEPTH) --dp_warn=$(EXPECTED_DEPTH) --dp_threshold=$(DEPTH_COVERAGE_THRESHOLD) -n $(NB_BASES_AROUND) -t $(BEDTOOLS) -s $(SAMTOOLS) --threads=$(THREADS) -o $(@D)/$(*F).$$bedfile_name; \
 					rm $(@D)/$(*F).$$bedfile_name.HsMetrics.per_base_coverage.2cols ; \
 					echo "#[INFO] BAM Metrics on Regions coverage with $$bedfile_name BED file done" >> $@; \
 				else \
@@ -860,90 +860,6 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 	#$(PYTHON) $(STARK_FOLDER_BIN)/runmetrics.py --metricsFileList $$(echo $^ | tr " " ",") --outputPrefix $*. ;
 	touch $@;
 
-
-# BAM CHECK rule (deprecated)
-###############################
-
-%.bam.metrics/metrics.bam_check: %.bam %.bam.bai
-	# CHECK NUMBER of READS in BAM \
-	# Create directory if not created
-	mkdir -p $(@D);
-	# Pattern
-	echo $$(dirname $*)/$$(basename $$(dirname $*)) > $@.sample_pattern;
-	# Header
-	echo "# Check number of reads between $< and $$(cat $@.sample_pattern).R1.fastq.gz $$(cat $@.sample_pattern).R2.fastq.gz to ensure no reads removing (only mark reads)" >$(@D)/$(*F).bam_check;
-	echo "# (possible new reads marked as secondary aligned)" >>$(@D)/$(*F).bam_check;
-	# Check
-	if [ -s $$(cat $@.sample_pattern).R1.fastq.gz ] && [ -s $$(cat $@.sample_pattern).R2.fastq.gz ]; then \
-		echo "# Files $$(cat $@.sample_pattern).R1.fastq.gz and $$(cat $@.sample_pattern).R2.fastq.gz exists" >>$(@D)/$(*F).bam_check; \
-		# Compare number of reads \
-		echo "# $$($(SAMTOOLS) view -c -F 0x0100 -@ $(THREADS_SAMTOOLS) $<) reads for $<" >>$(@D)/$(*F).bam_check; \
-		echo "# $$(zcat $$(cat $@.sample_pattern).R1.fastq.gz $$(cat $@.sample_pattern).R2.fastq.gz | grep ^@ -c ) reads for $$(cat $@.sample_pattern).R1.fastq.gz $$(cat $@.sample_pattern).R2.fastq.gz" >>$(@D)/$(*F).bam_check; \
-		grep ".* reads for $<" $(@D)/$(*F).bam_check | cut -d" " -f2; \
-		grep ".* reads for $$(cat $@.sample_pattern).R1.fastq.gz $$(cat $@.sample_pattern).R2.fastq.gz" $(@D)/$(*F).bam_check | cut -d" " -f2; \
-		if [ "$$(grep ".* reads for $<" $(@D)/$(*F).bam_check | cut -d" " -f2)" != "$$(grep ".* reads for $$(cat $@.sample_pattern).R1.fastq.gz $$(cat $@.sample_pattern).R2.fastq.gz" $(@D)/$(*F).bam_check | cut -d" " -f2)" ]; then \
-			# Error \
-			echo "#[ERROR] KO Number of reads between $< and $$(cat $@.sample_pattern).R1.fastq.gz $$(cat $@.sample_pattern).R2.fastq.gz !!!" >>$(@D)/$(*F).bam_check; \
-			echo "# BCFTOOLS STATS for $<" >>$(@D)/$(*F).bam_check;  \
-			$(SAMTOOLS) stats $< | grep ^SN >>$(@D)/$(*F).bam_check; \
-			$(SAMTOOLS) idxstats $< >>$(@D)/$(*F).bam_check; \
-			#exit 1; \
-		else \
-			# OK \
-			echo "# Number of reads OK between $< and $$(cat $@.sample_pattern).R1.fastq.gz $$(cat $@.sample_pattern).R2.fastq.gz"  >>$(@D)/$(*F).bam_check; \
-		fi; \
-	else \
-		# Error \
-		echo "#[ERROR] No $$(cat $@.sample_pattern).R1.fastq.gz or $$(cat $@.sample_pattern).R2.fastq.gz" >>$(@D)/$(*F).bam_check; \
-	fi;
-	cat $(@D)/$(*F).bam_check;
-	echo "#[INFO] BAM Check done" > $@ ;
-	#-rm -f $@.sample_pattern
-
-
-
-# BAM CHECK rule for unaligned BAM (deprecated)
-#################################################
-
-%.bam.metrics/metrics.bam_check_fromUBAM: %.bam %.bam.bai
-	# CHECK NUMBER of READS in BAM \
-	# Create directory if not created
-	mkdir -p $(@D);
-	# Pattern
-	echo $$(dirname $*)/$$(basename $$(dirname $*)) > $@.sample_pattern;
-	# Header
-	echo "# Check number of reads between $< and $$(cat $@.sample_pattern).unaligned.bam to ensure no reads removing (only mark reads)" >$(@D)/$(*F).bam_check;
-	echo "# (possible new reads marked as secondary aligned)" >>$(@D)/$(*F).bam_check;
-	# Check
-	if [ -s $$(cat $@.sample_pattern).unaligned.bam ] && [ -s $$(cat $@.sample_pattern).unaligned.bam.bai ]; then \
-		echo "# Files $$(cat $@.sample_pattern).unaligned.bam and $$(cat $@.sample_pattern).unaligned.bam.bai exists" >>$(@D)/$(*F).bam_check; \
-		# Compare number of reads \
-		#grep "Number of reads for /home1/IRC/DATA/DEV/RES/ALL/160923_M01656_0124_000000000-ATJUM/T_Horizon/T_Horizon.unaligned.bam" /home1/IRC/DATA/DEV/RES/ALL/160923_M01656_0124_000000000-ATJUM/T_Horizon/T_Horizon.bwamem.bam.metrics/T_Horizon.bwamem.bam_check | cut -d" " -f2 \
-		echo "# $$($(SAMTOOLS) view -c -F 0x0100 -@ $(THREADS_SAMTOOLS) $<) reads for $<" >>$(@D)/$(*F).bam_check; \
-		echo "# $$($(SAMTOOLS) view -c -F 0x0100 -@ $(THREADS_SAMTOOLS) $$(cat $@.sample_pattern).unaligned.bam) reads for $$(cat $@.sample_pattern).unaligned.bam" >>$(@D)/$(*F).bam_check; \
-		grep ".* reads for $<" $(@D)/$(*F).bam_check | cut -d" " -f2; \
-		grep ".* reads for $$(cat $@.sample_pattern).unaligned.bam" $(@D)/$(*F).bam_check | cut -d" " -f2; \
-		if [ "$$(grep ".* reads for $<" $(@D)/$(*F).bam_check | cut -d" " -f2)" != "$$(grep ".* reads for $$(cat $@.sample_pattern).unaligned.bam" $(@D)/$(*F).bam_check | cut -d" " -f2)" ]; then \
-			# Error \
-			echo "#[ERROR] KO Number of reads between $< and $$(cat $@.sample_pattern).unaligned.bam !!!" >>$(@D)/$(*F).bam_check; \
-			echo "# BCFTOOLS STATS for $<" >>$(@D)/$(*F).bam_check;  \
-			$(SAMTOOLS) stats $< | grep ^SN >>$(@D)/$(*F).bam_check; \
-			$(SAMTOOLS) idxstats $< >>$(@D)/$(*F).bam_check; \
-			echo "# BCFTOOLS STATS for $$(cat $@.sample_pattern).unaligned.bam" >>$(@D)/$(*F).bam_check;  \
-			$(SAMTOOLS) stats $$(cat $@.sample_pattern).unaligned.bam | grep ^SN >>$(@D)/$(*F).bam_check; \
-			$(SAMTOOLS) idxstats $$(cat $@.sample_pattern).unaligned.bam >>$(@D)/$(*F).bam_check; \
-			#exit 1; \
-		else \
-			# OK \
-			echo "# Number of reads OK between $< and $$(cat $@.sample_pattern).unaligned.bam"  >>$(@D)/$(*F).bam_check; \
-		fi; \
-	else \
-		# Error \
-		echo "#[ERROR] No $$(cat $@.sample_pattern).unaligned.bam or $$(cat $@.sample_pattern).unaligned.bam.bai" >>$(@D)/$(*F).bam_check; \
-	fi;
-	cat $(@D)/$(*F).bam_check;
-	echo "#[INFO] BAM Check done" > $@ ;
-	-rm $@.sample_pattern
 
 
 # CONFIG/RELEASE

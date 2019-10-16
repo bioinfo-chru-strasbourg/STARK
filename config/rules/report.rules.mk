@@ -49,7 +49,7 @@ HOWARD_NOMEN_FIELDS?="hgvs"
 
 
 # Analysis Header
-%.report.header: %.report.summary #%.config
+%.report.header: %.report.summary
 	mkdir -p $(@D)
 	@echo "######################################### " >> $@
 	@echo "###                                   ###" >> $@
@@ -62,13 +62,11 @@ HOWARD_NOMEN_FIELDS?="hgvs"
 	@echo "# $(NB_RUN) RUNS: $(RUNS) " >> $@
 	@echo "# $(NB_SAMPLE) SAMPLES: $(RUNS_SAMPLES) " >> $@
 	@echo " " >> $@
-	#@cat $*.config >> $@
-	#@echo " " >> $@
+
+
 
 %.config: %.report.header $(RELEASE)
 	mkdir -p $(@D)
-	#echo "CONFIG" > $@
-	#cat $(RELEASE) > $@
 	cat $^ > $@
 	echo "" >> $@
 
@@ -83,7 +81,6 @@ HOWARD_NOMEN_FIELDS?="hgvs"
 	echo "\"design\": [\"$(*F).$$([[ -s $*.manifest ]] && echo 'manifest' || echo 'bed')\"]," >> $@;
 	if [ -s $*.list.genes ]; then echo "\"genes\": [\""$$(for g in $$(cat $*.list.genes); do basename $$g; done | tr '\n' '+' | sed s/+$$//gi)"\"]," >> $@; fi;
 	if [ -s $*.transcripts ]; then echo "\"transcripts\": [\"$(*F).transcripts\"]," >> $@; fi;
-	# for g in $(cat P1408.list.genes); do basename $g; done | tr '\n' '+' | sed s/+$//gi
 	echo "\"sample_tag\": [\"$$(cat $*.tag | tr ' ' '!')\"]" >> $@;
 	echo "}" >> $@;
 
@@ -91,23 +88,18 @@ HOWARD_NOMEN_FIELDS?="hgvs"
 
 ## Report for a SAMPLE
 %.$(ANALYSIS_DATE).report: $(FINAL) $(REPORT_FILES) %.$(ANALYSIS_DATE).config #$(REPORT_FILES) $(BAM) %.$(ANALYSIS_DATE).config
-	#%.$(ANALYSIS_DATE).report.summary %.$(ANALYSIS_DATE).report.variants %.$(ANALYSIS_DATE).config
 	@echo "######################################### " > $@
 	@echo "### Sample Report '`echo $$(basename $$(dirname $(@D)))`/$(*F)' " >> $@
 	@echo "### from Analysis '$(ANALYSIS_REF)' " >> $@
 	@echo "######################################### " >> $@
 	@echo " " >> $@
-
+	#
 	# Report release
 	-cp $*.$(ANALYSIS_DATE).config $*.$(ANALYSIS_DATE).config.txt
-
+	#
 	# STARK REPORT
-	#echo "$(STARK_FOLDER_BIN)/stark_report.sh -f "`echo $$(basename $$(dirname $$(dirname $(@D))))`" -s "$(*F)" -e "$(ENV)" -i $$(echo $(PIPELINES) | tr " " ",") -d $(ANALYSIS_DATE) -r $(OUTDIR)"
-	#$(STARK_FOLDER_BIN)/stark_report.sh -f "`echo $$(basename $$(dirname $$(dirname $(@D))))`" -s "$(*F)" -e "$(ENV)" -i $$(echo $(PIPELINES) | tr " " ",") -d $(ANALYSIS_DATE) -r $(OUTDIR)
 	$(STARK_FOLDER_BIN)/STARK.report -f "`echo $$(basename $$(dirname $$(dirname $(@D))))`" -s "$(*F)" -e "$(ENV)" -i $$(echo $(PIPELINES) | tr " " ",") -k $(ANALYSIS_DATE) -r $(OUTDIR) --verbose
-	#echo "$(STARK_FOLDER_BIN)/stark_report_html.sh -f "`echo $$(basename $$(dirname $$(dirname $(@D))))`" -s "$(*F)" -e "$(ENV)" -i $$(echo $(PIPELINES) | tr " " ",") -d $(ANALYSIS_DATE) -r $(OUTDIR)"
-	#$(STARK_FOLDER_BIN)/stark_report_html.sh -f "`echo $$(basename $$(dirname $$(dirname $(@D))))`" -s "$(*F)" -e "$(ENV)" -i $$(echo $(PIPELINES) | tr " " ",") -d $(ANALYSIS_DATE) -r $(OUTDIR)
-	#--env=$(CONFIG_TOOLS)
+
 
 
 ## list of vcf
@@ -143,20 +135,18 @@ HOWARD_NOMEN_FIELDS?="hgvs"
 %.merge.vcf: %.final_variants_files_vcf_gz %.genome
 	# Generate pipeline name list
 	cat $< | rev | cut -d/ -f1 | rev | sed s/\.vcf.gz//gi | cut -d. -f2- > $@.pipelines #| tr '\n' '\t' | sed 's/\t$$//'
-	#echo "final_variants_files_vcf_gz:"; cat $<;
-	#echo "pipelines:"; cat $@.pipelines;
 	# Merge VCF, noramize and rehead with pipelines names
-	$(BCFTOOLS) merge -l $< --force-samples -m none --info-rules - | $(BCFTOOLS) norm -m- -f `cat $*.genome` | $(BCFTOOLS) reheader -s $@.pipelines > $@;
+	$(BCFTOOLS) merge -l $< --force-samples -m none --info-rules - | $(BCFTOOLS) norm -m- -f $$(cat $*.genome) | $(BCFTOOLS) norm -d all | $(BCFTOOLS) reheader -s $@.pipelines > $@;
 	# Cleaning
 	-rm -f $@.tmp* $@.pipelines
 
 
 ## FULL VCF: ANNOTATION OF A MERGE FILE
-%.full.unsorted.vcf: %.merge.vcf %.transcripts
+%.full.sorting.vcf: %.merge.vcf %.transcripts %.genome
 	# HOWARD annotation
-	+$(HOWARD) --input=$< --output=$@.tmp --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --annotation=$(HOWARD_ANNOTATION_REPORT) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS);
+	+$(HOWARD) --input=$< --output=$@.tmp --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --annotation=$(HOWARD_ANNOTATION_REPORT) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --norm=$$(cat $*.genome);
 	# HOWARD calculation and prioritization
-	+$(HOWARD) --input=$@.tmp --output=$@  --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --calculation=$(HOWARD_CALCULATION_REPORT) --nomen_fields=$(HOWARD_NOMEN_FIELDS) --prioritization=$(HOWARD_PRIORITIZATION_REPORT) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --tmp=$(TMP_FOLDER_TMP)  --transcripts=$*.transcripts --force --multithreading --threads=$(THREADS) --env=$(CONFIG_TOOLS);
+	+$(HOWARD) --input=$@.tmp --output=$@  --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --calculation=$(HOWARD_CALCULATION_REPORT) --nomen_fields=$(HOWARD_NOMEN_FIELDS) --prioritization=$(HOWARD_PRIORITIZATION_REPORT) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --tmp=$(TMP_FOLDER_TMP)  --transcripts=$*.transcripts --force --multithreading --threads=$(THREADS) --env=$(CONFIG_TOOLS) --norm=$$(cat $*.genome);
 	# cleaning
 	rm -rf $@.tmp
 
@@ -168,14 +158,13 @@ HOWARD_NOMEN_FIELDS?="hgvs"
 
 
 ## FINAL VCF  RULE
-%.final.unsorted.vcf: %.full.vcf
+%.final.sorting.vcf: %.full.vcf
 	-rm -f $<.tmp.*
 	for S in $$(grep "^#CHROM" $< | cut -f10-); do \
 		$(BCFTOOLS) view -U -s $$S $< | sed '/^#CHROM/s/'$$S'/'$$(echo $(@F) | cut -d\. -f1)'/' > $<.tmp.$$S; \
 		$(BGZIP) -f $<.tmp.$$S; \
 		$(TABIX) -f $<.tmp.$$S.gz; \
 	done;
-	#$(VCFTOOLS)/vcf-subset -c $$S $< | sed '/^#CHROM/s/'$$S'/'$$(echo $(@F) | cut -d\. -f1)'/' > $<.tmp.$$S; \
 	$(BCFTOOLS) concat $<.tmp.*.gz -a -D > $@
 	rm -f $<.tmp.*.gz*
 

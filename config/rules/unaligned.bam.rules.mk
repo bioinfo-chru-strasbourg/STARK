@@ -34,9 +34,12 @@ BAM_COMPRESSION?=5
 
 GZ?=gzip
 
+
+
+
 ## FASTQ from ILLUMINA ##
 
-%.fastq.gz: %$(POST_SEQUENCING).R1.fastq.gz %$(POST_SEQUENCING).R2.fastq.gz
+%.fastq.gz: %.R1$(POST_SEQUENCING).fastq.gz %.R2$(POST_SEQUENCING).fastq.gz
 	# Create directory
 	-mkdir -p $(@D)
 	# Contatenate all fastq.gz files
@@ -106,7 +109,7 @@ GZ?=gzip
 
 ## UNALIGNED BAM ###
 
-%.unaligned.bam: %$(POST_SEQUENCING).R1.fastq.gz %$(POST_SEQUENCING).R2.fastq.gz
+%.unaligned.bam: %.R1$(POST_SEQUENCING).fastq.gz %x.R2$(POST_SEQUENCING).fastq.gz
 	# Creation of the output folder $(@D)
 	@mkdir -p $(@D)
 	#
@@ -164,7 +167,7 @@ GZ?=gzip
 
 
 
-%.unaligned.OK.bam: %$(POST_SEQUENCING).R1.fastq.gz %$(POST_SEQUENCING).R2.fastq.gz #%.fastq.gz
+%.unaligned.OK.bam: %.R1$(POST_SEQUENCING).fastq.gz %.R2$(POST_SEQUENCING).fastq.gz #%.fastq.gz
 	# Creation of the output folder $(@D)
 	@mkdir -p $(@D)
 	#ls -l $(@D)

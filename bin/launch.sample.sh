@@ -1120,7 +1120,7 @@ for RUU in $RUN_UNIQ; do
 						#cp -p $B $RUN_SAMPLE_DIR/$S.bed;
 						#cp -p $B $RUN_SAMPLE_DIR/$S.metrics.bed;
 						#$COMMAND_COPY $B $RUN_SAMPLE_DIR/$S.bed;
-						$BEDTOOLS/bedtools sort -i $B | $BEDTOOLS/bedtools merge -i - | awk -F"\t" '
+						$BEDTOOLS sort -i $B | $BEDTOOLS merge -i - | awk -F"\t" '
 							{chr=$1}
 							{start=$2}
 							{stop=$3}
@@ -1154,7 +1154,7 @@ for RUU in $RUN_UNIQ; do
 			#elif (($(echo $F | grep ".bam$\|.ubam$\|.cram$\|.ucram\|.sam$\|.usam$" -c))); then
 			#	# Generate BED from BAM if exists
 			#	echo "#[INFO] Try to Generate BED file from BAM file."
-			#	$SAMTOOLS sort --reference $REF -@ $THREADS $F -T $TMP_INPUT_BAM -O BAM -l 0 2>/dev/null | $BEDTOOLS/bedtools bamtobed -i | $BEDTOOLS/bedtools merge | cut -f1,2,3 > $RUN_SAMPLE_DIR/$S.bed.tmp;
+			#	$SAMTOOLS sort --reference $REF -@ $THREADS $F -T $TMP_INPUT_BAM -O BAM -l 0 2>/dev/null | $BEDTOOLS bamtobed -i | $BEDTOOLS merge | cut -f1,2,3 > $RUN_SAMPLE_DIR/$S.bed.tmp;
 			#	if [ -s $RUN_SAMPLE_DIR/$S.bed.tmp ]; then
 			#		echo "#[INFO] BED file generated from BAM file."
 			#		$COMMAND_COPY $RUN_SAMPLE_DIR/$S.bed.tmp $RUN_SAMPLE_DIR/$S.bed;
@@ -1192,8 +1192,7 @@ for RUU in $RUN_UNIQ; do
 					# remove Sample name (mainly in case of relauch)
 					G_ONE_TARGET=$(echo $G_ONE_TARGET | sed "s/$S\.//gi")
 					#$COMMAND_COPY $G_ONE $RUN_SAMPLE_DIR/$S.$G_ONE_TARGET;
-					#$BEDTOOLS/bedtools sort -i $G_ONE | $BEDTOOLS/bedtools merge -i - > $RUN_SAMPLE_DIR/$S.$G_ONE_TARGET;
-					$BEDTOOLS/bedtools sort -i $G_ONE | $STARK_FOLDER_BIN/bed_normalization.awk > $RUN_SAMPLE_DIR/$S.$G_ONE_TARGET;
+					$BEDTOOLS sort -i $G_ONE | $STARK_FOLDER_BIN/bed_normalization.awk > $RUN_SAMPLE_DIR/$S.$G_ONE_TARGET;
 					echo $S.$G_ONE_TARGET >> $BEDFILE_GENES_LIST_ONE
 				done;
 			elif [ -s $B ] && [ "$B" != "" ]; then
@@ -1206,11 +1205,11 @@ for RUU in $RUN_UNIQ; do
 
 				if [[ $B =~ .bed$ ]]; then
 					#cut -f1,2,3 $B > $BEDFILE_GENES_INTERMEDIATE;
-					$BEDTOOLS/bedtools sort -i $B | $BEDTOOLS/bedtools merge -i - | cut -f1,2,3 > $BEDFILE_GENES_INTERMEDIATE;
+					$BEDTOOLS sort -i $B | $BEDTOOLS merge -i - | cut -f1,2,3 > $BEDFILE_GENES_INTERMEDIATE;
 				else
 					$CAP_ManifestToBED --input $B --output $BEDFILE_GENES_INTERMEDIATE.tmp --output_type "region" --type=PCR 1>/dev/null;
 					#cut -f1,2,3 $BEDFILE_GENES_INTERMEDIATE.tmp > $BEDFILE_GENES_INTERMEDIATE;
-					$BEDTOOLS/bedtools sort -i $BEDFILE_GENES_INTERMEDIATE.tmp | $BEDTOOLS/bedtools merge -i - | cut -f1,2,3 > $BEDFILE_GENES_INTERMEDIATE;
+					$BEDTOOLS sort -i $BEDFILE_GENES_INTERMEDIATE.tmp | $BEDTOOLS merge -i - | cut -f1,2,3 > $BEDFILE_GENES_INTERMEDIATE;
 					rm -f $BEDFILE_GENES_INTERMEDIATE.tmp;
 				fi;
 
@@ -1222,7 +1221,7 @@ for RUU in $RUN_UNIQ; do
 				if [ -s $BEDFILE_GENES_INTERMEDIATE ] ; then
 					(($VERBOSE)) && echo "#[INFO] Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' with intersection between Design file '$B' and RefSeq '$REFSEQ_GENES'."
 					#echo "MANIFEST.bed to bedfile_genes_list : $bedfile_genes_list";
-					$BEDTOOLS/bedtools intersect -wb -a $BEDFILE_GENES_INTERMEDIATE -b $REFSEQ_GENES | cut -f8 | sort -u > $BEDFILE_GENES_INTERMEDIATE.intersect;
+					$BEDTOOLS intersect -wb -a $BEDFILE_GENES_INTERMEDIATE -b $REFSEQ_GENES | cut -f8 | sort -u > $BEDFILE_GENES_INTERMEDIATE.intersect;
 					sort -k5 $REFSEQ_GENES > $BEDFILE_GENES_INTERMEDIATE.refseq;
 					join -1 1 -2 5 $BEDFILE_GENES_INTERMEDIATE.intersect $BEDFILE_GENES_INTERMEDIATE.refseq -o 2.1,2.2,2.3,2.5 | sort -u -k1,2 | tr " " "\t" | awk -F"\t" '{print $1"\t"$2"\t"$3"\t+\t"$4}' | $STARK_FOLDER_BIN/bed_normalization.awk > $BEDFILE_GENES_ONE;
 					echo $(basename $BEDFILE_GENES_ONE) > $BEDFILE_GENES_LIST_ONE;
@@ -1444,7 +1443,10 @@ for RUU in $RUN_UNIQ; do
 	echo "#[INFO] GROUP                     $SAMPLE_GROUP"
 	echo "#[INFO] PROJECT                   $SAMPLE_PROJECT"
 	echo "#[INFO] PIPELINES                 $PIPELINES"
-	echo "#[INFO] POST_ALIGNMENT            "$(echo $POST_ALIGNMENT | tr "." "\n" | tac | tr "\n" " " )""
+	echo "#[INFO] POST SEQUENCING           "$(echo $POST_SEQUENCING | tr "." "\n" | tac | tr "\n" " " )""
+	echo "#[INFO] POST ALIGNMENT            "$(echo $POST_ALIGNMENT | tr "." "\n" | tac | tr "\n" " " )""
+	echo "#[INFO] POST CALLING              "$(echo $POST_CALLING | tr "." "\n" | tac | tr "\n" " " )""
+	echo "#[INFO] POST ANNOTATION           "$(echo $POST_ANNOTATION | tr "." "\n" | tac | tr "\n" " " )""
 	echo "#[INFO] RESULTS                   $RESULTS"
 	echo "#[INFO] REPOSITORY                $REPOSITORY"
 	echo "#[INFO] ARCHIVE                   $ARCHIVE"

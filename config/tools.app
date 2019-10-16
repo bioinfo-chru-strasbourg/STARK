@@ -110,17 +110,6 @@ export BCFTOOLS_REF=$HTSLIB_REF
 TOOLS_LIST=$TOOLS_LIST" BCFTOOLS"
 
 
-# VCFTOOLS
-#export VCFTOOLS=$NGS_TOOLS/vcftools/0.1.12b/bin/		# DIR
-#export VCFTOOLSLIB=$NGS_TOOLS/vcftools/0.1.12b/perl/		# DIR
-export VCFTOOLS=$NGS_TOOLS/vcftools/current/bin			# DIR
-export VCFTOOLSLIB=$NGS_TOOLS/vcftools/current/perl		# DIR
-export VCFTOOLS_VERSION=0.1.14
-export VCFTOOLS_DESCRIPTION="provide easily accessible methods for working with complex genetic variation data in the form of VCF files"
-export VCFTOOLS_REF="http://vcftools.sourceforge.net/"
-TOOLS_LIST=$TOOLS_LIST" VCFTOOLS"
-
-
 # PICARD
 export PICARD=$NGS_TOOLS/picard/current/bin/picard.jar		# BIN
 export PICARD_VERSION=2.18.5					# VER
@@ -219,16 +208,18 @@ TOOLS_LIST=$TOOLS_LIST" BOWTIE"
 
 
 # BEDTOOLS
-export BEDTOOLS=$NGS_TOOLS/bedtools/current/bin			# DIR
-export BEDTOOLS2=$NGS_TOOLS/bedtools/current/bin			# DIR
+export BEDTOOLS=$NGS_TOOLS/bedtools/current/bin/bedtools	# BIN
+export BEDTOOLS_DIR=$NGS_TOOLS/bedtools/current/bin			# DIR
+#export BEDTOOLS2=$NGS_TOOLS/bedtools/current/bin			# DIR
 export BEDTOOLS_VERSION=2.27.1					# VER
-export BEDTOOLS2_VERSION=2.27.1					# VER
+#export BEDTOOLS2_VERSION=2.27.1					# VER
 export BEDTOOLS_DESCRIPTION="a powerful toolset for genome arithmetic"
-export BEDTOOLS2_DESCRIPTION="a powerful toolset for genome arithmetic"
+#export BEDTOOLS2_DESCRIPTION="a powerful toolset for genome arithmetic"
 export BEDTOOLS_REF="http://bedtools.readthedocs.org/"
-export BEDTOOLS2_REF="http://bedtools.readthedocs.org/"
+#export BEDTOOLS2_REF="http://bedtools.readthedocs.org/"
 #export BEDTOOLS2="/home1/DIAG/TOOLS/tools/bedtools/2.25.0/bin/"
-TOOLS_LIST=$TOOLS_LIST" BEDTOOLS BEDTOOLS2"
+#TOOLS_LIST=$TOOLS_LIST" BEDTOOLS BEDTOOLS2"
+TOOLS_LIST=$TOOLS_LIST" BEDTOOLS"
 
 # ANNOVAR
 export ANNOVAR=$NGS_TOOLS/annovar/current/bin			# DIR
@@ -404,7 +395,7 @@ export PATH=$PATH:$TABIX_PATH:$JAVA_PATH
 
 # ADD PERL
 if (($(grep -c " 6." /etc/centos-release))); then
-	export PERL5LIB=$VCFTOOLSLIB:$BCL2FASTQ_PERLLIB:$ENV_PERLLIB
+	export PERL5LIB=$BCL2FASTQ_PERLLIB:$ENV_PERLLIB
 else
-	export PERL5LIB=$VCFTOOLSLIB
+	export PERL5LIB=
 fi;

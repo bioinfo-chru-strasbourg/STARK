@@ -1,7 +1,7 @@
 #############################
 # NGS workflow
-# Release: 0.9.8.1
-# Date: 13/04/2016
+# Release: 0.9.8.2
+# Date: 14/10/2019
 # Author: Antony Le Bechec
 #############################
 
@@ -11,19 +11,15 @@
 
 MK_PATH:=$(abspath $(lastword $(MAKEFILE_LIST)))
 MK_DIR_PATH:=$(shell dirname $(MK_PATH))
-#MK_DIR_PATH:=$(shell echo $(STARK_FOLDER_CONFIG))
 PWD:=$(shell pwd -P)
+
 #Define NGSEnv and config.mk file
 NGSEnv?=/NGS
-#CONFIG?=$(MK_DIR_PATH)/rules.mk/config.mk
 CONFIG?=$(STARK_FOLDER_RULES)/config.mk
-#FUNCTIONS?=$(MK_DIR_PATH)/functions.mk
 FUNCTIONS?=$(STARK_FOLDER_BIN)/functions.mk
 PARAM?=makefile.param
-#RULES?=$(MK_DIR_PATH)/rules.mk/*.rules.mk
 RULES?=$(STARK_FOLDER_RULES)/*.rules.mk
 DATE:=$(shell date '+%Y%m%d-%H%M%S')
-#ANALYSIS_DATE?=$(DATE)
 ANALYSIS_REF?=$(DATE)
 ANALYSIS_DATE?=$(ANALYSIS_REF)
 
@@ -46,15 +42,11 @@ PIPELINES_CMD := $(shell echo "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
 # Load Config and all available rules
 include $(CONFIG)
 
-# Load rules
-#include $(RULES)
-
 
 #FORMAT RUNS_SAMPLES=RUN1:SAMPLE1 RUN1:SAMPLE2 RUN2:SAMPLEX
 # Found in $(PARAM)
 RUNS?=
 RUNS_SAMPLES?=
-
 
 
 #NUMBER CALCULATION
@@ -76,13 +68,11 @@ REMOVE_INTERMEDIATE_SAM?=1 # Remove SAM file after BAM conversion
 ## FILES TO GENERATE and KEEP
 ###############################
 
-#CLEAN :=
 
 # NEEDED files/folder, i.e. Run's configuration and Demultiplexing OK
 SAMPLESHEETS?=$(foreach RUN,$(RUNS),$(MISEQDIR)/$(RUN)/SampleSheet.csv )
 
-#DemultiplexedBustardSummary=$(foreach RUN,$(RUNS),$(INPUTDIR)/$(RUN)/DemultiplexedBustardSummary.xml )
-NEEDED= $(SAMPLESHEETS) #$(MAKEFILES) $(DemultiplexedBustardSummary)
+NEEDED= $(SAMPLESHEETS)
 
 
 SAMPLE=	$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).SampleSheet.csv ) \
@@ -111,9 +101,6 @@ BAM=	$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(foreach ALIGNER,$(ALIGNERS),$(OUTDIR
 	$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(foreach PIPELINE,$(PIPELINES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).$(call aligner,$(PIPELINE)).bam.metrics/metrics ))
 
 
-#$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(foreach PIPELINE,$(PIPELINES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).$(call aligner,$(PIPELINE)).bam.bed ))
-#$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(foreach ALIGNER,$(ALIGNERS),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).$(ALIGNER).bam.bed ))
-
 
 UBAM=	$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).unaligned.bam ) \
 	$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).unaligned.bam.bai )
@@ -130,19 +117,10 @@ CRAM=	$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$
 JSON=	$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).launch.json )
 
 
-FINAL=$(SAMPLE) $(BAM) $(VCF) $(CRAM) $(SEQUENCING_METRICS) #$(FASTQC_METRICS)
-#$(UBAM)
+FINAL=$(SAMPLE) $(BAM) $(VCF) $(CRAM) $(SEQUENCING_METRICS)
+
 
 REPORTS=$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).reports/$(call sample,$(RUN_SAMPLE)).$(ANALYSIS_DATE).report )
-
-#REPORT_FILES=	$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).reports/$(call sample,$(RUN_SAMPLE)).$(ANALYSIS_DATE).full.vcf ) \
-#		$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).reports/$(call sample,$(RUN_SAMPLE)).$(ANALYSIS_DATE).full.txt ) \
-#		$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).reports/$(call sample,$(RUN_SAMPLE)).$(ANALYSIS_DATE).final.vcf ) \
-#		$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).reports/$(call sample,$(RUN_SAMPLE)).$(ANALYSIS_DATE).final.txt ) \
-#		$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).reports/$(call sample,$(RUN_SAMPLE)).full.vcf ) \
-#		$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).reports/$(call sample,$(RUN_SAMPLE)).full.txt ) \
-#		$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).reports/$(call sample,$(RUN_SAMPLE)).final.vcf ) \
-#		$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).reports/$(call sample,$(RUN_SAMPLE)).final.txt ) \
 
 
 
@@ -180,57 +158,44 @@ all: $(FINAL) $(FINAL_REPORT) $(FINAL_REPORT_FILES) $(FINAL_REPORT).samples.vcf.
 	# CLEANING
 	echo $(CLEAN)
 	-rm -f $(CLEAN)
-	#rm -rf $(OUTDIR)/*/*/*.for_metrics_bed
-	#rm -rf $(OUTDIR)/*/*/*.*.manifest
-	#echo $(CLEAN)$(SAMPLESHEETS)
+
+
 
 # MAIN
 ########
 
 
-
 $(RELEASE):
 	#echo "RELEASE" > $@
 	cat $(RELEASE_INFOS) > $@
-	#head -n `echo $$(grep ^ $(RELEASE_INFOS) -c) / 2 | bc` $(RELEASE_INFOS) > $@
-	#head -n `echo $$(grep ^ $(RELEASE_INFOS) -c) / 2 | bc` $(RELEASE_INFOS) > $@
-	#echo "" >> $@
+
 
 ## List of BAMS
-#%.bams.list: $(foreach ALIGNER,$(ALIGNERS),%.$(ALIGNER).bam)
 %.bams.list: $(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(foreach ALIGNER,$(ALIGNERS),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).$(ALIGNER).bam )) $(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(foreach PIPELINE,$(PIPELINES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).$(call aligner,$(PIPELINE)).bam ))
 	ls $^ > $@
 	echo "BAM_LIST2 $*.test: $^"
 	#cp $@ $*.test
 
+## List of BEDs
 %.beds.list: $(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).bed )
 	mkdir -p $(@D) ;
 	ls $^ > $@;
 	echo "BED LIST $*.test: $^";
 
+## List of SampleSheets
 %.SampleSheets.list: $(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).SampleSheet.csv )
 	mkdir -p $(@D);
 	ls $^ > $@;
 
-
-#%.List of VCF
+## List of VCF
 %.vcfs.list: $(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(foreach ALIGNER,$(ALIGNERS),$(foreach CALLER,$(CALLERS),$(foreach ANNOTATOR,$(ANNOTATORS),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).$(ALIGNER).$(CALLER).$(ANNOTATOR).vcf )))) $(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(foreach PIPELINE,$(PIPELINES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).$(PIPELINE).vcf ))
 	mkdir -p $(@D)
 	ls $^ > $@
 
-#%.List of VCF.GZ
+## List of VCF.GZ
 %.vcfgzs.list: $(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(foreach ALIGNER,$(ALIGNERS),$(foreach CALLER,$(CALLERS),$(foreach ANNOTATOR,$(ANNOTATORS),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).$(ALIGNER).$(CALLER).$(ANNOTATOR).vcf.gz )))) $(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(foreach PIPELINE,$(PIPELINES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).$(PIPELINE).vcf.gz ))
 	mkdir -p $(@D)
 	ls $^ > $@
-
-# Files for Reports
-#VARIANTS_FILES_FOR_REPORTS=$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).$(ANALYSIS_DATE).variants.intersect.txt )
-
-# REPORTS (intermediate?) to generate for the FINAL REPORT and FINAL REPORT "FULL"
-#REPORTS=$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).$(ANALYSIS_DATE).report )
-
-
-#REPORTS_FULL=$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).$(ANALYSIS_DATE).report.full )
 
 
 
@@ -246,37 +211,10 @@ $(FINAL_REPORT): $(FINAL_REPORT).report.header $(REPORTS)
 		rm -f $$report; \
 	done;
 	# PDF creation
-	@enscript -f $(FONT) --header="$(@F)||[`date '+%d/%m/%Y-%H:%M:%S'`]" -p$@.ps $@
-	@ps2pdf $@.ps $@.pdf
-	@rm -f $@.ps
+	#@enscript -f $(FONT) --header="$(@F)||[`date '+%d/%m/%Y-%H:%M:%S'`]" -p$@.ps $@
+	#@ps2pdf $@.ps $@.pdf
+	#@rm -f $@.ps
 
-
-#$(FINAL_REPORT_FULL): %.$(ANALYSIS_DATE).report.summary $(REPORTS_FULL)
-#$(FINAL_REPORT_FULL): $(FINAL_REPORT_FULL).report.header $(REPORTS_FULL)
-#	# Creating Report $@ with Reports $^
-#	-for report in $^; \
-#	do \
-#		echo "" >> $@; \
-#		cat $$report >> $@; \
-#		rm $$report; \
-#	done;
-#	# PDF creation
-#	@enscript -f $(FONT) --header="$(@F)||[`date '+%d/%m/%Y-%H:%M:%S'`]" -p$@.ps $@
-#	@ps2pdf $@.ps $@.pdf
-#	@rm $@.ps
-
-# Warning !!! vcf-merge error occured !!!
-#$(FINAL_REPORT_FULL_VCF): $(FINAL_REPORT_FULL_VCF).vcfs.list
-#	-for VCF in `cat $<`; do \
-#		if [ ! -e $$VCF.gz ]; then \
-#			$(BGZIP) -f -c $$VCF > $$VCF.gz; \
-#		fi; \
-#		if [ ! -e $VCF.gz.tbi ]; then \
-#			echo "# VCF tabix"; \
-#			$(TABIX) -p vcf $$VCF.gz; \
-#		fi; \
-#	done;
-#	$(VCFTOOLS)/vcf-merge $$(for VCF in $$(echo $$(cat $<)); do echo -n $$VCF'.gz '; done;) > $@;
 
 
 # CLEAN
@@ -289,24 +227,13 @@ CLEAN=	$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/
 	$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).*.metrics.bed ) \
 	$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).*.transcripts ) \
 	$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).*.intervals.bed ) \
+	$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).*.filtration.vcf ) \
 	$(RELEASE_INFOS) \
-	$(PIPELINES_INFOS) \
-	#$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).*for_metrics_bed ) \
-	#$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).$(ANALYSIS_DATE)* ) \
-	#$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(RELEASE_DATE) ) \
-	#$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(RELEASE_REF) ) \
-	$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).*.*genes ) \
+	$(PIPELINES_INFOS)
+
 
 
 
 clean: #$(CLEAN)
 	echo $(CLEAN)
 	-rm -f $(CLEAN)
-	# Remove all symlink
-	#find TEST -type l | xargs rm
-	#rm -rf $(OUTDIR)/*/*/*.for_metrics_bed
-	#rm -rf $(OUTDIR)/*/*/*.*.manifest
-	#rm -rf $(OUTDIR)/*/*/*.*.genes
-	#rm -rf $(OUTDIR)/*/*/$(ANALYSIS_DATE)
-	#rm -rf $(OUTDIR)/*/*/$(RELEASE_DATE)
-	#rm -rf $(OUTDIR)/*/*/$(RELEASE_REF)

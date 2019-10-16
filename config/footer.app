@@ -503,8 +503,6 @@ export POST_SEQUENCING
 
 
 
-
-
 # POST ALIGNEMENT STEPS (default "sorting realignment clipping compress")
 # All steps after alignement and before calling
 # This sequence correspond to the BAM file generated jsut after the alignemnt
@@ -533,6 +531,56 @@ fi;
 # Create POST_ALIGNEMENT variable
 [ "$POST_ALIGNMENT_STEPS" != "" ] && POST_ALIGNMENT="."$(echo $POST_ALIGNMENT_STEPS | tr "," " " | tr "." " " | tr " " "\n" | sed '/^$/d' | tac  | tr "\n" " " | sed s/\.$//g | tr " " ".") || POST_ALIGNMENT=""
 export POST_ALIGNMENT
+
+
+
+# POST CALLING STEPS (default "sorting normalization recalibration filtration")
+# All steps after calling
+# This sequence correspond to the VCF file generated just after the calling
+# Format: "step1 step2 step3"
+# Example: "recalibration filtration"
+#    This sequence will generate the file $CALLER.filtration.recalibration.vcf whose will be processed
+#    Then, this VCF file will be 1/ recalibrated, 2/ filtrered
+# The steps are defined as makefiles rules
+# Check available steps by using the command: STARK --pipelines_infos
+# Available steps (not up-to-date):
+#    recalibration: VCF recalibration
+#    filtration: VCF filtration
+# Usually:
+#    "sorting normalization recalibration filtration"
+
+if [ -z "$POST_CALLING_STEPS" ]; then
+	POST_CALLING_STEPS="normalization recalibration filtration"
+fi;
+
+# Create POST_CALLING variable
+[ "$POST_CALLING_STEPS" != "" ] && POST_CALLING="."$(echo $POST_CALLING_STEPS | tr "," " " | tr "." " " | tr " " "\n" | sed '/^$/d' | tac  | tr "\n" " " | sed s/\.$//g | tr " " ".") || POST_CALLING=""
+export POST_CALLING
+
+
+
+# POST ANNOTATION STEPS (default "sorting normalization")
+# All steps after annotation
+# This sequence correspond to the VCF file generated just after the annotation
+# Format: "step1 step2 step3"
+# Example: "sorting normalization"
+#    This sequence will generate the file $ANNOTATION.normalization.sorting.vcf whose will be processed
+#    Then, this VCF file will be 1/ sorted, 2/ normalized
+# The steps are defined as makefiles rules
+# Check available steps by using the command: STARK --pipelines_infos
+# Available steps (not up-to-date):
+#    sorting: VCF sorting
+#    normalization: VCF normalization
+# Usually:
+#    "sorting normalization"
+
+if [ -z "$POST_ANNOTATION_STEPS" ]; then
+	POST_ANNOTATION_STEPS="sorting"
+fi;
+
+# Create POST_ANNOTATION variable
+[ "$POST_ANNOTATION_STEPS" != "" ] && POST_ANNOTATION="."$(echo $POST_ANNOTATION_STEPS | tr "," " " | tr "." " " | tr " " "\n" | sed '/^$/d' | tac  | tr "\n" " " | sed s/\.$//g | tr " " ".") || POST_ANNOTATION=""
+export POST_ANNOTATION
 
 
 

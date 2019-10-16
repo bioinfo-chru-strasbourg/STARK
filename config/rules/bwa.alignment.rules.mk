@@ -34,7 +34,7 @@ BWAMEM_FLAGS?= mem -C -M -t $(THREADS_BWA)
 #BWAMEM_FLAGS?= mem -M -t $(THREADS_BWA)
 #-a
 
-%.bwamem$(POST_ALIGNMENT).bam: %$(POST_SEQUENCING).R1.fastq.gz %$(POST_SEQUENCING).R2.fastq.gz %.genome #check in the code
+%.bwamem$(POST_ALIGNMENT).bam: %.R1$(POST_SEQUENCING).fastq.gz %.R2$(POST_SEQUENCING).fastq.gz %.genome #check in the code
 	# Read group
 	echo "@RG\tID:1\tPL:ILLUMINA\tPU:PU\tLB:001\tSM:$(*F)" > $@.RG
 	if [ "`cat $@.RG`" != "" ]; then echo " -R "`cat $@.RG` > $@.RG; fi;
@@ -77,7 +77,6 @@ BWAMEM_FromUBAM_FLAGS= mem -C -a -Mp -t $(THREADS_BWA)
 	# Alignment
 	-$(SAMTOOLS) bam2fq $< | $(BWA) $(BWAMEM_FromUBAM_FLAGS) `cat $*.genome` `cat $@.RG` - > $@.tmp
 	# AddOrReplaceReadGroups
-	#echo "# AddOrReplaceReadGroups %.bwamem.unrecalibrated.unclipped.unrealigned.unsorted.sam"
 	#$(JAVA) $(JAVA_FLAGS) -jar $(PICARDLIB)/AddOrReplaceReadGroups.jar $(PICARD_FLAGS) I=$@.tmp O=$@ RGSM=$(*F)
 	if (($$($(SAMTOOLS) view $@.tmp -H | grep "^@RG" -c))); then \
 		echo "# BAM $@.tmp with read group"; \
@@ -100,7 +99,7 @@ BWAMEM_FromUBAM_FLAGS= mem -C -a -Mp -t $(THREADS_BWA)
 BWAMEM_FromFASTQ_FLAGS= mem -C -a -M -t $(THREADS_BWA)
 #-a
 
-%.bwamem_FromFASTQ$(POST_ALIGNMENT).bam: %$(POST_SEQUENCING).R1.fastq.gz %$(POST_SEQUENCING).R2.fastq.gz %.genome #check in the code
+%.bwamem_FromFASTQ$(POST_ALIGNMENT).bam: %.R1$(POST_SEQUENCING).fastq.gz %.R2$(POST_SEQUENCING).fastq.gz %.genome #check in the code
 	# Read group
 	#$(SAMTOOLS) view $< -H | grep '@RG' | head -n 1 | sed 's/\t/\\t/gi' > $@.RG
 	echo "@RG\tID:1\tPL:ILLUMINA\tPU:PU\tLB:001\tSM:$(*F)" > $@.RG
@@ -115,7 +114,6 @@ BWAMEM_FromFASTQ_FLAGS= mem -C -a -M -t $(THREADS_BWA)
 		$(BWA) $(BWAMEM_FromFASTQ_FLAGS) `cat $@.RG` `cat $*.genome` $*.R1.fastq.gz | sed 's/[1-2]\:N\:0\:\([A-Z]*\)/BC\:Z\:\1/' | $(SAMTOOLS) view -o $@.tmp -b -1 -S -T `cat $*.genome` - -@ $(THREADS_SAMTOOLS); \
 	fi;
 	# AddOrReplaceReadGroups
-	#echo "# AddOrReplaceReadGroups %.bwamem.unrecalibrated.unclipped.unrealigned.unsorted.sam"
 	#$(JAVA) $(JAVA_FLAGS) -jar $(PICARDLIB)/AddOrReplaceReadGroups.jar $(PICARD_FLAGS) I=$@.tmp O=$@ RGSM=$(*F)
 	if (($$($(SAMTOOLS) view $@.tmp -H | grep "^@RG" -c))); then \
 		echo "# BAM $@.tmp with read group"; \
@@ -189,16 +187,6 @@ BWASW_FLAGS=bwasw -t $(THREADS_BWA)
 	-rm $@.tmp $@.RG
 
 
-
-
-## UNCLIPPED
-# Skip the clipping step. Need a sorting
-%.bwaalnUnclipped.unrecalibrated.unsorted.bam: %.bwaaln.unrecalibrated.clipped.bam
-	cp $< $@
-%.bwaswUnclipped.unrecalibrated.unsorted.bam: %.bwasw.unrecalibrated.clipped.bam
-	cp $< $@
-%.bwamemUnclipped.unrecalibrated.unsorted.bam: %.bwamem.unrecalibrated.clipped.bam
-	cp $< $@
 
 ## CLEAN
 #CLEAN += *.unrecalibrated.unclipped.bam

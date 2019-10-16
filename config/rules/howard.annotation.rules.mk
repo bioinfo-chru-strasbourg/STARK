@@ -15,9 +15,9 @@ MK_DATE="27/09/2019"
 # 27/09/2019-V0.9.4.1b: Add HOWARD NOMEN field option
 
 
-## DEBUG: Annotation only CORE TODO
+# HOWARD Variables
+####################
 
-#HOWARD
 HOWARD?=$(NGSscripts)
 HOWARD_CONFIG?=$(HOWARD)/config.ini
 HOWARD_CONFIG_PRIORITIZATION?="config.prioritization.ini"
@@ -32,66 +32,36 @@ HOWARD_ANNOTATION_REPORT?="core,frequency,score,annotation,prediction,snpeff,snp
 HOWARD_FILTER?="default"
 HOWARD_PRIORITIZATION?="default"
 HOWARD_NOMEN_FIELDS?="hgvs"
-#ANNOTATIONS="PZScore,PZFlag,PZComment,Symbol,hgvs,location,outcome,AlleleFrequency,AD,dbSNP,dbSNPNonFlagged,DP,AF,VF,GQ,Ensembl,TI,FC,GWASCatalog,COSMIC,LocalDB,1000genomesALL,1000genomesEUR,6500NHLBIALL,6500NHLBIEUR,PolyPhen2HumanVarPred,PolyPhen2HumanDivPred,MutationTasterPred,MutationAssessorPred,LTRPred,IARCTP53,GGCPolymorphismsBRCA,SIFT,phastCons,PhyloP,SiPhy,FATHMM,LRT,GERP,PolyPhen2HumanVar,PolyPhen2HumanDiv,MutationTaster,MutationAssessor,TFBS,FilterComment,ALL"
 ANNOVAR?=$(NGSscripts)
 BDFOLDER?=$(NGSscripts)
 HOWARD_CALCULATION?=VAF,NOMEN,VAF_STATS,VARTYPE
 
-# dev:
-# $VCFTOOLS/vcf-merge empty.ann1.vcf.gz empty.ann2.vcf.gz > empty.ann1ann1vcfmerge.vcf
-# $VCFTOOLS/vcf-subset -c sample  empty.ann1ann1vcfmerge.vcv > empty.ann1ann2.vcf
+
+# RULES
+########
 
 
 # HOWARD ANNOTATION
-%.howard.vcf: %.norm.vcf %.empty.vcf %.transcripts
+%.howard$(POST_ANNOTATION).vcf: %.vcf %.empty.vcf %.transcripts %.genome
 	# Annotation step
-	mkdir -p $@.metrics
-	+$(HOWARD) --input=$< --output=$@ --transcripts=$*.transcripts --config=$(HOWARD_CONFIG) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --annotation=$(HOWARD_ANNOTATION) --calculation=$(HOWARD_CALCULATION) --nomen_fields=$(HOWARD_NOMEN_FIELDS) --prioritization=$(HOWARD_PRIORITIZATION) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS);
-	#--snpeff_stats=$@.metrics/$(@F).snpeff.metrics.html
+	+$(HOWARD) --input=$< --output=$@ --transcripts=$*.transcripts --config=$(HOWARD_CONFIG) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --annotation=$(HOWARD_ANNOTATION) --calculation=$(HOWARD_CALCULATION) --nomen_fields=$(HOWARD_NOMEN_FIELDS) --prioritization=$(HOWARD_PRIORITIZATION) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --norm=$$(cat $*.genome);
 	-if [ ! -e $@ ]; then cp $*.empty.vcf $@; fi;
-
-	# STATS
-	#-$(BCFTOOLS) stats $@ > $@.metrics/$(@F).bcftools.metrics
-
 	# Downgrading VCF format 4.2 to 4.1
 	-cat $@ | sed "s/##fileformat=VCFv4.2/##fileformat=VCFv4.1/" > $@.dowgrade.4.2.to.4.1.tmp;
 	-rm -f $@;
 	-mv $@.dowgrade.4.2.to.4.1.tmp $@;
 
 # HOWARD MINIMAL ANNOTATION
-%.howard_minimal.vcf: %.norm.vcf %.empty.vcf %.transcripts
+%.howard_minimal$(POST_ANNOTATION).vcf: %.vcf %.empty.vcf %.transcripts %.genome
 	# Annotation step
-	mkdir -p $@.metrics
-	+$(HOWARD) --input=$< --output=$@ --transcripts=$*.transcripts --config=$(HOWARD_CONFIG) --config_annotation=$(HOWARD_CONFIG_PRIORITIZATION_MINIMAL) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION_MINIMAL) --annotation=$(HOWARD_ANNOTATION_MINIMAL) --calculation=$(HOWARD_CALCULATION_MINIMAL) --nomen_fields=$(HOWARD_NOMEN_FIELDS) --prioritization=$(HOWARD_PRIORITIZATION_MINIMAL) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS);
-	#--snpeff_stats=$@.metrics/$(@F).snpeff.metrics.html
+	+$(HOWARD) --input=$< --output=$@ --transcripts=$*.transcripts --config=$(HOWARD_CONFIG) --config_annotation=$(HOWARD_CONFIG_PRIORITIZATION_MINIMAL) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION_MINIMAL) --annotation=$(HOWARD_ANNOTATION_MINIMAL) --calculation=$(HOWARD_CALCULATION_MINIMAL) --nomen_fields=$(HOWARD_NOMEN_FIELDS) --prioritization=$(HOWARD_PRIORITIZATION_MINIMAL) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --norm=$$(cat $*.genome);
 	-if [ ! -e $@ ]; then cp $*.empty.vcf $@; fi;
-
-	# STATS
-	-$(BCFTOOLS) stats $@ > $@.metrics/$(@F).bcftools.metrics
-
 	# Downgrading VCF format 4.2 to 4.1
 	-cat $@ | sed "s/##fileformat=VCFv4.2/##fileformat=VCFv4.1/" > $@.dowgrade.4.2.to.4.1.tmp;
 	-rm -f $@;
 	-mv $@.dowgrade.4.2.to.4.1.tmp $@;
 
-%.vcf: %.unannotatedCORE.vcf %.empty.vcf
-	# Annotation CORE and snpEff HGVS
-	#$(HOWARD_ANNOTATION) --input_file=$< --output_file=$@ --annotation=core,snpeff_hgvs --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --verbose;
-	$(HOWARD) --input=$< --output=$@ --config=$(HOWARD_CONFIG) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --annotation=core,snpeff_hgvs --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --verbose;
-	-if [ ! -e $@ ]; then cp $*.empty.vcf $@; fi;
-	#-rm $*.empty.vcf $@;
 
-
-%.vcf: %.unMinimallyAnnotated.vcf %.empty.vcf
-	# Annotation CORE and snpEff HGVS
-	if [ "$(ANNOTATION_TYPE_MINIMAL)" != "" ]; then \
-		#$(HOWARD_ANNOTATION) --input_file=$< --output_file=$@ --annotation=$(ANNOTATION_TYPE_MINIMAL) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --verbose; \
-		$(HOWARD) --input=$< --output=$@ --config=$(HOWARD_CONFIG) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --config_filter=$(HOWARD_CONFIG_PRIORITIZATION) --annotation=$(ANNOTATION_TYPE_MINIMAL) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --verbose; \
-	else \
-		cp $< $@; \
-	fi;
-	-if [ ! -e $@ ]; then cp $*.empty.vcf $@; fi;
-	#-rm $*.empty.vcf $@;
 
 # CONFIG/RELEASE
 RELEASE_COMMENT := "\#\# ANNOTATION '$(MK_RELEASE)': HOWARD annotates and prioritizes variants on a VCF, and generates *.howard.vcf file. Releases: '$(HOWARD_VERSION)'. Options: , HOWARD_ANNOTATION='$(HOWARD_ANNOTATION)', HOWARD_CALCULATION='$(HOWARD_CALCULATION)', HOWARD_PRIORITIZATION='$(HOWARD_PRIORITIZATION)', SORT_BY='$(SORT_BY)', ORDER_BY='$(ORDER_BY)'"

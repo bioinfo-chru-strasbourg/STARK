@@ -233,6 +233,42 @@ POST_ALIGNMENT_STEPS="sorting markduplicates realignment recalibration compress"
 
 
 
+# POST CALLING STEPS (default "recalibration filtration")
+# All steps after calling
+# This sequence correspond to the VCF file generated just after the calling
+# Format: "step1 step2 step3"
+# Example: "recalibration filtration"
+#    This sequence will generate the file $CALLER.filtration.recalibration.vcf whose will be processed
+#    Then, this VCF file will be 1/ recalibrated, 2/ filtrered
+# The steps are defined as makefiles rules
+# Check available steps by using the command: STARK --pipelines_infos
+# Available steps (not up-to-date):
+#    recalibration: VCF recalibration
+#    filtration: VCF filtration
+# Usually:
+#    "recalibration filtration"
+POST_CALLING_STEPS="normalization recalibration filtration"
+
+
+
+# POST ANNOTATION STEPS (default "sorting normalization")
+# All steps after annotation
+# This sequence correspond to the VCF file generated just after the annotation
+# Format: "step1 step2 step3"
+# Example: "sorting normalization"
+#    This sequence will generate the file $ANNOTATION.normalization.sorting.vcf whose will be processed
+#    Then, this VCF file will be 1/ sorted, 2/ normalized
+# The steps are defined as makefiles rules
+# Check available steps by using the command: STARK --pipelines_infos
+# Available steps (not up-to-date):
+#    sorting: VCF sorting
+#    normalization: VCF normalization
+# Usually:
+#    "sorting normalization"
+POST_ANNOTATION_STEPS="sorting"
+
+
+
 # BAM COMPRESSION
 # Final BAM copression level (unaligned.bam, ALIGNER.bam)
 BAM_COMPRESSION=5
@@ -271,7 +307,7 @@ HOWARD_ANNOTATION_MINIMAL="core,snpeff_split"
 # Default annotation with HOWARD for report
 HOWARD_ANNOTATION_REPORT="core,frequency,score,annotation,prediction,snpeff,snpeff_hgvs,snpeff_split"
 # Default annotation with HOWARD for whole analysis
-HOWARD_ANNOTATION_ANALYSIS="" # no more annotation
+HOWARD_ANNOTATION_ANALYSIS="null" # no more annotation
 
 
 # CALCULATION

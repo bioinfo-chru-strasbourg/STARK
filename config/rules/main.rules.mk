@@ -26,7 +26,6 @@ TABIX?=$(NGSbin)/tabix
 BWA?=$(NGSbin)/bwa
 PICARDLIB?=$(NGSbin)/picard-tools
 FASTQC?=$(NGSbin)/fastqc
-VCFTOOLS?=$(NGSbin)/vcftools
 BGZIP?=bgzip
 GZ?=gzip
 
@@ -62,9 +61,6 @@ GZ?=gzip
 	# If no VCF or empty file, create an empty VCF
 	if [ ! -s $< ]; then cp $*.empty.vcf $<; fi;
 	# VCF Sorting
-	#$(VCFTOOLS)/vcf-sort $^ > $<.sorted
-	#$(VCFTOOLS)/vcf-sort $< > $<.sorted
-	#$(BCFTOOLS) sort $< -o $<.sorted
 	mkdir -p $@.SAMTOOLS_PREFIX
 	$(BCFTOOLS) sort -T $@.SAMTOOLS_PREFIX $< > $@.sorted
 	rm -rf $@.SAMTOOLS_PREFIX
@@ -100,25 +96,28 @@ GZ?=gzip
 	echo "#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	"$$(echo $$(basename $@) | awk -F"." '{print $$1}') >> $@
 
 
-# SORT VCF
-%.vcf: %.unsorted.vcf
-	$(VCFTOOLS)/vcf-sort $< -c -t $@"_BCFTOOLS_sort/" -p $(THREADS_BY_SAMPLE) > $@
-	#mkdir -p $@"_BCFTOOLS_sort/"
-	#$(BCFTOOLS) sort -T $@"_BCFTOOLS_sort/" $< > $@
-	#rm -rf $@"_BCFTOOLS_sort/"
+# VCF SORTING
+%.vcf: %.sorting.vcf
+	grep "^#" $< > $@
+	mkdir -p $<"_VCF_sort"
+	grep -v "^#" $< | sort -k1,1V -k2,2n -T $<"_VCF_sort" >> $@
+	rm -rf $<"_VCF_sort"
 
 
-# NORMALIZE VCF with BCFTOOLS
-%.norm.vcf: %.vcf %.genome
-	$(BCFTOOLS) norm -m- -f `cat $*.genome` $< > $@
+# VCF NORMALIZATION with BCFTOOLS
+%.vcf: %.normalization.vcf %.genome
+	$(BCFTOOLS) norm -m- -f `cat $*.genome` $< | $(BCFTOOLS) norm -d all > $@
 
 
 # MERGE SNP and InDel VCF
-%.unsorted.vcf: %.SNP.vcf.gz %.InDel.vcf.gz %.SNP.vcf.gz.tbi %.InDel.vcf.gz.tbi
+%.vcf: %.SNP.vcf.gz %.InDel.vcf.gz %.SNP.vcf.gz.tbi %.InDel.vcf.gz.tbi
 	# CONCAT
-	#$(VCFTOOLS)/vcf-concat $^ > $@
-	#$(BCFTOOLS) concat $^ > $@
-	$(BCFTOOLS) concat -a $*.SNP.vcf.gz $*.InDel.vcf.gz > $@
+	$(BCFTOOLS) concat -a $*.SNP.vcf.gz $*.InDel.vcf.gz > $@.tmp
+	# Sorting
+	grep "^#" $@.tmp > $@
+	mkdir -p $@.tmp"_VCF_sort"
+	grep -v "^#" $@.tmp | sort -k1,1V -k2,2n -T $@.tmp"_VCF_sort" >> $@
+	rm -rf $@.tmp*
 	# Cleaning
 	-rm -f $*.SNP.vcf.gz $*.InDel.vcf.gz
 	-rm -f $*.SNP.vcf.gz.tbi $*.InDel.vcf.gz.tbi
@@ -275,8 +274,6 @@ GATKRR_FLAGS=
 		touch $@; \
 	fi;
 	if [ ! -e $@ ]; then touch $@; fi;
-	#ln -s $(@D)/`echo $$(basename $(@D))`.manifest $@ || cp $(@D)/`echo $$(basename $(@D))`.manifest $@; \
-	#touch $@; \
 	# Clean
 
 
@@ -332,16 +329,16 @@ GATKRR_FLAGS=
 		touch $*.manifests_list.txt; \
 	fi;
 	if [ ! -e $@ ]; then touch $*.manifests_list.txt; fi;
-
+	#
 	# Column number of sample manifest
 	-grep -i ^Sample_ID $< | tr -d '\r\n' | sed -e 's/,/\n/g' | grep -i -n Manifest | cut -d \: -f 1 > $(@D)/$(*F).INDEX_SAMPLEMANIFEST_I;
 	-if [ ! -s $(@D)/$(*F).INDEX_SAMPLEMANIFEST_I ]; then echo "1" > $(@D)/$(*F).INDEX_SAMPLEMANIFEST_I; fi;
 	# Manifest letter for the index
 	-grep -e ^$$(basename $(@D)), $< | tail -n 1 | tr -d '\r\n' | cut -d \, -f `cat $(@D)/$(*F).INDEX_SAMPLEMANIFEST_I` > $(@D)/$(*F).SAMPLE_MANIFEST_I;
-
+	#
 	# Manifest name for the sample
 	-grep ^`cat $(@D)/$(*F).SAMPLE_MANIFEST_I`, $*.manifests_list.txt | cut -d \, -f 2 > $(@D)/$(*F).SAMPLE_MANIFEST;
-
+	#
 	# BED
 	file=$$( echo "$$( dirname $(MANIFEST_FOLDER)/`cat $(@D)/$(*F).SAMPLE_MANIFEST` )/$$( basename $(MANIFEST_FOLDER)/`cat $(@D)/$(*F).SAMPLE_MANIFEST` ).bed" ); \
 	echo "bed file is : $$file "; \
@@ -350,7 +347,7 @@ GATKRR_FLAGS=
 	else \
 		echo "$$file don't exist !!!"; \
 	fi;
-
+	#
 	# BED GENES
 	file=$$( echo "$$( dirname $(MANIFEST_FOLDER)/`cat $(@D)/$(*F).SAMPLE_MANIFEST` )/$$( basename $(MANIFEST_FOLDER)/`cat $(@D)/$(*F).SAMPLE_MANIFEST` ).genes" ); \
 	echo "genes file is : $$file "; \
@@ -359,7 +356,7 @@ GATKRR_FLAGS=
 	else \
 		echo "$$file don't exist !!!"; \
 	fi;
-
+	#
 	# TRANSCRIPTS
 	file=$$( echo "$$( dirname $(MANIFEST_FOLDER)/`cat $(@D)/$(*F).SAMPLE_MANIFEST` )/$$( basename $(MANIFEST_FOLDER)/`cat $(@D)/$(*F).SAMPLE_MANIFEST` ).transcripts" ); \
 	echo "transcripts file is : $$file "; \
@@ -368,7 +365,7 @@ GATKRR_FLAGS=
 	else \
 		echo "$$file don't exist !!!"; \
 	fi;
-
+	#
 	# Found manifest, or Default manifest is the first in the list
 	if [ "`cat $(@D)/$(*F).SAMPLE_MANIFEST`" != "" ] && [ -e "$(MANIFEST_FOLDER)/`cat $(@D)/$(*F).SAMPLE_MANIFEST`" ]; then \
 		echo "# TEST Found Manifest '"`cat $(@D)/$(*F).SAMPLE_MANIFEST`"' in '$(MANIFEST_FOLDER)' for sample `echo $$(basename $$(dirname $(@D)))`/$(*F)"; \
@@ -377,12 +374,12 @@ GATKRR_FLAGS=
 		echo "# TEST Manifest NOT found in '$(MANIFEST_FOLDER)'. Default Manifest used '"`cut -d, -f2 $*.manifests_list.txt`"' for sample `echo $$(basename $$(dirname $(@D)))`/$(*F)"; \
 		cat "$(MANIFEST_FOLDER)/`cut -d, -f2 $*.manifests_list.txt`" > $@; \
 	fi;
-
+	#
 	# IF root manifest exists
 	if [ -s $(@D)/`echo $$(basename $(@D))`.manifest ] && [ "$(@D)/`echo $$(basename $(@D))`.manifest" != "$@" ]; then \
 		cp -p $(@D)/`echo $$(basename $(@D))`.manifest $@; \
 	fi;
-
+	#
 	# Empty manifest if failed!
 	if [ ! -e $@ ]; then touch $@; fi;
 	# Touch manifest to use time of SampleSheet
@@ -414,25 +411,25 @@ GATKRR_FLAGS=
 		touch $*.manifests_list_name.txt; \
 	fi;
 	if [ ! -e $@ ]; then touch $*.manifests_list_name.txt; fi;
-
+	#
 	# Column number of sample manifest
 	-grep -i ^Sample_ID $< | tr -d '\r\n' | sed -e 's/,/\n/g' | grep -i -n Manifest | cut -d \: -f 1 > $(@D)/$(*F).INDEX_SAMPLEMANIFEST_I_name;
 	-if [ ! -s $(@D)/$(*F).INDEX_SAMPLEMANIFEST_I_name ]; then echo "1" > $(@D)/$(*F).INDEX_SAMPLEMANIFEST_I_name; fi;
 	# Manifest letter for the index
 	-grep -e ^$$(basename $(@D)), $< | tail -n 1 | tr -d '\r\n' | cut -d \, -f `cat $(@D)/$(*F).INDEX_SAMPLEMANIFEST_I_name` > $(@D)/$(*F).SAMPLE_MANIFEST_I_name;
-
+	#
 	# Manifest name for the sample
 	-grep ^`cat $(@D)/$(*F).SAMPLE_MANIFEST_I_name`, $*.manifests_list_name.txt | cut -d \, -f 2 > $(@D)/$(*F).SAMPLE_MANIFEST_name;
-
+	#
 	-if [ ! -s $(@D)/$(*F).SAMPLE_MANIFEST_name ]; then \
 		> $@; \
 	else \
 		echo -e $$(cat $(@D)/$(*F).SAMPLE_MANIFEST_name)"\tfrom SampleSheet" > $@; \
 	fi;
-
+	#
 	# Empty manifest if failed!
 	if [ ! -e $@ ]; then touch $@; fi;
-
+	#
 	# Clean
 	-rm -f $*.manifests_list_name.txt
 	# Remove intermediate files
@@ -449,37 +446,21 @@ GATKRR_FLAGS=
 		cp $< $@.bed; \
 	elif [ -s $*.bam ]; then \
 		echo "# Generation of BED from BAM because bed/manifest is empty"; \
-		#$(BEDTOOLS)/bamToBed -i $*.bam  | $(BEDTOOLS)/bedtools sort -i - | $(BEDTOOLS)/mergeBed -n -i - > $*.bed; \
-		#$(BEDTOOLS)/genomeCoverageBed_for_intervals -ibam $*.bam -bg | $(BEDTOOLS)/mergeBed -n -i - > $*.bed; \
 		cp $*.bam.bed $@.bed ; \
 		if ((0)); then \
 		if (($$($(SAMTOOLS) idxstats $*.bam | awk '{SUM+=$$3+$$4} END {print SUM}'))); then \
 			rm -f $*.bam.genomeCoverageBed_for_intervals.mk $*.bam.genomeCoverageBed_for_intervals1.mk $*.bam.genomeCoverageBed_for_intervals2.mk $*.bam.genomeCoverageBed_for_intervals3.mk; \
 			for chr in $$($(SAMTOOLS) idxstats $*.bam | grep -v "\*" | awk '{ if ($$3+$$4>0) print $$1 }'); do \
 				echo "$*.bam.genomeCoverageBed_for_intervals.$$chr.bed: $*.bam" >> $*.bam.genomeCoverageBed_for_intervals1.mk; \
-				#echo "	$(SAMTOOLS) view $*.bam -b $$chr | $(BEDTOOLS)/genomeCoverageBed_for_intervals -ibam stdin -bg | $(BEDTOOLS)/mergeBed -n -i - > $*.bam.genomeCoverageBed_for_intervals.$$chr.bed " >> $*.bam.genomeCoverageBed_for_intervals1.mk; \
-				echo "	$(SAMTOOLS) view $*.bam -b $$chr | $(BEDTOOLS)/genomeCoverageBed -ibam stdin -bg | $(BEDTOOLS)/mergeBed -i - > $*.bam.genomeCoverageBed_for_intervals.$$chr.bed " >> $*.bam.genomeCoverageBed_for_intervals1.mk; \
-				#echo "	$(SAMTOOLS) view $*.bam -b $$chr | $(BEDTOOLS)/genomeCoverageBed -ibam stdin -bg | $(BEDTOOLS)/mergeBed -i - > $*.bam.genomeCoverageBed_for_intervals.$$chr.bed.tmp " >> $*.bam.genomeCoverageBed_for_intervals1.mk; \
-				#echo "	awk -F'\t' '{print $$1\"\t\"$$2\"\t\"$$3\"\t+\t\"$$1\"_\"$$2\"_\"$$3}' $*.bam.genomeCoverageBed_for_intervals.$$chr.bed.tmp > $*.bam.genomeCoverageBed_for_intervals.$$chr.bed " >> $*.bam.genomeCoverageBed_for_intervals1.mk; \
-				#echo "	$(SAMTOOLS) view $*.bam -b $$chr | $(BEDTOOLS)/genomeCoverageBed -ibam stdin -bg | $(BEDTOOLS)/mergeBed -i - | awk -F'\t' '{print $$1\"\t\"$$2\"\t\"$$3\"\t+\t\"$$1\"_\"$$2\"_\"$$3}' > $*.bam.genomeCoverageBed_for_intervals.$$chr.bed " >> $*.bam.genomeCoverageBed_for_intervals1.mk; \
+				echo "	$(SAMTOOLS) view $*.bam -b $$chr | $(BEDTOOLS) genomecov -ibam stdin -bg | $(BEDTOOLS) merge -i - > $*.bam.genomeCoverageBed_for_intervals.$$chr.bed " >> $*.bam.genomeCoverageBed_for_intervals1.mk; \
 				echo -n " $*.bam.genomeCoverageBed_for_intervals.$$chr.bed" >> $*.bam.genomeCoverageBed_for_intervals2.mk; \
 			done; \
 			echo -n "$@.bed: " | cat - $*.bam.genomeCoverageBed_for_intervals2.mk > $*.bam.genomeCoverageBed_for_intervals3.mk; \
 			echo ""  >> $*.bam.genomeCoverageBed_for_intervals3.mk; \
-			#echo "	cat $$^ > $$@ " >> $*.bam.genomeCoverageBed_for_intervals3.mk; \
 			echo "	cat $$^ " >> $*.bam.genomeCoverageBed_for_intervals3.mk; \
 			echo "	cat $$^ > $@.bed " >> $*.bam.genomeCoverageBed_for_intervals3.mk; \
-			#echo "	-rm -f $$^ " >> $*.bam.genomeCoverageBed_for_intervals3.mk; \
 			cat $*.bam.genomeCoverageBed_for_intervals1.mk $*.bam.genomeCoverageBed_for_intervals3.mk >> $*.bam.genomeCoverageBed_for_intervals.mk; \
-			#echo "TESTgenomeCoverageBed_for_intervals: "; \
-			#cat $*.bam.genomeCoverageBed_for_intervals.mk; \
-			#make -i -f $*.bam.genomeCoverageBed_for_intervals.mk $*.bed -j $(THREADS)  1>/dev/null 2>/dev/null; \
 			make -i -f $*.bam.genomeCoverageBed_for_intervals.mk $@.bed -j $(THREADS) ; \
-			#echo "$*.bed:" ; \
-			#cat $*.bed ; \
-			#echo "$@.bed:" ; \
-			#cat $@.bed ; \
-			#rm $*.bam.genomeCoverageBed_for_intervals*.mk; \
 			rm $*.bam.genomeCoverageBed_for_intervals*; \
 		fi; \
 		fi; \
@@ -493,29 +474,20 @@ GATKRR_FLAGS=
 		cut $@.bed -f1-3,5 > $@.bed.4fields ; \
 		$(JAVA) -jar $(PICARD) BedToIntervalList I=$@.bed.4fields O=$@ SD=$$(cat $*.dict) ; \
 		rm $@.bed.4fields ; \
-		#echo "$@.bed:" ; \
-		#cat $@.bed ; \
-		#echo "$@:" ; \
-		#cat $@ ; \
 	fi;
 	# If error, try intervals with GREP/SED/AWK
 	if [ ! -s $@ ] && [ -s $@.bed ]; then \
 		echo "[INFO] Generate $@ from $@.bed with GREP/SED" ; \
 		grep -v ^@ $@.bed  | tr -d '\r' | sed -e "s/^M//" | awk -F"\t" '{print $$1":"$$2"-"$$3}' | sed s/:0-/:1-/gi > $@; \
-		#echo "$@.bed:" ; \
-		#cat $@.bed ; \
-		#echo "$@:" ; \
-		#cat $@ ; \
 	fi;
 	# touch
 	if [ ! -e $@ ]; then touch $@; fi;
 	# clean
-	#rm -f $@.bed;
+
 
 # Interval from BED
 %.bed.intervals: %.bed %.dict
 	# BED to Intervals (not needed?)
-	#cat $< | tr -d '\r' | sed -e "s/^M//" | awk -F"\t" '{print $$1":"$$2"-"$$3}' > $@
 	# INTERVAL WITH PICARD
 	if [ -s $< ]; then \
 		cut $< -f1-3,5 > $@.4fields ; \
@@ -526,7 +498,6 @@ GATKRR_FLAGS=
 	if [ ! -s $@ ] && [ -s $< ]; then \
 		grep -v ^@ $<  | tr -d '\r' | sed -e "s/^M//" | awk -F"\t" '{print $$1":"$$2"-"$$3}' | sed s/:0-/:1-/gi > $@; \
 	fi;
-	#grep -v ^@ $< | tr -d '\r' | sed -e "s/^M//" | awk -F"\t" '{print $$1":"$$2"-"$$3}' > $@
 	if [ ! -e $@ ]; then touch $@; fi;
 
 # BED primer file from a Manifest
@@ -560,7 +531,7 @@ GATKRR_FLAGS=
 		echo "# BED for the sample generated from the manifest '$<'" ; \
 		rm -f $@.tmp $@.sorted.tmp; \
 		$(CAP_ManifestToBED) --input=$< --output=$@.tmp --output_type=region_clipped; \
-		$(BEDTOOLS)/bedtools sort -i $@.tmp | $(BEDTOOLS)/bedtools merge -c 4 -o collapse  | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$4}' > $@; \
+		$(BEDTOOLS) sort -i $@.tmp | $(BEDTOOLS) merge -c 4 -o collapse  | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$4}' > $@; \
 		rm -f $@.tmp; \
 	elif [ -e "$(BED)" ] && [ "$(BED)" != "" ]; then \
 		echo "# Input BED '$(BED)' exists" ; \
@@ -568,12 +539,10 @@ GATKRR_FLAGS=
 	else \
 		touch $@; \
 	fi;
-
+	#
 	if [ ! -e $@ ]; then touch $@; fi;
 	# Clean
-	#-rm -f $*.manifest
-	#$(BEDTOOLS)/sortBed -i $@.tmp > $@.sorted.tmp; \
-	#$(BEDTOOLS)/mergeBed -i $@.sorted.tmp -nms | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$4}' > $@; \
+
 
 # BED file from a Manifest
 %.bed_name: %.manifest_name
@@ -581,7 +550,7 @@ GATKRR_FLAGS=
 	# 1. test if main bed file (SAMPLE.bed) exists (use for Sample analysis)
 	# 2. test if a bed can be generated from the manifest
 	# 3. test if a manifest is defined in the APP (as an environment variable)s
-
+	#
 	-if [ -e $(@D)/`echo $$(basename $(@D))`.bed_name ]; then \
 		echo "# BED name for the sample '$(@D)/`echo $$(basename $(@D))`.bed_name' exists" ; \
 		if  [ "$(@D)/`echo $$(basename $(@D))`.bed_name" != "$@" ]; then \
@@ -603,10 +572,9 @@ GATKRR_FLAGS=
 	else \
 		touch $@; \
 	fi;
-
+	#
 	if [ ! -e $@ ]; then touch $@; fi;
 	# Clean
-	#-rm -f $*.manifest
 
 
 # BED file from a Manifest
@@ -631,7 +599,6 @@ GATKRR_FLAGS=
 	fi;
 	if [ ! -e $@ ]; then touch $@; fi;
 	# Clean
-	#-rm -f $*.manifest
 
 
 # BED clipped region file from a Manifest
@@ -651,7 +618,7 @@ GATKRR_FLAGS=
 		echo "# Region Clipped BED for the sample generated from the manifest '$<'" ; \
 		rm -f $@.tmp $@.sorted.tmp; \
 		$(CAP_ManifestToBED) --input=$< --output=$@.tmp --output_type=region_clipped; \
-		$(BEDTOOLS)/bedtools sort -i $@.tmp | $(BEDTOOLS)/bedtools merge -c 4 -o collapse  | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$4}' > $@; \
+		$(BEDTOOLS) sort -i $@.tmp | $(BEDTOOLS) merge -c 4 -o collapse  | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$4}' > $@; \
 		rm -f $@.tmp; \
 	else \
 		echo "# Error creating region BED"; \
@@ -661,14 +628,6 @@ GATKRR_FLAGS=
 		cp $*.bed $@; \
 	fi;
 	if [ ! -e $@ ]; then touch $@; fi;
-
-	#$(BEDTOOLS)/sortBed -i $@.tmp > $@.sorted.tmp; \
-	#$(BEDTOOLS)/mergeBed -i $@.sorted.tmp -nms  | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$4}' > $@; \
-
-
-	# Error
-	#elif [ -s $*.bed ]; then
-	#	cp $*.bed $@;
 
 
 
@@ -682,4 +641,17 @@ PIPELINES_COMMENT := "POST_ALIGNMENT:sorting:BAM sorting"
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
 
 PIPELINES_COMMENT := "POST_ALIGNMENT:compress:BAM compression:BAM_COMPRESS='$(BAM_COMPRESSION)'"
+PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
+
+
+PIPELINES_COMMENT := "POST_CALLING:normalization:VCF Normalization."
+PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
+
+PIPELINES_COMMENT := "POST_ANNOTATION:normalization:VCF Normalization."
+PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
+
+PIPELINES_COMMENT := "POST_CALLING:sorting:VCF Sorting."
+PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
+
+PIPELINES_COMMENT := "POST_ANNOTATION:sorting:VCF Sorting."
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )

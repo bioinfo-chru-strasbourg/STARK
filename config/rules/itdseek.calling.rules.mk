@@ -1,6 +1,6 @@
 ############################
 # ITDSeek Calling Rules
-# Release: 0.9 
+# Release: 0.9
 # Date: 23/10/2017
 # Author: Antony Le Bechec
 ############################
@@ -14,9 +14,9 @@
 # Minimum coverage for a variant called by ITDSeek
 DPMIN_ITDSEEK=20
 VAFMIN_ITDSEEK=0.00
-	
-%.itdseek.vcf: %.bam %.bam.bai %.empty.vcf %.genome
-	
+
+%.itdseek$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.genome
+	#
 	# Generate VCF with ITDSeek
 	-$(ITDSEEK) $< `cat $*.genome` $(SAMTOOLS) > $@.tmp;
 	if (( $$(grep -c ^ERROR $@.tmp) )); then \
@@ -51,15 +51,15 @@ VAFMIN_ITDSEEK=0.00
 	#-cp $@ $@.debug
 	# Cleaning
 	rm -f $@.tmp*
-	
-	
-	
+
+
+
 	# filter on DP, cause ITDSeek is too relax
 	#$(VCFUTILS) varFilter -d $(DPMIN_ITDSEEK) $@.tmp2 > $@;
-	
+
 
 %.itdseek_ok_old.vcf: %.bam %.bam.bai %.empty.vcf %.genome
-	
+	#
 	# Generate VCF with ITDSeek
 	-$(ITDSEEK) $< `cat $*.genome` $(SAMTOOLS) > $@.tmp;
 	if (( $$(grep -c ^ERROR $@.tmp) )); then \
@@ -93,10 +93,9 @@ VAFMIN_ITDSEEK=0.00
 	cp $@ $@.debug
 	# Cleaning
 	rm -f $@.tmp*
-	
+
 
 RELEASE_CMD := $(shell echo "\#\# ITDSeek: FLT3 ITD detection, generate *.itdseek.vcf files with with parameters: DPMIN_ITDSEEK='$(DPMIN_ITDSEEK)', VAFMIN_ITDSEEK='$(VAFMIN_ITDSEEK)'. VCF file is modified to include GT/Genotype information as 0/1 by default. Variants are excluded if DP lower than $(DPMIN_ITDSEEK) AND VAF lower than $(VAFMIN_ITDSEEK)" >> $(RELEASE_INFOS) )
 
 PIPELINES_COMMENT := "CALLER:itdseek:ITDSeek - FLT3 ITD detection:no parameters, GT info 0/1 added"
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
-
