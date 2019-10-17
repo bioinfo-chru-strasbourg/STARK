@@ -65,7 +65,7 @@ ENV TOOLS=$STARK_FOLDER/tools
 ENV DATA=$STARK_FOLDER/data
 ENV TOOL=$STARK_FOLDER/tool
 ENV DATABASES=$STARK_FOLDER/databases
-ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git java java-1.8.0 lzma lzma-devel make ncurses-devel perl perl-Data-Dumper perl-Digest-MD5 perl-Switch perl-devel perl-Tk tbb-devel unzip wget which xz xz-devel zlib zlib-devel zlib2 zlib2-devel ghostscript enscript"
+ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git java java-1.8.0 lzma lzma-devel make ncurses-devel perl perl-Data-Dumper perl-Digest-MD5 perl-Switch perl-devel perl-Tk tbb-devel unzip wget which xz xz-devel zlib zlib-devel zlib2 zlib2-devel ghostscript enscript python3 yum install python3-devel "
 ENV YUM_REMOVE="autoconf automake bzip2-devel lzma-devel ncurses-devel perl-devel tbb-devel xz-devel zlib-devel zlib2-devel"
 
 #epel-release R
@@ -330,6 +330,26 @@ RUN wget $TARBALL_LOCATION -O $TARBALL ; \
 
 
 
+#########
+# GATK4 #
+#########
+
+ENV TOOL_NAME=gatk
+ENV TOOL_VERSION=4.1.4.0
+ENV TOOL_JAR=gatk-package-$TOOL_VERSION-local.jar
+ENV TARBALL_NAME=gatk-$TOOL_VERSION.zip
+ENV TARBALL_FOLDER=gatk-$TOOL_VERSION
+ENV TARBALL_LOCATION=https://github.com/broadinstitute/gatk/releases/download/$TOOL_VERSION/$TARBALL_NAME
+ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
+ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+
+RUN wget $TARBALL_LOCATION -O $TARBALL_NAME && \
+    mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
+	unzip -p $TARBALL_NAME $TARBALL_FOLDER/$TOOL_JAR > $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/$TOOL_JAR && \
+    rm -rf $TARBALL ;
+
+
+
 ###########
 # HOWARD #
 ###########
@@ -417,6 +437,41 @@ RUN mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
 
 
 
+#########
+# JAVA7 #
+#########
+
+ENV TOOL_NAME=java
+ENV TOOL_VERSION=1.7.0
+RUN yum install -y java-1.7.0-openjdk-devel && \
+	mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
+	ln -s /usr/lib/jvm/java-1.7.0/bin/java $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/java ;
+
+
+
+##########
+# MUTECT #
+##########
+
+ENV TOOL_NAME=mutect
+ENV TOOL_VERSION=1.1.7
+ENV TOOL_JAR=mutect.jar
+ENV TARBALL_RELEASE=
+ENV TARBALL_NAME=mutect-$TOOL_VERSION.jar.zip
+ENV TARBALL_LOCATION=https://software.broadinstitute.org/gatk/download/auth?package=M1
+ENV TARBALL_JAR=mutect-$TOOL_VERSION.jar
+ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
+ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+
+RUN wget $TARBALL_LOCATION -O $TARBALL_NAME && \
+    mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
+	unzip $TARBALL_NAME -d $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
+	mv $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/$TARBALL_JAR $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/$TOOL_JAR && \
+	rm $TARBALL_NAME && \
+    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
+
+
+
 ##########
 # PYTHON #
 ##########
@@ -426,7 +481,6 @@ ENV TOOL_VERSION=current
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 RUN mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
 	ln -s /usr/bin/python $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python ;
-
 
 
 
@@ -485,8 +539,8 @@ ENV TOOL_DATABASE_FOLDER_LINK=$DATABASES/snpeff_sources/4.3t
 ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 
-RUN wget $TARBALL_LOCATION/$TARBALL ; \
-    unzip $TARBALL -d $TARBALL_FOLDER ; \
+RUN wget $TARBALL_LOCATION/$TARBALL && \
+    unzip $TARBALL -d $TARBALL_FOLDER && \
 	rm $TARBALL ; \
     mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/ ; \
     cp $TARBALL_FOLDER/*/*jar $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/ -R ; \
@@ -496,6 +550,24 @@ RUN wget $TARBALL_LOCATION/$TARBALL ; \
 	mkdir -p $TOOL_DATABASE_FOLDER_LINK ; \
 	mkdir -p $TOOL_DATABASE_FOLDER ; \
 	ln -s $TOOL_DATABASE_FOLDER_LINK $TOOL_DATABASE_FOLDER ;
+
+
+
+############
+# UMITOOLS #
+############
+
+ENV TOOL_NAME=umi_tools
+ENV TOOL_VERSION=1.0.0
+ENV TARBALL_NAME=umi_tools-$TOOL_VERSION.zip
+ENV TARBALL_LOCATION=https://github.com/CGATOxford/UMI-tools/releases/tag/$TOOL_VERSION
+
+
+RUN pip3 install umi_tools && \
+	mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
+	ln -s /usr/local/bin/umi_tools $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/umi_tools && \
+	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
+
 
 
 ###########
@@ -516,32 +588,6 @@ RUN wget $TARBALL_LOCATION -O $TARBALL ; \
 	cp $TARBALL $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin ; \
 	rm $TARBALL ; \
     ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
-
-
-
-############
-# VCFTOOLS #
-############
-
-ENV TOOL_NAME=vcftools
-ENV TOOL_VERSION=0.1.14
-ENV TARBALL_NAME=vcftools
-ENV TARBALL_LOCATION=https://github.com/samtools/$TARBALL_NAME/releases/download/$TOOL_VERSION/
-ENV TARBALL=$TARBALL_NAME-$TOOL_VERSION.tar.bz2
-ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-
-RUN git clone https://github.com/cgrlab/vcftools.git ; \
-    cd vcftools; \
-    git checkout tags/v0.1.14 ; \
-    ./autogen.sh ; \
-    ./configure ; \
-    make -j $THREADS prefix=$TOOLS/$TOOL_NAME/$TOOL_VERSION ; \
-    make -j $THREADS prefix=$TOOLS/$TOOL_NAME/$TOOL_VERSION install ; \
-    cd ../ ; \
-	rm -rf TARBALL_NAME ; \
-    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
-
 
 
 

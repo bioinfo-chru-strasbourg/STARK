@@ -447,23 +447,6 @@ GATKRR_FLAGS=
 	elif [ -s $*.bam ]; then \
 		echo "# Generation of BED from BAM because bed/manifest is empty"; \
 		cp $*.bam.bed $@.bed ; \
-		if ((0)); then \
-		if (($$($(SAMTOOLS) idxstats $*.bam | awk '{SUM+=$$3+$$4} END {print SUM}'))); then \
-			rm -f $*.bam.genomeCoverageBed_for_intervals.mk $*.bam.genomeCoverageBed_for_intervals1.mk $*.bam.genomeCoverageBed_for_intervals2.mk $*.bam.genomeCoverageBed_for_intervals3.mk; \
-			for chr in $$($(SAMTOOLS) idxstats $*.bam | grep -v "\*" | awk '{ if ($$3+$$4>0) print $$1 }'); do \
-				echo "$*.bam.genomeCoverageBed_for_intervals.$$chr.bed: $*.bam" >> $*.bam.genomeCoverageBed_for_intervals1.mk; \
-				echo "	$(SAMTOOLS) view $*.bam -b $$chr | $(BEDTOOLS) genomecov -ibam stdin -bg | $(BEDTOOLS) merge -i - > $*.bam.genomeCoverageBed_for_intervals.$$chr.bed " >> $*.bam.genomeCoverageBed_for_intervals1.mk; \
-				echo -n " $*.bam.genomeCoverageBed_for_intervals.$$chr.bed" >> $*.bam.genomeCoverageBed_for_intervals2.mk; \
-			done; \
-			echo -n "$@.bed: " | cat - $*.bam.genomeCoverageBed_for_intervals2.mk > $*.bam.genomeCoverageBed_for_intervals3.mk; \
-			echo ""  >> $*.bam.genomeCoverageBed_for_intervals3.mk; \
-			echo "	cat $$^ " >> $*.bam.genomeCoverageBed_for_intervals3.mk; \
-			echo "	cat $$^ > $@.bed " >> $*.bam.genomeCoverageBed_for_intervals3.mk; \
-			cat $*.bam.genomeCoverageBed_for_intervals1.mk $*.bam.genomeCoverageBed_for_intervals3.mk >> $*.bam.genomeCoverageBed_for_intervals.mk; \
-			make -i -f $*.bam.genomeCoverageBed_for_intervals.mk $@.bed -j $(THREADS) ; \
-			rm $*.bam.genomeCoverageBed_for_intervals*; \
-		fi; \
-		fi; \
 	else \
 		echo "[ERROR] No intervals generated '$@'" ; \
 	fi;
@@ -471,7 +454,8 @@ GATKRR_FLAGS=
 	# INTERVAL WITH PICARD
 	if [ -s $@.bed ]; then \
 		echo "[INFO] Generate $@ from $@.bed with PICARD BedToIntervalList" ; \
-		cut $@.bed -f1-3,5 > $@.bed.4fields ; \
+		#cut $@.bed -f1-3,5 > $@.bed.4fields ; \
+		awk -F"\t" '{print $$1"\t"$$2-1"\t"$$3"\t"$$5}' $@.bed > $@.bed.4fields ; \
 		$(JAVA) -jar $(PICARD) BedToIntervalList I=$@.bed.4fields O=$@ SD=$$(cat $*.dict) ; \
 		rm $@.bed.4fields ; \
 	fi;
@@ -483,6 +467,7 @@ GATKRR_FLAGS=
 	# touch
 	if [ ! -e $@ ]; then touch $@; fi;
 	# clean
+
 
 
 # Interval from BED

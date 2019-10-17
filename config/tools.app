@@ -16,19 +16,27 @@ export GZIP=""				# PARAM GZIP
 
 
 # JAVA
-export JAVA=$NGS_TOOLS/java/current/bin/java						# BIN
-export JAVA_PATH=$NGS_TOOLS/java/current/bin						# BIN
-export JAVA_VERSION=current					# VER
-#export JAVA6=$NGS_TOOLS/java/1.6.0_45/bin/java			# BIN
-#export JAVA6_VERSION=1.6.0_45					# VER
+export JAVA=$NGS_TOOLS/java/current/bin/java		# BIN
+export JAVA_PATH=$NGS_TOOLS/java/current/bin		# BIN
+export JAVA_VERSION=current							# VER
 export JAVA_DESCRIPTION="A high-level programming language developed by Sun Microsystems"
 export JAVA_REF="http://java.com"
 TOOLS_LIST=$TOOLS_LIST" JAVA"
 
+
+# JAVA
+export JAVA7=$NGS_TOOLS/java/1.7.0/bin/java			# BIN
+export JAVA7_PATH=$NGS_TOOLS/java/1.7.0/bin			# BIN
+export JAVA7_VERSION=1.7.0							# VER
+export JAVA7_DESCRIPTION="A high-level programming language developed by Sun Microsystems"
+export JAVA7_REF="http://java.com"
+TOOLS_LIST=$TOOLS_LIST" JAVA7"
+
+
 # PYTHON
-export PYTHON=$NGS_TOOLS/python/current/bin/python					# BIN
-export PYTHON_PATH==$NGS_TOOLS/python/current/bin					# FOLDER
-export PYTHON_VERSION=current				# VER
+export PYTHON=$NGS_TOOLS/python/current/bin/python	# BIN
+export PYTHON_PATH==$NGS_TOOLS/python/current/bin	# FOLDER
+export PYTHON_VERSION=current						# VER
 export PYTHON_DESCRIPTION="Python is a programming language that lets you work quickly and integrate systems more efficiently"
 export PYTHON_REF="http://python.com"
 TOOLS_LIST=$TOOLS_LIST" PYTHON"
@@ -139,17 +147,20 @@ TOOLS_LIST=$TOOLS_LIST" IGVTOOLS"
 
 
 # GATK
-#export GATK=$NGS_TOOLS/gatk/3.5-0/bin/GenomeAnalysisTK.jar	# BIN-JAR
-#export GATK_VERSION=3.5-0					# VER
-#export GATK_DESCRIPTION="The toolkit offers a wide variety of tools, with a primary focus on variant discovery and genotyping as well as strong emphasis on data quality assurance."
-#export GATK_REF="The Genome Analysis Toolkit: a MapReduce framework for analyzing next-generation DNA sequencing data. McKenna A, Hanna M, Banks E, Sivachenko A, Cibulskis K, Kernytsky A, Garimella K, Altshuler D, Gabriel S, Daly M, DePristo MA, 2010 GENOME RESEARCH 20:1297-303 [Article] [Pubmed]"
-#export GATK=$NGS_TOOLS/gatk/3.8-1_2017-12-04-1/bin/GenomeAnalysisTK.jar	# BIN-JAR
-#export GATK_VERSION=3.8-1_2017-12-04-1					# VER
 export GATK=$NGS_TOOLS/gatk/current/bin/GenomeAnalysisTK.jar	# BIN-JAR
 export GATK_VERSION=3.8-1-0					# VER
 export GATK_DESCRIPTION="The toolkit offers a wide variety of tools, with a primary focus on variant discovery and genotyping as well as strong emphasis on data quality assurance."
 export GATK_REF="The Genome Analysis Toolkit: a MapReduce framework for analyzing next-generation DNA sequencing data. McKenna A, Hanna M, Banks E, Sivachenko A, Cibulskis K, Kernytsky A, Garimella K, Altshuler D, Gabriel S, Daly M, DePristo MA, 2010 GENOME RESEARCH 20:1297-303 [Article] [Pubmed]"
 TOOLS_LIST=$TOOLS_LIST" GATK"
+
+
+# GATK4
+export GATK4=$NGS_TOOLS/gatk/4.1.4.0/bin/gatk-package-4.1.4.0-local.jar	# BIN-JAR
+export GATK4_VERSION=4.1.4.0											# VER
+export GATK4_DESCRIPTION="The toolkit offers a wide variety of tools, with a primary focus on variant discovery and genotyping as well as strong emphasis on data quality assurance."
+export GATK4_REF="The Genome Analysis Toolkit: a MapReduce framework for analyzing next-generation DNA sequencing data. McKenna A, Hanna M, Banks E, Sivachenko A, Cibulskis K, Kernytsky A, Garimella K, Altshuler D, Gabriel S, Daly M, DePristo MA, 2010 GENOME RESEARCH 20:1297-303 [Article] [Pubmed]"
+TOOLS_LIST=$TOOLS_LIST" GATK4"
+
 
 
 # CANOE
@@ -169,8 +180,8 @@ TOOLS_LIST=$TOOLS_LIST" R"
 
 
 # MUTECT
-export MUTECT=$NGS_TOOLS/mutect/current/bin/muTect-1.1.4.jar	# BIN-JAR
-export MUTECT_VERSION=1.1.4					# VER
+export MUTECT=$NGS_TOOLS/mutect/current/bin/mutect.jar	# BIN-JAR
+export MUTECT_VERSION=1.1.7					# VER
 export MUTECT_DESCRIPTION="MuTect is a method developed at the Broad Institute for the reliable and accurate identification of somatic point mutations in next generation sequencing data of cancer genomes."
 export MUTECT_REF="Cibulskis, K. et al. Sensitive detection of somatic point mutations in impure and heterogeneous cancer samples. Nat Biotechnology (2013).doi:10.1038/nbt.2514"
 TOOLS_LIST=$TOOLS_LIST" MUTECT"

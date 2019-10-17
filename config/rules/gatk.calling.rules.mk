@@ -684,38 +684,6 @@ GATKIG_FLAGS= -minFraction 0.01 -minCnt 1 -B:dbsnp,vcf $(VCFDBSNP) -rf BadCigar
 	-rm $@.idx
 
 
-###############
-# MuTect TODO #
-###############
-
-# OPTIONS
-#MUTECT?=$(NGSbin)/muTect.jar
-JAVA_FLAGS?= -Xmx8g
-DCOV=100000
-gap_events_threshold?=7 # default 3
-THREADS_MUTECT=$(THREADS_GATK)
-MUTECT_FLAGS= -nt $(THREADS_MUTECT) --downsampling_type ALL_READS -dcov $(DCOV) -baq OFF -rf BadCigar
-MUTECT_OPTIONS= --dbsnp $(VCFDBSNP137VCF) --gap_events_threshold $(gap_events_threshold)
-
-%.mutect.vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
-	-if [ "`grep ^ -c $*.from_manifest.intervals`" == "0" ]; then \
-		$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKHC_FLAGS) \
-		-T HaplotypeCaller \
-		-R `cat $*.genome` \
-		-I $< \
-		-o $@; \
-	else \
-		$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKHC_FLAGS) \
-		-T HaplotypeCaller \
-		-R `cat $*.genome` \
-		-L $*.from_manifest.intervals \
-		-I $< \
-		-o $@; \
-	fi;
-	-if [ ! -e $@ ]; then cp $*.empty.vcf $@; fi;
-	-if [ ! -e $@ ]; then touch $@; fi;
-	-rm $@.idx
-	echo "MUTECT $< >> $@"
 
 
 RELEASE_COMMENT := "\#\# CALLING GATK '$(MK_RELEASE)': GATK tool identify variants from aligned BAM with shared parameters: GATK='$(GATK)', filterExpression='$(filterExpression)', genotypeFilterExpression='$(genotypeFilterExpression)'"
