@@ -6,6 +6,8 @@
 #FASTQ=$DIR/TEST.R1b.fastq.gz
 #FASTQ_R2=$DIR/TEST.R2.fastq.gz
 #SAMPLE_NAME=TEST
+#BC_PATTERN="NNNNNNNN"
+
 
 DIR=/STARK/data/SAMPLE/190830_M01656_0328_000000000-CLK2J
 FASTQ=$DIR/F10_S2_R1_001.fastq.gz
@@ -41,16 +43,15 @@ mkdir -p $DIR_OUTPUT
 #$SAMTOOLS view -h $BAM_MARKDUP_OUT | head -n 30 | tr " " "|"
 #exit 0
 
-
 #java -jar $PICARD SamToFastq I=/STARK/data/SAMPLE/TEST/TEST.bam FASTQ=/STARK/data/SAMPLE/TEST/TEST.R1.fastq SECOND_END_FASTQ=/STARK/data/SAMPLE/TEST/TEST.R2.fastq
 
 # FASTQ
-#echo $FASTQ
-#$GZ -d -c $FASTQ | head -n 10
+echo $FASTQ
+$GZ -d -c $FASTQ | head -n 10
 
 # FASTQ R2
-#echo $FASTQ_R2
-#$GZ -d -c $FASTQ_R2 | head -n 10
+echo $FASTQ_R2
+$GZ -d -c $FASTQ_R2 | head -n 10
 
 # Extract
 echo "## EXTRACT UMI"
@@ -65,11 +66,16 @@ time if ((1)); then
 			read_name=read[1];
 			read_umi=read[2];
 			printf read_name;
-			for (i = 2; i <= n_head; ++i) {
-				printf " "head[i];
+			if (n_head>=2) {
+				for (i = 2; i <= n_head; ++i) {
+					printf " "head[i];
+				}
+				printf "\t"
+			} else {
+				printf " "
 			}
-			#r2=(NR%16)%5;
-			printf "\tBX:Z:"read_umi;
+			#r2=((NR-1)/4)%10;
+			printf "BX:Z:"read_umi;
 			print "";
 		}
 		else
@@ -78,8 +84,8 @@ time if ((1)); then
 		}
 	}' | $GZ -c -1 > $FASTQ_UMI
 
-	#echo $FASTQ_UMI
-	#$GZ -d -c $FASTQ_UMI | head -n 10
+	echo $FASTQ_UMI
+	$GZ -d -c $FASTQ_UMI | head -n 10
 
 
 	# EXTRACT
@@ -90,11 +96,16 @@ time if ((1)); then
 			read_name=read[1];
 			read_umi=read[2];
 			printf read_name;
-			for (i = 2; i <= n_head; ++i) {
-				printf " "head[i];
+			if (n_head>=2) {
+				for (i = 2; i <= n_head; ++i) {
+					printf " "head[i];
+				}
+				printf "\t"
+			} else {
+				printf " "
 			}
-			#r2=(NR%16)%5;
-			printf "\tBX:Z:"read_umi;
+			#r2=((NR-1)/4)%10;
+			printf "BX:Z:"read_umi;
 			print "";
 		}
 		else
@@ -103,10 +114,11 @@ time if ((1)); then
 		}
 	}' | $GZ -c -1 > $FASTQ_R2_UMI
 
-	#echo $FASTQ_R2_UMI
-	#$GZ -d -c $FASTQ_R2_UMI | head -n 10
+	echo $FASTQ_R2_UMI
+	$GZ -d -c $FASTQ_R2_UMI | head -n 20
 
 fi;
+
 
 
 # Alignment
@@ -136,7 +148,7 @@ time if ((1)); then
 	      M=$BAM_MARKDUP_OUT.mx \
 		  BARCODE_TAG=BX
 
-	#$SAMTOOLS view $BAM_MARKDUP_OUT | head -n 10
+	$SAMTOOLS view $BAM_MARKDUP_OUT | head -n 10
 	grep "^#" -v $BAM_MARKDUP_OUT.mx | column -t
 
 	$SAMTOOLS flagstat $BAM_MARKDUP_OUT
