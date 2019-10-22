@@ -553,6 +553,50 @@ RUN wget $TARBALL_LOCATION/$TARBALL && \
 
 
 
+########
+# STAR # TODO
+########
+
+ENV TOOL_NAME=star
+ENV TOOL_VERSION=2.7.3a
+ENV TARBALL_NAME=$TOOL_VERSION.tar.gz
+ENV TARBALL_LOCATION=https://github.com/alexdobin/STAR/archive/$TARBALL_NAME
+ENV TARBALL_DIR=STAR-$TOOL_VERSION
+ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+
+RUN wget $TARBALL_LOCATION -O $TARBALL && \
+    mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
+	tar -xzf $TARBALL && \
+	rm $TARBALL && \
+	cd $TARBALL_DIR/source && \
+	make STAR && \
+	cp ../bin/Linux_x86_64_static/* $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/ && \
+	cd ../../ && \
+	rm -rf $TARBALL_DIR && \
+    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
+
+
+
+###############
+# STAR-FUSION # TODO
+###############
+
+ENV TOOL_NAME=star-fusion
+ENV TOOL_VERSION=v1.8.1
+ENV TARBALL_NAME=STAR-Fusion-$TOOL_VERSION.FULL.tar.gz
+ENV TARBALL_DIR=STAR-Fusion-$TOOL_VERSION
+ENV TARBALL_LOCATION=https://github.com/STAR-Fusion/STAR-Fusion/releases/download/$TARBALL_DIR/$TARBALL_NAME
+
+RUN wget $TARBALL_LOCATION -O $TARBALL && \
+    mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
+	tar -xzf $TARBALL && \
+	rm $TARBALL && \
+	cp $TARBALL_DIR/STAR-Fusion $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/ && \
+	rm -rf $TARBALL_DIR && \
+    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
+
+
+
 ############
 # UMITOOLS #
 ############
@@ -561,7 +605,6 @@ ENV TOOL_NAME=umi_tools
 ENV TOOL_VERSION=1.0.0
 ENV TARBALL_NAME=umi_tools-$TOOL_VERSION.zip
 ENV TARBALL_LOCATION=https://github.com/CGATOxford/UMI-tools/releases/tag/$TOOL_VERSION
-
 
 RUN pip3 install umi_tools && \
 	mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
