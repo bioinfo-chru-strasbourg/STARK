@@ -99,7 +99,7 @@ CAP_METRICS_OPTIONS?=$(CAP_METRICS_OPTIONS_CLIP_OVERLAPPING_READS)
 %.bam.bed: %.bam %.bam.bai
 	#BAM.BED from BAM
 	# samtools view P1335.bwamem.bam -b | /STARK/tools/bedtools/current/bin/bedtools genomecov -ibam stdin -bg | /STARK/tools/bedtools/current/bin/bedtools merge -i stdin
-	$(BEDTOOLS) bamtobed -i $< | $(BEDTOOLS) mergeBed -i - | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$1":"$$2"-"$$3}' > $@
+	$(BEDTOOLS) bamtobed -i $< | $(BEDTOOLS) merge -i - | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$1":"$$2"-"$$3}' > $@
 
 
 
