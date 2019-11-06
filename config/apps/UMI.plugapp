@@ -1,0 +1,39 @@
+#!/bin/bash
+## STARK application SOMATIC_PARAMETERS
+
+# DEFAULT ENV
+######################
+#source $CONFIG_DEFAULT_APP
+
+# APPLICATION INFOS
+#####################
+APP_NAME="UMI"
+APP_RELEASE="1.0"
+APP_DESCRIPTION="PlugAPP for specific parameters to extract and mark UMI tags"
+#APP_GROUP=""
+#APP_PROJECT=""
+
+# ANALYSIS PARAMETERS
+#######################
+
+
+# UMI extract tag
+UMI_BARCODE_PATTERN="NNNNNNNN"
+BARCODE_TAG="BX"
+
+
+# POST ALIGNEMENT STEPS TODO
+#POST_ALIGNMENT_STEPS="sorting UMImarkduplicates realignment recalibration compress "
+#POST_ALIGNMENT_STEPS="sorting UMIgroup UMImarkduplicates realignment recalibration compress"
+POST_ALIGNMENT_STEPS="sorting UMIgroup markduplicates realignment recalibration compress"
+
+
+
+# COVERAGE DP THRESHOLD (default "30" "100" "1")
+# For gene coverage metrics
+# the criteria test if genes failed (or just warning) the coverage threshold
+SEQUENCING_DEPTH="1" # Sequencing depth threshold
+SEQUENCING_COVERAGE_THRESHOLD="1" # Sequencing coverage threshold
+MINIMUM_DEPTH="10" # fail DP threshold (default 30X)
+EXPECTED_DEPTH="30" # warn DP threshold (default 100X)
+DEPTH_COVERAGE_THRESHOLD="0.95" # threshold percentage of bases over the DP threshold

@@ -458,6 +458,8 @@ else
 fi;
 export BAM_CHECK_STEPS
 
+
+
 # METRICS SNPEFF (default 0)
 # Generate snpEff variant metrics from VCF
 if [ -z $METRICS_SNPEFF ] || [ "${METRICS_SNPEFF^^}" == "FALSE" ] || [ "${METRICS_SNPEFF^^}" == "NO" ] || [ "${METRICS_SNPEFF^^}" == "N" ]  || [ "$METRICS_SNPEFF" == "0" ]; then
@@ -470,11 +472,29 @@ fi;
 export METRICS_SNPEFF
 
 
+
 # PIPELINES PRIORITIZATION
 # List of pipelines to prioritize for the report (final.vcf)
 #PRIORITIZE_PIPELINES_LIST=""
 export PRIORITIZE_PIPELINES_LIST
 
+
+
+# UMI extract tag
+# Set the UMI Barcode pattern
+# If not null, STARK will prepare fastq containg UMIs +/- cell barcodes for alignment
+# e.g.: UMI_BARCODE_PATTERN="NNNNNNNN"
+# See UMI TOOLS documentatin for more information
+export UMI_BARCODE_PATTERN
+
+
+
+# Barcode tag
+# Barcode to use for Mark Duplicates
+# If not null, Mark Duplicates will consider this tag (default null)
+# e.g.: BARCODE_TAG="BC" for 10X Genomics, BARCODE_TAG="BX" for UMI
+# See PICARD documentation for more information
+export BARCODE_TAG
 
 
 
@@ -517,12 +537,14 @@ export POST_SEQUENCING
 #    compress: BAM compression (see $BAM_COMPRESSION variable)
 #    realignment: local realignment
 #    recalibration: reads recalibration
-#    markduplicates: BAM Mark Duplicates
-#    UMImarkduplicates: BAM Mark Duplicates for UMI sequences (TODO)
+#    UMIgroup: UMI group in tag BX with UMI tools. Needed before UMI Mark Duplicates with BX BARCODE tag
+#    markduplicates: Mark duplicated reads in BAM with PICARD MarkDuplicates. Use BARCODE_TAG to specify tag
 #    clipping: BAM Clipping according to primer definition in manifest file, if any
 # Usually:
 #    "sorting realignment clipping compress" for Amplicon technology
 #    "sorting markduplicates realignment compress" for Capture technology
+#    "sorting UMIgroup markduplicates realignment compress" for UMI technology
+#POST_ALIGNMENT_STEPS="sorting realignment recalibration clipping compress"
 
 if [ -z "$POST_ALIGNMENT_STEPS" ]; then
 	POST_ALIGNMENT_STEPS="sorting realignment clipping compress"

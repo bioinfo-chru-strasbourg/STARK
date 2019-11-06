@@ -65,8 +65,8 @@ ENV TOOLS=$STARK_FOLDER/tools
 ENV DATA=$STARK_FOLDER/data
 ENV TOOL=$STARK_FOLDER/tool
 ENV DATABASES=$STARK_FOLDER/databases
-ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git java java-1.8.0 lzma lzma-devel make ncurses-devel perl perl-Data-Dumper perl-Digest-MD5 perl-Switch perl-devel perl-Tk tbb-devel unzip wget which xz xz-devel zlib zlib-devel zlib2 zlib2-devel ghostscript enscript python3 yum install python3-devel "
-ENV YUM_REMOVE="autoconf automake bzip2-devel lzma-devel ncurses-devel perl-devel tbb-devel xz-devel zlib-devel zlib2-devel"
+ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git java java-1.8.0 lzma lzma-devel make ncurses-devel perl perl-Data-Dumper perl-Digest-MD5 perl-Switch perl-devel perl-Tk tbb-devel unzip wget which xz xz-devel zlib zlib-devel zlib2 zlib2-devel ghostscript enscript python3 python3-devel "
+ENV YUM_REMOVE="autoconf automake bzip2-devel lzma-devel ncurses-devel perl-devel tbb-devel xz-devel zlib-devel zlib2-devel python3-devel"
 
 #epel-release R
 
@@ -253,6 +253,23 @@ RUN wget $TARBALL_LOCATION -O $TARBALL ; \
     cp bwa $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin ; \
     cd ../ ; \
     rm -rf $TARBALL_NAME-$TOOL_VERSION ; \
+    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
+
+
+
+#########
+# FASTP #
+#########
+
+ENV TOOL_NAME=fastp
+ENV TOOL_VERSION=0.20.0
+ENV TARBALL_LOCATION=http://opengene.org/$TOOL_NAME/$TOOL_NAME
+ENV TOOL_BIN=$TOOL_NAME
+ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
+ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+
+RUN mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
+	wget $TARBALL_LOCATION -O $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/$TOOL_BIN && \
     ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
 
 
@@ -553,50 +570,6 @@ RUN wget $TARBALL_LOCATION/$TARBALL && \
 
 
 
-########
-# STAR # TODO
-########
-
-ENV TOOL_NAME=star
-ENV TOOL_VERSION=2.7.3a
-ENV TARBALL_NAME=$TOOL_VERSION.tar.gz
-ENV TARBALL_LOCATION=https://github.com/alexdobin/STAR/archive/$TARBALL_NAME
-ENV TARBALL_DIR=STAR-$TOOL_VERSION
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-
-RUN wget $TARBALL_LOCATION -O $TARBALL && \
-    mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
-	tar -xzf $TARBALL && \
-	rm $TARBALL && \
-	cd $TARBALL_DIR/source && \
-	make STAR && \
-	cp ../bin/Linux_x86_64_static/* $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/ && \
-	cd ../../ && \
-	rm -rf $TARBALL_DIR && \
-    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
-
-
-
-###############
-# STAR-FUSION # TODO
-###############
-
-ENV TOOL_NAME=star-fusion
-ENV TOOL_VERSION=v1.8.1
-ENV TARBALL_NAME=STAR-Fusion-$TOOL_VERSION.FULL.tar.gz
-ENV TARBALL_DIR=STAR-Fusion-$TOOL_VERSION
-ENV TARBALL_LOCATION=https://github.com/STAR-Fusion/STAR-Fusion/releases/download/$TARBALL_DIR/$TARBALL_NAME
-
-RUN wget $TARBALL_LOCATION -O $TARBALL && \
-    mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
-	tar -xzf $TARBALL && \
-	rm $TARBALL && \
-	cp $TARBALL_DIR/STAR-Fusion $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/ && \
-	rm -rf $TARBALL_DIR && \
-    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
-
-
-
 ############
 # UMITOOLS #
 ############
@@ -610,6 +583,7 @@ RUN pip3 install umi_tools && \
 	mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
 	ln -s /usr/local/bin/umi_tools $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/umi_tools && \
 	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
+
 
 
 

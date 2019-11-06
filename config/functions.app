@@ -138,6 +138,28 @@ name_app () {
 } # source_app
 
 
+description_app () {
+# source an env file from an application definition
+# $1: APP definition
+# $2: APPS folder
+# return APP env file or default APP env file or null
+
+	local APP_LIST=$(echo $1 | tr "," " ") FOLDER_APPS=$2
+
+	#source $(find_app "$APP_LIST" "$FOLDER_APPS")
+	local ENV=$(find_app "$APP_LIST" "$FOLDER_APPS")
+	APP_LIST_DESCRIPTION=""
+	for E in $ENV; do
+		APP_DESCRIPTION=$(source_app "$E"; echo $APP_DESCRIPTION)
+		#APP_RELEASE_DEF=$(source_app "$E"; echo $APP_RELEASE)
+		APP_LIST_DESCRIPTION=$APP_LIST_DESCRIPTION" "$APP_DESCRIPTION". "
+	done
+
+	echo $APP_LIST_DESCRIPTION
+	return 0;
+
+} # source_app
+
 
 find_app () {
 # find a env file from an application definition

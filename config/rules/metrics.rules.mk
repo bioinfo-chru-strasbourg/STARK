@@ -99,25 +99,7 @@ CAP_METRICS_OPTIONS?=$(CAP_METRICS_OPTIONS_CLIP_OVERLAPPING_READS)
 %.bam.bed: %.bam %.bam.bai
 	#BAM.BED from BAM
 	# samtools view P1335.bwamem.bam -b | /STARK/tools/bedtools/current/bin/bedtools genomecov -ibam stdin -bg | /STARK/tools/bedtools/current/bin/bedtools merge -i stdin
-	$(BEDTOOLS) bamtobed -i $< | mergeBed -i - | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$1":"$$2"-"$$3}' > $@
-	-+if ((0)); then \
-	if (($$($(SAMTOOLS) idxstats $< | awk '{SUM+=$$3+$$4} END {print SUM}'))); then \
-		rm -f $<.genomeCoverageBed.mk $<.genomeCoverageBed1.mk $<.genomeCoverageBed2.mk $<.genomeCoverageBed3.mk; \
-		for chr in $$($(SAMTOOLS) idxstats $< | grep -v "\*" | awk '{ if ($$3+$$4>0) print $$1 }'); do \
-			echo "$<.genomeCoverageBed.$$chr.bed: $<" >> $<.genomeCoverageBed1.mk; \
-			echo "	$(SAMTOOLS) view $< -b $$chr | $(BEDTOOLS) genomecov -ibam stdin -bg | $(BEDTOOLS) merge -i - > $<.genomeCoverageBed.$$chr.bed " >> $<.genomeCoverageBed1.mk; \
-			echo -n " $<.genomeCoverageBed.$$chr.bed" >> $<.genomeCoverageBed2.mk; \
-		done; \
-		echo -n "$@: " | cat - $<.genomeCoverageBed2.mk > $<.genomeCoverageBed3.mk; \
-		echo ""  >> $<.genomeCoverageBed3.mk; \
-		echo "	cat $$^ > $@ " >> $<.genomeCoverageBed3.mk; \
-		echo "	-rm -f $$^ " >> $<.genomeCoverageBed3.mk; \
-		#echo "	-rm -f \$^ " >> $<.genomeCoverageBed3.mk; \
-		cat $<.genomeCoverageBed1.mk $<.genomeCoverageBed3.mk >> $<.genomeCoverageBed.mk; \
-		make -j $(THREADS) -i -f $<.genomeCoverageBed.mk $@ 1>/dev/null 2>/dev/null; \
-		rm $<.genomeCoverageBed*.mk*; \
-	fi; \
-	fi;
+	$(BEDTOOLS) bamtobed -i $< | $(BEDTOOLS) mergeBed -i - | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$1":"$$2"-"$$3}' > $@
 
 
 
@@ -228,6 +210,7 @@ CAP_METRICS_OPTIONS?=$(CAP_METRICS_OPTIONS_CLIP_OVERLAPPING_READS)
 	# Create directory ;
 	mkdir -p $(@D);
 	# BAM Validation
+	# samtools view -F 1284 F10.bwamem.bam
 	$(SAMTOOLS) view $(SAMTOOLS_METRICS_VIEW_PARAM) -h $< -1 -@ $(THREADS) > $@ ;
 
 
@@ -238,7 +221,7 @@ CAP_METRICS_OPTIONS?=$(CAP_METRICS_OPTIONS_CLIP_OVERLAPPING_READS)
 
 #%.bam.metrics/metrics.depthbed
 
-%.bam.metrics/metrics: %.bam.metrics/metrics.design %.bam.metrics/metrics.gatk %.bam.metrics/metrics.picard %.bam.metrics/metrics.samtools %.bam.metrics/metrics.regions_coverage %.bam.metrics/metrics.per_amplicon_coverage #%.bam.metrics/metrics.bam_check
+%.bam.metrics/metrics: %.bam.metrics/metrics.design %.bam.metrics/metrics.gatk %.bam.metrics/metrics.picard %.bam.metrics/metrics.samtools %.bam.metrics/metrics.regions_coverage %.bam.metrics/metrics.per_amplicon_coverage %.bam.metrics/metrics.post_alignment #%.bam.metrics/metrics.bam_check
 #%.bam.metrics/metrics: %.bam.metrics/metrics.depthbed
 	#Create directory
 	mkdir -p $(@D)
@@ -273,9 +256,30 @@ CAP_METRICS_OPTIONS?=$(CAP_METRICS_OPTIONS_CLIP_OVERLAPPING_READS)
 # MarkDuplicates metrics
 ##########################
 
-%.bam.metrics/metrics.markDuplicates: %.bam %.bam.bai
-	cp -f $**.markduplicates.bam.metrics/*.markDuplicates.metrics $(@D)/;
-	rm -rf $**.markduplicates.bam.metrics;
+#%.bam.metrics/metrics.markDuplicates: %.bam %.bam.bai
+#	-cp -f $**.markduplicates.bam.metrics/* $(@D)/;
+#	rm -rf $**.markduplicates.bam.metrics;
+#	echo "#[INFO] MarkDuplicates metrics done. " > $@;
+
+
+# UMIgroup metrics
+##########################
+
+#%.bam.metrics/metrics.UMIgroup: %.bam %.bam.bai
+#	-cp -f $**.UMIgroup.bam.metrics/* $(@D)/;
+#	rm -rf $**.UMIgroup.bam.metrics;
+#	echo "#[INFO] UMIgroup metrics done. " > $@;
+
+
+# Post align metrics
+##########################
+
+%.bam.metrics/metrics.post_alignment: %.bam %.bam.bai
+	mkdir -p $(@D) ;
+	-cp -f $*.*.bam.metrics/* $(@D)/;
+	rm -rf $*.*.bam.metrics;
+	echo "#[INFO] POST ALIGNMENT metrics done. " > $@;
+
 
 
 
@@ -552,7 +556,7 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 #################
 # FatsQC metrics and counts metrics
 
-%.sequencing/metrics: %.sequencing/metrics.fastqc %.sequencing/metrics.counts %.sequencing/metrics.Q30  %.sequencing/metrics.infos
+%.sequencing/metrics: %.sequencing/metrics.infos # %.sequencing/metrics.Q30 %.sequencing/metrics.fastqc %.sequencing/metrics.counts %.sequencing/metrics.Q30  %.sequencing/metrics.infos
 	# create directory
 	mkdir -p $(@D)
 	cat $^ > $@
@@ -588,7 +592,16 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 # Q30
 ########
 
-%.sequencing/metrics.Q30: %.sequencing/metrics.fastqc
+
+# cat F09.fastp.json | python -c "import sys, json; print json.load(sys.stdin)['summary']['before_filtering']['q30_rate']"
+
+%.sequencing/metrics.Q30: %.sequencing
+	cat $(@D)/*.fastp.json | python -c "import sys, json; print json.load(sys.stdin)['summary']['after_filtering']['q30_rate']" > $@.txt
+	echo "#[INFO] Q30 calculation done. See 'metrics.Q30.txt' file." > $@;
+
+
+
+%.sequencing/metrics.Q30.old: %.sequencing/metrics.fastqc
 	# create directory
 	mkdir -p $(@D)
 	cat $(@D)/metrics.fastqc.txt | awk '/>>Per sequence quality scores/,/>>END_MODULE/' | head -n -1 | tail -n+3 | awk '{s+=$$2}END{print s}' > $@.Q30_ALL;

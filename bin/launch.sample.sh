@@ -1003,58 +1003,38 @@ for RUU in $RUN_UNIQ; do
 		# DATA entry format is FASTQ/BAM/CRAM/SAM
 		#if ((1)); then
 		if [ ! -s $RUN_SAMPLE_DIR/$S.R1.fastq.gz ]; then
-			echo "#[INFO] Input file '$RUN_SAMPLE_DIR/$S.R1.fastq.gz' does NOT exist"
+			#echo "#[INFO] Input file '$RUN_SAMPLE_DIR/$S.R1.fastq.gz' does NOT exist"
 			# FASTQ
 			if (($(echo "$F" | grep ".fastq.gz$\|.fq.gz$" -c))); then
 				echo "#[INFO] Create Input data from FASTQ file(s)"
-				if [ "$ADAPTERS" != "" ]; then
-					echo "#[INFO] Trim adapters."
-					if [ -s $F ]; then
-						if [ -s $F_R2 ]; then
-							$JAVA -jar $TRIMMOMATIC PE -phred33 $F $F_R2 $F"_paired.fq.gz" $F"_unpaired.fq.gz" $F_R2"_paired.fq.gz" $F_R2"_unpaired.fq.gz" ILLUMINACLIP:$ADAPTERS:2:30:10 1>/dev/null 2>/dev/null #LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36
-							cat $F"_paired.fq.gz" $F"_unpaired.fq.gz" $F_R2"_paired.fq.gz" $F_R2"_unpaired.fq.gz" > $RUN_SAMPLE_DIR/$S.fastq.gz
-							cat $F"_paired.fq.gz" $F"_unpaired.fq.gz" > $RUN_SAMPLE_DIR/$S.R1.fastq.gz
-							cat $F_R2"_paired.fq.gz" $F_R2"_unpaired.fq.gz" > $RUN_SAMPLE_DIR/$S.R2.fastq.gz
-						else
-							$JAVA -jar $TRIMMOMATIC SE -phred33 $F $F"_paired.fq.gz" ILLUMINACLIP:$ADAPTERS:2:30:10 1>/dev/null 2>/dev/null #LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:36
-							cat $F"_paired.fq.gz" > $RUN_SAMPLE_DIR/$S.R1.fastq.gz
-						fi;
 
-					fi;
+				# Create FASTQ
+				#echo "#[INFO] FASTQ R1"
+				$COMMAND_COPY $F $RUN_SAMPLE_DIR/$S.R1.fastq.gz;
+
+				if [ -s "$F_R2" ]; then
+					#echo "#[INFO] FASTQ R2 '$F_R2'"
+					$COMMAND_COPY $F_R2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz
 				else
-					# Create FASTQ
-					#echo "#[INFO] FASTQ R1"
-					#cat $F > $RUN_SAMPLE_DIR/$S.R1.fastq.gz;
-
-					#cp $F $RUN_SAMPLE_DIR/$S.R1.fastq.gz;
-					$COMMAND_COPY $F $RUN_SAMPLE_DIR/$S.R1.fastq.gz;
-
-					#if [ -z $F_R2 ] && [ -e $F_R2 ]; then
-					if [ -s "$F_R2" ]; then # && [ -e $F_R2 ]; then
-						#echo "#[INFO] FASTQ R2 '$F_R2'"
-						#exit 0;
-						#cat $F_R2 >> $RUN_SAMPLE_DIR/$S.R2.fastq.gz;
-						#cp $F_R2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz
-						$COMMAND_COPY $F_R2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz
-					else
-						touch $RUN_SAMPLE_DIR/$S.R2.fastq.gz
-					fi;
+					touch $RUN_SAMPLE_DIR/$S.R2.fastq
+					$GZ $RUN_SAMPLE_DIR/$S.R2.fastq
 				fi;
+
 
 				# INDEX1
 				if [ -s "$I1" ]; then
-					#cp $I1 $RUN_SAMPLE_DIR/$S.I1.fastq.gz
 					$COMMAND_COPY $I1 $RUN_SAMPLE_DIR/$S.I1.fastq.gz
 				else
-					touch $RUN_SAMPLE_DIR/$S.I1.fastq.gz
+					touch $RUN_SAMPLE_DIR/$S.I1.fastq
+					$GZ $RUN_SAMPLE_DIR/$S.I1.fastq
 				fi;
 
 				# INDEX2
 				if [ -s "$I2" ]; then
-					#cp $I2 $RUN_SAMPLE_DIR/$S.I2.fastq.gz
 					$COMMAND_COPY $I2 $RUN_SAMPLE_DIR/$S.I2.fastq.gz
 				else
-					touch $RUN_SAMPLE_DIR/$S.I2.fastq.gz
+					touch $RUN_SAMPLE_DIR/$S.I2.fastq
+					$GZ $RUN_SAMPLE_DIR/$S.I2.fastq
 				fi;
 
 
@@ -1082,9 +1062,80 @@ for RUU in $RUN_UNIQ; do
 				fi;
 
 			fi;
+
 		else
 			echo "#[INFO] Input file '$RUN_SAMPLE_DIR/$S.R1.fastq.gz' DOES exist"
 		fi;
+
+		# FASTQ PROCESSING
+		if ((1)); then
+
+			RUN_SAMPLE_DIR_SEQUENCING=$RUN_SAMPLE_DIR/$S.sequencing
+			FASTP_HTML=$RUN_SAMPLE_DIR_SEQUENCING/$S.fastp.html
+			FASTP_JSON=$RUN_SAMPLE_DIR_SEQUENCING/$S.fastp.json
+			FASTP_LOG=$RUN_SAMPLE_DIR_SEQUENCING/$S.fastp.log
+			FASTP_ERR=$RUN_SAMPLE_DIR_SEQUENCING/$S.fastp.err
+
+			if [ ! -e $FASTP_LOG ]; then
+
+				echo "#[INFO] FASTQ processing (Adaptors, UMIs, quality)"
+
+				# Create sample sequencing folder
+				mkdir -p $RUN_SAMPLE_DIR/$S.sequencing
+
+				# FASTP parameters
+				FASTP_PARAM=" --disable_trim_poly_g --disable_length_filtering --thread $THREADS "
+
+				# OUTPUT
+				FASTP_METRICS_OUTPUT="-h $FASTP_HTML -j $FASTP_JSON"
+
+				# Paired-End or Single-End
+				if (( $($UNGZ -c $RUN_SAMPLE_DIR/$S.R2.fastq.gz | head -n 1 | wc -l) )); then
+					echo "#[INFO] Paired-End Processing"
+					FASTP_INPUT="-i $RUN_SAMPLE_DIR/$S.R1.fastq.gz -I $RUN_SAMPLE_DIR/$S.R2.fastq.gz"
+					FASTP_OUTPUT="-o $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.processed.fastq.gz -O $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.processed.fastq.gz"
+					FASTP_PARAM=$FASTP_PARAM" --detect_adapter_for_pe"
+				else
+					echo "#[INFO] Single-End Processing"
+					FASTP_INPUT="-i $RUN_SAMPLE_DIR/$S.R1.fastq.gz"
+					FASTP_OUTPUT="-o $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.umi_extract.fastq.gz"
+				fi;
+
+				# Adapter detection
+				echo "#[INFO] Adapter Processing (detection & trimming)"
+
+				# UMI Extraction
+				if [ "$UMI_BARCODE_PATTERN" != "" ] && ! (( $($UNGZ -d -c $RUN_SAMPLE_DIR/$S.R1.fastq.gz | head -n1 | awk -F" " '{n_read_name=split($1,read_name,":"); if (read_name[n_read_name] ~ /[A-Z]/) { print read_name[n_read_name]} }' | wc -l) )); then
+					echo "#[INFO] UMI extraction Processing with pattern '$UMI_BARCODE_PATTERN'"
+					FASTP_UMI_PARAM="--umi --umi_loc per_read --umi_len "${#UMI_BARCODE_PATTERN};
+				else
+					echo "#[INFO] NO UMI extraction Processing"
+					FASTP_UMI_PARAM=""
+				fi;
+
+				# Read quality filtering
+				if [ "$FASTQ_QUALITY_FILTERING" != "" ]; then
+					echo "#[INFO] Read quality filtering with quality '$FASTQ_QUALITY_FILTERING'"
+					FASTP_PARAM=$FASTP_PARAM" --cut_mean_quality=$FASTQ_QUALITY_FILTERING "
+				else
+					echo "#[INFO] NO Read quality filtering"
+					FASTP_PARAM=$FASTP_PARAM" --disable_quality_filtering "
+				fi;
+
+				# RUN FASTP
+				(($DEBUG)) && echo "#[INFO] FASTP CMD: $FASTP $FASTP_INPUT $FASTP_OUTPUT $FASTP_UMI_PARAM $FASTP_PARAM $FASTP_METRICS_OUTPUT"
+				$FASTP $FASTP_INPUT $FASTP_OUTPUT $FASTP_UMI_PARAM $FASTP_PARAM $FASTP_METRICS_OUTPUT --report_title="$S Sequencing Quality Report" 1>$FASTP_LOG 2>$FASTP_ERR
+				(($DEBUG)) && cat $FASTP_LOG $FASTP_ERR
+				#cat $FASTP_LOG $FASTP_ERR
+
+				# Copy fastq files
+				[ -e $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.processed.fastq.gz ] && mv $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.processed.fastq.gz $RUN_SAMPLE_DIR/$S.R1.fastq.gz
+				[ -e $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.processed.fastq.gz ] && mv $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.processed.fastq.gz $RUN_SAMPLE_DIR/$S.R2.fastq.gz
+
+			fi;
+
+		fi;
+
 
 		# OTHER_FILES
 		if [ "$OFCF" != "" ]; then

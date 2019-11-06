@@ -195,6 +195,21 @@ export FASTQC_REF="http://www.bioinformatics.bbsrc.ac.uk/projects/fastqc"
 TOOLS_LIST=$TOOLS_LIST" FASTQC"
 
 
+# FASTP
+export FASTP=$NGS_TOOLS/fastp/current/bin/fastp		# BIN
+export FASTP_VERSION=0.20.0							# VER
+export FASTP_DESCRIPTION="A tool designed to provide fast all-in-one preprocessing for FastQ files."
+export FASTP_REF="https://github.com/OpenGene/fastp"
+TOOLS_LIST=$TOOLS_LIST" FASTP"
+
+
+# UMI TOOLS
+export UMITOOLS=$NGS_TOOLS/umi_tools/current/bin/umi_tools		# BIN
+export FASTQC_VERSION=1.0.0					# VER
+export FASTQC_DESCRIPTION="UMI-tools contains tools for dealing with Unique Molecular Identifiers (UMIs)/Random Molecular Tags (RMTs) and single cell RNA-Seq cell barcodes."
+export FASTQC_REF="https://github.com/CGATOxford/UMI-tools"
+TOOLS_LIST=$TOOLS_LIST" UMITOOLS"
+
 # # BWA
 #export BWA_OLD=$NGS_TOOLS/bwa/0.7.12/bin/bwa			# BIN
 #export BWA_VERSION=0.7.12					# VER
