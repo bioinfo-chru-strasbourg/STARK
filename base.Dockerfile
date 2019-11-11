@@ -65,7 +65,7 @@ ENV TOOLS=$STARK_FOLDER/tools
 ENV DATA=$STARK_FOLDER/data
 ENV TOOL=$STARK_FOLDER/tool
 ENV DATABASES=$STARK_FOLDER/databases
-ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git java java-1.8.0 lzma lzma-devel make ncurses-devel perl perl-Data-Dumper perl-Digest-MD5 perl-Switch perl-devel perl-Tk tbb-devel unzip wget which xz xz-devel zlib zlib-devel zlib2 zlib2-devel ghostscript enscript python3 python3-devel "
+ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git java java-1.8.0 lzma lzma-devel make ncurses-devel perl perl-Data-Dumper perl-Digest-MD5 perl-Switch perl-devel perl-Tk tbb-devel unzip wget which xz xz-devel zlib zlib-devel zlib2 zlib2-devel ghostscript enscript python2-pip python3 python3-devel "
 ENV YUM_REMOVE="autoconf automake bzip2-devel lzma-devel ncurses-devel perl-devel tbb-devel xz-devel zlib-devel zlib2-devel python3-devel"
 
 #epel-release R
@@ -75,8 +75,8 @@ ENV YUM_REMOVE="autoconf automake bzip2-devel lzma-devel ncurses-devel perl-deve
 # YUM INSTALL #
 ###############
 
-RUN yum update -y ; \
-	yum install -y epel-release ; \
+RUN yum update -y && \
+	yum install -y epel-release && \
 	yum install -y $YUM_INSTALL ;
 
 
@@ -100,17 +100,17 @@ ENV TOOL_DATABASE_FOLDER_LINK=$DATABASES/annovar_sources
 ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 
-RUN wget $TARBALL_LOCATION/$TARBALL ; \
-    tar xf $TARBALL ; \
-    rm -rf $TARBALL ; \
-    cd $TARBALL_FOLDER ; \
-    mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin ; \
-    cp *.pl $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/ -R ; \
-    cd ../ ; \
-    rm -rf $TARBALL_FOLDER ; \
-    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ; \
-	mkdir -p $TOOL_DATABASE_FOLDER_LINK ; \
-	mkdir -p $TOOL_DATABASE_FOLDER ; \
+RUN wget --no-cache $TARBALL_LOCATION/$TARBALL && \
+    tar xf $TARBALL && \
+    rm -rf $TARBALL && \
+    cd $TARBALL_FOLDER && \
+    mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
+    cp *.pl $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/ -R && \
+    cd ../ && \
+    rm -rf $TARBALL_FOLDER && \
+    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current && \
+	mkdir -p $TOOL_DATABASE_FOLDER_LINK && \
+	mkdir -p $TOOL_DATABASE_FOLDER && \
 	ln -s $TOOL_DATABASE_FOLDER_LINK $TOOL_DATABASE_FOLDER ;
 
 
@@ -126,13 +126,13 @@ ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 
 # INSTALL
-RUN wget $TARBALL_LOCATION/$TARBALL ; \
-    tar xf $TARBALL ; \
-    rm -rf $TARBALL ; \
-    cd $TOOL_NAME-$TOOL_VERSION ; \
-    make -j $THREADS prefix=$TOOLS/$TOOL_NAME/$TOOL_VERSION install ; \
-	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ; \
-    cd ../ ; \
+RUN wget --no-cache $TARBALL_LOCATION/$TARBALL && \
+    tar xf $TARBALL && \
+    rm -rf $TARBALL && \
+    cd $TOOL_NAME-$TOOL_VERSION && \
+    make -j $THREADS prefix=$TOOLS/$TOOL_NAME/$TOOL_VERSION install && \
+	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current && \
+    cd ../ && \
     rm -rf $TOOL_NAME-$TOOL_VERSION ;
 
 
@@ -149,13 +149,13 @@ ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 
 # INSTALL
-RUN wget $TARBALL_LOCATION/$TARBALL ; \
-    tar xf $TARBALL ; \
-    rm -rf $TARBALL ; \
-    cd $TOOL_NAME-$TOOL_VERSION ; \
-    make -j $THREADS prefix=$TOOLS/$TOOL_NAME/$TOOL_VERSION install ; \
-	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ; \
-    cd ../ ; \
+RUN wget --no-cache $TARBALL_LOCATION/$TARBALL && \
+    tar xf $TARBALL && \
+    rm -rf $TARBALL && \
+    cd $TOOL_NAME-$TOOL_VERSION && \
+    make -j $THREADS prefix=$TOOLS/$TOOL_NAME/$TOOL_VERSION install && \
+	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current && \
+    cd ../ && \
     rm -rf $TOOL_NAME-$TOOL_VERSION ;
 
 
@@ -175,13 +175,13 @@ ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 ENV TOOLS_DATA_RUN=/data/run
 ENV TOOLS_DATA_OUTPUT=/data/output
 
-RUN wget $ZIPBALL_LOCATION/$ZIPBALL ; \
-    unzip  $ZIPBALL ; \
-    yum -y --nogpgcheck localinstall $RPM ; \
-    rm -f $ZIPBALL ; \
-    rm -f $RPM; \
-    mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin ; \
-    ln -s /usr/local/bin/bcl2fastq $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/bcl2fastq ; \
+RUN wget --no-cache $ZIPBALL_LOCATION/$ZIPBALL && \
+    unzip  $ZIPBALL && \
+    yum -y --nogpgcheck localinstall $RPM && \
+    rm -f $ZIPBALL && \
+    rm -f $RPM && \
+    mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
+    ln -s /usr/local/bin/bcl2fastq $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/bcl2fastq && \
     ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
 
 
@@ -191,20 +191,20 @@ RUN wget $ZIPBALL_LOCATION/$ZIPBALL ; \
 ############
 
 ENV TOOL_NAME=bedtools
-ENV TOOL_VERSION=2.27.1
+ENV TOOL_VERSION=2.29.0
 ENV TARBALL_LOCATION=https://github.com/arq5x/bedtools2/releases/download/v$TOOL_VERSION
 ENV TARBALL=$TOOL_NAME-$TOOL_VERSION.tar.gz
 ENV TARBALL_FOLDER=bedtools2
 ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 
-RUN wget $TARBALL_LOCATION/$TARBALL ; \
-    tar xf $TARBALL ; \
-    rm -rf $TARBALL ; \
-    cd $TARBALL_FOLDER ; \
-    make -j $THREADS prefix=$TOOLS/$TOOL_NAME/$TOOL_VERSION install ; \
-    cd ../ ; \
-    rm -rf $TARBALL_FOLDER ; \
+RUN wget --no-cache $TARBALL_LOCATION/$TARBALL && \
+    tar xf $TARBALL && \
+    rm -rf $TARBALL && \
+    cd $TARBALL_FOLDER && \
+    make -j $THREADS prefix=$TOOLS/$TOOL_NAME/$TOOL_VERSION install && \
+    cd ../ && \
+    rm -rf $TARBALL_FOLDER && \
     ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
 
 
@@ -219,15 +219,15 @@ ENV GIT=https://github.com/BenLangmead/bowtie2.git
 ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 
-RUN git clone $GIT ; \
-    cd $TOOL_NAME ; \
-    make -j $THREADS ; \
-    mkdir -p $DEST/bin ; \
-    cp LICENSE MANUAL TUTORIAL VERSION NEWS AUTHORS $DEST ; \
-    cp bowtie* $DEST/bin ; \
-    rm -rf .git ; \
-    cd ../ ;  \
-    rm -rf $TOOL_NAME ; \
+RUN git clone $GIT && \
+    cd $TOOL_NAME && \
+    make -j $THREADS && \
+    mkdir -p $DEST/bin && \
+    cp LICENSE MANUAL TUTORIAL VERSION NEWS AUTHORS $DEST && \
+    cp bowtie* $DEST/bin && \
+    rm -rf .git && \
+    cd ../ && \
+    rm -rf $TOOL_NAME && \
     ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
 
 
@@ -244,15 +244,15 @@ ENV TARBALL=$TARBALL_NAME-$TOOL_VERSION.tar.bz2
 ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 
-RUN wget $TARBALL_LOCATION -O $TARBALL ; \
-    tar xf $TARBALL ; \
-    rm -rf $TARBALL ; \
-    cd $TARBALL_NAME-$TOOL_VERSION ; \
-    make -j $THREADS; \
-    mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin ; \
-    cp bwa $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin ; \
-    cd ../ ; \
-    rm -rf $TARBALL_NAME-$TOOL_VERSION ; \
+RUN wget --no-cache $TARBALL_LOCATION -O $TARBALL && \
+    tar xf $TARBALL && \
+    rm -rf $TARBALL && \
+    cd $TARBALL_NAME-$TOOL_VERSION && \
+    make -j $THREADS && \
+    mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
+    cp bwa $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
+    cd ../ && \
+    rm -rf $TARBALL_NAME-$TOOL_VERSION && \
     ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
 
 
@@ -269,7 +269,8 @@ ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 
 RUN mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
-	wget $TARBALL_LOCATION -O $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/$TOOL_BIN && \
+	wget --no-cache $TARBALL_LOCATION -O $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/$TOOL_BIN && \
+	chmod a+x $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/$TOOL_BIN/* && \
     ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
 
 
@@ -286,15 +287,15 @@ ENV TARBALL=fastqc_v$TOOL_VERSION.zip
 ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 
-RUN wget $TARBALL_LOCATION -O $TARBALL ; \
-    unzip $TARBALL ; \
-    rm -rf $TARBALL ; \
-    cd $TARBALL_NAME ; \
-    mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin ; \
-    chmod u+x fastqc ; \
-    cp -R * $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin ; \
-    cd ../ ; \
-	rm -rf $TARBALL_NAME ; \
+RUN wget --no-cache $TARBALL_LOCATION -O $TARBALL && \
+    unzip $TARBALL && \
+    rm -rf $TARBALL && \
+    cd $TARBALL_NAME && \
+    mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
+    chmod u+x fastqc && \
+    cp -R * $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
+    cd ../ && \
+	rm -rf $TARBALL_NAME && \
     ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
 
 
@@ -311,13 +312,13 @@ ENV TARBALL_FOLDER=archive
 ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 
-RUN wget $TARBALL_LOCATION/$TARBALL ; \
-    tar xf $TARBALL ; \
-    rm -rf $TARBALL ; \
-    mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/ ; \
-    cp $(ls ${TOOL_NAME^^}-$TOOL_VERSION* -d)/* $TOOLS/$TOOL_NAME/$TOOL_VERSION/ -R ; \
-    rm -rf $(ls ${TOOL_NAME^^}-$TOOL_VERSION* -d) ; \
-    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ; \
+RUN wget --no-cache $TARBALL_LOCATION/$TARBALL && \
+    tar xf $TARBALL && \
+    rm -rf $TARBALL && \
+    mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/ && \
+    cp $(ls ${TOOL_NAME^^}-$TOOL_VERSION* -d)/* $TOOLS/$TOOL_NAME/$TOOL_VERSION/ -R && \
+    rm -rf $(ls ${TOOL_NAME^^}-$TOOL_VERSION* -d) && \
+    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current && \
     chmod 0775 $TOOLS/$TOOL_NAME/$TOOL_VERSION $TOOLS/$TOOL_NAME/current -R ;
 
 
@@ -335,14 +336,14 @@ ENV TARBALL=GenomeAnalysisTK-$TOOL_VERSION.tar.bz2
 ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 
-RUN wget $TARBALL_LOCATION -O $TARBALL ; \
-    tar -xf $TARBALL ; \
-    rm -rf $TARBALL ; \
-    cd $TARBALL_NAME ; \
-    mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin ; \
-    cp GenomeAnalysisTK.jar $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin ; \
-	cd ../ ; \
-	rm -rf $TARBALL_NAME ; \
+RUN wget --no-cache $TARBALL_LOCATION -O $TARBALL && \
+    tar -xf $TARBALL && \
+    rm -rf $TARBALL && \
+    cd $TARBALL_NAME && \
+    mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
+    cp GenomeAnalysisTK.jar $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
+	cd ../ && \
+	rm -rf $TARBALL_NAME && \
     ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
 
 
@@ -360,10 +361,10 @@ ENV TARBALL_LOCATION=https://github.com/broadinstitute/gatk/releases/download/$T
 ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 
-RUN wget $TARBALL_LOCATION -O $TARBALL_NAME && \
+RUN wget --no-cache $TARBALL_LOCATION -O $TARBALL_NAME && \
     mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
 	unzip -p $TARBALL_NAME $TARBALL_FOLDER/$TOOL_JAR > $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/$TOOL_JAR && \
-    rm -rf $TARBALL ;
+    rm -rf $TARBALL_NAME ;
 
 
 
@@ -381,15 +382,15 @@ ENV TOOL_DATABASE_FOLDER=/databases
 ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 
-RUN wget $TARBALL_LOCATION/$TARBALL ; \
-    tar xf $TARBALL ; \
-    rm -rf $TARBALL ; \
-    mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/ ; \
-    cp $(ls ${TOOL_NAME^^}-$TOOL_VERSION* -d)/* $TOOLS/$TOOL_NAME/$TOOL_VERSION/ -R ; \
-    rm -rf $(ls ${TOOL_NAME^^}-$TOOL_VERSION* -d) ; \
-    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ; \
-    chmod 0775 $TOOLS/$TOOL_NAME/$TOOL_VERSION $TOOLS/$TOOL_NAME/current -R ; \
-	mkdir -p $DATABASES ; \
+RUN wget --no-cache $TARBALL_LOCATION/$TARBALL && \
+    tar xf $TARBALL && \
+    rm -rf $TARBALL && \
+    mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/ && \
+    cp $(ls ${TOOL_NAME^^}-$TOOL_VERSION* -d)/* $TOOLS/$TOOL_NAME/$TOOL_VERSION/ -R && \
+    rm -rf $(ls ${TOOL_NAME^^}-$TOOL_VERSION* -d) && \
+    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current && \
+    chmod 0775 $TOOLS/$TOOL_NAME/$TOOL_VERSION $TOOLS/$TOOL_NAME/current -R && \
+	mkdir -p $DATABASES && \
 	ln -s $DATABASES $TOOL_DATABASE_FOLDER ;
 
 
@@ -408,19 +409,19 @@ ENV TARBALL_LOCATION=http://data.broadinstitute.org/igv/projects/downloads/$TOOL
 ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 
-RUN wget $TARBALL_LOCATION -O $TARBALL ; \
-    unzip $TARBALL ; \
-    rm -rf $TARBALL ; \
-    cd $TARBALL_FOLDER ; \
-    mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin ; \
-    cp -R * $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin ; \
-	cd ../ ; \
-	rm -rf $TARBALL_FOLDER ; \
+RUN wget --no-cache $TARBALL_LOCATION -O $TARBALL && \
+    unzip $TARBALL && \
+    rm -rf $TARBALL && \
+    cd $TARBALL_FOLDER && \
+    mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
+    cp -R * $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
+	cd ../ && \
+	rm -rf $TARBALL_FOLDER && \
     ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
 
 
 
-##########
+###########
 # ITDSEEK #
 ###########
 
@@ -432,7 +433,7 @@ ENV TARBALL_FOLDER=tommyau-itdseek-*
 ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 
-RUN wget $TARBALL_LOCATION/$TARBALL -O $TARBALL ; \
+RUN wget --no-cache $TARBALL_LOCATION/$TARBALL -O $TARBALL ; \
     unzip $TARBALL ; \
     rm -rf $TARBALL ; \
 	mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin ; \
@@ -480,7 +481,7 @@ ENV TARBALL_JAR=mutect-$TOOL_VERSION.jar
 ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 
-RUN wget $TARBALL_LOCATION -O $TARBALL_NAME && \
+RUN wget --no-cache $TARBALL_LOCATION -O $TARBALL_NAME && \
     mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
 	unzip $TARBALL_NAME -d $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
 	mv $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/$TARBALL_JAR $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/$TOOL_JAR && \
@@ -489,15 +490,61 @@ RUN wget $TARBALL_LOCATION -O $TARBALL_NAME && \
 
 
 
-##########
-# PYTHON #
-##########
+############
+# OUTLYZER #
+############
+
+ENV TOOL_NAME=outlyzer
+ENV TOOL_VERSION=2
+ENV FILE_LOCATION=https://raw.githubusercontent.com/EtieM/outLyzer/master
+ENV FILE=outLyzer.py
+ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
+ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+
+# Install OutLyser
+RUN mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
+	wget --no-cache $FILE_LOCATION/$FILE -O $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/$FILE && \
+	chmod a+x $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/$FILE && \
+    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
+
+# Install pip modules
+RUN pip --no-cache-dir install --upgrade pip && \
+	pip --no-cache-dir install numpy scipy argparse ;
+
+# Install pathos
+RUN wget --no-cache https://github.com/uqfoundation/pathos/archive/master.tar.gz && \
+    tar -xvzf master.tar.gz && \
+    chmod 0775 pathos-master -R && \
+    cd pathos-master && \
+    python ./setup.py build && \
+    python ./setup.py install && \
+    cd .. && \
+    rm -rf pathos-master master.tar.gz ;
+
+
+
+###########
+# PYTHON2 #
+###########
 
 ENV TOOL_NAME=python
-ENV TOOL_VERSION=current
+ENV TOOL_VERSION=2
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 RUN mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
-	ln -s /usr/bin/python $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python ;
+	ln -s /usr/bin/python $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python && \
+	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
+
+
+
+###########
+# PYTHON3 #
+###########
+
+ENV TOOL_NAME=python
+ENV TOOL_VERSION=3
+ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+RUN mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
+	ln -s /usr/bin/python3 $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python3 ;
 
 
 
@@ -506,15 +553,16 @@ RUN mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
 ##########
 
 ENV TOOL_NAME=picard
+#ENV TOOL_VERSION=2.18.5
 ENV TOOL_VERSION=2.18.5
 ENV JAR_LOCATION=https://github.com/broadinstitute/picard/releases/download/$TOOL_VERSION
 ENV JAR=picard.jar
 ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
 ENV PATH="$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH"
 
-RUN wget $JAR_LOCATION/$JAR ; \
-    mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin ; \
-    mv $JAR $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin ; \
+RUN wget --no-cache $JAR_LOCATION/$JAR && \
+    mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
+    mv $JAR $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
     ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
 
 
@@ -530,13 +578,13 @@ ENV TARBALL=$TOOL_NAME-$TOOL_VERSION.tar.bz2
 ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 
-RUN wget $TARBALL_LOCATION/$TARBALL ; \
-    tar xf $TARBALL ; \
-    rm -rf $TARBALL ; \
-    cd $TOOL_NAME-$TOOL_VERSION ; \
-    make -j $THREADS prefix=$TOOLS/$TOOL_NAME/$TOOL_VERSION install ; \
-    cd ../ ; \
-    rm -rf $TOOL_NAME-$TOOL_VERSION ; \
+RUN wget --no-cache $TARBALL_LOCATION/$TARBALL && \
+    tar xf $TARBALL && \
+    rm -rf $TARBALL && \
+    cd $TOOL_NAME-$TOOL_VERSION && \
+    make -j $THREADS prefix=$TOOLS/$TOOL_NAME/$TOOL_VERSION install && \
+    cd ../ && \
+    rm -rf $TOOL_NAME-$TOOL_VERSION && \
     ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
 
 
@@ -556,16 +604,16 @@ ENV TOOL_DATABASE_FOLDER_LINK=$DATABASES/snpeff_sources/4.3t
 ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 
-RUN wget $TARBALL_LOCATION/$TARBALL && \
+RUN wget --no-cache $TARBALL_LOCATION/$TARBALL && \
     unzip $TARBALL -d $TARBALL_FOLDER && \
-	rm $TARBALL ; \
-    mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/ ; \
-    cp $TARBALL_FOLDER/*/*jar $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/ -R ; \
-    cp $TARBALL_FOLDER/*/*.config $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/ -R ; \
-    rm -rf $TARBALL_FOLDER ; \
-	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ; \
-	mkdir -p $TOOL_DATABASE_FOLDER_LINK ; \
-	mkdir -p $TOOL_DATABASE_FOLDER ; \
+	rm $TARBALL && \
+    mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/ && \
+    cp $TARBALL_FOLDER/*/*jar $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/ -R && \
+    cp $TARBALL_FOLDER/*/*.config $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/ -R && \
+    rm -rf $TARBALL_FOLDER && \
+	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current && \
+	mkdir -p $TOOL_DATABASE_FOLDER_LINK && \
+	mkdir -p $TOOL_DATABASE_FOLDER && \
 	ln -s $TOOL_DATABASE_FOLDER_LINK $TOOL_DATABASE_FOLDER ;
 
 
@@ -579,7 +627,7 @@ ENV TOOL_VERSION=1.0.0
 ENV TARBALL_NAME=umi_tools-$TOOL_VERSION.zip
 ENV TARBALL_LOCATION=https://github.com/CGATOxford/UMI-tools/releases/tag/$TOOL_VERSION
 
-RUN pip3 install umi_tools && \
+RUN pip3 --no-cache-dir install umi_tools && \
 	mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
 	ln -s /usr/local/bin/umi_tools $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/umi_tools && \
 	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
@@ -592,7 +640,7 @@ RUN pip3 install umi_tools && \
 ###########
 
 ENV TOOL_NAME=varscan
-ENV TOOL_VERSION=2.4.3
+ENV TOOL_VERSION=2.4.4
 ENV TARBALL_RELEASE=
 ENV TARBALL_NAME=VarScan.v$TOOL_VERSION.jar
 ENV TARBALL_LOCATION=https://github.com/dkoboldt/varscan/raw/master/$TARBALL_NAME
@@ -600,10 +648,10 @@ ENV TARBALL=VarScan.jar
 ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 
-RUN wget $TARBALL_LOCATION -O $TARBALL ; \
-    mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin ; \
-	cp $TARBALL $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin ; \
-	rm $TARBALL ; \
+RUN wget --no-cache $TARBALL_LOCATION -O $TARBALL && \
+    mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
+	cp $TARBALL $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
+	rm $TARBALL && \
     ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
 
 
@@ -612,7 +660,9 @@ RUN wget $TARBALL_LOCATION -O $TARBALL ; \
 # YUM REMOVE & CLEAR #
 ######################
 
-RUN yum erase -y $YUM_REMOVE ; yum clean all ;
+RUN yum erase -y $YUM_REMOVE && \
+	yum clean all && \
+    rm -rf /var/cache/yum ;
 
 
 

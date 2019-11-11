@@ -65,6 +65,8 @@ elif [ -s $SCRIPT_DIR/$ENV ] && [ "$ENV" != "" ] && [ ! -d $ENV ]; then
 elif [ "$ENV" == "" ] || [ ! -s $ENV ]; then
 	if [ -s $SCRIPT_DIR/"env.sh" ]; then
 		ENV=$SCRIPT_DIR/"env.sh";
+	elif [ -s $SCRIPT_DIR/../config/config.app ]; then
+		ENV=$SCRIPT_DIR/../config/config.app;
 	else
 		ENV="";
 		echo "#[WARNING] NO ENV defined. Default ENV used."
@@ -105,10 +107,10 @@ SECONDS=$((60*60*24*$DAYS))
 # LISTEN #
 ##########
 
+
+
 #echo "ls $MISEQ_FOLDER/1510*"
 for RUN_FOLDER in $(ls -rd $MISEQ_FOLDER/*); do
-
-
 
 	if [ -d $RUN_FOLDER ] && (($(( (`date +%s` - `stat -L --format %Y $RUN_FOLDER `) < $SECONDS )))); then
 		RUN=$(basename $RUN_FOLDER)
@@ -122,7 +124,6 @@ for RUN_FOLDER in $(ls -rd $MISEQ_FOLDER/*); do
 
 
 		#CONDITIONS="$RTA_COMPLETE_FILE $SAMPLESHEET_FILE"
-
 		# TEST complete RUN CONDITIONS
 		CHECK_CONDITION=1
 		for CONDITION in $CONDITIONS; do
@@ -194,9 +195,10 @@ for RUN_FOLDER in $(ls -rd $MISEQ_FOLDER/*); do
 				#sleep 1;
 				# Queuing using COULSON with STARK LAUNCH and remove STARKQueued.txt and create STARKComplete.txt
 				#$COULSON/show.sh
-				CMD_STARK="$SCRIPT_DIR/launch.sh --runs \"$RUN\"; rm $STARK_QUEUED_FILE; #$STARK_QUEUED_FILE_TEXT "
+				CMD_STARK="$SCRIPT_DIR/../bin/STARK --runs=\"$RUN\"; rm $STARK_QUEUED_FILE; #$STARK_QUEUED_FILE_TEXT "
 				CMD_COULSON="$COULSON/add.sh '' '"$CMD_STARK"'"
-				eval $CMD_COULSON
+				CMD=$CMD_STARK
+				eval $CMD
 			fi;
 		fi;
 		#QUEUED

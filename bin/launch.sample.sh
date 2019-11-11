@@ -1098,7 +1098,7 @@ for RUU in $RUN_UNIQ; do
 				else
 					echo "#[INFO] Single-End Processing"
 					FASTP_INPUT="-i $RUN_SAMPLE_DIR/$S.R1.fastq.gz"
-					FASTP_OUTPUT="-o $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.umi_extract.fastq.gz"
+					FASTP_OUTPUT="-o $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.processed.fastq.gz"
 				fi;
 
 				# Adapter detection

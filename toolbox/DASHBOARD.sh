@@ -15,8 +15,8 @@ SCRIPT_LICENCE="GNU-GPL"
 
 HEADER="#######################################
 # $SCRIPT_NAME [$SCRIPT_RELEASE-$SCRIPT_DATE]
-# $SCRIPT_DESCRIPTION 
-# $SCRIPT_AUTHOR @ $SCRIPT_COPYRIGHT © 
+# $SCRIPT_DESCRIPTION
+# $SCRIPT_AUTHOR @ $SCRIPT_COPYRIGHT ©
 #######################################";
 echo "$HEADER";
 
@@ -64,20 +64,25 @@ SLEEP=$7
 LAST=$8
 
 # ENV
-: '
 if [ -s $ENV ] && [ "$ENV" != "" ] && [ ! -d $ENV ]; then
 	ENV=$ENV;
+	echo "truc1"
 elif [ -s $SCRIPT_DIR/$ENV ] && [ "$ENV" != "" ] && [ ! -d $ENV ]; then
 	ENV=$SCRIPT_DIR/$ENV;
+	echo "truc1"
 elif [ "$ENV" == "" ] || [ ! -s $ENV ]; then
 	if [ -s $SCRIPT_DIR/"env.sh" ]; then
 		ENV=$SCRIPT_DIR/"env.sh";
+	elif [ -s $SCRIPT_DIR/../config/config.app ]; then
+		ENV=$SCRIPT_DIR/../config/config.app;
 	else
 		ENV="";
 		echo "#[WARNING] NO ENV defined. Default ENV used."
 	fi;
 fi;
-'
+
+
+
 
 # ENV
 #source $SCRIPT_DIR/env.sh
@@ -130,7 +135,7 @@ if [ "$ENV" != "ALL" ]; then LAST=3; else LAST=2; fi;
 while ((1)); do
 	#clear;
 	#$SCRIPT_DIR/monitor.sh "$ENV" "$NB_RUN" "$NB_LOG" "$DETAILS" "$FILTER"
-	if [ -e $COULSON/queue.sh ]; then 
+	if [ -e $COULSON/queue.sh ]; then
 		COULSON_RUNNING=$($COULSON/running.sh | grep -v "^#" | sed '/^\s*$/d' | grep -v "^$" );
 		COULSON_QUEUE=$($COULSON/queue.sh | grep -v "^#" | sed '/^\s*$/d' | grep -v "^$");
 	fi;
@@ -147,6 +152,3 @@ while ((1)); do
 done;
 
 #$NGS_TOOLS/stark/$RELEASE/bin/monitor.live.sh "$ENV" "$NB_RUN" "$NB_LOG" "$DETAILS" "$TAIL" "$FILTER" "0" "$LAST"
-
-
-

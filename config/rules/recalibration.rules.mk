@@ -17,12 +17,12 @@ GATK?=$(NGSbin)/GenomeAnalysisTK.jar
 
 %.bam.grp: %.bam %.bam.bai %.from_manifest.intervals %.genome
 	# Generate BaseRecalibrator grp file for recalibration
-	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) -T BaseRecalibrator -R `cat $*.genome` -knownSites $(VCFDBSNP) -I $< -o $@ -L $*.from_manifest.intervals -nct $(THREADS_BY_SAMPLE) -U -compress 0
+	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) -T BaseRecalibrator -R $$(cat $*.genome) -knownSites $(VCFDBSNP) -I $< -o $@ -L $*.from_manifest.intervals -nct $(THREADS_BY_SAMPLE) -U -compress 0
 
 %.bam: %.recalibration.bam %.genome %.recalibration.bam.bai %.recalibration.bam.grp #%.recalibration.bam.bai %.from_manifest.intervals %.recalibration.from_manifest.intervals
 	# Recalibrate BAM with BaseRecalibrator grp file
 	#$(JAVA) $(JAVA_FLAGS) -jar $(GATK) -T PrintReads -R `cat $*.genome` -I $< -BQSR $*.recalibration.bam.grp -o $@ -L $*.recalibration.from_manifest.intervals -nct $(THREADS_BY_SAMPLE) -U
-	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) -T PrintReads -R `cat $*.genome` -I $< -BQSR $*.recalibration.bam.grp -o $@ -nct $(THREADS_BY_SAMPLE) -U -EOQ
+	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) -T PrintReads -R $$(cat $*.genome) -I $< -BQSR $*.recalibration.bam.grp -o $@ -nct $(THREADS_BY_SAMPLE) -U -EOQ
 	# clean
 	-rm -f $<;
 

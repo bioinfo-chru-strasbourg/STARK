@@ -479,6 +479,11 @@ export METRICS_SNPEFF
 export PRIORITIZE_PIPELINES_LIST
 
 
+# FASTQ Read quality filtering
+# Read Quality threshold. Read quality below will be removed
+# Default: null
+export FASTQ_QUALITY_FILTERING
+
 
 # UMI extract tag
 # Set the UMI Barcode pattern

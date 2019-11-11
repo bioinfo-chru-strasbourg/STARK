@@ -476,7 +476,7 @@ GATKRR_FLAGS=
 	# INTERVAL WITH PICARD
 	if [ -s $< ]; then \
 		cut $< -f1-3,5 > $@.4fields ; \
-		$(JAVA) -jar $(PICARD) BedToIntervalList I=$@.4fields O=$@ SD=$$(cat $*.dict) ; \
+		$(JAVA) -jar $(PICARD) BedToIntervalList INPUT=$@.4fields OUTPUT=$@ SEQUENCE_DICTIONARY=$$(cat $*.dict) ; \
 		rm $@.4fields ; \
 	fi;
 	# If error, try intervals with GREP/SED/AWK

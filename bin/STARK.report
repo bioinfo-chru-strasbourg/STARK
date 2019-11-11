@@ -641,15 +641,7 @@ echo '
 </section>
 ' > $HTMLFILE_MENU
 
-if ((0)); then
-	export ENV_NAME="STARK"
-	export ENV_DESCRIPTION="Stellar Tools for variants Analysis and RanKing"
-	export ENV_RELEASE="0.9.18d"
-	export ENV_DATE="14/01/2019"
-	export ENV_AUTHOR="Antony Le Bechec/Amandine Velt/Sinthuja Pachchek/Vincent Zilliox/Samuel Nicaise"
-	export ENV_COPYRIGHT="HUS"
-	export ENV_LICENCE="GNU GPLA V3"
-fi;
+
 
 
 # TITLE
@@ -735,6 +727,8 @@ echo '
 
 
 ' > $HTMLFILE_TITLE
+
+
 
 
 
@@ -870,7 +864,11 @@ SEQUENCING_INFOS="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.sequencing/metrics.i
 #SEQUENCING_Q30="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.sequencing/metrics.Q30.txt"
 SEQUENCING_FASTP_JSON="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.sequencing/$SAMPLE.fastp.json"
 SEQUENCING_FASTP_HTML="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.sequencing/$SAMPLE.fastp.html"
+
+# Prepare FASTP HTML file
 cp $SEQUENCING_FASTP_HTML $HTMLDIR/$(basename $SEQUENCING_FASTP_HTML)
+cat $SEQUENCING_FASTP_HTML | sed "s/https:\/\/cdn.plot.ly\/plotly-latest.min.js/plotly-latest.min.js/" > $HTMLDIR/$(basename $SEQUENCING_FASTP_HTML)
+
 SEQUENCING_FASTP_HTML_HTML=$HTMLFOLDER/$(basename $SEQUENCING_FASTP_HTML)
 
 
@@ -893,9 +891,10 @@ SEQUENCING_TECHNOLOGY_HTML=$(grep "^technology" $SEQUENCING_INFOS | cut -f2)
 
 # Q30
 Q30=$(cat $SEQUENCING_FASTP_JSON | python -c "import sys, json; print json.load(sys.stdin)['summary']['after_filtering']['q30_rate']")
-Q30_HTML=$(echo "scale = 4; $Q30 * 100" | bc | sed s/[0]*$//)
+[ "$Q30" == "1" ] && Q30_HTML="100" || Q30_HTML=$(echo "scale = 4; $Q30 * 100" | bc | sed s/[0]*$//)
 #Q30_HTML=$(grep "^Q30" $SEQUENCING_Q30 | cut -f2)
 [ "$Q30_HTML" == "" ] && Q30_HTML="?"
+
 
 
 

@@ -51,7 +51,7 @@ SAMTOOLS_DP10_FILTERS=--genotypeFilterExpression 'GQ < 99.0 && GQ >= 90.0' --gen
 
 %.samtools_DP10$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.genome %.bam.bed %.from_manifest.bed
 	# Calling
-	$(SAMTOOLS) mpileup -uf `cat $*.genome` $< $(MPILEUP_SAMTOOLS_OPTIONS) --positions $*.from_manifest.bed | $(BCFTOOLS) call -mv -Ov -f GQ -f GP | $(BCFTOOLS) filter $(SAMTOOLS_DP10_BCFTOOLS_FILTERS) > $@.unfiltered.vcf
+	$(SAMTOOLS) mpileup -uf $$(cat $*.genome) $< $(MPILEUP_SAMTOOLS_OPTIONS) --positions $*.from_manifest.bed | $(BCFTOOLS) call -mv -Ov -f GQ -f GP | $(BCFTOOLS) filter $(SAMTOOLS_DP10_BCFTOOLS_FILTERS) > $@.unfiltered.vcf
 	# Filtering
 	-if [ ! -s $@.unfiltered.vcf ]; then cp $*.empty.vcf $@.unfiltered.vcf; fi;
 	echo "#NBVARIANT ($@.unfiltered.vcf after calling)"`grep -cv ^# $@.unfiltered.vcf`

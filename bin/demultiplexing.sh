@@ -216,7 +216,6 @@ MAKEFILE=$OUTPUT_DIR/Makefile
 
 
 (($DEBUG)) && echo "#[INFO] BCL2FASTQ=$BCL2FASTQ"
-(($DEBUG)) && echo "#[INFO] BCL2FASTQ_BCLTOFASTQ=$BCL2FASTQ_BCLTOFASTQ"
 #(($DEBUG)) && echo "#[INFO] RUNFOLDER_DIR=$RUNFOLDER_DIR"
 (($DEBUG)) && echo "#[INFO] OUTPUT_DIR=$OUTPUT_DIR"
 (($DEBUG)) && echo "#[INFO] LOGFILE=$LOGFILE"
@@ -344,7 +343,7 @@ FASTQ_COMPRESSION_LEVEL=4
 #(($DEBUG)) && cat $MANIFESTS
 
 # Demultiplexing configuration
-COMMAND="$BCL2FASTQ_BCLTOFASTQ --runfolder-dir $RUN  --output-dir $OUTPUT_DIR --sample-sheet $DEM_SAMPLESHEET --barcode-mismatches $BARCODE_MISMATCHES --fastq-compression-level $FASTQ_COMPRESSION_LEVEL -r $THREADS -p $THREADS -w $WRITING_THREADS --no-lane-splitting --create-fastq-for-index-reads"
+COMMAND="$BCL2FASTQ --runfolder-dir $RUN  --output-dir $OUTPUT_DIR --sample-sheet $DEM_SAMPLESHEET --barcode-mismatches $BARCODE_MISMATCHES --fastq-compression-level $FASTQ_COMPRESSION_LEVEL -r $THREADS -p $THREADS -w $WRITING_THREADS --no-lane-splitting --create-fastq-for-index-reads"
 echo "#[`date`] COMMAND: " $COMMAND >> $LOGFILE
 (($DEBUG)) && echo "#[INFO] Command: "$COMMAND
 
