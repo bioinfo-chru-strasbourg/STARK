@@ -883,7 +883,7 @@ export CORES_TO_USE=$THREADS
 export THREADS_AUTO=1					# Automatize nb of threads depending on the input and number of cores to use (TRUE if = 1)
 
 # MEMORY
-MEMTOTAL=$(cat /proc/meminfo | grep MemTotal | awk '{print $2}')	# MEMORY in octet
+MEMTOTAL=$(cat /proc/meminfo 2>/dev/null | grep MemTotal | awk '{print $2}')	# MEMORY in octet
 #export MEMORY=$(($MEMTOTAL/$THREADS/1024/1024))			# MEMORY in Go
 MEMORY=$(($MEMTOTAL/$CORES_TO_USE/1024/1024))			# MEMORY in Go
 if [ "$MEMORY" == "" ] || [ $MEMORY -lt 1 ]; then

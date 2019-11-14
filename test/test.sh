@@ -2,7 +2,7 @@
 
 DATA_FOLDER=/STARK/data/
 
-TEST_NUM=TEST_23
+TEST_NUM=TEST_24
 
 
 STARK_CMD="STARK"
@@ -11,6 +11,11 @@ STARK_CMD="STARK"
 
 # OUTLYZER
 $STARK_CMD --analysis_name=$TEST_NUM"_TEST_OUTLYZER_BED_GENES" --application=OUTLYZER+NO_ANNOTATION --reads=$DATA_FOLDER/SAMPLE/TEST/TEST.bam --design=$DATA_FOLDER/SAMPLE/TEST/TEST.bed --genes=$DATA_FOLDER/SAMPLE/TEST/TEST.genes --verbose
+
+$STARK_CMD --analysis_name=$TEST_NUM"_P1439_OUTLYZER_FQ_MANIFEST" --reads=$DATA_FOLDER/SAMPLE/P1439/P1439.R1.fastq.gz --reads2=$DATA_FOLDER/SAMPLE/P1439/P1439.R2.fastq.gz --application=OUTLYZER+NO_ANNOTATION --design=$DATA_FOLDER/SAMPLE/P1439/P1439.manifest --verbose
+
+mkdir -p /STARK/output/results/TEST_23_P1439_OUTLYZER_FQ_MANIFEST/P1439_R1/P1439_R1.bwamem.outLyzer.filtration.recalibration.normalization.vcf.outlyser_tmp/
+/STARK/tools/outlyzer/current/bin/outLyzer.py calling -bed /STARK/output/results/TEST_23_P1439_OUTLYZER_FQ_MANIFEST/P1439_R1/P1439_R1.bed -bam /STARK/output/results/TEST_23_P1439_OUTLYZER_FQ_MANIFEST/P1439_R1/P1439_R1.bwamem.bam -ref /STARK/databases/genomes/hg19/hg19.fa -output /STARK/output/results/TEST_23_P1439_OUTLYZER_FQ_MANIFEST/P1439_R1/P1439_R1.bwamem.outLyzer.filtration.recalibration.normalization.vcf.outlyser_tmp/ -verbose 1
 
 
 # MUTECT

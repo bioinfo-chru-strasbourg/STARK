@@ -307,7 +307,7 @@ ENV_PERLLIB=$NGS_FOLDER/tools/perl/lib
 export PATH=$PATH:$TABIX_PATH:$JAVA_PATH
 
 # ADD PERL
-if (($(grep -c " 6." /etc/centos-release))); then
+if (($(grep -c " 6." /etc/centos-release 2>/dev/null))); then
 	export PERL5LIB=$BCL2FASTQ_PERLLIB:$ENV_PERLLIB
 else
 	export PERL5LIB=

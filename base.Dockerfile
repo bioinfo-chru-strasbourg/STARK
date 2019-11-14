@@ -38,6 +38,8 @@
 #######
 
 ARG THREADS=1
+ARG REPO=https://gitlab.bioinfo-diag.fr/Strasbourg/stark-repo/raw/master
+ARG SRC=/STARK/sources
 
 
 
@@ -65,7 +67,7 @@ ENV TOOLS=$STARK_FOLDER/tools
 ENV DATA=$STARK_FOLDER/data
 ENV TOOL=$STARK_FOLDER/tool
 ENV DATABASES=$STARK_FOLDER/databases
-ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git java java-1.8.0 lzma lzma-devel make ncurses-devel perl perl-Data-Dumper perl-Digest-MD5 perl-Switch perl-devel perl-Tk tbb-devel unzip wget which xz xz-devel zlib zlib-devel zlib2 zlib2-devel ghostscript enscript python2-pip python3 python3-devel "
+ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git java java-1.8.0 lzma lzma-devel make ncurses-devel perl perl-Data-Dumper perl-Digest-MD5 perl-Switch perl-devel perl-Tk tbb-devel unzip wget which xz xz-devel zlib zlib-devel zlib2 zlib2-devel ghostscript enscript python2-pip python3 python3-devel docker "
 ENV YUM_REMOVE="autoconf automake bzip2-devel lzma-devel ncurses-devel perl-devel tbb-devel xz-devel zlib-devel zlib2-devel python3-devel"
 
 #epel-release R
@@ -160,9 +162,9 @@ RUN wget --no-cache $TARBALL_LOCATION/$TARBALL && \
 
 
 
-#############
-# BCL2FASTQ #
-#############
+###################
+# BCL2FASTQ local #
+###################
 
 ENV TOOL_NAME=bcl2fastq
 ENV TOOL_VERSION=2.20.0
@@ -175,14 +177,73 @@ ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 ENV TOOLS_DATA_RUN=/data/run
 ENV TOOLS_DATA_OUTPUT=/data/output
 
-RUN wget --no-cache $ZIPBALL_LOCATION/$ZIPBALL && \
-    unzip  $ZIPBALL && \
+COPY tools/$ZIPBALL $ZIPBALL
+
+RUN unzip $ZIPBALL && \
     yum -y --nogpgcheck localinstall $RPM && \
     rm -f $ZIPBALL && \
     rm -f $RPM && \
     mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
     ln -s /usr/local/bin/bcl2fastq $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/bcl2fastq && \
     ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
+
+
+#############
+# BCL2FASTQ #
+#############
+# https://files.softwaredownloads.illumina.com/e8ed3335-5201-48ff-a2bc-db4bfb792c85/bcl2fastq2-v2-20-0-linux-x86-64.zip?Expires=1573636274&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly9maWxlcy5zb2Z0d2FyZWRvd25sb2Fkcy5pbGx1bWluYS5jb20vZThlZDMzMzUtNTIwMS00OGZmLWEyYmMtZGI0YmZiNzkyYzg1L2JjbDJmYXN0cTItdjItMjAtMC1saW51eC14ODYtNjQuemlwIiwiQ29uZGl0aW9uIjp7IkRhdGVMZXNzVGhhbiI6eyJBV1M6RXBvY2hUaW1lIjoxNTczNjM2Mjc0fX19XX0_&Signature=a9KO~lEQgDCOyjgn62me1MNywkcZ6ZwSd9lGAREChWiFcoDEfFqOn~xgT~QaGxheb922~HfC00dgBY6mnIRfGI9kjG2-Rm5-4SlqlqXQLjPJpjNk3p4AXNnDfhhlfrhQC~nD9M8oicEXgLdf-cQ4C42x5iFNxZ-PAxPJil7dpAmkW95D1TljSBL4VEhqOktCNs8wR4wT-unVh9qnTafr9nIiDG1~IvX7CUJOsS4BMAVn0IGmZIz7l-~dg0Tc5m13HkyKt0EChSUqXz9DrSV3BSgWtadCJ9HRiowRGx7HjEuWuBAyKHcRG6ccIt5u1jvyJ7KAbuIkvugKkOY3ubdTBw__&Key-Pair-Id=APKAJO3UYWPXK4A26FPQ
+
+# ENV TOOL_NAME=bcl2fastq
+# ENV TOOL_VERSION=2.20.0
+# ENV TOOL_VERSION_FOR_FILE=2-20-0
+# ENV ZIPBALL_LOCATION=https://support.illumina.com/content/dam/illumina-support/documents/downloads/software/bcl2fastq/
+# ENV ZIPBALL=$TOOL_NAME"2-v"$TOOL_VERSION_FOR_FILE"-linux-x86-64.zip"
+# ENV RPM=$TOOL_NAME"2-v"$TOOL_VERSION"*.rpm"
+# ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
+# ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+# ENV TOOLS_DATA_RUN=/data/run
+# ENV TOOLS_DATA_OUTPUT=/data/output
+#
+# RUN wget --no-cache $ZIPBALL_LOCATION/$ZIPBALL && \
+#     unzip $ZIPBALL && \
+#     yum -y --nogpgcheck localinstall $RPM && \
+#     rm -f $ZIPBALL && \
+#     rm -f $RPM && \
+#     mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
+#     ln -s /usr/local/bin/bcl2fastq $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/bcl2fastq && \
+#     ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
+
+
+#########################
+# BCL2FASTQ compilation #
+#########################
+
+# ENV TOOL_NAME=bcl2fastq
+# ENV TOOL_VERSION=2.20.0
+# ENV TOOL_VERSION_FOR_FILE=2-20-0
+# ENV ZIPBALL_LOCATION=ftp://webdata2:webdata2@ussd-ftp.illumina.com/downloads/software/bcl2fastq
+# ENV ZIPBALL=$TOOL_NAME"2-v"$TOOL_VERSION_FOR_FILE"-tar.zip"
+# ENV RPM=$TOOL_NAME"2-v"$TOOL_VERSION"*.rpm"
+# ENV TARBALL=$TOOL_NAME"2-v"$TOOL_VERSION"*.tar.gz"
+# ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
+# ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+# ENV TOOLS_DATA_RUN=/data/run
+# ENV TOOLS_DATA_OUTPUT=/data/output
+#
+# RUN wget --no-cache $ZIPBALL_LOCATION/$ZIPBALL && \
+#     unzip $ZIPBALL && \
+# 	rm -f $ZIPBALL && \
+#     tar -zxf $TARBALL && \
+#     rm -f $RPM && \
+# 	mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
+# 	cd bcl2fastq && \
+#     src/configure --prefix=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
+#     make -j $THREADS && \
+# 	make -j $THREADS install && \
+# 	cd ../ && \
+# 	rm -rf bcl2fastq && \
+#     ln -s /usr/local/bin/bcl2fastq $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/bcl2fastq && \
+#     ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
 
 
 
@@ -270,7 +331,7 @@ ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 
 RUN mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
 	wget --no-cache $TARBALL_LOCATION -O $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/$TOOL_BIN && \
-	chmod a+x $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/$TOOL_BIN/* && \
+	chmod a+x $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/$TOOL_BIN && \
     ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
 
 
@@ -336,10 +397,10 @@ ENV TARBALL=GenomeAnalysisTK-$TOOL_VERSION.tar.bz2
 ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 
-RUN wget --no-cache $TARBALL_LOCATION -O $TARBALL && \
-    tar -xf $TARBALL && \
-    rm -rf $TARBALL && \
-    cd $TARBALL_NAME && \
+RUN wget --no-cache "$TARBALL_LOCATION" -O $TARBALL ; \
+    tar -xf $TARBALL ; \
+    rm -rf $TARBALL ; \
+    cd $TARBALL_NAME ; \
     mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
     cp GenomeAnalysisTK.jar $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
 	cd ../ && \
@@ -553,7 +614,6 @@ RUN mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
 ##########
 
 ENV TOOL_NAME=picard
-#ENV TOOL_VERSION=2.18.5
 ENV TOOL_VERSION=2.18.5
 ENV JAR_LOCATION=https://github.com/broadinstitute/picard/releases/download/$TOOL_VERSION
 ENV JAR=picard.jar
