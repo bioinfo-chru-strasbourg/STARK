@@ -17,7 +17,8 @@
 	# create tmp Directory
 	mkdir -p $@.outlyser_tmp
 	# Generate VCF with OutLyser
-	$(OUTLYZER) calling -bed $*.from_manifest.bed -bam $< -ref $$(cat $*.genome) -output $@.outlyser_tmp/ -verbose 1
+	#$(OUTLYZER) calling -bed $*.from_manifest.bed -bam $< -ref $$(cat $*.genome) -output $@.outlyser_tmp/ -verbose 1
+	$(PYTHON2) $(OUTLYZER) calling -pythonPath=$(PYTHON2) -samtools=$(SAMTOOLS) -bed $*.from_manifest.bed -bam $< -ref $$(cat $*.genome) -output $@.outlyser_tmp/ -verbose 1
 	# Normalize OutLyzer output VCF
 	cat $@.outlyser_tmp/*.vcf | awk -f $(STARK_FOLDER_BIN)/outlyzer_norm.awk > $@
 	# Cleaning

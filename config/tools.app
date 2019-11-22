@@ -42,6 +42,24 @@ export PYTHON_REF="http://python.com"
 TOOLS_LIST=$TOOLS_LIST" PYTHON"
 
 
+# PYTHON2
+export PYTHON2=$NGS_TOOLS/python/2/bin/python2		# BIN
+export PYTHON2_PATH==$NGS_TOOLS/python/2/bin		# FOLDER
+export PYTHON2_VERSION=current						# VER
+export PYTHON2_DESCRIPTION="Python is a programming language that lets you work quickly and integrate systems more efficiently"
+export PYTHON2_REF="http://python.com"
+TOOLS_LIST=$TOOLS_LIST" PYTHON2"
+
+
+# PYTHON3
+export PYTHON3=$NGS_TOOLS/python/3/bin/python3		# BIN
+export PYTHON3_PATH==$NGS_TOOLS/python/3/bin		# FOLDER
+export PYTHON3_VERSION=current						# VER
+export PYTHON3_DESCRIPTION="Python is a programming language that lets you work quickly and integrate systems more efficiently"
+export PYTHON3_REF="http://python.com"
+TOOLS_LIST=$TOOLS_LIST" PYTHON3"
+
+
 # BCL2FASTQ
 export BCL2FASTQ=$NGS_TOOLS/bcl2fastq/current/bin/bcl2fastq		# BIN
 export BCL2FASTQ_VERSION=2.20.0									# VER
