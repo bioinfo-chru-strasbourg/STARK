@@ -100,7 +100,7 @@ RUN echo "###########################" && \
 	echo "#[INFO] SOURCES=$SOURCES" && \
 	echo "#[INFO] DATABASES=$DATABASES" && \
 	echo "#[INFO] WORKDIR=$WORKDIR" && \
-	echo "#[INFO] REMOVE_SOURCE=$REMOVE_SOURCE" && \
+	echo "#[INFO] REMOVE_SOURCES=$REMOVE_SOURCES" && \
 	echo "#[INFO] THREADS=$THREADS" && \
 	echo "#[INFO] REPO=$REPO" && \
 	echo "#";

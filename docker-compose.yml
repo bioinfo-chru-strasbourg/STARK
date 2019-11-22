@@ -39,7 +39,7 @@ services:
             #dockerfile: base.Dockerfile
             dockerfile: repo.Dockerfile
             args:
-                - REMOVE_SOURCE=1
+                - REMOVE_SOURCES=1
                 - REPO=${DOCKER_STARK_BUILD_REPO_URL}
         container_name: STARK-base
         depends_on:
@@ -64,13 +64,13 @@ services:
     # STARK REPO
 
     stark-repo:
-        image: ${DOCKER_STARK_IMAGE_BASE}
+        image: ${DOCKER_STARK_IMAGE_REPO}
         build:
             context: ${DOCKER_STARK_CONTEXT}
             #dockerfile: base.Dockerfile
             dockerfile: repo.Dockerfile
             args:
-                - REMOVE_SOURCE=0
+                - REMOVE_SOURCES=0
                 - REPO=${DOCKER_STARK_BUILD_REPO_URL}
         entrypoint: bash
         command: -c "find /STARK/sources/sources/ -maxdepth 3 -mindepth 1 -type d"
