@@ -2,12 +2,21 @@
 
 DATA_FOLDER=/STARK/data/
 
-TEST_NUM=TEST_24
+TEST_NUM=TEST_26
 
 
 STARK_CMD="STARK"
 #STARK_CMD="docker exec --rm STARK_DEV"
 
+$STARK_CMD --run="/STARK/data/RAW/tmp/RUN_TEST_TAG:"$TEST_NUM"_RUN_TEST_TAG" --verbose --debug
+
+#$STARK_CMD --run="RUN_TEST_TAG:"$TEST_NUM"_RUN_TEST_TAG" --verbose
+
+exit 0;
+
+# DOCKER
+
+$STARK_CMD --docker-stark-container=STARK_DEV2 --analysis_name=$TEST_NUM"_TEST_BED_GENES3_TRANSCRIPTS" --reads=$DATA_FOLDER/SAMPLE/TEST/TEST.bam --design=$DATA_FOLDER/SAMPLE/TEST/TEST.bed --genes=$DATA_FOLDER/SAMPLE/TEST/TEST.genes+$DATA_FOLDER/SAMPLE/TEST/TEST.2.genes+$DATA_FOLDER/SAMPLE/TEST/TEST.selected.genes --transcripts=$DATA_FOLDER/SAMPLE/TEST/TEST.transcripts --verbose
 
 # OUTLYZER
 $STARK_CMD --analysis_name=$TEST_NUM"_TEST_OUTLYZER_BED_GENES" --application=OUTLYZER+NO_ANNOTATION --reads=$DATA_FOLDER/SAMPLE/TEST/TEST.bam --design=$DATA_FOLDER/SAMPLE/TEST/TEST.bed --genes=$DATA_FOLDER/SAMPLE/TEST/TEST.genes --verbose

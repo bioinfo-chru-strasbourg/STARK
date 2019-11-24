@@ -243,13 +243,13 @@ echo "#[`date`] COMMAND: $COMMAND" >> $LOGFILE && $COMMAND >> $LOGFILE
 
 # Manifests_list
 (($VERBOSE)) && echo "#[INFO] Create manifests and indexes list file";
-COMMAND="$SCRIPT_DIR/ElectricFancyFox.py $DEM_SAMPLESHEET $MANIFESTS_LIST manifests_list $RUN"
+COMMAND="$PYTHON2 $SCRIPT_DIR/ElectricFancyFox.py $DEM_SAMPLESHEET $MANIFESTS_LIST manifests_list $RUN"
 # LOG
 echo "#[`date`] COMMAND: $COMMAND" >> $LOGFILE && $COMMAND >> $LOGFILE
 
 # Manifests
 (($VERBOSE)) && echo "#[INFO] Create manifests file and copy all manifests";
-COMMAND="$SCRIPT_DIR/ElectricFancyFox.py $DEM_SAMPLESHEET $MANIFESTS manifests $RUN"
+COMMAND="$PYTHON2 $SCRIPT_DIR/ElectricFancyFox.py $DEM_SAMPLESHEET $MANIFESTS manifests $RUN"
 # LOG
 echo "#[`date`] COMMAND: $COMMAND" >> $LOGFILE && $COMMAND >> $LOGFILE
 
@@ -306,19 +306,19 @@ done;
 
 # Reads Length file
 (($VERBOSE)) && echo "#[INFO] Create Reads Length file";
-COMMAND="$SCRIPT_DIR/ElectricFancyFox.py $DEM_SAMPLESHEET $READS_LENGTH readsLength $RUN"
+COMMAND="$PYTHON2 $SCRIPT_DIR/ElectricFancyFox.py $DEM_SAMPLESHEET $READS_LENGTH readsLength $RUN"
 # LOG
 echo "#[`date`] COMMAND: $COMMAND" >> $LOGFILE && $COMMAND >> $LOGFILE
 
 # BCL2FASTQ Mask option file
 (($VERBOSE)) && echo "#[INFO] BCL2FASTQ Mask option file";
-COMMAND="$SCRIPT_DIR/ElectricFancyFox.py $DEM_SAMPLESHEET $MASK mask $RUN"
+COMMAND="$PYTHON2 $SCRIPT_DIR/ElectricFancyFox.py $DEM_SAMPLESHEET $MASK mask $RUN"
 # LOG
 echo "#[`date`] COMMAND: $COMMAND" >> $LOGFILE && $COMMAND >> $LOGFILE
 
 # BCL2FASTQ Adapters
 (($VERBOSE)) && echo "#[INFO] BCL2FASTQ Adapters file";
-COMMAND="$SCRIPT_DIR/ElectricFancyFox.py $DEM_SAMPLESHEET $ADAPTERS adapters $RUN"
+COMMAND="$PYTHON2 $SCRIPT_DIR/ElectricFancyFox.py $DEM_SAMPLESHEET $ADAPTERS adapters $RUN"
 # LOG
 echo "#[`date`] COMMAND: $COMMAND" >> $LOGFILE && $COMMAND >> $LOGFILE
 

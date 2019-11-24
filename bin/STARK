@@ -974,7 +974,8 @@ if [ "$ANALYSIS" != "" ]; then
 			PARAM_ANALYSIS=$(echo "$PARAM " | sed "s/--analysis=[^ |$]*//gi" | sed "s/-w [^ |$]*//gi")
 
 			PARAM_STARK_TEST=0
-			PARAM_STARK="$($STARK_FOLDER_BIN/json_to_options.py $J)" && PARAM_STARK_TEST=1
+			#PARAM_STARK="$($PYTHON2 $STARK_FOLDER_BIN/json_to_options.py $J)" && PARAM_STARK_TEST=1
+			PARAM_STARK="$($PYTHON2 $STARK_FOLDER_BIN/json_to_options.py $J)" && PARAM_STARK_TEST=1
 
 			! (($PARAM_STARK_TEST)) && echo "[ERROR] Config file '$J' malformed " && cat $J && exit 1;
 
@@ -992,9 +993,12 @@ if [ "$ANALYSIS" != "" ]; then
 
 			#CMD=$(echo $0" "$PARAM_STARK" $PARAM_ANALYSIS")
 			#CMD="$0 $PARAM_ANALYSIS $PARAM_STARK --no_header "
-			CMD="$0 $PARAM_STARK $PARAM_ANALYSIS --no_header "
-			(($VERBOSE)) && echo "#[INFO] CMD="$(echo $CMD | tr "\n" " ")
+			#CMD="$0 $PARAM_STARK $PARAM_ANALYSIS --no_header "
+			CMD=$(echo "$0 $PARAM_STARK $PARAM_ANALYSIS --no_header " | tr "\n" " ")
+			(($VERBOSE)) && echo "#[INFO] CMD=$CMD"
 			(($VERBOSE)) && echo ""
+
+			#echo "the CMD=$CMD"; exit 0;
 
 			(($EXEC)) && eval $CMD;
 			#exit 0
@@ -1138,6 +1142,9 @@ if [ ! -z "$RUNS" ]; then
 				# RUN is a RAW RUN (BCL)
 				echo "#[INFO] RUN '$R_NAME' is a RAW folder (BCL) including a file RTAComplete.txt";
 
+				# APP DEM
+				APP_DEMULTIPLEXING=$APP
+
 				# Find SampleSheet
 				RUN_SAMPLESHEET=""
 				# sampleSheet from Input
@@ -1148,10 +1155,55 @@ if [ ! -z "$RUNS" ]; then
 				[ ! -e $RUN_SAMPLESHEET ] && echo "#[ERROR] No SampleSheet for RUN '$R'" && exit 1;
 				echo "#[INFO] SampleSheet found for RUN '$R': $RUN_SAMPLESHEET";
 
+				# FOUND demultiplexing folder
+				if [ "$DEMULTIPLEXING" != "" ]; then
+					DEMULTIPLEXING_FOLDER=$DEMULTIPLEXING;
+				else
+					# Check if in APP
+
+					# ANALYSIS TAG
+					ANALYSIS_TAG_SAMPLESHEET=$(grep "^Description" $RUN_SAMPLESHEET | cut -d, -f2- | tr "," "!" | tr " " "!"  | tr -d '\r')
+					if [ "$ANALYSIS_TAG" == "" ]; then
+						ANALYSIS_TAG=$ANALYSIS_TAG_SAMPLESHEET
+					fi;
+
+					# MAIN APP extraction
+					MAIN_APP=$(extract_tag "$ANALYSIS_TAG" "APP" | tr " " "+")
+
+					if [ "$MAIN_APP" != ""  ]; then
+						DEMULTIPLEXING_FOLDER=$(source_app "$MAIN_APP" 2>/dev/null; echo $FOLDER_DEMULTIPLEXING)
+						APP_DEMULTIPLEXING=$MAIN_APP
+					else
+						# Found APP in samples
+						SAMPLE_DESCRIPTION_FIELD=1;
+						C=1
+						for i in $(cat $RUN_SAMPLESHEET | awk '/\[Data\]/,/\[[^Data]/' | grep "^\[" -v | sed '/^[[:space:]]*$/d' | tr -d '\r' | sed 's/,/\t/g' | head -n 1) ; do
+							[ $i == "Description" ] && SAMPLE_DESCRIPTION_FIELD=$C
+							C=$(( $C + 1 )) ;
+						done
+
+						#FIRST_FOLDER_DEMULTIPLEXING_IN_SAMPLE=""
+						for L in $(cat $RUN_SAMPLESHEET | awk '/\[Data\]/,/\[[^Data]/' | grep "^\[" -v | sed '/^[[:space:]]*$/d' | tail -n +2 | tr -d '\r'); do
+							SAMPLE_TAG=$(echo $L | cut -d, -f$SAMPLE_DESCRIPTION_FIELD | tr " " "!")
+							SAMPLE_APP=$(extract_tag "$SAMPLE_TAG" "APP" | tr " " "+")
+							if [ "$SAMPLE_APP" != "" ]; then
+								SAMPLE_APP_FOLDER_DEMULTIPLEXING=$(source_app "$SAMPLE_APP" 2>/dev/null; echo $FOLDER_DEMULTIPLEXING)
+								if [ "$SAMPLE_APP_FOLDER_DEMULTIPLEXING" != "" ]; then
+									DEMULTIPLEXING_FOLDER=$SAMPLE_APP_FOLDER_DEMULTIPLEXING
+									APP_DEMULTIPLEXING=$SAMPLE_APP
+									break;
+								fi;
+							fi;
+						done;
+
+					fi;
+
+				fi;
+
 				# DEMULTIPLEXING_FOLDER
-				[ "$DEMULTIPLEXING" != "" ] && DEMULTIPLEXING_FOLDER=$DEMULTIPLEXING;
 				mkdir -p $DEMULTIPLEXING_FOLDER;
-				[ ! -d $DEMULTIPLEXING_FOLDER ] && echo "[ERROR] No demultiplexing folder '$DEMULTIPLEXING_FOLDER'."
+				(($VERBOSE)) && echo "#[INFO] Main Demultiplexing APP: $APP_DEMULTIPLEXING"
+				[ ! -d $DEMULTIPLEXING_FOLDER ] && echo "[ERROR] No demultiplexing folder '$DEMULTIPLEXING_FOLDER'." || echo "#[INFO] Demultiplexing folder for RUN '$R': $DEMULTIPLEXING_FOLDER";
 
 				DEM_SAMPLESHEET=$DEMULTIPLEXING_FOLDER/$R_BASENAME/SampleSheet.csv
 				DEM_STARKCOMPLETE=$DEMULTIPLEXING_FOLDER/$R_BASENAME/STARKComplete.txt
@@ -1171,7 +1223,7 @@ if [ ! -z "$RUNS" ]; then
 
 				#[ -e $R/RTAComplete.txt ] && [ ! -e $DEM_STARKCOMPLETE ] && echo "#[INFO] Start Demultiplexing for RUN '$R'" && echo "" && \
 				(($DEM_TODO)) && echo "#[INFO] Start Demultiplexing for RUN '$R'" && echo "" && \
-				$SCRIPT_DIR/demultiplexing.sh --app="$APP" --run=$R --demultiplex_folder=$DEMULTIPLEXING_FOLDER --samplesheet=$RUN_SAMPLESHEET --threads=$THREADS_INPUT $DEM_PARAM $DEM_PARAM #|| { echo "#[ERROR] Demultiplexing FAILED"; exit 1; }
+				$SCRIPT_DIR/demultiplexing.sh --app="$APP_DEMULTIPLEXING" --run=$R --demultiplex_folder=$DEMULTIPLEXING_FOLDER --samplesheet=$RUN_SAMPLESHEET --threads=$THREADS_INPUT $DEM_PARAM $DEM_PARAM #|| { echo "#[ERROR] Demultiplexing FAILED"; exit 1; }
 
 				#echo $SCRIPT_DIR/demultiplexing.sh --app="$APP" --run=$R --demultiplex_folder=$DEMULTIPLEXING_FOLDER --samplesheet=$RUN_SAMPLESHEET --threads=$THREADS_INPUT $DEM_PARAM $DEM_PARAM #|| { echo "#[ERROR] Demultiplexing FAILED"; exit 1; }
 
@@ -1185,7 +1237,7 @@ if [ ! -z "$RUNS" ]; then
 				fi;
 				#CMD=""
 
-				#echo ""
+				#echo "CMD=$CMD"; exit 0
 
 			#fi;
 		elif [ -f $R/SampleSheet.csv ] || [ -f "$SAMPLESHEET_INPUT_RI" ]; then
@@ -1218,7 +1270,6 @@ if [ ! -z "$RUNS" ]; then
 				#echo $RUN_SAMPLESHEET_TEST
 				INVESTIGATOR_NAME=$(grep "Investigator Name" $RUN_SAMPLESHEET | awk -F, '{print $2}')
 				MAIN_APP=$(grep "Investigator Name" $RUN_SAMPLESHEET | awk -F, '{print $2}' | awk -F"[$TAG_DELIMITER ]" '{print $1}' | tr " " "+" | tr "," "+")
-
 
 				#ANALYSIS_TAG_SAMPLESHEET=$(grep "Investigator Name" $RUN_SAMPLESHEET | cut -d, -f2- | tr "," "!" | tr " " "!"  | tr -d '\r')
 				ANALYSIS_TAG_SAMPLESHEET=$(grep "^Description" $RUN_SAMPLESHEET | cut -d, -f2- | tr "," "!" | tr " " "!"  | tr -d '\r')
@@ -1418,7 +1469,7 @@ if [ ! -z "$RUNS" ]; then
 					echo "}" >> $RUN_CONFIG_FILE
 
 					(($DEBUG)) && echo "#[INFO] " && cat $RUN_CONFIG_FILE
-					(($DEBUG)) && echo "#[INFO] " && $STARK_FOLDER_BIN/json_to_options.py $RUN_CONFIG_FILE
+					(($DEBUG)) && echo "#[INFO] " && $PYTHON2 $STARK_FOLDER_BIN/json_to_options.py $RUN_CONFIG_FILE
 
 					ANALYSIS_FILES="$ANALYSIS_FILES,$RUN_CONFIG_FILE"
 
@@ -1432,6 +1483,7 @@ if [ ! -z "$RUNS" ]; then
 					echo "#[ERROR] No Samples to analyse " && exit 1;
 				fi;
 				#CMD=""
+				#echo "CMD=$CMD"; exit 0
 
 			elif (($(find $R -name '*R1*fastq.gz' -or -name '*.sam' -or -name '*.bam' -or -name '*.cram' | wc -l))); then
 

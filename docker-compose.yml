@@ -15,20 +15,6 @@ services:
     # STARK IMAGES
     ##############
 
-    # STARK IMAGE
-
-    stark:
-        image: ${DOCKER_STARK_IMAGE}
-        build:
-            context: ${DOCKER_STARK_CONTEXT}
-            dockerfile: Dockerfile
-            args:
-                - DOCKER_STARK_IMAGE_BASE=${DOCKER_STARK_IMAGE_BASE}
-        container_name: STARK
-        env_file:
-            - .env
-        links:
-            - stark-base
 
     # STARK BASE IMAGE
 
@@ -42,24 +28,9 @@ services:
                 - REMOVE_SOURCES=1
                 - REPO=${DOCKER_STARK_BUILD_REPO_URL}
         container_name: STARK-base
-        depends_on:
-            - stark-server-repo
         env_file:
             - .env
-        links:
-            - stark-server-repo
 
-    # STARK DATABASES POPULATION
-
-    stark-databases:
-        image: ${DOCKER_STARK_IMAGE}
-        entrypoint: /tool/bin/get_databases.sh
-        command: --build --threads=${DOCKER_STARK_GET_DATABASES_THREADS} --additional_annotations=${DOCKER_STARK_GET_DATABASES_ADDITIONAL_ANNOTATIONS}
-        container_name: STARK-databases
-        volumes:
-            - databases:/STARK/databases
-        links:
-            - stark
 
     # STARK REPO
 
@@ -75,12 +46,39 @@ services:
         entrypoint: bash
         command: -c "find /STARK/sources/sources/ -maxdepth 3 -mindepth 1 -type d"
         container_name: STARK-repo
-        depends_on:
-            - "stark-server-repo"
         env_file:
             - .env
-        #links:
-        #    - stark-server-repo
+
+
+    # STARK IMAGE
+
+    stark:
+        image: ${DOCKER_STARK_IMAGE}
+        build:
+            context: ${DOCKER_STARK_CONTEXT}
+            dockerfile: Dockerfile
+            args:
+                - DOCKER_STARK_IMAGE_BASE=${DOCKER_STARK_IMAGE_BASE}
+        container_name: STARK
+        command: --help
+        env_file:
+            - .env
+        links:
+            - stark-base
+
+
+    # STARK DATABASES POPULATION
+
+    stark-databases:
+        image: ${DOCKER_STARK_IMAGE}
+        entrypoint: /tool/bin/get_databases.sh
+        command: --build --threads=${DOCKER_STARK_GET_DATABASES_THREADS} --additional_annotations=${DOCKER_STARK_GET_DATABASES_ADDITIONAL_ANNOTATIONS}
+        container_name: STARK-databases
+        volumes:
+            - databases:/STARK/databases
+        links:
+            - stark
+
 
 
     # SERVICES
@@ -88,54 +86,93 @@ services:
 
     # STARK SERVICE SERVER
 
-    stark-server-launcher:
-        image: ${DOCKER_STARK_IMAGE_SERVICE_SERVER}
+    stark-service-launcher:
+        image: ${DOCKER_STARK_SERVICE_LAUNCHER_IMAGE}
         build:
-            context: ${DOCKER_STARK_CONTEXT}service/server
+            context: ${DOCKER_STARK_SERVICE_LAUNCHER_CONTEXT}
             dockerfile: Dockerfile
-        container_name: STARK-server-launcher
+        container_name: STARK-service-launcher
         env_file:
             - .env
         ports:
-            - ${DOCKER_STARK_SERVICE_SERVER_PORT_HOST}:${DOCKER_STARK_SERVICE_SERVER_PORT_INNER}
+            - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_LAUNCHER_PORT_HOST}:${DOCKER_STARK_SERVICE_LAUNCHER_PORT_INNER}
         volumes:
             - /var/run/docker.sock:/var/run/docker.sock
             - analyses:/STARK/analyses
         links:
             - stark
             - stark-databases
+        restart: always
 
     # STARK SERVICE SERVER CENTOS
 
-    stark-server-launcher-centos:
-        image: ${DOCKER_STARK_IMAGE_SERVICE_SERVER}-centos
+    stark-service-launcher-centos:
+        image: ${DOCKER_STARK_SERVICE_LAUNCHER_IMAGE}-centos
         build:
-            context: ${DOCKER_STARK_CONTEXT}service/server
+            context: ${DOCKER_STARK_SERVICE_LAUNCHER_CONTEXT}
             dockerfile: centos.Dockerfile
-        container_name: STARK-server-launcher-centos
+        container_name: STARK-service-launcher-centos
         env_file:
             - .env
         ports:
-            - ${DOCKER_STARK_SERVICE_SERVER_PORT_HOST}02:${DOCKER_STARK_SERVICE_SERVER_PORT_INNER}
+            - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_LAUNCHER_PORT_HOST}2:${DOCKER_STARK_SERVICE_LAUNCHER_PORT_INNER}
         volumes:
             - /var/run/docker.sock:/var/run/docker.sock
             - analyses:/STARK/analyses
         links:
             - stark
             - stark-databases
+        restart: always
 
     # STARK SERVICE REPO
 
-    stark-server-repo:
+    stark-service-repo:
         image: ${DOCKER_STARK_SERVICE_REPO_IMAGE}
-        container_name: STARK-server-repo
+        container_name: STARK-service-repo
         restart: always
         env_file:
             - .env
         ports:
-            - ${DOCKER_STARK_SERVICE_REPO_PORT_HOST}:${DOCKER_STARK_SERVICE_REPO_PORT_INNER}
+            - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_REPO_PORT_HOST}:${DOCKER_STARK_SERVICE_REPO_PORT_INNER}
         volumes:
             - ${DOCKER_STARK_SERVICE_REPO_FOLDER}:/usr/local/apache2/htdocs/
+        restart: always
+
+
+    # # STARK SERVICE EXPLORER
+    #
+    # stark-server-explorer:
+    #     image: ${DOCKER_STARK_SERVICE_EXPLORER_IMAGE}
+    #     container_name: STARK-service-explorer
+    #     restart: always
+    #     env_file:
+    #         - .env
+    #     ports:
+    #         - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_EXPLORER_PORT_HOST}:${DOCKER_STARK_SERVICE_EXPLORER_PORT_INNER}
+    #     volumes:
+    #         - ${DOCKER_STARK_FOLDER_OUTPUT_REPOSITORY}:/usr/local/apache2/htdocs/
+    #     restart: always
+
+
+    # STARK SERVICE BROWSER
+
+    stark-service-browser:
+        image: ${DOCKER_STARK_SERVICE_BROWSER_IMAGE}
+        container_name: STARK-service-browser
+        #command:  -d ${DOCKER_STARK_FOLDER_BROWSER_CONFIG_INNER}/filebrowser.db -c ${DOCKER_STARK_FOLDER_BROWSER_CONFIG_INNER}/.filebrowser.json -r ${DOCKER_STARK_FOLDER_BROWSER_DATA_INNER}
+        command: -r ${DOCKER_STARK_FOLDER_BROWSER_DATA_INNER}
+        restart: always
+        env_file:
+            - .env
+        ports:
+            - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_BROWSER_PORT_HOST}:${DOCKER_STARK_SERVICE_BROWSER_PORT_INNER}
+        volumes:
+            - ${DOCKER_STARK_FOLDER_BROWSER_CONFIG_HOST}:${DOCKER_STARK_FOLDER_BROWSER_CONFIG_INNER}:rw
+            - ${DOCKER_STARK_FOLDER_BROWSER_DATA_HOST}:${DOCKER_STARK_FOLDER_BROWSER_DATA_INNER}:rw
+            - ${DOCKER_STARK_FOLDER_BROWSER_USERS_HOST}:${DOCKER_STARK_FOLDER_BROWSER_USERS_INNER}:rw
+            - ${DOCKER_STARK_FOLDER_OUTPUT_REPOSITORY}:${DOCKER_STARK_FOLDER_BROWSER_DATA_INNER}/repository:ro
+            - ${DOCKER_STARK_FOLDER_OUTPUT_ARCHIVE}:${DOCKER_STARK_FOLDER_BROWSER_DATA_INNER}/archives:ro
+            - ${DOCKER_STARK_FOLDER_INPUT}:${DOCKER_STARK_FOLDER_BROWSER_DATA_INNER}/raw:ro
         restart: always
 
 
@@ -146,8 +183,39 @@ services:
 
 volumes:
 
-    # ANALYSES
+    # INPUT
+    input:
+        driver: local
+        driver_opts:
+            type: none
+            device: ${DOCKER_STARK_FOLDER_INPUT}
+            o: bind
 
+    # DEMULTIPLEXING
+    demultiplexing:
+        driver: local
+        driver_opts:
+            type: none
+            device: ${DOCKER_STARK_FOLDER_OUTPUT_DEMULTIPLEXING}
+            o: bind
+
+    # REPOSITORY
+    repository:
+        driver: local
+        driver_opts:
+            type: none
+            device: ${DOCKER_STARK_FOLDER_OUTPUT_REPOSITORY}
+            o: bind
+
+    # ARCHIVE
+    archive:
+        driver: local
+        driver_opts:
+            type: none
+            device: ${DOCKER_STARK_FOLDER_OUTPUT_ARCHIVE}
+            o: bind
+
+    # ANALYSES
     analyses:
         driver: local
         driver_opts:
@@ -156,7 +224,6 @@ volumes:
             o: bind
 
     # DATABASES
-
     databases:
         driver: local
         driver_opts:
