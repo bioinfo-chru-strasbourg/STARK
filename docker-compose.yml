@@ -86,7 +86,7 @@ services:
             - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_LAUNCHER_PORT_HOST}:${DOCKER_STARK_SERVICE_LAUNCHER_PORT_INNER}
         volumes:
             - /var/run/docker.sock:/var/run/docker.sock
-            - analyses:${DOCKER_STARK_FOLDER_ANALYSIS_INNER}:rw
+            - analyses:${DOCKER_STARK_FOLDER_ANALYSES_INNER}:rw
         links:
             - stark
             - stark-databases
@@ -232,7 +232,7 @@ volumes:
         driver: local
         driver_opts:
             type: none
-            device: ${DOCKER_STARK_FOLDER_LOG}
+            device: ${DOCKER_STARK_FOLDER_OUTPUT_LOG}
             o: bind
 
 
