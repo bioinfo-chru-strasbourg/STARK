@@ -108,6 +108,7 @@ services:
             - input:${DOCKER_STARK_FOLDER_INPUT_INNER}:ro
             - repository:${DOCKER_STARK_FOLDER_OUTPUT_REPOSITORY_INNER}:rw
             - archive:${DOCKER_STARK_FOLDER_OUTPUT_ARCHIVE_INNER}:rw
+            - analyses:${DOCKER_STARK_FOLDER_OUTPUT_LOG_INNER}:rw
         links:
             - stark
         restart: always
@@ -225,6 +226,15 @@ volumes:
             type: none
             device: ${DOCKER_STARK_FOLDER_ANALYSES}
             o: bind
+
+    # LOG
+    log:
+        driver: local
+        driver_opts:
+            type: none
+            device: ${DOCKER_STARK_FOLDER_LOG}
+            o: bind
+
 
     # DATABASES
     databases:
