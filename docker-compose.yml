@@ -3,9 +3,7 @@
 #########
 # Usage: docker-compose up
 
-
 version: '3'
-
 
 # SERVICES
 ##########
@@ -15,9 +13,7 @@ services:
     # STARK IMAGES
     ##############
 
-
     # STARK BASE IMAGE
-
     stark-base:
         image: ${DOCKER_STARK_IMAGE_BASE}
         build:
@@ -31,9 +27,7 @@ services:
         env_file:
             - .env
 
-
     # STARK REPO
-
     stark-repo:
         image: ${DOCKER_STARK_IMAGE_REPO}
         build:
@@ -49,9 +43,7 @@ services:
         env_file:
             - .env
 
-
     # STARK IMAGE
-
     stark:
         image: ${DOCKER_STARK_IMAGE}
         build:
@@ -66,9 +58,7 @@ services:
         links:
             - stark-base
 
-
     # STARK DATABASES POPULATION
-
     stark-databases:
         image: ${DOCKER_STARK_IMAGE}
         entrypoint: /tool/bin/get_databases.sh
@@ -80,12 +70,10 @@ services:
             - stark
 
 
-
     # SERVICES
     ##########
 
     # STARK SERVICE SERVER
-
     stark-service-launcher:
         image: ${DOCKER_STARK_SERVICE_LAUNCHER_IMAGE}
         build:
@@ -104,8 +92,27 @@ services:
             - stark-databases
         restart: always
 
-    # STARK SERVICE SERVER CENTOS
 
+    # STARK SERVICE SERVER
+    stark-service-listener:
+        image: ${DOCKER_STARK_IMAGE}
+        entrypoint: /tool/bin/STARK.listener
+        #command: --verbose --command="STARK --docker-env-file=${DOCKER_STARK_SERVICE_LISTENER_ENV}"
+        command: --verbose
+        container_name: STARK-listener
+        env_file:
+            - .env
+        volumes:
+            - databases:${DOCKER_STARK_FOLDER_DATABASES_INNER}:ro
+            - input:${DOCKER_STARK_FOLDER_INPUT_INNER}:ro
+            - repository:${DOCKER_STARK_FOLDER_OUTPUT_REPOSITORY_INNER}:rw
+            - archive:${DOCKER_STARK_FOLDER_OUTPUT_ARCHIVE_INNER}:rw
+        links:
+            - stark
+        restart: always
+
+
+    # STARK SERVICE SERVER CENTOS
     stark-service-launcher-centos:
         image: ${DOCKER_STARK_SERVICE_LAUNCHER_IMAGE}-centos
         build:
@@ -124,8 +131,8 @@ services:
             - stark-databases
         restart: always
 
-    # STARK SERVICE REPO
 
+    # STARK SERVICE REPO
     stark-service-repo:
         image: ${DOCKER_STARK_SERVICE_REPO_IMAGE}
         container_name: STARK-service-repo
@@ -138,9 +145,7 @@ services:
             - ${DOCKER_STARK_SERVICE_REPO_FOLDER}:/usr/local/apache2/htdocs/
         restart: always
 
-
     # # STARK SERVICE EXPLORER
-    #
     # stark-server-explorer:
     #     image: ${DOCKER_STARK_SERVICE_EXPLORER_IMAGE}
     #     container_name: STARK-service-explorer
@@ -153,28 +158,25 @@ services:
     #         - ${DOCKER_STARK_FOLDER_OUTPUT_REPOSITORY}:/usr/local/apache2/htdocs/
     #     restart: always
 
-
     # STARK SERVICE BROWSER
-
     stark-service-browser:
         image: ${DOCKER_STARK_SERVICE_BROWSER_IMAGE}
         container_name: STARK-service-browser
-        #command:  -d ${DOCKER_STARK_FOLDER_BROWSER_CONFIG_INNER}/filebrowser.db -c ${DOCKER_STARK_FOLDER_BROWSER_CONFIG_INNER}/.filebrowser.json -r ${DOCKER_STARK_FOLDER_BROWSER_DATA_INNER}
-        command: -r ${DOCKER_STARK_FOLDER_BROWSER_DATA_INNER}
+        #command:  -d ${DOCKER_STARK_SERVICE_BROWSER_FOLDER_CONFIG_INNER}/filebrowser.db -c ${DOCKER_STARK_SERVICE_BROWSER_FOLDER_CONFIG_INNER}/.filebrowser.json -r ${DOCKER_STARK_SERVICE_BROWSER_FOLDER_DATA_INNER}
+        command: -r ${DOCKER_STARK_SERVICE_BROWSER_FOLDER_DATA_INNER}
         restart: always
         env_file:
             - .env
         ports:
             - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_BROWSER_PORT_HOST}:${DOCKER_STARK_SERVICE_BROWSER_PORT_INNER}
         volumes:
-            - ${DOCKER_STARK_FOLDER_BROWSER_CONFIG_HOST}:${DOCKER_STARK_FOLDER_BROWSER_CONFIG_INNER}:rw
-            - ${DOCKER_STARK_FOLDER_BROWSER_DATA_HOST}:${DOCKER_STARK_FOLDER_BROWSER_DATA_INNER}:rw
-            - ${DOCKER_STARK_FOLDER_BROWSER_USERS_HOST}:${DOCKER_STARK_FOLDER_BROWSER_USERS_INNER}:rw
-            - ${DOCKER_STARK_FOLDER_OUTPUT_REPOSITORY}:${DOCKER_STARK_FOLDER_BROWSER_DATA_INNER}/repository:ro
-            - ${DOCKER_STARK_FOLDER_OUTPUT_ARCHIVE}:${DOCKER_STARK_FOLDER_BROWSER_DATA_INNER}/archives:ro
-            - ${DOCKER_STARK_FOLDER_INPUT}:${DOCKER_STARK_FOLDER_BROWSER_DATA_INNER}/raw:ro
+            - ${DOCKER_STARK_SERVICE_BROWSER_FOLDER_CONFIG_HOST}:${DOCKER_STARK_SERVICE_BROWSER_FOLDER_CONFIG_INNER}:rw
+            - ${DOCKER_STARK_SERVICE_BROWSER_FOLDER_DATA_HOST}:${DOCKER_STARK_SERVICE_BROWSER_FOLDER_DATA_INNER}:rw
+            - ${DOCKER_STARK_SERVICE_BROWSER_FOLDER_USERS_HOST}:${DOCKER_STARK_SERVICE_BROWSER_FOLDER_USERS_INNER}:rw
+            - input:${DOCKER_STARK_SERVICE_BROWSER_FOLDER_DATA_INNER}/raw:ro
+            - repository:${DOCKER_STARK_SERVICE_BROWSER_FOLDER_DATA_INNER}/repository:ro
+            - archive:${DOCKER_STARK_SERVICE_BROWSER_FOLDER_DATA_INNER}/archives:ro
         restart: always
-
 
 
 

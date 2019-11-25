@@ -18,9 +18,3 @@ APP_PROJECT=""
 
 # PIPELINES
 PIPELINES="bwamem.gatkUG_HEMATOLOGY.howard bwamem.VarScan_HEMATOLOGY.howard bwamem.itdseek.howard" #
-
-# POST ALIGNEMENT STEPS
-#POST_ALIGNMENT_STEPS="sorting markduplicates realignment recalibration compress"
-
-
-HOWARD_NOMEN_FIELDS="snpeff_hgvs"

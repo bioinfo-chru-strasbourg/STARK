@@ -16,7 +16,5 @@ APP_PROJECT=""
 # ANALYSIS PARAMETERS
 #######################
 
-FOLDER_DEMULTIPLEXING=/STARK/output/demuSOLIDTUM
-
 # PIPELINES
 PIPELINES="bwamem.gatkUG_SOLIDTUMOR.howard bwamem.gatkHC_SOLIDTUMOR.howard bwamem.VarScan_SOLIDTUMOR.howard"

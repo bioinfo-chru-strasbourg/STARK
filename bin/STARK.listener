@@ -5,16 +5,16 @@
 ##
 #################################
 
-SCRIPT_NAME="STARKLaunch"
-SCRIPT_DESCRIPTION="STARK launch RUN or FASTQ/BAM analysis"
+SCRIPT_NAME="STARKListener"
+SCRIPT_DESCRIPTION="STARK listener analysis"
 SCRIPT_RELEASE="0.9b"
-SCRIPT_DATE="04/10/2016"
+SCRIPT_DATE="24/11/2019"
 SCRIPT_AUTHOR="Antony Le Bechec"
 SCRIPT_COPYRIGHT="IRC"
 SCRIPT_LICENCE="GNU-AGPL"
 
 # Realse note
-RELEASE_NOTES=$RELEASE_NOTES"# 0.9b-30/05/2016: Script creation\n";
+RELEASE_NOTES=$RELEASE_NOTES"# 0.9b-24/11/2019: Script creation\n";
 
 # Script folder
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -43,157 +43,39 @@ function release () {
 
 # Usage
 function usage {
-	echo "# USAGE: $(basename $0) --analysis=<FILE>|--reads=<FASTQ>|--run=<RUN> [options...]";
+	echo "# USAGE: $(basename $0) [options...]";
 	echo "";
 	echo "### Launch an analysis through (by order of priority):";
-	#echo "# --analysis a configuration file ";
-	#echo "# --reads a list of sample files ";
-	#echo "# --runs a list of runs folders ";
-	#echo "";
-	#echo "### Analysis configuration file ###";
-	echo "# --analysis=<FILE1,FILE2...>              List of configuration file in JSON format defining options (see below).";
-	echo "#                                          Format: { \"option1\":\"value1\", \"option2\":\"value2\"...}";
-	echo "# --reads=<FILE1,FILE2...>                 List of Reads files";
-	echo "#                                          For each samples, allowed formats FASTQ|BAM|SAM|CRAM:";
-	echo "#                                          *fastq.gz|*fq.gz|*bam|*ubam|*cram|*ucram|*sam|*usam";
-	echo "# --run=<FOLDER1,FOLDER2...>               List of RUNs to analyse";
-	echo "#                                          From Illumina sequencers (BCL), demultiplexing (FASTQ), or any folder containing FASTQ|BAM|SAM|CRAM.";
-	echo "#                                          For folder containing FASTQ, corresponding Paired-End Read2 will be autodetected: /.*[._-])R1([._-].*/.*[._-])R2([._-].*/";
-	echo "#                                          RUN can be a folder path, or the run folder in defined runs folders (see Application configuration)";
-	echo "#                                          Analysis name of each RUN can be defined using ':' after each RUN (default: run folder name)";
-	echo "#                                          Format: RUN1:RUN1_ANALYSIS_NAME,RUN2:RUN2_ANALYSIS_NAME...";
-	echo "#                                          Example: /path_of_my_runs/my_run:my_run1,run_name_folder_in_configured_runs_folder:my_run2";
-	#echo "#                                          Examples:";
-	#echo "#                                          - SAMPLE Analysis";
-	#echo "#                                          { \"fastq\":\"sample1.R1.fastq,sample2.bam\",";
-	#echo "#                                            \"fastq_R2\":\"sample1.R2.fastq,\",";
-	#echo "#                                            \"bed\":\"sample1.manifest,sample2.bed\",";
-	#echo "#                                            \"application\":\"APP2\" }";
-	#echo "#                                          - RUN Analysis";
-	#echo "#                                          { \"run\":\"/path_of_my_runs/my_run:my_run1,run_name_folder_in_configured_runs_folder:my_run2\",";
-	#echo "#                                            \"bed\":\"my_run.bed,my_other_run.manifest\",";
-	#echo "#                                            \"application\":\"APP2\" }";
-	echo ""
-
-	echo "### SAMPLE Analysis options";
-	echo "# --sample=<STRING1,STRING2...>            List of corresponding SAMPLE Name";
-	echo "#                                          Automatically detected from input files.";
-	echo "# --sample_tag=<STRING1,STRING2...>        List of corresponding SAMPLE Tags.";
-	echo "#                                          Format: [TYPE]#TAG[#TAG]{!}[[TYPE]#TAG[#TAG]]";
-	echo "# --reads2=<FILE1,FILE2...>                List of Reads files with corresponding Paired-End Read2 (beware of correspondance).";
-	echo "#                                          For each samples, allowed formats FASTQ:";
-	echo "#                                          *fastq.gz|*fq.gz";
-	echo "# --index1=<FILE1,FILE2...>                List of corresponding Index1 files (beware of correspondance).";
-	echo "#                                          For each samples, allowed formats FASTQ:";
-	echo "#                                          *fastq.gz|*fq.gz";
-	echo "# --index2=<FILE1,FILE2...>                List of corresponding Index2 files (beware of correspondance).";
-	echo "#                                          For each samples, allowed formats FASTQ:";
-	echo "#                                          *fastq.gz|*fq.gz";
-	echo "# --other_files=<FILE1,FILE2...>           List of corresponding other files (beware of correspondance).";
-	echo "#                                          Files will be copied into each SAMPLE folder";
-	#echo "# --adapters=<STRING>                      Adapters to trim.";
-	echo ""
-
-	echo "### RUN Analysis options";
-	echo "# --samplesheet=<FILE1,FILES2...>          List of corresponding Illumina SampleSheet.csv file to use with RUNS";
-	echo "#                                          Default: found in RUN folder";
-	echo "# --sample_filter=<STRING1,STRING2...>     List of SAMPLE name in Illumina SampleSheet.csv to analyse";
-	echo "#                                          Default: all samples in the SampleSheet ";
-	echo "# --demultiplexing_only                    Perform only demultiplexing (do NOT analysis FASTQ)";
-	echo "";
-
-	echo "### Folder options";
-	echo "# --input=<FOLDER>                         Input folder (Default: Defined in Application).";
-	echo "#                                          Contains folders 'runs' and 'manifests' to analyse Illumina RUN (see --run option)";
-	echo "# --output=<FOLDER>                        Output folder (Default: Defined in Application).";
-	echo "#                                          Contains folders 'demultiplexing', 'results', 'log' and 'tmp'";
-	echo "# --demultiplexing=<FOLDER>                Output/demultiplexing folder";
-	echo "# --results=<FOLDER>                       Output/results directory to generate RESULTS|RUN|SAMPLE|* files";
-	echo "# --log=<FOLDER>                           Output/log directory to generate RESULTS|RUN|SAMPLE|* files";
-	echo "# --tmp=<FOLDER>                           Output/tmp directory to generate RESULTS|RUN|SAMPLE|* files";
-	echo "#                                          Default: Defined in Application, or first --fastq file folder";
-	echo "# --repository=<FOLDER>                    Repository directory to generate GROUP|PROJECT|RUN|SAMPLE|* specific files";
-	echo "#                                          Default: no copy in a repository";
-	echo "# --archive=<FOLDER>                       Archive directory to generate GROUP|PROJECT|RUN|SAMPLE|* specific files";
-	echo "#                                          Default: no copy in a archive";
-	echo "# --databases=<FOLDER>                     Databases folder (requires STARK databases folder structure)";
-	echo "";
-
-	echo "### Other options";
-	echo "# --analysis_name=<STRING>                 Analysis name.";
-	echo "#                                          Default: 'date' (format YYYYMMDD) for a SAMPLE list analysis .";
-	echo "# --analysis_tag=<STRING1>                 List of ANALYSIS Tags. TODO";
-	echo "#                                          Format: TYPE#TAG[#TAG]{!}[TYPE#TAG[#TAG]]";
 	echo "# --application=<STRING|FILE>              APP name or APP file configuration of the APPLICATION.";
 	echo "#                                          Must be in the STARK APPS folder if relative path";
-	echo "#                                          Default: defined in the RUN SampleSheet, or default.app if not defined";
-	echo "# --design=<FILE1,FILE2...>                List of corresponding design for SAMPLE analysis";
-	echo "#                                          OR force design for RUN analysis (use only one design).";
-	echo "#                                          If not *.bed file (BED format), considered as Illumina manifest.";
-	echo "#                                          Default: first BED or empty";
-	echo "# --genes=<FILE1,FILE2...>                 List of corresponding GENES files.";
-	echo "#                                          OR force GENES file for RUN analysis (use only one GENES file).";
-	echo "#                                          Format: BED (chr<TAB>start<TAB>stop<TAB>strand<TAB>gene_name).";
-	echo "#                                          Default first GENES file or empty";
-	echo "# --transcripts=<FILE1,FILE2...>           List of corresponding TRANSCRIPTS files.";
-	echo "#                                          OR force TRANSCRIPTS file for RUN analysis (use only one TRANSCRIPTS file).";
-	echo "#                                          Format: TSV (transcript<TAB>geneID).";
-	echo "#                                          Default first TRANSCRIPTS file or empty";
-	echo "# --threads=<INTEGER>                      Number of thread to use";
-	echo "#                                          Default: all cores in your system minus one";
-	echo "# --by_sample                              Split analysis by SAMPLE, all threads on each sample, one by one.";
-	echo "";
-
-	echo "### Launch STARK with Docker";
-	echo "# --docker-compose-file=<FILE>             Docker compose file.";
-	echo "#                                          Default: 'docker-compose.yml' if any, or ''";
-	echo "#                                          Warning: Docker env file '.env' in the Docker compose file folder will be used to build images and populate databases";
-	echo "# --docker-env-file=<FILE>                 Docker environment file.";
-	echo "#                                          Default: found in Docker compose file folder if any, or ''";
-	echo "# --docker-parameters=<STRING>             Docker parameters, added if Docker compose file and Docker env file exists.";
-	echo "#                                          Format: see Docker doc";
-	echo "#                                          Default: ''";
-	echo "# --docker-stark-image=<STRING>            Docker STARK image.";
-	echo "#                                          Default: found in Docker env file if any, or 'stark:latest'";
-	echo "# --docker-stark-container=<STRING>        Docker STARK container name. Start container as deamon/detached (if any) and execute command";
-	echo "#                                          Default: no container started";
-	echo "";
-
-	echo "### Information options";
-	echo "# --applications_infos                     Applications informations.";
-	echo "# --pipelines_infos                        Pipelines informations.";
-	echo "# --release_infos                          Pipelines with tools and databases information.";
-	echo "# --tools_infos                            Tools release information.";
-	echo "# --databases_infos                        Databases information.";
+	echo "#                                          Default: defined in the RUN SampleSheet, or default.app if not defined";echo ""
+	echo "# --input=<FOLDER>                         List of folders containing analyses/runs.";
+	echo "#                                          Default: RUN folder in APP.";
+	echo "# --condition=<FILE1,FILE2...>             List of files to start command (at least one)";
+	echo "#                                          Default: 'SampleSheet.csv,*analysis.json'";
+	echo "# --days=<INTEGER>                         Analysis folder and files conditions maximum modification days";
+	echo "#                                          Default: '30'";
+	echo "# --log=<FOLDER>                           Logs folder";
+	echo "#                                          Default: LOG folder in APP.";
+	echo "# --command=<STRING>                       Command to launch";
+	echo "#                                          Default: 'STARK'";
 
 	echo "# --verbose                                VERBOSE";
 	echo "# --debug                                  DEBUG";
 	echo "# --release                                RELEASE";
 	echo "# --help                                   HELP";
 	echo "";
-	#echo -e "#\n# RUN Analysis\n################";
-	#$STARK_FOLDER_BIN/launch.sh -h | grep "# [ |-]";
-	#echo -e "#\n# SAMPLE Analysis\n###################";
-	#$STARK_FOLDER_BIN/launch.sample.sh -h | grep "# [ |-]";
 }
 
 
 
-# launch.sh
-# env:,runs:,aligners:,callers:,annotators:,filter_samples:,samplesheet:,parallelization:,remove:,application,help
-# e:r:a:c:n:f:s:p:v:wh
-# launch.sample.sh
-# e:f:q:b:s:r:p:t:a:h
-# env:,fastq_R1:,fastq_R2:,bed:,sample:,run:,pipelines:,threads:,adapters:,help
 
 ####################################################################################################################################
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
-ARGS=$(getopt -o "a:b:e:r:f:q:g:j:m:l:s:w:t:o:u:iygxvdnh" --long "env:,app:,application:,runs:,run:,fastq:,reads:,reads1:,fastq_R1:,by_sample,fastq_R2:,reads2:,index1:,index2:,other_files:,analysis_tag:,sample_tag:,adapters:,analysis:,analysis_name:,analysis_dir:,demultiplexing:,demultiplexing_only,samplesheet:,sample:,sample_filter:,design:,bed:,manifest:,genes:,transcripts:,threads:,output:,results:,repository:,archive:,databases:,input:,output:,tmp:,log:,docker-compose-file:,docker-env-file:,docker-parameters:,docker-stark-image:,docker-stark-container:,no_header,applications_infos,pipelines_infos,release_infos,tools_infos,databases_infos,verbose,debug,release,help" -- "$@" 2> /dev/null)
-#ARGS=$(getopt -o "e:r:f:l:w:t:iygxvdnh" --long "env:,app:,application:,runs:,fastq:,fastq_R1:,json:,ana:,analysis:,samplesheet:,threads:,application_infos,applications_infos,pipelines_infos,release_infos,tools_infos,databases_infos,verbose,debug,release,help" -- "$@" 2> /dev/null)
-#ARGS=$(getopt -o "e:r:f:l:s:w:t:iygxvdnh" --long "env:,app:,application:,runs:,fastq:,fastq_R1:,analysis:,analysis_name:,analysis_dir:,samplesheet:,sample:,sample_list:,threads:,no_header,application_infos,applications_infos,pipelines_infos,release_infos,tools_infos,databases_infos,verbose,debug,release,help" -- "$@" )
-# || [ -z $@ ]
+ARGS=$(getopt -o "e:vdnh" --long "env:,app:,application:,input:,condition:,days:,log:,command:,verbose,debug,release,help" -- "$@" 2> /dev/null)
+
 if [ $? -ne 0 ]; then
 	:
 	echo "#[ERROR] Error in the argument list:";
@@ -207,11 +89,7 @@ fi;
 PARAM=$@
 DEBUG=0
 VERBOSE=0
-#PARAM=$(echo $@ | tr "\n" " ")
-#echo $PARAM;
-#echo $ARGS;
-#PARAM=$(echo $ARGS | sed s/--//gi);
-#exit 0;
+
 
 eval set -- "$ARGS"
 while true
@@ -223,171 +101,26 @@ do
 			APP="$2"
 			shift 2
 			;;
-		-r|--run|--runs)
-			RUNS="$2"
-			shift 2
-			;;
-		-w|--analysis)
-			ANALYSIS="$2"
-			shift 2
-			;;
-		--analysis_name)
-			ANALYSIS_NAME="$2"
-			#ANALYSIS_NAME=$(echo $ANALYSIS_NAME | tr "," " ")
-			shift 2
-			;;
-		--analysis_tag)
-			ANALYSIS_TAG="$2"
-			#ANALYSIS_NAME=$(echo $ANALYSIS_NAME | tr "," " ")
-			shift 2
-			;;
-		-f|--reads|--reads1|--fastq|--fastq_R1)
-			FASTQ=$2 #"$(echo $2 | tr "\n" " ")"
-			shift 2
-			;;
-		-q|--reads2|--fastq_R2)
-			FASTQ_R2=$2 #"$(echo $2 | tr "\n" " ")"
-			shift 2
-			;;
-		--index1)
-			INDEX1=$2 #"$(echo $2 | tr "\n" " ")"
-			shift 2
-			;;
-		--index2)
-			INDEX2=$2 #"$(echo $2 | tr "\n" " ")"
-			shift 2
-			;;
-		--other_files)
-			OTHER_FILES=$2 #"$(echo $2 | tr "\n" " ")"
-			shift 2
-			;;
-		-l|--samplesheet)
-			SAMPLESHEET_INPUT="$2" #"$(echo $2 | tr "\n" " ")"
-			shift 2
-			;;
-		--demultiplexing_only)
-			DEMULTIPLEXING_ONLY=1
-			shift 1
-			;;
-		-s|--sample)
-			SAMPLE="$2"
-			SAMPLE=$(echo $SAMPLE | tr "," " ")
-			shift 2
-			;;
-		--sample_tag)
-			SAMPLE_TAG="$2"
-			shift 2
-			;;
-		--sample_filter)
-			SAMPLE_LIST="$2"
-			SAMPLE_LIST=$(echo $SAMPLE_LIST | tr "," " ")
-			shift 2
-			;;
-		-b|--design|--bed|--manifest)
-			BED_INPUT="$2"
-			BED_INPUT=$(echo $BED_INPUT | tr "," " ")
-			shift 2
-			;;
-		-j|--genes)
-			BEDFILE_GENES_INPUT="$2"
-			BEDFILE_GENES_INPUT=$(echo $BEDFILE_GENES_INPUT | tr "," " ")
-			shift 2
-			;;
-		-m|--transcripts)
-			TRANSCRIPTS_INPUT="$2"
-			TRANSCRIPTS_INPUT=$(echo $TRANSCRIPTS_INPUT | tr "," " ")
-			shift 2
-			;;
-		-u|--repository)
-			REPOSITORY="$2"
-			shift 2
-			;;
-		--archive)
-			ARCHIVE="$2"
-			shift 2
-			;;
-		--databases)
-			DATABASES="$2"
-			shift 2
-			;;
 		--input)
-			INPUT="$2"
+			INPUT_FOLDER="$2"
+			INPUT_FOLDER=$(echo $INPUT_FOLDER | tr "," " ")
 			shift 2
 			;;
-		--output)
-			OUTPUT="$2"
+		--condition)
+			CONDITION="$2"
+			CONDITION=$(echo $CONDITION | tr "," " ")
 			shift 2
 			;;
-		-o|--results)
-			RESULTS="$2"
-			shift 2
-			;;
-		--demultiplexing)
-			DEMULTIPLEXING="$2" #"$(echo $2 | tr "\n" " ")"
-			shift 2
-			;;
-		--tmp)
-			TMP="$2"
+		--days)
+			DAYS="$2"
 			shift 2
 			;;
 		--log)
 			LOG="$2"
 			shift 2
 			;;
-		--docker-compose-file)
-			DOCKER_COMPOSE_FILE="$2"
-			shift 2
-			;;
-		--docker-env-file)
-			DOCKER_ENV_FILE="$2"
-			shift 2
-			;;
-		--docker-parameters)
-			DOCKER_PARAMETERS="$2"
-			shift 2
-			;;
-		--docker-stark-image)
-			DOCKER_STARK_IMAGE_INPUT="$2"
-			shift 2
-			;;
-		--docker-stark-container)
-			DOCKER_STARK_CONTAINER="$2"
-			shift 2
-			;;
-		-i|--applications_infos)
-			APPLICATIONS_INFOS=1
-			shift 1
-			;;
-		-y|--pipelines_infos)
-			PIPELINES_INFOS=1
-			shift 1
-			;;
-		-g|--release_infos)
-			RELEASE_INFOS=1
-			shift 1
-			;;
-		-x|--tools_infos)
-			TOOLS_INFOS=1
-			shift 1
-			;;
-		--databases_infos)
-			DATABASES_INFOS=1
-			shift 1
-			;;
-		--analysis_dir)
-			ANALYSIS_DIR="$2"
-			shift 2
-			;;
-		-g|--by_sample)
-			BY_SAMPLE=1
-			shift 1
-			;;
-		-t|--threads)
-			THREADS_INPUT="$2"
-			shift 2
-			;;
-		-a|--adapters)
-			ADAPTERS="$2"
+		--command)
+			COMMAND="$2"
 			shift 2
 			;;
 		-v|--verbose)
@@ -428,34 +161,10 @@ done
 ####################################################################################################################################
 # Checking the input parameter
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-if [ -z "$FASTQ" ] && \
-	[ -z "$RUNS" ] && \
-	[ -z "$ANALYSIS" ] && \
-	[ -z "$APPLICATIONS_INFOS" ] && \
-	[ -z "$PIPELINES_INFOS" ] && \
-	[ -z "$RELEASE_INFOS" ] && \
-	[ -z "$TOOLS_INFOS" ] && \
-	[ -z "$DATABASES_INFOS" ] && \
-	((!$DEBUG)); then
+if ((0)); then
 	echo "#[ERROR] Required parameter: --analysis, --run, or --reads. For informations --applications_infos, --pipelines_infos, --release_infos, --tools_infos. Use --help to display the help." && echo "" && usage && exit 1;
 fi
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-#echo "if [ "$FASTQ" == "ollow" ] && [ "$THREADS_INPUT" == "he" ] && [ "$W" == "hite" ] && [ "$RUNS" == "abbit" ];"
-if [ "$FASTQ" == "ollow" ] && [ "$THREADS_INPUT" == "he" ] && [ "$W" == "hite" ] && [ "$RUNS" == "abbit" ]; then
-	echo "test";
-	echo -e "\033[2J\033[?25l"; R=`tput lines` C=`tput cols`;: $[R--] ; while true
-	do ( e=echo\ -e s=sleep j=$[RANDOM%C] d=$[RANDOM%R];for i in `eval $e {1..$R}`;
-	do c=`printf '\\\\0%o' $[RANDOM%57+33]` ###  ###
-	$e "\033[$[i-1];${j}H\033[32m$c\033[$i;${j}H\033[37m"$c; $s 0.1;if [ $i -ge $d ]
-	then $e "\033[$[i-d];${j}H ";fi;done;for i in `eval $e {$[i-d]..$R}`; #[mat!rix]
-	do echo -e "\033[$i;${j}f ";$s 0.1;done)& sleep 0.05;done #(c) 2011 -- [ BruXy ]
-	exit 0;
-fi;
-#echo "if [ "$FASTQ" == "ollow" ] && [ "$THREADS_INPUT" == "he" ] && [ "$W" == "hite" ] && [ "$RUNS" == "abbit" ];"
-#exit 0;
-
-
 
 
 # ENV
@@ -474,19 +183,63 @@ export APP
 (($VERBOSE)) && [ ! -z "$APP" ] && [ -z "$ENV" ] && echo "#[INFO] Application '$APP' NOT found"
 
 
+# INPUT FOLDER
+################
+
+if [ "$INPUT_FOLDER" == "" ]; then
+	INPUT_FOLDER=$FOLDER_RUN
+else
+	for IF in $INPUT_FOLDER; do
+		if [ ! -d $IF ]; then
+			echo "#[ERROR] Input folder '$IF' does NOT exists"
+			exit 0
+		fi;
+	done;
+fi;
+
+
+# CONDITION
+##############
+
+if [ "$CONDITION" == "" ]; then
+	CONDITION="RTAComplete.txt&SampleSheet.csv STARKComplete.txt&SampleSheet.csv *analysis.json"
+fi;
+
+
+# DAYS
+########
+
+if [ "$DAYS" == "" ]; then
+	DAYS="30"
+fi;
+
+
+# COMMAND
+###########
+
+if [ "$COMMAND" == "" ]; then
+	COMMAND="STARK"
+fi;
+
+
+
+
 # DEBUG
 #########
 EXEC=1
 
-if ((0)) && (($DEBUG)); then
+if ((1)) && (($DEBUG)); then
 #if (($DEBUG)); then
-	echo $STARK_FOLDER_BIN
-	echo $STARK_FOLDER_APPS
-	echo $STARK_FOLDER_DOCS
-	echo $STARK_FOLDER_TOOLBOX
-	echo $STARK_FOLDER_CONFIG
-	echo $STARK_FOLDER
-	echo "FOLDER_INPUT:$FOLDER_INPUT"
+	echo "APP:$APP"
+	echo "ENV:$ENV"
+	echo "INPUT_FOLDER:$INPUT_FOLDER"
+	echo "CONDITION:$CONDITION"
+	echo "FOLDER_LOG:$FOLDER_LOG"
+	echo ""
+	echo ""
+	echo ""
+	echo ""
+	echo "APP:$APP"
 	echo "   FOLDER_RUN:$FOLDER_RUN"
 	echo "   FOLDER_MANIFEST:$FOLDER_MANIFEST"
 	echo "FOLDER_OUTPUT:$FOLDER_OUTPUT"
@@ -495,6 +248,7 @@ if ((0)) && (($DEBUG)); then
 	echo "   FOLDER_TMP:$FOLDER_TMP"
 	echo "   FOLDER_LOG:$FOLDER_LOG"
 	echo "DATABASES:$DATABASES"
+	echo "CONDITION:$CONDITION"
 	echo "FOLDER_DATABASES:$FOLDER_DATABASES"
 	echo "APP=$APP"
 	echo "ASSEMBLY=$ASSEMBLY"
@@ -503,9 +257,82 @@ if ((0)) && (($DEBUG)); then
 	echo "CALLERS=$CALLERS"
 	echo "ANNOTATORS=$ANNOTATORS"
 	echo "ASSEMBLY=$ASSEMBLY"
-	echo "RULES=$RULES"
-	exit 0;
+	#exit 0;
 fi;
+
+
+# FOR DEV
+#rm $FOLDER_LOG/ID-*-NAME-*.log
+
+# foreach input folder
+for IF in $INPUT_FOLDER; do
+	# for each analysis folder
+	#for IFA in $IF/*; do
+	for IFA in $(find $IF -mindepth 1 -maxdepth 1 -type d -mtime -$DAYS); do
+		MD5=$(echo $IFA | md5sum | awk '{print $1}')
+		RUN_NAME=$(basename $IFA)
+		MD5_LOG="$FOLDER_LOG/ID-$MD5-NAME-$RUN_NAME.log"
+		if [ -d $IFA ] && [ ! -f $MD5_LOG ]; then
+			echo "#[INFO] Analysis/Run '$RUN_NAME' - folder '$IFA' [$MD5]"
+			CONDITION_TEST=0
+			for C in $CONDITION; do
+				(($VERBOSE)) && echo "#[INFO]    condition AND '$C' test"
+				CONDITION_AND=$(echo $C | tr "&" " ")
+				CONDITION_AND_TEST=1
+				for CA in $CONDITION_AND; do
+					(($VERBOSE)) && echo "#[INFO]          condition '$CA' test"
+					if (( $(find $IFA -mindepth 1 -maxdepth 1 -type f -iname "$CA" -mtime -$DAYS | wc -l) )); then
+						(($VERBOSE)) && echo "#[INFO]          => condition '$CA' OK"
+					else
+						(($VERBOSE)) && echo "#[INFO]       => condition '$CA' ko"
+						CONDITION_AND_TEST=0
+						break
+					fi;
+				done;
+				(($VERBOSE)) && echo "#[INFO]    => condition AND test '$CONDITION_AND_TEST'"
+				if (($CONDITION_AND_TEST)); then
+					CONDITION_TEST=1
+					break
+				fi;
+				#CONDITION_TEST=$(($CONDITION_TEST+$CONDITION_AND_TEST))
+			done;
+			(($VERBOSE)) && echo "#[INFO]    Condition '$C' test '$CONDITION_TEST'"
+			CMD=""
+			if (( $CONDITION_TEST )); then
+				CMD="$COMMAND --run=$IFA"
+				EXEC_DATE=$(date '+%Y%m%d-%H%M%S')
+				echo "#[INFO] Analysis/Run '$RUN_NAME' - folder '$IFA' [$MD5] LAUNCH"
+				(($VERBOSE)) && echo "#[INFO] => Launch analysis '$IFA' with command '$COMMAND'"
+				(($VERBOSE)) && echo "#[INFO]    MD5: $MD5_LOG"
+				(($VERBOSE)) && echo "#[INFO]    CMD: $CMD"
+				(($VERBOSE)) && echo "#[INFO]    EXEC_DATE: $EXEC_DATE"
+				echo "RUN: $RUN_NAME" > $MD5_LOG
+				echo "FOLDER: $IFA" >> $MD5_LOG
+				echo "CONDITION: $CONDITION" >> $MD5_LOG
+				echo "EXEC_DATE: $EXEC_DATE" >> $MD5_LOG
+				(($DEBUG)) && cat $MD5_LOG
+				eval $CMD
+			else
+				(($VERBOSE)) && echo "#[INFO] => DO NOT Launch analysis '$IFA' with command '$COMMAND'"
+			fi;
+		fi;
+		echo "# "
+	done;
+done;
+
+
+
+exit 0
+
+
+
+
+
+
+
+
+
+
 
 
 # CONFIG
@@ -876,7 +703,7 @@ if [ -s "$DOCKER_COMPOSE_FILE" ] || [ -s "$DOCKER_ENV_FILE" ] || [ "$DOCKER_STAR
 	DOCKER_MOUNT=""
 	for var in "${!DOCKER_STARK_FOLDER_@}"; do
 		ONE_DOCKER_STARK_FOLDER_CONTAINER=$(echo ${var} | sed "s/^DOCKER_STARK_FOLDER_//g" | sed "s/_/\//g" | tr '[:upper:]' '[:lower:]' )
-		[ ! -d ${!var} ] && mkdir -p ${!var} && echo "#[INFO] Folder '${!var}' created" # ???
+		[ ! -d ${!var} ] && mkdir -p ${!var} && echo "#[INFO] Folder '${!var}' created"
 		[ -d ${!var} ] && [ "${!var}" != "" ] && DOCKER_MOUNT=$DOCKER_MOUNT" -v "${!var}":/STARK/"$ONE_DOCKER_STARK_FOLDER_CONTAINER #  echo "$var = ${!var}"
 	done
 	DOCKER_CMD_PARAMETERS=$DOCKER_CMD_PARAMETERS" $DOCKER_MOUNT "
