@@ -86,7 +86,7 @@ services:
             - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_LAUNCHER_PORT_HOST}:${DOCKER_STARK_SERVICE_LAUNCHER_PORT_INNER}
         volumes:
             - /var/run/docker.sock:/var/run/docker.sock
-            - analyses:/STARK/analyses
+            - analyses:${DOCKER_STARK_FOLDER_ANALYSIS_INNER}:rw
         links:
             - stark
             - stark-databases
@@ -103,6 +103,7 @@ services:
         env_file:
             - .env
         volumes:
+            - /var/run/docker.sock:/var/run/docker.sock
             - databases:${DOCKER_STARK_FOLDER_DATABASES_INNER}:ro
             - input:${DOCKER_STARK_FOLDER_INPUT_INNER}:ro
             - repository:${DOCKER_STARK_FOLDER_OUTPUT_REPOSITORY_INNER}:rw
@@ -194,12 +195,12 @@ volumes:
             o: bind
 
     # DEMULTIPLEXING
-    demultiplexing:
-        driver: local
-        driver_opts:
-            type: none
-            device: ${DOCKER_STARK_FOLDER_OUTPUT_DEMULTIPLEXING}
-            o: bind
+    # demultiplexing:
+    #     driver: local
+    #     driver_opts:
+    #         type: none
+    #         device: ${DOCKER_STARK_FOLDER_OUTPUT_DEMULTIPLEXING}
+    #         o: bind
 
     # REPOSITORY
     repository:
