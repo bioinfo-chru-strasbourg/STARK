@@ -65,6 +65,8 @@ function usage {
 	echo "# --docker-stark-image=<STRING>            Docker STARK image (for command 'DOCKER')";
 	echo "#                                          Default: environment";
 	echo "# --exec                                   Execute command";
+	echo "# --daemon                                 Execute script as a daemon";
+	echo "# --daemon-periodicity                     Listening periodicity";
 
 	echo "# --verbose                                VERBOSE";
 	echo "# --debug                                  DEBUG";
@@ -80,7 +82,7 @@ function usage {
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
-ARGS=$(getopt -o "e:vdnh" --long "env:,app:,application:,input:,condition:,days:,log:,command:,launcher:,docker-stark-image:,exec,no_header,verbose,debug,release,help" -- "$@" 2> /dev/null)
+ARGS=$(getopt -o "e:vdnh" --long "env:,app:,application:,input:,condition:,days:,log:,command:,launcher:,docker-stark-image:,exec,daemon,daemon-periodicity:,no_header,verbose,debug,release,help" -- "$@" 2> /dev/null)
 
 if [ $? -ne 0 ]; then
 	:
@@ -140,6 +142,14 @@ do
 		--exec)
 			EXEC=1
 			shift 1
+			;;
+		--daemon)
+			DAEMON=1
+			shift 1
+			;;
+		--daemon-periodicity)
+			DAEMON_PERIODICITY="$2"
+			shift 2
 			;;
 		-v|--verbose)
 			VERBOSE=1
@@ -248,6 +258,15 @@ if [ "$LAUNCHER" == "" ]; then
 fi;
 
 
+# DAEMON_PERIODICITY
+######################
+
+if [ "$DAEMON_PERIODICITY" == "" ]; then
+	DAEMON_PERIODICITY="10"
+fi;
+
+
+
 
 
 # DEBUG
@@ -290,95 +309,105 @@ fi;
 # FOR DEV
 #rm $FOLDER_LOG/ID-*-NAME-*.log
 
-# foreach input folder
-for IF in $INPUT_FOLDER; do
-	# for each analysis folder
-	#for IFA in $IF/*; do
-	for IFA in $(find $IF -mindepth 1 -maxdepth 1 -type d -mtime -$DAYS); do
-		MD5=$(echo $IFA | md5sum | awk '{print $1}')
-		RUN_NAME=$(basename $IFA)
-		ID="ID-$MD5-NAME-$RUN_NAME"
-		MD5_LOG="$FOLDER_LOG/$ID.log"
-		if [ -d $IFA ]; then
-			if [ ! -f $MD5_LOG ]; then
-				(($VERBOSE)) && echo "#[INFO] Analysis/Run '$RUN_NAME' - folder '$IFA' [$MD5]"
-				CONDITION_TEST=0
-				for C in $CONDITION; do
-					(($VERBOSE)) && echo "#[INFO]    condition AND '$C' test"
-					CONDITION_AND=$(echo $C | tr "&" " ")
-					CONDITION_AND_TEST=1
-					for CA in $CONDITION_AND; do
-						(($VERBOSE)) && echo "#[INFO]          condition '$CA' test"
-						if (( $(find $IFA -mindepth 1 -maxdepth 1 -type f -iname "$CA" -mtime -$DAYS | wc -l) )); then
-							(($VERBOSE)) && echo "#[INFO]          => condition '$CA' OK"
-						else
-							(($VERBOSE)) && echo "#[INFO]       => condition '$CA' ko"
-							CONDITION_AND_TEST=0
+while ((1)); do
+
+	# foreach input folder
+	for IF in $INPUT_FOLDER; do
+		# for each analysis folder
+		#for IFA in $IF/*; do
+		for IFA in $(find $IF -mindepth 1 -maxdepth 1 -type d -mtime -$DAYS); do
+			MD5=$(echo $IFA | md5sum | awk '{print $1}')
+			RUN_NAME=$(basename $IFA)
+			ID="ID-$MD5-NAME-$RUN_NAME"
+			MD5_LOG="$FOLDER_LOG/$ID.log"
+			if [ -d $IFA ]; then
+				if [ ! -f $MD5_LOG ]; then
+					(($VERBOSE)) && echo "#[INFO] Analysis/Run '$RUN_NAME' - folder '$IFA' [$MD5]"
+					CONDITION_TEST=0
+					for C in $CONDITION; do
+						(($VERBOSE)) && echo "#[INFO]    condition AND '$C' test"
+						CONDITION_AND=$(echo $C | tr "&" " ")
+						CONDITION_AND_TEST=1
+						for CA in $CONDITION_AND; do
+							(($VERBOSE)) && echo "#[INFO]          condition '$CA' test"
+							if (( $(find $IFA -mindepth 1 -maxdepth 1 -type f -iname "$CA" -mtime -$DAYS | wc -l) )); then
+								(($VERBOSE)) && echo "#[INFO]          => condition '$CA' OK"
+							else
+								(($VERBOSE)) && echo "#[INFO]       => condition '$CA' ko"
+								CONDITION_AND_TEST=0
+								break
+							fi;
+						done;
+						(($VERBOSE)) && echo "#[INFO]    => condition AND test '$CONDITION_AND_TEST'"
+						if (($CONDITION_AND_TEST)); then
+							CONDITION_TEST=1
 							break
 						fi;
+						#CONDITION_TEST=$(($CONDITION_TEST+$CONDITION_AND_TEST))
 					done;
-					(($VERBOSE)) && echo "#[INFO]    => condition AND test '$CONDITION_AND_TEST'"
-					if (($CONDITION_AND_TEST)); then
-						CONDITION_TEST=1
-						break
-					fi;
-					#CONDITION_TEST=$(($CONDITION_TEST+$CONDITION_AND_TEST))
-				done;
-				(($VERBOSE)) && echo "#[INFO]    Condition '$C' test '$CONDITION_TEST'"
-				CMD=""
-				if (( $CONDITION_TEST )); then
+					(($VERBOSE)) && echo "#[INFO]    Condition '$C' test '$CONDITION_TEST'"
+					CMD=""
+					if (( $CONDITION_TEST )); then
 
-					#curl  http://STARK-service-launcher:8000/analysis -O /tmp/test
-					#cat /tmp/test
-					#
+						#curl  http://STARK-service-launcher:8000/analysis -O /tmp/test
+						#cat /tmp/test
+						#
 
-					#curl -X POST \
-					#	--data '{"run":"truc"}' \
-					#	http://STARK-service-launcher:8000/analysis
+						#curl -X POST \
+						#	--data '{"run":"truc"}' \
+						#	http://STARK-service-launcher:8000/analysis
 
-					#LAUNCHER="http://STARK-service-launcher:8000/analysis"
+						#LAUNCHER="http://STARK-service-launcher:8000/analysis"
 
 
-					if [ "$COMMAND" == "LAUNCHER" ]; then
-						CMD="curl -X POST -H 'Content-Type: application/json' -d '{\"run\":\"$IFA\"}' $LAUNCHER"
-					elif [ "$COMMAND" == "DOCKER" ]; then
-						CMD="STARK --docker-stark-image=$DOCKER_STARK_IMAGE --docker-parameters='--rm;-d;--name=$ID' --run=$IFA"
-					elif [ "$COMMAND" == "STARK" ]; then
-						CMD="STARK --run=$IFA"
-					fi;
-					#curl -X POST -H "Content-Type: application/json" -d @../data/cats.json http://STARK-service-launcher:8000/analysis
+						if [ "$COMMAND" == "LAUNCHER" ]; then
+							CMD="curl -X POST -H 'Content-Type: application/json' -d '{\"run\":\"$IFA\"}' $LAUNCHER"
+						elif [ "$COMMAND" == "DOCKER" ]; then
+							CMD="STARK --docker-stark-image=$DOCKER_STARK_IMAGE --docker-parameters='--rm;-d;--name=$ID' --run=$IFA"
+						elif [ "$COMMAND" == "STARK" ]; then
+							CMD="STARK --run=$IFA"
+						fi;
+						#curl -X POST -H "Content-Type: application/json" -d @../data/cats.json http://STARK-service-launcher:8000/analysis
 
 
-					#--request POST \
+						#--request POST \
 
-					#CMD="$COMMAND --run=$IFA"
-					EXEC_DATE=$(date '+%Y%m%d-%H%M%S')
-					(($VERBOSE)) && echo "#[INFO] Analysis/Run '$RUN_NAME' - folder '$IFA' [$MD5] TO LAUNCH"
-					(($VERBOSE)) && echo "#[INFO] => Launch analysis '$IFA' with command '$COMMAND'"
-					(($VERBOSE)) && echo "#[INFO]    MD5: $MD5_LOG"
-					(($VERBOSE)) && echo "#[INFO]    CMD: $CMD"
-					(($VERBOSE)) && echo "#[INFO]    EXEC_DATE: $EXEC_DATE"
-					if (($EXEC)); then
-						echo "RUN: $RUN_NAME" > $MD5_LOG
-						echo "FOLDER: $IFA" >> $MD5_LOG
-						echo "CONDITION: $C" >> $MD5_LOG
-						echo "EXEC_DATE: $EXEC_DATE" >> $MD5_LOG
-						echo "OUTPUT: " >> $MD5_LOG
-						(($DEBUG)) && cat $MD5_LOG
-						# LAUNCH
-						echo "#[INFO] Analysis/Run '$RUN_NAME' - folder '$IFA' [$MD5] LAUNCHED"
-						eval $CMD 1>> $MD5_LOG 2>> $MD5_LOG
+						#CMD="$COMMAND --run=$IFA"
+						EXEC_DATE=$(date '+%Y%m%d-%H%M%S')
+						(($VERBOSE)) && echo "#[INFO] Analysis/Run '$RUN_NAME' - folder '$IFA' [$MD5] TO LAUNCH"
+						(($VERBOSE)) && echo "#[INFO] => Launch analysis '$IFA' with command '$COMMAND'"
+						(($VERBOSE)) && echo "#[INFO]    MD5: $MD5_LOG"
+						(($VERBOSE)) && echo "#[INFO]    CMD: $CMD"
+						(($VERBOSE)) && echo "#[INFO]    EXEC_DATE: $EXEC_DATE"
+						if (($EXEC)); then
+							echo "RUN: $RUN_NAME" > $MD5_LOG
+							echo "FOLDER: $IFA" >> $MD5_LOG
+							echo "CONDITION: $C" >> $MD5_LOG
+							echo "EXEC_DATE: $EXEC_DATE" >> $MD5_LOG
+							echo "OUTPUT: " >> $MD5_LOG
+							(($DEBUG)) && cat $MD5_LOG
+							# LAUNCH
+							echo "#[INFO] Analysis/Run '$RUN_NAME' - folder '$IFA' [$MD5] LAUNCHED"
+							eval $CMD 1>> $MD5_LOG 2>> $MD5_LOG
+						fi;
+					else
+						(($VERBOSE)) && echo "#[INFO] Analysis/Run '$RUN_NAME' - folder '$IFA' [$MD5] NOT TO LAUNCH"
+						#(($VERBOSE)) && echo "#[INFO] => DO NOT Launch analysis '$IFA' with command '$COMMAND'"
 					fi;
 				else
-					(($VERBOSE)) && echo "#[INFO] Analysis/Run '$RUN_NAME' - folder '$IFA' [$MD5] NOT TO LAUNCH"
-					#(($VERBOSE)) && echo "#[INFO] => DO NOT Launch analysis '$IFA' with command '$COMMAND'"
+					(($VERBOSE)) && echo "#[INFO] Analysis/Run '$RUN_NAME' - folder '$IFA' [$MD5] ALREADY LAUNCHED"
 				fi;
-			else
-				(($VERBOSE)) && echo "#[INFO] Analysis/Run '$RUN_NAME' - folder '$IFA' [$MD5] ALREADY LAUNCHED"
 			fi;
-		fi;
-		(($VERBOSE)) && echo "# "
+			(($VERBOSE)) && echo "# "
+		done;
 	done;
+
+	if (($DAEMON)); then
+		sleep $DAEMON_PERIODICITY;
+	else
+		break;
+	fi;
+
 done;
 
 
