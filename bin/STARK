@@ -825,6 +825,8 @@ if [ -s "$DOCKER_COMPOSE_FILE" ] || [ -s "$DOCKER_ENV_FILE" ] || [ "$DOCKER_STAR
 
 	PARAM_CMD=$(echo "$PARAM " | sed "s/--docker-compose-file=[^ |$]*//g" | sed "s/--docker-env-file=[^ |$]*//g" | sed "s/--docker-parameters=[^ |$]*//g" | sed "s/--docker-stark-image=[^ |$]*//g" | sed "s/--docker-stark-container=[^ |$]*//g")
 
+	# MAIN Docker PARAMETERS
+	#DOCKER_CMD_PARAMETERS=" --rm "
 
 	## DOCKER
 	# Test if Docker is installed
@@ -842,7 +844,6 @@ if [ -s "$DOCKER_COMPOSE_FILE" ] || [ -s "$DOCKER_ENV_FILE" ] || [ "$DOCKER_STAR
 		(($DEBUG)) && echo "[INFO] DOCKER CMD: $DOCKER_CMD"
 		eval $DOCKER_CMD
 	fi;
-
 
 	## DOCKER ENV
 	# Check docker env file

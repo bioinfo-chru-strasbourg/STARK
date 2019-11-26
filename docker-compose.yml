@@ -57,6 +57,10 @@ services:
             - .env
         links:
             - stark-base
+            - stark-repo
+        depends_on:
+            - stark-base
+            - stark-repo
 
     # STARK DATABASES POPULATION
     stark-databases:
@@ -67,6 +71,8 @@ services:
         volumes:
             - databases:/STARK/databases
         links:
+            - stark
+        depends_on:
             - stark
 
 
@@ -82,57 +88,50 @@ services:
         container_name: STARK-service-launcher
         env_file:
             - .env
+        environment:
+            - TS=ts
+            #- TS_SOCKET=${TASK_SPOOLER_TS_SOCKET}
+            - TS_SAVELIST=${TASK_SPOOLER_TS_SAVELIST}
         ports:
-            - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_LAUNCHER_PORT_HOST}:${DOCKER_STARK_SERVICE_LAUNCHER_PORT_INNER}
+            - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_LAUNCHER_PORT}:${DOCKER_STARK_SERVICE_LAUNCHER_PORT_INNER}
         volumes:
             - /var/run/docker.sock:/var/run/docker.sock
-            - analyses:${DOCKER_STARK_FOLDER_ANALYSES_INNER}:rw
+            - analyses:${DOCKER_STARK_INNER_FOLDER_ANALYSES}:rw
+        restart: always
         links:
             - stark
             - stark-databases
-        restart: always
+        depends_on:
+            - stark
+            - stark-databases
 
 
     # STARK SERVICE SERVER
     stark-service-listener:
         image: ${DOCKER_STARK_IMAGE}
         entrypoint: /tool/bin/STARK.listener
-        #command: --verbose --command="STARK --docker-env-file=${DOCKER_STARK_SERVICE_LISTENER_ENV}"
-        command: --verbose
-        container_name: STARK-listener
+        #command: --verbose --command="STARK" --days=${DOCKER_STARK_SERVICE_LISTENER_DAYS} --condition="${DOCKER_STARK_SERVICE_LISTENER_CONDITION}" --exec
+        command: --verbose --command="LAUNCHER" --launcher="http://stark-service-launcher:${DOCKER_STARK_SERVICE_LAUNCHER_PORT_INNER}/analysis" --days=${DOCKER_STARK_SERVICE_LISTENER_DAYS} --condition="${DOCKER_STARK_SERVICE_LISTENER_CONDITION}" --exec
+        #command: --verbose --command="DOCKER" --docker-stark-image=${DOCKER_STARK_IMAGE} --days=${DOCKER_STARK_SERVICE_LISTENER_DAYS} --condition="${DOCKER_STARK_SERVICE_LISTENER_CONDITION}" --exec
+        container_name: STARK-service-listener
         env_file:
             - .env
         volumes:
             - /var/run/docker.sock:/var/run/docker.sock
-            - databases:${DOCKER_STARK_FOLDER_DATABASES_INNER}:ro
-            - input:${DOCKER_STARK_FOLDER_INPUT_INNER}:ro
-            - repository:${DOCKER_STARK_FOLDER_OUTPUT_REPOSITORY_INNER}:rw
-            - archive:${DOCKER_STARK_FOLDER_OUTPUT_ARCHIVE_INNER}:rw
-            - analyses:${DOCKER_STARK_FOLDER_OUTPUT_LOG_INNER}:rw
-        links:
-            - stark
+            - databases:${DOCKER_STARK_INNER_FOLDER_DATABASES}:ro
+            - input:${DOCKER_STARK_INNER_FOLDER_INPUT}:ro
+            - repository:${DOCKER_STARK_INNER_FOLDER_OUTPUT_REPOSITORY}:rw
+            - archive:${DOCKER_STARK_INNER_FOLDER_OUTPUT_ARCHIVE}:rw
+            - analyses:${DOCKER_STARK_INNER_FOLDER_OUTPUT_LOG}:rw
         restart: always
-
-
-    # STARK SERVICE SERVER CENTOS
-    stark-service-launcher-centos:
-        image: ${DOCKER_STARK_SERVICE_LAUNCHER_IMAGE}-centos
-        build:
-            context: ${DOCKER_STARK_SERVICE_LAUNCHER_CONTEXT}
-            dockerfile: centos.Dockerfile
-        container_name: STARK-service-launcher-centos
-        env_file:
-            - .env
-        ports:
-            - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_LAUNCHER_PORT_HOST}2:${DOCKER_STARK_SERVICE_LAUNCHER_PORT_INNER}
-        volumes:
-            - /var/run/docker.sock:/var/run/docker.sock
-            - analyses:/STARK/analyses
         links:
+            - stark-service-launcher
             - stark
             - stark-databases
-        restart: always
-
+        depends_on:
+            - stark-service-launcher
+            - stark
+            - stark-databases
 
     # STARK SERVICE REPO
     stark-service-repo:
@@ -142,44 +141,69 @@ services:
         env_file:
             - .env
         ports:
-            - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_REPO_PORT_HOST}:${DOCKER_STARK_SERVICE_REPO_PORT_INNER}
+            - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_REPO_PORT}:${DOCKER_STARK_SERVICE_REPO_PORT_INNER}
         volumes:
             - ${DOCKER_STARK_SERVICE_REPO_FOLDER}:/usr/local/apache2/htdocs/
         restart: always
+        depends_on:
+            - stark-repo
 
-    # # STARK SERVICE EXPLORER
-    # stark-server-explorer:
-    #     image: ${DOCKER_STARK_SERVICE_EXPLORER_IMAGE}
-    #     container_name: STARK-service-explorer
-    #     restart: always
-    #     env_file:
-    #         - .env
-    #     ports:
-    #         - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_EXPLORER_PORT_HOST}:${DOCKER_STARK_SERVICE_EXPLORER_PORT_INNER}
-    #     volumes:
-    #         - ${DOCKER_STARK_FOLDER_OUTPUT_REPOSITORY}:/usr/local/apache2/htdocs/
-    #     restart: always
 
     # STARK SERVICE BROWSER
     stark-service-browser:
         image: ${DOCKER_STARK_SERVICE_BROWSER_IMAGE}
         container_name: STARK-service-browser
-        #command:  -d ${DOCKER_STARK_SERVICE_BROWSER_FOLDER_CONFIG_INNER}/filebrowser.db -c ${DOCKER_STARK_SERVICE_BROWSER_FOLDER_CONFIG_INNER}/.filebrowser.json -r ${DOCKER_STARK_SERVICE_BROWSER_FOLDER_DATA_INNER}
-        command: -r ${DOCKER_STARK_SERVICE_BROWSER_FOLDER_DATA_INNER}
+        #command:  -d ${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_CONFIG}/filebrowser.db -c ${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_CONFIG}/.filebrowser.json -r ${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_DATA}
+        command: -r ${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_DATA}
         restart: always
         env_file:
             - .env
         ports:
-            - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_BROWSER_PORT_HOST}:${DOCKER_STARK_SERVICE_BROWSER_PORT_INNER}
+            - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_BROWSER_PORT}:${DOCKER_STARK_SERVICE_BROWSER_PORT_INNER}
         volumes:
-            - ${DOCKER_STARK_SERVICE_BROWSER_FOLDER_CONFIG_HOST}:${DOCKER_STARK_SERVICE_BROWSER_FOLDER_CONFIG_INNER}:rw
-            - ${DOCKER_STARK_SERVICE_BROWSER_FOLDER_DATA_HOST}:${DOCKER_STARK_SERVICE_BROWSER_FOLDER_DATA_INNER}:rw
-            - ${DOCKER_STARK_SERVICE_BROWSER_FOLDER_USERS_HOST}:${DOCKER_STARK_SERVICE_BROWSER_FOLDER_USERS_INNER}:rw
-            - input:${DOCKER_STARK_SERVICE_BROWSER_FOLDER_DATA_INNER}/raw:ro
-            - repository:${DOCKER_STARK_SERVICE_BROWSER_FOLDER_DATA_INNER}/repository:ro
-            - archive:${DOCKER_STARK_SERVICE_BROWSER_FOLDER_DATA_INNER}/archives:ro
+            - ${DOCKER_STARK_SERVICE_BROWSER_FOLDER_CONFIG}:${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_CONFIG}:rw
+            - ${DOCKER_STARK_SERVICE_BROWSER_FOLDER_DATA}:${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_DATA}:rw
+            - ${DOCKER_STARK_SERVICE_BROWSER_FOLDER_USERS}:${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_USERS}:rw
+            - input:${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_DATA}/raw:ro
+            - repository:${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_DATA}/repository:ro
+            - archive:${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_DATA}/archives:ro
         restart: always
 
+
+        # # STARK SERVICE SERVER CENTOS
+        # stark-service-launcher-centos:
+        #     image: ${DOCKER_STARK_SERVICE_LAUNCHER_IMAGE}-centos
+        #     build:
+        #         context: ${DOCKER_STARK_SERVICE_LAUNCHER_CONTEXT}
+        #         dockerfile: centos.Dockerfile
+        #     container_name: STARK-service-launcher-centos
+        #     env_file:
+        #         - .env
+        #     environment:
+        #         - TS_SOCKET=${TASK_SPOOLER_TS_SOCKET}
+        #         - TS_SAVELIST=${TASK_SPOOLER_TS_SAVELIST}
+        #     ports:
+        #         - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_LAUNCHER_PORT}2:${DOCKER_STARK_SERVICE_LAUNCHER_PORT_INNER}
+        #     volumes:
+        #         - /var/run/docker.sock:/var/run/docker.sock
+        #         - analyses:/STARK/analyses
+        #     links:
+        #         - stark
+        #         - stark-databases
+        #     restart: always
+
+        # # STARK SERVICE EXPLORER
+        # stark-server-explorer:
+        #     image: ${DOCKER_STARK_SERVICE_EXPLORER_IMAGE}
+        #     container_name: STARK-service-explorer
+        #     restart: always
+        #     env_file:
+        #         - .env
+        #     ports:
+        #         - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_EXPLORER_PORT}:${DOCKER_STARK_SERVICE_EXPLORER_PORT_INNER}
+        #     volumes:
+        #         - ${DOCKER_STARK_FOLDER_OUTPUT_REPOSITORY}:/usr/local/apache2/htdocs/
+        #     restart: always
 
 
 # VOLUMES
@@ -234,7 +258,6 @@ volumes:
             type: none
             device: ${DOCKER_STARK_FOLDER_OUTPUT_LOG}
             o: bind
-
 
     # DATABASES
     databases:
