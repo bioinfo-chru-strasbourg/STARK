@@ -257,7 +257,7 @@ volumes:
         driver: local
         driver_opts:
             type: none
-            device: ${DOCKER_STARK_SERVICE_LISTENER_FOLDER_LOG}
+            device: ${DOCKER_STARK_SERVICE_LAUNCHER_FOLDER_LOG}
             o: bind
 
     # ANALYSES - Listener
