@@ -34,16 +34,6 @@
 
 
 ########
-# ARGS #
-#######
-
-ARG THREADS=1
-ARG REPO=https://gitlab.bioinfo-diag.fr/Strasbourg/stark-repo/raw/master
-ARG SRC=/STARK/sources
-
-
-
-########
 # FROM #
 ########
 
@@ -58,28 +48,309 @@ LABEL Software="STARK-BASE" \
 
 
 
+########
+# ARGS #
+#######
+
+ARG THREADS="4"
+# REPO from GIT
+ARG REPO="https://gitlab.bioinfo-diag.fr/Strasbourg/STARK-repo/raw/master/"
+# REPO from internal HTTP server
+#ARG REPO="http://192.168.1.14:8080/"
+# REPO null
+#ARG REPO=""
+ARG REMOVE_SOURCES="1"
+
+
+
 ##############
 # PARAMETERS #
 ##############
 
-ENV STARK_FOLDER=/STARK
-ENV TOOLS=$STARK_FOLDER/tools
-ENV DATA=$STARK_FOLDER/data
-ENV TOOL=$STARK_FOLDER/tool
-ENV DATABASES=$STARK_FOLDER/databases
-ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git java java-1.8.0 lzma lzma-devel make ncurses-devel perl perl-Data-Dumper perl-Digest-MD5 perl-Switch perl-devel perl-Tk tbb-devel unzip wget which xz xz-devel zlib zlib-devel zlib2 zlib2-devel ghostscript enscript python2-pip python3 python3-devel docker "
-ENV YUM_REMOVE="autoconf automake bzip2-devel lzma-devel ncurses-devel perl-devel tbb-devel xz-devel zlib-devel zlib2-devel python3-devel"
+ENV STARK_FOLDER="/STARK"
+ENV TOOLS="$STARK_FOLDER/tools"
+ENV DATA="$STARK_FOLDER/data"
+ENV TOOL="$STARK_FOLDER/tool"
+ENV SOURCES_FOLDER="sources"
+ENV SOURCES="$STARK_FOLDER/$SOURCES_FOLDER"
+ENV DATABASES="$STARK_FOLDER/databases"
+ENV WORKDIR="/tmp"
+#ENV YUM_PARAM=" -q -e 0 "
+ENV YUM_PARAM=" "
+ENV WGET_PARAM=" "
+ENV TAR_PARAM=" "
+ENV ZIP_PARAM=" "
+ENV MAKE_PARAM=" "
 
-#epel-release R
+
+##########
+# HEADER #
+##########
+
+RUN echo "###########################" && \
+	echo "# STARK BASE INSTALLATION #" && \
+	echo "###########################" && \
+	echo "#" && \
+	echo "#### PARAMETERS" && \
+	echo "#[INFO] STARK_FOLDER=$STARK_FOLDER" && \
+	echo "#[INFO] TOOLS=$TOOLS" && \
+	echo "#[INFO] DATA=$DATA" && \
+	echo "#[INFO] TOOL=$TOOL" && \
+	echo "#[INFO] SOURCES_FOLDER=$SOURCES_FOLDER" && \
+	echo "#[INFO] SOURCES=$SOURCES" && \
+	echo "#[INFO] DATABASES=$DATABASES" && \
+	echo "#[INFO] WORKDIR=$WORKDIR" && \
+	echo "#[INFO] REMOVE_SOURCES=$REMOVE_SOURCES" && \
+	echo "#[INFO] THREADS=$THREADS" && \
+	echo "#[INFO] REPO=$REPO" && \
+	echo "#";
+
+
+
+
+###########
+# SOURCES #
+###########
+
+ADD . $SOURCES
+
+
+
+###########
+# WORKDIR #
+###########
+
+WORKDIR $WORKDIR
+
 
 
 ###############
 # YUM INSTALL #
 ###############
 
-RUN yum update -y && \
-	yum install -y epel-release && \
-	yum install -y $YUM_INSTALL ;
+ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git lzma lzma-devel make ncurses-devel perl perl-Data-Dumper perl-Digest-MD5 perl-Switch perl-devel perl-Tk tbb-devel unzip rsync wget which xz xz-devel zlib zlib-devel zlib2 zlib2-devel docker java-1.7.0 java-1.8.0 python2 python2-pip python3 python3-pip"
+#ENV YUM_INSTALL=" wget rsync python2 python2-pip python3 python3-pip"
+ENV YUM_REMOVE="autoconf automake bzip2-devel lzma-devel ncurses-devel perl-devel tbb-devel xz-devel zlib-devel zlib2-devel python3-devel"
+ENV PYTHON_MODULE=""
+ENV PYTHON2_MODULE=$PYTHON_MODULE" numpy scipy argparse"
+ENV PYTHON3_MODULE=$PYTHON_MODULE""
+
+
+ENV REPO_SYSTEM_GIT="$REPO/sources.system.tar.gz?path=sources/system"
+ENV REPO_SYSTEM_HTTP="$REPO/sources/system/"
+ENV REPO_PYTHON_GIT="$REPO/sources.python.tar.gz?path=sources/python"
+ENV REPO_PYTHON_HTTP="$REPO/sources/python/"
+
+
+RUN echo "#### SYSTEM INSTALLATION" && \
+	# Create system repository \
+	mkdir -p $SOURCES/$SOURCES_FOLDER/system && \
+	# INSTALL WGET \
+	echo "#[INFO] System install wget package" && \
+	ls $SOURCES/$SOURCES_FOLDER/system/*.rpm && \
+	if ! ls $SOURCES/$SOURCES_FOLDER/system/wget-*.rpm 1> /dev/null 2>&1; then \
+		echo "#[INFO] System wget package not locally available"; \
+		yum $YUM_PARAM install -y --nogpgcheck --downloadonly --downloaddir=$SOURCES/$SOURCES_FOLDER/system/ wget; \
+		echo "#[INFO] System wget package downloaded from YUM Repository"; \
+	fi && \
+	echo "#[INFO] System install rsync package" && \
+	if ! ls $SOURCES/$SOURCES_FOLDER/system/rsync-*.rpm 1> /dev/null 2>&1; then \
+		echo "#[INFO] System rsync package not locally available"; \
+		yum $YUM_PARAM install -y --nogpgcheck --downloadonly --downloaddir=$SOURCES/$SOURCES_FOLDER/system/ rsync; \
+		echo "#[INFO] System rsync package downloaded from YUM Repository"; \
+	fi && \
+	# Install packages locally \
+	echo "#[INFO] System packages installation locally" && \
+	yum $YUM_PARAM localinstall -y --nogpgcheck $SOURCES/$SOURCES_FOLDER/system/wget-*.rpm $SOURCES/$SOURCES_FOLDER/system/rsync-*.rpm && \
+	# Test WGET installation \
+	if ! command -v wget 1>/dev/null 2>/dev/null; then \
+		echo "#[ERROR] System wget package not installed (Please open Internet connexion or provide WGET rpm in sources/system folder)"; \
+		exit 1; \
+	fi && \
+	if ! command -v rsync 1>/dev/null 2>/dev/null; then \
+		echo "#[ERROR] System rsync package not installed (Please open Internet connexion or provide RSYNC rpm in sources/system folder)"; \
+		exit 1; \
+	fi && \
+	# DOWNLOAD packages from repository \
+	echo "#[INFO] System packages download from REPO '$REPO'"; \
+	mkdir -p $SOURCES/$SOURCES_FOLDER/system/build && \
+	# in GIT mode
+	if wget -q --progress=bar:force --tries=3 $REPO_SYSTEM_GIT -O $SOURCES/$SOURCES_FOLDER/system/build/STARK-repo.sources.system.tar.gz; then \
+		if tar xf $SOURCES/$SOURCES_FOLDER/system/build/STARK-repo.sources.system.tar.gz -C $SOURCES/$SOURCES_FOLDER/system/build/; then \
+			rsync -auczqAXhi --no-links --no-perms --no-owner --no-group $SOURCES/$SOURCES_FOLDER/system/build/STARK-repo.sources.system*/sources/system/*rpm $SOURCES/$SOURCES_FOLDER/system/; \
+			echo "#[INFO] System packages downloaded from REPO '$REPO' (GIT)"; \
+		else \
+			echo "#[WARNING] System fail to uncompress packages from REPO '$REPO'"; \
+		fi; \
+	# in HTTP mode
+	elif wget -q --progress=bar:force --tries=3 -r --no-parent $REPO_SYSTEM_HTTP -x --directory-prefix=$SOURCES/$SOURCES_FOLDER/system/build/STARK-repo.sources.system/; then \
+		rsync -auczqAXhi --no-links --no-perms --no-owner --no-group $SOURCES/$SOURCES_FOLDER/system/build/STARK-repo.sources.system/*/sources/system/*rpm $SOURCES/$SOURCES_FOLDER/system/; \
+		echo "#[INFO] System packages downloaded from REPO '$REPO' (FTP/HTTP)"; \
+	else \
+		echo "#[WARNING] System fail packages download from REPO '$REPO'"; \
+	fi && \
+	rm -rf $SOURCES/$SOURCES_FOLDER/system/build && \
+	# Install packages locally \
+	echo "#[INFO] System packages installation locally" && \
+	yum $YUM_PARAM localinstall -y --nogpgcheck $SOURCES/$SOURCES_FOLDER/system/*.rpm && \
+	# Install EPEL Repository \
+	echo "#[INFO] System EPEL Repository package" && \
+	if ! ls $SOURCES/$SOURCES_FOLDER/system/epel-release-*.rpm 1> /dev/null 2>&1; then \
+		yum $YUM_PARAM install -y --nogpgcheck --downloadonly --downloaddir=$SOURCES/$SOURCES_FOLDER/system/ epel-release; \
+		echo "#[INFO] System EPEL Repository package downloaded from YUM repository"; \
+	fi && \
+	if ls $SOURCES/$SOURCES_FOLDER/system/epel-release-*.rpm 1> /dev/null 2>&1; then \
+		yum $YUM_PARAM localinstall -y --nogpgcheck $SOURCES/$SOURCES_FOLDER/system/epel-release-*.rpm; \
+		echo "#[INFO] System EPEL Repository package enabled"; \
+	else \
+		echo "#[WARNING] System fail enable EPEL Repository"; \
+	fi && \
+	# Update YUM \
+	echo "#[INFO] System packages update from YUM Repository" && \
+	mkdir -p $SOURCES/$SOURCES_FOLDER/system/build/update && \
+	yum $YUM_PARAM update -y --downloadonly --downloaddir=$SOURCES/$SOURCES_FOLDER/system/build/update && \
+	yum $YUM_PARAM update -y && \
+	#yum $YUM_PARAM localinstall -y --nogpgcheck $SOURCES/$SOURCES_FOLDER/system/build/update/*.rpm && \
+	rsync -auczqAXhi --no-links --no-perms --no-owner --no-group $SOURCES/$SOURCES_FOLDER/system/build/update/*rpm $SOURCES/$SOURCES_FOLDER/system/ && \
+	echo "#[INFO] System packages downloaded & updated from YUM Repository"; \
+	echo "#[INFO] System packages install from YUM Repository" && \
+	mkdir -p $SOURCES/$SOURCES_FOLDER/system/build/install && \
+	yum $YUM_PARAM install -y --downloadonly --downloaddir=$SOURCES/$SOURCES_FOLDER/system/build/install/ $YUM_INSTALL && \
+	yum $YUM_PARAM install -y $YUM_INSTALL && \
+	#yum $YUM_PARAM localinstall -y --nogpgcheck $SOURCES/$SOURCES_FOLDER/system/build/install/*.rpm && \
+	rsync -auczqAXhi --no-links --no-perms --no-owner --no-group $SOURCES/$SOURCES_FOLDER/system/build/install/*rpm $SOURCES/$SOURCES_FOLDER/system/ && \
+	echo "#[INFO] System packages downloaded & installed from YUM Repository"; \
+	rm -rf $SOURCES/$SOURCES_FOLDER/system/build && \
+	# PYTHON
+	# Install whl
+	echo "#[INFO] System Python packages download from REPO '$REPO'"; \
+	mkdir -p $SOURCES/$SOURCES_FOLDER/python/build && \
+	# in GIT mode
+	if wget --progress=bar:force --tries=3 $REPO_PYTHON_GIT -O $SOURCES/$SOURCES_FOLDER/python/build/STARK-repo.sources.python.tar.gz; then \
+		if tar xf $SOURCES/$SOURCES_FOLDER/python/build/STARK-repo.sources.python.tar.gz -C $SOURCES/$SOURCES_FOLDER/python/build/; then \
+			rsync -auczqAXhi --no-links --no-perms --no-owner --no-group $SOURCES/$SOURCES_FOLDER/python/build/STARK-repo.sources.python*/sources/system/* $SOURCES/$SOURCES_FOLDER/python/; \
+			echo "#[INFO] System Python packages downloaded from REPO '$REPO' (GIT)"; \
+		else \
+			echo "#[WARNING] System fail to uncompress Python packages from REPO '$REPO'"; \
+		fi; \
+	# in HTTP mode
+	elif wget --progress=bar:force --tries=3 -r --no-parent $REPO_PYTHON_HTTP -x --directory-prefix=$SOURCES/$SOURCES_FOLDER/python/build/STARK-repo.sources.system/; then \
+		rsync -auczqAXhi --no-links --no-perms --no-owner --no-group $SOURCES/$SOURCES_FOLDER/system/build/STARK-repo.sources.system*/sources/python/* $SOURCES/$SOURCES_FOLDER/python/; \
+		echo "#[INFO] System Python packages downloaded from REPO '$REPO' (FTP/HTTP)"; \
+	else \
+		echo "#[WARNING] System fail Python packages download from REPO '$REPO'"; \
+	fi && \
+	rm -rf $SOURCES/$SOURCES_FOLDER/python/build && \
+	# Install Python packages locally \
+	echo "#[INFO] System Python packages installation locally" && \
+	if ls $SOURCES/$SOURCES_FOLDER/python/2/*whl 1> /dev/null 2>&1; then \
+		pip2 --no-cache-dir install $SOURCES/$SOURCES_FOLDER/python/2/*whl ; \
+	fi && \
+	if ls $SOURCES/$SOURCES_FOLDER/python/3/*whl 1> /dev/null 2>&1; then \
+		pip3 --no-cache-dir install $SOURCES/$SOURCES_FOLDER/python/3/*whl ; \
+	fi && \
+	# Update PIP \
+	echo "#[INFO] System Python packages update from PIP Repository" && \
+	python2 -m pip  --no-cache-dir install --upgrade pip && \
+	python3 -m pip  --no-cache-dir install --upgrade pip && \
+	echo "#[INFO] System Python packages downloaded & updated from PIP Repository" && \
+	echo "#[INFO] System Python packages install from PIP Repository" && \
+	if (( $(echo $PYTHON2_MODULE | wc -w | tr -d " ") )); then \
+		python2 -m pip --no-cache-dir download $PYTHON2_MODULE --dest $SOURCES/$SOURCES_FOLDER/python/2/ ; \
+		python2 -m pip --no-cache-dir install $SOURCES/$SOURCES_FOLDER/python/2/*whl ; \
+	fi && \
+	if (( $(echo $PYTHON3_MODULE | wc -w | tr -d " ") )); then \
+		python3 -m pip --no-cache-dir download $PYTHON3_MODULE --dest $SOURCES/$SOURCES_FOLDER/python/3/ ; \
+		python3 -m pip --no-cache-dir install $SOURCES/$SOURCES_FOLDER/python/3/*whl ; \
+	fi && \
+	echo "#[INFO] System Python packages downloaded & installed from PIP Repository" && \
+	# CLEAN
+	echo "#[INFO] System Cleaning" && \
+	if (($REMOVE_SOURCES)); then \
+		rm -rf $SOURCES/$SOURCES_FOLDER/* ; \
+		echo "#[INFO] System Remove Sources" ; \
+	fi && \
+	yum clean all && \
+	rm -rf /var/cache/yum && \
+	echo "#[INFO] System Clean" && \
+	echo "#";
+
+
+
+##################
+# SOURCE SCRIPTS #
+##################
+
+ENV GET_TOOL_SOURCE=$SOURCES/$SOURCES_FOLDER/get_tool_source.sh
+ENV TOOL_INIT=$SOURCES/$SOURCES_FOLDER/tool_init.sh
+ENV TOOL_CHECK=$SOURCES/$SOURCES_FOLDER/tool_check.sh
+
+RUN echo "#### SOURCES SCRIPTS" && \
+	if [ -e $GET_TOOL_SOURCE ]; then \
+		echo "#[INFO] GET TOOL SOURCE script exists" ; \
+	elif $(wget --no-cache --progress=bar:force -nv --quiet "$REPO/$SOURCES_FOLDER/$(basename $GET_TOOL_SOURCE)" -O $GET_TOOL_SOURCE); then \
+		echo "#[INFO] GET TOOL SOURCE script downloaded from REPO '$REPO/$SOURCES_FOLDER/$(basename $GET_TOOL_SOURCE)'" ; \
+	else \
+		mkdir -p $(dirname $GET_TOOL_SOURCE) ; \
+		echo 'echo "#[INFO] TOOL source" && \
+		mkdir -p $(dirname $TOOL_SOURCE) && \
+		if [ -e $TOOL_SOURCE ]; then \
+			echo "#[INFO] TOOL TARBALL already in $TOOL_SOURCE"; \
+		elif $(wget --no-cache --progress=bar:force "$TOOL_SOURCE_REPO" -O $TOOL_SOURCE); then \
+			echo "#[INFO] TOOL TARBALL downloaded from STARK REPO $TOOL_SOURCE_REPO"; \
+			if $(wget --no-cache --progress=bar:force -nv --quiet "$(dirname $TOOL_SOURCE_REPO)/source.info" -O $(dirname $TOOL_SOURCE)/source.info); then \
+				echo "#[INFO] TOOL TARBALL external source information downloaded from STARK REPO $TOOL_SOURCE_REPO " ; \
+			fi ; \
+		elif $(wget --no-cache --progress=bar:force "$TOOL_SOURCE_EXTERNAL" -O $TOOL_SOURCE); then \
+			echo "#[INFO] TOOL TARBALL downloaded from EXTERNAL SOURCE $TOOL_SOURCE_EXTERNAL"; \
+			echo "$TOOL_SOURCE_EXTERNAL" > $(dirname $TOOL_SOURCE)/source.info; \
+		else \
+			echo "#[ERROR] TOOL TARBALL NOT FOUND"; \
+			exit 1; \
+		fi && \
+		if [ -e $(dirname $TOOL_SOURCE)/source.info ]; then \
+			echo "#[INFO] TOOL TARBALL external source: "$(cat $(dirname $TOOL_SOURCE)/source.info) ; \
+		fi && \
+		exit 0;' > $GET_TOOL_SOURCE ; \
+		echo "#[INFO] GET TOOL SOURCE script written" ; \
+	fi && \
+	chmod u+x $GET_TOOL_SOURCE && \
+	if [ -e $TOOL_INIT ]; then \
+		echo "#[INFO] INIT TOOL script exists" ; \
+	elif $(wget --no-cache --progress=bar:force -nv --quiet "$REPO/$SOURCES_FOLDER/$(basename $TOOL_INIT)" -O $TOOL_INIT); then \
+		echo "#[INFO] INIT TOOL script downloaded from REPO '$REPO/$SOURCES_FOLDER/$(basename $TOOL_INIT)'" ; \
+	else \
+		mkdir -p $(dirname $TOOL_INIT) ; \
+		echo 'echo "#[INFO] TOOL $TOOL_NAME/$TOOL_VERSION" && \
+		export TOOL_SOURCE=$SOURCES/$SOURCES_FOLDER/tools/$TOOL_NAME/$TOOL_VERSION/$TOOL_TARBALL && \
+		export TOOL_SOURCE_REPO=$REPO/$SOURCES_FOLDER/tools/$TOOL_NAME/$TOOL_VERSION/$TOOL_TARBALL && \
+		export TOOL_SOURCE_BUILD=$SOURCES/$SOURCES_FOLDER/tools/$TOOL_NAME/$TOOL_VERSION/build && \
+		export TOOL_DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION && \
+		export PATH=$TOOL_DEST/bin:$PATH && \
+		# Get TOOL SOURCE && \
+		$GET_TOOL_SOURCE $TOOL_SOURCE $TOOL_SOURCE_REPO $TOOL_SOURCE_EXTERNAL && \
+		# TOOL folder preparation \
+		echo "#[INFO] TOOL preparation" && \
+		mkdir -p $TOOL_SOURCE_BUILD && \
+		mkdir -p $TOOL_DEST/bin && \
+		ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current' > $TOOL_INIT ; \
+		echo "#[INFO] INIT TOOL script written" ; \
+	fi && \
+	chmod u+x $TOOL_INIT && \
+	if [ -e $TOOL_CHECK ]; then \
+		echo "#[INFO] INIT TOOL script exists" ; \
+	elif $(wget --no-cache --progress=bar:force -nv --quiet "$REPO/$SOURCES_FOLDER/$(basename $TOOL_CHECK)" -O $TOOL_CHECK); then \
+		echo "#[INFO] INIT TOOL script downloaded from REPO '$REPO/$SOURCES_FOLDER/$(basename $TOOL_CHECK)'" ; \
+	else \
+		mkdir -p $(dirname $TOOL_CHECK) ; \
+		echo 'echo "#[INFO] TOOL cleaning" && \
+		rm -rf $TOOL_SOURCE_BUILD && \
+		if (($REMOVE_SOURCES)); then rm -rf $SOURCES/$SOURCES_FOLDER/tools/$TOOL_NAME; fi && \
+		echo "#[INFO] TOOL $TOOL_NAME/$TOOL_VERSION installed" ;' > $TOOL_CHECK ; \
+		echo "#[INFO] INIT TOOL script written" ; \
+	fi && \
+	chmod u+x $TOOL_CHECK && \
+	echo "#";
 
 
 
@@ -88,431 +359,39 @@ RUN yum update -y && \
 ################
 
 
-###########
-# ANNOVAR #
-###########
+### TOOL INSTALLATION CODE FORMAT
+# All variables <VARIABLE> must be changed
 
-ENV TOOL_NAME=annovar
-ENV TOOL_VERSION=2018Apr16
-ENV TARBALL_LOCATION=http://www.openbioinformatics.org/annovar/download/0wgxR2rIVP
-ENV TARBALL=annovar.latest.tar.gz
-ENV TARBALL_FOLDER=$TOOL_NAME
-ENV TOOL_DATABASE_FOLDER=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/databases/
-ENV TOOL_DATABASE_FOLDER_LINK=$DATABASES/annovar_sources
-ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-
-RUN wget --no-cache $TARBALL_LOCATION/$TARBALL && \
-    tar xf $TARBALL && \
-    rm -rf $TARBALL && \
-    cd $TARBALL_FOLDER && \
-    mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
-    cp *.pl $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/ -R && \
-    cd ../ && \
-    rm -rf $TARBALL_FOLDER && \
-    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current && \
-	mkdir -p $TOOL_DATABASE_FOLDER_LINK && \
-	mkdir -p $TOOL_DATABASE_FOLDER && \
-	ln -s $TOOL_DATABASE_FOLDER_LINK $TOOL_DATABASE_FOLDER ;
-
-
-##########
-# HTSLIB #
-##########
-
-ENV TOOL_NAME=htslib
-ENV TOOL_VERSION=1.9
-ENV TARBALL_LOCATION=https://github.com/samtools/$TOOL_NAME/releases/download/$TOOL_VERSION/
-ENV TARBALL=$TOOL_NAME-$TOOL_VERSION.tar.bz2
-ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-
-# INSTALL
-RUN wget --no-cache $TARBALL_LOCATION/$TARBALL && \
-    tar xf $TARBALL && \
-    rm -rf $TARBALL && \
-    cd $TOOL_NAME-$TOOL_VERSION && \
-    make -j $THREADS prefix=$TOOLS/$TOOL_NAME/$TOOL_VERSION install && \
-	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current && \
-    cd ../ && \
-    rm -rf $TOOL_NAME-$TOOL_VERSION ;
-
-
-
-############
-# BCFTOOLS #
-############
-
-ENV TOOL_NAME=bcftools
-ENV TOOL_VERSION=1.9
-ENV TARBALL_LOCATION=https://github.com/samtools/$TOOL_NAME/releases/download/$TOOL_VERSION/
-ENV TARBALL=$TOOL_NAME-$TOOL_VERSION.tar.bz2
-ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-
-# INSTALL
-RUN wget --no-cache $TARBALL_LOCATION/$TARBALL && \
-    tar xf $TARBALL && \
-    rm -rf $TARBALL && \
-    cd $TOOL_NAME-$TOOL_VERSION && \
-    make -j $THREADS prefix=$TOOLS/$TOOL_NAME/$TOOL_VERSION install && \
-	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current && \
-    cd ../ && \
-    rm -rf $TOOL_NAME-$TOOL_VERSION ;
-
-
-
-###################
-# BCL2FASTQ local #
-###################
-
-ENV TOOL_NAME=bcl2fastq
-ENV TOOL_VERSION=2.20.0
-ENV TOOL_VERSION_FOR_FILE=2-20-0
-ENV ZIPBALL_LOCATION=https://support.illumina.com/content/dam/illumina-support/documents/downloads/software/bcl2fastq/
-ENV ZIPBALL=$TOOL_NAME"2-v"$TOOL_VERSION_FOR_FILE"-linux-x86-64.zip"
-ENV RPM=$TOOL_NAME"2-v"$TOOL_VERSION"*.rpm"
-ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-ENV TOOLS_DATA_RUN=/data/run
-ENV TOOLS_DATA_OUTPUT=/data/output
-
-COPY tools/$ZIPBALL $ZIPBALL
-
-RUN unzip $ZIPBALL && \
-    yum -y --nogpgcheck localinstall $RPM && \
-    rm -f $ZIPBALL && \
-    rm -f $RPM && \
-    mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
-    ln -s /usr/local/bin/bcl2fastq $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/bcl2fastq && \
-    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
-
-
-#############
-# BCL2FASTQ #
-#############
-# https://files.softwaredownloads.illumina.com/e8ed3335-5201-48ff-a2bc-db4bfb792c85/bcl2fastq2-v2-20-0-linux-x86-64.zip?Expires=1573636274&Policy=eyJTdGF0ZW1lbnQiOlt7IlJlc291cmNlIjoiaHR0cHM6Ly9maWxlcy5zb2Z0d2FyZWRvd25sb2Fkcy5pbGx1bWluYS5jb20vZThlZDMzMzUtNTIwMS00OGZmLWEyYmMtZGI0YmZiNzkyYzg1L2JjbDJmYXN0cTItdjItMjAtMC1saW51eC14ODYtNjQuemlwIiwiQ29uZGl0aW9uIjp7IkRhdGVMZXNzVGhhbiI6eyJBV1M6RXBvY2hUaW1lIjoxNTczNjM2Mjc0fX19XX0_&Signature=a9KO~lEQgDCOyjgn62me1MNywkcZ6ZwSd9lGAREChWiFcoDEfFqOn~xgT~QaGxheb922~HfC00dgBY6mnIRfGI9kjG2-Rm5-4SlqlqXQLjPJpjNk3p4AXNnDfhhlfrhQC~nD9M8oicEXgLdf-cQ4C42x5iFNxZ-PAxPJil7dpAmkW95D1TljSBL4VEhqOktCNs8wR4wT-unVh9qnTafr9nIiDG1~IvX7CUJOsS4BMAVn0IGmZIz7l-~dg0Tc5m13HkyKt0EChSUqXz9DrSV3BSgWtadCJ9HRiowRGx7HjEuWuBAyKHcRG6ccIt5u1jvyJ7KAbuIkvugKkOY3ubdTBw__&Key-Pair-Id=APKAJO3UYWPXK4A26FPQ
-
-# ENV TOOL_NAME=bcl2fastq
-# ENV TOOL_VERSION=2.20.0
-# ENV TOOL_VERSION_FOR_FILE=2-20-0
-# ENV ZIPBALL_LOCATION=https://support.illumina.com/content/dam/illumina-support/documents/downloads/software/bcl2fastq/
-# ENV ZIPBALL=$TOOL_NAME"2-v"$TOOL_VERSION_FOR_FILE"-linux-x86-64.zip"
-# ENV RPM=$TOOL_NAME"2-v"$TOOL_VERSION"*.rpm"
-# ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
-# ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-# ENV TOOLS_DATA_RUN=/data/run
-# ENV TOOLS_DATA_OUTPUT=/data/output
+# ##########
+# # <TOOL> #
+# ##########
 #
-# RUN wget --no-cache $ZIPBALL_LOCATION/$ZIPBALL && \
-#     unzip $ZIPBALL && \
-#     yum -y --nogpgcheck localinstall $RPM && \
-#     rm -f $ZIPBALL && \
-#     rm -f $RPM && \
-#     mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
-#     ln -s /usr/local/bin/bcl2fastq $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/bcl2fastq && \
-#     ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
-
-
-#########################
-# BCL2FASTQ compilation #
-#########################
-
-# ENV TOOL_NAME=bcl2fastq
-# ENV TOOL_VERSION=2.20.0
-# ENV TOOL_VERSION_FOR_FILE=2-20-0
-# ENV ZIPBALL_LOCATION=ftp://webdata2:webdata2@ussd-ftp.illumina.com/downloads/software/bcl2fastq
-# ENV ZIPBALL=$TOOL_NAME"2-v"$TOOL_VERSION_FOR_FILE"-tar.zip"
-# ENV RPM=$TOOL_NAME"2-v"$TOOL_VERSION"*.rpm"
-# ENV TARBALL=$TOOL_NAME"2-v"$TOOL_VERSION"*.tar.gz"
-# ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
-# ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-# ENV TOOLS_DATA_RUN=/data/run
-# ENV TOOLS_DATA_OUTPUT=/data/output
+# # TOOL INFO
+# ENV TOOL_NAME="<TOOL_NAME>"								# tool name
+# ENV TOOL_VERSION="<TOOL_RELEASE>"							# tool release
+# ENV TOOL_TARBALL="<TOOL_TARBALL>"							# filename of the tarball
+# ENV TOOL_SOURCE_EXTERNAL="<TOOL_SOURCE_EXTERNAL>"			# Extenal tarball source of the tool
+# # TOOL PARAMETERS
+# ENV TOOL_PARAM_<VARIABLE1>="<VALUE1>"						# Parameter 1
+# ENV TOOL_PARAM_<VARIABLE2>="<VALUE2>"						# Parameter 2
 #
-# RUN wget --no-cache $ZIPBALL_LOCATION/$ZIPBALL && \
-#     unzip $ZIPBALL && \
-# 	rm -f $ZIPBALL && \
-#     tar -zxf $TARBALL && \
-#     rm -f $RPM && \
-# 	mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
-# 	cd bcl2fastq && \
-#     src/configure --prefix=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
-#     make -j $THREADS && \
-# 	make -j $THREADS install && \
-# 	cd ../ && \
-# 	rm -rf bcl2fastq && \
-#     ln -s /usr/local/bin/bcl2fastq $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/bcl2fastq && \
-#     ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
+# # TOOL INSTALLATION
+# RUN source $TOOL_INIT && \								# Init tool variables && tarball source && ...
+# 	echo "#[INFO] TOOL installation" && \					# head
+# 	<Installation CMD such as tar... && cp... && ...> && \	# Installation commands using $TOOL_SOURCE $TOOL_SOURCE_BUILD $TOOL_DEST...
+# 	# Example: tar && make install  \						# Example of command (tar && make install)
+# 	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
+# 	make install -j $THREADS -C $(ls -d $TOOL_SOURCE_BUILD/*) prefix=$TOOL_DEST && \
+# 	# Example: unzip && rpm  \								# Example of command (unzip && rpm)
+# 	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
+# 	rpm -ih $TOOL_SOURCE_BUILD/*.rpm --excludedocs --prefix=$TOOL_DEST && \
+# 	$TOOL_CHECK ;											# Check tool, rm source build folder...
 
 
 
-############
-# BEDTOOLS #
-############
-
-ENV TOOL_NAME=bedtools
-ENV TOOL_VERSION=2.29.0
-ENV TARBALL_LOCATION=https://github.com/arq5x/bedtools2/releases/download/v$TOOL_VERSION
-ENV TARBALL=$TOOL_NAME-$TOOL_VERSION.tar.gz
-ENV TARBALL_FOLDER=bedtools2
-ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-
-RUN wget --no-cache $TARBALL_LOCATION/$TARBALL && \
-    tar xf $TARBALL && \
-    rm -rf $TARBALL && \
-    cd $TARBALL_FOLDER && \
-    make -j $THREADS prefix=$TOOLS/$TOOL_NAME/$TOOL_VERSION install && \
-    cd ../ && \
-    rm -rf $TARBALL_FOLDER && \
-    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
-
-
-
-###########
-# BOWTIE2 #
-###########
-
-ENV TOOL_NAME=bowtie2
-ENV TOOL_VERSION=2.3.4.3
-ENV GIT=https://github.com/BenLangmead/bowtie2.git
-ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-
-RUN git clone $GIT && \
-    cd $TOOL_NAME && \
-    make -j $THREADS && \
-    mkdir -p $DEST/bin && \
-    cp LICENSE MANUAL TUTORIAL VERSION NEWS AUTHORS $DEST && \
-    cp bowtie* $DEST/bin && \
-    rm -rf .git && \
-    cd ../ && \
-    rm -rf $TOOL_NAME && \
-    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
-
-
-
-#######
-# BWA #
-#######
-
-ENV TOOL_NAME=bwa
-ENV TOOL_VERSION=0.7.17
-ENV TARBALL_NAME=bwa
-ENV TARBALL_LOCATION=https://sourceforge.net/projects/bio-bwa/files/bwa-$TOOL_VERSION.tar.bz2/download
-ENV TARBALL=$TARBALL_NAME-$TOOL_VERSION.tar.bz2
-ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-
-RUN wget --no-cache $TARBALL_LOCATION -O $TARBALL && \
-    tar xf $TARBALL && \
-    rm -rf $TARBALL && \
-    cd $TARBALL_NAME-$TOOL_VERSION && \
-    make -j $THREADS && \
-    mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
-    cp bwa $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
-    cd ../ && \
-    rm -rf $TARBALL_NAME-$TOOL_VERSION && \
-    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
-
-
-
-#########
-# FASTP #
-#########
-
-ENV TOOL_NAME=fastp
-ENV TOOL_VERSION=0.20.0
-ENV TARBALL_LOCATION=http://opengene.org/$TOOL_NAME/$TOOL_NAME
-ENV TOOL_BIN=$TOOL_NAME
-ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-
-RUN mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
-	wget --no-cache $TARBALL_LOCATION -O $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/$TOOL_BIN && \
-	chmod a+x $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/$TOOL_BIN && \
-    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
-
-
-
-##########
-# FASTQC #
-##########
-
-ENV TOOL_NAME=fastqc
-ENV TOOL_VERSION=0.11.8
-ENV TARBALL_NAME=FastQC
-ENV TARBALL_LOCATION=http://www.bioinformatics.babraham.ac.uk/projects/fastqc/fastqc_v$TOOL_VERSION.zip
-ENV TARBALL=fastqc_v$TOOL_VERSION.zip
-ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-
-RUN wget --no-cache $TARBALL_LOCATION -O $TARBALL && \
-    unzip $TARBALL && \
-    rm -rf $TARBALL && \
-    cd $TARBALL_NAME && \
-    mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
-    chmod u+x fastqc && \
-    cp -R * $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
-    cd ../ && \
-	rm -rf $TARBALL_NAME && \
-    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
-
-
-
-#######
-# CAP #
-#######
-
-ENV TOOL_NAME=cap
-ENV TOOL_VERSION=0.9.11b
-ENV TARBALL_LOCATION=https://gitlab.bioinfo-diag.fr/Strasbourg/CAP/repository/0.9.11b
-ENV TARBALL=archive.tar.gz
-ENV TARBALL_FOLDER=archive
-ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-
-RUN wget --no-cache $TARBALL_LOCATION/$TARBALL && \
-    tar xf $TARBALL && \
-    rm -rf $TARBALL && \
-    mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/ && \
-    cp $(ls ${TOOL_NAME^^}-$TOOL_VERSION* -d)/* $TOOLS/$TOOL_NAME/$TOOL_VERSION/ -R && \
-    rm -rf $(ls ${TOOL_NAME^^}-$TOOL_VERSION* -d) && \
-    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current && \
-    chmod 0775 $TOOLS/$TOOL_NAME/$TOOL_VERSION $TOOLS/$TOOL_NAME/current -R ;
-
-
-
-########
-# GATK #
-########
-
-ENV TOOL_NAME=gatk
-ENV TOOL_VERSION=3.8-1-0
-ENV TARBALL_RELEASE=gf15c1c3ef
-ENV TARBALL_NAME=GenomeAnalysisTK-$TOOL_VERSION-$TARBALL_RELEASE
-ENV TARBALL_LOCATION=https://software.broadinstitute.org/gatk/download/auth?package=GATK-archive&version=$TOOL_VERSION-$TARBALL_RELEASE
-ENV TARBALL=GenomeAnalysisTK-$TOOL_VERSION.tar.bz2
-ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-
-RUN wget --no-cache "$TARBALL_LOCATION" -O $TARBALL ; \
-    tar -xf $TARBALL ; \
-    rm -rf $TARBALL ; \
-    cd $TARBALL_NAME ; \
-    mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
-    cp GenomeAnalysisTK.jar $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
-	cd ../ && \
-	rm -rf $TARBALL_NAME && \
-    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
-
-
-
-#########
-# GATK4 #
-#########
-
-ENV TOOL_NAME=gatk
-ENV TOOL_VERSION=4.1.4.0
-ENV TOOL_JAR=gatk-package-$TOOL_VERSION-local.jar
-ENV TARBALL_NAME=gatk-$TOOL_VERSION.zip
-ENV TARBALL_FOLDER=gatk-$TOOL_VERSION
-ENV TARBALL_LOCATION=https://github.com/broadinstitute/gatk/releases/download/$TOOL_VERSION/$TARBALL_NAME
-ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-
-RUN wget --no-cache $TARBALL_LOCATION -O $TARBALL_NAME && \
-    mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
-	unzip -p $TARBALL_NAME $TARBALL_FOLDER/$TOOL_JAR > $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/$TOOL_JAR && \
-    rm -rf $TARBALL_NAME ;
-
-
-
-###########
-# HOWARD #
-###########
-
-ENV TOOL_NAME=howard
-ENV TOOL_VERSION=0.9.15b
-ENV TARBALL_LOCATION=https://gitlab.bioinfo-diag.fr/Strasbourg/HOWARD/repository/$TOOL_VERSION
-ENV TARBALL=archive.tar.gz
-ENV TARBALL_FOLDER=archive
-ENV TOOL_DATABASE_FOLDER=/databases
-#ENV TOOL_TOOLS_FOLDER=/tools
-ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-
-RUN wget --no-cache $TARBALL_LOCATION/$TARBALL && \
-    tar xf $TARBALL && \
-    rm -rf $TARBALL && \
-    mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/ && \
-    cp $(ls ${TOOL_NAME^^}-$TOOL_VERSION* -d)/* $TOOLS/$TOOL_NAME/$TOOL_VERSION/ -R && \
-    rm -rf $(ls ${TOOL_NAME^^}-$TOOL_VERSION* -d) && \
-    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current && \
-    chmod 0775 $TOOLS/$TOOL_NAME/$TOOL_VERSION $TOOLS/$TOOL_NAME/current -R && \
-	mkdir -p $DATABASES && \
-	ln -s $DATABASES $TOOL_DATABASE_FOLDER ;
-
-
-
-############
-# IGVTOOLS #
-############
-
-ENV TOOL_NAME=igvtools
-ENV TOOL_MAIN_VERSION=2.4
-ENV TOOL_VERSION=$TOOL_MAIN_VERSION.16
-ENV TARBALL_NAME=igvtools_$TOOL_VERSION
-ENV TARBALL=$TARBALL_NAME.zip
-ENV TARBALL_FOLDER=IGVTools
-ENV TARBALL_LOCATION=http://data.broadinstitute.org/igv/projects/downloads/$TOOL_MAIN_VERSION/$TARBALL
-ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-
-RUN wget --no-cache $TARBALL_LOCATION -O $TARBALL && \
-    unzip $TARBALL && \
-    rm -rf $TARBALL && \
-    cd $TARBALL_FOLDER && \
-    mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
-    cp -R * $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
-	cd ../ && \
-	rm -rf $TARBALL_FOLDER && \
-    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
-
-
-
-###########
-# ITDSEEK #
-###########
-
-ENV TOOL_NAME=itdseek
-ENV TOOL_VERSION=1.2-2
-ENV TARBALL_LOCATION=https://github.com/tommyau/itdseek/zipball/master
-ENV TARBALL=$TOOL_NAME-$TOOL_VERSION.zip
-ENV TARBALL_FOLDER=tommyau-itdseek-*
-ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-
-RUN wget --no-cache $TARBALL_LOCATION/$TARBALL -O $TARBALL ; \
-    unzip $TARBALL ; \
-    rm -rf $TARBALL ; \
-	mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin ; \
-	cp $TARBALL_FOLDER/* $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin ; \
-    rm -rf $TARBALL_FOLDER ; \
-    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
-
-
-
-########
-# JAVA #
-########
-
-ENV TOOL_NAME=java
-ENV TOOL_VERSION=current
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-RUN mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
-	ln -s /usr/bin/java $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/java ;
+################
+# TOOLS SYSTEM #
+################
 
 
 
@@ -520,67 +399,23 @@ RUN mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
 # JAVA7 #
 #########
 
-ENV TOOL_NAME=java
-ENV TOOL_VERSION=1.7.0
-RUN yum install -y java-1.7.0-openjdk-devel && \
-	mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
-	ln -s /usr/lib/jvm/java-1.7.0/bin/java $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/java ;
-
-
-
-##########
-# MUTECT #
-##########
-
-ENV TOOL_NAME=mutect
-ENV TOOL_VERSION=1.1.7
-ENV TOOL_JAR=mutect.jar
-ENV TARBALL_RELEASE=
-ENV TARBALL_NAME=mutect-$TOOL_VERSION.jar.zip
-ENV TARBALL_LOCATION=https://software.broadinstitute.org/gatk/download/auth?package=M1
-ENV TARBALL_JAR=mutect-$TOOL_VERSION.jar
-ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-
-RUN wget --no-cache $TARBALL_LOCATION -O $TARBALL_NAME && \
-    mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
-	unzip $TARBALL_NAME -d $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
-	mv $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/$TARBALL_JAR $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/$TOOL_JAR && \
-	rm $TARBALL_NAME && \
-    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
-
-
-
-############
-# OUTLYZER #
-############
-
-ENV TOOL_NAME=outlyzer
-ENV TOOL_VERSION=2
-ENV FILE_LOCATION=https://raw.githubusercontent.com/EtieM/outLyzer/master
-ENV FILE=outLyzer.py
-ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-
-# Install OutLyser
+ENV TOOL_NAME="java"
+ENV TOOL_VERSION="1.7.0"
 RUN mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
-	wget --no-cache $FILE_LOCATION/$FILE -O $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/$FILE && \
-	chmod a+x $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/$FILE && \
-    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
+	ln -s /usr/lib/jvm/jre-1.7.0/bin/java $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/java ;
 
-# Install pip modules
-RUN pip --no-cache-dir install --upgrade pip && \
-	pip --no-cache-dir install numpy scipy argparse ;
 
-# Install pathos
-RUN wget --no-cache https://github.com/uqfoundation/pathos/archive/master.tar.gz && \
-    tar -xvzf master.tar.gz && \
-    chmod 0775 pathos-master -R && \
-    cd pathos-master && \
-    python ./setup.py build && \
-    python ./setup.py install && \
-    cd .. && \
-    rm -rf pathos-master master.tar.gz ;
+
+#########
+# JAVA8 #
+#########
+
+ENV TOOL_NAME="java"
+ENV TOOL_VERSION="1.8.0"
+ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+RUN mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
+	ln -s /usr/lib/jvm/jre-1.8.0/bin/java $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/java && \
+	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
 
 
 
@@ -588,12 +423,14 @@ RUN wget --no-cache https://github.com/uqfoundation/pathos/archive/master.tar.gz
 # PYTHON2 #
 ###########
 
-ENV TOOL_NAME=python
-ENV TOOL_VERSION=2
+ENV TOOL_NAME="python"
+ENV TOOL_VERSION="2"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 RUN mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
-	ln -s /usr/bin/python $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python && \
-	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
+	ln -s /usr/bin/python2 $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python2 && \
+	ln -s python2 $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python && \
+	ln -s /usr/bin/pip2 $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/pip2 && \
+	ln -s pip2 $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/pip ;
 
 
 
@@ -601,11 +438,386 @@ RUN mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
 # PYTHON3 #
 ###########
 
-ENV TOOL_NAME=python
-ENV TOOL_VERSION=3
+ENV TOOL_NAME="python"
+ENV TOOL_VERSION="3"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 RUN mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
-	ln -s /usr/bin/python3 $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python3 ;
+	ln -s /usr/bin/python3 $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python3 && \
+	ln -s python3 $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python && \
+	ln -s /usr/bin/pip3 $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/pip3 && \
+	ln -s pip3 $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/pip && \
+	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
+
+
+
+################
+# TOOLS EXTERN #
+################
+
+
+
+###########
+# ANNOVAR #
+###########
+
+# TOOL INFO
+ENV TOOL_NAME="annovar"
+ENV TOOL_VERSION="2018Apr16"
+ENV TOOL_TARBALL="$TOOL_NAME.latest.tar.gz"
+ENV TOOL_SOURCE_EXTERNAL="http://www.openbioinformatics.org/annovar/download/0wgxR2rIVP/$TOOL_TARBALL"
+# TOOL PARAMETERS
+ENV TOOL_PARAM_TARBALL_FOLDER=$TOOL_NAME
+ENV TOOL_PARAM_DATABASE_FOLDER_LINK=$DATABASES/annovar_sources
+ENV TOOL_PARAM_DATABASE_FOLDER=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/databases/
+
+
+# TOOL INSTALLATION
+RUN source $TOOL_INIT && \
+	echo "#[INFO] TOOL installation" && \
+    tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
+    cp $TOOL_SOURCE_BUILD/*/*.pl $TOOL_DEST/bin/ -R && \
+	echo "#[INFO] TOOL databases configuration" && \
+	mkdir -p $TOOL_PARAM_DATABASE_FOLDER_LINK && \
+	mkdir -p $TOOL_PARAM_DATABASE_FOLDER && \
+	ln -s $TOOL_PARAM_DATABASE_FOLDER_LINK $TOOL_PARAM_DATABASE_FOLDER && \
+    $TOOL_CHECK ;
+
+
+
+##########
+# HTSLIB #
+##########
+
+# TOOL INFO
+ENV TOOL_NAME="htslib"
+ENV TOOL_VERSION="1.9"
+ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.tar.bz2"
+ENV TOOL_SOURCE_EXTERNAL="https://github.com/samtools/$TOOL_NAME/releases/download/$TOOL_VERSION/$TOOL_TARBALL"
+# TOOL PARAMETERS
+
+# TOOL INSTALLATION
+RUN source $TOOL_INIT && \
+	echo "#[INFO] TOOL installation" && \
+	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
+	make install --quiet -j $THREADS -C $(ls -d $TOOL_SOURCE_BUILD/*) prefix=$TOOL_DEST && \
+    $TOOL_CHECK ;
+
+
+
+############
+# BCFTOOLS #
+############
+
+# TOOL INFO
+ENV TOOL_NAME="bcftools"
+ENV TOOL_VERSION="1.9"
+ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.tar.bz2"
+ENV TOOL_SOURCE_EXTERNAL="https://github.com/samtools/$TOOL_NAME/releases/download/$TOOL_VERSION/$TOOL_TARBALL"
+# TOOL PARAMETERS
+
+# TOOL INSTALLATION
+RUN source $TOOL_INIT && \
+	echo "#[INFO] TOOL installation" && \
+	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
+	make install --quiet -j $THREADS -C $(ls -d $TOOL_SOURCE_BUILD/*) prefix=$TOOL_DEST && \
+	$TOOL_CHECK ;
+
+
+
+#############
+# BCL2FASTQ #
+#############
+
+# TOOL INFO
+ENV TOOL_NAME="bcl2fastq"
+ENV TOOL_VERSION="2.20.0"
+ENV TOOL_TARBALL=$TOOL_NAME"2-v2-20-0-linux-x86-64.zip"
+ENV TOOL_SOURCE_EXTERNAL="https://support.illumina.com/content/dam/illumina-support/documents/downloads/software/bcl2fastq/$TOOL_TARBALL"
+# TOOL PARAMETERS
+
+# TOOL INSTALLATION
+RUN source $TOOL_INIT && \
+	echo "#[INFO] TOOL installation" && \
+	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
+    rpm -ih $TOOL_SOURCE_BUILD/*.rpm --excludedocs --prefix=$TOOL_DEST && \
+    $TOOL_CHECK ;
+
+
+
+############
+# BEDTOOLS #
+############
+
+# TOOL INFO
+ENV TOOL_NAME="bedtools"
+ENV TOOL_VERSION="2.29.0"
+ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.tar.gz"
+ENV TOOL_SOURCE_EXTERNAL="https://github.com/arq5x/bedtools2/releases/download/v$TOOL_VERSION/$TOOL_TARBALL"
+# TOOL PARAMETERS
+
+# TOOL INSTALLATION
+RUN source $TOOL_INIT && \
+	echo "#[INFO] TOOL installation" && \
+	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
+	make install --quiet -j $THREADS -C $(ls -d $TOOL_SOURCE_BUILD/*) prefix=$TOOL_DEST && \
+    $TOOL_CHECK ;
+
+
+
+############
+# BOWTIE2 #
+############
+
+# TOOL INFO
+ENV TOOL_NAME="bowtie2"
+ENV TOOL_VERSION="2.3.5.1"
+ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION-linux-x86_64.zip"
+ENV TOOL_SOURCE_EXTERNAL="https://github.com/BenLangmead/bowtie2/releases/download/v$TOOL_VERSION/$TOOL_TARBALL"
+# TOOL PARAMETERS
+
+# TOOL INSTALLATION
+RUN source $TOOL_INIT && \
+	echo "#[INFO] TOOL installation" && \
+	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
+	cp $TOOL_SOURCE_BUILD/*/bowtie2* $TOOL_DEST/bin/ && \
+	rm -f $TOOL_DEST/bin/*debug && \
+    $TOOL_CHECK ;
+
+
+
+#######
+# BWA #
+#######
+
+# TOOL INFO
+ENV TOOL_NAME="bwa"
+ENV TOOL_VERSION="0.7.17"
+ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.tar.bz2"
+ENV TOOL_SOURCE_EXTERNAL="https://sourceforge.net/projects/bio-bwa/files/$TOOL_NAME-$TOOL_VERSION.tar.bz2/download"
+# TOOL PARAMETERS
+
+# TOOL INSTALLATION
+RUN source $TOOL_INIT && \
+	echo "#[INFO] TOOL installation" && \
+	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
+	make --quiet -j $THREADS -C $(ls -d $TOOL_SOURCE_BUILD/*) && \
+	cp $TOOL_SOURCE_BUILD/*/bwa $TOOL_DEST/bin/ && \
+    $TOOL_CHECK ;
+
+
+
+#########
+# FASTP #
+#########
+
+# TOOL INFO
+ENV TOOL_NAME="fastp"
+ENV TOOL_VERSION="0.20.0"
+ENV TOOL_TARBALL="$TOOL_NAME"
+ENV TOOL_SOURCE_EXTERNAL="http://opengene.org/$TOOL_NAME/$TOOL_NAME"
+# TOOL PARAMETERS
+
+# TOOL INSTALLATION
+RUN source $TOOL_INIT && \
+	echo "#[INFO] TOOL installation" && \
+	cp $TOOL_SOURCE $TOOL_DEST/bin/ && \
+	chmod a+x $TOOL_DEST/bin/* && \
+    $TOOL_CHECK ;
+
+
+
+#######
+# CAP #
+#######
+
+# TOOL INFO
+ENV TOOL_NAME="cap"
+ENV TOOL_VERSION="0.9.11b"
+ENV TOOL_TARBALL="archive.tar.gz"
+ENV TOOL_SOURCE_EXTERNAL="https://gitlab.bioinfo-diag.fr/Strasbourg/CAP/repository/$TOOL_VERSION/$TOOL_TARBALL"
+# TOOL PARAMETERS
+
+# TOOL INSTALLATION
+RUN source $TOOL_INIT && \
+	echo "#[INFO] TOOL installation" && \
+	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
+	cp -R $TOOL_SOURCE_BUILD/*/* $TOOL_DEST/ && \
+	chmod a+x $TOOL_DEST/bin/* && \
+    $TOOL_CHECK ;
+
+
+
+########
+# GATK #
+########
+
+# TOOL INFO
+ENV TOOL_NAME="gatk"
+ENV TOOL_VERSION="3.8-1-0"
+ENV TOOL_TARBALL="GenomeAnalysisTK-$TOOL_VERSION.tar.bz2"
+ENV TOOL_SOURCE_EXTERNAL="https://software.broadinstitute.org/gatk/download/auth?package=GATK-archive&version=$TOOL_VERSION-gf15c1c3ef"
+# TOOL PARAMETERS
+ENV TOOL_JAR=GenomeAnalysisTK.jar
+
+# TOOL INSTALLATION
+RUN source $TOOL_INIT && \
+	echo "#[INFO] TOOL installation" && \
+	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
+	cp -R $TOOL_SOURCE_BUILD/*/$TOOL_JAR $TOOL_DEST/bin/ && \
+    $TOOL_CHECK ;
+
+
+
+#########
+# GATK4 #
+#########
+
+# TOOL INFO
+ENV TOOL_NAME="gatk"
+ENV TOOL_VERSION="4.1.4.0"
+ENV TOOL_TARBALL="gatk-$TOOL_VERSION.zip"
+ENV TOOL_SOURCE_EXTERNAL="https://github.com/broadinstitute/gatk/releases/download/$TOOL_VERSION/$TOOL_TARBALL"
+# TOOL PARAMETERS
+ENV TOOL_JAR=gatk-package-$TOOL_VERSION-local.jar
+
+# TOOL INSTALLATION
+RUN source $TOOL_INIT && \
+	echo "#[INFO] TOOL installation" && \
+	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
+	cp -R $TOOL_SOURCE_BUILD/*/$TOOL_JAR $TOOL_DEST/bin/ && \
+    $TOOL_CHECK ;
+
+
+
+##########
+# HOWARD #
+##########
+
+# TOOL INFO
+ENV TOOL_NAME="howard"
+ENV TOOL_VERSION="0.9.15b"
+ENV TOOL_TARBALL="archive.tar.gz"
+ENV TOOL_SOURCE_EXTERNAL="https://gitlab.bioinfo-diag.fr/Strasbourg/HOWARD/repository/$TOOL_VERSION/$TOOL_TARBALL"
+# TOOL PARAMETERS
+#ENV TOOL_DATABASE_FOLDER=/databases
+ENV TOOL_PARAM_DATABASE_FOLDER_LINK=$DATABASES
+ENV TOOL_PARAM_DATABASE_FOLDER=/databases
+
+
+# TOOL INSTALLATION
+RUN source $TOOL_INIT && \
+	echo "#[INFO] TOOL installation" && \
+	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
+	cp -R $TOOL_SOURCE_BUILD/*/* $TOOL_DEST/ && \
+	chmod a+x $TOOL_DEST/* -R && \
+	mkdir -p $TOOL_PARAM_DATABASE_FOLDER_LINK && \
+	mkdir -p $TOOL_PARAM_DATABASE_FOLDER && \
+	ln -s $DATABASES $TOOL_DATABASE_FOLDER && \
+    $TOOL_CHECK ;
+
+
+
+############
+# IGVTOOLS #
+############
+
+# TOOL INFO
+ENV TOOL_NAME="igvtools"
+ENV TOOL_VERSION="2.4"
+ENV TOOL_TARBALL="igvtools_2.4.16.zip"
+ENV TOOL_SOURCE_EXTERNAL="http://data.broadinstitute.org/igv/projects/downloads/$TOOL_VERSION/$TOOL_TARBALL"
+# TOOL PARAMETERS
+
+# TOOL INSTALLATION
+RUN source $TOOL_INIT && \
+	echo "#[INFO] TOOL installation" && \
+	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
+	cp -R $TOOL_SOURCE_BUILD/*/* $TOOL_DEST/bin/ && \
+    $TOOL_CHECK ;
+
+
+
+###########
+# ITDSEEK #
+###########
+
+# TOOL INFO
+ENV TOOL_NAME="itdseek"
+ENV TOOL_VERSION="1.2-2"
+ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.zip"
+ENV TOOL_SOURCE_EXTERNAL="https://github.com/tommyau/itdseek/zipball/master/$TOOL_TARBALL"
+# TOOL PARAMETERS
+
+# TOOL INSTALLATION
+RUN source $TOOL_INIT && \
+	echo "#[INFO] TOOL installation" && \
+	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
+	cp -R $TOOL_SOURCE_BUILD/*/* $TOOL_DEST/bin/ && \
+    $TOOL_CHECK ;
+
+
+
+##########
+# MUTECT #
+##########
+
+# TOOL INFO
+ENV TOOL_NAME="mutect"
+ENV TOOL_VERSION="1.1.7"
+ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.jar.zip"
+ENV TOOL_SOURCE_EXTERNAL="https://software.broadinstitute.org/gatk/download/auth?package=M1"
+# TOOL PARAMETERS
+ENV TARBALL_JAR=mutect-$TOOL_VERSION.jar
+ENV TOOL_JAR=mutect.jar
+
+# TOOL INSTALLATION
+RUN source $TOOL_INIT && \
+	echo "#[INFO] TOOL installation" && \
+	unzip -q $TOOL_SOURCE -d $TOOL_DEST/bin/ && \
+	mv $TOOL_DEST/bin/$TARBALL_JAR $TOOL_DEST/bin/$TOOL_JAR && \
+    $TOOL_CHECK ;
+
+
+
+############
+# OUTLYZER #
+############
+
+# TOOL INFO
+ENV TOOL_NAME="outlyzer"
+ENV TOOL_VERSION="2"
+ENV TOOL_TARBALL="outLyzer.py"
+ENV TOOL_SOURCE_EXTERNAL="https://raw.githubusercontent.com/EtieM/outLyzer/master/$TOOL_TARBALL"
+# TOOL PARAMETERS
+
+# TOOL INSTALLATION
+RUN source $TOOL_INIT && \
+	echo "#[INFO] TOOL installation" && \
+	cp $TOOL_SOURCE -d $TOOL_DEST/bin/ && \
+	chmod a+x $TOOL_DEST/bin/*.py && \
+    $TOOL_CHECK ;
+
+
+
+##########
+# PATHOS #
+##########
+
+# TOOL INFO
+ENV TOOL_NAME="pathos"
+ENV TOOL_VERSION="master"
+ENV TOOL_TARBALL="$TOOL_VERSION.tar.gz"
+ENV TOOL_SOURCE_EXTERNAL="https://github.com/uqfoundation/pathos/archive/$TOOL_TARBALL"
+# TOOL PARAMETERS
+ENV TOOL_TARBALL_FOLDER="$TOOL_NAME-$TOOL_VERSION"
+
+# TOOL INSTALLATION
+RUN source $TOOL_INIT && \
+	echo "#[INFO] TOOL installation" && \
+	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
+	(cd $TOOL_SOURCE_BUILD/$TOOL_TARBALL_FOLDER/; python2 setup.py build) && \
+	(cd $TOOL_SOURCE_BUILD/$TOOL_TARBALL_FOLDER/; python2 setup.py install) && \
+    $TOOL_CHECK ;
 
 
 
@@ -613,17 +825,18 @@ RUN mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
 # PICARD #
 ##########
 
-ENV TOOL_NAME=picard
-ENV TOOL_VERSION=2.18.5
-ENV JAR_LOCATION=https://github.com/broadinstitute/picard/releases/download/$TOOL_VERSION
-ENV JAR=picard.jar
-ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
-ENV PATH="$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH"
+# TOOL INFO
+ENV TOOL_NAME="picard"
+ENV TOOL_VERSION="2.18.5"
+ENV TOOL_TARBALL="picard.jar"
+ENV TOOL_SOURCE_EXTERNAL="https://github.com/broadinstitute/picard/releases/download/$TOOL_VERSION/picard.jar"
+# TOOL PARAMETERS
 
-RUN wget --no-cache $JAR_LOCATION/$JAR && \
-    mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
-    mv $JAR $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
-    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
+# TOOL INSTALLATION
+RUN source $TOOL_INIT && \
+	echo "#[INFO] TOOL installation" && \
+	cp $TOOL_SOURCE $TOOL_DEST/bin/ && \
+    $TOOL_CHECK ;
 
 
 
@@ -631,21 +844,19 @@ RUN wget --no-cache $JAR_LOCATION/$JAR && \
 # SAMTOOLS #
 ############
 
-ENV TOOL_NAME=samtools
-ENV TOOL_VERSION=1.9
-ENV TARBALL_LOCATION=https://github.com/samtools/$TOOL_NAME/releases/download/$TOOL_VERSION/
-ENV TARBALL=$TOOL_NAME-$TOOL_VERSION.tar.bz2
-ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+# TOOL INFO
+ENV TOOL_NAME="samtools"
+ENV TOOL_VERSION="1.9"
+ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.tar.bz2"
+ENV TOOL_SOURCE_EXTERNAL="https://github.com/samtools/$TOOL_NAME/releases/download/$TOOL_VERSION/$TOOL_TARBALL"
+# TOOL PARAMETERS
 
-RUN wget --no-cache $TARBALL_LOCATION/$TARBALL && \
-    tar xf $TARBALL && \
-    rm -rf $TARBALL && \
-    cd $TOOL_NAME-$TOOL_VERSION && \
-    make -j $THREADS prefix=$TOOLS/$TOOL_NAME/$TOOL_VERSION install && \
-    cd ../ && \
-    rm -rf $TOOL_NAME-$TOOL_VERSION && \
-    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
+# TOOL INSTALLATION
+RUN source $TOOL_INIT && \
+	echo "#[INFO] TOOL installation" && \
+	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
+	make install --quiet -j $THREADS -C $(ls -d $TOOL_SOURCE_BUILD/*) prefix=$TOOL_DEST && \
+	$TOOL_CHECK ;
 
 
 
@@ -653,67 +864,102 @@ RUN wget --no-cache $TARBALL_LOCATION/$TARBALL && \
 # SNPEFF #
 ##########
 
-ENV TOOL_NAME=snpeff
-ENV TOOL_VERSION=4.3t
-ENV TOOL_VERSION_FOR_FILE=4_3t
-ENV TARBALL_LOCATION=https://sourceforge.net/projects/snpeff/files
-ENV TARBALL="snpEff_v"$TOOL_VERSION_FOR_FILE"_core.zip"
-ENV TARBALL_FOLDER=snpeff_folder
-ENV TOOL_DATABASE_FOLDER=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/data
-ENV TOOL_DATABASE_FOLDER_LINK=$DATABASES/snpeff_sources/4.3t
-ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+# TOOL INFO
+ENV TOOL_NAME="snpeff"
+ENV TOOL_VERSION="4.3t"
+ENV TOOL_TARBALL="snpEff_v4_3t_core.zip"
+ENV TOOL_SOURCE_EXTERNAL="https://sourceforge.net/projects/snpeff/files/$TOOL_TARBALL"
+# TOOL PARAMETERS
+ENV TOOL_PARAM_DATABASE_FOLDER_LINK=$DATABASES/snpeff_sources/4.3t
+ENV TOOL_PARAM_DATABASE_FOLDER=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/data
 
-RUN wget --no-cache $TARBALL_LOCATION/$TARBALL && \
-    unzip $TARBALL -d $TARBALL_FOLDER && \
-	rm $TARBALL && \
-    mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/ && \
-    cp $TARBALL_FOLDER/*/*jar $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/ -R && \
-    cp $TARBALL_FOLDER/*/*.config $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/ -R && \
-    rm -rf $TARBALL_FOLDER && \
-	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current && \
-	mkdir -p $TOOL_DATABASE_FOLDER_LINK && \
-	mkdir -p $TOOL_DATABASE_FOLDER && \
-	ln -s $TOOL_DATABASE_FOLDER_LINK $TOOL_DATABASE_FOLDER ;
+# TOOL INSTALLATION
+RUN source $TOOL_INIT && \
+	echo "#[INFO] TOOL installation" && \
+	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
+	cp $TOOL_SOURCE_BUILD/*/*jar $TOOL_DEST/bin/ && \
+	cp $TOOL_SOURCE_BUILD/*/*config $TOOL_DEST/bin/ && \
+	mkdir -p $TOOL_PARAM_DATABASE_FOLDER_LINK && \
+	mkdir -p $TOOL_PARAM_DATABASE_FOLDER && \
+	ln -s $TOOL_PARAM_DATABASE_FOLDER_LINK $TOOL_PARAM_DATABASE_FOLDER && \
+    $TOOL_CHECK ;
 
 
 
-############
-# UMITOOLS #
-############
-
-ENV TOOL_NAME=umi_tools
-ENV TOOL_VERSION=1.0.0
-ENV TARBALL_NAME=umi_tools-$TOOL_VERSION.zip
-ENV TARBALL_LOCATION=https://github.com/CGATOxford/UMI-tools/releases/tag/$TOOL_VERSION
-
-RUN pip3 --no-cache-dir install umi_tools && \
-	mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
-	ln -s /usr/local/bin/umi_tools $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/umi_tools && \
-	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
 
 
+
+#
+# ##########
+# # SNPEFF #
+# ##########
+#
+# ENV TOOL_NAME=snpeff
+# ENV TOOL_VERSION=4.3t
+# ENV TOOL_VERSION_FOR_FILE=4_3t
+# ENV TARBALL_LOCATION=https://sourceforge.net/projects/snpeff/files
+# ENV TARBALL="snpEff_v"$TOOL_VERSION_FOR_FILE"_core.zip"
+# ENV TARBALL_FOLDER=snpeff_folder
+# ENV TOOL_DATABASE_FOLDER=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/data
+# ENV TOOL_DATABASE_FOLDER_LINK=$DATABASES/snpeff_sources/4.3t
+# ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
+# ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+#
+# RUN wget --no-cache $TARBALL_LOCATION/$TARBALL && \
+# 	mkdir -p $SRC/$TOOL_NAME/$TOOL_VERSION && cp $TARBALL $SRC/$TOOL_NAME/$TOOL_VERSION && \
+#     unzip $TARBALL -d $TARBALL_FOLDER && \
+# 	rm $TARBALL && \
+#     mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/ && \
+#     cp $TARBALL_FOLDER/*/*jar $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/ -R && \
+#     cp $TARBALL_FOLDER/*/*.config $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/ -R && \
+#     rm -rf $TARBALL_FOLDER && \
+# 	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current && \
+# 	mkdir -p $TOOL_DATABASE_FOLDER_LINK && \
+# 	mkdir -p $TOOL_DATABASE_FOLDER && \
+# 	ln -s $TOOL_DATABASE_FOLDER_LINK $TOOL_DATABASE_FOLDER ;
+#
+#
+#
 
 
 ###########
 # VARSCAN #
 ###########
 
-ENV TOOL_NAME=varscan
-ENV TOOL_VERSION=2.4.4
-ENV TARBALL_RELEASE=
-ENV TARBALL_NAME=VarScan.v$TOOL_VERSION.jar
-ENV TARBALL_LOCATION=https://github.com/dkoboldt/varscan/raw/master/$TARBALL_NAME
-ENV TARBALL=VarScan.jar
-ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+# TOOL INFO
+ENV TOOL_NAME="varscan"
+ENV TOOL_VERSION="2.4.4"
+ENV TOOL_TARBALL="VarScan.v$TOOL_VERSION.jar"
+ENV TOOL_SOURCE_EXTERNAL="https://github.com/dkoboldt/varscan/raw/master/$TOOL_TARBALL"
+# TOOL PARAMETERS
 
-RUN wget --no-cache $TARBALL_LOCATION -O $TARBALL && \
-    mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
-	cp $TARBALL $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
-	rm $TARBALL && \
-    ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
+# TOOL INSTALLATION
+RUN source $TOOL_INIT && \
+	echo "#[INFO] TOOL installation" && \
+	cp $TOOL_SOURCE $TOOL_DEST/bin/ && \
+    $TOOL_CHECK ;
 
+
+# ###########
+# # VARSCAN #
+# ###########
+#
+# ENV TOOL_NAME=varscan
+# ENV TOOL_VERSION=2.4.4
+# ENV TARBALL_RELEASE=
+# ENV TARBALL_NAME=VarScan.v$TOOL_VERSION.jar
+# ENV TARBALL_LOCATION=https://github.com/dkoboldt/varscan/raw/master/$TARBALL_NAME
+# ENV TARBALL=VarScan.jar
+# ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
+# ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+#
+# RUN wget --no-cache $TARBALL_LOCATION -O $TARBALL && \
+# 	mkdir -p $SRC/$TOOL_NAME/$TOOL_VERSION && cp $TARBALL $SRC/$TOOL_NAME/$TOOL_VERSION && \
+#     mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
+# 	cp $TARBALL $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
+# 	rm $TARBALL && \
+#     ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
+#
 
 
 ######################
@@ -722,7 +968,10 @@ RUN wget --no-cache $TARBALL_LOCATION -O $TARBALL && \
 
 RUN yum erase -y $YUM_REMOVE && \
 	yum clean all && \
-    rm -rf /var/cache/yum ;
+    rm -rf /var/cache/yum \
+	rm -rf $WORKDIR/* && \
+	rm -rf /tmp/* && \
+	if (($REMOVE_SOURCES)); then rm -rf $SOURCES; fi;
 
 
 

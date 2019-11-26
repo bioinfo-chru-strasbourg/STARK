@@ -97,11 +97,12 @@ ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 
 COPY . $TOOLS/$TOOL_NAME/$TOOL_VERSION/
 
-RUN mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin ; \
-		ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ; \
-		ln -s $TOOLS/$TOOL_NAME/$TOOL_VERSION/ $TOOL ; \
-		ln -s $TOOLS/$TOOL_NAME/$TOOL_VERSION/config/apps/myapps/ $MYAPPS ;
+RUN mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
+		ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current && \
+		ln -s $TOOLS/$TOOL_NAME/$TOOL_VERSION/ $TOOL && \
+		ln -s $MYAPPS $TOOLS/$TOOL_NAME/$TOOL_VERSION/config/apps/myapps/ ;
 
+		#ln -s $TOOLS/$TOOL_NAME/$TOOL_VERSION/config/apps/myapps/ $MYAPPS ;
 
 		#mkdir -p $DATABASES; \
 		#ln -s /home /home1 ; \

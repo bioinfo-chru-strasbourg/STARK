@@ -80,7 +80,7 @@ function usage {
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
-ARGS=$(getopt -o "e:vdnh" --long "env:,app:,application:,input:,condition:,days:,log:,command:,launcher:,docker-stark-image:,exec,verbose,debug,release,help" -- "$@" 2> /dev/null)
+ARGS=$(getopt -o "e:vdnh" --long "env:,app:,application:,input:,condition:,days:,log:,command:,launcher:,docker-stark-image:,exec,no_header,verbose,debug,release,help" -- "$@" 2> /dev/null)
 
 if [ $? -ne 0 ]; then
 	:
@@ -301,7 +301,7 @@ for IF in $INPUT_FOLDER; do
 		MD5_LOG="$FOLDER_LOG/$ID.log"
 		if [ -d $IFA ]; then
 			if [ ! -f $MD5_LOG ]; then
-				echo "#[INFO] Analysis/Run '$RUN_NAME' - folder '$IFA' [$MD5]"
+				(($VERBOSE)) && echo "#[INFO] Analysis/Run '$RUN_NAME' - folder '$IFA' [$MD5]"
 				CONDITION_TEST=0
 				for C in $CONDITION; do
 					(($VERBOSE)) && echo "#[INFO]    condition AND '$C' test"
@@ -353,7 +353,7 @@ for IF in $INPUT_FOLDER; do
 
 					#CMD="$COMMAND --run=$IFA"
 					EXEC_DATE=$(date '+%Y%m%d-%H%M%S')
-					echo "#[INFO] Analysis/Run '$RUN_NAME' - folder '$IFA' [$MD5] TO LAUNCH"
+					(($VERBOSE)) && echo "#[INFO] Analysis/Run '$RUN_NAME' - folder '$IFA' [$MD5] TO LAUNCH"
 					(($VERBOSE)) && echo "#[INFO] => Launch analysis '$IFA' with command '$COMMAND'"
 					(($VERBOSE)) && echo "#[INFO]    MD5: $MD5_LOG"
 					(($VERBOSE)) && echo "#[INFO]    CMD: $CMD"
@@ -363,21 +363,23 @@ for IF in $INPUT_FOLDER; do
 						echo "FOLDER: $IFA" >> $MD5_LOG
 						echo "CONDITION: $C" >> $MD5_LOG
 						echo "EXEC_DATE: $EXEC_DATE" >> $MD5_LOG
+						echo "OUTPUT: " >> $MD5_LOG
 						(($DEBUG)) && cat $MD5_LOG
-						eval $CMD
+						# LAUNCH
+						echo "#[INFO] Analysis/Run '$RUN_NAME' - folder '$IFA' [$MD5] LAUNCHED"
+						eval $CMD 1>> $MD5_LOG 2>> $MD5_LOG
 					fi;
 				else
-					echo "#[INFO] Analysis/Run '$RUN_NAME' - folder '$IFA' [$MD5] NOT TO LAUNCH"
+					(($VERBOSE)) && echo "#[INFO] Analysis/Run '$RUN_NAME' - folder '$IFA' [$MD5] NOT TO LAUNCH"
 					#(($VERBOSE)) && echo "#[INFO] => DO NOT Launch analysis '$IFA' with command '$COMMAND'"
 				fi;
 			else
 				(($VERBOSE)) && echo "#[INFO] Analysis/Run '$RUN_NAME' - folder '$IFA' [$MD5] ALREADY LAUNCHED"
 			fi;
 		fi;
-		echo "# "
+		(($VERBOSE)) && echo "# "
 	done;
 done;
-
 
 
 exit 0

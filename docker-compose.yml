@@ -19,7 +19,7 @@ services:
         build:
             context: ${DOCKER_STARK_CONTEXT}
             #dockerfile: base.Dockerfile
-            dockerfile: repo.Dockerfile
+            dockerfile: base.Dockerfile
             args:
                 - REMOVE_SOURCES=1
                 - REPO=${DOCKER_STARK_BUILD_REPO_URL}
@@ -33,7 +33,7 @@ services:
         build:
             context: ${DOCKER_STARK_CONTEXT}
             #dockerfile: base.Dockerfile
-            dockerfile: repo.Dockerfile
+            dockerfile: base.Dockerfile
             args:
                 - REMOVE_SOURCES=0
                 - REPO=${DOCKER_STARK_BUILD_REPO_URL}
@@ -97,6 +97,7 @@ services:
         volumes:
             - /var/run/docker.sock:/var/run/docker.sock
             - analyses:${DOCKER_STARK_INNER_FOLDER_ANALYSES}:rw
+            - analyses-STARK-service-launcher:${TASK_SPOOLER_TS_SAVELIST}:rw
         restart: always
         links:
             - stark
@@ -110,9 +111,9 @@ services:
     stark-service-listener:
         image: ${DOCKER_STARK_IMAGE}
         entrypoint: /tool/bin/STARK.listener
-        #command: --verbose --command="STARK" --days=${DOCKER_STARK_SERVICE_LISTENER_DAYS} --condition="${DOCKER_STARK_SERVICE_LISTENER_CONDITION}" --exec
-        command: --verbose --command="LAUNCHER" --launcher="http://stark-service-launcher:${DOCKER_STARK_SERVICE_LAUNCHER_PORT_INNER}/analysis" --days=${DOCKER_STARK_SERVICE_LISTENER_DAYS} --condition="${DOCKER_STARK_SERVICE_LISTENER_CONDITION}" --exec
-        #command: --verbose --command="DOCKER" --docker-stark-image=${DOCKER_STARK_IMAGE} --days=${DOCKER_STARK_SERVICE_LISTENER_DAYS} --condition="${DOCKER_STARK_SERVICE_LISTENER_CONDITION}" --exec
+        #command: --no_header --command="STARK" --days=${DOCKER_STARK_SERVICE_LISTENER_DAYS} --condition="${DOCKER_STARK_SERVICE_LISTENER_CONDITION}" --exec
+        command: --no_header --command="LAUNCHER" --launcher="http://stark-service-launcher:${DOCKER_STARK_SERVICE_LAUNCHER_PORT_INNER}/analysis" --days=${DOCKER_STARK_SERVICE_LISTENER_DAYS} --condition="${DOCKER_STARK_SERVICE_LISTENER_CONDITION}" --exec
+        #command: --no_header --command="DOCKER" --docker-stark-image=${DOCKER_STARK_IMAGE} --days=${DOCKER_STARK_SERVICE_LISTENER_DAYS} --condition="${DOCKER_STARK_SERVICE_LISTENER_CONDITION}" --exec
         container_name: STARK-service-listener
         env_file:
             - .env
@@ -122,7 +123,7 @@ services:
             - input:${DOCKER_STARK_INNER_FOLDER_INPUT}:ro
             - repository:${DOCKER_STARK_INNER_FOLDER_OUTPUT_REPOSITORY}:rw
             - archive:${DOCKER_STARK_INNER_FOLDER_OUTPUT_ARCHIVE}:rw
-            - analyses:${DOCKER_STARK_INNER_FOLDER_OUTPUT_LOG}:rw
+            - analyses-STARK-service-listener:${DOCKER_STARK_INNER_FOLDER_OUTPUT_LOG}:rw
         restart: always
         links:
             - stark-service-launcher
@@ -251,6 +252,21 @@ volumes:
             device: ${DOCKER_STARK_FOLDER_ANALYSES}
             o: bind
 
+    # ANALYSES - Launcher
+    analyses-STARK-service-launcher:
+        driver: local
+        driver_opts:
+            type: none
+            device: ${DOCKER_STARK_SERVICE_LISTENER_FOLDER_LOG}
+            o: bind
+
+    # ANALYSES - Listener
+    analyses-STARK-service-listener:
+        driver: local
+        driver_opts:
+            type: none
+            device: ${DOCKER_STARK_SERVICE_LISTENER_FOLDER_LOG}
+            o: bind
     # LOG
     log:
         driver: local
