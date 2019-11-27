@@ -26,6 +26,8 @@ services:
         container_name: STARK-base
         env_file:
             - .env
+        networks:
+            - stark
 
     # STARK REPO
     stark-repo:
@@ -42,6 +44,8 @@ services:
         container_name: STARK-repo
         env_file:
             - .env
+        networks:
+            - stark
 
     # STARK IMAGE
     stark:
@@ -61,6 +65,8 @@ services:
         depends_on:
             - stark-base
             - stark-repo
+        networks:
+            - stark
 
     # STARK DATABASES POPULATION
     stark-databases:
@@ -73,6 +79,8 @@ services:
         links:
             - stark
         depends_on:
+            - stark
+        networks:
             - stark
 
 
@@ -105,6 +113,8 @@ services:
         depends_on:
             - stark
             - stark-databases
+        networks:
+            - stark
 
 
     # STARK SERVICE SERVER
@@ -135,6 +145,8 @@ services:
             - stark-service-launcher
             - stark
             - stark-databases
+        networks:
+            - stark
 
     # STARK SERVICE REPO
     stark-service-repo:
@@ -150,6 +162,8 @@ services:
         restart: always
         depends_on:
             - stark-repo
+        networks:
+            - stark
 
 
     # STARK SERVICE BROWSER
@@ -171,6 +185,8 @@ services:
             - repository:${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_DATA}/repository:ro
             - archive:${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_DATA}/archives:ro
         restart: always
+        networks:
+            - stark
 
 
     # STARK SERVICE REPORTS
@@ -190,6 +206,8 @@ services:
         volumes:
             - repository:${DOCKER_STARK_SERVICE_REPORTS_INNER_FOLDER_REPOSITORIES}/repository:ro
         restart: always
+        networks:
+            - stark
 
 
     # # STARK SERVICE SERVER CENTOS
@@ -303,3 +321,9 @@ volumes:
             type: none
             device: ${DOCKER_STARK_FOLDER_DATABASES}
             o: bind
+
+# NETWORK
+###########
+
+networks:
+    stark:
