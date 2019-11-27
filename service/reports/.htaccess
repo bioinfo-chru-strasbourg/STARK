@@ -1,0 +1,12 @@
+# Deny access to .htaccess
+DirectoryIndex index.php
+<Files .htaccess>
+	Order allow,deny
+	Deny from all
+</Files>
+<Directory /var/www/html>
+	Deny All
+	Options -Indexes
+    Options Indexes FollowSymLinks MultiViews
+    AllowOverride All
+</Directory>

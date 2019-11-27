@@ -90,7 +90,7 @@ services:
             - .env
         environment:
             - TS=ts
-            #- TS_SOCKET=${TASK_SPOOLER_TS_SOCKET}
+            - TS_SOCKET=${TASK_SPOOLER_TS_SOCKET}
             - TS_SAVELIST=${TASK_SPOOLER_TS_SAVELIST}
         ports:
             - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_LAUNCHER_PORT}:${DOCKER_STARK_SERVICE_LAUNCHER_PORT_INNER}
@@ -173,40 +173,59 @@ services:
         restart: always
 
 
-        # # STARK SERVICE SERVER CENTOS
-        # stark-service-launcher-centos:
-        #     image: ${DOCKER_STARK_SERVICE_LAUNCHER_IMAGE}-centos
-        #     build:
-        #         context: ${DOCKER_STARK_SERVICE_LAUNCHER_CONTEXT}
-        #         dockerfile: centos.Dockerfile
-        #     container_name: STARK-service-launcher-centos
-        #     env_file:
-        #         - .env
-        #     environment:
-        #         - TS_SOCKET=${TASK_SPOOLER_TS_SOCKET}
-        #         - TS_SAVELIST=${TASK_SPOOLER_TS_SAVELIST}
-        #     ports:
-        #         - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_LAUNCHER_PORT}2:${DOCKER_STARK_SERVICE_LAUNCHER_PORT_INNER}
-        #     volumes:
-        #         - /var/run/docker.sock:/var/run/docker.sock
-        #         - analyses:/STARK/analyses
-        #     links:
-        #         - stark
-        #         - stark-databases
-        #     restart: always
+    # STARK SERVICE REPORTS
+    stark-service-reports:
+        image: ${DOCKER_STARK_SERVICE_REPORTS_IMAGE}
+        build:
+            context: ${DOCKER_STARK_SERVICE_REPORTS_CONTEXT}
+            dockerfile: Dockerfile
+        container_name: STARK-service-reports
+        #command:  -d ${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_CONFIG}/filebrowser.db -c ${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_CONFIG}/.filebrowser.json -r ${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_DATA}
+        #command: -r ${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_DATA}
+        restart: always
+        env_file:
+            - .env
+        ports:
+            - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_REPORTS_PORT}:${DOCKER_STARK_SERVICE_REPORTS_PORT_INNER}
+        volumes:
+            - repository:${DOCKER_STARK_SERVICE_REPORTS_INNER_FOLDER_REPOSITORIES}/repository:ro
+        restart: always
 
-        # # STARK SERVICE EXPLORER
-        # stark-server-explorer:
-        #     image: ${DOCKER_STARK_SERVICE_EXPLORER_IMAGE}
-        #     container_name: STARK-service-explorer
-        #     restart: always
-        #     env_file:
-        #         - .env
-        #     ports:
-        #         - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_EXPLORER_PORT}:${DOCKER_STARK_SERVICE_EXPLORER_PORT_INNER}
-        #     volumes:
-        #         - ${DOCKER_STARK_FOLDER_OUTPUT_REPOSITORY}:/usr/local/apache2/htdocs/
-        #     restart: always
+
+    # # STARK SERVICE SERVER CENTOS
+    # stark-service-launcher-centos:
+    #     image: ${DOCKER_STARK_SERVICE_LAUNCHER_IMAGE}-centos
+    #     build:
+    #         context: ${DOCKER_STARK_SERVICE_LAUNCHER_CONTEXT}
+    #         dockerfile: centos.Dockerfile
+    #     container_name: STARK-service-launcher-centos
+    #     env_file:
+    #         - .env
+    #     environment:
+    #         - TS_SOCKET=${TASK_SPOOLER_TS_SOCKET}
+    #         - TS_SAVELIST=${TASK_SPOOLER_TS_SAVELIST}
+    #     ports:
+    #         - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_LAUNCHER_PORT}2:${DOCKER_STARK_SERVICE_LAUNCHER_PORT_INNER}
+    #     volumes:
+    #         - /var/run/docker.sock:/var/run/docker.sock
+    #         - analyses:/STARK/analyses
+    #     links:
+    #         - stark
+    #         - stark-databases
+    #     restart: always
+
+    # # STARK SERVICE EXPLORER
+    # stark-service-explorer-repository:
+    #     image: ${DOCKER_STARK_SERVICE_EXPLORER_REPOSITORY_IMAGE}
+    #     container_name: STARK-service-explorer-repository
+    #     restart: always
+    #     env_file:
+    #         - .env
+    #     ports:
+    #         - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_EXPLORER_REPOSITORY_PORT}:${DOCKER_STARK_SERVICE_EXPLORER_REPOSITORY_PORT_INNER}
+    #     volumes:
+    #         - /Users/lebechea/Documents/NGS/DATA/REPOSITORY/:/usr/local/apache2/htdocs/
+    #     restart: always
 
 
 # VOLUMES

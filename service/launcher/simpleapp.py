@@ -26,9 +26,6 @@ else:
     ts=""
 
 
-
-
-
 # DEF
 
 def randomStringDigits(stringLength=6):
@@ -136,10 +133,16 @@ def stark_launch():
     else:
         ts_cmd=""
 
+    # Create a Notification by a command ?
+
     # Prepare and Launch TS Docker run command
     myCmd = ts_cmd + ' docker run ' + docker_parameters + ' ' + docker_stark + ' --analysis_name=' + analysesNAME + ' --analysis=' + analysisFILE #+ analysisLOGERR_PARAM
     print myCmd
     getCmd = subprocess.check_output(myCmd, shell=True);
+
+    # Notification or something else
+    # command to launch : ( ts -w ; xmessage Finished! ) &
+
     #return "Hello world from Distelli & Docker!"+json+getCmd
     if getCmd:
         return analysesID + '.' + analysesNAME, 200
