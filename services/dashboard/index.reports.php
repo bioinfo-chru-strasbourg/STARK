@@ -31,35 +31,68 @@
 		$PATH_SHORT=path_short($PATH);
 		$PATH_HREF="";
 		$PATH_RETURN="
-
+			<big>
 			<a class='' href='?PATH=$PATH_HREF'>
-				<div class='card-img align-self-center bold'>
+				<div class='card-img align-self-center mbr-bold'>
 					<span class='mbr-iconfont mbri-home mbr-bold' style='color: rgb(20, 157, 204); fill: rgb(20, 157, 204);'></span>
 				</div>
 				HOME
 			</a>
-
+			</big>
 		";
+		#$last_value="";
 		foreach (explode("/",$PATH_SHORT) as $key => $value) {
 			if ($value!="") {
 				$PATH_HREF.="$value/";
 				#$PATH_RETURN.=" > <a class='btn btn-primary-outline display-7' href='?PATH=$PATH_HREF'>$value</a>";
 				$PATH_RETURN.="
 				&nbsp;
+				<!--
 				<div class='card-img align-self-center bold'>
 					<span class='mbr-iconfont mbri-arrow-next mbr-bold' style='color: rgb(20, 157, 204); fill: rgb(20, 157, 204);'></span>
 				</div>
+				-->
 				&nbsp;
 				<a class='' href='?PATH=$PATH_HREF'>
-					<div class='card-img align-self-center bold'>
+					<div class='align-self-center bold'>
+					<span class='mbr-iconfont mbri-arrow-next mbr-bold' style='color: rgb(20, 157, 204); fill: rgb(20, 157, 204);'></span>
 						<span class='mbr-iconfont mbri-folder mbr-bold' style='color: rgb(20, 157, 204); fill: rgb(20, 157, 204);'></span>
 					</div>
-					$value
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$value
 				</a>
 				&nbsp;
 				";
+				# card-img
 			};
+			#$last_value=$value;
 		};
+
+		if ($key<5) {
+			$PATH_RETURN.="
+
+			&nbsp;
+			<!--
+			<div class='card-img align-self-center bold'>
+				<span class='mbr-iconfont mbri-arrow-next mbr-bold' style='color: rgb(20, 157, 204); fill: rgb(20, 157, 204);'></span>
+			</div>
+			-->
+			&nbsp;
+			<a class='' href='?PATH=$PATH_HREF'>
+				<div class='align-self-center bold'>
+
+					<span class='mbr-iconfont mbri-arrow-down mbr-bold' style='color: rgb(20, 157, 204); fill: rgb(20, 157, 204);'></span>
+
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;".path_links($HOME,$PATH)."
+				</div>
+
+			</a>
+			&nbsp;
+
+			";
+		}
+
+		# mbri-cust-feedback
+
 		return $PATH_RETURN;
 	};
 
@@ -81,13 +114,20 @@
 				// 	&nbsp;<br>
 				// 	";
 				$PATH_LINKS.="
+					<a class='' href='?PATH="."$PATH".end(explode( "/", $value ))."/'>
+						<div class=' align-self-left align-left bold'>
+							<!--
+							<span class='mbr-iconfont mbri-folder mbr-bold' style='color: rgb(20, 157, 204); fill: rgb(20, 157, 204);'></span>
+							&nbsp;&nbsp;
+							-->
+							".end(explode( "/", $value ))."
+							<!--
+							&nbsp;&nbsp;
+							<span class='mbr-iconfont mbri-cursor-click mbr-bold' style='color: rgb(20, 157, 204); fill: rgb(20, 157, 204);'></span>
+							-->
 
-					<div class='card-img align-self-left align-left bold'>
-					<a class='' href='?PATH="."$PATH".end(explode( "/", $value ))."/'>	".end(explode( "/", $value ))."
-						&nbsp;&nbsp;<span class='mbr-iconfont mbri-cursor-click mbr-bold' style='color: rgb(20, 157, 204); fill: rgb(20, 157, 204);'></span>
+						</div>
 					</a>
-					</div>
-
 				";
 			};
 		};
@@ -134,11 +174,64 @@
 	// </style>
 
 
+	echo '
+	<section class="menu cid-qTkzRZLJNu" once="menu" id="menu1-3">
+	  <nav class="navbar navbar-expand beta-menu navbar-dropdown align-items-center navbar-fixed-top collapsed bg-color transparent">
+		  <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+			  <div class="hamburger">
+				  <span></span>
+				  <span></span>
+				  <span></span>
+				  <span></span>
+			  </div>
+		  </button>
+		  <div class="menu-logo">
+			  <div class="navbar-brand">
+				  <span class="navbar-logo">
+					  <a href="/">
+						   <img src="assets/logo.png" alt="Mobirise" title="" style="height: 6rem;">
+					  </a>
+				  </span>
+				  <span class="navbar-caption-wrap"><a class="navbar-caption text-secondary display-2" href="">Reports</a></span>
+			 </div>
+		  </div>
+		  <div class="collapse navbar-collapse align-center" id="navbarSupportedContent">
+		  <!--
+			  <p class="mbr-text pb-3 mbr-fonts-style display-5">
+				  <img src="assets/logo.png" alt="STARK" title="" style="height: 24rem;">
+			  </p>
+			  <h1 class="mbr-section-title mbr-bold pb-3 mbr-fonts-style display-2">
+				  $ENV_NAME
+			  </h1>
+			  <p class="mbr-text pb-3 mbr-fonts-style display-5">
+				  $ENV_RELEASE - $ENV_DATE
+				  <BR>
+				  $ENV_DESCRIPTION
+				  <BR>
+				  © Copyright $ENV_COPYRIGHT - All Rights Reserved
+				  <BR>
+				  $ENV_LICENCE Licence
+				  <BR>
+				  <BR>
+				  <BR>
+			  </p>
+			-->
+		  </div>
+	  </nav>
+	</section>
+	';
+
+
+
+
+
+
 	$PATH_HTML=path_html($HOME,$PATH);
 	$PATH_LINKS=path_links($HOME,$PATH);
 
 	echo '
 		<section class="header1 cid-ru7OEConn1" id="header16-1k">
+			<!--
 			<div class="container">
 			   	<div class="row justify-content-center  align-center">
 			   		<div class="card p-6 col-12 col-md-12">
@@ -150,21 +243,25 @@
 			   		</div>
 				</div>
 			</div>
+			-->
 		    <div class="container">
 				<h3 class="mbr-section-subtitle mbr-fonts-style align-center mbr-light display-2">
-					Reports
+					&nbsp;
 			  	</h3>
-				<br>
-				<br>
+		    </div>
+			<div class="container div-wrapper">
+
 				<h3 class="mbr-section-subtitle mbr-fonts-style align-left mbr-light display-5">
 					<small><small>
 					<div class="media">
 						'.$PATH_HTML.'
 					</div>
 					<br>
+
 					<div class="div-wrapper">
-						'.$PATH_LINKS.'
+
 					</div>
+
 					</small></small>
 			  	</h3>
 
@@ -173,7 +270,7 @@
 
 	';
 
-	#<div class="mbr-section-btn align-center"> <div class="media">
+	#<div class="mbr-section-btn align-center"> <div class="media"> '.$PATH_LINKS.'
 
 
 	### TABLE

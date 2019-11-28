@@ -202,7 +202,7 @@ GZ?=gzip
 
 
 # BAM Indexing
-%.cram.crai: %.bam
+%.cram.crai: %.cram
 	$(SAMTOOLS) index $<
 
 
