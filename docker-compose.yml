@@ -191,25 +191,7 @@ services:
             - stark
 
 
-    # STARK SERVICE REPORTS
-    stark-service-reports:
-        image: ${DOCKER_STARK_SERVICE_REPORTS_IMAGE}
-        build:
-            context: ${DOCKER_STARK_SERVICE_REPORTS_CONTEXT}
-            dockerfile: Dockerfile
-        container_name: STARK-service-reports
-        #command:  -d ${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_CONFIG}/filebrowser.db -c ${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_CONFIG}/.filebrowser.json -r ${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_DATA}
-        #command: -r ${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_DATA}
-        restart: always
-        env_file:
-            - .env
-        ports:
-            - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_REPORTS_PORT}:${DOCKER_STARK_SERVICE_REPORTS_PORT_INNER}
-        volumes:
-            - repository:${DOCKER_STARK_SERVICE_REPORTS_INNER_FOLDER_REPOSITORIES}/repository:ro
-        restart: always
-        networks:
-            - stark
+
 
     stark-service-dashboard:
         image: ${DOCKER_STARK_SERVICE_DASHBOARD_IMAGE}
@@ -231,7 +213,25 @@ services:
         networks:
             - stark
 
-
+    # # STARK SERVICE REPORTS
+    # stark-service-reports:
+    #     image: ${DOCKER_STARK_SERVICE_REPORTS_IMAGE}
+    #     build:
+    #         context: ${DOCKER_STARK_SERVICE_REPORTS_CONTEXT}
+    #         dockerfile: Dockerfile
+    #     container_name: STARK-service-reports
+    #     #command:  -d ${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_CONFIG}/filebrowser.db -c ${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_CONFIG}/.filebrowser.json -r ${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_DATA}
+    #     #command: -r ${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_DATA}
+    #     restart: always
+    #     env_file:
+    #         - .env
+    #     ports:
+    #         - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_REPORTS_PORT}:${DOCKER_STARK_SERVICE_REPORTS_PORT_INNER}
+    #     volumes:
+    #         - repository:${DOCKER_STARK_SERVICE_REPORTS_INNER_FOLDER_REPOSITORIES}/repository:ro
+    #     restart: always
+    #     networks:
+    #         - stark
 
     # # STARK SERVICE SERVER CENTOS
     # stark-service-launcher-centos:
