@@ -25,6 +25,5 @@ RUN a2enmod rewrite remoteip
 ADD conf/vhost.conf /etc/apache2/sites-available/000-default.conf
 ADD conf/apache.conf /etc/apache2/conf-available/z-app.conf
 RUN a2enconf z-app
-ADD index.php /app/index.php
-ADD index.reports.php /app/index.reports.php
+ADD *.php /app/
 ADD assets /app/assets
