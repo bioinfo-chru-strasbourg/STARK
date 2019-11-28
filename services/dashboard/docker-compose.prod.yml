@@ -1,0 +1,15 @@
+version: '3'
+
+services:
+    app:
+        image: silarhi/php-apache:7.3
+        container_name: lab_php_app
+        labels:
+            - "traefik.frontend.rule=Host:labs.silarhi.fr;PathPrefixStrip:/php,/_errors;PathPrefix:/php"
+        restart: always
+        networks:
+            - web
+
+networks:
+    web:
+        external: true

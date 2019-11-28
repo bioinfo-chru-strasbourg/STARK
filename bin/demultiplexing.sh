@@ -180,7 +180,8 @@ echo "#[INFO] SampleSheet: $RUN_SAMPLESHEET";
 
 # THREADS
 re='^[0-9]+$'
-CORES=$(ls -d /sys/devices/system/cpu/cpu[[:digit:]]* | wc -w)
+#CORES=$(ls -d /sys/devices/system/cpu/cpu[[:digit:]]* | wc -w)
+CORES=$(nproc)
 if ! [[ $THREADS =~ $re ]] || [ -z "$THREADS" ] || [ "$THREADS" == "" ] || [ $THREADS -gt $CORES ] ; then
 	CORES_FREE=1
 	THREADS=$(($CORES-$CORES_FREE))

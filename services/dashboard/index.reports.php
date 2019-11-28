@@ -1,6 +1,104 @@
 <?php
 
 
+	### VARIABLES
+	###############
+
+	$PATH=$_GET["PATH"];
+	$HOME="repositories";
+	$SEARCH=$_GET["search"];
+
+
+	### FUNCTIONS
+	###############
+
+	function path_full($PATH="") {
+		$PATH_SPLIT=explode ( "/" , $PATH );
+		if (isset($PATH_SPLIT[0]) && $PATH_SPLIT[0]!="") {$REPOSITORY=$PATH_SPLIT[0];} else {$REPOSITORY="*";};
+		if (isset($PATH_SPLIT[1]) && $PATH_SPLIT[1]!="") {$GROUP=$PATH_SPLIT[1];} else {$GROUP="*";};
+		if (isset($PATH_SPLIT[2]) && $PATH_SPLIT[2]!="") {$PROJECT=$PATH_SPLIT[2];} else {$PROJECT="*";};
+		if (isset($PATH_SPLIT[3]) && $PATH_SPLIT[3]!="") {$RUN=$PATH_SPLIT[3];} else {$RUN="*";};
+		if (isset($PATH_SPLIT[4]) && $PATH_SPLIT[4]!="") {$SAMPLE=$PATH_SPLIT[4];} else {$SAMPLE="*";};
+		return "$REPOSITORY/$GROUP/$PROJECT/$RUN/$SAMPLE/";
+	};
+
+	function path_short($PATH="") {
+		return str_replace("*/","",path_full($PATH));
+	};
+
+	function path_html($HOME="repositories",$PATH="") {
+		# <a href='?PATH=$REPOSITORY/$GROUP/$PROJECT/$RUN/$SAMPLE/'>$SAMPLE</a>
+		$PATH_SHORT=path_short($PATH);
+		$PATH_HREF="";
+		$PATH_RETURN="
+
+			<a class='' href='?PATH=$PATH_HREF'>
+				<div class='card-img align-self-center bold'>
+					<span class='mbr-iconfont mbri-home mbr-bold' style='color: rgb(20, 157, 204); fill: rgb(20, 157, 204);'></span>
+				</div>
+				HOME
+			</a>
+
+		";
+		foreach (explode("/",$PATH_SHORT) as $key => $value) {
+			if ($value!="") {
+				$PATH_HREF.="$value/";
+				#$PATH_RETURN.=" > <a class='btn btn-primary-outline display-7' href='?PATH=$PATH_HREF'>$value</a>";
+				$PATH_RETURN.="
+				&nbsp;
+				<div class='card-img align-self-center bold'>
+					<span class='mbr-iconfont mbri-arrow-next mbr-bold' style='color: rgb(20, 157, 204); fill: rgb(20, 157, 204);'></span>
+				</div>
+				&nbsp;
+				<a class='' href='?PATH=$PATH_HREF'>
+					<div class='card-img align-self-center bold'>
+						<span class='mbr-iconfont mbri-folder mbr-bold' style='color: rgb(20, 157, 204); fill: rgb(20, 157, 204);'></span>
+					</div>
+					$value
+				</a>
+				&nbsp;
+				";
+			};
+		};
+		return $PATH_RETURN;
+	};
+
+	function path_links($HOME="repositories",$PATH="") {
+		$PATH_SHORT=path_short($PATH);
+		if (count(explode( "/", $PATH ))<=5) {
+			foreach (glob ( $HOME."/".$PATH_SHORT."/*", GLOB_ONLYDIR ) as $key => $value) {
+				// $PATH_LINKS.="
+				// 	&nbsp;
+				// 	<small><small>
+				// 	<a class='btn display-8 small' href='?PATH="."$PATH".end(explode( "/", $value ))."/'>
+				// 		<div class='card-img align-self-center'>
+				// 			<span class='mbr-iconfont mbri-folder mbr-bold' style='color: rgb(20, 157, 204); fill: rgb(20, 157, 204);'></span>
+				// 				<br><small>".end(explode( "/", $value ))."</small>
+				// 		</div>
+				//
+				// 	</a>
+				// 	</small></small>
+				// 	&nbsp;<br>
+				// 	";
+				$PATH_LINKS.="
+
+					<div class='card-img align-self-left align-left bold'>
+					<a class='' href='?PATH="."$PATH".end(explode( "/", $value ))."/'>	".end(explode( "/", $value ))."
+						&nbsp;&nbsp;<span class='mbr-iconfont mbri-cursor-click mbr-bold' style='color: rgb(20, 157, 204); fill: rgb(20, 157, 204);'></span>
+					</a>
+					</div>
+
+				";
+			};
+		};
+		#echo "L $LINKS_HTML L"; btn btn-primary-outline display-8 display-8
+		return $PATH_LINKS;
+	};
+
+
+	### HEADER
+	############
+
 	echo '<!-- Site made with Mobirise Website Builder v4.10.3, https://mobirise.com -->
 	<meta charset="UTF-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -20,6 +118,12 @@
 	<link rel="stylesheet" href="assets/theme/css/style.css">
 	<link rel="stylesheet" href="assets/gallery/style.css">
 	<link rel="stylesheet" href="assets/mobirise/css/mbr-additional.css" type="text/css">
+	<style>
+		.div-wrapper {
+			overflow: auto;
+			max-height:400px;
+			}
+	</style>
 	';
 
 	// <style>
@@ -29,6 +133,9 @@
 	// 		}
 	// </style>
 
+
+	$PATH_HTML=path_html($HOME,$PATH);
+	$PATH_LINKS=path_links($HOME,$PATH);
 
 	echo '
 		<section class="header1 cid-ru7OEConn1" id="header16-1k">
@@ -44,14 +151,35 @@
 				</div>
 			</div>
 		    <div class="container">
-				<h3 class="mbr-section-subtitle mbr-fonts-style align-center mbr-light display-3">
+				<h3 class="mbr-section-subtitle mbr-fonts-style align-center mbr-light display-2">
 					Reports
 			  	</h3>
+				<br>
+				<br>
+				<h3 class="mbr-section-subtitle mbr-fonts-style align-left mbr-light display-5">
+					<small><small>
+					<div class="media">
+						'.$PATH_HTML.'
+					</div>
+					<br>
+					<div class="div-wrapper">
+						'.$PATH_LINKS.'
+					</div>
+					</small></small>
+			  	</h3>
+
 		    </div>
 		</section>
 
 	';
 
+	#<div class="mbr-section-btn align-center"> <div class="media">
+
+
+	### TABLE
+	###########
+
+	### THEAD
 
 	$thead='
 		<tr class="table-heads">
@@ -74,14 +202,13 @@
 	';
 
 
+	### TBODY
+
 	$tbody="";
-	#$reports=glob ( "repositories/*/*/*/*/*/*stark.report.html" );
-	$reports=glob ( "repositories/*/*/*/*/*/*stark.report.html" );
-	#$reports=glob ( "repositories/*" );
-	#print_r($reports);
+	$reports=glob ( "repositories/".path_full($PATH)."*stark.report.html" );
 	foreach ($reports as $key => $report_html) {
+		# Find infos
 		$report_html_split=explode ( "/" , $report_html );
-		#echo "<br><a href='$report_html'>".$report_html_split[0].$report_html_split[5]."</a>";
 		$root=$report_html_split[0];
 		$repository=$report_html_split[1];
 		$group=$report_html_split[2];
@@ -91,9 +218,11 @@
 		$report_html_file=$report_html_split[6];
 		$report_html_file_split=explode ( "." , $report_html_file );
 		$report_html_id=$report_html_file_split[1];
+		# Files
 		$report_tsv=$root.'/'.$repository.'/'.$group.'/'.$project.'/'.$run.'/'.$sample.'/'.$sample.'.final.tsv';
 		$report_vcf_gz=$root.'/'.$repository.'/'.$group.'/'.$project.'/'.$run.'/'.$sample.'/'.$sample.'.final.vcf.gz';
 		$report_bed=$root.'/'.$repository.'/'.$group.'/'.$project.'/'.$run.'/'.$sample.'/'.$sample.'.bed';
+		# TBODY
 		$tbody=$tbody.'
 			<tr class="table-heads">
 				<td class="head-item mbr-fonts-style display-7">
@@ -120,22 +249,17 @@
 	};
 
 
-
-# DER_BIN/csv_to_html.awk
-#-v tag_row_head_plus="class='table-heads'"
-#-v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\""
-#-v tag_row_body_plus=""
-#-v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
+	### SECTION
+	#############
 
 	echo '
 
 	<section class="section-table cid-ruiBoanIwc" id="REPORTS">
 
-
 	  <div class="container container-table">
 
-
 		  <div class="table-wrapper">
+
 			<div class="container">
 			  <div class="row search">
 				<div class="col-md-6"></div>
@@ -175,14 +299,16 @@
 			  </div>
 			</div>
 
-
 		  </div>
+
 		</div>
 
 	</section>
-
 	';
 
+
+	### SCRIPTS
+	#############
 
 	echo '
 		<script src="assets/web/assets/jquery/jquery.min.js"></script>
@@ -206,6 +332,6 @@
 		<script src="assets/gallery/script.js"></script>
 		<script src="assets/slidervideo/script.js"></script>
 		<script src="assets/mbr-tabs/mbr-tabs.js"></script>
-	'
+	';
 
 ?>

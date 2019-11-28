@@ -177,6 +177,7 @@ GZ?=gzip
 %.bam.bai: %.bam
 	$(SAMTOOLS) index $<
 
+
 # BAM from SAM
 # sorting sam file by coordinate and output a bam file
 %.bam : %.sam %.genome
@@ -198,6 +199,12 @@ GZ?=gzip
 	$(SAMTOOLS) view -o $@ -O CRAM -S -T `cat $*.genome` $*.bam -@ $(THREADS_SAMTOOLS);
 	# test Empty output file
 	# Remove intermediate SAM file
+
+
+# BAM Indexing
+%.cram.crai: %.bam
+	$(SAMTOOLS) index $<
+
 
 
 # BAM Sorting

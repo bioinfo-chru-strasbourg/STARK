@@ -14,20 +14,20 @@ services:
     ##############
 
     # STARK BASE IMAGE
-    stark-base:
-        image: ${DOCKER_STARK_IMAGE_BASE}
-        build:
-            context: ${DOCKER_STARK_CONTEXT}
-            #dockerfile: base.Dockerfile
-            dockerfile: base.Dockerfile
-            args:
-                - REMOVE_SOURCES=1
-                - REPO=${DOCKER_STARK_BUILD_REPO_URL}
-        container_name: STARK-base
-        env_file:
-            - .env
-        networks:
-            - stark
+    # stark-base:
+    #     image: ${DOCKER_STARK_IMAGE_BASE}
+    #     build:
+    #         context: ${DOCKER_STARK_CONTEXT}
+    #         #dockerfile: base.Dockerfile
+    #         dockerfile: Dockerfile
+    #         args:
+    #             - REMOVE_SOURCES=1
+    #             - REPO=${DOCKER_STARK_BUILD_REPO_URL}
+    #     container_name: STARK-base
+    #     env_file:
+    #         - .env
+    #     networks:
+    #         - stark
 
     # STARK REPO
     stark-repo:
@@ -35,7 +35,7 @@ services:
         build:
             context: ${DOCKER_STARK_CONTEXT}
             #dockerfile: base.Dockerfile
-            dockerfile: base.Dockerfile
+            dockerfile: Dockerfile
             args:
                 - REMOVE_SOURCES=0
                 - REPO=${DOCKER_STARK_BUILD_REPO_URL}
@@ -54,16 +54,18 @@ services:
             context: ${DOCKER_STARK_CONTEXT}
             dockerfile: Dockerfile
             args:
-                - DOCKER_STARK_IMAGE_BASE=${DOCKER_STARK_IMAGE_BASE}
+                #- DOCKER_STARK_IMAGE_BASE=${DOCKER_STARK_IMAGE_BASE}
+                - REMOVE_SOURCES=1
+                - REPO=${DOCKER_STARK_BUILD_REPO_URL}
         container_name: STARK
         command: --help
         env_file:
             - .env
         links:
-            - stark-base
+            #- stark-base
             - stark-repo
         depends_on:
-            - stark-base
+            #- stark-base
             - stark-repo
         networks:
             - stark
@@ -208,6 +210,27 @@ services:
         restart: always
         networks:
             - stark
+
+    stark-service-dashboard:
+        image: ${DOCKER_STARK_SERVICE_DASHBOARD_IMAGE}
+        build:
+            context: ${DOCKER_STARK_SERVICE_DASHBOARD_CONTEXT}
+            dockerfile: Dockerfile
+        container_name: STARK-service-dashboard
+        #command:  -d ${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_CONFIG}/filebrowser.db -c ${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_CONFIG}/.filebrowser.json -r ${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_DATA}
+        #command: -r ${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_DATA}
+        restart: always
+        env_file:
+            - .env
+        ports:
+            - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_DASHBOARD_PORT}2:${DOCKER_STARK_SERVICE_DASHBOARD_PORT_INNER}
+        volumes:
+            #- /Users/lebechea/Documents/NGS/GIT/Strasbourg/STARK/service/reports:/var/www/html/:rw
+            - repository:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER_REPOSITORIES}/repository:ro
+        restart: always
+        networks:
+            - stark
+
 
 
     # # STARK SERVICE SERVER CENTOS
