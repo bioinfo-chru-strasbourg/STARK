@@ -137,22 +137,20 @@
 	$BROWSER_PORT=$_ENV["DOCKER_STARK_SERVICE_PORT_PATTERN"].$_ENV["DOCKER_STARK_SERVICE_BROWSER_PORT"];
 	$BROWSER_URL=$BROWSER_SERVER.":".$BROWSER_PORT;
 
-
+	# class='btn btn-primary-outline display-7'
 
 	echo '
 
+
+
 	<section class="features10 cid-ru7OEDbxhA" id="features10-1l">
 
-	    <div class="container">
-	        <div class="row justify-content-center">
+		<div class="container ">
+			<div class="row justify-content-center">
 
-
-
-
-				<div class="card p-3 col-12 col-md-8">
-
+				<div class="card p-3 col-12 col-md-6 mb-4">
 					<a href="http://'.$BROWSER_URL.'" class="navbar-caption text-secondary">
-						<div class="media mb-3">
+						<div class="media mb-2">
 							<div class="card-img align-self-center">
 								<span class="mbr-iconfont mbri-browse" style="color: rgb(20, 157, 204); fill: rgb(20, 157, 204);"></span>
 							</div>
@@ -166,11 +164,11 @@
 							</p>
 						</div>
 					</a>
+				</div>
 
-					<br><br>
-
+				<div class="card p-3 col-12 col-md-6 mb-4">
 					<a href="index.reports.php" class="navbar-caption text-secondary ">
-						<div class="media mb-3">
+						<div class="media mb-2">
 							<div class="card-img align-self-center">
 								<span class="mbr-iconfont mbri-cust-feedback" style="color: rgb(20, 157, 204); fill: rgb(20, 157, 204);"></span>
 							</div>
@@ -182,32 +180,46 @@
 							</p>
 						</div>
 					</a>
-
-					<br><br>
-
-					<a href="index.stats.php" class="navbar-caption text-secondary ">
-		                <div class="media mb-3">
-		                    <div class="card-img align-self-center">
-		                        <span class="mbr-iconfont mbri-growing-chart" style="color: rgb(20, 157, 204); fill: rgb(20, 157, 204);"></span>
-		                    </div>
-		                    <h4 class="card-title media-body py-3 mbr-fonts-style display-5">Statistics</h4>
-		                </div>
-		                <div class="card-box">
-		                    <p class="mbr-text mbr-fonts-style display-7">
-								Some Statistics (TODO)
-							</p>
-		                </div>
-					</a>
-
 				</div>
 
+			</div>
+		</div>
 
+		<div class="container">
+			<div class="row justify-content-center">
 
-	        </div>
-	    </div>
+				<div class="card p-3 col-12 col-md-6 mb-4">
+					<a href="index.stats.php" class="navbar-caption text-secondary ">
+						<div class="media mb-2">
+							<div class="card-img align-self-center">
+								<span class="mbr-iconfont mbri-growing-chart" style="color: rgb(20, 157, 204); fill: rgb(20, 157, 204);"></span>
+							</div>
+							<h4 class="card-title media-body py-3 mbr-fonts-style display-5">Statistics</h4>
+						</div>
+						<div class="card-box">
+							<p class="mbr-text mbr-fonts-style display-7">
+								Statistics on runs, groups, projects, analyses and samples,
+								stored in repository, archives and and sequencing raw sequencing data.
+							</p>
+						</div>
+					</a>
+				</div>
 
+				<div class="card p-3 col-12 col-md-6 mb-4">
+					<a href="index.reports.php" class="navbar-caption text-secondary ">
+
+					</a>
+				</div>
+
+			</div>
+		</div>
 
 	</section>
+
+
+
+
+
 
 	';
 

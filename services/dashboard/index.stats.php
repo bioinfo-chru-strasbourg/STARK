@@ -4,9 +4,28 @@
 	### VARIABLES
 	###############
 
+	#$count=" count ";
+	$count="  ";
 
 	### FUNCTIONS
 	###############
+
+
+	function pp($arr){
+	    $retStr = '<ul>';
+	    if (is_array($arr)){
+	        foreach ($arr as $key=>$val){
+	            if (is_array($val)){
+	                $retStr .= '<li>' . $key . ' => ' . pp($val) . '</li>';
+	            }else{
+	                $retStr .= '<li>' . $key . ' => ' . $val . '</li>';
+	            }
+	        }
+	    }
+	    $retStr .= '</ul>';
+	    return $retStr;
+	}
+
 
 
 	### HEADER
@@ -18,8 +37,8 @@
 	<meta name="generator" content="Mobirise v4.10.3, mobirise.com">
 	<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
 	<link rel="shortcut icon" href="assets/favicon.ico" type="image/x-icon">
-	<meta name="description" content="STARK Dashboard">
-	<title>STARK Dashboard</title>
+	<meta name="description" content="STARK Statistics">
+	<title>STARK Statisticss</title>
 	<link rel="stylesheet" href="assets/web/assets/mobirise-icons/mobirise-icons.css">
 	<link rel="stylesheet" href="assets/tether/tether.min.css">
 	<link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css">
@@ -65,7 +84,7 @@
 						   <img src="assets/logo.png" alt="Mobirise" title="" style="height: 6rem;">
 					  </a>
 				  </span>
-				  <span class="navbar-caption-wrap"><a class="navbar-caption text-secondary display-2" href="">Dashboard</a></span>
+				  <span class="navbar-caption-wrap"><a class="navbar-caption text-secondary display-2" href="">Statistics</a></span>
 			 </div>
 		  </div>
 		  <div class="collapse navbar-collapse align-center" id="navbarSupportedContent">
@@ -138,35 +157,304 @@
 	$BROWSER_URL=$BROWSER_SERVER.":".$BROWSER_PORT;
 
 
+	# REPOSITORIES
+	$REPOSITORY=$_ENV["DOCKER_STARK_INNER_FOLDER_OUTPUT_REPOSITORY"];
+	$ARCHIVE=$_ENV["DOCKER_STARK_INNER_FOLDER_OUTPUT_ARCHIVE"];
+	#print_r(glob ( $REPOSITORY."/*/*/*/*", GLOB_ONLYDIR ));
+	foreach (array($REPOSITORY,$ARCHIVE) as $REPO) {
+		foreach (glob ( $REPO."/*/*/*/*", GLOB_ONLYDIR ) as $key => $sample_path) {
+			$sample_split=explode ( "/" , $sample_path );
+			$sample_path_count=count($sample_split);
+			#print $sample_path_count;
+			#$repository=$sample_split[0];
+			$group=$sample_split[$sample_path_count-4];
+			$project=$sample_split[$sample_path_count-3];
+			$run=$sample_split[$sample_path_count-2];
+			$sample=$sample_split[$sample_path_count-1];
+			#echo $sample;
+			$hash["groups"][$group]++;
+			$hash["projects"][$project]++;
+			$hash["runs"][$run]++;
+			$hash["samples"][$sample]++;
+			$hash["tree"][$group][$project][$run][$sample]++;
+		};
+	};
+	$nb_groups=count($hash["groups"]);
+	$nb_projects=count($hash["projects"]);
+	$nb_runs=count($hash["runs"]);
+	$nb_samples=count($hash["samples"]);
+
 
 	echo '
 
-	<section class="features10 cid-ru7OEDbxhA" id="features10-1l">
+	<section class="counters1 counters cid-ru7OEH6r7i" id="SECTION_ID" >
+    <br>
 
-	    <div class="container">
-	        <div class="row justify-content-center">
-				<a href="http://'.$BROWSER_URL.'" class="navbar-caption text-secondary">
-	            <div class="card p-3 col-12 col-md-12">
-	                <div class="media mb-3">
-	                    <div class="card-img align-self-center">
-	                        <span class="mbr-iconfont mbri-browse" style="color: rgb(20, 157, 204); fill: rgb(20, 157, 204);"></span>
-	                    </div>
-	                    <h4 class="card-title media-body py-3 mbr-fonts-style display-5">Stats</h4>
-	                </div>
-	                <div class="card-box">
-	                    <p class="mbr-text mbr-fonts-style display-7">
-							Statistics
-						</p>
-	                </div>
-	            </div>
-				</a>
-	        </div>
-	    </div>
+ 	   	<div class="container">
+
+ 		   <h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">
+ 			   Repositories
+ 		   </h2>
+
+ 		   <p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
+ 			   Statistics for Repository and Archive (only unique items)
+ 		   </p>
 
 
-	</section>
+		   <h3 class="mbr-section-subtitle mbr-fonts-style display-5" >
+		   <br>
+		   		Global statistics
+		   </h3>
+
+		   <div class="container pt-4 mt-2">
+		   	<div class="media-container-row">
+
+		   		<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+		   			<div class="panel-item">
+		   				<div class="card-img pb-3">
+		   					<span class="mbr-iconfont mbri-info"></span>
+		   				</div>
+
+		   				<div class="card-text">
+		   					<h3 class="'.$count.' pt-3 pb-3 mbr-fonts-style display-2">
+		   						'.$nb_groups.'
+		   					</h3>
+		   					<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+		   						Groups
+		   					</h4>
+		   					<p class="mbr-content-text mbr-fonts-style display-7">
+		   						Number of unique groups
+		   					</p>
+		   				</div>
+		   			</div>
+		   		</div>
+
+				<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+		   			<div class="panel-item">
+		   				<div class="card-img pb-3">
+		   					<span class="mbr-iconfont mbri-info"></span>
+		   				</div>
+
+		   				<div class="card-text">
+		   					<h3 class="'.$count.' pt-3 pb-3 mbr-fonts-style display-2">
+		   						'.$nb_projects.'
+		   					</h3>
+		   					<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+		   						Projects
+		   					</h4>
+		   					<p class="mbr-content-text mbr-fonts-style display-7">
+		   						Number of unique analyses / runs
+		   					</p>
+		   				</div>
+		   			</div>
+		   		</div>
+
+				<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+		   			<div class="panel-item">
+		   				<div class="card-img pb-3">
+		   					<span class="mbr-iconfont mbri-info"></span>
+		   				</div>
+
+		   				<div class="card-text">
+		   					<h3 class="'.$count.' pt-3 pb-3 mbr-fonts-style display-2">
+		   						'.$nb_runs.'
+		   					</h3>
+		   					<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+		   						Analyses / Runs
+		   					</h4>
+		   					<p class="mbr-content-text mbr-fonts-style display-7">
+		   						Number of unique analyses / runs
+		   					</p>
+		   				</div>
+		   			</div>
+		   		</div>
+
+				<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+		   			<div class="panel-item">
+		   				<div class="card-img pb-3">
+		   					<span class="mbr-iconfont mbri-info"></span>
+		   				</div>
+
+		   				<div class="card-text">
+		   					<h3 class="'.$count.' pt-3 pb-3 mbr-fonts-style display-2">
+		   						'.$nb_samples.'
+		   					</h3>
+		   					<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+		   						Samples
+		   					</h4>
+		   					<p class="mbr-content-text mbr-fonts-style display-7">
+		   						Number of unique samples
+		   					</p>
+		   				</div>
+		   			</div>
+		   		</div>
+
+
+
+		   	</div>
+		   </div>
+
+
+ 		</div>
+    </section>
 
 	';
+
+
+
+	# BY tables
+	# $hash["tree"][$group][$project][$run][$sample]++;
+
+	echo '<section class=" cid-rtQc0shhyd" id="truc">
+
+		<div class="container">
+			<h2 class="mbr-section-title align-center pb-0 mbr-fonts-style display-2">
+				  Statistics by Group
+			</h2>
+		</div>
+
+		';
+
+	$project_id=0;
+
+	foreach ($hash["tree"] as $group=>$tree) {
+
+		$project_key=0;
+		$project_link="";
+		$project_content="";
+		$project_active=" active ";
+		$project_stats="";
+
+		foreach ($tree as $project=>$tree2) {
+
+			$project_id++;
+			$project_key++;
+			if ($project_key>1) {
+				$project_active="";
+			};
+
+			$project_link.='
+				<li class="nav-item mbr-fonts-style">
+					<a class="nav-link '.$project_active.' display-7" role="tab" data-toggle="tab" href="#tab'.$project_id.'">
+						'.$project.'
+					</a>
+				</li>
+			';
+
+			$project_stats.='
+				<div id="tab'.$project_id.'" class="tab-pane in '.$project_active.' mbr-table" role="tabpanel">
+					<div class="row tab-content-row">
+			';
+
+			$project_nb_run=count($tree2);
+			$project_samples=array();
+			foreach ($tree2 as $sample=>$tree3) {
+				$project_samples=array_merge($project_samples,$tree3);
+			};
+			$project_nb_sample=count($project_samples);
+
+			$project_stats.='
+
+			<div class="container pt-0 mt-0">
+	 		   	<div class="media-container-row">
+
+					<div class="card p-0 align-center col-12 col-md-6 col-lg-2">
+						<div class="panel-item">
+
+
+							<div class="card-text">
+								<h3 class="'.$count.' mbr-fonts-style display-2">
+									'.$project_nb_run.'
+								</h3>
+								<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+									Analyses / Runs
+								</h4>
+								<p class="mbr-content-text mbr-fonts-style display-7">
+									Number of unique analyses / runs
+								</p>
+							</div>
+						</div>
+					</div>
+
+					<div class="card p-0 align-center col-12 col-md-6 col-lg-2">
+						<div class="panel-item">
+
+
+							<div class="card-text">
+								<h3 class=" '.$count.' mbr-fonts-style display-2">
+									'.$project_nb_sample.'
+								</h3>
+								<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+									Samples
+								</h4>
+								<p class="mbr-content-text mbr-fonts-style display-7">
+									Number of unique samples
+								</p>
+							</div>
+						</div>
+					</div>
+
+				</div>
+			</div>
+
+			';
+
+			// <div class="card-img pb-6">
+			// 	<span class="mbr-iconfont mbri-info"></span>
+			// </div>
+
+			$project_stats.='
+					</div>
+				</div>
+			';
+
+			$project_content=$project_stats;
+
+		};
+
+
+
+	echo '
+
+
+		<br><br><br>
+		<div class="container">
+			<h3 class=" display-5 align-center mbr-light mbr-fonts-style ">
+				<big><big>
+				'.$group.'
+				</big></big>
+			</h3>
+		</div>
+
+		<div class="container-fluid col-md-8">
+			<div class="row tabcont">
+				<ul class="nav nav-tabs pt-0 mt-0" role="tablist">
+					'.$project_link.'
+				</ul>
+			</div>
+		</div>
+
+		<div class="container">
+			<div class="row px-1">
+				<div class="tab-content">
+					'.$project_content.'
+				</div>
+			</div>
+		</div>
+
+
+	';
+
+	};
+
+
+	echo '
+	</section>
+	';
+
+
+
+
 
 	# mbri-cust-feedback mbri-desktop
 

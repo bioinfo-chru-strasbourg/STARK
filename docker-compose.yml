@@ -208,7 +208,10 @@ services:
             - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_DASHBOARD_PORT}:${DOCKER_STARK_SERVICE_DASHBOARD_PORT_INNER}
         volumes:
             #- /Users/lebechea/Documents/NGS/GIT/Strasbourg/STARK/services/dashboard:/app/:rw
-            - repository:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER_REPOSITORIES}/repository:ro
+            # Available on browser reports
+            - repository:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER_REPOSITORIES}/Repository:ro
+            - archive:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER_REPOSITORIES}/Archive:ro
+            # Available on system
             - databases:${DOCKER_STARK_INNER_FOLDER_DATABASES}:ro
             - input:${DOCKER_STARK_INNER_FOLDER_INPUT}:ro
             - repository:${DOCKER_STARK_INNER_FOLDER_OUTPUT_REPOSITORY}:ro
@@ -217,6 +220,36 @@ services:
         restart: always
         networks:
             - stark
+
+    # # STARK SERVICE DASHBOARD
+    # stark-service-dashboard-dev:
+    #     image: ${DOCKER_STARK_SERVICE_DASHBOARD_IMAGE}
+    #     build:
+    #         context: ${DOCKER_STARK_SERVICE_DASHBOARD_CONTEXT}
+    #         dockerfile: Dockerfile
+    #     container_name: STARK-service-dashboard-dev
+    #     #command:  -d ${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_CONFIG}/filebrowser.db -c ${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_CONFIG}/.filebrowser.json -r ${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_DATA}
+    #     #command: -r ${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_DATA}
+    #     restart: always
+    #     env_file:
+    #         - .env
+    #     ports:
+    #         - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_DASHBOARD_PORT}2:${DOCKER_STARK_SERVICE_DASHBOARD_PORT_INNER}
+    #     volumes:
+    #         - /Users/lebechea/Documents/NGS/GIT/Strasbourg/STARK/services/dashboard:/app/:rw
+    #         # Available on browser reports
+    #         - repository:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER_REPOSITORIES}/Repository:ro
+    #         - archive:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER_REPOSITORIES}/Archive:ro
+    #         # Available on system
+    #         - databases:${DOCKER_STARK_INNER_FOLDER_DATABASES}:ro
+    #         - input:${DOCKER_STARK_INNER_FOLDER_INPUT}:ro
+    #         - repository:${DOCKER_STARK_INNER_FOLDER_OUTPUT_REPOSITORY}:ro
+    #         - archive:${DOCKER_STARK_INNER_FOLDER_OUTPUT_ARCHIVE}:ro
+    #         - analyses-STARK-service-listener:${DOCKER_STARK_INNER_FOLDER_OUTPUT_LOG}:ro
+    #     restart: always
+    #     networks:
+    #         - stark
+
 
 
     # # DASHBOARD
