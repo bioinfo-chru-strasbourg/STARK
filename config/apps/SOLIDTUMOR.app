@@ -17,4 +17,4 @@ APP_PROJECT=""
 #######################
 
 # PIPELINES
-PIPELINES="bwamem.gatkUG_SOLIDTUMOR.howard bwamem.gatkHC_SOLIDTUMOR.howard bwamem.VarScan_SOLIDTUMOR.howard"
+PIPELINES="bwamem.gatkUG_SOLIDTUMOR.howard bwamem.gatkHC_SOLIDTUMOR.howard bwamem.VarScan_SOLIDTUMOR.howard bwamem.outLyzer.howard bwamem.MuTect2.howard bwamem.GATK3_MuTect2.howard bwamem.MuTect.howard"

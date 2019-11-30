@@ -10,14 +10,14 @@ source_app $CONFIG_DEFAULT_APP,CAPTURE,SOMATIC_PARAMETERS
 APP_NAME="EXOME_SOMATIC"
 APP_RELEASE="1.0"
 APP_DESCRIPTION="Application to detect somatic mutations in exome sequencing data"
-APP_GROUP=""
-APP_PROJECT=""
+APP_GROUP="SOMATIC"
+APP_PROJECT="EXOME"
 
 # ANALYSIS PARAMETERS
 #######################
 
 # PIPELINES
-PIPELINES="bwamem.gatkHC_EXOME_SOMATIC.howard bwamem.gatkUG_EXOME_SOMATIC.howard bwamem.VarScan_EXOME_SOMATIC.howard"
+PIPELINES="bwamem.gatkHC_EXOME_SOMATIC.howard bwamem.gatkUG_EXOME_SOMATIC.howard bwamem.VarScan_EXOME_SOMATIC.howard bwamem.outLyzer.howard"
 
 # INTERVAL_PADDING / add some padding to the intervals used (manifest) in order to include the flanking regions (typically ~100 bp)
 INTERVAL_PADDING=100

@@ -10,8 +10,8 @@ source_app $CONFIG_DEFAULT_APP
 APP_NAME="ONCOGENET"
 APP_RELEASE="1.0"
 APP_DESCRIPTION="Application to detect germline mutations in oncology gene panel sequencing data"
-APP_GROUP=""
-APP_PROJECT=""
+APP_GROUP="GENETIC"
+APP_PROJECT="ONCOGENETIC"
 
 # ANALYSIS PARAMETERS
 #######################
