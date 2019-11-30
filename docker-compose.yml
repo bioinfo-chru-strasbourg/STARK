@@ -10,42 +10,6 @@ version: '3'
 
 services:
 
-    # STARK IMAGES
-    ##############
-
-    # STARK BASE IMAGE
-    # stark-base:
-    #     image: ${DOCKER_STARK_IMAGE_BASE}
-    #     build:
-    #         context: ${DOCKER_STARK_CONTEXT}
-    #         #dockerfile: base.Dockerfile
-    #         dockerfile: Dockerfile
-    #         args:
-    #             - REMOVE_SOURCES=1
-    #             - REPO=${DOCKER_STARK_BUILD_REPO_URL}
-    #     container_name: STARK-base
-    #     env_file:
-    #         - .env
-    #     networks:
-    #         - stark
-
-    # STARK REPO
-    stark-repo:
-        image: ${DOCKER_STARK_IMAGE_REPO}
-        build:
-            context: ${DOCKER_STARK_CONTEXT}
-            #dockerfile: base.Dockerfile
-            dockerfile: Dockerfile
-            args:
-                - REMOVE_SOURCES=0
-                - REPO=${DOCKER_STARK_BUILD_REPO_URL}
-        entrypoint: bash
-        command: -c "find /STARK/sources/sources/ -maxdepth 3 -mindepth 1 -type d"
-        container_name: STARK-repo
-        env_file:
-            - .env
-        networks:
-            - stark
 
     # STARK IMAGE
     stark:
@@ -54,21 +18,39 @@ services:
             context: ${DOCKER_STARK_CONTEXT}
             dockerfile: Dockerfile
             args:
-                #- DOCKER_STARK_IMAGE_BASE=${DOCKER_STARK_IMAGE_BASE}
                 - REMOVE_SOURCES=1
                 - REPO=${DOCKER_STARK_BUILD_REPO_URL}
+                - DOCKER_STARK_IMAGE_BASE=centos:7
         container_name: STARK
         command: --help
         env_file:
             - .env
+        networks:
+            - stark
+
+
+    # STARK REPO
+    stark-repo:
+        image: ${DOCKER_STARK_IMAGE_REPO}
+        build:
+            context: ${DOCKER_STARK_CONTEXT}
+            dockerfile: Dockerfile
+            args:
+                - REMOVE_SOURCES=0
+                - REPO=${DOCKER_STARK_BUILD_REPO_URL}
+                - DOCKER_STARK_IMAGE_BASE=$DOCKER_STARK_IMAGE
+        entrypoint: bash
+        command: -c "find /STARK/sources/sources/ -maxdepth 3 -mindepth 1 -type d"
+        container_name: STARK-repo
+        env_file:
+            - .env
         links:
-            #- stark-base
             - stark-repo
         depends_on:
-            #- stark-base
             - stark-repo
         networks:
             - stark
+
 
     # STARK DATABASES POPULATION
     stark-databases:
