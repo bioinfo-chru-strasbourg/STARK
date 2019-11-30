@@ -45,9 +45,9 @@ services:
         env_file:
             - .env
         links:
-            - stark-repo
+            - stark
         depends_on:
-            - stark-repo
+            - stark
         networks:
             - stark
 
