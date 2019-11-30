@@ -133,15 +133,15 @@
 	// </pre>
 	// ';
 
-	$BROWSER_SERVER=$_SERVER["SERVER_NAME"];
-	$BROWSER_PORT=$_ENV["DOCKER_STARK_SERVICE_PORT_PATTERN"].$_ENV["DOCKER_STARK_SERVICE_BROWSER_PORT"];
-	$BROWSER_URL=$BROWSER_SERVER.":".$BROWSER_PORT;
+	$CLOUD_SERVER=$_SERVER["SERVER_NAME"];
+	$CLOUD_PORT=$_ENV["DOCKER_STARK_SERVICE_PORT_PATTERN"].$_ENV["DOCKER_STARK_SERVICE_CLOUD_PORT"];
+	$CLOUD_URL=$CLOUD_SERVER.":".$CLOUD_PORT;
 
 	# class='btn btn-primary-outline display-7'
 
+	# mbri-cust-feedback mbri-browse clock desktop extension features file layers
+
 	echo '
-
-
 
 	<section class="features10 cid-ru7OEDbxhA" id="features10-1l">
 
@@ -149,16 +149,16 @@
 			<div class="row justify-content-center">
 
 				<div class="card p-3 col-12 col-md-6 mb-4">
-					<a href="http://'.$BROWSER_URL.'" class="navbar-caption text-secondary">
+					<a href="http://'.$CLOUD_URL.'" class="navbar-caption text-secondary">
 						<div class="media mb-2">
 							<div class="card-img align-self-center">
-								<span class="mbr-iconfont mbri-browse" style="color: rgb(20, 157, 204); fill: rgb(20, 157, 204);"></span>
+								<span class="mbr-iconfont mbri-cloud" style="color: rgb(20, 157, 204); fill: rgb(20, 157, 204);"></span>
 							</div>
-							<h4 class="card-title media-body py-3 mbr-fonts-style display-5">Data Browser</h4>
+							<h4 class="card-title media-body py-3 mbr-fonts-style display-5">Cloud</h4>
 						</div>
 						<div class="card-box">
 							<p class="mbr-text mbr-fonts-style display-7">
-								Data Browser shares available data, such as raw sequenced data with configuration files (manifest, bed, genes...),
+								Data Cloud shares available data, such as raw sequenced data with configuration files (manifest, bed, genes...),
 								analyses results in the repository,
 								and archived data.
 							</p>
@@ -170,9 +170,9 @@
 					<a href="index.reports.php" class="navbar-caption text-secondary ">
 						<div class="media mb-2">
 							<div class="card-img align-self-center">
-								<span class="mbr-iconfont mbri-cust-feedback" style="color: rgb(20, 157, 204); fill: rgb(20, 157, 204);"></span>
+								<span class="mbr-iconfont mbri-file" style="color: rgb(20, 157, 204); fill: rgb(20, 157, 204);"></span>
 							</div>
-							<h4 class="card-title media-body py-3 mbr-fonts-style display-5">Reports Browser</h4>
+							<h4 class="card-title media-body py-3 mbr-fonts-style display-5">Reports</h4>
 						</div>
 						<div class="card-box">
 							<p class="mbr-text mbr-fonts-style display-7">
@@ -189,7 +189,7 @@
 			<div class="row justify-content-center">
 
 				<div class="card p-3 col-12 col-md-6 mb-4">
-					<a href="index.stats.php" class="navbar-caption text-secondary ">
+					<a href="index.statistics.php" class="navbar-caption text-secondary ">
 						<div class="media mb-2">
 							<div class="card-img align-self-center">
 								<span class="mbr-iconfont mbri-growing-chart" style="color: rgb(20, 157, 204); fill: rgb(20, 157, 204);"></span>
@@ -206,8 +206,18 @@
 				</div>
 
 				<div class="card p-3 col-12 col-md-6 mb-4">
-					<a href="index.reports.php" class="navbar-caption text-secondary ">
-
+					<a href="index.activity.php" class="navbar-caption text-secondary ">
+						<div class="media mb-2">
+							<div class="card-img align-self-center">
+								<span class="mbr-iconfont mbri-clock" style="color: rgb(20, 157, 204); fill: rgb(20, 157, 204);"></span>
+							</div>
+							<h4 class="card-title media-body py-3 mbr-fonts-style display-5">Activity</h4>
+						</div>
+						<div class="card-box">
+							<p class="mbr-text mbr-fonts-style display-7">
+								Activity for runs analyses, queued, running, archived and availabled in repository.
+							</p>
+						</div>
 					</a>
 				</div>
 

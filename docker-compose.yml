@@ -89,6 +89,60 @@ services:
     # SERVICES
     ##########
 
+    # STARK SERVICE DASHBOARD
+    stark-service-dashboard:
+        image: ${DOCKER_STARK_SERVICE_DASHBOARD_IMAGE}
+        build:
+            context: ${DOCKER_STARK_SERVICE_DASHBOARD_CONTEXT}
+            dockerfile: Dockerfile
+        container_name: STARK-service-dashboard
+        #command:  -d ${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_CONFIG}/filebrowser.db -c ${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_CONFIG}/.filebrowser.json -r ${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_DATA}
+        #command: -r ${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_DATA}
+        restart: always
+        env_file:
+            - .env
+        ports:
+            - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_DASHBOARD_PORT}:${DOCKER_STARK_SERVICE_DASHBOARD_PORT_INNER}
+        volumes:
+            #- /Users/lebechea/Documents/NGS/GIT/Strasbourg/STARK/services/dashboard:/app/:rw
+            # Available on browser reports
+            - input:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER_INPUTS}/Input:ro
+            - repository:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER_REPOSITORIES}/Repository:ro
+            - archive:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER_REPOSITORIES}/Archive:ro
+            # Available on system
+            # - databases:${DOCKER_STARK_INNER_FOLDER_DATABASES}:ro
+            # - input:${DOCKER_STARK_INNER_FOLDER_INPUT}:ro
+            # - repository:${DOCKER_STARK_INNER_FOLDER_OUTPUT_REPOSITORY}:ro
+            # - archive:${DOCKER_STARK_INNER_FOLDER_OUTPUT_ARCHIVE}:ro
+            # - analyses-STARK-service-listener:${DOCKER_STARK_INNER_FOLDER_OUTPUT_LOG}:ro
+        restart: always
+        networks:
+            - stark
+
+
+    # STARK SERVICE CLOUD
+    stark-service-cloud:
+        image: ${DOCKER_STARK_SERVICE_CLOUD_IMAGE}
+        container_name: STARK-service-cloud
+        #command:  -d ${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_CONFIG}/filebrowser.db -c ${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_CONFIG}/.filebrowser.json -r ${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_DATA}
+        command: -r ${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_DATA}
+        restart: always
+        env_file:
+            - .env
+        ports:
+            - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_CLOUD_PORT}:${DOCKER_STARK_SERVICE_CLOUD_PORT_INNER}
+        volumes:
+            - ${DOCKER_STARK_SERVICE_CLOUD_FOLDER_CONFIG}:${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_CONFIG}:rw
+            - ${DOCKER_STARK_SERVICE_CLOUD_FOLDER_DATA}:${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_DATA}:rw
+            - ${DOCKER_STARK_SERVICE_CLOUD_FOLDER_USERS}:${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_USERS}:rw
+            - input:${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_DATA}/raw:ro
+            - repository:${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_DATA}/repository:ro
+            - archive:${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_DATA}/archives:ro
+        restart: always
+        networks:
+            - stark
+
+
     # STARK SERVICE SERVER
     stark-service-launcher:
         image: ${DOCKER_STARK_SERVICE_LAUNCHER_IMAGE}
@@ -169,165 +223,40 @@ services:
             - stark
 
 
-    # STARK SERVICE BROWSER
-    stark-service-browser:
-        image: ${DOCKER_STARK_SERVICE_BROWSER_IMAGE}
-        container_name: STARK-service-browser
-        #command:  -d ${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_CONFIG}/filebrowser.db -c ${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_CONFIG}/.filebrowser.json -r ${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_DATA}
-        command: -r ${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_DATA}
-        restart: always
-        env_file:
-            - .env
-        ports:
-            - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_BROWSER_PORT}:${DOCKER_STARK_SERVICE_BROWSER_PORT_INNER}
-        volumes:
-            - ${DOCKER_STARK_SERVICE_BROWSER_FOLDER_CONFIG}:${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_CONFIG}:rw
-            - ${DOCKER_STARK_SERVICE_BROWSER_FOLDER_DATA}:${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_DATA}:rw
-            - ${DOCKER_STARK_SERVICE_BROWSER_FOLDER_USERS}:${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_USERS}:rw
-            - input:${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_DATA}/raw:ro
-            - repository:${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_DATA}/repository:ro
-            - archive:${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_DATA}/archives:ro
-        restart: always
-        networks:
-            - stark
-
+    ###########
+    ### DEV ###
+    ############
 
     # STARK SERVICE DASHBOARD
-    stark-service-dashboard:
+    stark-service-dashboard-dev:
         image: ${DOCKER_STARK_SERVICE_DASHBOARD_IMAGE}
         build:
             context: ${DOCKER_STARK_SERVICE_DASHBOARD_CONTEXT}
             dockerfile: Dockerfile
-        container_name: STARK-service-dashboard
-        #command:  -d ${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_CONFIG}/filebrowser.db -c ${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_CONFIG}/.filebrowser.json -r ${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_DATA}
-        #command: -r ${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_DATA}
+        container_name: STARK-service-dashboard-dev
+        #command:  -d ${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_CONFIG}/filebrowser.db -c ${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_CONFIG}/.filebrowser.json -r ${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_DATA}
+        #command: -r ${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_DATA}
         restart: always
         env_file:
             - .env
         ports:
-            - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_DASHBOARD_PORT}:${DOCKER_STARK_SERVICE_DASHBOARD_PORT_INNER}
+            - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_DASHBOARD_PORT}2:${DOCKER_STARK_SERVICE_DASHBOARD_PORT_INNER}
         volumes:
-            #- /Users/lebechea/Documents/NGS/GIT/Strasbourg/STARK/services/dashboard:/app/:rw
+            - /Users/lebechea/Documents/NGS/GIT/Strasbourg/STARK/services/dashboard:/app/:rw
             # Available on browser reports
+            - input:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER_INPUTS}/Input:ro
             - repository:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER_REPOSITORIES}/Repository:ro
             - archive:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER_REPOSITORIES}/Archive:ro
             # Available on system
-            - databases:${DOCKER_STARK_INNER_FOLDER_DATABASES}:ro
-            - input:${DOCKER_STARK_INNER_FOLDER_INPUT}:ro
-            - repository:${DOCKER_STARK_INNER_FOLDER_OUTPUT_REPOSITORY}:ro
-            - archive:${DOCKER_STARK_INNER_FOLDER_OUTPUT_ARCHIVE}:ro
-            - analyses-STARK-service-listener:${DOCKER_STARK_INNER_FOLDER_OUTPUT_LOG}:ro
+            # - databases:${DOCKER_STARK_INNER_FOLDER_DATABASES}:ro
+            # - input:${DOCKER_STARK_INNER_FOLDER_INPUT}:ro
+            # - repository:${DOCKER_STARK_INNER_FOLDER_OUTPUT_REPOSITORY}:ro
+            # - archive:${DOCKER_STARK_INNER_FOLDER_OUTPUT_ARCHIVE}:ro
+            # - analyses-STARK-service-listener:${DOCKER_STARK_INNER_FOLDER_OUTPUT_LOG}:ro
         restart: always
         networks:
             - stark
 
-    # # STARK SERVICE DASHBOARD
-    # stark-service-dashboard-dev:
-    #     image: ${DOCKER_STARK_SERVICE_DASHBOARD_IMAGE}
-    #     build:
-    #         context: ${DOCKER_STARK_SERVICE_DASHBOARD_CONTEXT}
-    #         dockerfile: Dockerfile
-    #     container_name: STARK-service-dashboard-dev
-    #     #command:  -d ${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_CONFIG}/filebrowser.db -c ${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_CONFIG}/.filebrowser.json -r ${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_DATA}
-    #     #command: -r ${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_DATA}
-    #     restart: always
-    #     env_file:
-    #         - .env
-    #     ports:
-    #         - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_DASHBOARD_PORT}2:${DOCKER_STARK_SERVICE_DASHBOARD_PORT_INNER}
-    #     volumes:
-    #         - /Users/lebechea/Documents/NGS/GIT/Strasbourg/STARK/services/dashboard:/app/:rw
-    #         # Available on browser reports
-    #         - repository:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER_REPOSITORIES}/Repository:ro
-    #         - archive:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER_REPOSITORIES}/Archive:ro
-    #         # Available on system
-    #         - databases:${DOCKER_STARK_INNER_FOLDER_DATABASES}:ro
-    #         - input:${DOCKER_STARK_INNER_FOLDER_INPUT}:ro
-    #         - repository:${DOCKER_STARK_INNER_FOLDER_OUTPUT_REPOSITORY}:ro
-    #         - archive:${DOCKER_STARK_INNER_FOLDER_OUTPUT_ARCHIVE}:ro
-    #         - analyses-STARK-service-listener:${DOCKER_STARK_INNER_FOLDER_OUTPUT_LOG}:ro
-    #     restart: always
-    #     networks:
-    #         - stark
-
-
-
-    # # DASHBOARD
-    # stark-service-dashboard-old:
-    #     image: ${DOCKER_STARK_SERVICE_DASHBOARD_IMAGE}
-    #     build:
-    #         context: ${DOCKER_STARK_SERVICE_DASHBOARD_CONTEXT}
-    #         dockerfile: Dockerfile
-    #     container_name: STARK-service-dashboard-old
-    #     #command:  -d ${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_CONFIG}/filebrowser.db -c ${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_CONFIG}/.filebrowser.json -r ${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_DATA}
-    #     #command: -r ${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_DATA}
-    #     restart: always
-    #     env_file:
-    #         - .env
-    #     ports:
-    #         - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_DASHBOARD_PORT}:${DOCKER_STARK_SERVICE_DASHBOARD_PORT_INNER}
-    #     volumes:
-    #         #- /Users/lebechea/Documents/NGS/GIT/Strasbourg/STARK/services/dashboard:/app/:rw
-    #         - repository:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER_REPOSITORIES}/repository:ro
-    #     restart: always
-    #     networks:
-    #         - stark
-
-
-    # # STARK SERVICE REPORTS
-    # stark-service-reports:
-    #     image: ${DOCKER_STARK_SERVICE_REPORTS_IMAGE}
-    #     build:
-    #         context: ${DOCKER_STARK_SERVICE_REPORTS_CONTEXT}
-    #         dockerfile: Dockerfile
-    #     container_name: STARK-service-reports
-    #     #command:  -d ${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_CONFIG}/filebrowser.db -c ${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_CONFIG}/.filebrowser.json -r ${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_DATA}
-    #     #command: -r ${DOCKER_STARK_SERVICE_BROWSER_INNER_FOLDER_DATA}
-    #     restart: always
-    #     env_file:
-    #         - .env
-    #     ports:
-    #         - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_REPORTS_PORT}:${DOCKER_STARK_SERVICE_REPORTS_PORT_INNER}
-    #     volumes:
-    #         - repository:${DOCKER_STARK_SERVICE_REPORTS_INNER_FOLDER_REPOSITORIES}/repository:ro
-    #     restart: always
-    #     networks:
-    #         - stark
-
-    # # STARK SERVICE SERVER CENTOS
-    # stark-service-launcher-centos:
-    #     image: ${DOCKER_STARK_SERVICE_LAUNCHER_IMAGE}-centos
-    #     build:
-    #         context: ${DOCKER_STARK_SERVICE_LAUNCHER_CONTEXT}
-    #         dockerfile: centos.Dockerfile
-    #     container_name: STARK-service-launcher-centos
-    #     env_file:
-    #         - .env
-    #     environment:
-    #         - TS_SOCKET=${TASK_SPOOLER_TS_SOCKET}
-    #         - TS_SAVELIST=${TASK_SPOOLER_TS_SAVELIST}
-    #     ports:
-    #         - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_LAUNCHER_PORT}2:${DOCKER_STARK_SERVICE_LAUNCHER_PORT_INNER}
-    #     volumes:
-    #         - /var/run/docker.sock:/var/run/docker.sock
-    #         - analyses:/STARK/analyses
-    #     links:
-    #         - stark
-    #         - stark-databases
-    #     restart: always
-
-    # # STARK SERVICE EXPLORER
-    # stark-service-explorer-repository-dev:
-    #     image: ${DOCKER_STARK_SERVICE_REPO_IMAGE}
-    #     container_name: STARK-service-explorer-repository-dev
-    #     restart: always
-    #     env_file:
-    #         - .env
-    #     ports:
-    #         - ${DOCKER_STARK_SERVICE_PORT_PATTERN}98:${DOCKER_STARK_SERVICE_REPO_PORT_INNER}
-    #     volumes:
-    #         - repository:/usr/local/apache2/htdocs/:ro
-    #     restart: always
 
 
 # VOLUMES

@@ -37,8 +37,8 @@
 	<meta name="generator" content="Mobirise v4.10.3, mobirise.com">
 	<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1">
 	<link rel="shortcut icon" href="assets/favicon.ico" type="image/x-icon">
-	<meta name="description" content="STARK Statistics">
-	<title>STARK Statisticss</title>
+	<meta name="description" content="STARK Activity">
+	<title>STARK Activity</title>
 	<link rel="stylesheet" href="assets/web/assets/mobirise-icons/mobirise-icons.css">
 	<link rel="stylesheet" href="assets/tether/tether.min.css">
 	<link rel="stylesheet" href="assets/bootstrap/css/bootstrap.min.css">
@@ -84,7 +84,7 @@
 						   <img src="assets/logo.png" alt="Mobirise" title="" style="height: 6rem;">
 					  </a>
 				  </span>
-				  <span class="navbar-caption-wrap"><a class="navbar-caption text-secondary display-2" href="">Statistics</a></span>
+				  <span class="navbar-caption-wrap"><a class="navbar-caption text-secondary display-2" href="">Activity</a></span>
 			 </div>
 		  </div>
 		  <div class="collapse navbar-collapse align-center" id="navbarSupportedContent">
@@ -116,19 +116,6 @@
 
 	echo '
 		<section class="header1 cid-ru7OEConn1" id="header16-1k">
-			<!--
-			<div class="container">
-			   	<div class="row justify-content-center  align-center">
-			   		<div class="card p-6 col-12 col-md-12">
-			   			<div class="card-box">
-			   				<h1 class="mbr-section-title mbr-bold pb-3 mbr-fonts-style display-2">
-				   				<img src="assets/logo.png" width="128">
-			   				</h1>
-			   			</div>
-			   		</div>
-				</div>
-			</div>
-			-->
 		    <div class="container">
 				<h3 class="mbr-section-subtitle mbr-fonts-style align-center mbr-light display-2">
 					&nbsp;
@@ -188,268 +175,102 @@
 	echo '
 
 	<section class="counters1 counters cid-ru7OEH6r7i" id="SECTION_ID" >
-    <br>
 
- 	   	<div class="container">
+		<div class="container">
 
- 		   <h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">
- 			   Repositories
- 		   </h2>
+		   <h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">
+			   Global Activity
+		   </h2>
 
- 		   <p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
- 			   Statistics for Repository and Archive (only unique items)
- 		   </p>
+		   <p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
+			  Activity Statistics
+		   </p>
 
-
-		   <h3 class="mbr-section-subtitle mbr-fonts-style display-5" >
-		   <br>
-		   		Global statistics
+		   <h3 class="mbr-section-subtitle mbr-fonts-style align-center mbr-light display-2">
+			test
 		   </h3>
 
 		   <div class="container pt-4 mt-2">
-		   	<div class="media-container-row">
-
-		   		<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
-		   			<div class="panel-item">
-		   				<div class="card-img pb-3">
-		   					<span class="mbr-iconfont mbri-info"></span>
-		   				</div>
-
-		   				<div class="card-text">
-		   					<h3 class="'.$count.' pt-3 pb-3 mbr-fonts-style display-2">
-		   						'.$nb_groups.'
-		   					</h3>
-		   					<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
-		   						Groups
-		   					</h4>
-		   					<p class="mbr-content-text mbr-fonts-style display-7">
-		   						Number of unique groups
-		   					</p>
-		   				</div>
-		   			</div>
-		   		</div>
+			<div class="media-container-row">
 
 				<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
-		   			<div class="panel-item">
-		   				<div class="card-img pb-3">
-		   					<span class="mbr-iconfont mbri-info"></span>
-		   				</div>
+					<div class="panel-item">
+						<div class="card-img pb-3">
+							<span class="mbr-iconfont mbri-align-center"></span>
+						</div>
 
-		   				<div class="card-text">
-		   					<h3 class="'.$count.' pt-3 pb-3 mbr-fonts-style display-2">
-		   						'.$nb_projects.'
-		   					</h3>
-		   					<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
-		   						Projects
-		   					</h4>
-		   					<p class="mbr-content-text mbr-fonts-style display-7">
-		   						Number of unique analyses / runs
-		   					</p>
-		   				</div>
-		   			</div>
-		   		</div>
+						<div class="card-text">
+							<h3 class="'.$count.' pt-3 pb-3 mbr-fonts-style display-2">
+								'.count($runs[$input]).'
+							</h3>
+							<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+								Runs
+							</h4>
+						</div>
+					</div>
+				</div>
 
 				<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
-		   			<div class="panel-item">
-		   				<div class="card-img pb-3">
-		   					<span class="mbr-iconfont mbri-info"></span>
-		   				</div>
+					<div class="panel-item">
+						<div class="card-img pb-3">
+							<span class="mbr-iconfont mbri-target"></span>
+						</div>
 
-		   				<div class="card-text">
-		   					<h3 class="'.$count.' pt-3 pb-3 mbr-fonts-style display-2">
-		   						'.$nb_runs.'
-		   					</h3>
-		   					<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
-		   						Analyses / Runs
-		   					</h4>
-		   					<p class="mbr-content-text mbr-fonts-style display-7">
-		   						Number of unique analyses / runs
-		   					</p>
-		   				</div>
-		   			</div>
-		   		</div>
+						<div class="card-text">
+							<h3 class="'.$count.' pt-3 pb-3 mbr-fonts-style display-2">
+								'.count($designs[$input]).'
+							</h3>
+							<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+								Target Designs
+							</h4>
+						</div>
+					</div>
+				</div>
 
 				<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
-		   			<div class="panel-item">
-		   				<div class="card-img pb-3">
-		   					<span class="mbr-iconfont mbri-info"></span>
-		   				</div>
+					<div class="panel-item">
+						<div class="card-img pb-3">
+							<span class="mbr-iconfont mbri-menu"></span>
+						</div>
 
-		   				<div class="card-text">
-		   					<h3 class="'.$count.' pt-3 pb-3 mbr-fonts-style display-2">
-		   						'.$nb_samples.'
-		   					</h3>
-		   					<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
-		   						Samples
-		   					</h4>
-		   					<p class="mbr-content-text mbr-fonts-style display-7">
-		   						Number of unique samples
-		   					</p>
-		   				</div>
-		   			</div>
-		   		</div>
+						<div class="card-text">
+							<h3 class="'.$count.' pt-3 pb-3 mbr-fonts-style display-2">
+								'.count($genes[$input]).'
+							</h3>
+							<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+								Gene Panels
+							</h4>
+						</div>
+					</div>
+				</div>
 
+				<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+					<div class="panel-item">
+						<div class="card-img pb-3">
+							<span class="mbr-iconfont mbri-bookmark"></span>
+						</div>
 
+						<div class="card-text">
+							<h3 class="'.$count.' pt-3 pb-3 mbr-fonts-style display-2">
+								'.count($transcripts[$input]).'
+							</h3>
+							<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+								Transcript custom lists
+							</h4>
+						</div>
+					</div>
+				</div>
 
-		   	</div>
+			</div>
 		   </div>
 
+		   <p class="mbr-content-text mbr-fonts-style display-7">
+			   &nbsp;
+		  </p>
 
  		</div>
     </section>
 
-	';
-
-
-
-	# BY tables
-	# $hash["tree"][$group][$project][$run][$sample]++;
-
-	echo '<section class=" cid-rtQc0shhyd" id="truc">
-
-		<div class="container">
-			<h2 class="mbr-section-title align-center pb-0 mbr-fonts-style display-2">
-				  Statistics by Group
-			</h2>
-		</div>
-
-		';
-
-	$project_id=0;
-
-	foreach ($hash["tree"] as $group=>$tree) {
-
-		$project_key=0;
-		$project_link="";
-		$project_content="";
-		$project_active=" active ";
-		$project_stats="";
-
-		foreach ($tree as $project=>$tree2) {
-
-			$project_id++;
-			$project_key++;
-			if ($project_key>1) {
-				$project_active="";
-			};
-
-			$project_link.='
-				<li class="nav-item mbr-fonts-style">
-					<a class="nav-link '.$project_active.' display-7" role="tab" data-toggle="tab" href="#tab'.$project_id.'">
-						'.$project.'
-					</a>
-				</li>
-			';
-
-			$project_stats.='
-				<div id="tab'.$project_id.'" class="tab-pane in '.$project_active.' mbr-table" role="tabpanel">
-					<div class="row tab-content-row">
-			';
-
-			$project_nb_run=count($tree2);
-			$project_samples=array();
-			foreach ($tree2 as $sample=>$tree3) {
-				$project_samples=array_merge($project_samples,$tree3);
-			};
-			$project_nb_sample=count($project_samples);
-
-			$project_stats.='
-
-			<div class="container pt-0 mt-0">
-	 		   	<div class="media-container-row">
-
-					<div class="card p-0 align-center col-12 col-md-6 col-lg-2">
-						<div class="panel-item">
-
-
-							<div class="card-text">
-								<h3 class="'.$count.' mbr-fonts-style display-2">
-									'.$project_nb_run.'
-								</h3>
-								<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
-									Analyses / Runs
-								</h4>
-								<p class="mbr-content-text mbr-fonts-style display-7">
-									Number of unique analyses / runs
-								</p>
-							</div>
-						</div>
-					</div>
-
-					<div class="card p-0 align-center col-12 col-md-6 col-lg-2">
-						<div class="panel-item">
-
-
-							<div class="card-text">
-								<h3 class=" '.$count.' mbr-fonts-style display-2">
-									'.$project_nb_sample.'
-								</h3>
-								<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
-									Samples
-								</h4>
-								<p class="mbr-content-text mbr-fonts-style display-7">
-									Number of unique samples
-								</p>
-							</div>
-						</div>
-					</div>
-
-				</div>
-			</div>
-
-			';
-
-			// <div class="card-img pb-6">
-			// 	<span class="mbr-iconfont mbri-info"></span>
-			// </div>
-
-			$project_stats.='
-					</div>
-				</div>
-			';
-
-			$project_content=$project_stats;
-
-		};
-
-
-
-	echo '
-
-
-		<br><br><br>
-		<div class="container">
-			<h3 class=" display-5 align-center mbr-light mbr-fonts-style ">
-				<big><big>
-				'.$group.'
-				</big></big>
-			</h3>
-		</div>
-
-		<div class="container-fluid col-md-8">
-			<div class="row tabcont">
-				<ul class="nav nav-tabs pt-0 mt-0" role="tablist">
-					'.$project_link.'
-				</ul>
-			</div>
-		</div>
-
-		<div class="container">
-			<div class="row px-1">
-				<div class="tab-content">
-					'.$project_content.'
-				</div>
-			</div>
-		</div>
-
-
-	';
-
-	};
-
-
-	echo '
-	</section>
 	';
 
 
