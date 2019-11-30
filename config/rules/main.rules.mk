@@ -347,31 +347,31 @@ GATKRR_FLAGS=
 	-grep ^`cat $(@D)/$(*F).SAMPLE_MANIFEST_I`, $*.manifests_list.txt | cut -d \, -f 2 > $(@D)/$(*F).SAMPLE_MANIFEST;
 	#
 	# BED
-	file=$$( echo "$$( dirname $(MANIFEST_FOLDER)/`cat $(@D)/$(*F).SAMPLE_MANIFEST` )/$$( basename $(MANIFEST_FOLDER)/`cat $(@D)/$(*F).SAMPLE_MANIFEST` ).bed" ); \
-	echo "bed file is : $$file "; \
-	if [ -s $$file ]; then \
-		cat $$file > $*.bed; \
-	else \
-		echo "$$file don't exist !!!"; \
-	fi;
+	# file=$$( echo "$$( dirname $(MANIFEST_FOLDER)/`cat $(@D)/$(*F).SAMPLE_MANIFEST` )/$$( basename $(MANIFEST_FOLDER)/`cat $(@D)/$(*F).SAMPLE_MANIFEST` ).bed" ); \
+	# echo "bed file is : $$file "; \
+	# if [ -s $$file ]; then \
+	# 	cat $$file > $*.bed; \
+	# else \
+	# 	echo "$$file don't exist !!!"; \
+	# fi;
 	#
 	# BED GENES
-	file=$$( echo "$$( dirname $(MANIFEST_FOLDER)/`cat $(@D)/$(*F).SAMPLE_MANIFEST` )/$$( basename $(MANIFEST_FOLDER)/`cat $(@D)/$(*F).SAMPLE_MANIFEST` ).genes" ); \
-	echo "genes file is : $$file "; \
-	if [ -s $$file ]; then \
-		cat $$file > $*.genes; \
-	else \
-		echo "$$file don't exist !!!"; \
-	fi;
+	# file=$$( echo "$$( dirname $(MANIFEST_FOLDER)/`cat $(@D)/$(*F).SAMPLE_MANIFEST` )/$$( basename $(MANIFEST_FOLDER)/`cat $(@D)/$(*F).SAMPLE_MANIFEST` ).genes" ); \
+	# echo "genes file is : $$file "; \
+	# if [ -s $$file ]; then \
+	# 	cat $$file > $*.genes; \
+	# else \
+	# 	echo "$$file don't exist !!!"; \
+	# fi;
 	#
 	# TRANSCRIPTS
-	file=$$( echo "$$( dirname $(MANIFEST_FOLDER)/`cat $(@D)/$(*F).SAMPLE_MANIFEST` )/$$( basename $(MANIFEST_FOLDER)/`cat $(@D)/$(*F).SAMPLE_MANIFEST` ).transcripts" ); \
-	echo "transcripts file is : $$file "; \
-	if [ -s $$file ]; then \
-		cat $$file > $*.transcripts; \
-	else \
-		echo "$$file don't exist !!!"; \
-	fi;
+	# file=$$( echo "$$( dirname $(MANIFEST_FOLDER)/`cat $(@D)/$(*F).SAMPLE_MANIFEST` )/$$( basename $(MANIFEST_FOLDER)/`cat $(@D)/$(*F).SAMPLE_MANIFEST` ).transcripts" ); \
+	# echo "transcripts file is : $$file "; \
+	# if [ -s $$file ]; then \
+	# 	cat $$file > $*.transcripts; \
+	# else \
+	# 	echo "$$file don't exist !!!"; \
+	# fi;
 	#
 	# Found manifest, or Default manifest is the first in the list
 	if [ "`cat $(@D)/$(*F).SAMPLE_MANIFEST`" != "" ] && [ -e "$(MANIFEST_FOLDER)/`cat $(@D)/$(*F).SAMPLE_MANIFEST`" ]; then \
