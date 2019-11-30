@@ -34,18 +34,10 @@
 
 
 ########
-# ARGS #
-#######
-
-ARG DOCKER_STARK_IMAGE_BASE=centos:7
-
-
-
-########
 # FROM #
 ########
 
-FROM $DOCKER_STARK_IMAGE_BASE
+FROM centos:7
 MAINTAINER Antony Le Bechec <antony.lebechec@gmail.com>
 LABEL Software="STARK" \
 	Version="0.9.18b" \
@@ -486,13 +478,8 @@ ENV TOOL_PARAM_DATABASE_FOLDER=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/databases/
 # TOOL INSTALLATION
 RUN source $TOOL_INIT && \
 	echo "#[INFO] TOOL installation" && \
-	if [ ! -d $TOOL_DEST/bin ]; then \
-		echo "#[INFO] TOOL installation - installed from source" ; \
-	    tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD ; \
-	    cp $TOOL_SOURCE_BUILD/*/*.pl $TOOL_DEST/bin/ -R ; \
-	else \
-		echo "#[INFO] TOOL installation - already installed" ; \
-	fi && \
+    tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
+    cp $TOOL_SOURCE_BUILD/*/*.pl $TOOL_DEST/bin/ -R && \
 	echo "#[INFO] TOOL databases configuration" && \
 	mkdir -p $TOOL_PARAM_DATABASE_FOLDER_LINK && \
 	mkdir -p $TOOL_PARAM_DATABASE_FOLDER && \
