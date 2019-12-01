@@ -30,18 +30,18 @@ services:
     #         - stark
 
     # STARK REPO
-    stark-repo:
-        image: ${DOCKER_STARK_IMAGE_REPO}
+    stark-sources:
+        image: ${DOCKER_STARK_IMAGE_SOURCES}
         build:
             context: ${DOCKER_STARK_CONTEXT}
             #dockerfile: base.Dockerfile
             dockerfile: Dockerfile
             args:
                 - REMOVE_SOURCES=0
-                - REPO=${DOCKER_STARK_BUILD_REPO_URL}
+                - REPO_SOURCES=${DOCKER_STARK_BUILD_SOURCES_URL}
         entrypoint: bash
         command: -c "find /STARK/sources/sources/ -maxdepth 3 -mindepth 1 -type d"
-        container_name: STARK-repo
+        container_name: STARK-sources
         env_file:
             - .env
         networks:
@@ -56,17 +56,17 @@ services:
             args:
                 #- DOCKER_STARK_IMAGE_BASE=${DOCKER_STARK_IMAGE_BASE}
                 - REMOVE_SOURCES=1
-                - REPO=${DOCKER_STARK_BUILD_REPO_URL}
+                - REPO_SOURCES=${DOCKER_STARK_BUILD_SOURCES_URL}
         container_name: STARK
         command: --help
         env_file:
             - .env
         links:
             #- stark-base
-            - stark-repo
+            - stark-sources
         depends_on:
             #- stark-base
-            - stark-repo
+            - stark-sources
         networks:
             - stark
 
@@ -135,9 +135,47 @@ services:
             - ${DOCKER_STARK_SERVICE_CLOUD_FOLDER_CONFIG}:${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_CONFIG}:rw
             - ${DOCKER_STARK_SERVICE_CLOUD_FOLDER_DATA}:${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_DATA}:rw
             - ${DOCKER_STARK_SERVICE_CLOUD_FOLDER_USERS}:${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_USERS}:rw
-            - input:${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_DATA}/raw:ro
-            - repository:${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_DATA}/repository:ro
-            - archive:${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_DATA}/archives:ro
+            - input:${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_DATA}/Input:ro
+            - repository:${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_DATA}/Repository:ro
+            - archive:${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_DATA}/Archive:ro
+        restart: always
+        networks:
+            - stark
+
+
+    # STARK SERVICE DATA
+    stark-service-data:
+        image: ${DOCKER_STARK_SERVICE_DATA_IMAGE}
+        build:
+            context: ${DOCKER_STARK_SERVICE_DATA_CONTEXT}
+            dockerfile: Dockerfile
+        container_name: STARK-service-data
+        restart: always
+        env_file:
+            - .env
+        ports:
+            - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_DATA_PORT}:${DOCKER_STARK_SERVICE_DATA_PORT_INNER}
+        volumes:
+            - input:${DOCKER_STARK_SERVICE_DATA_INNER_FOLDER_DATA}/inputs/Input:ro
+            - repository:${DOCKER_STARK_SERVICE_DATA_INNER_FOLDER_DATA}/repositories/Repository:ro
+            - archive:${DOCKER_STARK_SERVICE_DATA_INNER_FOLDER_DATA}/repositories/Archive:ro
+        restart: always
+        networks:
+            - stark
+
+
+    # STARK SERVICE IGV
+    stark-service-igv:
+        image: ${DOCKER_STARK_SERVICE_IGV_IMAGE}
+        build:
+            context: ${DOCKER_STARK_SERVICE_IGV_CONTEXT}
+            dockerfile: Dockerfile
+        container_name: STARK-service-igv
+        restart: always
+        env_file:
+            - .env
+        ports:
+            - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_IGV_PORT}:${DOCKER_STARK_SERVICE_IGV_PORT_INNER}
         restart: always
         networks:
             - stark
@@ -205,20 +243,20 @@ services:
             - stark
 
 
-    # STARK SERVICE REPO
-    stark-service-repo:
-        image: ${DOCKER_STARK_SERVICE_REPO_IMAGE}
-        container_name: STARK-service-repo
+    # STARK SERVICE SOURCES
+    stark-service-sources:
+        image: ${DOCKER_STARK_SERVICE_SOURCES_IMAGE}
+        container_name: STARK-service-sources
         restart: always
         env_file:
             - .env
         ports:
-            - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_REPO_PORT}:${DOCKER_STARK_SERVICE_REPO_PORT_INNER}
+            - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_SOURCES_PORT}:${DOCKER_STARK_SERVICE_SOURCES_PORT_INNER}
         volumes:
-            - ${DOCKER_STARK_SERVICE_REPO_FOLDER}:/usr/local/apache2/htdocs/
+            - ${DOCKER_STARK_SERVICE_SOURCES_FOLDER}:/usr/local/apache2/htdocs/
         restart: always
         depends_on:
-            - stark-repo
+            - stark-sources
         networks:
             - stark
 

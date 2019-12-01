@@ -56,7 +56,7 @@ LABEL Software="STARK" \
 
 ARG THREADS="1"
 # REPO from GIT
-ARG REPO="https://gitlab.bioinfo-diag.fr/Strasbourg/STARK-repo/raw/master/"
+ARG REPO_SOURCES="https://gitlab.bioinfo-diag.fr/Strasbourg/STARK-repo/raw/master/"
 # REPO from internal HTTP server
 #ARG REPO="http://192.168.1.14:8080/"
 # REPO null
@@ -73,6 +73,7 @@ ENV STARK_FOLDER="/STARK"
 ENV TOOLS="$STARK_FOLDER/tools"
 ENV DATA="$STARK_FOLDER/data"
 ENV TOOL="$STARK_FOLDER/tool"
+ENV REPO="$REPO_SOURCES"
 ENV SOURCES_FOLDER="sources"
 ENV SOURCES="$STARK_FOLDER/$SOURCES_FOLDER"
 ENV DATABASES="$STARK_FOLDER/databases"
