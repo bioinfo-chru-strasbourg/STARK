@@ -361,7 +361,7 @@ while ((1)); do
 
 
 						if [ "$COMMAND" == "LAUNCHER" ]; then
-							CMD="curl -X POST -H 'Content-Type: application/json' -d '{\"run\":\"$IFA\"}' $LAUNCHER"
+							CMD="curl -s -X POST -H 'Content-Type: application/json' -d '{\"run\":\"$IFA\"}' $LAUNCHER"
 						elif [ "$COMMAND" == "DOCKER" ]; then
 							CMD="STARK --docker-stark-image=$DOCKER_STARK_IMAGE --docker-parameters='--rm;-d;--name=$ID' --run=$IFA"
 						elif [ "$COMMAND" == "STARK" ]; then
@@ -374,7 +374,7 @@ while ((1)); do
 
 						#CMD="$COMMAND --run=$IFA"
 						EXEC_DATE=$(date '+%Y%m%d-%H%M%S')
-						(($VERBOSE)) && echo "#[INFO] Analysis/Run '$RUN_NAME' - folder '$IFA' [$MD5] TO LAUNCH"
+						(($VERBOSE)) && echo "#[INFO] Analysis/Run '$RUN_NAME' - folder '$IFA' [$ID] TO LAUNCH"
 						(($VERBOSE)) && echo "#[INFO] => Launch analysis '$IFA' with command '$COMMAND'"
 						(($VERBOSE)) && echo "#[INFO]    MD5: $MD5_LOG"
 						(($VERBOSE)) && echo "#[INFO]    CMD: $CMD"
@@ -384,7 +384,7 @@ while ((1)); do
 							echo "FOLDER: $IFA" >> $MD5_LOG
 							echo "CONDITION: $C" >> $MD5_LOG
 							echo "EXEC_DATE: $EXEC_DATE" >> $MD5_LOG
-							echo "OUTPUT: " >> $MD5_LOG
+							echo -n "ID: " >> $MD5_LOG
 							(($DEBUG)) && cat $MD5_LOG
 							# LAUNCH
 							echo "#[INFO] Analysis/Run '$RUN_NAME' - folder '$IFA' [$MD5] LAUNCHED"

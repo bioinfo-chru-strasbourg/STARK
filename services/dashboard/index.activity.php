@@ -139,6 +139,26 @@
 	// </pre>
 	// ';
 
+
+	#$DOCKER_STARK_SERVICE_LAUNCHER_CONTAINER_NAME:$DOCKER_STARK_SERVICE_LAUNCHER_PORT
+	#echo readfile("http://$DOCKER_STARK_SERVICE_LAUNCHER_CONTAINER_NAME:$DOCKER_STARK_SERVICE_LAUNCHER_PORT/queue?format=html");
+	#echo "http://".$_ENV["DOCKER_STARK_SERVICE_LAUNCHER_CONTAINER_NAME"].":".$_ENV["DOCKER_STARK_SERVICE_LAUNCHER_PORT_INNER"]."/queue";
+	#$truc=readfile("http://$DOCKER_STARK_SERVICE_LAUNCHER_CONTAINER_NAME:$DOCKER_STARK_SERVICE_LAUNCHER_PORT");
+	#echo "<pre>";
+	$URL_LAUNCHER="http://".$_ENV["DOCKER_STARK_SERVICE_LAUNCHER_CONTAINER_NAME"].":".$_ENV["DOCKER_STARK_SERVICE_LAUNCHER_PORT_INNER"]."/queue";
+
+	$lines_array=file($URL_LAUNCHER);
+	print_r($lines_array);
+	#$url='https://oscarliang.com';
+	// using file() function to get content
+	#$lines_array=file($url);
+	// turn array into one variable
+	#print_r($lines_array);
+	#$lines_string=implode('',$lines_array);
+	//output, you can also save it locally on the server
+	#echo $lines_string;
+
+
 	$BROWSER_SERVER=$_SERVER["SERVER_NAME"];
 	$BROWSER_PORT=$_ENV["DOCKER_STARK_SERVICE_PORT_PATTERN"].$_ENV["DOCKER_STARK_SERVICE_BROWSER_PORT"];
 	$BROWSER_URL=$BROWSER_SERVER.":".$BROWSER_PORT;

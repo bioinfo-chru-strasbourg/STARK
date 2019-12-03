@@ -231,19 +231,6 @@
 
 	echo '
 		<section class="header1 cid-ru7OEConn1" id="header16-1k">
-			<!--
-			<div class="container">
-			   	<div class="row justify-content-center  align-center">
-			   		<div class="card p-6 col-12 col-md-12">
-			   			<div class="card-box">
-			   				<h1 class="mbr-section-title mbr-bold pb-3 mbr-fonts-style display-2">
-				   				<img src="assets/logo.png" width="128">
-			   				</h1>
-			   			</div>
-			   		</div>
-				</div>
-			</div>
-			-->
 		    <div class="container">
 				<h3 class="mbr-section-subtitle mbr-fonts-style align-center mbr-light display-2">
 					&nbsp;
@@ -301,9 +288,13 @@
 
 	### TBODY
 
+
+
+
 	$tbody="";
 	$reports=glob ( "repositories/".path_full($PATH)."*stark.report.html" );
 	foreach ($reports as $key => $report_html) {
+
 		# Find infos
 		$report_html_split=explode ( "/" , $report_html );
 		$root=$report_html_split[0];
@@ -315,10 +306,16 @@
 		$report_html_file=$report_html_split[6];
 		$report_html_file_split=explode ( "." , $report_html_file );
 		$report_html_id=$report_html_file_split[1];
+
 		# Files
+		$sample_path=$root.'/'.$repository.'/'.$group.'/'.$project.'/'.$run.'/'.$sample;
 		$report_tsv=$root.'/'.$repository.'/'.$group.'/'.$project.'/'.$run.'/'.$sample.'/'.$sample.'.final.tsv';
 		$report_vcf_gz=$root.'/'.$repository.'/'.$group.'/'.$project.'/'.$run.'/'.$sample.'/'.$sample.'.final.vcf.gz';
 		$report_bed=$root.'/'.$repository.'/'.$group.'/'.$project.'/'.$run.'/'.$sample.'/'.$sample.'.bed';
+
+
+		$IGV_LINK="<a href='index.igv.php?SAMPLE_PATH[]=$sample_path'>IGV</a>";
+
 		# TBODY
 		$tbody=$tbody.'
 			<tr class="table-heads">
@@ -328,6 +325,7 @@
 					<a href="'.$report_tsv.'">TSV</a>
 					<a href="'.$report_vcf_gz.'">VCF</a>
 					<a href="'.$report_bed.'">BED</a>
+					'.$IGV_LINK.'
 				</td>
 				<td class="head-item mbr-fonts-style display-7">
 					'.$sample.'

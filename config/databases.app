@@ -62,6 +62,10 @@ DATABASES_LIST=$DATABASES_LIST" PHASE1_1000G"
 # Configuration
 #################
 
+# Main Folder for HOWARD configuration
+export HOWARD_FOLDER_CONFIG=$STARK_FOLDER_CONFIG/howard
+
+
 if [ -z $HOWARD_CONFIG ] || [ ! -e $HOWARD_CONFIG ]; then
 	HOWARD_CONFIG=$HOWARD_FOLDER_CONFIG/config.ini			# INI
 fi;

@@ -25,6 +25,19 @@ if 'TS' in os.environ:
 else:
     ts=""
 
+if 'TS_SOCKET' in os.environ:
+    ts_socket=os.environ['TS_SOCKET']
+else:
+    ts_socket="/ts-tmp/STARK"
+
+if 'TS_SAVELIST' in os.environ:
+    ts_savelist=os.environ['TS_SAVELIST']
+else:
+    ts_savelist="/ts-tmp"
+
+ts_env=" TS_SOCKET=" + ts_socket + " TS_SAVELIST=" + ts_savelist + " "
+
+
 
 # DEF
 
@@ -65,6 +78,29 @@ def stark_launch():
     analysesID=randomStringDigits(12)
     analysesNAME=analysesID
 
+    # Folders
+
+    if 'DOCKER_STARK_MAIN_FOLDER' in os.environ:
+        docker_stark_main_folder=os.environ['DOCKER_STARK_MAIN_FOLDER']
+    else:
+        docker_stark_main_folder=""
+
+    if 'DOCKER_STARK_SERVICE_LISTENER_FOLDER_LOG' in os.environ:
+        docker_stark_service_listener_folder_log=os.environ['DOCKER_STARK_SERVICE_LISTENER_FOLDER_LOG']
+    else:
+        docker_stark_service_listener_folder_log="analyses/stark-services/listener"
+
+    if 'DOCKER_STARK_INNER_FOLDER_ANALYSES' in os.environ:
+        docker_stark_inner_folder_analyses=os.environ['DOCKER_STARK_INNER_FOLDER_ANALYSES']
+    else:
+        docker_stark_inner_folder_analyses="/STARK/analyses"
+
+    if 'DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_LAUNCHER' in os.environ:
+        docker_stark_service_data_subfolder_services_launcher=os.environ['DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_LAUNCHER']
+    else:
+        docker_stark_service_data_subfolder_services_launcher="stark-services/launcher"
+
+
 
     # Find analysisID from RUN info in JSON
     runID=""
@@ -88,6 +124,7 @@ def stark_launch():
 
     #print "analysesID:"+analysesID
 
+
     # DOCKER MOUNT PARAMETERS
     docker_mount=""
     docker_stark_folder_pattern="DOCKER_STARK_FOLDER_"
@@ -96,7 +133,7 @@ def stark_launch():
             #print "Found",docker_stark_folder
             docker_stark_folder_basename=re.sub('_', '/', re.sub(docker_stark_folder_pattern, '', docker_stark_folder)).lower()
             #print docker_stark_folder_basename
-            docker_mount+=" -v "+os.environ[docker_stark_folder]+":"+"/STARK/"+docker_stark_folder_basename
+            docker_mount+=" -v "+docker_stark_main_folder+"/"+os.environ[docker_stark_folder]+":"+"/STARK/"+docker_stark_folder_basename
         #print docker_stark_folder
     if 'DOCKER_STARK_FOLDER_MOUNT' in os.environ:
         docker_mount+=" " + DOCKER_STARK_FOLDER_MOUNT + " "
@@ -117,10 +154,11 @@ def stark_launch():
     docker_parameters=' --rm ' + docker_mount + ' ' + docker_env + ' ' + docker_name + ' '
 
 
-
-    analysisFILE="/STARK/analyses/analysis."+analysesID+".json"
-    analysisLOG="/STARK/analyses/analysis."+analysesID+".log"
-    analysisERR="/STARK/analyses/analysis."+analysesID+".err"
+    # ${DOCKER_STARK_INNER_FOLDER_ANALYSES}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_LAUNCHER}
+    analysisFOLDER=docker_stark_inner_folder_analyses+"/"+docker_stark_service_data_subfolder_services_launcher
+    analysisFILE=analysisFOLDER+"/analysis."+analysesID+".json"
+    analysisLOG=analysisFOLDER+"/analysis."+analysesID+".log"
+    analysisERR=analysisFOLDER+"/analysis."+analysesID+".err"
     analysisLOGERR_PARAM=' 1>' + analysisLOG + ' 2>' + analysisERR
     f = open(analysisFILE, "w")
     f.write(json_dump)
@@ -129,7 +167,7 @@ def stark_launch():
 
     # TS
     if ts != "":
-        ts_cmd=ts + ' -L ' + analysisIDNAME
+        ts_cmd=ts_env + ts + ' -L ' + analysisIDNAME
     else:
         ts_cmd=""
 
@@ -145,7 +183,7 @@ def stark_launch():
 
     #return "Hello world from Distelli & Docker!"+json+getCmd
     if getCmd:
-        return analysesID + '.' + analysesNAME, 200
+        return analysisIDNAME, 200
     else:
         return "KO", 400
 

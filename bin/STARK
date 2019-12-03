@@ -878,7 +878,7 @@ if [ -s "$DOCKER_COMPOSE_FILE" ] || [ -s "$DOCKER_ENV_FILE" ] || [ "$DOCKER_STAR
 	for var in "${!DOCKER_STARK_FOLDER_@}"; do
 		ONE_DOCKER_STARK_FOLDER_CONTAINER=$(echo ${var} | sed "s/^DOCKER_STARK_FOLDER_//g" | sed "s/_/\//g" | tr '[:upper:]' '[:lower:]' )
 		[ ! -d ${!var} ] && mkdir -p ${!var} && echo "#[INFO] Folder '${!var}' created" # ???
-		[ -d ${!var} ] && [ "${!var}" != "" ] && DOCKER_MOUNT=$DOCKER_MOUNT" -v "${!var}":/STARK/"$ONE_DOCKER_STARK_FOLDER_CONTAINER #  echo "$var = ${!var}"
+		[ -d ${!var} ] && [ "${!var}" != "" ] && DOCKER_MOUNT=$DOCKER_MOUNT" -v "$DOCKER_STARK_MAIN_FOLDER"/"${!var}":/STARK/"$ONE_DOCKER_STARK_FOLDER_CONTAINER #  echo "$var = ${!var}"
 	done
 	DOCKER_CMD_PARAMETERS=$DOCKER_CMD_PARAMETERS" $DOCKER_MOUNT "
 

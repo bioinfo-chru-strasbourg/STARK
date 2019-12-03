@@ -29,19 +29,18 @@ services:
     #     networks:
     #         - stark
 
-    # STARK REPO
-    stark-sources:
-        image: ${DOCKER_STARK_IMAGE_SOURCES}
+    # STARK IMAGE
+    stark-source:
+        image: ${DOCKER_STARK_SOURCES_IMAGE}
         build:
             context: ${DOCKER_STARK_CONTEXT}
-            #dockerfile: base.Dockerfile
             dockerfile: Dockerfile
             args:
+                #- DOCKER_STARK_IMAGE_BASE=${DOCKER_STARK_IMAGE_BASE}
                 - REMOVE_SOURCES=0
                 - REPO_SOURCES=${DOCKER_STARK_BUILD_SOURCES_URL}
-        entrypoint: bash
-        command: -c "find /STARK/sources/sources/ -maxdepth 3 -mindepth 1 -type d"
         container_name: STARK-sources
+        command: --help
         env_file:
             - .env
         networks:
@@ -61,12 +60,6 @@ services:
         command: --help
         env_file:
             - .env
-        links:
-            #- stark-base
-            - stark-sources
-        depends_on:
-            #- stark-base
-            - stark-sources
         networks:
             - stark
 
@@ -77,70 +70,13 @@ services:
         command: --build --threads=${DOCKER_STARK_GET_DATABASES_THREADS} --additional_annotations=${DOCKER_STARK_GET_DATABASES_ADDITIONAL_ANNOTATIONS}
         container_name: STARK-databases
         volumes:
-            - databases:/STARK/databases
-        links:
-            - stark
-        depends_on:
-            - stark
+            - databases:/STARK/databases:rw
         networks:
             - stark
 
 
     # SERVICES
     ##########
-
-    # STARK SERVICE DASHBOARD
-    stark-service-dashboard:
-        image: ${DOCKER_STARK_SERVICE_DASHBOARD_IMAGE}
-        build:
-            context: ${DOCKER_STARK_SERVICE_DASHBOARD_CONTEXT}
-            dockerfile: Dockerfile
-        container_name: STARK-service-dashboard
-        #command:  -d ${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_CONFIG}/filebrowser.db -c ${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_CONFIG}/.filebrowser.json -r ${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_DATA}
-        #command: -r ${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_DATA}
-        restart: always
-        env_file:
-            - .env
-        ports:
-            - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_DASHBOARD_PORT}:${DOCKER_STARK_SERVICE_DASHBOARD_PORT_INNER}
-        volumes:
-            #- /Users/lebechea/Documents/NGS/GIT/Strasbourg/STARK/services/dashboard:/app/:rw
-            # Available on browser reports
-            - input:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER_INPUTS}/Input:ro
-            - repository:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER_REPOSITORIES}/Repository:ro
-            - archive:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER_REPOSITORIES}/Archive:ro
-            # Available on system
-            # - databases:${DOCKER_STARK_INNER_FOLDER_DATABASES}:ro
-            # - input:${DOCKER_STARK_INNER_FOLDER_INPUT}:ro
-            # - repository:${DOCKER_STARK_INNER_FOLDER_OUTPUT_REPOSITORY}:ro
-            # - archive:${DOCKER_STARK_INNER_FOLDER_OUTPUT_ARCHIVE}:ro
-            # - analyses-STARK-service-listener:${DOCKER_STARK_INNER_FOLDER_OUTPUT_LOG}:ro
-        restart: always
-        networks:
-            - stark
-
-
-    # STARK SERVICE CLOUD
-    stark-service-cloud:
-        image: ${DOCKER_STARK_SERVICE_CLOUD_IMAGE}
-        container_name: STARK-service-cloud
-        #command:  -d ${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_CONFIG}/filebrowser.db -c ${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_CONFIG}/.filebrowser.json -r ${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_DATA}
-        command: -r ${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_DATA}
-        restart: always
-        env_file:
-            - .env
-        ports:
-            - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_CLOUD_PORT}:${DOCKER_STARK_SERVICE_CLOUD_PORT_INNER}
-        volumes:
-            - ${DOCKER_STARK_SERVICE_CLOUD_FOLDER_CONFIG}:${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_CONFIG}:rw
-            - ${DOCKER_STARK_SERVICE_CLOUD_FOLDER_DATA}:${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_DATA}:rw
-            - ${DOCKER_STARK_SERVICE_CLOUD_FOLDER_USERS}:${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_USERS}:rw
-            - input:${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_DATA}/Input:ro
-            - repository:${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_DATA}/Repository:ro
-            - archive:${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_DATA}/Archive:ro
-        restart: always
-        networks:
-            - stark
 
 
     # STARK SERVICE DATA
@@ -149,16 +85,82 @@ services:
         build:
             context: ${DOCKER_STARK_SERVICE_DATA_CONTEXT}
             dockerfile: Dockerfile
-        container_name: STARK-service-data
+        container_name: ${DOCKER_STARK_SERVICE_DATA_CONTAINER_NAME}
         restart: always
         env_file:
             - .env
         ports:
             - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_DATA_PORT}:${DOCKER_STARK_SERVICE_DATA_PORT_INNER}
         volumes:
-            - input:${DOCKER_STARK_SERVICE_DATA_INNER_FOLDER_DATA}/inputs/Input:ro
-            - repository:${DOCKER_STARK_SERVICE_DATA_INNER_FOLDER_DATA}/repositories/Repository:ro
-            - archive:${DOCKER_STARK_SERVICE_DATA_INNER_FOLDER_DATA}/repositories/Archive:ro
+            # Data folders available (need to be coherent with other services)
+            - input:${DOCKER_STARK_SERVICE_DATA_INNER_FOLDER_DATA}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_INPUTS}/Input:ro
+            - repository:${DOCKER_STARK_SERVICE_DATA_INNER_FOLDER_DATA}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_REPOSITORIES}/Repository:ro
+            - archive:${DOCKER_STARK_SERVICE_DATA_INNER_FOLDER_DATA}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_REPOSITORIES}/Archive:ro
+            - sources:${DOCKER_STARK_SERVICE_DATA_INNER_FOLDER_DATA}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SOURCES}:ro
+            - analyses-STARK-service-igv:${DOCKER_STARK_SERVICE_DATA_INNER_FOLDER_DATA}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_IGV}:ro
+        restart: always
+        networks:
+            - stark
+
+
+    # STARK SERVICE DASHBOARD
+    stark-service-dashboard:
+        image: ${DOCKER_STARK_SERVICE_DASHBOARD_IMAGE}
+        build:
+            context: ${DOCKER_STARK_SERVICE_DASHBOARD_CONTEXT}
+            dockerfile: Dockerfile
+        container_name: ${DOCKER_STARK_SERVICE_DASHBOARD_CONTAINER_NAME}
+        restart: always
+        env_file:
+            - .env
+        ports:
+            - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_DASHBOARD_PORT}:${DOCKER_STARK_SERVICE_DASHBOARD_PORT_INNER}
+        volumes:
+            # Data folders available (need to be coherent with STARK-service-data)
+            - input:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_INPUTS}/Input:ro
+            - repository:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_REPOSITORIES}/Repository:ro
+            - archive:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_REPOSITORIES}/Archive:ro
+            # Available on system only
+            - analyses-STARK-service-launcher:${DOCKER_STARK_SERVICE_DATA_INNER_FOLDER_DATA}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_LAUNCHER}:rw
+            - analyses-STARK-service-listener:${DOCKER_STARK_SERVICE_DATA_INNER_FOLDER_DATA}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_LISTENER}:rw
+            - analyses-STARK-service-igv:${DOCKER_STARK_SERVICE_DATA_INNER_FOLDER_DATA}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_IGV}:rw
+        restart: always
+        links:
+            - stark-service-data
+            - stark-service-igv
+            - stark-service-launcher
+            - stark-service-cloud
+        depends_on:
+            - stark-service-data
+            - stark-service-igv
+            - stark-service-launcher
+            - stark-service-cloud
+
+        networks:
+            - stark
+
+
+    # STARK SERVICE CLOUD
+    stark-service-cloud:
+        image: ${DOCKER_STARK_SERVICE_CLOUD_IMAGE}
+        container_name: ${DOCKER_STARK_SERVICE_CLOUD_CONTAINER_NAME}
+        command: -r ${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_DATA}
+        #command:  -d ${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_CONFIG}/filebrowser.db -c ${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_CONFIG}/.filebrowser.json -r ${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_DATA}
+        restart: always
+        env_file:
+            - .env
+        ports:
+            - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_CLOUD_PORT}:${DOCKER_STARK_SERVICE_CLOUD_PORT_INNER}
+        volumes:
+            # Volumes for configuration
+            #- ${DOCKER_STARK_SERVICE_CLOUD_FOLDER_CONFIG}:${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_CONFIG}:rw
+            #- ${DOCKER_STARK_SERVICE_CLOUD_FOLDER_USERS}:${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_USERS}:rw
+            #- ${DOCKER_STARK_SERVICE_CLOUD_FOLDER_DATA}:${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_DATA}:rw
+            - analyses-STARK-service-cloud:${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER}:rw
+            # Data available on the cloud (no link with service data)
+            - input:${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_DATA}/Input:ro
+            - repository:${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_DATA}/Repository:ro
+            - archive:${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_DATA}/Archive:ro
         restart: always
         networks:
             - stark
@@ -170,7 +172,7 @@ services:
         build:
             context: ${DOCKER_STARK_SERVICE_IGV_CONTEXT}
             dockerfile: Dockerfile
-        container_name: STARK-service-igv
+        container_name: ${DOCKER_STARK_SERVICE_IGV_CONTAINER_NAME}
         restart: always
         env_file:
             - .env
@@ -187,7 +189,7 @@ services:
         build:
             context: ${DOCKER_STARK_SERVICE_LAUNCHER_CONTEXT}
             dockerfile: Dockerfile
-        container_name: STARK-service-launcher
+        container_name: ${DOCKER_STARK_SERVICE_LAUNCHER_CONTAINER_NAME}
         env_file:
             - .env
         environment:
@@ -198,8 +200,10 @@ services:
             - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_LAUNCHER_PORT}:${DOCKER_STARK_SERVICE_LAUNCHER_PORT_INNER}
         volumes:
             - /var/run/docker.sock:/var/run/docker.sock
-            - analyses:${DOCKER_STARK_INNER_FOLDER_ANALYSES}:rw
+            #- analyses:${DOCKER_STARK_INNER_FOLDER_ANALYSES}:rw
+            #- analyses:${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_SERVICE_LISTENER_FOLDER_LOG}:rw
             - analyses-STARK-service-launcher:${TASK_SPOOLER_TS_SAVELIST}:rw
+            - analyses-STARK-service-launcher:${DOCKER_STARK_INNER_FOLDER_ANALYSES}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_LAUNCHER}:rw
         restart: always
         links:
             - stark
@@ -218,9 +222,8 @@ services:
         #command: --no_header --command="STARK" --days=${DOCKER_STARK_SERVICE_LISTENER_DAYS} --condition="${DOCKER_STARK_SERVICE_LISTENER_CONDITION}" --exec
         #command: --no_header --command="LAUNCHER" --launcher="http://stark-service-launcher:${DOCKER_STARK_SERVICE_LAUNCHER_PORT_INNER}/analysis" --days=${DOCKER_STARK_SERVICE_LISTENER_DAYS} --condition="${DOCKER_STARK_SERVICE_LISTENER_CONDITION}" --exec
         #command: --no_header --command="DOCKER" --docker-stark-image=${DOCKER_STARK_IMAGE} --days=${DOCKER_STARK_SERVICE_LISTENER_DAYS} --condition="${DOCKER_STARK_SERVICE_LISTENER_CONDITION}" --exec
-        command: --no_header --command="LAUNCHER" --launcher="http://stark-service-launcher:${DOCKER_STARK_SERVICE_LAUNCHER_PORT_INNER}/analysis" --days=${DOCKER_STARK_SERVICE_LISTENER_DAYS} --condition="${DOCKER_STARK_SERVICE_LISTENER_CONDITION}" --exec --daemon --daemon-periodicity=${DOCKER_STARK_SERVICE_LISTENER_DAEMON_PERIODICITY}
-
-        container_name: STARK-service-listener
+        command: --no_header --command="LAUNCHER" --launcher="http://stark-service-launcher:${DOCKER_STARK_SERVICE_LAUNCHER_PORT_INNER}/analysis" --days=${DOCKER_STARK_SERVICE_LISTENER_DAYS} --condition="${DOCKER_STARK_SERVICE_LISTENER_CONDITION}" --exec --daemon --daemon-periodicity=${DOCKER_STARK_SERVICE_LISTENER_DAEMON_PERIODICITY} --log=${DOCKER_STARK_INNER_FOLDER_ANALYSES}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_LISTENER}
+        container_name: ${DOCKER_STARK_SERVICE_LISTENER_CONTAINER_NAME}
         env_file:
             - .env
         volumes:
@@ -229,7 +232,8 @@ services:
             - input:${DOCKER_STARK_INNER_FOLDER_INPUT}:ro
             - repository:${DOCKER_STARK_INNER_FOLDER_OUTPUT_REPOSITORY}:rw
             - archive:${DOCKER_STARK_INNER_FOLDER_OUTPUT_ARCHIVE}:rw
-            - analyses-STARK-service-listener:${DOCKER_STARK_INNER_FOLDER_OUTPUT_LOG}:rw
+            - analyses-STARK-service-listener:${DOCKER_STARK_INNER_FOLDER_ANALYSES}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_LISTENER}:rw
+            - analyses-STARK-service-launcher:${DOCKER_STARK_INNER_FOLDER_ANALYSES}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_LAUNCHER}:rw
         restart: always
         links:
             - stark-service-launcher
@@ -243,22 +247,22 @@ services:
             - stark
 
 
-    # STARK SERVICE SOURCES
-    stark-service-sources:
-        image: ${DOCKER_STARK_SERVICE_SOURCES_IMAGE}
-        container_name: STARK-service-sources
-        restart: always
-        env_file:
-            - .env
-        ports:
-            - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_SOURCES_PORT}:${DOCKER_STARK_SERVICE_SOURCES_PORT_INNER}
-        volumes:
-            - ${DOCKER_STARK_SERVICE_SOURCES_FOLDER}:/usr/local/apache2/htdocs/
-        restart: always
-        depends_on:
-            - stark-sources
-        networks:
-            - stark
+    # # STARK SERVICE SOURCES
+    # stark-service-sources:
+    #     image: ${DOCKER_STARK_SERVICE_SOURCES_IMAGE}
+    #     container_name: ${DOCKER_STARK_SERVICE_SOURCES_CONTAINER_NAME}
+    #     restart: always
+    #     env_file:
+    #         - .env
+    #     ports:
+    #         - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_SOURCES_PORT}:${DOCKER_STARK_SERVICE_SOURCES_PORT_INNER}
+    #     volumes:
+    #         - sources:/usr/local/apache2/htdocs/
+    #     restart: always
+    #     depends_on:
+    #         - stark-sources
+    #     networks:
+    #         - stark
 
 
     ###########
@@ -266,35 +270,40 @@ services:
     ############
 
     # STARK SERVICE DASHBOARD
-    # stark-service-dashboard-dev:
-    #     image: ${DOCKER_STARK_SERVICE_DASHBOARD_IMAGE}
-    #     build:
-    #         context: ${DOCKER_STARK_SERVICE_DASHBOARD_CONTEXT}
-    #         dockerfile: Dockerfile
-    #     container_name: STARK-service-dashboard-dev
-    #     #command:  -d ${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_CONFIG}/filebrowser.db -c ${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_CONFIG}/.filebrowser.json -r ${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_DATA}
-    #     #command: -r ${DOCKER_STARK_SERVICE_CLOUD_INNER_FOLDER_DATA}
-    #     restart: always
-    #     env_file:
-    #         - .env
-    #     ports:
-    #         - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_DASHBOARD_PORT}2:${DOCKER_STARK_SERVICE_DASHBOARD_PORT_INNER}
-    #     volumes:
-    #         - /Users/lebechea/Documents/NGS/GIT/Strasbourg/STARK/services/dashboard:/app/:rw
-    #         # Available on browser reports
-    #         - input:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER_INPUTS}/Input:ro
-    #         - repository:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER_REPOSITORIES}/Repository:ro
-    #         - archive:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER_REPOSITORIES}/Archive:ro
-    #         # Available on system
-    #         # - databases:${DOCKER_STARK_INNER_FOLDER_DATABASES}:ro
-    #         # - input:${DOCKER_STARK_INNER_FOLDER_INPUT}:ro
-    #         # - repository:${DOCKER_STARK_INNER_FOLDER_OUTPUT_REPOSITORY}:ro
-    #         # - archive:${DOCKER_STARK_INNER_FOLDER_OUTPUT_ARCHIVE}:ro
-    #         # - analyses-STARK-service-listener:${DOCKER_STARK_INNER_FOLDER_OUTPUT_LOG}:ro
-    #     restart: always
-    #     networks:
-    #         - stark
-
+    stark-service-dashboard-dev:
+        image: ${DOCKER_STARK_SERVICE_DASHBOARD_IMAGE}
+        build:
+            context: ${DOCKER_STARK_SERVICE_DASHBOARD_CONTEXT}
+            dockerfile: Dockerfile
+        container_name: ${DOCKER_STARK_SERVICE_DASHBOARD_CONTAINER_NAME}-dev
+        restart: always
+        env_file:
+            - .env
+        ports:
+            - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_DASHBOARD_PORT}2:${DOCKER_STARK_SERVICE_DASHBOARD_PORT_INNER}
+        volumes:
+            - /Users/lebechea/Documents/NGS/GIT/Strasbourg/STARK/services/dashboard:/app/:rw
+            # Available on browser reports
+            - input:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_INPUTS}/Input:ro
+            - repository:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_REPOSITORIES}/Repository:ro
+            - archive:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_REPOSITORIES}/Archive:ro
+            # Available on system only
+            - analyses-STARK-service-launcher:${DOCKER_STARK_SERVICE_DATA_INNER_FOLDER_DATA}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_LAUNCHER}:rw
+            - analyses-STARK-service-listener:${DOCKER_STARK_SERVICE_DATA_INNER_FOLDER_DATA}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_LISTENER}:rw
+            - analyses-STARK-service-igv:${DOCKER_STARK_SERVICE_DATA_INNER_FOLDER_DATA}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_IGV}:rw
+        restart: always
+        links:
+            - stark-service-data
+            - stark-service-igv
+            - stark-service-launcher
+            - stark-service-cloud
+        depends_on:
+            - stark-service-data
+            - stark-service-igv
+            - stark-service-launcher
+            - stark-service-cloud
+        networks:
+            - stark
 
 
 # VOLUMES
@@ -307,7 +316,7 @@ volumes:
         driver: local
         driver_opts:
             type: none
-            device: ${DOCKER_STARK_FOLDER_INPUT}
+            device: ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_INPUT}
             o: bind
 
     # DEMULTIPLEXING
@@ -323,7 +332,7 @@ volumes:
         driver: local
         driver_opts:
             type: none
-            device: ${DOCKER_STARK_FOLDER_OUTPUT_REPOSITORY}
+            device: ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_OUTPUT_REPOSITORY}
             o: bind
 
     # ARCHIVE
@@ -331,7 +340,15 @@ volumes:
         driver: local
         driver_opts:
             type: none
-            device: ${DOCKER_STARK_FOLDER_OUTPUT_ARCHIVE}
+            device: ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_OUTPUT_ARCHIVE}
+            o: bind
+
+    # SOURCES
+    sources:
+        driver: local
+        driver_opts:
+            type: none
+            device: ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_SOURCES}
             o: bind
 
     # ANALYSES
@@ -339,7 +356,7 @@ volumes:
         driver: local
         driver_opts:
             type: none
-            device: ${DOCKER_STARK_FOLDER_ANALYSES}
+            device: ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_ANALYSES}
             o: bind
 
     # ANALYSES - Launcher
@@ -347,7 +364,7 @@ volumes:
         driver: local
         driver_opts:
             type: none
-            device: ${DOCKER_STARK_SERVICE_LAUNCHER_FOLDER_LOG}
+            device: ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_SERVICE_LAUNCHER_FOLDER_LOG}
             o: bind
 
     # ANALYSES - Listener
@@ -355,14 +372,31 @@ volumes:
         driver: local
         driver_opts:
             type: none
-            device: ${DOCKER_STARK_SERVICE_LISTENER_FOLDER_LOG}
+            device: ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_SERVICE_LISTENER_FOLDER_LOG}
             o: bind
+
+    # ANALYSES - IGV
+    analyses-STARK-service-igv:
+        driver: local
+        driver_opts:
+            type: none
+            device: ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_SERVICE_IGV_FOLDER_LOG}
+            o: bind
+
+    # ANALYSES - CLOUD
+    analyses-STARK-service-cloud:
+        driver: local
+        driver_opts:
+            type: none
+            device: ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_SERVICE_CLOUD_FOLDER}
+            o: bind
+
     # LOG
     log:
         driver: local
         driver_opts:
             type: none
-            device: ${DOCKER_STARK_FOLDER_OUTPUT_LOG}
+            device: ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_OUTPUT_LOG}
             o: bind
 
     # DATABASES
@@ -370,7 +404,7 @@ volumes:
         driver: local
         driver_opts:
             type: none
-            device: ${DOCKER_STARK_FOLDER_DATABASES}
+            device: ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_DATABASES}
             o: bind
 
 # NETWORK

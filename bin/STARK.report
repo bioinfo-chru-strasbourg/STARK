@@ -214,12 +214,18 @@ fi;
 if [ ! -z $GROUP_INPUT ]; then
 	GROUP=$GROUP_INPUT
 fi;
+if [ ! -z $APP_GROUP ]; then
+	GROUP=$APP_GROUP
+fi;
 if [ -z $GROUP ]; then
 	GROUP="UNKNOWN"
 fi;
 
 if [ ! -z $PROJECT_INPUT ]; then
 	PROJECT=$PROJECT_INPUT
+fi;
+if [ ! -z $APP_PROJECT ]; then
+	PROJECT=$APP_PROJECT
 fi;
 if [ -z $PROJECT ]; then
 	PROJECT="UNKNOWN"
