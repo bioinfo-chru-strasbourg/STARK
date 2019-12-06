@@ -30,7 +30,7 @@ services:
     #         - stark
 
     # STARK IMAGE
-    stark-source:
+    stark-sources:
         image: ${DOCKER_STARK_SOURCES_IMAGE}
         build:
             context: ${DOCKER_STARK_CONTEXT}
@@ -97,7 +97,9 @@ services:
             - repository:${DOCKER_STARK_SERVICE_DATA_INNER_FOLDER_DATA}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_REPOSITORIES}/Repository:ro
             - archive:${DOCKER_STARK_SERVICE_DATA_INNER_FOLDER_DATA}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_REPOSITORIES}/Archive:ro
             - sources:${DOCKER_STARK_SERVICE_DATA_INNER_FOLDER_DATA}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SOURCES}:ro
-            - analyses-STARK-service-igv:${DOCKER_STARK_SERVICE_DATA_INNER_FOLDER_DATA}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_IGV}:ro
+            - analyses-STARK-service-launcher:${DOCKER_STARK_SERVICE_DATA_INNER_FOLDER_DATA}/${DOCKER_STARK_SERVICE_LAUNCHER_FOLDER_LOG}:ro
+            - analyses-STARK-service-listener:${DOCKER_STARK_SERVICE_DATA_INNER_FOLDER_DATA}/${DOCKER_STARK_SERVICE_LISTENER_FOLDER_LOG}:ro
+            - analyses-STARK-service-igv:${DOCKER_STARK_SERVICE_DATA_INNER_FOLDER_DATA}/${DOCKER_STARK_SERVICE_IGV_FOLDER_LOG}:ro
         restart: always
         networks:
             - stark
@@ -120,10 +122,10 @@ services:
             - input:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_INPUTS}/Input:ro
             - repository:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_REPOSITORIES}/Repository:ro
             - archive:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_REPOSITORIES}/Archive:ro
-            # Available on system only
-            - analyses-STARK-service-launcher:${DOCKER_STARK_SERVICE_DATA_INNER_FOLDER_DATA}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_LAUNCHER}:rw
-            - analyses-STARK-service-listener:${DOCKER_STARK_SERVICE_DATA_INNER_FOLDER_DATA}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_LISTENER}:rw
-            - analyses-STARK-service-igv:${DOCKER_STARK_SERVICE_DATA_INNER_FOLDER_DATA}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_IGV}:rw
+            # Service
+            - analyses-STARK-service-launcher:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER}/${DOCKER_STARK_SERVICE_LAUNCHER_FOLDER_LOG}:ro
+            - analyses-STARK-service-listener:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER}/${DOCKER_STARK_SERVICE_LISTENER_FOLDER_LOG}:ro
+            - analyses-STARK-service-igv:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER}/${DOCKER_STARK_SERVICE_IGV_FOLDER_LOG}:ro
         restart: always
         links:
             - stark-service-data
@@ -178,6 +180,23 @@ services:
             - .env
         ports:
             - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_IGV_PORT}:${DOCKER_STARK_SERVICE_IGV_PORT_INNER}
+        restart: always
+        networks:
+            - stark
+
+
+    # STARK SERVICE JARVIS
+    stark-service-jarvis:
+        image: ${DOCKER_STARK_SERVICE_JARVIS_IMAGE}
+        build:
+            context: ${DOCKER_STARK_SERVICE_JARVIS_CONTEXT}
+            dockerfile: Dockerfile
+        container_name: ${DOCKER_STARK_SERVICE_JARVIS_CONTAINER_NAME}
+        restart: always
+        env_file:
+            - .env
+        ports:
+            - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_JARVIS_PORT}:${DOCKER_STARK_SERVICE_JARVIS_PORT_INNER}
         restart: always
         networks:
             - stark
@@ -287,21 +306,40 @@ services:
             - input:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_INPUTS}/Input:ro
             - repository:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_REPOSITORIES}/Repository:ro
             - archive:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_REPOSITORIES}/Archive:ro
-            # Available on system only
-            - analyses-STARK-service-launcher:${DOCKER_STARK_SERVICE_DATA_INNER_FOLDER_DATA}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_LAUNCHER}:rw
-            - analyses-STARK-service-listener:${DOCKER_STARK_SERVICE_DATA_INNER_FOLDER_DATA}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_LISTENER}:rw
-            - analyses-STARK-service-igv:${DOCKER_STARK_SERVICE_DATA_INNER_FOLDER_DATA}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_IGV}:rw
+            # Services
+            - analyses-STARK-service-launcher:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER}/${DOCKER_STARK_SERVICE_LAUNCHER_FOLDER_LOG}:ro
+            - analyses-STARK-service-listener:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER}/${DOCKER_STARK_SERVICE_LISTENER_FOLDER_LOG}:ro
+            - analyses-STARK-service-igv:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER}/${DOCKER_STARK_SERVICE_IGV_FOLDER_LOG}:ro
         restart: always
-        links:
-            - stark-service-data
-            - stark-service-igv
-            - stark-service-launcher
-            - stark-service-cloud
-        depends_on:
-            - stark-service-data
-            - stark-service-igv
-            - stark-service-launcher
-            - stark-service-cloud
+        # links:
+        #     - stark-service-data
+        #     - stark-service-igv
+        #     - stark-service-launcher
+        #     - stark-service-cloud
+        # depends_on:
+        #     - stark-service-data
+        #     - stark-service-igv
+        #     - stark-service-launcher
+        #     - stark-service-cloud
+        networks:
+            - stark
+
+
+    # STARK SERVICE JARVIS
+    stark-service-jarvis-dev:
+        image: ${DOCKER_STARK_SERVICE_JARVIS_IMAGE}
+        build:
+            context: ${DOCKER_STARK_SERVICE_JARVIS_CONTEXT}
+            dockerfile: Dockerfile
+        container_name: ${DOCKER_STARK_SERVICE_JARVIS_CONTAINER_NAME}-dev
+        restart: always
+        env_file:
+            - .env
+        ports:
+            - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_JARVIS_PORT}2:${DOCKER_STARK_SERVICE_JARVIS_PORT_INNER}
+        volumes:
+            - /Users/lebechea/Documents/NGS/GIT/Strasbourg/STARK/services/jarvis/html:/var/www/html/:rw
+        restart: always
         networks:
             - stark
 

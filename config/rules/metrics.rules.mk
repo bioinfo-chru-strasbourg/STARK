@@ -864,13 +864,13 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 # Global run metrics (Sam)
 #############################
 %.reads.metrics: $(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(foreach PIPELINE,$(PIPELINES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).$(call aligner,$(PIPELINE)).bam.metrics/metrics ))
-	# creates different files in the run directory: \
-	# <run>.reads.metrics \
-	# <run>.genes.metrics \
-	# <run>.design.metrics \
-	# <run>.amplicon.metrics if applicable \
-	# see python script for documentation \
-	#$(PYTHON) $(STARK_FOLDER_BIN)/runmetrics.py --metricsFileList $$(echo $^ | tr " " ",") --outputPrefix $*. ;
+	# creates different files in the run directory:
+	# <run>.reads.metrics
+	# <run>.genes.metrics
+	# <run>.design.metrics
+	# <run>.amplicon.metrics if applicable
+	# see python script for documentation
+	#$(PYTHON3) $(STARK_FOLDER_BIN)/runmetrics.py --metricsFileList $$(echo $^ | tr " " ",") --outputPrefix $*. ;
 	touch $@;
 
 

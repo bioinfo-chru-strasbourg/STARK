@@ -158,9 +158,8 @@
 						</div>
 						<div class="card-box">
 							<p class="mbr-text mbr-fonts-style display-7">
-								Data Cloud shares available data, such as raw sequenced data with configuration files (manifest, bed, genes...),
-								analyses results in the repository,
-								and archived data.
+								Data Cloud provides a file managing interface within specified directories, such as input raw sequenced data and configuration files, and repositories to share analysis results and archives.
+								Based on File Browser, it can be used to upload, delete, preview, rename and edit files.
 							</p>
 						</div>
 					</a>
@@ -224,8 +223,52 @@
 			</div>
 		</div>
 
-	</section>
+		<div class="container">
+			<div class="row justify-content-center">
 
+				<div class="card p-3 col-12 col-md-6 mb-4">
+					<a href="index.igv.php" class="navbar-caption text-secondary ">
+						<div class="media mb-2">
+							<div class="card-img align-self-center">
+								<span class="mbr-iconfont mbri-browse" style="color: rgb(20, 157, 204); fill: rgb(20, 157, 204);"></span>
+							</div>
+							<h4 class="card-title media-body py-3 mbr-fonts-style display-5">IGV-web</h4>
+						</div>
+						<div class="card-box">
+							<p class="mbr-text mbr-fonts-style display-7">
+								The Integrative Genomics Viewer (IGV) is a high-performance visualization tool
+								for interactive exploration of large, integrated genomic datasets.
+								It supports a wide variety of data types,
+								including array-based and next-generation sequence data,
+								and genomic annotations.
+							</p>
+						</div>
+					</a>
+				</div>
+
+				<div class="card p-3 col-12 col-md-6 mb-4">
+					<a href="index.jarvis.php" class="navbar-caption text-secondary ">
+						<div class="media mb-2">
+							<div class="card-img align-self-center">
+								<span class="mbr-iconfont mbri-add-submenu" style="color: rgb(20, 157, 204); fill: rgb(20, 157, 204);"></span>
+							</div>
+							<h4 class="card-title media-body py-3 mbr-fonts-style display-5">JARVIS/VISION</h4>
+						</div>
+						<div class="card-box">
+							<p class="mbr-text mbr-fonts-style display-7">
+								JARVIS is an efficient tool functionally annotating variants
+								in order to detected causative genetics mutations.
+								VISION module is an simplyfied interface providing genetic variants proritization, querying
+								and visualization in VCF format
+							</p>
+						</div>
+					</a>
+				</div>
+
+			</div>
+		</div>
+
+	</section>
 
 
 
@@ -234,6 +277,7 @@
 	';
 
 	# mbri-cust-feedback mbri-desktop
+	# mbri-cust-feedback mbri-browse clock desktop extension features file layers
 
 	### SCRIPTS
 	#############

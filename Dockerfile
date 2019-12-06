@@ -981,7 +981,7 @@ RUN mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
 
 RUN yum erase -y $YUM_REMOVE && \
 	yum clean all && \
-    rm -rf /var/cache/yum \
+    rm -rf /var/cache/yum && \
 	rm -rf $WORKDIR/* && \
 	rm -rf /tmp/* && \
 	if (($REMOVE_SOURCES)); then rm -rf $SOURCES; fi;

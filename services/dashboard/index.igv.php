@@ -5,6 +5,7 @@
 
 $SAMPLE_PATH=$_GET["SAMPLE_PATH"];
 $CHECK_SUBFOLDER_DATA=$_GET["FULL_FILES"];
+$SEARCH_LEVEL=$_GET["SEARCH_LEVEL"];
 $DEBUG=0;
 
 # FUNCTIONS
@@ -97,6 +98,10 @@ if ($DOCKER_STARK_SERVICE_DATA_INNER_FOLDER_DATA=="") { $DOCKER_STARK_SERVICE_DA
 $DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_IGV=$_ENV["DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_IGV"];
 if ($DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_IGV=="") { $DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_IGV="/STARK/output/log"; };
 
+# DOCKER STARK INNER FOLDER OUTPUT LOG
+$DOCKER_STARK_SERVICE_IGV_FOLDER_LOG=$_ENV["DOCKER_STARK_SERVICE_IGV_FOLDER_LOG"];
+if ($DOCKER_STARK_SERVICE_IGV_FOLDER_LOG=="") { $DOCKER_STARK_SERVICE_IGV_FOLDER_LOG="analyses/stark-services/igv"; };
+
 
 
 # MAIN URL
@@ -149,6 +154,12 @@ $TRACKS_JSON_ARRAY=array();
 
 $TRACKS_JSON_KEY=0;
 
+#echo $SEARCH_LEVEL;
+$PATH_LEVEL="";
+for ($i=0; $i<$SEARCH_LEVEL+0; $i++) {
+	$PATH_LEVEL.="/*";
+}
+
 foreach ($SAMPLE_PATH as $key_sample => $ONE_SAMPLE_PATH) {
 
 	# SAMPLE NAME
@@ -159,9 +170,9 @@ foreach ($SAMPLE_PATH as $key_sample => $ONE_SAMPLE_PATH) {
 
 	# Search files
 	$design=array();
-	$design_root=glob("$ONE_SAMPLE_PATH/*{bed,genes}",GLOB_BRACE);
+	$design_root=glob("$ONE_SAMPLE_PATH$PATH_LEVEL/*{bed,genes}",GLOB_BRACE);
 	if ($CHECK_SUBFOLDER_DATA) {
-		$design_data=glob("$ONE_SAMPLE_PATH/DATA/*{bed,genes}",GLOB_BRACE);
+		$design_data=glob("$ONE_SAMPLE_PATH$PATH_LEVEL/DATA/*{bed,genes}",GLOB_BRACE);
 	} else {
 		$design_data=array();
 	};
@@ -217,9 +228,9 @@ foreach ($SAMPLE_PATH as $key_sample => $ONE_SAMPLE_PATH) {
 
 	# Search files
 	$vcf=array();
-	$vcf_root=glob("$ONE_SAMPLE_PATH/*{vcf.gz,gvcf.gz,bcf.gz}",GLOB_BRACE);
+	$vcf_root=glob("$ONE_SAMPLE_PATH$PATH_LEVEL/*{vcf.gz,gvcf.gz,bcf.gz}",GLOB_BRACE);
 	if ($CHECK_SUBFOLDER_DATA) {
-		$vcf_data=glob("$ONE_SAMPLE_PATH/DATA/*{vcf.gz,gvcf.gz,bcf.gz}",GLOB_BRACE);
+		$vcf_data=glob("$ONE_SAMPLE_PATH$PATH_LEVEL/DATA/*{vcf.gz,gvcf.gz,bcf.gz}",GLOB_BRACE);
 	} else {
 		$vcf_data=array();
 	};
@@ -254,9 +265,9 @@ foreach ($SAMPLE_PATH as $key_sample => $ONE_SAMPLE_PATH) {
 
 	# Search files
 	$alignment=array();
-	$alignment_root=glob("$ONE_SAMPLE_PATH/*{bam,cram}",GLOB_BRACE);
+	$alignment_root=glob("$ONE_SAMPLE_PATH$PATH_LEVEL/*{bam,cram}",GLOB_BRACE);
 	if ($CHECK_SUBFOLDER_DATA) {
-		$alignment_data=glob("$ONE_SAMPLE_PATH/DATA/*{bam,cram}",GLOB_BRACE);
+		$alignment_data=glob("$ONE_SAMPLE_PATH$PATH_LEVEL/DATA/*{bam,cram}",GLOB_BRACE);
 	} else {
 		$alignment_data=array();
 	};
@@ -351,9 +362,8 @@ fclose($myfile);
 ####################
 
 # FINAL URL
-$FINAL_URL="http://$IGV_URL?file=http://$DATA_URL/$DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_IGV/$IGV_JSON_FILENAME";
-
-
+#$FINAL_URL="http://$IGV_URL?file=http://$DATA_URL/$DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_IGV/$IGV_JSON_FILENAME";
+$FINAL_URL="http://$IGV_URL?file=http://$DATA_URL/$DOCKER_STARK_SERVICE_IGV_FOLDER_LOG/$IGV_JSON_FILENAME";
 
 # EMBED
 echo "<embed style='width:100%;height:100%' src='$FINAL_URL'>";

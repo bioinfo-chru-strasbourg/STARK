@@ -1542,6 +1542,8 @@ for RUU in $RUN_UNIQ; do
 		if (($VERBOSE)); then grep "\*\*\*" $LOGFILE_RES_RUN; fi;
 		# RUNNING stop
 		rm -f $STARK_RUNNING_FILE
+		# EXIT
+		exit 1;
 		continue;
 	fi;
 
