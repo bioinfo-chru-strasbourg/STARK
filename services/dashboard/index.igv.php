@@ -102,6 +102,9 @@ if ($DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_IGV=="") { $DOCKER_STARK_SERVI
 $DOCKER_STARK_SERVICE_IGV_FOLDER_LOG=$_ENV["DOCKER_STARK_SERVICE_IGV_FOLDER_LOG"];
 if ($DOCKER_STARK_SERVICE_IGV_FOLDER_LOG=="") { $DOCKER_STARK_SERVICE_IGV_FOLDER_LOG="analyses/stark-services/igv"; };
 
+#$DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER
+$DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER=$_ENV["DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER"];
+if ($DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER=="") { $DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER="/app"; };
 
 
 # MAIN URL
@@ -133,8 +136,15 @@ $IGV_JSON_ID=$DATE.".".rand ( 1 , 1000000 );
 $IGV_JSON_FILENAME="$IGV_JSON_ID.json";
 
 # JSON FILE
-$IGV_JSON_FILE="$DOCKER_STARK_SERVICE_DATA_INNER_FOLDER_DATA/$DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_IGV/$IGV_JSON_FILENAME";
+#$IGV_JSON_FILE="$DOCKER_STARK_SERVICE_DATA_INNER_FOLDER_DATA/$DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_IGV/$IGV_JSON_FILENAME";
+$IGV_JSON_FILE="$DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER/$DOCKER_STARK_SERVICE_IGV_FOLDER_LOG/$IGV_JSON_FILENAME";
+#${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER}/${DOCKER_STARK_SERVICE_IGV_FOLDER_LOG}
 #${DOCKER_STARK_SERVICE_DATA_INNER_FOLDER_DATA}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_IGV}
+
+if ($DEBUG) {
+	echo "<br>$IGV_JSON_FILE";
+}
+
 
 # JSON
 $JSON = "";
@@ -216,6 +226,7 @@ foreach ($SAMPLE_PATH as $key_sample => $ONE_SAMPLE_PATH) {
 			  "sourceType": "file",
 			  "format": "'.$design_format.'",
 			  "order": '.$TRACKS_JSON_KEY.',
+			  "height": "40",
 			  "type": "annotation"
 			}
 		';
@@ -253,6 +264,7 @@ foreach ($SAMPLE_PATH as $key_sample => $ONE_SAMPLE_PATH) {
 			  "sourceType": "file",
 			  "format": "'.$VCF_FORMAT.'",
 			  "order": '.$TRACKS_JSON_KEY.',
+			  "height": "40",
 			  "type": "annotation"
 			}
 		';
@@ -305,10 +317,12 @@ foreach ($SAMPLE_PATH as $key_sample => $ONE_SAMPLE_PATH) {
 			  "name": "'.$ALIGNMENT_NAME.'",
 			  "sourceType": "file",
 			  "format": "'.$ALIGNMENT_FORMAT.'",
-			   "order": '.$TRACKS_JSON_KEY.',
+			  "order": '.$TRACKS_JSON_KEY.',
 			  "type": "alignment"
 			}
 		';
+
+		#"autoHeight": true,
 
 		# ADD TRACKS
 		if ($TRACKS_INDEXURL!="null") {
@@ -364,6 +378,16 @@ fclose($myfile);
 # FINAL URL
 #$FINAL_URL="http://$IGV_URL?file=http://$DATA_URL/$DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_IGV/$IGV_JSON_FILENAME";
 $FINAL_URL="http://$IGV_URL?file=http://$DATA_URL/$DOCKER_STARK_SERVICE_IGV_FOLDER_LOG/$IGV_JSON_FILENAME";
+
+# DEV
+if ($DEBUG) {
+	echo "<br>";
+	echo $FINAL_URL;
+	echo "<pre>";
+	#echo $JSON;
+	echo "</pre>";
+};
+
 
 # EMBED
 echo "<embed style='width:100%;height:100%' src='$FINAL_URL'>";

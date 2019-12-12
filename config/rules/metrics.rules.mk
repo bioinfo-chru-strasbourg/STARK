@@ -870,7 +870,7 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 	# <run>.design.metrics
 	# <run>.amplicon.metrics if applicable
 	# see python script for documentation
-	#$(PYTHON3) $(STARK_FOLDER_BIN)/runmetrics.py --metricsFileList $$(echo $^ | tr " " ",") --outputPrefix $*. ;
+	$(PYTHON3) $(STARK_FOLDER_BIN)/runmetrics.py --metricsFileList $$(echo $^ | tr " " ",") --outputPrefix $*. ;
 	touch $@;
 
 

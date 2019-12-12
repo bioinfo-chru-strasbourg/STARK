@@ -163,10 +163,12 @@ def get_cov_criteria():
 	maxCriteria = str(max([int(v) for v in covCriteria.split(",")]))
 	return covCriteria, maxCriteria
 
-def get_depth_metrics(sampleDir, sample, aligner):
+def deprecated_get_depth_metrics(sampleDir, sample, aligner):
 	"""
 	Computes % depth at 1X,5X... (defined by an envt variable or a default value) based on depthbed. Returns them as a list in that order.
 	Uses the awk magic formula from stark_report.sh to keep the same values as the pdf report. 
+	
+	DEPRECATED as the depthbed file no longer exists in newer stark 0.9.18 versions. 
 	"""
 	#for stark before 0.9.18d
 	#depthFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+".depthbed")
@@ -181,6 +183,38 @@ def get_depth_metrics(sampleDir, sample, aligner):
 	for l in out:
 		l = l.decode("utf-8").strip()
 		covMetrics.append(format(float(l.split()[3])*100, ".2f"))
+	return covMetrics
+
+def get_depth_metrics(sampleDir, sample, aligner):
+	"""
+	coverage can now be found in files such as TEST.bwamem.TEST.from_design.genes.coverage 
+	whose content is like:
+	#Depth  CoveredBases    TotalBases      Percent
+	1X      274     11413   0.0240077
+	5X      274     11413   0.0240077
+	10X     274     11413   0.0240077
+	20X     274     11413   0.0240077
+	30X     274     11413   0.0240077
+	50X     254     11413   0.0222553
+	100X    0       11413   0
+	200X    0       11413   0
+	300X    0       11413   0
+	This function extracts the % values and returns them as a list. 
+	"""
+	depthFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+"."+sample+"."+aligner+".design.bed.coverage")
+	assert_file_exists_and_is_readable(depthFile)
+	covCriteria, maxCriteria = get_cov_criteria()
+	if "," in covCriteria:
+		covCriteriaList = covCriteria.split(",")
+	else:
+		covCriteriaList = [covCriteria]
+	covMetrics = []
+	with open(depthFile, "r") as f:
+		for l in f:
+			l = l.strip().split()
+			if l[0][:-1] in covCriteriaList:
+				covMetrics.append(format(float(l[3])*100, ".5f"))
+	assert len(covMetrics) == len(covCriteriaList), "[ERROR] Content of the environment variable COVERAGE_CRITERIA did not fit the content of the coverage file "+depthFile
 	return covMetrics
 
 def get_sample_metrics(runPath, sample, fromResDir, aligner):
@@ -310,6 +344,7 @@ def str_to_bool(v):
 
 def main_routine(metricsFileList, outputPrefix):
 	#1) extract parameters
+	#####
 	fromResDir = True #here for legacy reasons; and potentially future compatibility
 	if "," in metricsFileList:
 		#applying os.path.normpath now so I don't have to bother with // in paths later
@@ -329,6 +364,7 @@ def main_routine(metricsFileList, outputPrefix):
 	tagsList = get_tags_list(sampleList, sampleDirList, samplesheet=find_any_samplesheet(run, fromResDir))
 
 	#2) reads.metrics (global run metrics)
+	#####
 	runMetrics={}
 	print("Getting run metrics...")
 	for metricsFile, sample, aligner in zip(metricsFileList, sampleList ,alignerList):
@@ -339,7 +375,7 @@ def main_routine(metricsFileList, outputPrefix):
 		covHeader = "\t".join(["Cov "+v+"X" for v in get_cov_criteria()[0].split(",")])
 		f.write("## Run Metrics\n"
 				"##\n"
-				"## On-target reads are reads that are aligned within the regions defined in the design and that aren't duplicates, unmapped or containing low quality (< 10) bases \n"
+				"## On-target reads are reads that are aligned within the regions defined in the design and that aren't duplicates, unmapped or with low mapping quality (MAPQ < 10)\n"
 				"## Cov 30X is the % of coverage with at least 30X read depth ; in the regions defined in the design manifest/bed.\n"
 				"##\n"
 				"#Run\tSample\tTotal reads\tMapped reads\t% Mapped reads\tDuplicate reads\t% Duplicate reads\tOn-target reads\t% On-target reads\t"+covHeader+"\n")
@@ -348,23 +384,25 @@ def main_routine(metricsFileList, outputPrefix):
 			f.write(os.path.basename(run)+"\t"+sample+"\t"+"\t".join([str(v) for v in runMetrics[sample]])+"\n")
 	
 	#3) design.cov.metrics
+	#####
 	#selecting data files (no generic function for this because data file names have different structures)
 	dataFileList = []
 	for metricsFile, sample, sampleDir, aligner in zip(metricsFileList, sampleList, sampleDirList, alignerList):
 		#before latest 0.9.18 version
 		# dataFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+".HsMetrics.per_target_coverage")
-		dataFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+"."+sample+"."+aligner+".design.bed.HsMetrics.per_target_coverage")
+		dataFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+"."+sample+"."+aligner+".design.bed.HsMetrics.per_target_coverage.flags")
 		assert_file_exists_and_is_readable(dataFile)
 		dataFileList.append(dataFile)
 	#creating output
 	finalTsv = osj(outputPrefix+"design.metrics")
 	legend=("## Coverage metrics - per design target\n"
 			"##\n"
-			"## The regions listed here correspond to the design bed/manifest.\n"
+			"## The regions correspond to the design bed/manifest.\n"
 			"##\n")
 	write_cov_metrics_file(finalTsv, run, sampleList, dataFileList, legend, tagsList)
 	
 	#4) .gene coverage metrics
+	#####
 	#find .genes file that are used in all samples
 	genesSetList = []
 	for metricsFile in metricsFileList:
@@ -412,12 +450,13 @@ def main_routine(metricsFileList, outputPrefix):
 			write_cov_metrics_file(finalTsv, run, sampleList, dataFileList, legend, tagsList)
 	
 	#5) amplicon coverage metrics
+	#####
 	# Check if the first amplicon metrics file is not empty...
 	skipAmpliconMetrics = False
 	if fromResDir:
-		testFile = osj(run, sampleList[0], sampleList[0]+"."+aligner+".bam.metrics", sampleList[0]+"."+aligner+".amplicon_coverage")
+		testFile = osj(run, sampleList[0], sampleList[0]+"."+aligner+".bam.metrics", sampleList[0]+"."+aligner+".HsMetrics.per_amplicon_coverage.flags")
 	else:
-		testFile = osj(run, sampleList[0], "DATA", sampleList[0]+"."+aligner+".bam.metrics", sampleList[0]+"."+aligner+".amplicon_coverage")
+		testFile = osj(run, sampleList[0], "DATA", sampleList[0]+"."+aligner+".bam.metrics", sampleList[0]+"."+aligner+".HsMetrics.per_amplicon_coverage.flags")
 	with open(testFile, "r") as f:
 		if f.readline().rstrip() == "":
 			skipAmpliconMetrics = True
@@ -425,13 +464,13 @@ def main_routine(metricsFileList, outputPrefix):
 	if not skipAmpliconMetrics:
 		dataFileList = []
 		for metricsFile, sample, sampleDir, aligner in zip(metricsFileList, sampleList, sampleDirList, alignerList):
-			dataFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+".amplicon_coverage")
+			dataFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+".HsMetrics.per_amplicon_coverage.flags")
 			assert_file_exists_and_is_readable(dataFile)
 			dataFileList.append(dataFile)
 		finalTsv = osj(outputPrefix+"amplicon.metrics")
 		legend=("## Coverage metrics - per amplicon\n"
 			"##\n"
-			"## The regions listed here correspond to the amplicons listed in the initial manifest.\n"
+			"## The regions listed here correspond to the amplicons listed in the manifest.\n"
 			"##\n")
 		write_cov_metrics_file(finalTsv, run, sampleList, dataFileList, legend, tagsList)
 

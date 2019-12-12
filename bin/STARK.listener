@@ -309,6 +309,8 @@ fi;
 # FOR DEV
 #rm $FOLDER_LOG/ID-*-NAME-*.log
 
+
+
 while ((1)); do
 
 	# foreach input folder

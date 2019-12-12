@@ -125,7 +125,7 @@ services:
             # Service
             - analyses-STARK-service-launcher:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER}/${DOCKER_STARK_SERVICE_LAUNCHER_FOLDER_LOG}:ro
             - analyses-STARK-service-listener:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER}/${DOCKER_STARK_SERVICE_LISTENER_FOLDER_LOG}:ro
-            - analyses-STARK-service-igv:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER}/${DOCKER_STARK_SERVICE_IGV_FOLDER_LOG}:ro
+            - analyses-STARK-service-igv:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER}/${DOCKER_STARK_SERVICE_IGV_FOLDER_LOG}:rw
         restart: always
         links:
             - stark-service-data
@@ -213,14 +213,13 @@ services:
             - .env
         environment:
             - TS=ts
-            - TS_SOCKET=${TASK_SPOOLER_TS_SOCKET}
+            #- TS_SOCKET=${TASK_SPOOLER_TS_SOCKET}
             - TS_SAVELIST=${TASK_SPOOLER_TS_SAVELIST}
         ports:
             - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_LAUNCHER_PORT}:${DOCKER_STARK_SERVICE_LAUNCHER_PORT_INNER}
         volumes:
             - /var/run/docker.sock:/var/run/docker.sock
-            #- analyses:${DOCKER_STARK_INNER_FOLDER_ANALYSES}:rw
-            #- analyses:${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_SERVICE_LISTENER_FOLDER_LOG}:rw
+            - input:${DOCKER_STARK_INNER_FOLDER_INPUT}:ro
             - analyses-STARK-service-launcher:${TASK_SPOOLER_TS_SAVELIST}:rw
             - analyses-STARK-service-launcher:${DOCKER_STARK_INNER_FOLDER_ANALYSES}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_LAUNCHER}:rw
         restart: always
@@ -266,6 +265,8 @@ services:
             - stark
 
 
+
+
     # # STARK SERVICE SOURCES
     # stark-service-sources:
     #     image: ${DOCKER_STARK_SERVICE_SOURCES_IMAGE}
@@ -309,7 +310,7 @@ services:
             # Services
             - analyses-STARK-service-launcher:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER}/${DOCKER_STARK_SERVICE_LAUNCHER_FOLDER_LOG}:ro
             - analyses-STARK-service-listener:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER}/${DOCKER_STARK_SERVICE_LISTENER_FOLDER_LOG}:ro
-            - analyses-STARK-service-igv:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER}/${DOCKER_STARK_SERVICE_IGV_FOLDER_LOG}:ro
+            - analyses-STARK-service-igv:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER}/${DOCKER_STARK_SERVICE_IGV_FOLDER_LOG}:rw
         restart: always
         # links:
         #     - stark-service-data
@@ -342,6 +343,71 @@ services:
         restart: always
         networks:
             - stark
+
+
+    # # STARK SERVICE SERVER
+    # stark-service-listener-dev:
+    #     image: ${DOCKER_STARK_IMAGE}
+    #     entrypoint: /tool/bin/STARK.listener
+    #     #command: --no_header --command="STARK" --days=${DOCKER_STARK_SERVICE_LISTENER_DAYS} --condition="${DOCKER_STARK_SERVICE_LISTENER_CONDITION}" --exec
+    #     #command: --no_header --command="LAUNCHER" --launcher="http://stark-service-launcher:${DOCKER_STARK_SERVICE_LAUNCHER_PORT_INNER}/analysis" --days=${DOCKER_STARK_SERVICE_LISTENER_DAYS} --condition="${DOCKER_STARK_SERVICE_LISTENER_CONDITION}" --exec
+    #     #command: --no_header --command="DOCKER" --docker-stark-image=${DOCKER_STARK_IMAGE} --days=${DOCKER_STARK_SERVICE_LISTENER_DAYS} --condition="${DOCKER_STARK_SERVICE_LISTENER_CONDITION}" --exec
+    #     command: --no_header --command="LAUNCHER" --launcher="http://stark-service-launcher:${DOCKER_STARK_SERVICE_LAUNCHER_PORT_INNER}/analysis" --days=${DOCKER_STARK_SERVICE_LISTENER_DAYS} --condition="${DOCKER_STARK_SERVICE_LISTENER_CONDITION}" --exec --daemon --daemon-periodicity=${DOCKER_STARK_SERVICE_LISTENER_DAEMON_PERIODICITY} --log=${DOCKER_STARK_INNER_FOLDER_ANALYSES}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_LISTENER}
+    #     container_name: ${DOCKER_STARK_SERVICE_LISTENER_CONTAINER_NAME}-dev
+    #     env_file:
+    #         - .env
+    #     volumes:
+    #         - /var/run/docker.sock:/var/run/docker.sock
+    #         - /Users/lebechea/Documents/NGS/GIT/Strasbourg/STARK:/tool:rw
+    #         - databases:${DOCKER_STARK_INNER_FOLDER_DATABASES}:ro
+    #         - input:${DOCKER_STARK_INNER_FOLDER_INPUT}:ro
+    #         - repository:${DOCKER_STARK_INNER_FOLDER_OUTPUT_REPOSITORY}:rw
+    #         - archive:${DOCKER_STARK_INNER_FOLDER_OUTPUT_ARCHIVE}:rw
+    #         - analyses-STARK-service-listener:${DOCKER_STARK_INNER_FOLDER_ANALYSES}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_LISTENER}:rw
+    #         - analyses-STARK-service-launcher:${DOCKER_STARK_INNER_FOLDER_ANALYSES}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_LAUNCHER}:rw
+    #     restart: always
+    #     links:
+    #         - stark-service-launcher
+    #         - stark
+    #         - stark-databases
+    #     depends_on:
+    #         - stark-service-launcher
+    #         - stark
+    #         - stark-databases
+    #     networks:
+    #         - stark
+    #
+    #
+    # # STARK SERVICE SERVER
+    # stark-service-launcher-dev:
+    #     image: ${DOCKER_STARK_SERVICE_LAUNCHER_IMAGE}
+    #     build:
+    #         context: ${DOCKER_STARK_SERVICE_LAUNCHER_CONTEXT}
+    #         dockerfile: Dockerfile
+    #     container_name: ${DOCKER_STARK_SERVICE_LAUNCHER_CONTAINER_NAME}-dev
+    #     env_file:
+    #         - .env
+    #     environment:
+    #         - TS=ts
+    #         #- TS_SOCKET=${TASK_SPOOLER_TS_SOCKET}
+    #         - TS_SAVELIST=${TASK_SPOOLER_TS_SAVELIST}
+    #     ports:
+    #         - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_LAUNCHER_PORT}2:${DOCKER_STARK_SERVICE_LAUNCHER_PORT_INNER}
+    #     volumes:
+    #         - /var/run/docker.sock:/var/run/docker.sock
+    #         - /Users/lebechea/Documents/NGS/GIT/Strasbourg/STARK/services/launcher/simpleapp.py:/src/simpleapp.py:rw
+    #         - input:${DOCKER_STARK_INNER_FOLDER_INPUT}:ro
+    #         - analyses-STARK-service-launcher:${TASK_SPOOLER_TS_SAVELIST}:rw
+    #         - analyses-STARK-service-launcher:${DOCKER_STARK_INNER_FOLDER_ANALYSES}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_LAUNCHER}:rw
+    #     restart: always
+    #     links:
+    #         - stark
+    #         - stark-databases
+    #     depends_on:
+    #         - stark
+    #         - stark-databases
+    #     networks:
+    #         - stark
 
 
 # VOLUMES

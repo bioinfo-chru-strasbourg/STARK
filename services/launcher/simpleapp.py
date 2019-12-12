@@ -35,7 +35,8 @@ if 'TS_SAVELIST' in os.environ:
 else:
     ts_savelist="/ts-tmp"
 
-ts_env=" TS_SOCKET=" + ts_socket + " TS_SAVELIST=" + ts_savelist + " "
+#ts_env=" TS_SOCKET=" + ts_socket + " TS_SAVELIST=" + ts_savelist + " "
+ts_env=" TS_SAVELIST=" + ts_savelist + " "
 
 
 
@@ -106,23 +107,33 @@ def stark_launch():
     runID=""
     if 'run' in json_input.keys():
         #print json_input['run']
-        for i, name in enumerate(json_input['run'].split(":")):
-            #print i, name
-            #runID=name #run_split[i]
-            #runID=re.sub("/", '_', name)
+        if len(json_input['run'].split(",")) == 1:
+            #for i, name in enumerate(json_input['run'].split(":")):
+            #runID=os.path.basename(name)
+            name=json_input['run'].split(":")[0]
             runID=os.path.basename(name)
+            myCmd ="find " + name + " -maxdepth 1 -type f -print0 | xargs -0 sha1sum | cut -b-40 | sha1sum | awk '{print $1}'"
+            runMD5 = subprocess.check_output(myCmd, shell=True).strip();
+
     if runID != "":
-        analysesNAME=runID
+        #analysesNAME=runID
+        analysesNAME="ID-" + runMD5 + "-NAME-" + runID
 
     # Find analysisID from ANALYSIS_NAME info in JSON
     analysis_name=""
     if 'analysis_name' in json_input.keys():
         #print json_input['run']
         analysis_name=json_input['analysis_name']
+
     if analysis_name != "":
         analysesNAME=analysis_name
 
     #print "analysesID:"+analysesID
+    # MD5
+    #MD5=$(find $IFA -maxdepth 1 -xtype f -print0 | xargs -0 sha1sum | cut -b-40 | sha1sum | awk '{print $1}')
+    #MD5=$(find $IFA -maxdepth 1 -type f -print0 | xargs -0 sha1sum | cut -b-40 | sha1sum | awk '{print $1}')
+    #RUN_NAME=$(basename $IFA)
+    #ID="ID-$MD5-NAME-$RUN_NAME"
 
 
     # DOCKER MOUNT PARAMETERS
@@ -145,6 +156,7 @@ def stark_launch():
     if 'DOCKER_STARK_ENV' in os.environ:
         docker_env=os.environ['DOCKER_STARK_ENV']
 
+
     analysisIDNAME='STARK.' + analysesID + '.' + analysesNAME
 
     # Docker name
@@ -156,9 +168,10 @@ def stark_launch():
 
     # ${DOCKER_STARK_INNER_FOLDER_ANALYSES}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_LAUNCHER}
     analysisFOLDER=docker_stark_inner_folder_analyses+"/"+docker_stark_service_data_subfolder_services_launcher
-    analysisFILE=analysisFOLDER+"/analysis."+analysesID+".json"
-    analysisLOG=analysisFOLDER+"/analysis."+analysesID+".log"
-    analysisERR=analysisFOLDER+"/analysis."+analysesID+".err"
+    analysisFILE=analysisFOLDER+"/"+analysisIDNAME+".json"
+    analysisLOG=analysisFOLDER+"/"+analysisIDNAME+".log"
+    analysisERR=analysisFOLDER+"/"+analysisIDNAME+".err"
+    analysisINFO=analysisFOLDER+"/"+analysisIDNAME+".info"
     analysisLOGERR_PARAM=' 1>' + analysisLOG + ' 2>' + analysisERR
     f = open(analysisFILE, "w")
     f.write(json_dump)
@@ -168,15 +181,29 @@ def stark_launch():
     # TS
     if ts != "":
         ts_cmd=ts_env + ts + ' -L ' + analysisIDNAME
+        #ts_cmd= ts + ' -L ' + analysisIDNAME
     else:
         ts_cmd=""
 
     # Create a Notification by a command ?
 
     # Prepare and Launch TS Docker run command
-    myCmd = ts_cmd + ' docker run ' + docker_parameters + ' ' + docker_stark + ' --analysis_name=' + analysesNAME + ' --analysis=' + analysisFILE #+ analysisLOGERR_PARAM
-    print myCmd
+    #myCmd = ts_cmd + ' docker run ' + docker_parameters + ' ' + docker_stark + ' --analysis_name=' + analysesNAME + ' --analysis=' + analysisFILE #+ analysisLOGERR_PARAM
+    myCmd = ts_cmd + ' docker run ' + docker_parameters + ' ' + docker_stark + ' --analysis_name=' + analysesNAME + ' --analysis=' + analysisFILE + ' '#+ analysisLOGERR_PARAM
+    #print(myCmd);
     getCmd = subprocess.check_output(myCmd, shell=True);
+    STARKCmdID=getCmd.strip();
+
+    # Retrive INFO from command
+    # Example :
+    # FIRST_TASKID=`ts ash -c "sleep 10; echo hi"`
+    # ts ash -c "ts -w $FIRST_TASKID && echo there"
+    if ts != "":
+        #myPostCmd=ts_env + " " + ts + ' ash -c "' + ts_env + ts + ' -w ' + STARKCmdID + ' && ' + ts_env + ts + ' -i ' + STARKCmdID + ' > ' + analysisINFO + '"'
+        myPostCmd=ts_env + " " + ts + ' -L STARK.POSTCMD ash -c "' + ts_env + ts + ' -i ' + STARKCmdID + ' > ' + analysisINFO + '"'
+        #myPostCmd=" TS_SOCKET=/tmp/info TS_SAVELIST=/tmp " + " " + ts + ' ash -c "' + ts_env + ts + ' -i ' + STARKCmdID + ' > ' + analysisINFO + '"'
+        getPostCmd = subprocess.check_output(myPostCmd, shell=True);
+
 
     # Notification or something else
     # command to launch : ( ts -w ; xmessage Finished! ) &

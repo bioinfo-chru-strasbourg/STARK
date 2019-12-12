@@ -539,7 +539,7 @@ if (1) {
 	# LAUNCHER LOG
 	#analyses/stark-services/igv/20191204-080425.432691.json
 	#$launcher_log=glob ( "igvjs/static/data/public/stark-services/launcher/*", GLOB_ONLYDIR );
-	$LAUNCHER_LOG_PATTERN="{analysis.*.json,ts-out.*}";
+	$LAUNCHER_LOG_PATTERN="{*.json,*.log,*.err,*.info,ts-out.*}";
 	$runs_launcher_log=glob("analyses/stark-services/launcher/$LAUNCHER_LOG_PATTERN",GLOB_BRACE);
 	foreach ($runs_launcher_log as $runs_launcher_log_key=>$runs_launcher_log_file) {
 		#echo "<br><br>";
@@ -547,6 +547,7 @@ if (1) {
 		$runs_listener_log_file_split=explode("/",$runs_launcher_log_file);
 		$run_listener_log=$runs_listener_log_file_split[count($runs_listener_log_file_split)-1];
 		$ext = pathinfo($runs_launcher_log_file, PATHINFO_EXTENSION);
+		$runs_infos[$run]["launcher"][$runs_launcher_log_file][$ext]=$runs_launcher_log_file;
 		if ($ext=="json") {
 			#echo "<pre>";
 			#print_r(file($runs_launcher_log_file));
