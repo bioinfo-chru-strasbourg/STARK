@@ -214,7 +214,7 @@
 						Time
 					</th>
 					<th class="head-item mbr-fonts-style display-7">
-						Run & Command ID
+						Analysis/Run & Command ID
 					</th>
 				</tr>
 				';
@@ -253,7 +253,9 @@
 			preg_match('#\[(.*?)\]#', $ONE_TASK_COMMAND, $match);
 			$ONE_TASK_COMMAND_ID=$match[1];
 
-			$ONE_TASK_RUN=explode('.',$ONE_TASK_COMMAND_ID)[2];
+			#$ONE_TASK_RUN=explode('.',$ONE_TASK_COMMAND_ID)[2];
+			$ONE_TASK_RUN_TYPE=explode('.',$ONE_TASK_COMMAND_ID)[0];
+			$ONE_TASK_RUN=explode('-',explode('.',$ONE_TASK_COMMAND_ID)[2])[3];
 
 
 			if ($ONE_TASK_OUTPUT!="(file)") {
@@ -271,6 +273,7 @@
 			};
 
 			# Times
+			$ONE_TASK_TIME="";
 			if ($ONE_TASK_TIMES!="") {
 				$ONE_TASK_TIME=str_replace(array("/",":"),array("h","m"),gmdate("H/i:s", explode("/",$ONE_TASK_TIMES)[0]))."s";
 			} else if ($ONE_TASK_TIME_RUNNING!="") {
@@ -278,11 +281,12 @@
 			}
 
 			# state finished/green queued/black running/orange other/red
+			#echo "<BR>$ONE_TASK_STATE && $ONE_TASK_E_LEVEL";
 
 			if ($ONE_TASK_STATE=="finished" && $ONE_TASK_E_LEVEL==0) {
 				$ONE_TASK_STATE_COLOR="green";
 				$ONE_TASK_TIME_COLOR="";
-			} else if ($ONE_TASK_STATE=="finished" && $ONE_TASK_E_LEVEL>0) {
+			} else if ($ONE_TASK_STATE=="finished" && $ONE_TASK_E_LEVEL!=0) {
 				$ONE_TASK_STATE_COLOR="red";
 				$ONE_TASK_TIME_COLOR="red";
 			} else if ($ONE_TASK_STATE=="queued") {
@@ -297,16 +301,18 @@
 			};
 
 			# Last task (by ID)
-			if (!isset($run_task[$ONE_TASK_RUN]["task"]["id"]) || $ONE_TASK_ID>$run_task[$ONE_TASK_RUN]["task"]["id"] ) {
-				$run_task[$ONE_TASK_RUN]["task"]["status"]=$ONE_TASK_STATE;
-				$run_task[$ONE_TASK_RUN]["task"]["color"]=$ONE_TASK_STATE_COLOR;
-				$run_task[$ONE_TASK_RUN]["task"]["time"]=$ONE_TASK_TIME;
-				$run_task[$ONE_TASK_RUN]["task"]["time_color"]=$ONE_TASK_TIME_COLOR;
-				$run_task[$ONE_TASK_RUN]["task"]["error_level"]=$ONE_TASK_E_LEVEL;
-				$run_task[$ONE_TASK_RUN]["task"]["id"]=$ONE_TASK_ID;
+			if ($ONE_TASK_RUN_TYPE=="STARK") {
+				if (!isset($run_task[$ONE_TASK_RUN]["task"]["id"]) || $ONE_TASK_ID>$run_task[$ONE_TASK_RUN]["task"]["id"] ) {
+					$run_task[$ONE_TASK_RUN]["task"]["status"]=$ONE_TASK_STATE;
+					$run_task[$ONE_TASK_RUN]["task"]["color"]=$ONE_TASK_STATE_COLOR;
+					$run_task[$ONE_TASK_RUN]["task"]["time"]=$ONE_TASK_TIME;
+					$run_task[$ONE_TASK_RUN]["task"]["time_color"]=$ONE_TASK_TIME_COLOR;
+					$run_task[$ONE_TASK_RUN]["task"]["error_level"]=$ONE_TASK_E_LEVEL;
+					$run_task[$ONE_TASK_RUN]["task"]["id"]=$ONE_TASK_ID;
+				}
 			}
 
-
+			$ONE_TASK_RUN_HEAD="[$ONE_TASK_RUN_TYPE] $ONE_TASK_RUN";
 
 			$tbody=$tbody.'
 				<tr class="table-heads">
@@ -325,7 +331,7 @@
 						<small style="color:'.$ONE_TASK_TIME_COLOR.'">'.$ONE_TASK_TIME.'</small>
 					</td>
 					<td class="head-item mbr-fonts-style display-7 ">
-						'.$ONE_TASK_RUN.'
+						'.$ONE_TASK_RUN_HEAD.'
 						<br>
 						<a>
 						<small onclick=\'if(document.getElementById("info_'.$TASK_KEY.'").style.display=="none"){document.getElementById("info_'.$TASK_KEY.'").style.display="block"}else{document.getElementById("info_'.$TASK_KEY.'").style.display="none"};\'>'.$ONE_TASK_COMMAND_ID.'</small>
@@ -621,12 +627,12 @@ if (1) {
 	        #$sequencing_status="complete";
 			if (!isset($run_infos["inputs"]["run_files"]["SampleSheet.csv"])) {
 				$sequencing_status="ready";
-				$sequencing_color="blue";
+				$sequencing_color="dodgerblue";
 				$sequencing_message="Ready for analysis (SampleSheet missing)";
 			} else {
 				$sequencing_status="complete";
 				$sequencing_color="green";
-				$sequencing_message="Complete and Ready for analysis ";
+				$sequencing_message="Complete for analysis ";
 			}
 	        break;
 		default:
@@ -656,6 +662,10 @@ if (1) {
 		# Analysis
 		#############
 
+		// echo "<pre>";
+		// print_r($run_task[$run]);
+		// echo "</pre>";
+
 		$analysis_status_code=isset($run_infos["listener"])+isset($run_infos["launcher"]);
 		switch ($analysis_status_code) {
 		case 0:
@@ -678,7 +688,7 @@ if (1) {
 				$analysis_status=$run_task[$run]["task"]["status"];
 				$analysis_color=$run_task[$run]["task"]["color"];
 				$analysis_message="";
-				if ($run_task[$run]["task"]["error_level"]>0) {
+				if ($run_task[$run]["task"]["error_level"]!=0) {
 					$analysis_color="red";
 					$run_status="error";
 					$analysis_message.="<span style='color:red'>Error '".$run_task[$run]["task"]["error_level"]."' </span><br>";
@@ -698,6 +708,8 @@ if (1) {
 			$analysis_message="No information";
 			break;
 		}
+
+		#echo "<br>$analysis_status";
 
 		$run_progress[$run]["analysis"]["status"]=$analysis_status;
 		$run_progress[$run]["analysis"]["color"]=$analysis_color;
@@ -721,11 +733,11 @@ if (1) {
 			$repository_message_plus="";
 
 			# change analysis status...
-			if ($run_progress[$run]["analysis"]["status"]=="finished") {
-				$run_progress[$run]["analysis"]["status"]="finished - error";
-				$run_progress[$run]["analysis"]["color"]="red";
-				$run_progress[$run]["analysis"]["message"].="<br>(Uncomplete and NOT available in repository)<br>Probably Errors in analysis (Please check log files)";
-			}
+			// if ($run_progress[$run]["analysis"]["status"]=="finished") {
+			// 	$run_progress[$run]["analysis"]["status"]="finished - error";
+			// 	$run_progress[$run]["analysis"]["color"]="red";
+			// 	$run_progress[$run]["analysis"]["message"].="<br>(Uncomplete and NOT available in repository)<br>Probably Errors in analysis (Please check log files)";
+			// }
 
 		} else {
 			$repository_status="available";
@@ -734,10 +746,10 @@ if (1) {
 			$repository_message_plus="";
 
 			# change analysis status...
-			if ($run_progress[$run]["analysis"]["status"]=="no information") {
-				$run_progress[$run]["analysis"]["color"]="green";
-				$run_progress[$run]["analysis"]["message"].="<br>(Complete and available in repository)";
-			}
+			// if ($run_progress[$run]["analysis"]["status"]=="no information") {
+			// 	$run_progress[$run]["analysis"]["color"]="green";
+			// 	$run_progress[$run]["analysis"]["message"].="<br>(Complete and available in repository)";
+			// }
 
 
 			# Check number of samples !
@@ -779,12 +791,14 @@ if (1) {
 			$run_color=$repository_color;
 		}
 
+		# <b>'.$run_status.'</b>
+
 		$tbody=$tbody.'
 			<tr class="table-heads">
 				<td class="head-item mbr-fonts-style display-7">
 					<small><b>'.$run.'</b></small>
 					<br>
-					<small style="color:'.$run_color.'"><b>'.$run_status.'</b></small>
+					<small style="color:'.$run_color.'"></small>
 
 
 				</td>
@@ -836,7 +850,7 @@ if (1) {
 	  <div class="container container-table">
 
 		  <h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">
-			  Run Progress
+			  Analyses/Runs Progress
 		  </h2>
 
 		  <p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">

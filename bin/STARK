@@ -933,7 +933,12 @@ if [ -s "$DOCKER_COMPOSE_FILE" ] || [ -s "$DOCKER_ENV_FILE" ] || [ "$DOCKER_STAR
 			echo ""
 			DOCKER_CMD="docker exec $DOCKER_STARK_CONTAINER STARK $PARAM_CMD"
 			(($DEBUG)) && echo "#[INFO] DOCKER CMD: $DOCKER_CMD"
-			eval $DOCKER_CMD
+			eval $DOCKER_CMD || exit 1
+			# if $DOCKER_CMD; then
+			# 	(($DEBUG)) && echo "#[INFO] DOCKER CMD: OK"
+			# else
+			# 	exit 1
+			# fi;
 		fi;
 
 		exit 0
@@ -945,9 +950,12 @@ if [ -s "$DOCKER_COMPOSE_FILE" ] || [ -s "$DOCKER_ENV_FILE" ] || [ "$DOCKER_STAR
 	DOCKER_CMD="docker run $DOCKER_CMD_PARAMETERS $DOCKER_STARK_IMAGE_INPUT $PARAM_CMD"
 	(($DEBUG)) && echo "#[INFO] DOCKER CMD: $DOCKER_CMD"
 	echo ""
-	eval $DOCKER_CMD
 
-	exit 0
+	if $DOCKER_CMD; then
+		(($VERBOSE)) && echo "#[INFO] DOCKER CMD: OK"
+	else
+		exit 1
+	fi;
 
 fi;
 
@@ -1001,7 +1009,16 @@ if [ "$ANALYSIS" != "" ]; then
 
 			#echo "the CMD=$CMD"; exit 0;
 
-			(($EXEC)) && eval $CMD;
+			(($EXEC)) && eval $CMD || exit 1;
+
+			# if (($EXEC)); then
+			# 	if $CMD; then
+			# 		(($VERBOSE)) && echo "#[INFO] CMD OK"
+			# 	else
+			# 		exit 1
+			# 	fi;
+			# fi;
+
 			#exit 0
 			EXIT=1
 
@@ -1046,8 +1063,13 @@ if [ ! -z "$FASTQ" ]; then # && [ -e "$FASTQ" ]; then
 		echo "#[INFO] Start SAMPLE Analysis"
 		#echo "$PARAM"
 		CMD="$STARK_FOLDER_BIN/launch.sample.sh $PARAM"
-		echo "#[INFO] $CMD"
-		eval $CMD
+		(($VERBOSE)) && echo "#[INFO] $CMD"
+		eval $CMD || exit 1
+		# if $CMD; then
+		# 	(($VERBOSE)) && echo "#[INFO] CMD OK"
+		# else
+		# 	exit 1
+		# fi;
 		echo ""
 		EXIT=1
 	else
@@ -1435,6 +1457,7 @@ if [ ! -z "$RUNS" ]; then
 					> $RUN_CONFIG_FILE
 					echo "{" >> $RUN_CONFIG_FILE
 					# APP
+					#echo "\"app\":\"$APP_ONE\"," >> $RUN_CONFIG_FILE
 					echo "\"app\":\"$APP_ONE\"," >> $RUN_CONFIG_FILE
 					# RUN
 					echo "\"analysis_name\":\"$RUN_ANALYSIS_NAME\"," >> $RUN_CONFIG_FILE
@@ -1542,7 +1565,15 @@ if [ ! -z "$RUNS" ]; then
 			((RI_NUM++))
 
 			(($DEBUG)) && echo "[INFO] CMD=$CMD"
-			[ "$CMD" != "" ] && eval $CMD  --no_header
+			[ "$CMD" != "" ] && eval $CMD --no_header || exit 1
+			# if [ "$CMD" != "" ]; then
+			# 	if $CMD --no_header; then
+			# 		(($DEBUG)) && echo "#[INFO] CMD OK"
+			# 	else
+			# 		exit 1
+			# 	fi;
+			# fi;
+
 
 			echo ""
 

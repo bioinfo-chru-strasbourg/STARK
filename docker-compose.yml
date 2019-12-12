@@ -54,6 +54,7 @@ services:
             dockerfile: Dockerfile
             args:
                 #- DOCKER_STARK_IMAGE_BASE=${DOCKER_STARK_IMAGE_BASE}
+                - THREADS=3
                 - REMOVE_SOURCES=1
                 - REPO_SOURCES=${DOCKER_STARK_BUILD_SOURCES_URL}
         container_name: STARK
