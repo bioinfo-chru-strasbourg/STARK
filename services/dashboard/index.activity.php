@@ -257,6 +257,8 @@
 			$ONE_TASK_RUN_TYPE=explode('.',$ONE_TASK_COMMAND_ID)[0];
 			$ONE_TASK_RUN=explode('-',explode('.',$ONE_TASK_COMMAND_ID)[2])[3];
 
+			#echo "<br>$ONE_TASK_RUN_TYPE $ONE_TASK_RUN";
+
 
 			if ($ONE_TASK_OUTPUT!="(file)") {
 				$ONE_TASK_LOG_NAME="output";
@@ -601,6 +603,9 @@ if (1) {
 		if ($DEBUG && 0) {
 			echo "<br><br>";
 			echo "run: $run";
+			echo "<pre>";
+			print_r($run_infos);
+			echo "</pre>";
 		};
 
 		$run_progress[$run]=array();

@@ -77,6 +77,7 @@ def stark_launch():
 
     # analysis ID & NAME default
     analysesID=randomStringDigits(12)
+    analysesRUNNAME=analysesID
     analysesNAME=analysesID
 
     # Folders
@@ -117,6 +118,7 @@ def stark_launch():
 
     if runID != "":
         #analysesNAME=runID
+        analysesRUNNAME=runID
         analysesNAME="ID-" + runMD5 + "-NAME-" + runID
 
     # Find analysisID from ANALYSIS_NAME info in JSON
@@ -126,6 +128,7 @@ def stark_launch():
         analysis_name=json_input['analysis_name']
 
     if analysis_name != "":
+        analysesRUNNAME=analysis_name
         analysesNAME=analysis_name
 
     #print "analysesID:"+analysesID
@@ -190,7 +193,7 @@ def stark_launch():
 
     # Prepare and Launch TS Docker run command
     #myCmd = ts_cmd + ' docker run ' + docker_parameters + ' ' + docker_stark + ' --analysis_name=' + analysesNAME + ' --analysis=' + analysisFILE #+ analysisLOGERR_PARAM
-    myCmd = ts_cmd + ' docker run ' + docker_parameters + ' ' + docker_stark + ' --analysis_name=' + analysesNAME + ' --analysis=' + analysisFILE + ' '#+ analysisLOGERR_PARAM
+    myCmd = ts_cmd + ' docker run ' + docker_parameters + ' ' + docker_stark + ' --analysis_name=' + analysesRUNNAME + ' --analysis=' + analysisFILE + ' '#+ analysisLOGERR_PARAM
     #print(myCmd);
     getCmd = subprocess.check_output(myCmd, shell=True);
     STARKCmdID=getCmd.strip();
