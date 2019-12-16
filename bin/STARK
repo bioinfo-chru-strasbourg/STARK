@@ -436,10 +436,15 @@ if [ -z "$FASTQ" ] && \
 	[ -z "$RELEASE_INFOS" ] && \
 	[ -z "$TOOLS_INFOS" ] && \
 	[ -z "$DATABASES_INFOS" ] && \
+	[ -z "$DOCKER_COMPOSE_FILE" ] && \
+	[ -z "$DOCKER_ENV_FILE" ] && \
+	[ -z "$DOCKER_STARK_IMAGE_INPUT" ] && \
+	[ -z "$DOCKER_STARK_CONTAINER" ] && \
 	((!$DEBUG)); then
 	echo "#[ERROR] Required parameter: --analysis, --run, or --reads. For informations --applications_infos, --pipelines_infos, --release_infos, --tools_infos. Use --help to display the help." && echo "" && usage && exit 1;
 fi
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 
 #echo "if [ "$FASTQ" == "ollow" ] && [ "$THREADS_INPUT" == "he" ] && [ "$W" == "hite" ] && [ "$RUNS" == "abbit" ];"
 if [ "$FASTQ" == "ollow" ] && [ "$THREADS_INPUT" == "he" ] && [ "$W" == "hite" ] && [ "$RUNS" == "abbit" ]; then
@@ -877,8 +882,8 @@ if [ -s "$DOCKER_COMPOSE_FILE" ] || [ -s "$DOCKER_ENV_FILE" ] || [ "$DOCKER_STAR
 	DOCKER_MOUNT=""
 	for var in "${!DOCKER_STARK_FOLDER_@}"; do
 		ONE_DOCKER_STARK_FOLDER_CONTAINER=$(echo ${var} | sed "s/^DOCKER_STARK_FOLDER_//g" | sed "s/_/\//g" | tr '[:upper:]' '[:lower:]' )
-		[ ! -d ${!var} ] && mkdir -p ${!var} && echo "#[INFO] Folder '${!var}' created" # ???
-		[ -d ${!var} ] && [ "${!var}" != "" ] && DOCKER_MOUNT=$DOCKER_MOUNT" -v "$DOCKER_STARK_MAIN_FOLDER"/"${!var}":/STARK/"$ONE_DOCKER_STARK_FOLDER_CONTAINER #  echo "$var = ${!var}"
+		[ ! -d $DOCKER_STARK_MAIN_FOLDER"/"${!var} ] && mkdir -p $DOCKER_STARK_MAIN_FOLDER"/"${!var} && echo "#[INFO] Folder '$DOCKER_STARK_MAIN_FOLDER/${!var}' created" # ???
+		[ -d $DOCKER_STARK_MAIN_FOLDER"/"${!var} ] && [ "$DOCKER_STARK_MAIN_FOLDER/${!var}" != "" ] && DOCKER_MOUNT=$DOCKER_MOUNT" -v "$DOCKER_STARK_MAIN_FOLDER"/"${!var}":/STARK/"$ONE_DOCKER_STARK_FOLDER_CONTAINER #  echo "$var = ${!var}"
 	done
 	DOCKER_CMD_PARAMETERS=$DOCKER_CMD_PARAMETERS" $DOCKER_MOUNT "
 
