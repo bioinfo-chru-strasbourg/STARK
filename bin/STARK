@@ -1223,6 +1223,9 @@ if [ ! -z "$RUNS" ]; then
 
 				fi;
 
+				# NO APP detected
+				[ "$APP_DEMULTIPLEXING" == "" ] && APP_DEMULTIPLEXING="default"
+
 				# DEMULTIPLEXING_FOLDER
 				mkdir -p $DEMULTIPLEXING_FOLDER;
 				(($VERBOSE)) && echo "#[INFO] Main Demultiplexing APP: $APP_DEMULTIPLEXING"
@@ -1289,40 +1292,32 @@ if [ ! -z "$RUNS" ]; then
 				[ ! -z $ANALYSIS_NAME ] && RUN_ANALYSIS_NAME=$ANALYSIS_NAME
 				#echo " R_NAME=$R_NAME ANALYSIS_NAME=$ANALYSIS_NAME RUN_ANALYSIS_NAME=$RUN_ANALYSIS_NAME"; exit 0;
 
-				# Main application
-				#echo $RUN_SAMPLESHEET_TEST
-				INVESTIGATOR_NAME=$(grep "Investigator Name" $RUN_SAMPLESHEET | awk -F, '{print $2}')
-				MAIN_APP=$(grep "Investigator Name" $RUN_SAMPLESHEET | awk -F, '{print $2}' | awk -F"[$TAG_DELIMITER ]" '{print $1}' | tr " " "+" | tr "," "+")
 
-				#ANALYSIS_TAG_SAMPLESHEET=$(grep "Investigator Name" $RUN_SAMPLESHEET | cut -d, -f2- | tr "," "!" | tr " " "!"  | tr -d '\r')
 				ANALYSIS_TAG_SAMPLESHEET=$(grep "^Description" $RUN_SAMPLESHEET | cut -d, -f2- | tr "," "!" | tr " " "!"  | tr -d '\r')
 				if [ "$ANALYSIS_TAG" == "" ]; then
 					ANALYSIS_TAG=$ANALYSIS_TAG_SAMPLESHEET
 				fi;
 
 				# NEW APP extraction format
-				#RUN_DESCRIPTION=$(grep "^Description" $RUN_SAMPLESHEET | awk -F, '{print $2}')
-				#MAIN_APP=$(extract_tag "$RUN_DESCRIPTION" "APP" | tr " " "+")
 				MAIN_APP=$(extract_tag "$ANALYSIS_TAG" "APP" | tr " " "+")
 
+				# If OLD APP folder
+				if [ "$MAIN_APP" == "" ]; then
 
-				#APP=$(grep "Investigator Name" $RUN_SAMPLESHEET_TEST | awk -F, '{print $2}' | awk -F$APP_DELIMITER '{print $1}')
-				#grep "Investigator Name" $RUN_SAMPLESHEET_TEST | awk -F, '{print $2}'
-				#grep "Investigator Name" $RUN_SAMPLESHEET_TEST | awk -F, '{print $2}' | awk -F$APP_DELIMITER '{print $1}'
+					# Main application OLD format
+					MAIN_APP_OLD=$(grep "Investigator Name" $RUN_SAMPLESHEET | awk -F, '{print $2}' | awk -F"-" '{print $1"."$2}')
+					ENV_OLD=$(find_app "$MAIN_APP_OLD" "$STARK_FOLDER_APPS")
+					[ "$ENV_OLD" != "" ] && MAIN_APP=$MAIN_APP_OLD
+				fi;
+
+				[ "$MAIN_APP" == "" ] && MAIN_APP="default"
+
 				(($VERBOSE)) && echo "#[INFO] Main APP: $MAIN_APP"
 
-				#echo $INVESTIGATOR_NAME
-				#echo $INVESTIGATOR_NAME | awk -F"," '{print $1}'
-				#echo $INVESTIGATOR_NAME",-truc-machin" | cut -d"," -f 1
-
 				# LIST of samples
-				#DATA_SECTION_LINE=$(grep "^\[Data\]" $DEM_SAMPLESHEET -n | awk -F: '{print $1}')
-				#SAMPLE_SECTION_FIRST_LINE=$(($DATA_SECTION_LINE+1))
-				#SAMPLE_LIST=$(tail -n $(($SAMPLE_SECTION_FIRST_LINE-$(grep ^ -c $DEM_SAMPLESHEET))) $DEM_SAMPLESHEET | cut -d, -f1 | tr "\n" " ")
 				SAMPLE_LIST_IN_SAMPLESHEET=$(cat $RUN_SAMPLESHEET | awk '/\[Data\]/,/\[[^Data]/' | grep "^\[" -v | sed '/^[[:space:]]*$/d' | tail -n +2 | cut -d, -f1 | tr "\n" " ")
 				(($VERBOSE)) && echo "#[INFO] List of samples: $SAMPLE_LIST_IN_SAMPLESHEET";
 
-				#awk '/Data/{y=1;next}y' $DEM_SAMPLESHEET | tr -d '\r' | sed 's/,/\t/g'
 				SAMPLE_PROJECT_FIELD=1;
 				MANIFEST_INDEX_FIELD=1;
 				SAMPLE_DESCRIPTION_FIELD=1;
@@ -1352,6 +1347,7 @@ if [ ! -z "$RUNS" ]; then
 						SAMPLE_FASTQ_I2_PATTERN=$SAMPLE_NAME'_S*_I2_*.fastq.gz'
 						#echo $SAMPLE_FASTQ_R1_PATTERN
 						SAMPLE_FASTQ_R1=$(find $R -name "$SAMPLE_FASTQ_R1_PATTERN")
+						[ "$SAMPLE_FASTQ_R1" == "" ] && echo "[ERROR] No Reads for sample '$SAMPLE_NAME'" && exit 1;
 						SAMPLE_FASTQ_R2=$(find $R -name "$SAMPLE_FASTQ_R2_PATTERN")
 						SAMPLE_FASTQ_I1=$(find $R -name "$SAMPLE_FASTQ_I1_PATTERN")
 						SAMPLE_FASTQ_I2=$(find $R -name "$SAMPLE_FASTQ_I2_PATTERN")
@@ -1429,9 +1425,10 @@ if [ ! -z "$RUNS" ]; then
 					#echo "APP_ONE_RUN_CONFIG_FILE=$APP_ONE_RUN_CONFIG_FILE"
 					APP_ONE=$(basename $APP_ONE_RUN_CONFIG_FILE | sed s/.config.tab//)
 
+
 					SAMPLE_TEST=$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u | awk -F"," -v APP=$APP_ONE '$1==APP{print $3}' | tr '\n' ',' | sed s/,$//)
 
-					APP_INFOS=$(source_app "$APP_ONE+NO_ANNOTATION" "$STARK_FOLDER_APPS/"; echo -e "$APP_RELEASE\t$APP_DESCRIPTION\t$APP_GROUP\t$APP_PROJECT\t$FOLDER_RUN\t$FOLDER_RESULTS\t$FOLDER_REPOSITORY\t$FOLDER_ARCHIVE\t$PIPELINES\t$POST_ALIGNMENT_STEPS\t$HOWARD_ANNOTATION_REPORT")
+					APP_INFOS=$(source_app "$APP_ONE" "$STARK_FOLDER_APPS/"; echo -e "$APP_RELEASE\t$APP_DESCRIPTION\t$APP_GROUP\t$APP_PROJECT\t$FOLDER_RUN\t$FOLDER_RESULTS\t$FOLDER_REPOSITORY\t$FOLDER_ARCHIVE\t$PIPELINES\t$POST_ALIGNMENT_STEPS\t$HOWARD_ANNOTATION_REPORT")
 					#APP_RELEASE_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $1}')
 					#APP_DESCRIPTION_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $2}')
 					#APP_GROUP_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $3}')

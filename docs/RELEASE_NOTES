@@ -3,27 +3,33 @@
 # Stellar Tools for variants          #
 #    Analysis and RanKing             #
 # Author: Antony Le Bechec            #
-# Copyright: IRC                      #
-# Licence: GNU-GPL/CeCILL             #
+# Copyright: HUS                      #
+# License: GNU GPLA V3                #
 #######################################
 
 #######################################
-# Release : 0.9.18b                   #
-# Date : 20190211                     #
+# Release: 0.9.18                     #
+# Date: 20191216                      #
 #######################################
 
 ## New
 
 - New folder architecture (bin, config, app, ...)
-- BED file provided in each sample folder in repository
-- BAM compression changed to 9 by default
-- HOWARD new release 0.9.14b (Alamut compatibility, bug fixed...)
-- Automatiszation of Databases download (get_databases.sh)
+- New Application management
+- New tools releases
+- New rules including new callers (OutLyzer, MuTect)
+- New report in html
+- Automatization of Databases download (get_databases.sh)
+- Docker compose deployment
+- Docker services added such as a dashboard, listener, launcher, and tools such as IGV and JARVIS
 
 
-## Improvments
+## Improvements
 
 - Databases files/folder structure simplification
+- Gene panels management
+- Simplification of metrics (for samples and run)
+- Error catches
 
 
 ## Fixes
@@ -60,7 +66,7 @@
 
 - Report generation improved (multiallelic splitted into multi lines into VCF)
 - VCF metrics improved (snpEff and BCFTOOLS stats)
-- CANOE rule improved (detection improved and exit if failed) 
+- CANOE rule improved (detection improved and exit if failed)
 
 
 ## Fixes
@@ -232,4 +238,3 @@
 - *vcf.gz creation
 - demultiplexing check
 - alternative samplesheet option
-

@@ -176,6 +176,7 @@ def stark_launch():
     analysisLOG=analysisFOLDER+"/"+analysisIDNAME+".log"
     analysisERR=analysisFOLDER+"/"+analysisIDNAME+".err"
     analysisINFO=analysisFOLDER+"/"+analysisIDNAME+".info"
+    analysisOUTPUT=analysisFOLDER+"/"+analysisIDNAME+".output"
     analysisLOGERR_PARAM=' 1>' + analysisLOG + ' 2>' + analysisERR
     f = open(analysisFILE, "w")
     f.write(json_dump)
@@ -203,9 +204,11 @@ def stark_launch():
     # FIRST_TASKID=`ts ash -c "sleep 10; echo hi"`
     # ts ash -c "ts -w $FIRST_TASKID && echo there"
     if ts != "":
-        #myPostCmd=ts_env + " " + ts + ' ash -c "' + ts_env + ts + ' -w ' + STARKCmdID + ' && ' + ts_env + ts + ' -i ' + STARKCmdID + ' > ' + analysisINFO + '"'
+        # INFO
         myPostCmd=ts_env + " " + ts + ' -L ' + PostanalysisIDNAME + ' ash -c "' + ts_env + ts + ' -i ' + STARKCmdID + ' > ' + analysisINFO + '"'
-        #myPostCmd=" TS_SOCKET=/tmp/info TS_SAVELIST=/tmp " + " " + ts + ' ash -c "' + ts_env + ts + ' -i ' + STARKCmdID + ' > ' + analysisINFO + '"'
+        getPostCmd = subprocess.check_output(myPostCmd, shell=True);
+        # OUTPUT
+        myPostCmd=ts_env + " " + ts + ' -L ' + PostanalysisIDNAME + ' ash -c "' + ts_env + ts + ' -c ' + STARKCmdID + ' > ' + analysisOUTPUT + '"'
         getPostCmd = subprocess.check_output(myPostCmd, shell=True);
 
 

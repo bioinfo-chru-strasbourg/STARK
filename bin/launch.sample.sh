@@ -907,8 +907,11 @@ RUN_UNIQ=$(echo $RUN | tr " " "\n" | sort | uniq | tr "\n" " ");
 
 echo "#[INFO] *** INPUT"
 
+RUN_ANALYZED=0
+
 for RUU in $RUN_UNIQ; do
 
+	((RUN_ANALYZED++))
 
 	#RUN_DIR=$RESULTS/$RUN #$RESULTS_RES_DIR/$RUN
 	MAKEFILE_ANALYSIS_RUN=$RESULTS/$RUU/analysis.V$ANALYSIS_REF.param.mk
@@ -1767,3 +1770,11 @@ for RUU in $RUN_UNIQ; do
 	#echo "# DONE @"`date '+%Y%m%d-%H%M%S'`
 
 done;
+
+
+# Return
+if (( $RUN_ANALYZED )); then
+	exit 0;
+else
+	exit 1;
+fi;

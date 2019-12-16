@@ -27,7 +27,7 @@ MUTECT_INTERVAL_PADDING?=0
 		-ip $(MUTECT_INTERVAL_PADDING);
 	# Normalize
 	grep "^##" $@.tmp1 > $@.tmp
-	grep "^##" -v $@.tmp1 | cut -f1-10 >> $@.tmp
+	grep "^##" -v $@.tmp1 | grep "REJECT" -v | cut -f1-10 >> $@.tmp
 	# Empty
 	if [ ! -e $@.tmp ]; then cp $*.empty.vcf $@.tmp; fi;
 	# Copy

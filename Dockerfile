@@ -2,7 +2,7 @@
 ##############################################################
 # Dockerfile Version:   1.0
 # Software:             STARK-BASE
-# Software Version:     0.9.18b
+# Software Version:     0.9.18
 # Software Website:     none
 # Licence:              GNU Affero General Public License (AGPL)
 # Description:          STARK
@@ -40,7 +40,7 @@
 FROM centos:7
 MAINTAINER Antony Le Bechec <antony.lebechec@gmail.com>
 LABEL Software="STARK" \
-	Version="0.9.18b" \
+	Version="0.9.18" \
 	Website="none" \
 	Description="STARK" \
 	License="GNU Affero General Public License (AGPL)" \
@@ -937,7 +937,7 @@ RUN source $TOOL_INIT && \
 
 # TOOL INFO
 ENV TOOL_NAME="stark"
-ENV TOOL_VERSION="0.9.18d"
+ENV TOOL_VERSION="0.9.18"
 #ENV TOOL_TARBALL="VarScan.v$TOOL_VERSION.jar"
 #ENV TOOL_SOURCE_EXTERNAL="https://github.com/dkoboldt/varscan/raw/master/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH

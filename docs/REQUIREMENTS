@@ -3,36 +3,24 @@
 # Stellar Tools for variants          #
 #    Analysis and RanKing             #
 # Author: Antony Le Bechec            #
-# Copyright: IRC                      #
-# Licence: GNU-GPL/CeCILL             #
+# Copyright: HUS                      #
+# License: GNU GPLA V3                #
 #######################################
 
 
 ## Operating system
 
-STARK works on Linux. 
-STARK was tested on CentOS 6.7
+STARK works on Linux systems.
+STARK was tested on CentOS 7
 
 
 ## Packages
 
-Python 2.6.6
-Make 3.81
-ghostscript 8.70
+See Dockerfile for more linux packages dependencies
 
 
-## CPU
+## CPU and Memory
 
-STARK does not need a minimum of CPU to work.
-Hoever, we recommand at least 2 CPU, ideally 8 CPU.
-Note that bigger are your data, more CPU is required.
-
-
-## RAM
-
-We recommand at least 5Go by CPU (especially for SNPEff annotation and BWA mem alignment).
-Thus, STARK works ideally with 32Go of memory
-
-
-
-
+STARK does not need a minimum of CPU to work, but need at least 8Go memory by CPU.
+We recommend ideally 4 CPU and 32Go of memory.
+Note that bigger are your data, more CPU is recommended to decrease execution time.

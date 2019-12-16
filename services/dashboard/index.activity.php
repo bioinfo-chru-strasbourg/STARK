@@ -256,6 +256,10 @@
 			#$ONE_TASK_RUN=explode('.',$ONE_TASK_COMMAND_ID)[2];
 			$ONE_TASK_RUN_TYPE=explode('.',$ONE_TASK_COMMAND_ID)[0];
 			$ONE_TASK_RUN=explode('-',explode('.',$ONE_TASK_COMMAND_ID)[2])[3];
+			preg_match("/(.*)\.(.*)\.ID-(.*)-NAME-(.*)/i", $ONE_TASK_COMMAND_ID,$ONE_TASK_COMMAND_ID_matches);
+			#print_r($ONE_TASK_COMMAND_ID_matches);
+			$ONE_TASK_RUN_TYPE=$ONE_TASK_COMMAND_ID_matches[1];
+			$ONE_TASK_RUN=$ONE_TASK_COMMAND_ID_matches[4];
 
 			#echo "<br>$ONE_TASK_RUN_TYPE $ONE_TASK_RUN";
 
@@ -277,10 +281,12 @@
 			# Times
 			$ONE_TASK_TIME="";
 			if ($ONE_TASK_TIMES!="") {
-				$ONE_TASK_TIME=str_replace(array("/",":"),array("h","m"),gmdate("H/i:s", explode("/",$ONE_TASK_TIMES)[0]))."s";
+				$ONE_TASK_TIME=$ONE_TASK_TIMES;
 			} else if ($ONE_TASK_TIME_RUNNING!="") {
-				$ONE_TASK_TIME=str_replace(array("/",":"),array("h","m"),gmdate("H/i:s", explode("/",$ONE_TASK_TIME_RUNNING)[0]))."s";
+				$ONE_TASK_TIME=$ONE_TASK_TIME_RUNNING;
+				#$ONE_TASK_TIME=str_replace(array("=","/",":","+"),array("d ","h ","m ","s "),gmdate("z=H/i:s+", explode("/",$ONE_TASK_TIME_RUNNING)[0]));
 			}
+			$ONE_TASK_TIME_FORMATED=str_replace(array("=","/",":","+"),array("d ","h ","m ","s "),gmdate("z=H/i:s+", explode("/",$ONE_TASK_TIME)[0]));
 
 			# state finished/green queued/black running/orange other/red
 			#echo "<BR>$ONE_TASK_STATE && $ONE_TASK_E_LEVEL";
@@ -289,10 +295,11 @@
 				$ONE_TASK_STATE_COLOR="green";
 				$ONE_TASK_TIME_COLOR="";
 			} else if ($ONE_TASK_STATE=="finished" && $ONE_TASK_E_LEVEL!=0) {
+				$ONE_TASK_STATE="error";
 				$ONE_TASK_STATE_COLOR="red";
 				$ONE_TASK_TIME_COLOR="red";
 			} else if ($ONE_TASK_STATE=="queued") {
-				$ONE_TASK_STATE_COLOR="silver";
+				$ONE_TASK_STATE_COLOR="gray";
 				$ONE_TASK_TIME_COLOR="";
 			} else if ($ONE_TASK_STATE=="running") {
 				$ONE_TASK_STATE_COLOR="orange";
@@ -308,11 +315,12 @@
 					$run_task[$ONE_TASK_RUN]["task"]["status"]=$ONE_TASK_STATE;
 					$run_task[$ONE_TASK_RUN]["task"]["color"]=$ONE_TASK_STATE_COLOR;
 					$run_task[$ONE_TASK_RUN]["task"]["time"]=$ONE_TASK_TIME;
+					$run_task[$ONE_TASK_RUN]["task"]["time_formated"]=$ONE_TASK_TIME_FORMATED;
 					$run_task[$ONE_TASK_RUN]["task"]["time_color"]=$ONE_TASK_TIME_COLOR;
 					$run_task[$ONE_TASK_RUN]["task"]["error_level"]=$ONE_TASK_E_LEVEL;
 					$run_task[$ONE_TASK_RUN]["task"]["id"]=$ONE_TASK_ID;
 				}
-			}
+
 
 			$ONE_TASK_RUN_HEAD="[$ONE_TASK_RUN_TYPE] $ONE_TASK_RUN";
 
@@ -330,7 +338,7 @@
 						</small>
 					</td>
 					<td class="head-item mbr-fonts-style display-7">
-						<small style="color:'.$ONE_TASK_TIME_COLOR.'">'.$ONE_TASK_TIME.'</small>
+						<small style="color:'.$ONE_TASK_TIME_COLOR.'">'.$ONE_TASK_TIME_FORMATED.'</small>
 					</td>
 					<td class="head-item mbr-fonts-style display-7 ">
 						'.$ONE_TASK_RUN_HEAD.'
@@ -347,6 +355,7 @@
 
 				';
 
+				}
 
 		}
 
@@ -357,70 +366,74 @@
 	### SECTION
 	#############
 
-	echo '
+	if (0) {
 
-	<section class="section-table cid-ruiBoanIwc" id="METRICS">
+		echo '
 
-	  <div class="container container-table">
+		<section class="section-table cid-ruiBoanIwc" id="METRICS">
 
-		  <h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">
-			  Task Spooler
-		  </h2>
+		  <div class="container container-table">
 
-		  <p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
-			  Task Spooler queue up STARK analyses
-		  </p>
+			  <h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">
+				  Task Spooler
+			  </h2>
 
-		  <div class="div-wrapper" style="max-height:600px;">
+			  <p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
+				  Task Spooler queue up STARK analyses
+			  </p>
 
-			<div class="container">
-			  <div class="row search">
-				<div class="col-md-6"></div>
-				<div class="col-md-6">
-					<div class="dataTables_filter">
-					  <label class="searchInfo mbr-fonts-style display-7">Search:</label>
-					  <input class="form-control input-sm" disabled="">
+			  <div class="div-wrapper" style="max-height:600px;">
+
+				<div class="container">
+				  <div class="row search">
+					<div class="col-md-6"></div>
+					<div class="col-md-6">
+						<div class="dataTables_filter">
+						  <label class="searchInfo mbr-fonts-style display-7">Search:</label>
+						  <input class="form-control input-sm" disabled="">
+						</div>
 					</div>
-				</div>
-			  </div>
-			</div>
-
-			<div class="container scroll">
-				<table class="table isSearch" cellspacing="0">
-					<thead>
-						'.$thead.'
-					</thead>
-					<tbody>
-						'.$tbody.'
-					</tbody>
-				</table>
-			</div>
-
-			<div class="container table-info-container">
-			  <div class="row info">
-				<div class="col-md-6">
-				  <div class="dataTables_info mbr-fonts-style display-7">
-					<span class="infoBefore">Showing</span>
-					<span class="inactive infoRows"></span>
-					<span class="infoAfter">entries</span>
-					<span class="infoFilteredBefore">(filtered from</span>
-					<span class="inactive infoRows"></span>
-					<span class="infoFilteredAfter"> total entries)</span>
 				  </div>
 				</div>
-				<div class="col-md-6"></div>
+
+				<div class="container scroll">
+					<table class="table isSearch" cellspacing="0">
+						<thead>
+							'.$thead.'
+						</thead>
+						<tbody>
+							'.$tbody.'
+						</tbody>
+					</table>
+				</div>
+
+				<div class="container table-info-container">
+				  <div class="row info">
+					<div class="col-md-6">
+					  <div class="dataTables_info mbr-fonts-style display-7">
+						<span class="infoBefore">Showing</span>
+						<span class="inactive infoRows"></span>
+						<span class="infoAfter">entries</span>
+						<span class="infoFilteredBefore">(filtered from</span>
+						<span class="inactive infoRows"></span>
+						<span class="infoFilteredAfter"> total entries)</span>
+					  </div>
+					</div>
+					<div class="col-md-6"></div>
+				  </div>
+				</div>
+
 			  </div>
+
 			</div>
 
-		  </div>
+		</section>
 
-		</div>
+		<br>
 
-	</section>
+		';
 
-	<br>
-
-	';
+	}
 
 
 if (1) {
@@ -434,12 +447,14 @@ if (1) {
 
 	# RUN folders
 	$runs_inputs=glob("inputs/*/runs/*",GLOB_ONLYDIR|GLOB_BRACE);
+	array_multisort(array_map('filemtime', $runs_inputs), SORT_NUMERIC, SORT_DESC, $runs_inputs);
+
+	#$runs_inputs=glob("inputs/*",GLOB_ONLYDIR);
 	foreach ($runs_inputs as $runs_inputs_key=>$run_path) {
 		$run_path_split=explode("/",$run_path);
 		$run=$run_path_split[count($run_path_split)-1];
 		$runs_infos[$run]["inputs"]["run_path"][$run_path]=$run_path;
 	};
-
 
 	# Runs specific files
 	$runs_inputs_files=glob("inputs/*/*/*/{RTAComplete.txt,SampleSheet.csv}",GLOB_BRACE);
@@ -448,7 +463,7 @@ if (1) {
 		$run_file_path_split=explode("/",$run_file_path);
 		$run=$run_file_path_split[count($run_file_path_split)-2];
 		$run_file=$run_file_path_split[count($run_file_path_split)-1];
-		$runs_infos[$run]["inputs"]["run_files"][$run_file][$run_path]=$run_file_path;
+		$runs_infos[$run]["inputs"]["run_files"][$run_file]["file"]=$run_file_path;
 		#echo $run_file;
 		if ($run_file=="SampleSheet.csv") {
 			#echo "<br>SampleSheet";
@@ -478,7 +493,7 @@ if (1) {
 			fclose($ini_file);
 			$ini_array = parse_ini_file($ini_filename, true);
 			unlink($ini_file);
-			$runs_infos[$run]["inputs"]["run_files"][$run_file][$run_path]=$ini_array;
+			$runs_infos[$run]["inputs"]["run_files"][$run_file]["file_array"]=$ini_array;
 			#echo "<pre>";
 			#print_r($ini_array["Data"]);
 
@@ -547,29 +562,27 @@ if (1) {
 	# LAUNCHER LOG
 	#analyses/stark-services/igv/20191204-080425.432691.json
 	#$launcher_log=glob ( "igvjs/static/data/public/stark-services/launcher/*", GLOB_ONLYDIR );
-	$LAUNCHER_LOG_PATTERN="{*.json,*.log,*.err,*.info,ts-out.*}";
+	#$LAUNCHER_LOG_PATTERN="{*.json,*.log,*.err,*.info,ts-out.*}";
+	#$LAUNCHER_LOG_PATTERN="{*.json,*.log,*.err,*.info,*.output,ts-out.*}";
+	$LAUNCHER_LOG_PATTERN="{*.json,*.log,*.err,*.info,*.output}";
 	$runs_launcher_log=glob("analyses/stark-services/launcher/$LAUNCHER_LOG_PATTERN",GLOB_BRACE);
+	array_multisort(array_map('filemtime', $runs_launcher_log), SORT_NUMERIC, SORT_DESC, $runs_launcher_log);
+
 	foreach ($runs_launcher_log as $runs_launcher_log_key=>$runs_launcher_log_file) {
 		#echo "<br><br>";
 		#print_r($runs_launcher_log_file);
-		$runs_listener_log_file_split=explode("/",$runs_launcher_log_file);
-		$run_listener_log=$runs_listener_log_file_split[count($runs_listener_log_file_split)-1];
-		$ext = pathinfo($runs_launcher_log_file, PATHINFO_EXTENSION);
-		$runs_infos[$run]["launcher"][$runs_launcher_log_file][$ext]=$runs_launcher_log_file;
-		if ($ext=="json") {
-			#echo "<pre>";
-			#print_r(file($runs_launcher_log_file));
-			$runs_launcher_log_file_json = json_decode(implode("",file($runs_launcher_log_file)));
-			$run_path=$runs_launcher_log_file_json->run;
-			$run=basename($run_path);
-			if ($run!="") {
-				$runs_infos[$run]["launcher"][$runs_launcher_log_file]["run"]=$run;
-			};
-			#echo "</pre>";
-		} else {
-			# TODO - inegrate log files !!!
+		$runs_listener_log_file_basename=basename($runs_launcher_log_file);
+		preg_match("/(.*)\.(.*)\.ID-(.*)-NAME-(.*)\.(.*)/i", $runs_listener_log_file_basename,$runs_launcher_log_file_matches);
+		$run_listener_log=$runs_listener_log_file_basename;
+		$ext=$runs_launcher_log_file_matches[5];
+		$run=$runs_launcher_log_file_matches[4];
+
+
+		if ($run!="") {
 			#$runs_infos[$run]["launcher"][$runs_launcher_log_file]["run"]=$run;
-		}
+			$runs_infos[$run]["launcher"][$ext]=$runs_launcher_log_file;
+		};
+
 	};
 
 
@@ -648,9 +661,18 @@ if (1) {
 		}
 
 		$sequencing_message_plus="";
-		if (count($runs_infos[$run]["inputs"]["run_files"]["SampleSheet.csv"]["samples"])) {
-			$sequencing_message_plus="<br>".implode(" ",array_keys($runs_infos[$run]["inputs"]["run_files"]["SampleSheet.csv"]["samples"]));
+		if (isset($runs_infos[$run]["inputs"]["run_files"]["RTAComplete.txt"])) {
+			$sequencing_message_plus.="<br><br>".implode(file($runs_infos[$run]["inputs"]["run_files"]["RTAComplete.txt"]["file"]))."";
 		}
+		if (count($runs_infos[$run]["inputs"]["run_files"]["SampleSheet.csv"]["samples"])) {
+			$sequencing_message_plus.="<br><br><a target='SampleSheet' href='".$runs_infos[$run]["inputs"]["run_files"]["SampleSheet.csv"]["file"]."'>SampleSheet</a>";
+			$sequencing_message_plus.="<br>".implode(" ",array_keys($runs_infos[$run]["inputs"]["run_files"]["SampleSheet.csv"]["samples"]));
+		}
+
+		// echo "<pre>";
+		// print_r($runs_infos[$run]["inputs"]["run_files"]["SampleSheet.csv"]);
+		// echo "</pre>";
+
 
 		$run_progress[$run]["sequencing"]["status"]=$sequencing_status;
 		$run_progress[$run]["sequencing"]["color"]=$sequencing_color;
@@ -668,8 +690,75 @@ if (1) {
 		#############
 
 		// echo "<pre>";
-		// print_r($run_task[$run]);
+		// echo "RUN: $run<br>";
+		// print_r($run_infos);
 		// echo "</pre>";
+
+		// echo "RUN: $run<br>";
+		// echo "<pre>";
+		// print_r($run_infos["launcher"]);
+		// echo implode(file($run_infos["launcher"]["info"]));
+
+		$analysis_infos=array();
+		if (isset($run_task[$run]["task"])) {
+			$analysis_status=$run_task[$run]["task"]["status"];
+			$analysis_color=$run_task[$run]["task"]["color"];
+			$analysis_message="";
+			if ($run_task[$run]["task"]["error_level"]!=0) {
+				$analysis_color="red";
+				$run_status="error";
+				$analysis_message.="<span style='color:red'>Error '".$run_task[$run]["task"]["error_level"]."' </span><br>";
+			}
+			$analysis_message.="<span style='color:".$run_task[$run]["task"]["time_color"]."'>".$run_task[$run]["task"]["time"]."</span>";
+
+			# ANALYSIS INFOS
+			$analysis_infos["error_level"]=$run_task[$run]["task"]["error_level"];
+			$analysis_infos["status"]=$run_task[$run]["task"]["status"];
+			$analysis_infos["color"]=$run_task[$run]["task"]["color"];
+			$analysis_infos["time"]=$run_task[$run]["task"]["time"];
+			#$analysis_infos["time_color"]=$run_task[$run]["task"]["time_color"];
+			$analysis_infos["time_formated"]=$run_task[$run]["task"]["time_formated"];
+			#$analysis_infos["time_color"]=$run_task[$run]["task"]["time_color"];
+
+
+
+		} elseif (isset($run_infos["launcher"]["info"])) {
+				$run_launcher_info_split=file($run_infos["launcher"]["info"]);
+
+				foreach ($run_launcher_info_split as $key => $value) {
+					# ERROR_LEVEL
+					preg_match("/Exit status: died with exit code (.*)/i", $value,$run_launcher_info_split_matches);
+					#print_r($run_launcher_info_split_matches);
+					if (isset($run_launcher_info_split_matches[1])) {
+						$analysis_infos["error_level"]=$run_launcher_info_split_matches[1];
+						if ($run_launcher_info_split_matches[1]!=0) {
+							$analysis_infos["status"]="error";
+							$analysis_infos["color"]="red";
+						} else {
+							$analysis_infos["status"]="finished";
+							$analysis_infos["color"]="green";
+						}
+					}
+					# TIME
+					preg_match("/Time run: (.*)s/i", $value,$run_launcher_info_split_matches);
+					#print_r($run_launcher_info_split_matches);
+					if (isset($run_launcher_info_split_matches[1])) {
+						$analysis_infos["time"]=$run_launcher_info_split_matches[1];
+						$analysis_infos["time_formated"]=str_replace(array("=","/",":","+"),array("d ","h ","m ","s "),gmdate("z=H/i:s+", explode("/",$run_launcher_info_split_matches[1])[0]));
+					}
+				}
+
+		} else {
+			# TODO - Check on log file !!!
+			$analysis_status="no information";
+			$analysis_color="red";
+			$analysis_message="Analysis launched but no Task Spooler information";
+		};
+
+		// print_r($analysis_infos);
+
+		#echo "</pre>";
+
 
 		$analysis_status_code=isset($run_infos["listener"])+isset($run_infos["launcher"]);
 		switch ($analysis_status_code) {
@@ -684,27 +773,12 @@ if (1) {
 			$analysis_message="Run sequencing ready detected";
 			break;
 		case 2:
-			$analysis_status="launched";
-			$analysis_color="orange";
-			$analysis_message="Run analysis launched";
-			#$run_task[$ONE_TASK_RUN]["task"]["time"]=$ONE_TASK_STATE;
-			#echo "<br><br>"; print_r($run_task[$ONE_TASK_RUN]);
-			if (isset($run_task[$run]["task"])) {
-				$analysis_status=$run_task[$run]["task"]["status"];
-				$analysis_color=$run_task[$run]["task"]["color"];
-				$analysis_message="";
-				if ($run_task[$run]["task"]["error_level"]!=0) {
-					$analysis_color="red";
-					$run_status="error";
-					$analysis_message.="<span style='color:red'>Error '".$run_task[$run]["task"]["error_level"]."' </span><br>";
-				}
-				$analysis_message.="<span style='color:".$run_task[$run]["task"]["time_color"]."'>".$run_task[$run]["task"]["time"]."</span>";
-
-			} else {
-				# TODO - Check on log file !!!
-				$analysis_status="no information";
-				$analysis_color="red";
-				$analysis_message="Analysis launched but no Task Spooler information";
+			$analysis_status=$analysis_infos["status"];
+			$analysis_color=$analysis_infos["color"];
+			#$analysis_message="Run analysis launched";
+			$analysis_message="";
+			if ( isset($analysis_infos["time_formated"]) ) {
+				$analysis_message.="<span style='color:".$analysis_infos["time_color"]."'>".$analysis_infos["time_formated"];
 			};
 			break;
 		default:
@@ -714,12 +788,20 @@ if (1) {
 			break;
 		}
 
-		#echo "<br>$analysis_status";
+		# Message PLUS
+		// echo "<pre>";
+		// print_r($runs_infos[$run]["launcher"]);
+		// echo "</pre>";
+
+		$analysis_message_plus="";
+		if (isset($runs_infos[$run]["launcher"]["output"])) {
+			$analysis_message_plus.="<br><br><a target='Output' href='".$runs_infos[$run]["launcher"]["output"]."' download>Output</a>";
+		}
 
 		$run_progress[$run]["analysis"]["status"]=$analysis_status;
 		$run_progress[$run]["analysis"]["color"]=$analysis_color;
 		$run_progress[$run]["analysis"]["message"]=$analysis_message;
-		$run_progress[$run]["analysis"]["message_plus"]="";
+		$run_progress[$run]["analysis"]["message_plus"]=$analysis_message_plus;
 
 		if ($analysis_status!="unavailable") {
 			$run_status="Analysis ".$analysis_status;
@@ -860,6 +942,7 @@ if (1) {
 
 		  <p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
 			  Run process activity (sequencing, analysis, repository)
+
 		  </p>
 
 		  <div class="">

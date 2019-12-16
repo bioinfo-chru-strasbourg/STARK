@@ -1,14 +1,12 @@
 #######################################
 # STARK                               #
-# Stellar Tools for varaints          #
+# Stellar Tools for variants          #
 #    Analysis and RanKing             #
 # Author: Antony Le Béchec            #
-# Copyright: IRC                      #
-# Licence: GNU-GPL/CeCILL             #
+# Copyright: HUS                      #
+# License: GNU GPLA V3                #
 #######################################
 
 Welcome to STARK environment!!!
 
 STARK is a Next-Generation Sequencing data analysis pipeline for clinical diagnosis
-
-Just launch STARK command and follow the instructions to analyze your data

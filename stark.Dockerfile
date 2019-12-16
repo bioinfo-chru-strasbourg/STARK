@@ -2,7 +2,7 @@
 ##############################################################
 # Dockerfile Version:   1.0
 # Software:             STARK
-# Software Version:     0.9.18b
+# Software Version:     0.9.18
 # Software Website:     none
 # Licence:              GNU Affero General Public License (AGPL)
 # Description:          STARK
@@ -48,7 +48,7 @@ ARG DOCKER_STARK_IMAGE_BASE=stark:latest
 FROM $DOCKER_STARK_IMAGE_BASE
 MAINTAINER Antony Le Bechec <antony.lebechec@gmail.com>
 LABEL Software="STARK" \
-	Version="0.9.18b" \
+	Version="0.9.18" \
 	Website="none" \
 	Description="STARK" \
 	License="GNU Affero General Public License (AGPL)" \
@@ -91,7 +91,7 @@ RUN yum install -y $YUM_INSTALL ;
 #########
 
 ENV TOOL_NAME=stark
-ENV TOOL_VERSION=0.9.18d
+ENV TOOL_VERSION=0.9.18
 ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 
