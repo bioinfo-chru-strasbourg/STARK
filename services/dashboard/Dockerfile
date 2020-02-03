@@ -26,4 +26,6 @@ ADD conf/vhost.conf /etc/apache2/sites-available/000-default.conf
 ADD conf/apache.conf /etc/apache2/conf-available/z-app.conf
 RUN a2enconf z-app
 ADD *.php /app/
+ADD apps.conf /app/
 ADD assets /app/assets
+RUN chmod 0755 /app/* -R

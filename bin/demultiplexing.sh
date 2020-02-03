@@ -24,7 +24,7 @@ RELEASE_NOTES=$RELEASE_NOTES"# 0.9.10b-25/03/2019: Cleaning Sample Name in the S
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Configuration
-ENV_CONFIG=$(find $SCRIPT_DIR/.. -name config.app)
+ENV_CONFIG=$(find -L $SCRIPT_DIR/.. -name config.app)
 source $ENV_CONFIG
 
 

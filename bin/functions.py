@@ -16,7 +16,7 @@ def assert_file_exists_and_is_readable(filePath):
 			"[ERROR] File "+filePath+" doesn't exist or isn't readable"
 
 def get_stdout_and_stderr(cmd):
-	p = subprocess.Popen("find "+runDir+" -name *SampleSheet.csv", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+	p = subprocess.Popen("find -L "+runDir+" -name *SampleSheet.csv", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 	out = p.stdout.readlines()
 	outList = [l.decode("utf-8").strip() for l in out]
 	err = p.stderr.readlines()
@@ -39,7 +39,7 @@ def find_any_samplesheet(runDir, fromResDir):
 		defined by the bool fromResDir)
 	3) first correct file path is returned
 	"""
-	p = subprocess.Popen("find "+runDir+" -name *SampleSheet.csv", stdout=subprocess.PIPE, shell=True)
+	p = subprocess.Popen("find -L "+runDir+" -name *SampleSheet.csv", stdout=subprocess.PIPE, shell=True)
 	out = p.stdout.readlines()
 	for ss in out:
 		ss = ss.decode("utf-8").strip()
@@ -130,7 +130,7 @@ def tags_and_types_to_lists(tags, tagTypes="", associator="#", separator="!"):
 						tagValuesList.append(tag.split(associator, 1)[1].replace(associator, " "))
 						tagTypesList.append(tag.split(associator)[0])
 		else:
-			tagValuesList.append(tag.split(associator, 1)[1].replace(associator, " "))
-			tagTypesList.append(tag.split(associator)[0])
+			tagValuesList.append(tags.split(associator, 1)[1].replace(associator, " "))
+			tagTypesList.append(tags.split(associator)[0])
 
 	return (tagValuesList, tagTypesList)

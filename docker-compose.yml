@@ -165,6 +165,8 @@ services:
         ports:
             - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_IGV_PORT}:${DOCKER_STARK_SERVICE_IGV_PORT_INNER}
         restart: always
+        links:
+            - stark-service-data
         networks:
             - stark
 
@@ -182,6 +184,8 @@ services:
         ports:
             - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_JARVIS_PORT}:${DOCKER_STARK_SERVICE_JARVIS_PORT_INNER}
         restart: always
+        links:
+            - stark-service-data
         networks:
             - stark
 

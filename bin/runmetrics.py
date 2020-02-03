@@ -14,15 +14,15 @@ for each sample, both total and %:
 
 + specify what bed is used
 
-(*): 2 values exist in stark report: 
+(*): 2 values exist in stark report:
 	- %bases on target in hsmetrics file ; not what was discussed
 	- %reads on target made with the filtered bam: view -F 1024 -F 4 -q 10
 		The reads on target are computed with samtools view cleaned.bam -L sample.bed
 		and the results are found in bwamem.bam.metrics/<sample>.bwamem.<on/off>.nbreads
 The latter is exactly what was discussed with the biologists; except for the -F4 -q 10 flags.
-I'm taking this value for now, but this should be discussed. 
+I'm taking this value for now, but this should be discussed.
 
-All stark files listed above exist in Stark 0.9.17 and below outputs. The script is fitted to use the new 0.9.18 files, but the old data file names are commented out for an easy rollback. 
+All stark files listed above exist in Stark 0.9.17 and below outputs. The script is fitted to use the new 0.9.18 files, but the old data file names are commented out for an easy rollback.
 
 The secondary cov metrics files created here will be copies of their equivalent in the report, but grouped by sample in a single file.
 
@@ -32,7 +32,7 @@ python /home1/TOOLS/tools/toolkit/current/lib/sam/forStark/runmetrics.py --metri
 
 @TODO
 DONE: the legends of coverage files could be improved.
-DONE: colonne nom du run 
+DONE: colonne nom du run
 TODO: stats globales pour une maladie/appli [beyond the scope of this script]
 DONE: variables environnement pour legende (MAPQ...) si applicable
 DONE: gestion tags (CTUM...)
@@ -62,11 +62,11 @@ def find_any_samplesheet(runDir, fromResDir):
 	"""
 	1) look up recursively all files named SampleSheet.csv in the runDir
 	2) check if file path follows an expected samplesheet name and location
-		(the latter depends on if we're in a STARK result or repository dir, 
+		(the latter depends on if we're in a STARK result or repository dir,
 		defined by the bool fromResDir)
 	3) first correct file path is returned
 	"""
-	p = subprocess.Popen("find "+runDir+" -name *SampleSheet.csv", stdout=subprocess.PIPE, shell=True)
+	p = subprocess.Popen("find -L "+runDir+" -name *SampleSheet.csv", stdout=subprocess.PIPE, shell=True)
 	out = p.stdout.readlines()
 	for ss in out:
 		ss = ss.decode("utf-8").strip()
@@ -79,7 +79,7 @@ def find_any_samplesheet(runDir, fromResDir):
 		elif r.group(1) == r.group(2): #checks if (.*) == (.*)
 			return ss
 	return "NO_SAMPLESHEET_FOUND"
-	
+
 def get_run_path_from_metrics_file(metricsFile, fromResDir):
 	"""
 	Example: "/home1/datas/WORK_DIR_SAM/TOOLSstark18RES/results/test_bam_bed_metrics/TEST/TEST.bwamem.bam.metrics/metrics"
@@ -94,14 +94,14 @@ def get_run_path_from_metrics_file(metricsFile, fromResDir):
 
 def get_sample_list_from_samplesheet(samplesheetPath):
 	"""
-	Returns a python list containing all sample names in a samplesheet. 
+	Returns a python list containing all sample names in a samplesheet.
 	"""
 	assert samplesheetPath != "NO_SAMPLESHEET_FOUND", \
-			"[ERROR] find_any_samplesheet() couldn't find any samplesheet. Check if the --fromResultDir argument is set correctly." 
+			"[ERROR] find_any_samplesheet() couldn't find any samplesheet. Check if the --fromResultDir argument is set correctly."
 	assert_file_exists_and_is_readable(samplesheetPath)
 	inDataTable = False
 	sampleList = []
-	with open(samplesheetPath, "r") as f: 
+	with open(samplesheetPath, "r") as f:
 			for l in f:
 				if not inDataTable:
 					if l.startswith("Sample_ID,Sample_Name,"):
@@ -112,13 +112,13 @@ def get_sample_list_from_samplesheet(samplesheetPath):
 	#if there are spaces in samplesheet names, change them to "_" because that's what demultiplexing.sh will do
 	#otherwise the fastq won't be found when looking in the DEM dir
 	for i in range(len(sampleList)):
-		if " " in sampleList[i]: 
+		if " " in sampleList[i]:
 			sampleList[i] = sampleList[i].replace(" ", "_")
 	return sampleList
 
 def get_total_mapped_duplicate_reads(sampleDir, sample, aligner):
 	"""
-	Fetches total reads, mapped reads (total and %), duplicate reads (total and %) from the flagstat file in sampleDir. 
+	Fetches total reads, mapped reads (total and %), duplicate reads (total and %) from the flagstat file in sampleDir.
 	Returns them as a list in that order.
 	"""
 	flagstatFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+".flagstat")
@@ -132,8 +132,8 @@ def get_total_mapped_duplicate_reads(sampleDir, sample, aligner):
 
 def get_on_target_reads(sampleDir, sample, aligner):
 	"""
-	Fetches on target reads (total and %). Returns them as a list. 
-	More explanations in the docstring at the top of this script. 
+	Fetches on target reads (total and %). Returns them as a list.
+	More explanations in the docstring at the top of this script.
 	"""
 	#for stark before 0.9.18d
 	#onReadsFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+".on.nbreads")
@@ -166,9 +166,9 @@ def get_cov_criteria():
 def deprecated_get_depth_metrics(sampleDir, sample, aligner):
 	"""
 	Computes % depth at 1X,5X... (defined by an envt variable or a default value) based on depthbed. Returns them as a list in that order.
-	Uses the awk magic formula from stark_report.sh to keep the same values as the pdf report. 
-	
-	DEPRECATED as the depthbed file no longer exists in newer stark 0.9.18 versions. 
+	Uses the awk magic formula from stark_report.sh to keep the same values as the pdf report.
+
+	DEPRECATED as the depthbed file no longer exists in newer stark 0.9.18 versions.
 	"""
 	#for stark before 0.9.18d
 	#depthFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+".depthbed")
@@ -187,7 +187,7 @@ def deprecated_get_depth_metrics(sampleDir, sample, aligner):
 
 def get_depth_metrics(sampleDir, sample, aligner):
 	"""
-	coverage can now be found in files such as TEST.bwamem.TEST.from_design.genes.coverage 
+	coverage can now be found in files such as TEST.bwamem.TEST.from_design.genes.coverage
 	whose content is like:
 	#Depth  CoveredBases    TotalBases      Percent
 	1X      274     11413   0.0240077
@@ -199,7 +199,7 @@ def get_depth_metrics(sampleDir, sample, aligner):
 	100X    0       11413   0
 	200X    0       11413   0
 	300X    0       11413   0
-	This function extracts the % values and returns them as a list. 
+	This function extracts the % values and returns them as a list.
 	"""
 	depthFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+"."+sample+"."+aligner+".design.bed.coverage")
 	assert_file_exists_and_is_readable(depthFile)
@@ -229,13 +229,13 @@ def get_sample_metrics(runPath, sample, fromResDir, aligner):
 	metricsList += get_on_target_reads(sampleDir, sample, aligner)
 	metricsList += get_depth_metrics(sampleDir, sample, aligner)
 	return metricsList
-	
+
 def get_tags_list(sampleList, sampleDirList, samplesheet=""):
 	"""
 	Returns a list of tags string in the order corresponding to sampleList
-	
+
 	Tries to fetch tags through STARK analysis and sample tags files.
-	If it fails and a samplesheet is provided, fetches them from there instead. 
+	If it fails and a samplesheet is provided, fetches them from there instead.
 	"""
 	try:
 		tagsList = []
@@ -263,17 +263,17 @@ def get_tags_list(sampleList, sampleDirList, samplesheet=""):
 			return ["" for v in sampleList]
 			# return ["APP#SWAG!#TUMCELL" for v in sampleList]
 		else:
-			#get both samples and tags to make sure the tags returned 
+			#get both samples and tags to make sure the tags returned
 			#are in the same order as the sampleList provided in input
 			samples = get_sample_list_from_samplesheet(samplesheet)
 			tags = get_descriptions_from_samplesheet(samplesheet)
 			return [tags[samples.index(s)] for s in sampleList]
-	
+
 def build_cov_metrics_header(dataFileList, tagsList):
 	"""Builds the header for write_cov_metrics_file()"""
 	#Base
 	header = "#Run\tSample"
-	
+
 	#appending tag types
 	allTagTypes = []
 	for tags in tagsList:
@@ -282,16 +282,16 @@ def build_cov_metrics_header(dataFileList, tagsList):
 	seen = set()
 	#remove duplicate types for the header, while still keeping them ordered
 	allTagTypes = [t for t in allTagTypes if not(t in seen or seen.add(t))]
-	
+
 	untypedValuesExist = False
-	for t in allTagTypes: 
+	for t in allTagTypes:
 		if t == '':
 			untypedValuesExist = True
 		else:
 			header += "\t" + t
 	if untypedValuesExist:
 		header += "\t" + "Other tags"
-	
+
 	#appending data file header
 	with open(dataFileList[0], "r") as fin:
 		headerTmp = fin.readline().strip()
@@ -301,19 +301,19 @@ def build_cov_metrics_header(dataFileList, tagsList):
 	header += "\n"
 
 	return header, allTagTypes
-		
+
 def write_cov_metrics_file(name, run, sampleList, dataFileList, legend, tagList):
 	"""
-	Input: 
+	Input:
 	- name: metrics file name (including path)
 	- sampleList: list of sample base names
 	- dataFileList : python list of the files to concatenate
-	- legend: text at the start of the file commented with ##. Usually a multiline docstring. 
+	- legend: text at the start of the file commented with ##. Usually a multiline docstring.
 	- tags: list of tag strings (should be the same length as sample)
 	"""
 	with open(name, "w") as fout:
 		fout.write(legend)
-		
+
 		#Create header with the first file
 		header, headerTags = build_cov_metrics_header(dataFileList, tagList)
 		fout.write(header)
@@ -322,13 +322,13 @@ def write_cov_metrics_file(name, run, sampleList, dataFileList, legend, tagList)
 			tagString = ""
 			values, types = tags_and_types_to_lists(tags)
 			for h in headerTags:
-				if h in types: 
+				if h in types:
 					tagString += "\t" + values[types.index(h)]
 				else:
 					tagString += "\t" + ""
 			with open(dataFile, "r") as fin:
 				next(fin) #skips the header
-				for l in fin: 
+				for l in fin:
 					fout.write(os.path.basename(run)+"\t"+sample+tagString+"\t"+l)
 
 def str_to_bool(v):
@@ -354,7 +354,7 @@ def main_routine(metricsFileList, outputPrefix):
 	# run = os.path.commonprefix(metricsFileList)
 	run = get_run_path_from_metrics_file(metricsFileList[0], fromResDir)
 	sampleList = [v.replace(run+"/", "").split("/")[0] for v in metricsFileList]
-	#to get the aligner: need to get e.g. "bwamem" from a path like 
+	#to get the aligner: need to get e.g. "bwamem" from a path like
 	#/home1/datas/WORK_DIR_SAM/TOOLSstark18RES/results/test_bam_bed_metrics/TEST/TEST.bwamem.bam.metrics/metrics
 	alignerList = [os.path.dirname(mF).split("/")[-1].split(".")[1] for mF in metricsFileList]
 	if fromResDir:
@@ -382,7 +382,7 @@ def main_routine(metricsFileList, outputPrefix):
 		#"." could be converted to "," for French Excel visualization with str(v).replace(".", ",")
 		for sample in sampleList:
 			f.write(os.path.basename(run)+"\t"+sample+"\t"+"\t".join([str(v) for v in runMetrics[sample]])+"\n")
-	
+
 	#3) design.cov.metrics
 	#####
 	#selecting data files (no generic function for this because data file names have different structures)
@@ -400,7 +400,7 @@ def main_routine(metricsFileList, outputPrefix):
 			"## The regions correspond to the design bed/manifest.\n"
 			"##\n")
 	write_cov_metrics_file(finalTsv, run, sampleList, dataFileList, legend, tagsList)
-	
+
 	#4) .gene coverage metrics
 	#####
 	#find .genes file that are used in all samples
@@ -436,7 +436,7 @@ def main_routine(metricsFileList, outputPrefix):
 				assert_file_exists_and_is_readable(dataFile)
 				dataFileList.append(dataFile)
 			#creating output
-			#remove the sample name from the final filename 
+			#remove the sample name from the final filename
 			#/!\ This uses the last values of the previous loop for 'sample' and 'gl'
 			if "<sample>" in gl:
 				gl = gl.replace("<sample>", "sample")
@@ -448,7 +448,7 @@ def main_routine(metricsFileList, outputPrefix):
 				gl = gl[1:]
 			finalTsv = osj(outputPrefix+gl+".metrics")
 			write_cov_metrics_file(finalTsv, run, sampleList, dataFileList, legend, tagsList)
-	
+
 	#5) amplicon coverage metrics
 	#####
 	# Check if the first amplicon metrics file is not empty...
@@ -484,5 +484,5 @@ if __name__=="__main__":
 	parser.add_argument("-f", "--fromResultDir", type=str_to_bool, default=True, help="specifies if the directories in the folder are organised like in STARK results (default) or like in STARK repository (then enter False/No/N/0)")
 	parser.add_argument("-o", "--outputPrefix", type=str, default="", help="output prefix (including dir). Files go into run dir by default if not specified.")
 	args = parser.parse_args()
-	
+
 	main_routine(args.metricsFileList, args.outputPrefix)

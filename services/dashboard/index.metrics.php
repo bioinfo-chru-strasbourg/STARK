@@ -1,5 +1,15 @@
 <?php
 
+
+
+### INCLUDES
+###############
+
+include "config.php";
+
+
+
+
 # PARAMETERS
 ##############
 
