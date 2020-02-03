@@ -1,11 +1,17 @@
 <?php
 
 
+	### INCLUDES
+	###############
+
+	include "config.php";
+
+
 	### VARIABLES
 	###############
 
 	$DEBUG=1;
-
+	$TS_SHOW=$_REQUEST["TS_SHOW"];
 
 
 	### FUNCTIONS
@@ -261,6 +267,13 @@
 			$ONE_TASK_RUN_TYPE=$ONE_TASK_COMMAND_ID_matches[1];
 			$ONE_TASK_RUN=$ONE_TASK_COMMAND_ID_matches[4];
 
+			if ($ONE_TASK_RUN=="") {
+				preg_match("/(.*)\.(.*)\.(.*)/i", $ONE_TASK_COMMAND_ID,$ONE_TASK_COMMAND_ID_matches);
+				$ONE_TASK_RUN_TYPE=$ONE_TASK_COMMAND_ID_matches[1];
+				#$ONE_TASK_ANALYSIS_NAME=$ONE_TASK_COMMAND_ID_matches[3];
+				$ONE_TASK_RUN=$ONE_TASK_COMMAND_ID_matches[3];
+			}
+
 			#echo "<br>$ONE_TASK_RUN_TYPE $ONE_TASK_RUN";
 
 
@@ -310,7 +323,7 @@
 			};
 
 			# Last task (by ID)
-			if ($ONE_TASK_RUN_TYPE=="STARK") {
+			if ($ONE_TASK_RUN_TYPE=="STARK" || $TS_SHOW=="FULL") {
 				if (!isset($run_task[$ONE_TASK_RUN]["task"]["id"]) || $ONE_TASK_ID>$run_task[$ONE_TASK_RUN]["task"]["id"] ) {
 					$run_task[$ONE_TASK_RUN]["task"]["status"]=$ONE_TASK_STATE;
 					$run_task[$ONE_TASK_RUN]["task"]["color"]=$ONE_TASK_STATE_COLOR;
@@ -321,41 +334,40 @@
 					$run_task[$ONE_TASK_RUN]["task"]["id"]=$ONE_TASK_ID;
 				}
 
+				$ONE_TASK_RUN_HEAD="[$ONE_TASK_RUN_TYPE] $ONE_TASK_RUN";
 
-			$ONE_TASK_RUN_HEAD="[$ONE_TASK_RUN_TYPE] $ONE_TASK_RUN";
-
-			$tbody=$tbody.'
-				<tr class="table-heads">
-					<td class="head-item mbr-fonts-style display-7">
-						<small>'.$ONE_TASK_ID.'</small>
-					</td>
-					<td class="head-item mbr-fonts-style display-7">
-						<small style="color:'.$ONE_TASK_STATE_COLOR.'">
-							'.$ONE_TASK_STATE.'
-							'.$ONE_TASK_E_LEVEL_HTML.'
+				$tbody=$tbody.'
+					<tr class="table-heads">
+						<td class="head-item mbr-fonts-style display-7">
+							<small>'.$ONE_TASK_ID.'</small>
+						</td>
+						<td class="head-item mbr-fonts-style display-7">
+							<small style="color:'.$ONE_TASK_STATE_COLOR.'">
+								'.$ONE_TASK_STATE.'
+								'.$ONE_TASK_E_LEVEL_HTML.'
+								<br>
+								<a href="'.$ONE_TASK_LOG_URL.'" download>'.$ONE_TASK_LOG_NAME.'</a>
+							</small>
+						</td>
+						<td class="head-item mbr-fonts-style display-7">
+							<small style="color:'.$ONE_TASK_TIME_COLOR.'">'.$ONE_TASK_TIME_FORMATED.'</small>
+						</td>
+						<td class="head-item mbr-fonts-style display-7 ">
+							'.$ONE_TASK_RUN_HEAD.' '.$ONE_TASK_ANALYSIS_NAME.'
 							<br>
-							<a href="'.$ONE_TASK_LOG_URL.'" download>'.$ONE_TASK_LOG_NAME.'</a>
-						</small>
-					</td>
-					<td class="head-item mbr-fonts-style display-7">
-						<small style="color:'.$ONE_TASK_TIME_COLOR.'">'.$ONE_TASK_TIME_FORMATED.'</small>
-					</td>
-					<td class="head-item mbr-fonts-style display-7 ">
-						'.$ONE_TASK_RUN_HEAD.'
-						<br>
-						<a>
-						<small onclick=\'if(document.getElementById("info_'.$TASK_KEY.'").style.display=="none"){document.getElementById("info_'.$TASK_KEY.'").style.display="block"}else{document.getElementById("info_'.$TASK_KEY.'").style.display="none"};\'>'.$ONE_TASK_COMMAND_ID.'</small>
-						</a>
-						<div id="info_'.$TASK_KEY.'" style="display:none">
-							<small><br>'.$ONE_TASK_INFO_CONTENT_HTML.'</small>
-						</div>
-					</td>
+							<a>
+							<small onclick=\'if(document.getElementById("info_'.$TASK_KEY.'").style.display=="none"){document.getElementById("info_'.$TASK_KEY.'").style.display="block"}else{document.getElementById("info_'.$TASK_KEY.'").style.display="none"};\'>'.$ONE_TASK_COMMAND_ID.'</small>
+							</a>
+							<div id="info_'.$TASK_KEY.'" style="display:none">
+								<small><br>'.$ONE_TASK_INFO_CONTENT_HTML.'</small>
+							</div>
+						</td>
 
-				</tr>
+					</tr>
 
-				';
+					';
 
-				}
+			}
 
 		}
 
@@ -366,7 +378,7 @@
 	### SECTION
 	#############
 
-	if (0) {
+	if ($TS_SHOW) {
 
 		echo '
 
@@ -380,6 +392,8 @@
 
 			  <p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
 				  Task Spooler queue up STARK analyses
+				  <br>
+				  <small>[<a href="?TS_SHOW=0">Hide Task Spooler activity<a>]</small>
 			  </p>
 
 			  <div class="div-wrapper" style="max-height:600px;">
@@ -458,6 +472,7 @@ if (1) {
 
 	# Runs specific files
 	$runs_inputs_files=glob("inputs/*/*/*/{RTAComplete.txt,SampleSheet.csv}",GLOB_BRACE);
+	array_multisort(array_map('filemtime', $runs_inputs_files), SORT_NUMERIC, SORT_DESC, $runs_inputs_files);
 	foreach ($runs_inputs_files as $runs_inputs_key=>$run_file_path) {
 		$run_path=dirname($run_file_path);
 		$run_file_path_split=explode("/",$run_file_path);
@@ -518,6 +533,7 @@ if (1) {
 
 	# REPOSITORIES
 	$runs_repositories=glob("repositories/*/*/*/*/*",GLOB_ONLYDIR);
+	array_multisort(array_map('filemtime', $runs_repositories), SORT_NUMERIC, SORT_DESC, $runs_repositories);
 	foreach ($runs_repositories as $runs_inputs_key=>$sample_path) {
 		$sample_path_split=explode("/",$sample_path);
 		$sample=basename($sample_path);
@@ -533,6 +549,7 @@ if (1) {
 	# LISTENER LOG
 	$LISTENER_LOG_PATTERN="{ID-*-NAME-*.log}";
 	$runs_listener_log=glob("analyses/stark-services/listener/$LISTENER_LOG_PATTERN",GLOB_BRACE);
+	array_multisort(array_map('filemtime', $runs_listener_log), SORT_NUMERIC, SORT_DESC, $runs_listener_log);
 	foreach ($runs_listener_log as $runs_listener_log_key=>$runs_listener_log_file) {
 		$runs_listener_log_file_split=explode("/",$runs_listener_log_file);
 		$run_listener_log=$runs_listener_log_file_split[count($runs_listener_log_file_split)-1];
@@ -567,7 +584,6 @@ if (1) {
 	$LAUNCHER_LOG_PATTERN="{*.json,*.log,*.err,*.info,*.output}";
 	$runs_launcher_log=glob("analyses/stark-services/launcher/$LAUNCHER_LOG_PATTERN",GLOB_BRACE);
 	array_multisort(array_map('filemtime', $runs_launcher_log), SORT_NUMERIC, SORT_DESC, $runs_launcher_log);
-
 	foreach ($runs_launcher_log as $runs_launcher_log_key=>$runs_launcher_log_file) {
 		#echo "<br><br>";
 		#print_r($runs_launcher_log_file);
@@ -768,9 +784,24 @@ if (1) {
 			$analysis_message="No analysis information available";
 			break;
 		case 1:
-			$analysis_status="detected";
-			$analysis_color="orange";
-			$analysis_message="Run sequencing ready detected";
+			#$analysis_status="detected";
+			#$analysis_color="orange";
+			if (isset($analysis_infos["status"])) {
+				$analysis_status=$analysis_infos["status"];
+			} else {
+				$analysis_status="detected";
+			}
+			if (isset($analysis_infos["color"])) {
+				$analysis_color=$analysis_infos["color"];
+			} else {
+				$analysis_color="orange";
+			}
+			$analysis_message="";
+			if ( isset($analysis_infos["time_formated"]) ) {
+				$analysis_message.="<span style='color:".$analysis_infos["time_color"]."'>".$analysis_infos["time_formated"];
+			};
+
+			#$analysis_message="Run sequencing ready detected";
 			break;
 		case 2:
 			$analysis_status=$analysis_infos["status"];
@@ -941,8 +972,9 @@ if (1) {
 		  </h2>
 
 		  <p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
-			  Run process activity (sequencing, analysis, repository)
-
+			  Analyses and Runs process activity (sequencing, analysis, repository)
+			  <br>
+			  <small>[<a href="?TS_SHOW=1">Show Task Spooler activity<a>]</small>
 		  </p>
 
 		  <div class="">

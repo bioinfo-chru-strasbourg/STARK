@@ -20,7 +20,7 @@ RELEASE_NOTES=$RELEASE_NOTES"# 0.9b-24/11/2019: Script creation\n";
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Configuration
-ENV_CONFIG=$(find $SCRIPT_DIR/.. -name config.app)
+ENV_CONFIG=$(find -L $SCRIPT_DIR/.. -name config.app)
 source $ENV_CONFIG 1>/dev/null 2>/dev/null
 
 
@@ -317,11 +317,9 @@ while ((1)); do
 	for IF in $INPUT_FOLDER; do
 		# for each analysis folder
 		#for IFA in $IF/*; do
-		for IFA in $(find $IF -mindepth 1 -maxdepth 1 -type d -mtime -$DAYS); do
+		for IFA in $(find -L $IF -mindepth 1 -maxdepth 1 -type d -mtime -$DAYS); do
 			#MD5=$(echo $IFA | md5sum | awk '{print $1}')
-			#find $r  -maxdepth 1 -xtype f -print0 | xargs -0 sha1sum | cut -b-40 | sha1sum | cut -d" " -f1
 			MD5=$(find $IFA -maxdepth 1 -xtype f -print0 | xargs -0 sha1sum | cut -b-40 | sha1sum | awk '{print $1}')
-			# find runs/190927_M01656_0335_000000000-CLGGY  -maxdepth 1 -xtype f -print0 | xargs -0 sha1sum | cut -b-40 | sha1sum | cut -d" " -f1
 			RUN_NAME=$(basename $IFA)
 			ID="ID-$MD5-NAME-$RUN_NAME"
 			MD5_LOG="$FOLDER_LOG/$ID.log"
@@ -335,7 +333,7 @@ while ((1)); do
 						CONDITION_AND_TEST=1
 						for CA in $CONDITION_AND; do
 							(($VERBOSE)) && echo "#[INFO]          condition '$CA' test"
-							if (( $(find $IFA -mindepth 1 -maxdepth 1 -type f -iname "$CA" -mtime -$DAYS | wc -l) )); then
+							if (( $(find -L $IFA -mindepth 1 -maxdepth 1 -type f -iname "$CA" -mtime -$DAYS | wc -l) )); then
 								(($VERBOSE)) && echo "#[INFO]          => condition '$CA' OK"
 							else
 								(($VERBOSE)) && echo "#[INFO]       => condition '$CA' ko"
@@ -389,11 +387,15 @@ while ((1)); do
 							echo "FOLDER: $IFA" >> $MD5_LOG
 							echo "CONDITION: $C" >> $MD5_LOG
 							echo "EXEC_DATE: $EXEC_DATE" >> $MD5_LOG
-							echo -n "ID: " >> $MD5_LOG
+							[ "$COMMAND" == "LAUNCHER" ] && echo -n "ID: " >> $MD5_LOG
 							(($DEBUG)) && cat $MD5_LOG
 							# LAUNCH
 							echo "#[INFO] Analysis/Run '$RUN_NAME' - folder '$IFA' [$MD5] LAUNCHED"
 							eval $CMD 1>> $MD5_LOG 2>> $MD5_LOG
+
+							# If Launcher doesn't respond
+							[ "$COMMAND" == "LAUNCHER" ] && ! (($(cat $MD5_LOG | grep "^ID: .*" -c))) && echo "#[ERROR] LAUNCHER NOT responding!" >> $MD5_LOG
+
 						fi;
 					else
 						(($VERBOSE)) && echo "#[INFO] Analysis/Run '$RUN_NAME' - folder '$IFA' [$MD5] NOT TO LAUNCH"

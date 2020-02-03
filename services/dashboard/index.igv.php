@@ -1,5 +1,12 @@
 <?php
 
+### INCLUDES
+###############
+
+include "config.php";
+
+
+
 # PARAMETERS
 ##############
 
@@ -182,7 +189,7 @@ foreach ($SAMPLE_PATH as $key_sample => $ONE_SAMPLE_PATH) {
 	$design=array();
 	$design_root=glob("$ONE_SAMPLE_PATH$PATH_LEVEL/*{bed,genes}",GLOB_BRACE);
 	if ($CHECK_SUBFOLDER_DATA) {
-		$design_data=glob("$ONE_SAMPLE_PATH$PATH_LEVEL/DATA/*{bed,genes}",GLOB_BRACE);
+		$design_data=glob("$ONE_SAMPLE_PATH$PATH_LEVEL/$RESULTS_SUBFOLDER_DATA/*{bed,genes}",GLOB_BRACE);
 	} else {
 		$design_data=array();
 	};
@@ -241,7 +248,7 @@ foreach ($SAMPLE_PATH as $key_sample => $ONE_SAMPLE_PATH) {
 	$vcf=array();
 	$vcf_root=glob("$ONE_SAMPLE_PATH$PATH_LEVEL/*{vcf.gz,gvcf.gz,bcf.gz}",GLOB_BRACE);
 	if ($CHECK_SUBFOLDER_DATA) {
-		$vcf_data=glob("$ONE_SAMPLE_PATH$PATH_LEVEL/DATA/*{vcf.gz,gvcf.gz,bcf.gz}",GLOB_BRACE);
+		$vcf_data=glob("$ONE_SAMPLE_PATH$PATH_LEVEL/$RESULTS_SUBFOLDER_DATA/*{vcf.gz,gvcf.gz,bcf.gz}",GLOB_BRACE);
 	} else {
 		$vcf_data=array();
 	};
@@ -279,7 +286,7 @@ foreach ($SAMPLE_PATH as $key_sample => $ONE_SAMPLE_PATH) {
 	$alignment=array();
 	$alignment_root=glob("$ONE_SAMPLE_PATH$PATH_LEVEL/*{bam,cram}",GLOB_BRACE);
 	if ($CHECK_SUBFOLDER_DATA) {
-		$alignment_data=glob("$ONE_SAMPLE_PATH$PATH_LEVEL/DATA/*{bam,cram}",GLOB_BRACE);
+		$alignment_data=glob("$ONE_SAMPLE_PATH$PATH_LEVEL/$RESULTS_SUBFOLDER_DATA/*{bam,cram}",GLOB_BRACE);
 	} else {
 		$alignment_data=array();
 	};

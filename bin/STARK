@@ -20,7 +20,7 @@ RELEASE_NOTES=$RELEASE_NOTES"# 0.9b-30/05/2016: Script creation\n";
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Configuration
-ENV_CONFIG=$(find $SCRIPT_DIR/.. -name config.app)
+ENV_CONFIG=$(find -L $SCRIPT_DIR/.. -name config.app)
 source $ENV_CONFIG 1>/dev/null 2>/dev/null
 
 
@@ -552,12 +552,8 @@ if (($APPLICATIONS_INFOS)); then
 	#for ENV_DEF in $( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/env.*sh; do
 
 	#for ENV_DEF in $STARK_FOLDER_APPS/*app; do
-	#find $STARK_FOLDER_APPS -name '*app' | sort -t'/' -k2.2r -k2.1
-	#find $STARK_FOLDER_APPS -name '*app' -type f | xargs ls -l --group-directories-first | sed s#$STARK_FOLDER_APPS/## #| sort -t'/' -k2.3 -k2.2 -k2.1
-	#find $STARK_FOLDER_APPS -name '*app' -type f | sed s#$STARK_FOLDER_APPS/## | sort -f -t'/' -k2.3 -k2.2 -k2.1
-	#exit 0
 	#for ENV_DEF in $(find $STARK_FOLDER_APPS -name '*app' | sort -t'/' -k2.2r -k2.1); do
-	for ENV_DEF in $(find $STARK_FOLDER_APPS -name '*.app' -type f | sed s#$STARK_FOLDER_APPS/## | sort -f -t'/' -k2.3 -k2.2 -k2.1) $(find $STARK_FOLDER_APPS -name '*.plugapp' -type f | sed s#$STARK_FOLDER_APPS/## | sort -f -t'/' -k2.3 -k2.2 -k2.1); do
+	for ENV_DEF in $(find -L $STARK_FOLDER_APPS -name '*.app' -type f | sed s#$STARK_FOLDER_APPS/## | sort -f -t'/' -k2.3 -k2.2 -k2.1) $(find -L $STARK_FOLDER_APPS -name '*.plugapp' -type f | sed s#$STARK_FOLDER_APPS/## | sort -f -t'/' -k2.3 -k2.2 -k2.1); do
 
 		# FIND APP
 		#APP=$($STARK_FOLDER_BIN/extract_variable_from_env.sh $ENV_DEF "APP_NAME");
@@ -1158,11 +1154,11 @@ if [ ! -z "$RUNS" ]; then
 			# Test if RAW Folder or DEM Folder
 
 			# RUN with analysis JSON
-			if (($(find $R -name '*analysis.json' | wc -l))); then
+			if (($(find -L $R -name '*analysis.json' | wc -l))); then
 
 				echo "#[INFO] RUN '$R_NAME' contains configuration files *analysis.json"
 
-				CMD="$STARK_FOLDER_BIN/STARK $PARAM --analysis="$(find $R -name '*.analysis.json' | tr "\n" "," | sed s/,$//)
+				CMD="$STARK_FOLDER_BIN/STARK $PARAM --analysis="$(find -L $R -name '*.analysis.json' | tr "\n" "," | sed s/,$//)
 				#CMD=""
 
 			elif [ -e $R/RTAComplete.txt ]; then
@@ -1351,11 +1347,11 @@ if [ ! -z "$RUNS" ]; then
 						SAMPLE_FASTQ_I1_PATTERN=$SAMPLE_NAME'_S*_I1_*.fastq.gz'
 						SAMPLE_FASTQ_I2_PATTERN=$SAMPLE_NAME'_S*_I2_*.fastq.gz'
 						#echo $SAMPLE_FASTQ_R1_PATTERN
-						SAMPLE_FASTQ_R1=$(find $R -name "$SAMPLE_FASTQ_R1_PATTERN")
+						SAMPLE_FASTQ_R1=$(find -L $R -name "$SAMPLE_FASTQ_R1_PATTERN")
 						[ "$SAMPLE_FASTQ_R1" == "" ] && echo "[ERROR] No Reads for sample '$SAMPLE_NAME'" && exit 1;
-						SAMPLE_FASTQ_R2=$(find $R -name "$SAMPLE_FASTQ_R2_PATTERN")
-						SAMPLE_FASTQ_I1=$(find $R -name "$SAMPLE_FASTQ_I1_PATTERN")
-						SAMPLE_FASTQ_I2=$(find $R -name "$SAMPLE_FASTQ_I2_PATTERN")
+						SAMPLE_FASTQ_R2=$(find -L $R -name "$SAMPLE_FASTQ_R2_PATTERN")
+						SAMPLE_FASTQ_I1=$(find -L $R -name "$SAMPLE_FASTQ_I1_PATTERN")
+						SAMPLE_FASTQ_I2=$(find -L $R -name "$SAMPLE_FASTQ_I2_PATTERN")
 						# APP
 						#SAMPLE_APP="$(echo $L | cut -d, -f$SAMPLE_PROJECT_FIELD | awk -F[$TAG_DELIMITER ] '{print $1}' | tr " " "+" | tr "," "+")"
 						# NEW APP extraction format
@@ -1372,38 +1368,51 @@ if [ ! -z "$RUNS" ]; then
 						MANIFEST_ID=$(echo $L | cut -d, -f$MANIFEST_INDEX_FIELD)
 						MANIFEST_FILENAME=$(cat $RUN_SAMPLESHEET | awk '/\[Manifests\]/,/\[[^Manifest]/' | grep "^\[" -v | sed '/^[[:space:]]*$/d' | tr -d '\r' | awk -F, -v MANIFEST_ID=$MANIFEST_ID '$1==MANIFEST_ID{print $2}')
 
-						# Manifest File
-						if [ -e $R/$MANIFEST_FILENAME ]; then
-							MANIFEST_FILE=$R/$MANIFEST_FILENAME && (($VERBOSE)) && echo "#[INFO] Manifest file found for sample '$SAMPLE_NAME': $MANIFEST_FILE"
-						elif [ -e $FOLDER_MANIFEST/$MANIFEST_FILENAME ]; then
-							MANIFEST_FILE=$FOLDER_MANIFEST/$MANIFEST_FILENAME && (($VERBOSE)) && echo "#[INFO] Manifest file found for sample '$SAMPLE_NAME': $MANIFEST_FILE"
-						else
-							echo "#[WARNING] Manifest file NOT found"
-						fi;
 
-						# Genes File
-						if (($(ls $R/$MANIFEST_FILENAME*.genes 2>/dev/null | wc -l))); then
-							MANIFEST_GENES_FILE=$(ls $R/$MANIFEST_FILENAME*.genes 2>/dev/null | tr "\n" "+" | sed "s/+$//" | sed "s/^+//") && (($VERBOSE)) &&  echo "#[INFO] Manifest Genes file found for sample '$SAMPLE_NAME': $MANIFEST_GENES_FILE"
-						elif (($(ls $FOLDER_MANIFEST/$MANIFEST_FILENAME*.genes 2>/dev/null | wc -l))); then
-							MANIFEST_GENES_FILE=$(ls $FOLDER_MANIFEST/$MANIFEST_FILENAME*.genes 2>/dev/null | tr "\n" "+" | sed "s/+$//" | sed "s/^+//") && (($VERBOSE)) &&  echo "#[INFO] Manifest Genes file found for sample '$SAMPLE_NAME': $MANIFEST_GENES_FILE"
-						else
-							echo "#[INFO] Manifest Genes file NOT found"
-						fi;
-						MANIFEST_GENES_FILE=$(echo $MANIFEST_GENES_FILE | sed "s/+$//")
+						if [ "$MANIFEST_FILENAME" == "" ]; then
 
-						# Transcripts File
-						#MANIFEST_TRANSCRIPTS_FILE=$(ls "$R/$MANIFEST_FILENAME*.transcripts" 2>/dev/null | tr "\n" "+") && (($VERBOSE)) &&  echo "#[INFO] Manifest Transcripts file found for sample '$SAMPLE_NAME': $MANIFEST_TRANSCRIPTS_FILE"
-						if (($(ls $R/$MANIFEST_FILENAME*.transcripts 2>/dev/null | wc -l))); then
-							MANIFEST_TRANSCRIPTS_FILE=$(ls $R/$MANIFEST_FILENAME*.transcripts 2>/dev/null | tr "\n" "+" | sed "s/+$//" | sed "s/^+//") && (($VERBOSE)) &&  echo "#[INFO] Manifest Transcripts file found for sample '$SAMPLE_NAME': $MANIFEST_TRANSCRIPTS_FILE"
-						elif (($(ls $FOLDER_MANIFEST/$MANIFEST_FILENAME*.transcripts 2>/dev/null | wc -l))); then
-							MANIFEST_TRANSCRIPTS_FILE=$(ls $FOLDER_MANIFEST/$MANIFEST_FILENAME*.transcripts 2>/dev/null | tr "\n" "+" | sed "s/+$//" | sed "s/^+//") && (($VERBOSE)) &&  echo "#[INFO] Manifest Transcripts file found for sample '$SAMPLE_NAME': $MANIFEST_TRANSCRIPTS_FILE"
+							MANIFEST_FILE=""
+							MANIFEST_GENES_FILE=""
+							MANIFEST_TRANSCRIPTS_FILE=""
+
 						else
-							echo "#[INFO] Manifest Transcripts file NOT found"
+
+							# Manifest File
+							if [ -f $R/$MANIFEST_FILENAME ]; then
+								MANIFEST_FILE=$R/$MANIFEST_FILENAME && (($VERBOSE)) && echo "#[INFO] Manifest file found for sample '$SAMPLE_NAME': $MANIFEST_FILE"
+							elif [ -f $FOLDER_MANIFEST/$MANIFEST_FILENAME ]; then
+								MANIFEST_FILE=$FOLDER_MANIFEST/$MANIFEST_FILENAME && (($VERBOSE)) && echo "#[INFO] Manifest file found for sample '$SAMPLE_NAME': $MANIFEST_FILE"
+							else
+								MANIFEST_FILE=""
+								echo "#[WARNING] Manifest file NOT found"
+							fi;
+
+							# Genes File
+							if (($(ls $R/$MANIFEST_FILENAME*.genes 2>/dev/null | wc -l))); then
+								MANIFEST_GENES_FILE=$(ls $R/$MANIFEST_FILENAME*.genes 2>/dev/null | tr "\n" "+" | sed "s/+$//" | sed "s/^+//") && (($VERBOSE)) &&  echo "#[INFO] Manifest Genes file found for sample '$SAMPLE_NAME': $MANIFEST_GENES_FILE"
+							elif (($(ls $FOLDER_MANIFEST/$MANIFEST_FILENAME*.genes 2>/dev/null | wc -l))); then
+								MANIFEST_GENES_FILE=$(ls $FOLDER_MANIFEST/$MANIFEST_FILENAME*.genes 2>/dev/null | tr "\n" "+" | sed "s/+$//" | sed "s/^+//") && (($VERBOSE)) &&  echo "#[INFO] Manifest Genes file found for sample '$SAMPLE_NAME': $MANIFEST_GENES_FILE"
+							else
+								MANIFEST_GENES_FILE=""
+								echo "#[INFO] Manifest Genes file NOT found"
+							fi;
+							MANIFEST_GENES_FILE=$(echo $MANIFEST_GENES_FILE | sed "s/+$//")
+
+							# Transcripts File
+							#MANIFEST_TRANSCRIPTS_FILE=$(ls "$R/$MANIFEST_FILENAME*.transcripts" 2>/dev/null | tr "\n" "+") && (($VERBOSE)) &&  echo "#[INFO] Manifest Transcripts file found for sample '$SAMPLE_NAME': $MANIFEST_TRANSCRIPTS_FILE"
+							if (($(ls $R/$MANIFEST_FILENAME*.transcripts 2>/dev/null | wc -l))); then
+								MANIFEST_TRANSCRIPTS_FILE=$(ls $R/$MANIFEST_FILENAME*.transcripts 2>/dev/null | tr "\n" "+" | sed "s/+$//" | sed "s/^+//") && (($VERBOSE)) &&  echo "#[INFO] Manifest Transcripts file found for sample '$SAMPLE_NAME': $MANIFEST_TRANSCRIPTS_FILE"
+							elif (($(ls $FOLDER_MANIFEST/$MANIFEST_FILENAME*.transcripts 2>/dev/null | wc -l))); then
+								MANIFEST_TRANSCRIPTS_FILE=$(ls $FOLDER_MANIFEST/$MANIFEST_FILENAME*.transcripts 2>/dev/null | tr "\n" "+" | sed "s/+$//" | sed "s/^+//") && (($VERBOSE)) &&  echo "#[INFO] Manifest Transcripts file found for sample '$SAMPLE_NAME': $MANIFEST_TRANSCRIPTS_FILE"
+							else
+								MANIFEST_TRANSCRIPTS_FILE=""
+								echo "#[INFO] Manifest Transcripts file NOT found"
+							fi;
+							MANIFEST_TRANSCRIPTS_FILE=$(echo $MANIFEST_TRANSCRIPTS_FILE | sed "s/+$//")
+
 						fi;
-						MANIFEST_TRANSCRIPTS_FILE=$(echo $MANIFEST_TRANSCRIPTS_FILE | sed "s/+$//")
 
 						# OTHER FILES
-						#echo "find $R/Stats -name *"
 						OTHER_FILES="$R/Stats:$SAMPLE_NAME.demultiplexing/Stats+$R/Reports:$SAMPLE_NAME.demultiplexing/Reports"
 
 						#	echo "SAMPLE_LIST '$SAMPLE_NAME' found in the list '$SAMPLE_LIST'"
@@ -1511,7 +1520,7 @@ if [ ! -z "$RUNS" ]; then
 				#CMD=""
 				#echo "CMD=$CMD"; exit 0
 
-			elif (($(find $R -name '*R1*fastq.gz' -or -name '*.sam' -or -name '*.bam' -or -name '*.cram' | wc -l))); then
+			elif (($(find -L $R -name '*R1*fastq.gz' -or -name '*.sam' -or -name '*.bam' -or -name '*.cram' | wc -l))); then
 
 				echo "#[INFO] RUN '$R_NAME' is a samples folder (Fastq/bam/cram)"
 
@@ -1519,7 +1528,7 @@ if [ ! -z "$RUNS" ]; then
 				FASTQ_R2=""
 
 				(($VERBOSE)) && echo "#[INFO] Search FASTQ Read1 (*R1*fastq.gz)"
-				for R1 in $(find $R -name '*R1*fastq.gz'); do
+				for R1 in $(find -L $R -name '*R1*fastq.gz'); do
 					(($VERBOSE)) && echo "#[INFO] FASTQ Read1 found: $R1";
 					# find R2
 					#echo $R1 | sed s/[._-]R1[._-]/R2/gi
@@ -1547,7 +1556,7 @@ if [ ! -z "$RUNS" ]; then
 
 				(($VERBOSE)) && echo "#[INFO] Find *sam/*bam.*cram"
 
-				for R1 in $(find $R -name '*.sam' -or -name '*.bam' -or -name '*.cram'); do
+				for R1 in $(find -L $R -name '*.sam' -or -name '*.bam' -or -name '*.cram'); do
 					(($VERBOSE)) && echo "#[INFO] SAM/BAM/CRAM found: $R1";
 
 					FASTQ_R1="$FASTQ_R1$R1,"

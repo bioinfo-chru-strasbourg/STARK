@@ -1,5 +1,14 @@
 <?php
 
+
+### INCLUDES
+###############
+
+include "config.php";
+
+
+
+
 # PARAMETERS
 ##############
 
@@ -182,7 +191,7 @@ foreach ($SAMPLE_PATH as $key_sample => $ONE_SAMPLE_PATH) {
 	$vcf=array();
 	$vcf_root=glob("$ONE_SAMPLE_PATH$PATH_LEVEL/*{".$SEARCH_EXT."}",GLOB_BRACE);
 	if ($CHECK_SUBFOLDER_DATA) {
-		$vcf_data=glob("$ONE_SAMPLE_PATH$PATH_LEVEL/DATA/*{".$SEARCH_EXT."}",GLOB_BRACE);
+		$vcf_data=glob("$ONE_SAMPLE_PATH$PATH_LEVEL/$RESULTS_SUBFOLDER_DATA/*{".$SEARCH_EXT."}",GLOB_BRACE);
 	} else {
 		$vcf_data=array();
 	};

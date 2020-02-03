@@ -1,6 +1,12 @@
 <?php
 
 
+	### INCLUDES
+	###############
+
+	include "config.php";
+
+
 	### VARIABLES
 	###############
 

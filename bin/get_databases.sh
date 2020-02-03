@@ -23,7 +23,7 @@ RELEASE_NOTES=$RELEASE_NOTES"# 0.9.3b-31/05/2019: Add APP configuration\n";
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Configuration
-ENV_CONFIG=$(find $SCRIPT_DIR/.. -name config.app)
+ENV_CONFIG=$(find -L $SCRIPT_DIR/.. -name config.app)
 source $ENV_CONFIG 1>/dev/null 2>/dev/null
 
 # Header
