@@ -162,7 +162,7 @@ description_app () {
 
 
 find_app () {
-# find a env file from an application definition
+# find -L a env file from an application definition
 # $1: APP definition
 # $2: APPS folder
 # return APP env file or default APP env file or null
@@ -201,13 +201,13 @@ find_app () {
 		local APP_tr=$(echo $APP | tr "-" ".")
 		local APP_BASENAME_tr=$(echo $APP_BASENAME | tr "-" ".")
 
-		local FIND_APP_FILE=$(find $FOLDER_APPS/$APP_DIRNAME -name $APP_BASENAME -type f)
+		local FIND_APP_FILE=$(find -L $FOLDER_APPS/$APP_DIRNAME -name $APP_BASENAME -type f)
 		[ ! -z $FIND_APP_FILE ] && echo $FIND_APP_FILE && return 0
 
-		local FIND_APP_SUB_FILE=$(find $FOLDER_APPS/$APP_DIRNAME -name $APP_BASENAME.app -or -name $APP_BASENAME_tr.app -name $APP_BASENAME.plugapp -or -name $APP_BASENAME_tr.plugapp | sort -t'/' -k2.2r -k2.1 | head -n1 )
+		local FIND_APP_SUB_FILE=$(find -L $FOLDER_APPS/$APP_DIRNAME -name $APP_BASENAME.app -or -name $APP_BASENAME_tr.app -name $APP_BASENAME.plugapp -or -name $APP_BASENAME_tr.plugapp | sort -t'/' -k2.2r -k2.1 | head -n1 )
 		[ ! -z "$FIND_APP_SUB_FILE" ] && echo $FIND_APP_SUB_FILE && return 0
 
-		for APP_TEST in $(find $FOLDER_APPS -name *.app -or -name *.plugapp); do
+		for APP_TEST in $(find -L $FOLDER_APPS -name *.app -or -name *.plugapp); do
 
 			local APP_NAME=$(source $APP_TEST 2>/dev/null; echo $APP_NAME);
 			[[ $APP = $APP_NAME ]] && echo $APP_TEST && return 0
