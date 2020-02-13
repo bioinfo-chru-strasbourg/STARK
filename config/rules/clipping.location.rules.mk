@@ -24,7 +24,7 @@ CAP_TMP_FOLDER?=$(TMP_FOLDER_TMP) # TMP_SYS_FOLDER ???
 # Soft Clipping primer bam file from a manifest
 %.bam: %.clipping.bam %.clipping.bam.bai %.manifest %.genome
 	# Clipping
-	+$(CAP) --function=clipping --env=$(CONFIG_TOOLS) --ref=`cat $*.genome` --bam=$< --manifest=$*.manifest --output=$@ --threads=$(CAP_THREADS) --bedtools=$(BEDTOOLS) --tmp=$(CAP_TMP_FOLDER) $(CAP_OPTIONS)
+	+$(CAP) --function=clipping --env=$(CONFIG_TOOLS) --ref=$$(cat $*.genome) --bam=$< --manifest=$*.manifest --output=$@ --threads=$(CAP_THREADS) --bedtools=$(BEDTOOLS) --tmp=$(CAP_TMP_FOLDER) $(CAP_OPTIONS)
 	#-rm $*.unclipped.*
 	-rm $*.clipping.*
 

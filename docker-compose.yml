@@ -183,6 +183,9 @@ services:
             - .env
         ports:
             - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_JARVIS_PORT}:${DOCKER_STARK_SERVICE_JARVIS_PORT_INNER}
+        # volumes:
+        #     # Volumes for configuration
+        #     - ${DOCKER_STARK_INNER_FOLDER_CONFIG_HOWARD}:${DOCKER_STARK_SERVICE_JARVIS_FOLDER_CONFIGURATION}:ro
         restart: always
         links:
             - stark-service-data

@@ -345,34 +345,7 @@ GATKRR_FLAGS=
 	#
 	# Manifest name for the sample
 	-grep ^`cat $(@D)/$(*F).SAMPLE_MANIFEST_I`, $*.manifests_list.txt | cut -d \, -f 2 > $(@D)/$(*F).SAMPLE_MANIFEST;
-	#
-	# BED
-	# file=$$( echo "$$( dirname $(MANIFEST_FOLDER)/`cat $(@D)/$(*F).SAMPLE_MANIFEST` )/$$( basename $(MANIFEST_FOLDER)/`cat $(@D)/$(*F).SAMPLE_MANIFEST` ).bed" ); \
-	# echo "bed file is : $$file "; \
-	# if [ -s $$file ]; then \
-	# 	cat $$file > $*.bed; \
-	# else \
-	# 	echo "$$file don't exist !!!"; \
-	# fi;
-	#
-	# BED GENES
-	# file=$$( echo "$$( dirname $(MANIFEST_FOLDER)/`cat $(@D)/$(*F).SAMPLE_MANIFEST` )/$$( basename $(MANIFEST_FOLDER)/`cat $(@D)/$(*F).SAMPLE_MANIFEST` ).genes" ); \
-	# echo "genes file is : $$file "; \
-	# if [ -s $$file ]; then \
-	# 	cat $$file > $*.genes; \
-	# else \
-	# 	echo "$$file don't exist !!!"; \
-	# fi;
-	#
-	# TRANSCRIPTS
-	# file=$$( echo "$$( dirname $(MANIFEST_FOLDER)/`cat $(@D)/$(*F).SAMPLE_MANIFEST` )/$$( basename $(MANIFEST_FOLDER)/`cat $(@D)/$(*F).SAMPLE_MANIFEST` ).transcripts" ); \
-	# echo "transcripts file is : $$file "; \
-	# if [ -s $$file ]; then \
-	# 	cat $$file > $*.transcripts; \
-	# else \
-	# 	echo "$$file don't exist !!!"; \
-	# fi;
-	#
+
 	# Found manifest, or Default manifest is the first in the list
 	if [ "`cat $(@D)/$(*F).SAMPLE_MANIFEST`" != "" ] && [ -e "$(MANIFEST_FOLDER)/`cat $(@D)/$(*F).SAMPLE_MANIFEST`" ]; then \
 		echo "# TEST Found Manifest '"`cat $(@D)/$(*F).SAMPLE_MANIFEST`"' in '$(MANIFEST_FOLDER)' for sample `echo $$(basename $$(dirname $(@D)))`/$(*F)"; \
@@ -462,7 +435,8 @@ GATKRR_FLAGS=
 	if [ -s $@.bed ]; then \
 		echo "[INFO] Generate $@ from $@.bed with PICARD BedToIntervalList" ; \
 		#cut $@.bed -f1-3,5 > $@.bed.4fields ; \
-		awk -F"\t" '{print $$1"\t"$$2-1"\t"$$3"\t"$$5}' $@.bed > $@.bed.4fields ; \
+		#awk -F"\t" '{print $$1"\t"$$2-1"\t"$$3"\t"$$5}' $@.bed > $@.bed.4fields ; # BED in 1-based \
+		awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$5}' $@.bed > $@.bed.4fields ; \
 		$(JAVA) -jar $(PICARD) BedToIntervalList I=$@.bed.4fields O=$@ SD=$$(cat $*.dict) ; \
 		rm $@.bed.4fields ; \
 	fi;
@@ -523,7 +497,8 @@ GATKRR_FLAGS=
 		echo "# BED for the sample generated from the manifest '$<'" ; \
 		rm -f $@.tmp $@.sorted.tmp; \
 		$(CAP_ManifestToBED) --input=$< --output=$@.tmp --output_type=region_clipped; \
-		$(BEDTOOLS) sort -i $@.tmp | $(BEDTOOLS) merge -c 4 -o collapse  | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$4}' > $@; \
+		#$(BEDTOOLS) sort -i $@.tmp | $(BEDTOOLS) merge -c 5 -o collapse  | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$4}' > $@; \
+		$(BEDTOOLS) sort -i $@.tmp | $(BEDTOOLS) merge -c 4,5 -o first,collapse  | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$4"\t"$$5}' > $@; \
 		rm -f $@.tmp; \
 	elif [ -e "$(BED)" ] && [ "$(BED)" != "" ]; then \
 		echo "# Input BED '$(BED)' exists" ; \
@@ -610,7 +585,7 @@ GATKRR_FLAGS=
 		echo "# Region Clipped BED for the sample generated from the manifest '$<'" ; \
 		rm -f $@.tmp $@.sorted.tmp; \
 		$(CAP_ManifestToBED) --input=$< --output=$@.tmp --output_type=region_clipped; \
-		$(BEDTOOLS) sort -i $@.tmp | $(BEDTOOLS) merge -c 4 -o collapse  | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$4}' > $@; \
+		$(BEDTOOLS) sort -i $@.tmp | $(BEDTOOLS) merge -c 4,5 -o first,collapse  | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$4"\t"$$5}' > $@; \
 		rm -f $@.tmp; \
 	else \
 		echo "# Error creating region BED"; \

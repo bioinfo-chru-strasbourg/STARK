@@ -49,24 +49,6 @@ BARCODE_TAG?=
 
 
 
-%.bam.old: %.UMIgroup.bam %.UMIgroup.bam.bai
-	# Create Metrics Directory
-	mkdir -p $(@D) ;
-	# Group barcode (usefu)
-	#if [ "$(BARCODE_TAG)" == "BX" ]; then
-	echo "#[INFO] Group UMI TAG BX";
-	mkdir -p $<.metrics;
-	$(UMITOOLS) group -I $< --paired --unpaired-reads=use --unmapped-reads=use --chimeric-pairs=use \
-		--group-out=$<.metrics/$(*F).UMIgroup.metrics.tsv \
-		--umi-separator=":" \
-		--output-bam -S $@ \
-		-L $<.metrics/$(*F).UMIgroup.log \
-		--temp-dir=$(TMP_FOLDER_TMP);
-	$(GZ) $<.metrics/$(*F).UMIgroup.metrics.tsv
-
-
-
-
 RELEASE_COMMENT := "\#\# MARK_DUPLICATES: Mark duplicated reads in BAM with PICARD MarkDuplicates. Not parallelized"
 RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
