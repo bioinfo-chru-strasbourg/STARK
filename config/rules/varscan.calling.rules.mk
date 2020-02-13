@@ -54,7 +54,7 @@ VARSCAN_SNP_FILTERS=$(VARSCAN_FILTERS)
 VARSCAN_INDEL_FILTERS=$(VARSCAN_FILTERS)
 VARSCAN_TIMEOUT=3600 # 1 = 1sec, 60=1min, 3600=1h
 
-%.VarScan.SNP$(POST_CALLING).vcf: %.bam.mpileup %.from_manifest.intervals %.empty.vcf %.genome #
+%.VarScan.SNP$(POST_CALLING).vcf: %.bam.mpileup %.empty.vcf %.genome #
 	-if [ -s $< ]; then \
 		echo "# GENERATION of '$@' start: "`date`; \
 		sample=`basename $* | cut -d"." -f1`; \
@@ -78,7 +78,7 @@ VARSCAN_TIMEOUT=3600 # 1 = 1sec, 60=1min, 3600=1h
 	-rm $@.idx
 
 
-%.VarScan.InDel$(POST_CALLING).vcf: %.bam.mpileup %.from_manifest.intervals %.empty.vcf %.genome
+%.VarScan.InDel$(POST_CALLING).vcf: %.bam.mpileup %.empty.vcf %.genome
 	-if [ -s $< ]; then \
 		echo "# GENERATION of '$@' start: "`date`; \
 		sample=`basename $* | cut -d"." -f1`; \
@@ -121,7 +121,7 @@ VARSCAN_SOMATIC_INDEL_FILTERS=$(VARSCAN_SOMATIC_FILTERS)
 VARSCAN_SOMATIC_TIMEOUT=3600 # 1 = 1sec, 60=1min, 3600=1h
 
 
-%.VarScan_SOMATIC$(POST_CALLING).SNP.vcf: %.bam.mpileup %.from_manifest.intervals %.empty.vcf %.genome #
+%.VarScan_SOMATIC$(POST_CALLING).SNP.vcf: %.bam.mpileup %.empty.vcf %.genome #
 	-if [ -s $< ]; then \
 		echo "# GENERATION of '$@' start: "`date`; \
 		sample=`basename $* | cut -d"." -f1`; \
@@ -145,7 +145,7 @@ VARSCAN_SOMATIC_TIMEOUT=3600 # 1 = 1sec, 60=1min, 3600=1h
 	-rm $@.idx
 
 
-%.VarScan_SOMATIC$(POST_CALLING).InDel.vcf: %.bam.mpileup %.from_manifest.intervals %.empty.vcf %.genome
+%.VarScan_SOMATIC$(POST_CALLING).InDel.vcf: %.bam.mpileup %.empty.vcf %.genome
 	-if [ -s $< ]; then \
 		echo "# GENERATION of '$@' start: "`date`; \
 		sample=`basename $* | cut -d"." -f1`; \
@@ -188,7 +188,7 @@ VARSCAN_EXOME_SOMATIC_INDEL_FILTERS=$(VARSCAN_EXOME_SOMATIC_FILTERS)
 VARSCAN_EXOME_SOMATIC_TIMEOUT=36000 # 1 = 1sec, 60=1min, 3600=1h
 
 
-%.VarScan_EXOME_SOMATIC.SNP$(POST_CALLING).vcf: %.bam.mpileup %.from_manifest.intervals %.empty.vcf %.genome #
+%.VarScan_EXOME_SOMATIC.SNP$(POST_CALLING).vcf: %.bam.mpileup %.empty.vcf %.genome #
 	-if [ -s $< ]; then \
 		echo "# GENERATION of '$@' start: "`date`; \
 		sample=`basename $* | cut -d"." -f1`; \
@@ -212,7 +212,7 @@ VARSCAN_EXOME_SOMATIC_TIMEOUT=36000 # 1 = 1sec, 60=1min, 3600=1h
 	-rm $@.idx
 
 
-%.VarScan_EXOME_SOMATIC.InDel$(POST_CALLING).vcf: %.bam.mpileup %.from_manifest.intervals %.empty.vcf %.genome
+%.VarScan_EXOME_SOMATIC.InDel$(POST_CALLING).vcf: %.bam.mpileup %.empty.vcf %.genome
 	-if [ -s $< ]; then \
 		echo "# GENERATION of '$@' start: "`date`; \
 		sample=`basename $* | cut -d"." -f1`; \
@@ -257,7 +257,7 @@ VARSCAN_HEMATOLOGY_INDEL_FILTERS=$(VARSCAN_HEMATOLOGY_FILTERS)
 VARSCAN_HEMATOLOGY_TIMEOUT=3600 # 1 = 1sec, 60=1min, 3600=1h
 
 
-%.VarScan_HEMATOLOGY.SNP$(POST_CALLING).vcf: %.bam.mpileup %.from_manifest.intervals %.empty.vcf %.genome #
+%.VarScan_HEMATOLOGY.SNP$(POST_CALLING).vcf: %.bam.mpileup %.empty.vcf %.genome #
 	-if [ -s $< ]; then \
 		echo "# GENERATION of '$@' start: "`date`; \
 		sample=`basename $* | cut -d"." -f1`; \
@@ -281,7 +281,7 @@ VARSCAN_HEMATOLOGY_TIMEOUT=3600 # 1 = 1sec, 60=1min, 3600=1h
 	-rm $@.idx
 
 
-%.VarScan_HEMATOLOGY.InDel$(POST_CALLING).vcf: %.bam.mpileup %.from_manifest.intervals %.empty.vcf %.genome
+%.VarScan_HEMATOLOGY.InDel$(POST_CALLING).vcf: %.bam.mpileup %.empty.vcf %.genome
 	-if [ -s $< ]; then \
 		echo "# GENERATION of '$@' start: "`date`; \
 		sample=`basename $* | cut -d"." -f1`; \
@@ -323,7 +323,7 @@ VARSCAN_SOLIDTUMOR_INDEL_FILTERS=$(VARSCAN_SOLIDTUMOR_FILTERS)
 VARSCAN_SOLIDTUMOR_TIMEOUT=3600 # 1 = 1sec, 60=1min, 3600=1h
 
 
-%.VarScan_SOLIDTUMOR.SNP$(POST_CALLING).vcf: %.bam.mpileup %.from_manifest.intervals %.empty.vcf %.genome #
+%.VarScan_SOLIDTUMOR.SNP$(POST_CALLING).vcf: %.bam.mpileup %.empty.vcf %.genome #
 	-if [ -s $< ]; then \
 		echo "# GENERATION of '$@' start: "`date`; \
 		sample=`basename $* | cut -d"." -f1`; \
@@ -347,7 +347,7 @@ VARSCAN_SOLIDTUMOR_TIMEOUT=3600 # 1 = 1sec, 60=1min, 3600=1h
 	-rm $@.idx
 
 
-%.VarScan_SOLIDTUMOR.InDel$(POST_CALLING).vcf: %.bam.mpileup %.from_manifest.intervals %.empty.vcf %.genome
+%.VarScan_SOLIDTUMOR.InDel$(POST_CALLING).vcf: %.bam.mpileup %.empty.vcf %.genome
 	-if [ -s $< ]; then \
 		echo "# GENERATION of '$@' start: "`date`; \
 		sample=`basename $* | cut -d"." -f1`; \

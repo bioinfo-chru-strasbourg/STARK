@@ -644,7 +644,7 @@ RUN source $TOOL_INIT && \
 
 # TOOL INFO
 ENV TOOL_NAME="cap"
-ENV TOOL_VERSION="0.9.11b"
+ENV TOOL_VERSION="0.9.12"
 ENV TOOL_TARBALL="archive.tar.gz"
 ENV TOOL_SOURCE_EXTERNAL="https://gitlab.bioinfo-diag.fr/Strasbourg/CAP/repository/$TOOL_VERSION/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
@@ -921,11 +921,13 @@ ENV TOOL_TARBALL="VarScan.v$TOOL_VERSION.jar"
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/dkoboldt/varscan/raw/master/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
+ENV TOOL_PARAM_JAR_NAME=VarScan.jar
 
 # TOOL INSTALLATION
 RUN source $TOOL_INIT && \
 	echo "#[INFO] TOOL installation" && \
 	cp $TOOL_SOURCE $TOOL_DEST/bin/ && \
+	ln -s $(basename $TOOL_SOURCE) $TOOL_DEST/bin/$TOOL_PARAM_JAR_NAME && \
     $TOOL_CHECK ;
 
 

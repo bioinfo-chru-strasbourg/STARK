@@ -178,10 +178,22 @@ SORT_ORDER="-k1,1 -k2,2n"
 #BEDFILE_GENES_CHECKED=$BEDFILE_GENES.$RANDOM.checked
 BEDFILE_GENES_CHECKED=$TMP_GENESCOVERAGE/BEDFILE_GENES.$RANDOM.checked
 
-# Normalize bed
+# # Normalize bed
+# awk -F"\t" '
+# {chr=$1}
+# {start=$2}
+# {stop=$3}
+# {strand=$4}
+# {gene=$5}
+# strand !~ /[+-]/ {strand="+"}
+# gene == "" { if ($4 !~ /[+-]/ && $4 != "") {gene=$4} else {gene=chr"_"start"_"stop} }
+# {print chr"\t"start"\t"stop"\t"strand"\t"gene}
+# ' $BEDFILE_GENES | sort $SORT_ORDER > $BEDFILE_GENES_CHECKED
+
+# Normalize bed and 1-based format
 awk -F"\t" '
 {chr=$1}
-{start=$2}
+{start=$2+1}
 {stop=$3}
 {strand=$4}
 {gene=$5}

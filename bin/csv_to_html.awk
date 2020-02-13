@@ -4,6 +4,7 @@
 BEGIN {
     FS="\t";
 	nb_line=0;
+    if (limit=="") limit=2000;
     #print "<table>";
 	#print "tag_row_head_plus="tag_row_head_plus;
 	#print "tag_col_head_plus="tag_col_head_plus;
@@ -29,7 +30,7 @@ NR==2 {
 # If CSV file line number (NR variable) is greater than 1, call printRow fucntion with 'td' as argument
 NR>1 {
 	nb_line++;
-    printRow("td",tag_row_body_plus,tag_col_body_plus)
+    if (nb_line<=limit) printRow("td",tag_row_body_plus,tag_col_body_plus);
 }
 # Print HTML footer
 END {

@@ -415,6 +415,10 @@ fi;
 PAGE_BREAK_AFTER=' style="page-break-after: always;"'
 PAGE_BREAK_BEFORE=' style="page-break-before: always;"'
 
+
+# TABLE_LIMIT
+TABLE_LIMIT=2000
+
 # BAM Validation texts
 #uniq reads, with quality higher than 10, aligned on Target Design, and clipped overlapped bases
 BAM_VALIDATION_TEXT_HTML='Minimum Mapping Quality >= '$METRICS_MINIMUM_MAPPING_QUALITY','
@@ -2412,23 +2416,7 @@ for ALIGNER in $ALIGNERS; do
 
 	if [ -s $GENES_PANEL_AMPLICON ]; then
 
-		#cat $GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH;
-		if ((0)); then
-			print_header=true
-
-			while read INPUT ; do
-				if $print_header;then
-					GENES_PANEL_AMPLICON_HTML=$GENES_PANEL_AMPLICON_HTML"<thead><tr class=\"table-heads\"><th class=\"head-item mbr-fonts-style display-7\">"$( echo -e "$INPUT" | tr ",;" " " | sed -e 's/\t/<\/th><th class=\"head-item mbr-fonts-style display-7\">/g')"</th></tr></thead><tbody>"
-					print_header=false
-				else
-					#echo "<tr><td>${INPUT//\t/</td><td>}</td></tr>" ;
-					GENES_PANEL_AMPLICON_HTML=$GENES_PANEL_AMPLICON_HTML"<tr><td class=\"body-item mbr-fonts-style display-7\">"$(echo -e "$INPUT" | tr ",;" " " | sed -e 's/\t/<\/td><td class=\"body-item mbr-fonts-style display-7\">/g')"</td></tr>"
-				fi;
-			done < $GENES_PANEL_AMPLICON ;
-			GENES_PANEL_AMPLICON_HTML=$GENES_PANEL_AMPLICON_HTML"</tbody>"
-		fi;
-
-		GENES_PANEL_AMPLICON_HTML=$(cat $GENES_PANEL_AMPLICON | tr "," " " | $STARK_FOLDER_BIN/csv_to_html.awk -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
+		GENES_PANEL_AMPLICON_HTML=$(cat $GENES_PANEL_AMPLICON | tr "," " " | $STARK_FOLDER_BIN/csv_to_html.awk -v limit=$TABLE_LIMIT -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
 
 		#AMPLICON_TEXT_HTML="Amplicon clipping generated with <strong>CAP</strong> and depth metrics with <strong>Picard CollectHsMetrics</strong> on all <strong>Target Design</strong>."
 		AMPLICON_TEXT_HTML="<br>Amplicon depth metrics generated with <strong>CAP</strong>"
@@ -2554,19 +2542,19 @@ for ALIGNER in $ALIGNERS; do
 			# GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE
 			GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML=""
 			if [ -s $GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE ]; then
-				GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML=$(cat $GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE | tr "," " " | $STARK_FOLDER_BIN/csv_to_html.awk -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
+				GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML=$(cat $GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE | tr "," " " | $STARK_FOLDER_BIN/csv_to_html.awk -v limit=$TABLE_LIMIT -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
 			fi;
 
 			# GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE
 			GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML=""
 			if [ -s $GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE ]; then
-				GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML=$(cat $GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE | tr "," " " | $STARK_FOLDER_BIN/csv_to_html.awk -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
+				GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML=$(cat $GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE | tr "," " " | $STARK_FOLDER_BIN/csv_to_html.awk -v limit=$TABLE_LIMIT -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
 			fi;
 
 			# GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH
 			GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH_HTML=""
 			if [ -s $GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH ]; then
-				GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH_HTML=$(cat $GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH | tr "," " " | $STARK_FOLDER_BIN/csv_to_html.awk -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
+				GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH_HTML=$(cat $GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH | tr "," " " | $STARK_FOLDER_BIN/csv_to_html.awk -v limit=$TABLE_LIMIT -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
 			fi;
 
 			# FLAGS
@@ -2952,6 +2940,8 @@ echo '
 				<br>
 				Minimum depth <strong>'$MINIMUM_DEPTH'X</strong>,
 				Expected depth <strong>'$EXPECTED_DEPTH'X</strong>
+				<br>
+				[Tables limited to '$TABLE_LIMIT' entries]
 			</p>
 
 			<section class="mbr-section content8 cid-ruitEAjBmu" id="content8-1z">
@@ -3055,6 +3045,8 @@ echo '
 				Expected depth <strong>'$EXPECTED_DEPTH'X</strong>,
 				Sequencing coverage threshold <strong>'$(awk 'BEGIN{printf("%.1f\n",'$SEQUENCING_COVERAGE_THRESHOLD'*100)}')'%</strong>,
 				Minimum & Expected depth coverage threshold <strong>'$(awk 'BEGIN{printf("%.1f\n",'$DEPTH_COVERAGE_THRESHOLD'*100)}')'%</strong>
+				<br>
+				[Tables limited to '$TABLE_LIMIT' entries]
 			</p>
 
 			<section class="mbr-section content8 cid-ruitEAjBmu" id="content8-1z">
@@ -3169,14 +3161,14 @@ GENES_PANEL_NUM=0
 				rev $GENES_PANEL_REPORT_TSV | cut -f -2 | rev >$HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.FORMATSAMPLE
 				paste $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.INFO $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.CHROMPOSREFALT $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.FORMATSAMPLE > $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV
 
-				GENES_PANEL_VARIANTS_HTML=$(cat $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV | tr "," " " | $STARK_FOLDER_BIN/csv_to_html.awk -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
+				GENES_PANEL_VARIANTS_HTML=$(cat $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV | tr "," " " | $STARK_FOLDER_BIN/csv_to_html.awk -v limit=$TABLE_LIMIT -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
 
 			fi;
 
 			# GENES_PANEL_INFO_FIELD_STATS
 			echo "Annotation	Value	Count" > $HTMLFILE_ANNEX_GENES_PANEL_ANNOTATIONS.tmp
 			cat $GENES_PANEL_INFO_FIELD_STATS | grep "^#" -v >> $HTMLFILE_ANNEX_GENES_PANEL_ANNOTATIONS.tmp
-			GENES_PANEL_INFO_FIELD_STATS_HTML=$(cat $HTMLFILE_ANNEX_GENES_PANEL_ANNOTATIONS.tmp | tr "," " " | $STARK_FOLDER_BIN/csv_to_html.awk -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
+			GENES_PANEL_INFO_FIELD_STATS_HTML=$(cat $HTMLFILE_ANNEX_GENES_PANEL_ANNOTATIONS.tmp | tr "," " " | $STARK_FOLDER_BIN/csv_to_html.awk -v limit=$TABLE_LIMIT -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
 
 			# BREAK
 			(( $(echo "$GENES_PANEL_NUM >= 2" |bc -l) )) && GENES_PANEL_BREAK=$PAGE_BREAK_BEFORE || GENES_PANEL_BREAK=""

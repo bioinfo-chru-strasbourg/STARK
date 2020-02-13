@@ -128,7 +128,7 @@ CAP_METRICS_OPTIONS?=$(CAP_METRICS_OPTIONS_CLIP_OVERLAPPING_READS)
 # Check if .metrics.region_clipped.bed and metrics.bed exists
 # Else generate BED from BAM
 
-%.for_metrics_bed: %.bam %.bam.bai %.bam.bed %.metrics.from_manifest.intervals %.metrics.bed %.metrics.region_clipped.bed #%.bam.bed
+%.for_metrics_bed: %.bam %.bam.bai %.bam.bed %.metrics.bed %.metrics.region_clipped.bed #%.bam.bed
 	+if [ "`grep ^ -c $*.metrics.bed`" == "0" ] && [ "`grep ^ -c $*.metrics.region_clipped.bed`" == "0" ]; then \
 		echo "# No BED file provided... BED from the BAM file"; \
 		cp $*.bam.bed $@; \
@@ -351,7 +351,8 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 	# Picard Metrics needs BED with Header and 3+3 fields!!!
 	for one_bed in $$(cat $*.list.genes) $*.design.bed; do \
 		if [ -s $$one_bed ]; then \
-			awk -F"\t" '{print $$1"\t"$$2-1"\t"$$3"\t"$$5}' $$one_bed > $(@D)/$(*F).$$(basename $$one_bed).4fields ; \
+			#awk -F"\t" '{print $$1"\t"$$2-1"\t"$$3"\t"$$5}' $$one_bed > $(@D)/$(*F).$$(basename $$one_bed).4fields ; \
+			awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$5}' $$one_bed > $(@D)/$(*F).$$(basename $$one_bed).4fields ; \
 			$(JAVA) $(JAVA_FLAGS_BY_SAMPLE) -jar $(PICARD) BedToIntervalList I=$(@D)/$(*F).$$(basename $$one_bed).4fields O=$(@D)/$(*F).$$(basename $$one_bed).interval SD=$$(cat $*.dict); \
 			$(JAVA) $(JAVA_FLAGS_BY_SAMPLE) -jar $(PICARD) CollectHsMetrics INPUT=$*.validation.bam OUTPUT=$(@D)/$(*F).$$(basename $$one_bed).HsMetrics R=$$(cat $*.genome) BAIT_INTERVALS=$(@D)/$(*F).$$(basename $$one_bed).interval TARGET_INTERVALS=$(@D)/$(*F).$$(basename $$one_bed).interval PER_TARGET_COVERAGE=$(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_target_coverage.tmp PER_BASE_COVERAGE=$(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp $(PICARD_CollectHsMetrics_PARAM) VALIDATION_STRINGENCY=SILENT 2>$(@D)/$(*F).$$(basename $$one_bed).HsMetrics.err ; \
 			# fLAG HsMetrics per_target_coverage \
