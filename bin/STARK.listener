@@ -396,6 +396,8 @@ while ((1)); do
 							# If Launcher doesn't respond
 							[ "$COMMAND" == "LAUNCHER" ] && ! (($(cat $MD5_LOG | grep "^ID: .*" -c))) && echo "#[ERROR] LAUNCHER NOT responding!" >> $MD5_LOG
 
+							# chmod
+							chmod og+r $MD5_LOG
 						fi;
 					else
 						(($VERBOSE)) && echo "#[INFO] Analysis/Run '$RUN_NAME' - folder '$IFA' [$MD5] NOT TO LAUNCH"

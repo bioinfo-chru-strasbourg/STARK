@@ -112,10 +112,10 @@ BAM_METRICS=0
 # GLOBAL METRICS VARIABLES
 # Values for BAM metrics
 # Minimum mapping quality to consider in the metrics BAM
-METRICS_MINIMUM_MAPPING_QUALITY=20
+METRICS_MINIMUM_MAPPING_QUALITY=10
 
 # Minimum bases quality to consider in the metrics BAM
-METRICS_MINIMUM_BASE_QUALITY=20
+METRICS_MINIMUM_BASE_QUALITY=10
 
 # Clipping overlapping reads in the metrics BAM
 CLIP_OVERLAPPING_READS=1
