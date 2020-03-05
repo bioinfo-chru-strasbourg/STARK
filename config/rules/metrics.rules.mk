@@ -384,11 +384,12 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 	echo "#[INFO] SAMTOOLS Metrics done" >> $@
 
 
-%.bam.metrics/metrics.samtools.flagstat: %.validation.bam %.bam.bai
+%.bam.metrics/metrics.samtools.flagstat: %.bam %.bam.bai %.validation.bam %.validation.bam.bai
 	# Create directory ;
 	mkdir -p $(@D);
 	> $@;
-	$(SAMTOOLS) flagstat $< > $(@D)/$(*F).flagstat ;
+	$(SAMTOOLS) flagstat $*.bam > $(@D)/$(*F).flagstat ;
+	$(SAMTOOLS) flagstat $*.validation.bam > $(@D)/$(*F).validation.flagstat ;
 	if [ -s $(@D)/$(*F).flagstat ]; then \
 		echo "#[INFO] SAMTOOLS flagstat done. See '$(@D)/$(*F).flagstat'. " >> $@; \
 	else \
@@ -396,11 +397,12 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 	fi;
 
 
-%.bam.metrics/metrics.samtools.idxstats: %.validation.bam %.bam.bai
+%.bam.metrics/metrics.samtools.idxstats: %.bam %.bam.bai %.validation.bam %.validation.bam.bai
 	# Create directory ;
 	mkdir -p $(@D);
 	> $@;
-	$(SAMTOOLS) idxstats $< > $(@D)/$(*F).idxstats ;
+	$(SAMTOOLS) idxstats $*.bam > $(@D)/$(*F).idxstats ;
+	$(SAMTOOLS) idxstats $*.validation.bam > $(@D)/$(*F).validation.idxstats ;
 	if [ -z $(@D)/$(*F).idxstats ]; then \
 		echo "#[INFO] SAMTOOLS idxstats done. See '$(@D)/$(*F).idxstats'. " >> $@; \
 	else \
@@ -408,16 +410,18 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 	fi;
 
 
-%.bam.metrics/metrics.samtools.genomeCoverage: %.validation.bam %.bam.bai
+%.bam.metrics/metrics.samtools.genomeCoverage: %.bam %.bam.bai %.validation.bam %.validation.bam.bai
 	# Create directory ;
 	mkdir -p $(@D);
 	> $@;
 	if (($(BAM_METRICS))); then \
 		if (($(FULL_COVERAGE))); then \
-			$(BEDTOOLS) genomecov -ibam $< -dz > $(@D)/$(*F).genomeCoverage; \
+			$(BEDTOOLS) genomecov -ibam $*.bam -dz > $(@D)/$(*F).genomeCoverage; \
 			$(GZ) --best -f $(@D)/$(*F).genomeCoverage; \
-			if [ -s $(@D)/$(*F).genomeCoverage.gz ]; then \
-				echo "#[INFO] BEDTOOLS genomeCoverage done. See '$(@D)/$(*F).genomeCoverage.gz'. " >> $@; \
+			$(BEDTOOLS) genomecov -ibam $*.validation.bam -dz > $(@D)/$(*F).validation.genomeCoverage; \
+			$(GZ) --best -f $(@D)/$(*F).validation.genomeCoverage; \
+			if [ -s $(@D)/$(*F).genomeCoverage.gz ] && [ -s $(@D)/$(*F).validation.genomeCoverage.gz ]; then \
+				echo "#[INFO] BEDTOOLS genomeCoverage done. See '$(@D)/$(*F).genomeCoverage.gz' and '$(@D)/$(*F).validation.genomeCoverage.gz'. " >> $@; \
 			else \
 				echo "#[INFO] SAMTOOLS genomeCoverage failed. " >> $@; \
 			fi; \

@@ -21,6 +21,11 @@ RELEASE_NOTES=$RELEASE_NOTES"# 0.9.2b-02/11/2018: Use BCFTOOLS instead of VCFTOO
 # Script folder
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
+# Configuration
+ENV_CONFIG=$(find -L $SCRIPT_DIR/.. -name config.app)
+
+source $ENV_CONFIG 1>/dev/null 2>/dev/null
+
 # Header
 function header () {
 	echo "#######################################";
@@ -52,7 +57,7 @@ header;
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
-ARGS=$(getopt -o "uh" --long "update,help" -- "$@" 2> /dev/null)
+ARGS=$(getopt -o "e:r:uh" --long "update,app_folder:,application_folder:,repo_folder:,repo_folder:,tmp:,bcftools:,tabix:,bgzip:,annovar:,help" -- "$@" 2> /dev/null)
 
 eval set -- "$ARGS"
 while true
@@ -65,6 +70,34 @@ do
 		-u|--update)
 			UPDATE=1;
 			shift 1
+			;;
+		-e|--app_folder|--application_folder)
+			APP_FOLDER="$2";
+			shift 2
+			;;
+		-r|--repo_folder|--repo_folder)
+			REPO_FOLDER="$2";
+			shift 2
+			;;
+		--tmp)
+			TMP_FOLDER_TMP="$2";
+			shift 2
+			;;
+		--bcftools)
+			BCFTOOLS="$2";
+			shift 2
+			;;
+		--tabix)
+			TABIX="$2";
+			shift 2
+			;;
+		--bgzip)
+			BGZIP="$2";
+			shift 2
+			;;
+		--annovar)
+			ANNOVAR="$2";
+			shift 2
 			;;
 		--) shift
 			break
@@ -103,15 +136,64 @@ done
 # VERBOSE
 VERBOSE=0
 
+if [ ! -z "$APP_FOLDER" ] && [ -d "$APP_FOLDER" ]; then
+    STARK_FOLDER_APPS=$APP_FOLDER
+fi;
+if [ ! -z "$REPO_FOLDER" ] && [ -d "$REPO_FOLDER" ]; then
+    FOLDER_REPOSITORY=$REPO_FOLDER
+fi;
+
+if [ -z "$FOLDER_ENV" ]; then
+    FOLDER_ENV="."
+fi;
+
+
+echo "STARK_FOLDER_APPS=$STARK_FOLDER_APPS"
+echo "APP_FOLDER=$APP_FOLDER"
+echo "FOLDER_ENV=$FOLDER_ENV"
+echo "FOLDER_REPOSITORY=$FOLDER_REPOSITORY"
+
+
+#GP_FOLDER_LIST="$REPO_FOLDER/HUSDIAGGEN/TUBE"
 GP_FOLDER_LIST=""
-for ENV in $STARK/env*.sh; do
-	#echo $ENV
-	source $ENV
-	GP_FOLDER_LIST="$GP_FOLDER_LIST\n$FOLDER_REPOSITORY/$GROUP/$PROJECT"
-	#echo $FOLDER_REPOSITORY/$GROUP/$PROJECT
-done
+if [ -z $GP_FOLDER_LIST ]; then
+    for ENV_DEF in $(find -L $STARK_FOLDER_APPS -name '*.app' -type f | sed s#$STARK_FOLDER_APPS/## | sort -f -t'/' -k2.3 -k2.2 -k2.1) $(find -L $STARK_FOLDER_APPS -name '*.plugapp' -type f | sed s#$STARK_FOLDER_APPS/## | sort -f -t'/' -k2.3 -k2.2 -k2.1); do
+    #for ENV_DEF in "/home1/data/STARK/config/myapps/ONCO/HUSDIAGGEN.TUBE.app"; do
+        #echo $ENV_DEF
+        #exit 0
+        #APP=$(source_app "$STARK_FOLDER_APPS/$ENV_DEF"  2>/dev/null; echo $APP_NAME)
+        APP_FOLDER_REPOSITORY=$(source_app "$ENV_DEF"  2>/dev/null; echo $FOLDER_REPOSITORY)
+        APP_GROUP=$(source_app "$ENV_DEF"  2>/dev/null; echo $APP_GROUP)
+        APP_PROJECT=$(source_app "$ENV_DEF"  2>/dev/null; echo $APP_PROJECT)
+        if [ ! -z "$REPO_FOLDER" ] && [ -d "$REPO_FOLDER" ] && [ -d "$REPO_FOLDER/$APP_GROUP/$APP_PROJECT" ]; then
+            APP_FOLDER_REPOSITORY=$REPO_FOLDER
+        fi;
+        if [ -z "$APP_GROUP" ]; then
+            APP_GROUP="UNKNOWN"
+        fi;
+        if [ -z "$APP_PROJECT" ]; then
+            APP_PROJECT="UNKNOWN"
+        fi;
+        echo "$APP_FOLDER_REPOSITORY $APP_GROUP $APP_PROJECT"
+        GP_FOLDER_LIST="$GP_FOLDER_LIST\n$APP_FOLDER_REPOSITORY/$APP_GROUP/$APP_PROJECT"
+    done;
+fi;
 GP_FOLDER_LIST_UNIQ=$(echo -e $GP_FOLDER_LIST | sort -u)
 
+echo $GP_FOLDER_LIST_UNIQ
+
+
+
+if ((0)); then
+    GP_FOLDER_LIST=""
+    for ENV in $STARK/env*.sh; do
+	    #echo $ENV
+	    source $ENV
+	    GP_FOLDER_LIST="$GP_FOLDER_LIST\n$FOLDER_REPOSITORY/$GROUP/$PROJECT"
+	    #echo $FOLDER_REPOSITORY/$GROUP/$PROJECT
+    done
+    GP_FOLDER_LIST_UNIQ=$(echo -e $GP_FOLDER_LIST | sort -u)
+fi;
 #GP_FOLDER_LIST_UNIQ="/home1/L/Archives/HUSHEMATO/TSOMYELOID"
 #GP_FOLDER_LIST_UNIQ="/home1/L/Archives/CPSGEN/HCSOP"
 
@@ -150,6 +232,8 @@ for GP_FOLDER in $GP_FOLDER_LIST_UNIQ; do
 	GROUP=$(basename $(dirname $GP_FOLDER))
 	PROJECT=$(basename $GP_FOLDER)
 	
+    echo "# $GP_FOLDER / $GROUP / $PROJECT "
+
 	#ls -l $DEJAVU/$RELEASE/dejavu.$GROUP.$PROJECT.txt
 
 	if [ ! -s $DEJAVU/$RELEASE/dejavu.$GROUP.$PROJECT.done ]; then
@@ -182,18 +266,6 @@ for GP_FOLDER in $GP_FOLDER_LIST_UNIQ; do
 				if [ -s $VCF ] && (($(grep ^# -cv $VCF))); then
 
 					echo "$VCF.gz: $VCF
-					
-					#-if $VCFTOOLS/vcf-sort -c $< 1>$<.sorted 2>/dev/null; then \\
-					#	if $BCFTOOLS annotate -x FILTER,QUAL,^INFO/AN,^FORMAT/GT $<.sorted 1>$<.cleaned; then \\
-					#		if $BGZIP -c $<.cleaned 1> $<.gz; then \\
-					#			if ((\$\$($BGZIP -dc $<.gz | wc -l))); then \\
-					#				$TABIX \$@; \\
-					#			else \\
-					#				rm $<.gz; \\
-					#			fi; \\
-					#		fi; \\
-					#	fi; \\
-					#fi;
 					mkdir $<.sort.
 					$BCFTOOLS sort $< -T $<.sort. 2>/dev/null | $BCFTOOLS annotate -x FILTER,QUAL,^INFO/AN,^FORMAT/GT -o \$@ -O z 2>/dev/null;
 					$TABIX \$@;
