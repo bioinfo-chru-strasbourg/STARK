@@ -54,8 +54,8 @@ services:
     # STARK DATABASES POPULATION
     stark-databases:
         image: ${DOCKER_STARK_IMAGE}
-        entrypoint: /tool/bin/get_databases.sh
-        command: --build --threads=${DOCKER_STARK_GET_DATABASES_THREADS} --additional_annotations=${DOCKER_STARK_GET_DATABASES_ADDITIONAL_ANNOTATIONS}
+        entrypoint: /bin/bash
+        command: -c "/tool/bin/get_databases.sh --build --threads=${DOCKER_STARK_GET_DATABASES_THREADS} --additional_annotations=${DOCKER_STARK_GET_DATABASES_ADDITIONAL_ANNOTATIONS} --verbose 1>/STARK/databases/build.log 2>/STARK/databases/build.err"
         container_name: STARK-databases
         volumes:
             - databases:/STARK/databases:rw
