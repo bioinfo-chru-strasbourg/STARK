@@ -17,4 +17,4 @@ APP_PROJECT="HEMATOLOGY"
 #######################
 
 # PIPELINES
-PIPELINES="bwamem.gatkUG_HEMATOLOGY.howard bwamem.VarScan_HEMATOLOGY.howard bwamem.outLyzer.howard bwamem.MuTect2.howard bwamem.GATK3_MuTect2.howard bwamem.itdseek.howard" #
+PIPELINES="bwamem.gatkUG_HEMATOLOGY.howard bwamem.outLyzer.howard bwamem.MuTect2.howard bwamem.itdseek.howard" #
