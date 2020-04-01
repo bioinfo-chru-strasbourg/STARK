@@ -15,7 +15,7 @@ services:
     ##############
 
 
-    # STARK IMAGE SOURCES
+    # STARK SOURCES
     stark-sources:
         image: ${DOCKER_STARK_SOURCES_IMAGE}
         build:
@@ -47,6 +47,24 @@ services:
         command: --help
         env_file:
             - .env
+        depends_on:
+            - stark-sources
+        networks:
+            - stark
+
+
+    # STARK CREATE FOLDERS
+    stark-folders:
+        image: ${DOCKER_STARK_IMAGE}
+        container_name: STARK-folders
+        entrypoint: /bin/bash
+        command: -c "/tool/bin/STARK.setup --docker-env-file=/tool/.env --setup-type=INNER --setup-main-folder-pattern=/STARK_folder_setup --verbose"
+        volumes:
+            - main:/STARK_folder_setup/STARK:rw
+        env_file:
+            - .env
+        depends_on:
+            - stark
         networks:
             - stark
 
@@ -54,11 +72,16 @@ services:
     # STARK DATABASES POPULATION
     stark-databases:
         image: ${DOCKER_STARK_IMAGE}
+        container_name: STARK-databases
         entrypoint: /bin/bash
         command: -c "/tool/bin/get_databases.sh --build --threads=${DOCKER_STARK_GET_DATABASES_THREADS} --additional_annotations=${DOCKER_STARK_GET_DATABASES_ADDITIONAL_ANNOTATIONS} --verbose 1>/STARK/databases/build.log 2>/STARK/databases/build.err"
-        container_name: STARK-databases
         volumes:
             - databases:/STARK/databases:rw
+        env_file:
+            - .env
+        depends_on:
+            - stark
+            - stark-folders
         networks:
             - stark
 
@@ -85,9 +108,9 @@ services:
             - repository:${DOCKER_STARK_SERVICE_DATA_INNER_FOLDER_DATA}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_REPOSITORIES}/Repository:ro
             - archive:${DOCKER_STARK_SERVICE_DATA_INNER_FOLDER_DATA}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_REPOSITORIES}/Archive:ro
             - sources:${DOCKER_STARK_SERVICE_DATA_INNER_FOLDER_DATA}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SOURCES}:ro
-            - analyses-STARK-service-launcher:${DOCKER_STARK_SERVICE_DATA_INNER_FOLDER_DATA}/${DOCKER_STARK_SERVICE_LAUNCHER_FOLDER_LOG}:ro
-            - analyses-STARK-service-listener:${DOCKER_STARK_SERVICE_DATA_INNER_FOLDER_DATA}/${DOCKER_STARK_SERVICE_LISTENER_FOLDER_LOG}:ro
-            - analyses-STARK-service-igv:${DOCKER_STARK_SERVICE_DATA_INNER_FOLDER_DATA}/${DOCKER_STARK_SERVICE_IGV_FOLDER_LOG}:ro
+            - analyses-STARK-service-launcher:${DOCKER_STARK_SERVICE_DATA_INNER_FOLDER_DATA}/${DOCKER_STARK_SERVICE_FOLDER_LAUNCHER}:ro
+            - analyses-STARK-service-listener:${DOCKER_STARK_SERVICE_DATA_INNER_FOLDER_DATA}/${DOCKER_STARK_SERVICE_FOLDER_LISTENER}:ro
+            - analyses-STARK-service-igv:${DOCKER_STARK_SERVICE_DATA_INNER_FOLDER_DATA}/${DOCKER_STARK_SERVICE_FOLDER_IGV}:ro
         restart: always
         networks:
             - stark
@@ -111,9 +134,9 @@ services:
             - repository:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_REPOSITORIES}/Repository:ro
             - archive:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_REPOSITORIES}/Archive:ro
             # Service
-            - analyses-STARK-service-launcher:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER}/${DOCKER_STARK_SERVICE_LAUNCHER_FOLDER_LOG}:ro
-            - analyses-STARK-service-listener:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER}/${DOCKER_STARK_SERVICE_LISTENER_FOLDER_LOG}:ro
-            - analyses-STARK-service-igv:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER}/${DOCKER_STARK_SERVICE_IGV_FOLDER_LOG}:rw
+            - analyses-STARK-service-launcher:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER}/${DOCKER_STARK_SERVICE_FOLDER_LAUNCHER}:ro
+            - analyses-STARK-service-listener:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER}/${DOCKER_STARK_SERVICE_FOLDER_LISTENER}:ro
+            - analyses-STARK-service-igv:${DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER}/${DOCKER_STARK_SERVICE_FOLDER_IGV}:rw
         restart: always
         links:
             - stark-service-data
@@ -258,6 +281,14 @@ services:
 
 volumes:
 
+    # MAIN STARK FOLDER
+    main:
+        driver: local
+        driver_opts:
+            type: none
+            device: ${DOCKER_STARK_MAIN_FOLDER}
+            o: bind
+
     # INPUT
     input:
         driver: local
@@ -314,38 +345,6 @@ volumes:
             device: ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_ANALYSES}
             o: bind
 
-    # ANALYSES - Launcher
-    analyses-STARK-service-launcher:
-        driver: local
-        driver_opts:
-            type: none
-            device: ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_SERVICE_LAUNCHER_FOLDER_LOG}
-            o: bind
-
-    # ANALYSES - Listener
-    analyses-STARK-service-listener:
-        driver: local
-        driver_opts:
-            type: none
-            device: ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_SERVICE_LISTENER_FOLDER_LOG}
-            o: bind
-
-    # ANALYSES - IGV
-    analyses-STARK-service-igv:
-        driver: local
-        driver_opts:
-            type: none
-            device: ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_SERVICE_IGV_FOLDER_LOG}
-            o: bind
-
-    # ANALYSES - CLOUD
-    analyses-STARK-service-cloud:
-        driver: local
-        driver_opts:
-            type: none
-            device: ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_SERVICE_CLOUD_FOLDER}
-            o: bind
-
     # LOG
     log:
         driver: local
@@ -361,6 +360,39 @@ volumes:
             type: none
             device: ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_DATABASES}
             o: bind
+
+    # ANALYSES - Launcher
+    analyses-STARK-service-launcher:
+        driver: local
+        driver_opts:
+            type: none
+            device: ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_SERVICE_FOLDER_LAUNCHER}
+            o: bind
+
+    # ANALYSES - Listener
+    analyses-STARK-service-listener:
+        driver: local
+        driver_opts:
+            type: none
+            device: ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_SERVICE_FOLDER_LISTENER}
+            o: bind
+
+    # ANALYSES - IGV
+    analyses-STARK-service-igv:
+        driver: local
+        driver_opts:
+            type: none
+            device: ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_SERVICE_FOLDER_IGV}
+            o: bind
+
+    # ANALYSES - CLOUD
+    analyses-STARK-service-cloud:
+        driver: local
+        driver_opts:
+            type: none
+            device: ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_SERVICE_FOLDER_CLOUD}
+            o: bind
+
 
 # NETWORK
 ###########
