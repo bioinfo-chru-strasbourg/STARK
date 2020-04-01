@@ -469,7 +469,7 @@ if ((0)); then
 	#exit 0
 fi;
 
-
+# DETECT_ADAPTER_FOR_PE
 
 # BED
 BED_DEFAULT="";
@@ -1098,7 +1098,7 @@ for RUU in $RUN_UNIQ; do
 					echo "#[INFO] Paired-End Processing"
 					FASTP_INPUT="-i $RUN_SAMPLE_DIR/$S.R1.fastq.gz -I $RUN_SAMPLE_DIR/$S.R2.fastq.gz"
 					FASTP_OUTPUT="-o $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.processed.fastq.gz -O $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.processed.fastq.gz"
-					FASTP_PARAM=$FASTP_PARAM" --detect_adapter_for_pe"
+					(($DETECT_ADAPTER_FOR_PE)) && FASTP_PARAM=$FASTP_PARAM" --detect_adapter_for_pe"
 				else
 					echo "#[INFO] Single-End Processing"
 					FASTP_INPUT="-i $RUN_SAMPLE_DIR/$S.R1.fastq.gz"

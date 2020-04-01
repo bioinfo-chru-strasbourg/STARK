@@ -1267,7 +1267,7 @@ if [ ! -z "$RUNS" ]; then
 				#echo "CMD=$CMD"; exit 0
 
 			#fi;
-		elif [ -f $R/SampleSheet.csv ] || [ -f "$SAMPLESHEET_INPUT_RI" ]; then
+			elif [ -f $R/SampleSheet.csv ] || [ -f "$SAMPLESHEET_INPUT_RI" ]; then
 
 				echo "#[INFO] RUN '$R_NAME' is a demultiplexed folder (Fastq) including configuration file SampleSheet"
 

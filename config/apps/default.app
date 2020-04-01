@@ -190,12 +190,18 @@ PRIORITIZE_PIPELINES_LIST=""
 
 
 
+# FASTQ Processing
+
+# DETECT ADAPTER FOR PE
+# Autodetect adapter for paired end
+# Either 0 or 1
+# Default: 0 (i.e. no detection)
+DETECT_ADAPTER_FOR_PE=0
+
 # FASTQ Read quality filtering
 # Read Quality threshold. Read quality below will be removed
 # Default: null (e.g. "")
 FASTQ_QUALITY_FILTERING=""
-
-
 
 # UMI extract tag
 # Set the UMI Barcode pattern
@@ -203,8 +209,6 @@ FASTQ_QUALITY_FILTERING=""
 # e.g.: UMI_BARCODE_PATTERN="NNNNNNNN"
 # See UMI TOOLS documentation for more information
 UMI_BARCODE_PATTERN=""
-
-
 
 # Barcode tag
 # Barcode to use for Mark Duplicates
