@@ -1,3 +1,4 @@
+
 #!/bin/bash
 #################################
 ##
@@ -5,16 +6,16 @@
 ##
 #################################
 
-SCRIPT_NAME="STARKRunsCopy"
-SCRIPT_DESCRIPTION="STARK Runs Copy"
+SCRIPT_NAME="STARKDockerToSingularity"
+SCRIPT_DESCRIPTION="STARK Docker to Singularity"
 SCRIPT_RELEASE="0.9b"
-SCRIPT_DATE="31/03/2020"
+SCRIPT_DATE="06/04/2020"
 SCRIPT_AUTHOR="Antony Le Bechec"
 SCRIPT_COPYRIGHT="HUS/CPS"
 SCRIPT_LICENCE="GNU GPLA V3"
 
 # Realse note
-RELEASE_NOTES=$RELEASE_NOTES"# 0.9b-31/03/2020: Script creation\n";
+RELEASE_NOTES=$RELEASE_NOTES"# 0.9b-06/04/2020: Script creation\n";
 
 # Script folder
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -42,16 +43,16 @@ function release () {
 
 # Usage
 function usage {
-	echo "# USAGE: $(basename $0) --sources=<STRING> --dest=<FOLDER> [-h] [options...]";
+	echo "# USAGE: $(basename $0) [-h] [options...]";
 	echo "#";
 	echo "### This script copy runs from multiple source folders to destination folder.";
 	echo "#";
-	echo "# --sources=<STRING>                         List of sources runs folder (required).";
-	echo "#                                            Format: 'folder1,folder2,...'";
-	echo "# --dest=<FOLDER>                            Destination runs folder (required)";
-	echo "#                                            Format: 'folder'";
-	echo "# --days=<INTEGER>                           Run folder modification days";
-	echo "#                                            Default: '30'";
+	echo "# --docker-env-file=<FILE>                   Docker environment file";
+	echo "#                                            Default: '../.env'";
+	echo "# --docker-stark-image=<STRING>              Docker STARK image.";
+	echo "#                                            Default: $DOCKER_STARK_IMAGE or 'stark:latest'";
+	echo "# --output-folder=<FOLDER>                   Singularity file output folder.";
+	echo "#                                            Default: current work directory";
 	echo "# -v|--verbose                               Verbose mode";
 	echo "# -d|--debug                                 Debug mode";
 	echo "# -n|--release                               Script Release";
@@ -70,7 +71,7 @@ function usage {
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
-ARGS=$(getopt -o "vdnh" --long "sources:,dest:,days:,verbose,debug,release,help" -- "$@" 2> /dev/null)
+ARGS=$(getopt -o "vdnh" --long "docker-env-file:,docker-stark-image:,output-folder:,verbose,debug,release,help" -- "$@" 2> /dev/null)
 if [ $? -ne 0 ]; then
 	:
 	echo "#[ERROR] Error in the argument list:";
@@ -93,16 +94,16 @@ do
 	#echo "$1=$2"
 	#echo "Eval opts";
 	case "$1" in
-		--sources)
-			SOURCES_RUNS=$(echo $2 | tr "," " ")
+		--docker-env-file)
+			DOCKER_ENV_FILE="$2"
 			shift 2
 			;;
-		--dest|--destination)
-			DEST_RUNS="$2"
+		--docker-stark-image)
+			DOCKER_STARK_IMAGE_INPUT="$2"
 			shift 2
 			;;
-		--days)
-			DAYS="$2"
+		--output-folder)
+			OUTPUT_FOLDER="$2"
 			shift 2
 			;;
 		-h|--help)
@@ -134,54 +135,79 @@ done
 ####################################################################################################################################
 # Checking the input parameter
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-if [ -z "$SOURCE_RUNS" ] && [ -z "$DEST_RUNS" ] && ((!$DEBUG)); then
-	echo "#[ERROR] Required parameter: --sources and --dest. Use --help to display the help." && echo "" && usage && exit 1;
-fi
+# if [ -z "$SOURCE_RUNS" ] && [ -z "$DEST_RUNS" ] && ((!$DEBUG)); then
+# 	echo "#[ERROR] Required parameter: --sources and --dest. Use --help to display the help." && echo "" && usage && exit 1;
+# fi
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
 
+## PARAM
+##########
 
-# DAYS
-########
 
-if [ "$DAYS" == "" ]; then
-	DAYS="30"
+## ENV
+if [ -z "$DOCKER_ENV_FILE" ]; then
+	if [ -e $SCRIPT_DIR/../.env ]; then
+		DOCKER_ENV_FILE=$SCRIPT_DIR/../.env
+	fi;
+fi;
+
+[ ! -z "$DOCKER_ENV_FILE" ] && [ -e "$DOCKER_ENV_FILE" ] && source $DOCKER_ENV_FILE #&& echo "sourced"
+
+
+## DOCKER_STARK_IMAGE_INPUT
+if [ -z "$DOCKER_STARK_IMAGE_INPUT" ]; then
+	DOCKER_STARK_IMAGE_INPUT="stark:latest"
+fi;
+
+
+## OUTPUT_FOLDER
+if [ -z "$OUTPUT_FOLDER" ]; then
+	OUTPUT_FOLDER=$(pwd)
+fi;
+mkdir -p $OUTPUT_FOLDER
+
+
+
+## PARAM output
+################
+
+
+
+(($VERBOSE)) && echo "#[INFO] Docker environment file: $DOCKER_ENV_FILE"
+(($VERBOSE)) && echo "#[INFO] Docker STARK image: $DOCKER_STARK_IMAGE_INPUT"
+(($VERBOSE)) && echo "#[INFO] Singularity file output folder: $OUTPUT_FOLDER"
+
+
+
+## PARAM test
+###############
+
+if [ -z "$DOCKER_STARK_IMAGE_INPUT" ] || [ ! -d "$OUTPUT_FOLDER" ]; then
+	echo "#[ERROR] Required parameter: --docker-stark-image and --output-folder. Use --help to display the help." && echo "" && usage && exit 1;
 fi;
 
 
 
+## APP
+########
 
-# RUNS COPY
-#############
+CMD="
+docker run \
+-v /var/run/docker.sock:/var/run/docker.sock \
+-v $OUTPUT_FOLDER:/output \
+--privileged -t --rm \
+singularityware/docker2singularity \
+$DOCKER_STARK_IMAGE_INPUT
+"
+
+(($DEBUG)) && echo $CMD
 
 
-for SOURCE_RUNS in $SOURCES_RUNS; do 
+eval $CMD
 
-	#echo "SOURCE_RUNS=$SOURCE_RUNS"
+exit 0
 
-	if [ -d $SOURCE_RUNS ]; then
-		for RUN_SOURCE_FOLDER in $(find -L $SOURCE_RUNS -type d -mindepth 1 -maxdepth 1 -mtime -$DAYS); do
-			
-			RUN=$(basename $RUN_SOURCE_FOLDER)
-			RUN_DEST_FOLDER=$DEST_RUNS/$RUN
-
-			echo $RUN_SOURCE_FOLDER
-			echo $RUN_DEST_FOLDER
-
-			(($DEBUG)) && echo "rsync -avz --exclude 'SampleSheet.csv' $RUN_SOURCE_FOLDER/ $RUN_DEST_FOLDER/"
-			(($DEBUG)) && echo "rsync -avz --include 'SampleSheet.csv' $RUN_SOURCE_FOLDER/ $RUN_DEST_FOLDER/"
-
-			if ((1)); then
-				#mkdir -p $RUN_DEST_FOLDER
-				rsync -avz --exclude 'SampleSheet.csv' $RUN_SOURCE_FOLDER/ $RUN_DEST_FOLDER/
-				# #ls -l $RUN_SOURCE_FOLDER/RTAComplete.txt
-				[ -e $RUN_DEST_FOLDER/RTAComplete.txt ] && rsync -avz --include 'SampleSheet.csv' $RUN_SOURCE_FOLDER/ $RUN_DEST_FOLDER/
-			fi;
-
-		done;
-	fi;
-
-done;
 
 

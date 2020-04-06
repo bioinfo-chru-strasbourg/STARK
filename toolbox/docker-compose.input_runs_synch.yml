@@ -1,0 +1,62 @@
+#########
+# STARK #
+#########
+# Usage: docker-compose up
+
+version: '3'
+
+# SERVICES
+##########
+
+services:
+
+
+    # STARK IMAGES
+    ##############
+
+
+    # STARK SOURCES
+    stark-input_runs_synch:
+        image: ${DOCKER_STARK_IMAGE}
+        build:
+            context: ${DOCKER_STARK_CONTEXT}
+            dockerfile: Dockerfile
+            args:
+                - THREADS=${DOCKER_STARK_BUILD_THREADS}
+                - REPO_SOURCES=${DOCKER_STARK_BUILD_SOURCES_URL}
+                - REMOVE_SOURCES=1
+        container_name: STARK-input_runs_synch
+        restart: always
+        entrypoint: /bin/bash
+        command: -c "while ((1)); do /tool/toolbox/input_runs_synch.sh --sources=/STARK/input_runs_source --dest=${DOCKER_STARK_INNER_FOLDER_INPUT}/runs --days=30 --verbose && sleep 60; done;"
+        volumes:
+            - /Users/lebechea/STARK.ok/input/runs:/STARK/input_runs_source:ro
+            - input:${DOCKER_STARK_INNER_FOLDER_INPUT}:rw
+        env_file:
+            - ../.env
+        networks:
+            - stark
+
+
+
+# VOLUMES
+#########
+
+volumes:
+
+
+    # INPUT
+    input:
+        driver: local
+        driver_opts:
+            type: none
+            device: ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_INPUT}
+            o: bind
+
+
+# NETWORK
+###########
+
+networks:
+    stark:
+        driver: "bridge"

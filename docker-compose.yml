@@ -216,7 +216,7 @@ services:
             - stark
 
 
-    # STARK SERVICE SERVER
+    # STARK SERVICE LAUNCHER
     stark-service-launcher:
         image: ${DOCKER_STARK_SERVICE_LAUNCHER_IMAGE}
         build:
@@ -246,7 +246,35 @@ services:
             - stark
 
 
-    # STARK SERVICE SERVER
+    # STARK SERVICE LISTENER CLEAR
+    stark-service-listener-clear:
+        image: ${DOCKER_STARK_IMAGE}
+        entrypoint: /tool/bin/STARK.listener.clear
+        command: --clear --listener="${DOCKER_STARK_INNER_FOLDER_ANALYSES}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_LISTENER}" --launcher="${DOCKER_STARK_INNER_FOLDER_ANALYSES}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_LAUNCHER}"
+        container_name: ${DOCKER_STARK_SERVICE_LISTENER_CONTAINER_NAME}-clear
+        env_file:
+            - .env
+        volumes:
+            #- /var/run/docker.sock:/var/run/docker.sock
+            #- databases:${DOCKER_STARK_INNER_FOLDER_DATABASES}:ro
+            #- input:${DOCKER_STARK_INNER_FOLDER_INPUT}:ro
+            #- repository:${DOCKER_STARK_INNER_FOLDER_OUTPUT_REPOSITORY}:rw
+            #- archive:${DOCKER_STARK_INNER_FOLDER_OUTPUT_ARCHIVE}:rw
+            - analyses-STARK-service-listener:${DOCKER_STARK_INNER_FOLDER_ANALYSES}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_LISTENER}:rw
+            - analyses-STARK-service-launcher:${DOCKER_STARK_INNER_FOLDER_ANALYSES}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_LAUNCHER}:ro
+        links:
+            - stark-service-launcher
+            - stark
+            - stark-databases
+        depends_on:
+            - stark-service-launcher
+            - stark
+            - stark-databases
+        networks:
+            - stark
+
+
+    # STARK SERVICE LISTENER
     stark-service-listener:
         image: ${DOCKER_STARK_IMAGE}
         entrypoint: /tool/bin/STARK.listener
@@ -264,10 +292,12 @@ services:
             - analyses-STARK-service-launcher:${DOCKER_STARK_INNER_FOLDER_ANALYSES}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_LAUNCHER}:rw
         restart: always
         links:
+            - stark-service-listener-clear
             - stark-service-launcher
             - stark
             - stark-databases
         depends_on:
+            - stark-service-listener-clear
             - stark-service-launcher
             - stark
             - stark-databases

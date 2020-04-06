@@ -1,0 +1,194 @@
+#!/bin/bash
+#################################
+##
+## STARK Setup
+##
+#################################
+
+SCRIPT_NAME="STARKSetup"
+SCRIPT_DESCRIPTION="STARK Setup"
+SCRIPT_RELEASE="0.9.1b"
+SCRIPT_DATE="30/03/2020"
+SCRIPT_AUTHOR="Antony Le Bechec"
+SCRIPT_COPYRIGHT="IRC"
+SCRIPT_LICENCE="GNU-AGPL"
+
+# Realse note
+RELEASE_NOTES=$RELEASE_NOTES"# 0.9b-26/03/2020: Script creation\n";
+RELEASE_NOTES=$RELEASE_NOTES"# 0.9.1b-30/03/2020: Add setup-type option\n";
+
+
+# Script folder
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# Configuration
+ENV_CONFIG=$(find -L $SCRIPT_DIR/.. -name config.app)
+source $ENV_CONFIG 1>/dev/null 2>/dev/null
+
+
+
+# Header
+function header () {
+	echo "#######################################";
+	echo "# $SCRIPT_NAME [$SCRIPT_RELEASE-$SCRIPT_DATE]";
+	echo "# $SCRIPT_DESCRIPTION ";
+	echo "# $SCRIPT_AUTHOR @ $SCRIPT_COPYRIGHT © $SCRIPT_LICENCE";
+	echo "#######################################";
+}
+
+# Release
+function release () {
+	echo "# RELEASE NOTES:";
+	echo -e $RELEASE_NOTES
+}
+
+# Usage
+function usage {
+	echo "# USAGE: $(basename $0) [--docker-env-file=<FILE> --setup-type=<STRING> --setup-main-folder-pattern=<STRING>] [-h] [options...]";
+	echo "#";
+	echo "### This script setup STARK, by creating mandatory folders.";
+	echo "#";
+	echo "# --docker-env-file=<FILE>                 Docker environment file.";
+	echo "#                                          Default: found in STARK main folder if any, or ''";
+	echo "# --setup-type=<STRING>                    Type of setup, either:";
+	echo "#                                             HOST: create host folders (default)";
+	echo "#                                             INNER: create folders within STARK docker container";
+	echo "# --setup-main-folder-pattern=<STRING>     Main folder pattern to create folders within STARK docker container.";
+	echo "#                                          Will create tree folders in this pattern folder.";
+	echo "#                                          Default: ''";
+	echo "# --verbose                                Verbose mode";
+	echo "# --debug                                  Debug mode";
+	echo "# --release                                Script Release";
+	echo "# --help                                   Help message";
+	echo "#";
+}
+
+
+####################################################################################################################################
+# Getting parameters from the input
+#-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+# ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
+ARGS=$(getopt -o "vdnh" --long "docker-env-file:,setup-type:,setup-main-folder-pattern:,verbose,debug,release,help" -- "$@" 2> /dev/null)
+if [ $? -ne 0 ]; then
+	:
+	echo "#[ERROR] Error in the argument list:";
+	echo "#[ERROR] $@"
+	echo ""
+	usage;
+	exit;
+fi;
+
+
+PARAM=$@
+DEBUG=0
+VERBOSE=0
+
+eval set -- "$ARGS"
+while true
+do
+	#echo "$1=$2"
+	#echo "Eval opts";
+	case "$1" in
+		--docker-env-file)
+			DOCKER_COMPOSE_FILE="$2"
+			shift 2
+			;;
+		--setup-type)
+			SETUP_TYPE="$2"
+			shift 2
+			;;
+		--setup-main-folder-pattern)
+			SETUP_MAIN_FOLDER_PATTERN="$2"
+			shift 2
+			;;
+		-h|--help)
+			usage
+			exit 0
+			;;
+		-v|--verbose)
+			VERBOSE=1
+			shift 1
+			;;
+		-d|--debug)
+			DEBUG=1
+			shift 1
+			;;
+		--) shift
+			break
+			;;
+		*) 	echo "Option $1 is not recognized. " "Use -h or --help to display the help." && \
+			exit 1
+			;;
+	esac
+done
+
+# header
+(($NO_HEADER)) || header;
+
+
+# Example:
+# STARK.report -f "RUN_TEST_TAG7" -s "P1408" -e "/STARK/tools/stark/0.9.18d/config/apps/SOLIDTUMOR.app" -i "bwamem.gatkUG_SOLIDTUMOR.howard,bwamem.gatkHC_SOLIDTUMOR.howard,bwamem.VarScan_SOLIDTUMOR.howard" -k test -r /STARK/output/results
+
+####################################################################################################################################
+# Checking the input parameter
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+#if [ -z "$ANALYSIS" ] && [ -z "$SAMPLE" ] && [ -z "$APP" ] && ((!$DEBUG)); then
+#	echo "#[ERROR] Required parameter: --analysis, --sample, and --application. Use --help to display the help." && echo "" && usage && exit 1;
+#fi
+#--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+# Parameters
+#############
+
+# PIPELINES
+if [ "$DOCKER_COMPOSE_FILE" == "" ] || [ -f "$DOCKER_COMPOSE_FILE" ]; then
+	DOCKER_COMPOSE_FILE=$SCRIPT_DIR/../.env
+fi;
+
+if [ -z "$SETUP_TYPE" ]; then
+	SETUP_TYPE="HOST";
+fi;
+
+
+
+## SETUP
+##########
+
+# Source docker-compose env file
+(($VERBOSE)) && echo "#[INFO] Docker Compose env file '$DOCKER_COMPOSE_FILE'"
+source $DOCKER_COMPOSE_FILE
+
+
+
+if [ "$SETUP_TYPE" == "HOST" ]; then
+
+	for var in "${!DOCKER_STARK_FOLDER_@}"; do
+		#ONE_DOCKER_STARK_FOLDER_CONTAINER=$(echo ${var} | sed "s/^DOCKER_STARK_FOLDER_//g" | sed "s/_/\//g" | tr '[:upper:]' '[:lower:]' )
+		(($VERBOSE)) && echo "#[INFO] Folder '$DOCKER_STARK_MAIN_FOLDER/${!var}'"
+		[ ! -d $DOCKER_STARK_MAIN_FOLDER"/"${!var} ] && mkdir -p $DOCKER_STARK_MAIN_FOLDER"/"${!var} && echo "#[INFO] Folder '$DOCKER_STARK_MAIN_FOLDER/${!var}' created"
+		[ ! -d $DOCKER_STARK_MAIN_FOLDER/${!var} ] && echo "#[ERROR] Folder '$DOCKER_STARK_MAIN_FOLDER/${!var}' failed"
+	done
+
+	for var in "${!DOCKER_STARK_SERVICE_FOLDER_@}"; do
+		#ONE_DOCKER_STARK_FOLDER_CONTAINER=$(echo ${var} | sed "s/^DOCKER_STARK_SERVICE_FOLDER_//g" | sed "s/_/\//g" | tr '[:upper:]' '[:lower:]' )
+		(($VERBOSE)) && echo "#[INFO] Folder '$DOCKER_STARK_MAIN_FOLDER/${!var}'"
+		[ ! -d $DOCKER_STARK_MAIN_FOLDER"/"${!var} ] && mkdir -p $DOCKER_STARK_MAIN_FOLDER"/"${!var} && echo "#[INFO] Folder '$DOCKER_STARK_MAIN_FOLDER/${!var}' created"
+		[ ! -d $DOCKER_STARK_MAIN_FOLDER/${!var} ] && echo "#[ERROR] Folder '$DOCKER_STARK_MAIN_FOLDER/${!var}' failed"
+	done
+
+elif [ "$SETUP_TYPE" == "INNER" ]; then
+
+	for var in "${!DOCKER_STARK_INNER_FOLDER_@}"; do
+		#ONE_DOCKER_STARK_FOLDER_CONTAINER=$(echo ${var} | sed "s/^DOCKER_STARK_FOLDER_//g" | sed "s/_/\//g" | tr '[:upper:]' '[:lower:]' )
+		(($VERBOSE)) && echo "#[INFO] Folder '$SETUP_MAIN_FOLDER_PATTERN${!var}'"
+		mkdir -p $SETUP_MAIN_FOLDER_PATTERN${!var} && echo "#[INFO] Folder '$SETUP_MAIN_FOLDER_PATTERN${!var}' created" || echo "#[ERROR] Folder '$SETUP_MAIN_FOLDER_PATTERN${!var}' failed"
+		#[ ! -d $DOCKER_STARK_MAIN_FOLDER"/"${!var} ] && mkdir -p $DOCKER_STARK_MAIN_FOLDER"/"${!var} && echo "#[INFO] Folder '$DOCKER_STARK_MAIN_FOLDER/${!var}' created" # ???
+	done
+
+else
+
+	echo "#[WARNING] Error setup type"
+
+fi;
