@@ -48,7 +48,7 @@ function usage {
 	echo "### Launch an analysis through (by order of priority):";
 	echo "# --application=<STRING|FILE>              APP name or APP file configuration of the APPLICATION.";
 	echo "#                                          Must be in the STARK APPS folder if relative path";
-	echo "#                                          Default: defined in the RUN SampleSheet, or default.app if not defined";echo ""
+	echo "#                                          Default: defined in the RUN SampleSheet, or default.app if not defined";
 	echo "# --input=<FOLDER>                         List of folders containing analyses/runs.";
 	echo "#                                          Default: RUN folder in APP.";
 	echo "# --condition=<FILE1,FILE2...>             List of files to start command (at least one)";
