@@ -1,4 +1,3 @@
-
 #!/bin/bash
 #################################
 ##
@@ -6,23 +5,22 @@
 ##
 #################################
 
-SCRIPT_NAME="STARKDockerToSingularity"
-SCRIPT_DESCRIPTION="STARK Docker to Singularity"
+SCRIPT_NAME="STARKDockerSetup"
+SCRIPT_DESCRIPTION="STARK Docker Setup"
 SCRIPT_RELEASE="0.9b"
-SCRIPT_DATE="06/04/2020"
+SCRIPT_DATE="12/04/2020"
 SCRIPT_AUTHOR="Antony Le Bechec"
 SCRIPT_COPYRIGHT="HUS/CPS"
 SCRIPT_LICENCE="GNU GPLA V3"
 
 # Realse note
-RELEASE_NOTES=$RELEASE_NOTES"# 0.9b-06/04/2020: Script creation\n";
+RELEASE_NOTES=$RELEASE_NOTES"# 0.9b-12/04/2020: Script creation\n";
 
 # Script folder
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-# Configuration
-ENV_CONFIG=$(find -L $SCRIPT_DIR/.. -name config.app)
-source $ENV_CONFIG 1>/dev/null 2>/dev/null
+# GIT_CLONE_DEFAULT
+GIT_CLONE_DEFAULT="https://gitlab.bioinfo-diag.fr/Strasbourg/STARK.git"
 
 
 # Header
@@ -45,18 +43,21 @@ function release () {
 function usage {
 	echo "# USAGE: $(basename $0) [-h] [options...]";
 	echo "#";
-	echo "### This script copy runs from multiple source folders to destination folder.";
+	echo "### This script setup STARK envronment.";
+	echo "### Can be used with curl (e.g. curl https://gitlab.bioinfo-diag.fr/Strasbourg/vision/raw/master/setup.sh | bash)";
+	echo "###    (e.g. curl https://gitlab.bioinfo-diag.fr/Strasbourg/STARK/raw/master/setup.sh | bash)";
 	echo "#";
-	echo "# --docker-env-file=<FILE>                   Docker environment file";
-	echo "#                                            Default: '../.env'";
-	echo "# --docker-stark-image=<STRING>              Docker STARK image.";
-	echo "#                                            Default: $DOCKER_STARK_IMAGE or 'stark:latest'";
-	echo "# --output=<FILE>                            Singularity output file.";
-	echo "#                                            Default: Docker STARK image 'name_release.simg' in current work directory";
-	echo "# -v|--verbose                               Verbose mode";
-	echo "# -d|--debug                                 Debug mode";
-	echo "# -n|--release                               Script Release";
-	echo "# -h|--help                                  Help message";
+	echo "# --git-clone=<STRING>             Download STARK code on GIT ";
+	echo "#                                     - 'auto': Will detect '.git' folder to check if GIT clone is needed, if not 'default'";
+	echo "#                                     - '0': Will not GIT clone STARK code and consider current directory as STARK code folder ";
+	echo "#                                     - 'default': Will DO GIT clone STARK code from default GIT repository (BioInfoDiag GitLab) ";
+	echo "#                                     - <URL>: Will DO GIT clone STARK code from GIT URL ";
+	echo "#                                  Default: 'auto' (detect '.git' folder to check if GIT clone is needed)";
+	echo "#                                  BioInfoDiag GitLab URL: $GIT_CLONE_DEFAULT";
+	echo "# -v|--verbose                     Verbose mode";
+	echo "# -d|--debug                       Debug mode";
+	echo "# -n|--release                     Script Release";
+	echo "# -h|--help                        Help message";
 	echo "#";
 	#echo -e "#\n# RUN Analysis\n################";
 	#$STARK_FOLDER_BIN/launch.sh -h | grep "# [ |-]";
@@ -71,7 +72,7 @@ function usage {
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
-ARGS=$(getopt -o "vdnh" --long "docker-env-file:,docker-stark-image:,output-folder:,output:,verbose,debug,release,help" -- "$@" 2> /dev/null)
+ARGS=$(getopt -o "vdnh" --long "git-clone:,verbose,debug,release,help" -- "$@" 2> /dev/null)
 if [ $? -ne 0 ]; then
 	:
 	echo "#[ERROR] Error in the argument list:";
@@ -94,20 +95,8 @@ do
 	#echo "$1=$2"
 	#echo "Eval opts";
 	case "$1" in
-		--docker-env-file)
-			DOCKER_ENV_FILE="$2"
-			shift 2
-			;;
-		--docker-stark-image)
-			DOCKER_STARK_IMAGE_INPUT="$2"
-			shift 2
-			;;
-		--output-folder)
-			OUTPUT_FOLDER="$2"
-			shift 2
-			;;
-		--output)
-			OUTPUT_FILE="$2"
+		--git-clone)
+			GIT_CLONE="$2"
 			shift 2
 			;;
 		-h|--help)
@@ -151,76 +140,60 @@ done
 
 
 ## ENV
-if [ -z "$DOCKER_ENV_FILE" ]; then
-	if [ -e $SCRIPT_DIR/../.env ]; then
-		DOCKER_ENV_FILE=$SCRIPT_DIR/../.env
+if [ -z "$GIT_CLONE" ]; then
+	GIT_CLONE="auto";
+fi;
+
+
+GIT_CLONE_URL=""
+if [ "$GIT_CLONE" == "0" ]; then
+	GIT_CLONE_URL=""
+elif [ "$GIT_CLONE" == "default" ]; then
+	GIT_CLONE_URL=$GIT_CLONE_DEFAULT;
+elif [ "$GIT_CLONE" == "auto" ]; then
+	if (($(ls -d .git 2>/dev/null | wc -l))); then
+		GIT_CLONE_URL=""
+	else
+		GIT_CLONE_URL=$GIT_CLONE_DEFAULT;
 	fi;
-fi;
-
-[ ! -z "$DOCKER_ENV_FILE" ] && [ -e "$DOCKER_ENV_FILE" ] && source $DOCKER_ENV_FILE #&& echo "sourced"
-
-
-## DOCKER_STARK_IMAGE_INPUT
-if [ -z "$DOCKER_STARK_IMAGE_INPUT" ]; then
-	DOCKER_STARK_IMAGE_INPUT="stark:latest"
+else
+	GIT_CLONE_URL=$GIT_CLONE;
 fi;
 
 
-## OUTPUT_FOLDER
-if [ -z "$OUTPUT_FOLDER" ]; then
-	OUTPUT_FOLDER=/tmp/$RANDOM
-fi;
-mkdir -p $OUTPUT_FOLDER
+(($VERBOSE)) && echo "#[INFO] GIT URL: $GIT_CLONE_URL "
 
 
-## OUTPUT_FOLDER
-if [ -z "$OUTPUT_FILE" ]; then
-	OUTPUT_FILE=$(pwd)/$(echo $DOCKER_STARK_IMAGE_INPUT | tr ":" "_").simg
+# Git Clone
+if [ "$GIT_CLONE_URL" != "" ]; then
+	(($VERBOSE)) && echo "#[INFO] GIT Clone "
+	git clone $GIT_CLONE_URL
+	cd STARK
 fi;
 
 
-
-## PARAM output
-################
-
-
-
-(($VERBOSE)) && echo "#[INFO] Docker environment file: $DOCKER_ENV_FILE"
-(($VERBOSE)) && echo "#[INFO] Docker STARK image: $DOCKER_STARK_IMAGE_INPUT"
-(($VERBOSE)) && echo "#[INFO] Singularity output file: $OUTPUT_FILE"
+# Build
+(($VERBOSE)) && echo "#[INFO] Docker Compose Build "
+docker-compose build
 
 
-
-## PARAM test
-###############
-
-if [ -z "$DOCKER_STARK_IMAGE_INPUT" ] || [ ! -d "$OUTPUT_FOLDER" ]; then
-	echo "#[ERROR] Required parameter: --docker-stark-image and --output. Use --help to display the help." && echo "" && usage && exit 1;
-fi;
-
+# Setup
+(($VERBOSE)) && echo "#[INFO] Docker Compose Setup "
+source .env
+mkdir -p $DOCKER_STARK_MAIN_FOLDER
+docker-compose up stark-folders
+docker-compose up stark-databases
 
 
-## APP
-########
+# Start
+(($VERBOSE)) && echo "#[INFO] Docker Compose Start "
+docker-compose up -d
 
-CMD="
-docker run \
--v /var/run/docker.sock:/var/run/docker.sock \
--v $OUTPUT_FOLDER:/output \
---privileged -t --rm \
-singularityware/docker2singularity \
-$DOCKER_STARK_IMAGE_INPUT
-"
 
-(($DEBUG)) && echo $CMD
+# Output Message
+echo "#[INFO] Open 'http://localhost:$DOCKER_STARK_SERVICE_PORT_PATTERN$DOCKER_STARK_SERVICE_DASHBOARD_PORT' in your browser "
+echo "#[INFO] or run 'bin/STARK --help' "
 
-eval $CMD
-
-mv $(ls $OUTPUT_FOLDER/*simg) $OUTPUT_FILE
-
-rm -r $OUTPUT_FOLDER
 
 exit 0
-
-
 

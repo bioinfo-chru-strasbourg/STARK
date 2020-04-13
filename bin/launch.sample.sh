@@ -1133,6 +1133,8 @@ for RUU in $RUN_UNIQ; do
 				#cat $FASTP_LOG $FASTP_ERR
 
 				# Copy fastq files
+				[ -e $RUN_SAMPLE_DIR/$S.R1.fastq.gz ] && $COMMAND_COPY $RUN_SAMPLE_DIR/$S.R1.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.demultiplexing.fastq.gz
+				[ -e $RUN_SAMPLE_DIR/$S.R2.fastq.gz ] && $COMMAND_COPY $RUN_SAMPLE_DIR/$S.R2.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.demultiplexing.fastq.gz
 				[ -e $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.processed.fastq.gz ] && mv $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.processed.fastq.gz $RUN_SAMPLE_DIR/$S.R1.fastq.gz
 				[ -e $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.processed.fastq.gz ] && mv $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.processed.fastq.gz $RUN_SAMPLE_DIR/$S.R2.fastq.gz
 

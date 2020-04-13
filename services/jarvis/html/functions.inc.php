@@ -1795,11 +1795,23 @@ function VCFtoHTML($Variants_VCFContent,$sample_id=0,$annotation_list=array("ALL
 							<TD><a href='http://exac.broadinstitute.org/variant/".$variant_array["CHROM"]."-".$variant_array["POS"]."-".$variant_array["REF"]."-".$variant_array["ALT"]."' target='exac'>ExAC</a></TD><TD width='20'></TD>
 							<TD><a href='http://www.ncbi.nlm.nih.gov/clinvar?term=(".str_replace("chr","",$variant_array["CHROM"])."[Chromosome]) AND ".$variant_array["POS"]."[Base Position]' target='clinvar'>ClinVar</a> </TD><TD width='20'></TD>
 							".(($variant_array["DBSNP"]!="")?"<TD><a href='http://www.ncbi.nlm.nih.gov/projects/SNP/snp_ref.cgi?rs=".$variant_array["DBSNP"]."' target='dbsnp'>dbSNP</a></TD><TD width='20'></TD>":"")."
+							".(($variant_array["DBSNP"]!="")?"<TD><a href='https://www.snpedia.com/index.php/".$variant_array["DBSNP"]."' target='SNPedia'>SNPedia</a></TD><TD width='20'></TD>":"")."
 							".(($variant_array["DBSNP"]!="")?"<TD><a href='http://www.ncbi.nlm.nih.gov/pubmed?term=".$variant_array["SYMBOL"]." AND ".$variant_array["PNOMEN"]."' target='PubMed'>PubMed</a></TD><TD width='20'></TD>":"")."
 							".(($variant_array["DBSNP"]!="")?"<TD><a href='http://www.ncbi.nlm.nih.gov/variation/view/?filters=source:dbsnp&q=".$variant_array["DBSNP"]."' target='VariationViewer'>Variation</a></TD><TD width='20'></TD>":"")."
-
+							".(($variant_array["GNOMEN"]!="" && $variant_array["PNOMEN"]!="")?"<TD><a href='https://www.ncbi.nlm.nih.gov/CBBresearch/Lu/Demo/LitVar/#!?query=".$variant_array["GNOMEN"]."%20".$variant_array["PNOMEN"]."' target='LitVar'>LitVar</a></TD><TD width='20'></TD>":"")."
+							".(($variant_array["GNOMEN"]!="" && $variant_array["PNOMEN"]!="")?"<TD><a href='https://cancer.sanger.ac.uk/cosmic/search?q=".$variant_array["GNOMEN"]."+".$variant_array["PNOMEN"]."' target='COSMIC'>COSMIC</a></TD><TD width='20'></TD>":"")."
+							".(($variant_array["GNOMEN"]!="" && $variant_array["PNOMEN"]!="")?"<TD><a href='https://varsome.com/variant/hg19/".$variant_array["GNOMEN"]."%20".$variant_array["PNOMEN"]."' target='VarSome'>VarSome</a></TD><TD width='20'></TD>":"")."
+							<TD width='20'></TD>
+						</TR>
+						<TR><TD></TD>
+							<TD width='20'></TD>
+							".(($variant_array["GNOMEN"]!="")?"<TD><a href='https://www.ncbi.nlm.nih.gov/gap/advanced_search/?TERM=".$variant_array["GNOMEN"]."' target='dbGaP'>dbGaP</a></TD><TD width='20'></TD>":"")."
 							".(($variant_array["SYMBOL"]!="")?"<TD><a href='http://www.genecards.org/cgi-bin/carddisp.pl?gene=".$variant_array["SYMBOL"]."' target='genecards'>GeneCards</a></TD>
-							<TD width='20'></TD>":"")."<TD width='20'></TD>
+							<TD width='20'></TD>":"")."
+							".(($variant_array["CHROM"]!="" && $variant_array["POS"]!="" && $variant_array["ALT"]!="" && $variant_array["REF"]!="")?"<TD><a href='http://www.fudan-pgx.org/premedkb/index.html#/search/result?queryType=3&step=1&num=1&term=%27".$variant_array["CHROMNUM"]."-".$variant_array["POS"]."-".$variant_array["REF"]."-".$variant_array["ALT"]."%27%5Bvariant%5D' target='_blank'>PreMedKB</a></TD>
+							<TD width='20'></TD>":"")."
+							".(($variant_array["DBSNP"]!="")?"<TD><a href='https://www.pharmgkb.org/rsid/".$variant_array["DBSNP"]."' target='PharmGKB'>PharmGKB</a></TD><TD width='20'></TD>":"")."
+							<TD width='20'></TD>
 
 						</TR>
 					</TABLE>
@@ -1811,6 +1823,8 @@ function VCFtoHTML($Variants_VCFContent,$sample_id=0,$annotation_list=array("ALL
 				</TD></TR></TABLE>
 			";
 			};#if
+
+
 		};#if
 	};#foreach
 
@@ -2936,6 +2950,10 @@ function VCFFiletoHTML($Variants_VCFContent,$sample_id=0,$annotation_list=array(
 
 						$nb_variant_in_html++;
 
+
+						$variant_array["CHROMNUM"]=str_replace("chr", "", $variant_array["CHROM"]);
+
+
 						#print "$orderby";
 						#if ($variant_nb == "") { $variant_nb=1; };
 						$Variants_HTMLContent[$variant_array[$orderby]][$variant_nb]="
@@ -3027,18 +3045,31 @@ function VCFFiletoHTML($Variants_VCFContent,$sample_id=0,$annotation_list=array(
 										<TD>Ensembl</TD>
 										<TD width='20'></TD>
 										$ensembl_links
+
 									</TR>
 									<TR>
 										<TD>Links</TD>
 										<TD width='20'></TD>
-										<TD><a href='http://exac.broadinstitute.org/region/".$variant_array["CHROM"]."-".$variant_array["POS"]."-".$variant_array["POS"]."' target='exac'>ExAC</a></TD><TD width='20'></TD>
-										<TD><a href='http://www.ncbi.nlm.nih.gov/clinvar?term=((".str_replace("chr","",$variant_array["CHROM"])."[Chromosome]) AND ".$variant_array["POS"]."[Base Position]) OR ((".str_replace("chr","",$variant_array["CHROM"])."[Chromosome]) AND ".$variant_array["POS"]."[Base Position for Assembly GRCh37])' target='clinvar'>ClinVar</a> </TD><TD width='20'></TD>
+										<TD><a href='http://exac.broadinstitute.org/variant/".$variant_array["CHROM"]."-".$variant_array["POS"]."-".$variant_array["REF"]."-".$variant_array["ALT"]."' target='exac'>ExAC</a></TD><TD width='20'></TD>
+										<TD><a href='http://www.ncbi.nlm.nih.gov/clinvar?term=(".str_replace("chr","",$variant_array["CHROM"])."[Chromosome]) AND ".$variant_array["POS"]."[Base Position]' target='clinvar'>ClinVar</a> </TD><TD width='20'></TD>
 										".(($variant_array["DBSNP"]!="")?"<TD><a href='http://www.ncbi.nlm.nih.gov/projects/SNP/snp_ref.cgi?rs=".$variant_array["DBSNP"]."' target='dbsnp'>dbSNP</a></TD><TD width='20'></TD>":"")."
-										<TD><a href='http://www.ncbi.nlm.nih.gov/pubmed?term=".$variant_array["SYMBOL"]." AND ".$variant_array["PNOMEN"]."' target='PubMed'>PubMed</a></TD><TD width='20'></TD>
+										".(($variant_array["DBSNP"]!="")?"<TD><a href='https://www.snpedia.com/index.php/".$variant_array["DBSNP"]."' target='SNPedia'>SNPedia</a></TD><TD width='20'></TD>":"")."
+										".(($variant_array["DBSNP"]!="")?"<TD><a href='http://www.ncbi.nlm.nih.gov/pubmed?term=".$variant_array["SYMBOL"]." AND ".$variant_array["PNOMEN"]."' target='PubMed'>PubMed</a></TD><TD width='20'></TD>":"")."
 										".(($variant_array["DBSNP"]!="")?"<TD><a href='http://www.ncbi.nlm.nih.gov/variation/view/?filters=source:dbsnp&q=".$variant_array["DBSNP"]."' target='VariationViewer'>Variation</a></TD><TD width='20'></TD>":"")."
-
+										".(($variant_array["GNOMEN"]!="" && $variant_array["PNOMEN"]!="")?"<TD><a href='https://www.ncbi.nlm.nih.gov/CBBresearch/Lu/Demo/LitVar/#!?query=".$variant_array["GNOMEN"]."%20".$variant_array["PNOMEN"]."' target='LitVar'>LitVar</a></TD><TD width='20'></TD>":"")."
+										".(($variant_array["GNOMEN"]!="" && $variant_array["PNOMEN"]!="")?"<TD><a href='https://cancer.sanger.ac.uk/cosmic/search?q=".$variant_array["GNOMEN"]."+".$variant_array["PNOMEN"]."' target='COSMIC'>COSMIC</a></TD><TD width='20'></TD>":"")."
+										".(($variant_array["GNOMEN"]!="" && $variant_array["PNOMEN"]!="")?"<TD><a href='https://varsome.com/variant/hg19/".$variant_array["GNOMEN"]."%20".$variant_array["PNOMEN"]."' target='VarSome'>VarSome</a></TD><TD width='20'></TD>":"")."
+										<TD width='20'></TD>
+									</TR>
+									<TR><TD></TD>
+										<TD width='20'></TD>
+										".(($variant_array["GNOMEN"]!="")?"<TD><a href='https://www.ncbi.nlm.nih.gov/gap/advanced_search/?TERM=".$variant_array["GNOMEN"]."' target='dbGaP'>dbGaP</a></TD><TD width='20'></TD>":"")."
 										".(($variant_array["SYMBOL"]!="")?"<TD><a href='http://www.genecards.org/cgi-bin/carddisp.pl?gene=".$variant_array["SYMBOL"]."' target='genecards'>GeneCards</a></TD>
-										<TD width='20'></TD>":"")."<TD width='20'></TD>
+										<TD width='20'></TD>":"")."
+										".(($variant_array["CHROM"]!="" && $variant_array["POS"]!="" && $variant_array["ALT"]!="" && $variant_array["REF"]!="")?"<TD><a href='http://www.fudan-pgx.org/premedkb/index.html#/search/result?queryType=3&step=1&num=1&term=%27".$variant_array["CHROMNUM"]."-".$variant_array["POS"]."-".$variant_array["REF"]."-".$variant_array["ALT"]."%27%5Bvariant%5D' target='PreMedKB'>PreMedKB</a></TD>
+										<TD width='20'></TD>":"")."
+										".(($variant_array["DBSNP"]!="")?"<TD><a href='https://www.pharmgkb.org/rsid/".$variant_array["DBSNP"]."' target='PharmGKB'>PharmGKB</a></TD><TD width='20'></TD>":"")."
+										<TD width='20'></TD>
 
 									</TR>
 								</TABLE>
@@ -3050,12 +3081,6 @@ function VCFFiletoHTML($Variants_VCFContent,$sample_id=0,$annotation_list=array(
 							</TD></TR></TABLE>
 						";
 
-
-
-
-
-
-				#echo "variant_nb=$variant_nb<BR>";
 
 
 				};#if global filter

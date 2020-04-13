@@ -123,6 +123,10 @@ $hardfiltering=$_REQUEST["hardfiltering"];
 $orderby=$_REQUEST["orderby"];
 if ($orderby=="") {
 	$orderby="";
+} else {
+	$orderby_split=explode(":",$orderby);
+	$orderby=$orderby_split[0];
+	$orderby_type=$orderby_split[1];
 };#if
 $ascdesc=$_REQUEST["ascdesc"];
 if ($ascdesc=="") {
@@ -627,9 +631,10 @@ $filter_form="
 										<SELECT name='orderby' style='width:120px;'>
 											<!--$annotation_list_for_order_by_select-->
 											<OPTION value='' ".($orderby==""?"selected":"").">NO order
-											<OPTION value='PZScore' ".($orderby=="PZScore"?"selected":"").">PZScore
-											<OPTION value='Symbol' ".($orderby=="Symbol"?"selected":"").">Symbol
-											<OPTION value='CHROM' ".($orderby=="CHROM"?"selected":"").">CHROM
+											<OPTION value='PZScore:n' ".($orderby=="PZScore"?"selected":"").">PZScore
+											<OPTION value='Symbol:' ".($orderby=="Symbol"?"selected":"").">Symbol
+											<OPTION value='CHROM:' ".($orderby=="CHROM"?"selected":"").">CHROM
+											<OPTION value='VARTYPE:' ".($orderby=="VARTYPE"?"selected":"").">VARTYPE
 										</SELECT>
 										<SELECT name='ascdesc' style='width:auto;'>
 											<OPTION value='DESC' ".($ascdesc=="DESC"?"selected":"").">DESC
@@ -740,7 +745,8 @@ if ( file_exists($t) && filesize($t) != 0 && $process) {
 	};
 
 	if ($orderby != "") {
-		$orderby_options=" --translation=vcf --sort_by=$orderby --order_by=$ascdesc ";
+		#$orderby_options=" --translation=vcf --sort_by=$orderby --order_by=$ascdesc ";
+		$orderby_options=" --translation=vcf --sort='$orderby:$orderby_type:$ascdesc' ";
 	};#if
 
 	#config prioritization $filter_file

@@ -21,7 +21,7 @@
 	# sort and contig
 	$(JAVA) -jar $(PICARD) SortVcf I=$@.tmp O=$@ SEQUENCE_DICTIONARY=$$(cat $*.dict)
 	# Cleaning
-	rm -rf $@.outlyser_tmp $@.tmp
+	rm -rf $@.outlyser_tmp $@.tmp $@.idx
 
 
 RELEASE_CMD := $(shell echo "\#\# OutLyzer: OutLyzer caller to detect variant with low VAF, generate *.outLyzer.vcf files. VCF file is modified to include GT/Genotype information, depending on AF value - greater than 80 is 1/1, othewise 0/1." >> $(RELEASE_INFOS) )
