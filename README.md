@@ -15,6 +15,16 @@ Getting Started
 
 
 ---
+**0. Quick Start**
+
+Use curl from BioInfoDiag GitLab to setup STARK environment (or go to step 1).
+
+```
+$ curl https://gitlab.bioinfo-diag.fr/Strasbourg/STARK/raw/master/setup.sh | bash
+```
+
+
+---
 **1. Download**
 
 Download STARK script from BioInfoDiag GitLab.

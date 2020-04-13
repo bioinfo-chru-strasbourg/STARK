@@ -76,7 +76,7 @@ services:
         entrypoint: /bin/bash
         command: -c "/tool/bin/get_databases.sh --build --threads=${DOCKER_STARK_GET_DATABASES_THREADS} --additional_annotations=${DOCKER_STARK_GET_DATABASES_ADDITIONAL_ANNOTATIONS} --verbose 1>/STARK/databases/build.log 2>/STARK/databases/build.err"
         volumes:
-            - databases:/STARK/databases:rw
+            - databases:${DOCKER_STARK_INNER_FOLDER_DATABASES}:ro
         env_file:
             - .env
         depends_on:
@@ -88,6 +88,35 @@ services:
 
     # SERVICES
     ##########
+
+
+    # STARK IMAGE
+    stark-container:
+        image: ${DOCKER_STARK_IMAGE}
+        build:
+            context: ${DOCKER_STARK_CONTEXT}
+            dockerfile: Dockerfile
+            args:
+                - THREADS=${DOCKER_STARK_BUILD_THREADS}
+                - REPO_SOURCES=${DOCKER_STARK_BUILD_SOURCES_URL}
+                - REMOVE_SOURCES=1
+        container_name: STARK-container
+        entrypoint: /bin/bash
+        command: -c "while true; do sleep 60; done"
+        volumes:
+            - data:${DOCKER_STARK_INNER_FOLDER_DATA}:rw
+            - databases:${DOCKER_STARK_INNER_FOLDER_DATABASES}:ro
+        restart: always
+        env_file:
+            - .env
+        depends_on:
+            - stark
+            - stark-folders
+            - stark-databases
+        networks:
+            - stark
+        deploy:
+            replicas: 1
 
 
     # STARK SERVICE DATA
@@ -114,6 +143,8 @@ services:
         restart: always
         networks:
             - stark
+        deploy:
+            replicas: 1
 
 
     # STARK SERVICE DASHBOARD
@@ -148,9 +179,10 @@ services:
             - stark-service-igv
             - stark-service-launcher
             - stark-service-cloud
-
         networks:
             - stark
+        deploy:
+            replicas: 2
 
 
     # STARK SERVICE CLOUD
@@ -173,6 +205,8 @@ services:
         restart: always
         networks:
             - stark
+        deploy:
+            replicas: 2
 
 
     # STARK SERVICE IGV
@@ -192,6 +226,8 @@ services:
             - stark-service-data
         networks:
             - stark
+        deploy:
+            replicas: 2
 
 
     # STARK SERVICE JARVIS
@@ -206,14 +242,16 @@ services:
             - .env
         ports:
             - ${DOCKER_STARK_SERVICE_PORT_PATTERN}${DOCKER_STARK_SERVICE_JARVIS_PORT}:${DOCKER_STARK_SERVICE_JARVIS_PORT_INNER}
-        # volumes:
-        #     # Volumes for configuration
-        #     - ${DOCKER_STARK_INNER_FOLDER_CONFIG_HOWARD}:${DOCKER_STARK_SERVICE_JARVIS_FOLDER_CONFIGURATION}:ro
+        volumes:
+            # Volumes for configuration
+            - ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_CONFIG_HOWARD}:${DOCKER_STARK_SERVICE_JARVIS_INNER_FOLDER_CONFIGURATION}:ro
         restart: always
         links:
             - stark-service-data
         networks:
             - stark
+        deploy:
+            replicas: 2
 
 
     # STARK SERVICE LAUNCHER
@@ -244,34 +282,8 @@ services:
             - stark-databases
         networks:
             - stark
-
-
-    # STARK SERVICE LISTENER CLEAR
-    stark-service-listener-clear:
-        image: ${DOCKER_STARK_IMAGE}
-        entrypoint: /tool/bin/STARK.listener.clear
-        command: --clear --listener="${DOCKER_STARK_INNER_FOLDER_ANALYSES}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_LISTENER}" --launcher="${DOCKER_STARK_INNER_FOLDER_ANALYSES}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_LAUNCHER}"
-        container_name: ${DOCKER_STARK_SERVICE_LISTENER_CONTAINER_NAME}-clear
-        env_file:
-            - .env
-        volumes:
-            #- /var/run/docker.sock:/var/run/docker.sock
-            #- databases:${DOCKER_STARK_INNER_FOLDER_DATABASES}:ro
-            #- input:${DOCKER_STARK_INNER_FOLDER_INPUT}:ro
-            #- repository:${DOCKER_STARK_INNER_FOLDER_OUTPUT_REPOSITORY}:rw
-            #- archive:${DOCKER_STARK_INNER_FOLDER_OUTPUT_ARCHIVE}:rw
-            - analyses-STARK-service-listener:${DOCKER_STARK_INNER_FOLDER_ANALYSES}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_LISTENER}:rw
-            - analyses-STARK-service-launcher:${DOCKER_STARK_INNER_FOLDER_ANALYSES}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_LAUNCHER}:ro
-        links:
-            - stark-service-launcher
-            - stark
-            - stark-databases
-        depends_on:
-            - stark-service-launcher
-            - stark
-            - stark-databases
-        networks:
-            - stark
+        deploy:
+            replicas: 1
 
 
     # STARK SERVICE LISTENER
@@ -298,6 +310,31 @@ services:
             - stark-databases
         depends_on:
             - stark-service-listener-clear
+            - stark-service-launcher
+            - stark
+            - stark-databases
+        networks:
+            - stark
+        deploy:
+            replicas: 1
+
+
+    # STARK SERVICE LISTENER CLEAR
+    stark-service-listener-clear:
+        image: ${DOCKER_STARK_IMAGE}
+        entrypoint: /tool/bin/STARK.listener.clear
+        command: --clear --listener="${DOCKER_STARK_INNER_FOLDER_ANALYSES}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_LISTENER}" --launcher="${DOCKER_STARK_INNER_FOLDER_ANALYSES}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_LAUNCHER}"
+        container_name: ${DOCKER_STARK_SERVICE_LISTENER_CONTAINER_NAME}-clear
+        env_file:
+            - .env
+        volumes:
+            - analyses-STARK-service-listener:${DOCKER_STARK_INNER_FOLDER_ANALYSES}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_LISTENER}:rw
+            - analyses-STARK-service-launcher:${DOCKER_STARK_INNER_FOLDER_ANALYSES}/${DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_LAUNCHER}:ro
+        links:
+            - stark-service-launcher
+            - stark
+            - stark-databases
+        depends_on:
             - stark-service-launcher
             - stark
             - stark-databases
@@ -365,6 +402,14 @@ volumes:
         driver_opts:
             type: none
             device: ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_SOURCES}
+            o: bind
+
+    # DATA
+    data:
+        driver: local
+        driver_opts:
+            type: none
+            device: ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_DATA}
             o: bind
 
     # ANALYSES

@@ -12,7 +12,8 @@
 		# Add header
 		print "##FORMAT=<ID=GT,Number=.,Type=String,Description=\"Genotype\">"
 		print "##FORMAT=<ID=DP,Number=.,Type=Integer,Description=\"Raw Depth\">"
-		print "##FORMAT=<ID=FREQ,Number=.,Type=Float,Description=\"Allele Frequency\">"
+		print "##FORMAT=<ID=FREQ,Number=.,Type=String,Description=\"Allele Frequency Percent\">"
+		print "##FORMAT=<ID=VAF,Number=.,Type=Float,Description=\"Allele Frequency\">"
 		# CHROM line
 		print $0
 	} else {
@@ -21,6 +22,7 @@
 		# Calculation GT
 		GT="./.";
 		FREQ=".";
+		VAF=".";
 		DP=".";
 		for (i = 1; i <= n_INFO; ++i) {
 			# Split Annotations
@@ -28,6 +30,7 @@
 			# Find AF annotation value
 			if (ANN[1]=="AF") {
 				FREQ=ANN[2];
+				VAF=FREQ/100;
 				# CalculatiON GT
 				if (ANN[2]>80) {
 					GT="1/1";
@@ -45,6 +48,6 @@
 			printf $i"\t"
 		}
 		# Print FORMAT and Sample format
-		print "GT:DP:FREQ:"$9"\t"GT":"DP":"FREQ":"$10
+		print "GT:DP:FREQ:VAF:"$9"\t"GT":"DP":"FREQ"":"VAF":"$10
 	}
 }
