@@ -632,7 +632,7 @@ $filter_form="
 											<!--$annotation_list_for_order_by_select-->
 											<OPTION value='' ".($orderby==""?"selected":"").">NO order
 											<OPTION value='PZScore:n' ".($orderby=="PZScore"?"selected":"").">PZScore
-											<OPTION value='Symbol:' ".($orderby=="Symbol"?"selected":"").">Symbol
+											<OPTION value='symbol:' ".($orderby=="symbol"?"selected":"").">symbol
 											<OPTION value='CHROM:' ".($orderby=="CHROM"?"selected":"").">CHROM
 											<OPTION value='VARTYPE:' ".($orderby=="VARTYPE"?"selected":"").">VARTYPE
 										</SELECT>
