@@ -106,6 +106,8 @@ services:
         volumes:
             - data:${DOCKER_STARK_INNER_FOLDER_DATA}:rw
             - databases:${DOCKER_STARK_INNER_FOLDER_DATABASES}:ro
+            - input:${DOCKER_STARK_INNER_FOLDER_INPUT}:ro
+            - repository:${DOCKER_STARK_INNER_FOLDER_OUTPUT_REPOSITORY}:rw
         restart: always
         env_file:
             - .env
