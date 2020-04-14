@@ -13,7 +13,7 @@
 #################################
 
 # Main tools folder
-NGS_TOOLS=/home/TOOLS/tools
+NGS_TOOLS=/tools
 NGS_DATABASES=/databases
 
 # THREADS
@@ -27,21 +27,21 @@ export HTSLIB_DESCRIPTION="A C library for reading/writing high-throughput seque
 export HTSLIB_REF="http://www.htslib.org/"
 
 # TABIX
-export TABIX=$NGS_TOOLS/htslib/1.9/bin/tabix			# BIN
+export TABIX=$NGS_TOOLS/htslib/current/bin/tabix			# BIN
 export TABIX_PATH=$(dirname $TABIX)				# BIN
-export TABIX_VERSION=1.9					# VER
+export TABIX_VERSION=current					# VER
 export TABIX_DESCRIPTION="Indexing VCF files"
 export TABIX_REF=$HTSLIB_REF
 
 # BGZIP
-export BGZIP=$NGS_TOOLS/htslib/1.9/bin/bgzip			# BIN
-export BGZIP_VERSION=1.9					# VER
+export BGZIP=$NGS_TOOLS/htslib/current/bin/bgzip			# BIN
+export BGZIP_VERSION=current					# VER
 export BGZIP_DESCRIPTION="Compressing VCF files"
 export BGZIP_REF=$HTSLIB_REF
 
 # BCFTOOLS
-export BCFTOOLS=$NGS_TOOLS/bcftools/1.9/bin/bcftools		# BIN
-export BCFTOOLS_VERSION=1.9					# VER
+export BCFTOOLS=$NGS_TOOLS/bcftools/current/bin/bcftools		# BIN
+export BCFTOOLS_VERSION=current					# VER
 export BCFTOOLS_DESCRIPTION="Reading/writing BCF2/VCF/gVCF files and calling/filtering/summarising SNP and short indel sequence variants"
 export BCFTOOLS_REF="http://www.htslib.org/"
 

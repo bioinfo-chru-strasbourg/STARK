@@ -34,6 +34,24 @@ deployment.
 The image does not support SSL at this time.
 
 
+Quick Start
+------------
+
+Just GIT clone and use Docker Compose and open your browser (default http://localhost:4299):
+
+```
+$ git clone https://gitlab.bioinfo-diag.fr/Strasbourg/vision.git
+$ cd vision
+$ docker-compose up -d
+```
+
+Or, for a very quick start:
+
+```
+$ curl https://gitlab.bioinfo-diag.fr/Strasbourg/vision/raw/master/setup.sh | bash
+```
+
+
 Building
 --------
 

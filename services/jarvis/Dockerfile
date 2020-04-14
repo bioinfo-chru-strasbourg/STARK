@@ -1,8 +1,8 @@
 
 ##############################################################
-# Dockerfile Version:   1.0.1
+# Dockerfile Version:   1.0.2
 # Software:             VISION
-# Software Version:     1.0.1b
+# Software Version:     1.0.2b
 # Software Website:     https://gitlab.bioinfo-diag.fr/Strasbourg/VISION
 # Licence:              GNU Affero General Public License (AGPL)
 # Description:          VISION
@@ -61,7 +61,6 @@ ENV YUM_REMOVE="zlib-devel zlib2-devel bzip2-devel lzma-devel xz-devel ncurses-d
 
 
 
-
 ###########
 # JARVIS #
 ###########
@@ -74,10 +73,15 @@ ENV TARBALL_FOLDER=archive
 ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 
-COPY . $TOOLS/$TOOL_NAME/$TOOL_VERSION/
-
 # INSTALL (add webtatic for php55)
-RUN ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current && \
+RUN yum install -y wget && \
+	wget $TARBALL_LOCATION/$TARBALL && \
+    tar xf $TARBALL && \
+    rm -rf $TARBALL && \
+    mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/ && \
+    cp $(ls ${TOOL_NAME,,}-$TOOL_VERSION* -d)/* $TOOLS/$TOOL_NAME/$TOOL_VERSION/ -R && \
+    rm -rf $(ls ${TOOL_NAME,,}-$TOOL_VERSION* -d) && \
+    ln -s $TOOLS/$TOOL_NAME/$TOOL_VERSION $TOOLS/$TOOL_NAME/current && \
     chmod 0775 $TOOLS/$TOOL_NAME/$TOOL_VERSION $TOOLS/$TOOL_NAME/current -R && \
 	mkdir -p $DATABASES && \
 	ln -s $TOOLS/$TOOL_NAME/$TOOL_VERSION $TOOLS/$TOOL_NAME/current && \
@@ -146,8 +150,7 @@ RUN yum upgrade -y && \
     ncurses-devel \
 	$YUM_INSTALL \
     && \
-    yum clean all && \
-	rm -rf /var/cache/yum
+    yum clean all
 
 
 
@@ -228,7 +231,8 @@ RUN wget $TARBALL_LOCATION/$TARBALL && \
 	mkdir -p $DATABASES && \
 	ln -s $DATABASES $TOOL_DATABASE_FOLDER && \
 	ln -s $TOOLS/$TOOL_NAME/$TOOL_VERSION $TOOLS/$TOOL_NAME/current && \
-	ln -s $TOOLS/$TOOL_NAME/$TOOL_VERSION/ /tool
+	ln -s $TOOLS/$TOOL_NAME/$TOOL_VERSION/ /tool && \
+	ln -s $TOOLS/ /tools
 
 
 
@@ -260,10 +264,7 @@ RUN cp -R $TOOLS/$TOOL_NAME/$TOOL_VERSION/html/* /var/www/html/ -R && \
 ######################
 
 #RUN yum erase -y $YUM_REMOVE ; yum clean all ;
-RUN yum erase -y $YUM_REMOVE && \
-	yum clean all && \
-    rm -rf /var/cache/yum
-
+RUN yum clean all ;
 
 
 
