@@ -76,7 +76,7 @@ services:
         entrypoint: /bin/bash
         command: -c "/tool/bin/get_databases.sh --build --threads=${DOCKER_STARK_GET_DATABASES_THREADS} --additional_annotations=${DOCKER_STARK_GET_DATABASES_ADDITIONAL_ANNOTATIONS} --verbose 1>/STARK/databases/build.log 2>/STARK/databases/build.err"
         volumes:
-            - databases:${DOCKER_STARK_INNER_FOLDER_DATABASES}:ro
+            - databases:${DOCKER_STARK_INNER_FOLDER_DATABASES}:rw
         env_file:
             - .env
         depends_on:

@@ -48,6 +48,6 @@
 			printf $i"\t"
 		}
 		# Print FORMAT and Sample format
-		print "GT:DP:FREQ:VAF:"$9"\t"GT":"DP":"FREQ"":"VAF":"$10
+		print "GT:DP:FREQ:VAF:"$9"\t"GT":"DP":"FREQ":"VAF":"$10
 	}
 }
