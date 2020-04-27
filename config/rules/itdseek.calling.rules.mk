@@ -35,12 +35,15 @@ VAFMIN_ITDSEEK=0.00
 		echo '##reference=file://'`cat $*.genome` >> $@.tmp2; \
 		# Add sample columns FORMAT and $SAMPLE \
 		grep "^#CHROM" $@.tmp | sed "s/INFO$$/INFO\tFORMAT\t"`echo $$(basename $$(dirname $@))`"/" >> $@.tmp2; \
-		old_IFS=$$IFS; IFS=$$'\n'; for l in $$(grep -v "^#" $@.tmp); do VAF=$$(echo $$l | cut -d" " -f8 | cut -d";" -f5 | cut -d"=" -f2); AD=$$(echo $$l | cut -d" " -f8 | cut -d";" -f1 | cut -d"=" -f2); DP=$$(echo $$l | cut -d" " -f8 | cut -d";" -f1 | cut -d"=" -f2 | awk -F"," '{print $$1+$$2}'); echo -e $$l";ITD=1 GT:DP:VAF 0/1:$$DP:$$VAF" | tr " " "\t" >> $@.tmp2; done; IFS=$$old_IFS; \
+		mkdir -p $@.tmp"_VCF_sort"; \
+		touch $@.tmp3; \
+		old_IFS=$$IFS; IFS=$$'\n'; for l in $$(grep -v "^#" $@.tmp); do VAF=$$(echo $$l | cut -d" " -f8 | cut -d";" -f5 | cut -d"=" -f2); AD=$$(echo $$l | cut -d" " -f8 | cut -d";" -f1 | cut -d"=" -f2); DP=$$(echo $$l | cut -d" " -f8 | cut -d";" -f1 | cut -d"=" -f2 | awk -F"," '{print $$1+$$2}'); echo -e $$l";ITD=1 GT:DP:VAF 0/1:$$DP:$$VAF" | tr " " "\t" >> $@.tmp3; done; IFS=$$old_IFS; \
+		cat $@.tmp3 | sort -k1,1V -k2,2n -T $@.tmp"_VCF_sort" >> $@.tmp2; \
 		# Filter on DP \
-		$(BCFTOOLS) view -e " FORMAT/DP[*] < $(DPMIN_ITDSEEK) && FORMAT/VAF[*] <= $(VAFMIN_ITDSEEK) "  $@.tmp2 > $@; \
+		$(BCFTOOLS) view -e " FORMAT/DP[*] < $(DPMIN_ITDSEEK) || FORMAT/VAF[*] <= $(VAFMIN_ITDSEEK) "  $@.tmp2 > $@; \
 	fi;
 	# Cleaning
-	rm -f $@.tmp*
+	rm -rf $@.tmp*
 
 
 

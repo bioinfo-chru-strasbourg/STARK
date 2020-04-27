@@ -211,33 +211,32 @@ fi;
 
 
 for ANALYSIS_LOG in $(find -L $LISTENER_FOLDER -mindepth 1 -maxdepth 1 -name "ID-*-NAME-*.log" -type f); do
-	
+
 	ANALYSIS_NAME=$(echo $(basename $ANALYSIS_LOG) | sed 's/.log//g')
-	
+
 	(($VERBOSE)) && echo "#[INFO] STARK ANALYSIS '$ANALYSIS_NAME' "
 
 	# finished
 	if (($(ls $LAUNCHER_FOLDER/STARK.*.$ANALYSIS_NAME.json 2>/dev/null | wc -l))) && (($(ls $LAUNCHER_FOLDER/STARK.*.$ANALYSIS_NAME.info 2>/dev/null | wc -l))); then
-		(($VERBOSE)) && echo "#[INFO] STARK ANALYSIS '$ANALYSIS_NAME' finished "
+		(($VERBOSE)) && echo "#[INFO] STARK ANALYSIS '$ANALYSIS_NAME' launched "
+	else
+		(($VERBOSE)) && echo "#[INFO] STARK ANALYSIS '$ANALYSIS_NAME' NOT launched "
 	fi;
 
 	# Not finished
-	if (($(ls $LAUNCHER_FOLDER/STARK.*.$ANALYSIS_NAME.json 2>/dev/null | wc -l))) && ! (($(ls $LAUNCHER_FOLDER/STARK.*.$ANALYSIS_NAME.info 2>/dev/null | wc -l))); then
+	#if (($(ls $LAUNCHER_FOLDER/STARK.*.$ANALYSIS_NAME.json 2>/dev/null | wc -l))) && ! (($(ls $LAUNCHER_FOLDER/STARK.*.$ANALYSIS_NAME.info 2>/dev/null | wc -l))); then
+	if (($(ls $LAUNCHER_FOLDER/STARK.*.$ANALYSIS_NAME.info 2>/dev/null | wc -l))); then
+		(($VERBOSE)) && echo "#[INFO] STARK ANALYSIS '$ANALYSIS_NAME' finished "
+	else
 		(($VERBOSE)) && echo "#[INFO] STARK ANALYSIS '$ANALYSIS_NAME' NOT finished "
 		if (($RELAUNCHED_NOT_FINISHED)); then
 			echo "#[INFO] STARK ANALYSIS '$ANALYSIS_NAME' relaunched"
 			mv $ANALYSIS_LOG $ANALYSIS_LOG.$EXEC_DATE
-		else 
+		else
 			echo "#[INFO] STARK ANALYSIS '$ANALYSIS_NAME' need to be relaunched"
 			(($DEBUG)) && echo "#[INFO] $ANALYSIS_LOG > $ANALYSIS_LOG.$EXEC_DATE "
-
 		fi;
 	fi;
 
 
 done;
-
-
-
-
-

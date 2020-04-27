@@ -7,6 +7,10 @@
 include "config.php";
 
 
+// Script start time
+$rustart = getrusage();
+
+
 
 ### VARIABLES
 ###############
@@ -17,6 +21,8 @@ $SEARCH=$_GET["search"];
 
 
 $MAX_REPORTS=2000;
+
+$VERBOSE=0;
 
 
 
@@ -157,6 +163,19 @@ function path_links($PATH="") {
 	};
 	#echo "L $LINKS_HTML L"; btn btn-primary-outline display-8 display-8
 	return $PATH_LINKS;
+};
+
+function rutime($ru, $rus, $index) {
+    return ($ru["ru_$index.tv_sec"]*1000 + intval($ru["ru_$index.tv_usec"]/1000))
+     -  ($rus["ru_$index.tv_sec"]*1000 + intval($rus["ru_$index.tv_usec"]/1000));
+}
+
+function tags_extract($TAGS="") {
+	$return=str_replace(" ","\n",str_replace("!"," ",$TAGS));
+	preg_match_all('/.*#.*/i', $return, $matchWords);
+	return implode(" ",$matchWords[0]);
+    #  $matchWords = $matchWords[0];
+    #  return $return;
 };
 
 
@@ -318,7 +337,11 @@ $root="repositories";
 $tbody="";
 $reports=glob ( "".path_full($PATH)."*stark.report.html" );
 
+
 if (count($reports)<=$MAX_REPORTS) {
+
+	$tags_sample_files=glob ( "".path_full($PATH)."*tag" );
+	$tags_analysis_files=glob ( "".path_full($PATH)."*analysis.tag" );
 
 	foreach ($reports as $key => $report_html) {
 
@@ -342,6 +365,30 @@ if (count($reports)<=$MAX_REPORTS) {
 		$report_tsv=$root.'/'.$repository.'/'.$group.'/'.$project.'/'.$run.'/'.$sample.'/'.$sample.'.final.tsv';
 		$report_vcf_gz=$root.'/'.$repository.'/'.$group.'/'.$project.'/'.$run.'/'.$sample.'/'.$sample.'.final.vcf.gz';
 		$report_bed=$root.'/'.$repository.'/'.$group.'/'.$project.'/'.$run.'/'.$sample.'/'.$sample.'.bed';
+
+
+
+
+		# TAGS
+		$tags_file=glob ( "".$sample_path."/".$sample.".tag" );
+		$analysis_tags_file=glob ( "".$sample_path."/".$sample.".analysis.tag" );
+		if (count($tags_file)>0) {
+
+			$myfile = fopen($tags_file[0], "r") or die("Unable to open file!");
+			$tags=tags_extract(trim(fread($myfile,filesize($tags_file[0]))));
+			fclose($myfile);
+		};
+		if (count($analysis_tags_file)>0) {
+			$myfile = fopen($analysis_tags_file[0], "r") or die("Unable to open file!");
+			$tags_analysis=tags_extract(trim(fread($myfile,filesize($analysis_tags_file[0]))));
+			fclose($myfile);
+		};
+		if ($tags != "") {
+			$tags="<br><small><span style='color:gray'>$tags</span></small>";
+		};
+		if ($tags_analysis != "") {
+			$tags_analysis="<br><small><span style='color:gray'>$tags_analysis</span></small>";
+		};
 
 		# IGV LINKS
 		if (isset($MODULES["IGV"])) {
@@ -377,6 +424,7 @@ if (count($reports)<=$MAX_REPORTS) {
 				<td class="head-item mbr-fonts-style display-7">
 					<small>
 						<b>'.$sample.'</b>
+						'.$tags.'
 						<br>
 						'.$IGV_SAMPLE_LINK.'
 						'.$JARVIS_SAMPLE_LINK.'
@@ -385,6 +433,7 @@ if (count($reports)<=$MAX_REPORTS) {
 				<td class="head-item mbr-fonts-style display-7">
 					<small>
 						'.$run.'
+						'.$tags_analysis.'
 						<br>
 						'.$IGV_RUN_LINK.'
 						'.$JARVIS_RUN_LINK.'
@@ -518,5 +567,21 @@ echo '
 	<script src="assets/slidervideo/script.js"></script>
 	<script src="assets/mbr-tabs/mbr-tabs.js"></script>
 ';
+
+
+# Script end time
+
+if ($VERBOSE) {
+
+	$ru = getrusage();
+	echo "This process used " . rutime($ru, $rustart, "utime") .
+	    " ms for its computations\n";
+	echo "It spent " . rutime($ru, $rustart, "stime") .
+	    " ms in system calls\n";
+
+};
+
+
+
 
 ?>
