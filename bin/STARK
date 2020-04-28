@@ -122,7 +122,7 @@ function usage {
 	echo "### Other options";
 	echo "# --analysis_name=<STRING>                 Analysis name.";
 	echo "#                                          Default: 'date' (format YYYYMMDD) for a SAMPLE list analysis .";
-	echo "# --analysis_tag=<STRING1>                 List of ANALYSIS Tags. TODO";
+	echo "# --analysis_tag=<STRING>                  List of ANALYSIS Tags.";
 	echo "#                                          Format: TYPE#TAG[#TAG]{!}[TYPE#TAG[#TAG]]";
 	echo "# --application=<STRING|FILE>              APP name or APP file configuration of the APPLICATION.";
 	echo "#                                          Must be in the STARK APPS folder if relative path";
