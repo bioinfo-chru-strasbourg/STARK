@@ -1,0 +1,35 @@
+#######################################
+# STARK                               #
+# Stellar Tools for variants          #
+#    Analysis and RanKing             #
+# Author: Antony Le Bechec            #
+# Copyright: HUS                      #
+# License: GNU GPLA V3                #
+#######################################
+
+#######################################
+# Release: 0.9.18.1                   #
+# Date: 20200602                      #
+#######################################
+
+########################
+#### DATABASES LIST ####
+########################
+## VCFDBSNP: /STARK/databases/dbsnp/dbsnp.hg19.vcf.gz
+## VCFDBSNP_RECALIBRATION: /STARK/databases/dbsnp/dbsnp.hg19.vcf.gz
+## VCFMILLS1000G: /STARK/databases/others/Mills_and_1000G_gold_standard.indels.hg19.sites.vcf
+## COSMIC: /STARK/databases/others/cosmic.hg19.vcf
+## KNOWN_ALLELES: /STARK/databases/others/Mills_and_1000G_gold_standard.indels.hg19.sites.vcf
+## HAPMAP: /STARK/databases/others/hapmap_3.3.hg19.sites.vcf
+## OMNI: /STARK/databases/others/1000G_omni2.5.hg19.vcf
+## PHASE1_1000G: /STARK/databases/others/1000G_phase1.snps.high_confidence.hg19.sites.vcf
+
+##########################
+#### DATABASES CONFIG ####
+##########################
+## HOWARD_CONFIG: /STARK/tools/stark/0.9.18.1/config/howard/config.ini
+## HOWARD_CONFIG_ANNOTATION: /STARK/tools/stark/0.9.18.1/config/howard/config.annotation.ini
+## HOWARD_CONFIG_PRIORITIZATION: /STARK/tools/stark/0.9.18.1/config/howard/config.prioritization.ini
+## SNPEFF_CONFIG: /STARK/tools/snpeff/current/bin/snpeff.config
+## ANNOVAR_DATABASES: /STARK/databases/annovar
+## SNPEFF_DATABASES: /STARK/databases/snpeff/4.3t

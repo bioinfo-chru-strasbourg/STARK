@@ -11,12 +11,13 @@
 ## Operating system
 
 STARK works on Linux systems.
-STARK was tested on CentOS 7
+STARK was tested on CentOS 7.
 
 
 ## Packages
 
-See Dockerfile for more linux packages dependencies
+Only Docker is required.
+See Dockerfile for more linux packages dependencies.
 
 
 ## CPU and Memory

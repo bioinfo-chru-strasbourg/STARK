@@ -1,7 +1,7 @@
 #!/bin/bash
 #################################
 ##
-## NGS environment
+## STARK Docker Setup 
 ##
 #################################
 
@@ -47,6 +47,8 @@ function usage {
 	echo "### Can be used with curl (e.g. curl https://gitlab.bioinfo-diag.fr/Strasbourg/vision/raw/master/setup.sh | bash)";
 	echo "###    (e.g. curl https://gitlab.bioinfo-diag.fr/Strasbourg/STARK/raw/master/setup.sh | bash)";
 	echo "#";
+	echo "# --env=<FILE>                     Dockerfile environment configuration file ";
+	echo "#                                  Default: '.env'";
 	echo "# --git-clone=<STRING>             Download STARK code on GIT ";
 	echo "#                                     - 'auto': Will detect '.git' folder to check if GIT clone is needed, if not 'default'";
 	echo "#                                     - '0': Will not GIT clone STARK code and consider current directory as STARK code folder ";
@@ -95,6 +97,10 @@ do
 	#echo "$1=$2"
 	#echo "Eval opts";
 	case "$1" in
+		--env)
+			ENV="$2"
+			shift 2
+			;;
 		--git-clone)
 			GIT_CLONE="$2"
 			shift 2
@@ -134,12 +140,53 @@ done
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
+(($DEBUG)) && VERBOSE=1
+
 
 ## PARAM
 ##########
 
 
+
 ## ENV
+if [ -z "$ENV" ]; then
+	ENV=".env";
+fi;
+
+(($VERBOSE)) && echo "#[INFO] STARK Docker environment configuration file '$ENV' "
+
+if [ -s $ENV ]; then
+	source $ENV;
+else
+	echo "#[ERROR] STARK Docker environment configuration file '$ENV' failed"
+	exit 1;
+fi;
+
+
+# DOCKER_STARK_MAIN_FOLDER
+if mkdir -p $DOCKER_STARK_MAIN_FOLDER; then
+	(($VERBOSE)) && echo "#[INFO] STARK Main folder '$DOCKER_STARK_MAIN_FOLDER' created"
+else
+	echo "#[ERROR] STARK Main folder '$DOCKER_STARK_MAIN_FOLDER' NOT created "
+	exit 1;
+fi;
+
+## LOG
+DOCKER_STARK_SETUP_LOG="$DOCKER_STARK_MAIN_FOLDER/setup.log"
+echo "### STARK Setup" >> $DOCKER_STARK_SETUP_LOG 2>> $DOCKER_STARK_SETUP_LOG
+echo -e '# STARK Setup DATE: '`date '+%Y%m%d-%H%M%S'` >> $DOCKER_STARK_SETUP_LOG 2>> $DOCKER_STARK_SETUP_LOG
+echo -e '\n' >> $DOCKER_STARK_SETUP_LOG 2>> $DOCKER_STARK_SETUP_LOG
+if [ -s $DOCKER_STARK_SETUP_LOG ]; then
+	(($VERBOSE)) && echo "#[INFO] STARK setup log file '$DOCKER_STARK_SETUP_LOG' created "
+else
+	echo "#[ERROR] STARK setup log file '$DOCKER_STARK_SETUP_LOG' NOT created "
+	exit 1;
+fi;
+
+(($DEBUG)) && tail $DOCKER_STARK_SETUP_LOG
+
+
+## GIT CLONE
 if [ -z "$GIT_CLONE" ]; then
 	GIT_CLONE="auto";
 fi;
@@ -161,39 +208,87 @@ else
 fi;
 
 
-(($VERBOSE)) && echo "#[INFO] GIT URL: $GIT_CLONE_URL "
-
-
 # Git Clone
+(($VERBOSE)) && echo "#[INFO] STARK GIT Clone URL '$GIT_CLONE_URL' "
 if [ "$GIT_CLONE_URL" != "" ]; then
-	(($VERBOSE)) && echo "#[INFO] GIT Clone "
-	git clone $GIT_CLONE_URL
-	cd STARK
+	(($VERBOSE)) && echo "#[INFO] STARK GIT Clone "
+	if git clone $GIT_CLONE_URL >> $DOCKER_STARK_SETUP_LOG 2>> $DOCKER_STARK_SETUP_LOG; then
+		cd STARK
+		(($VERBOSE)) && echo "#[INFO] STARK GIT Clone '$GIT_CLONE_URL' done."
+	else
+		echo "#[ERROR] STARK GIT Clone '$GIT_CLONE_URL' failed"
+		exit 1;
+	fi;
+else
+	(($VERBOSE)) && echo "#[INFO] STARK GIT Clone skipped."
 fi;
 
 
 # Build
-(($VERBOSE)) && echo "#[INFO] Docker Compose Build "
-docker-compose build
+(($VERBOSE)) && echo "#[INFO] STARK Docker Compose Build "
+if docker-compose build >> $DOCKER_STARK_SETUP_LOG 2>> $DOCKER_STARK_SETUP_LOG; then
+	(($VERBOSE)) && echo "#[INFO] STARK Docker Compose Build done."
+else
+	echo "#[ERROR] STARK Docker Compose Build failed"
+	exit 1;
+fi;
 
 
 # Setup
-(($VERBOSE)) && echo "#[INFO] Docker Compose Setup "
-source .env
-mkdir -p $DOCKER_STARK_MAIN_FOLDER
-docker-compose up stark-folders
-docker-compose up stark-databases
+(($VERBOSE)) && echo "#[INFO] STARK Docker Compose Setup "
+#source .env
+#mkdir -p $DOCKER_STARK_MAIN_FOLDER
+
+# Folder creation
+(($VERBOSE)) && echo "#[INFO] STARK Docker Compose Setup - Folders creation"
+if docker-compose --project-name STARK up stark-folders >> $DOCKER_STARK_SETUP_LOG 2>> $DOCKER_STARK_SETUP_LOG; then
+	(($VERBOSE)) && echo "#[INFO] STARK Docker Compose Setup - Folders creation done."
+else
+	echo "#[ERROR] STARK Docker Compose Setup - Folders creation failed"
+	exit 1;
+fi;
+
+# Databases download
+(($VERBOSE)) && echo "#[INFO] STARK Docker Compose Setup - Databases Download"
+if docker-compose --project-name STARK up stark-databases >> $DOCKER_STARK_SETUP_LOG 2>> $DOCKER_STARK_SETUP_LOG; then
+	(($VERBOSE)) && echo "#[INFO] STARK Docker Compose Setup - Databases Download done."
+else
+	echo "#[ERROR] STARK Docker Compose Setup - Databases Download failed"
+	exit 1;
+fi;
+
+# Sources archive
+(($VERBOSE)) && echo "#[INFO] STARK Docker Compose Setup - Sources Archive"
+if docker-compose --project-name STARK up stark-sources-archive >> $DOCKER_STARK_SETUP_LOG 2>> $DOCKER_STARK_SETUP_LOG; then
+	(($VERBOSE)) && echo "#[INFO] STARK Docker Compose Setup - Sources Archive done."
+else
+	echo "#[ERROR] STARK Docker Compose Setup - Sources Archive failed"
+	exit 1;
+fi;
+
+(($VERBOSE)) && echo "#[INFO] STARK Docker Compose Setup done."
 
 
-# Start
-(($VERBOSE)) && echo "#[INFO] Docker Compose Start "
-docker-compose up -d
+# Start services Build
+(($VERBOSE)) && echo "#[INFO] STARK Docker Compose Build - Services Modules"
+if $SCRIPT_DIR/services/services.sh --module=* --command=build --verbose >> $DOCKER_STARK_SETUP_LOG 2>> $DOCKER_STARK_SETUP_LOG; then
+	(($VERBOSE)) && echo "#[INFO] STARK Docker Compose Build - Services Modules done."
+else
+	echo "#[ERROR] STARK Docker Compose Build - Services Modules failed"
+	exit 1;
+fi;
+
+# Start services Start
+(($VERBOSE)) && echo "#[INFO] STARK Docker Compose Start - Services Modules"
+if $SCRIPT_DIR/services/services.sh --module=* --command=up --verbose >> $DOCKER_STARK_SETUP_LOG 2>> $DOCKER_STARK_SETUP_LOG; then
+	(($VERBOSE)) && echo "#[INFO] STARK Docker Compose Start - Services Modules done."
+else
+	echo "#[ERROR] STARK Docker Compose Start - Services Modules failed"
+	exit 1;
+fi;
 
 
 # Output Message
-echo "#[INFO] Open 'http://localhost:$DOCKER_STARK_SERVICE_PORT_PATTERN$DOCKER_STARK_SERVICE_DASHBOARD_PORT' in your browser "
-echo "#[INFO] or run 'bin/STARK --help' "
-
+echo "#[INFO] STARK installed - Read README.md for more information"
 
 exit 0
-

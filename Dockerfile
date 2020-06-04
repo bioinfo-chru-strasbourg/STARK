@@ -1,12 +1,12 @@
 
 ##############################################################
-# Dockerfile Version:   1.0
-# Software:             STARK-BASE
-# Software Version:     0.9.18
-# Software Website:     none
+# Dockerfile Version:   1.1
+# Software:             STARK
+# Software Version:     0.9.18.1
+# Software Website:     https://gitlab.bioinfo-diag.fr/Strasbourg/STARK
 # Licence:              GNU Affero General Public License (AGPL)
 # Description:          STARK
-# Usage:                docker run -ti [-v [DATA FOLDER]:/data -v [DATABASE_FOLDER]:/databases] stark-base:version
+# Usage:                docker run -ti [-v [DATA FOLDER]:/data -v [DATABASE_FOLDER]:/databases] stark:version
 ##############################################################
 
 ##########
@@ -40,13 +40,11 @@
 FROM centos:7
 MAINTAINER Antony Le Bechec <antony.lebechec@gmail.com>
 LABEL Software="STARK" \
-	Version="0.9.18" \
-	Website="none" \
+	Version="0.9.18.1" \
+	Website="https://gitlab.bioinfo-diag.fr/Strasbourg/STARK" \
 	Description="STARK" \
 	License="GNU Affero General Public License (AGPL)" \
 	Usage="docker run [-v [DATA FOLDER]:/STARK/data -v [DATABASE FOLDER]:/STARK/databases -v [RESULTS FOLDER]:/STARK/output/results -v [RUNS FOLDER]:/STARK/input/runs -v [MANIFESTS FOLDER]:/STARK/input/manifests] stark:version"
-
-
 
 
 
@@ -472,7 +470,7 @@ ENV TOOL_SOURCE_EXTERNAL="http://www.openbioinformatics.org/annovar/download/0wg
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
 ENV TOOL_PARAM_TARBALL_FOLDER=$TOOL_NAME
-ENV TOOL_PARAM_DATABASE_FOLDER_LINK=$DATABASES/annovar_sources
+ENV TOOL_PARAM_DATABASE_FOLDER_LINK=$DATABASES/annovar
 ENV TOOL_PARAM_DATABASE_FOLDER=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/databases/
 
 
@@ -710,7 +708,7 @@ RUN source $TOOL_INIT && \
 
 # TOOL INFO
 ENV TOOL_NAME="howard"
-ENV TOOL_VERSION="0.9.15b"
+ENV TOOL_VERSION="0.9.15.1b"
 ENV TOOL_TARBALL="archive.tar.gz"
 ENV TOOL_SOURCE_EXTERNAL="https://gitlab.bioinfo-diag.fr/Strasbourg/HOWARD/repository/$TOOL_VERSION/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
@@ -894,7 +892,7 @@ ENV TOOL_TARBALL="snpEff_v4_3t_core.zip"
 ENV TOOL_SOURCE_EXTERNAL="https://sourceforge.net/projects/snpeff/files/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
-ENV TOOL_PARAM_DATABASE_FOLDER_LINK=$DATABASES/snpeff_sources/4.3t
+ENV TOOL_PARAM_DATABASE_FOLDER_LINK=$DATABASES/snpeff/4.3t
 ENV TOOL_PARAM_DATABASE_FOLDER=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/data
 
 # TOOL INSTALLATION
@@ -939,7 +937,7 @@ RUN source $TOOL_INIT && \
 
 # TOOL INFO
 ENV TOOL_NAME="stark"
-ENV TOOL_VERSION="0.9.18"
+ENV TOOL_VERSION="0.9.18.1"
 #ENV TOOL_TARBALL="VarScan.v$TOOL_VERSION.jar"
 #ENV TOOL_SOURCE_EXTERNAL="https://github.com/dkoboldt/varscan/raw/master/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
@@ -973,9 +971,6 @@ RUN mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
 		cp -R $TOOLS/$TOOL_NAME/$TOOL_VERSION/config/howard/* $CONFIG_HOWARD_FOLDER && \
 		ln -s $CONFIG_HOWARD_FOLDER/ $TOOLS/$TOOL_NAME/$TOOL_VERSION/config/howard ;
 
-		#ln -s $TOOLS/$TOOL_NAME/$TOOL_VERSION/config/apps/myapps/ $MYAPPS ;
-
-
 
 
 ######################
@@ -998,8 +993,4 @@ RUN yum erase -y $YUM_REMOVE && \
 
 WORKDIR "/STARK/data"
 
-#ENTRYPOINT [ "/bin/bash" ]
-# find /Users/lebechea/Documents/NGS/Dockerfile -maxdepth 2 -mindepth 2 -type d
-#CMD [ "ls", "-l", "/home/TOOLS/tools" ]
-#CMD [ "find", "/STARK/tools", "-maxdepth", "2", "-mindepth", "2", "-type", "d" ]
 ENTRYPOINT [ "/tool/bin/STARK" ]

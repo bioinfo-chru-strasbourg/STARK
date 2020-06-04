@@ -30,7 +30,7 @@ services:
         entrypoint: /bin/bash
         command: -c "while ((1)); do /tool/toolbox/input_runs_synch.sh --sources=/STARK/input_runs_source --dest=${DOCKER_STARK_INNER_FOLDER_INPUT}/runs --days=30 --verbose && sleep 60; done;"
         volumes:
-            - /Users/lebechea/STARK.ok/input/runs:/STARK/input_runs_source:ro
+            - ~/STARK/input/runs:/STARK/input_runs_source:ro
             - input:${DOCKER_STARK_INNER_FOLDER_INPUT}:rw
         env_file:
             - ../.env

@@ -14,7 +14,7 @@
 
 ## New
 
-- New folder architecture (bin, config, app, ...)
+- New folder architecture (bin, config, app, modules...)
 - New Application management
 - New tools releases
 - New rules including new callers (OutLyzer, MuTect)
@@ -49,7 +49,7 @@
 #######################################
 
 #######################################
-# Release : 0.9.17d                   #
+# Release : 0.9.17b                   #
 # Date : 20181002                     #
 #######################################
 

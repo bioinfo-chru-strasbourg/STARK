@@ -127,7 +127,7 @@ done
 
 
 # Example:
-# STARK.report -f "RUN_TEST_TAG7" -s "P1408" -e "/STARK/tools/stark/0.9.18d/config/apps/SOLIDTUMOR.app" -i "bwamem.gatkUG_SOLIDTUMOR.howard,bwamem.gatkHC_SOLIDTUMOR.howard,bwamem.VarScan_SOLIDTUMOR.howard" -k test -r /STARK/output/results
+# STARK.report -f "RUN_TEST_TAG7" -s "P1408" -e "/STARK/tools/stark/0.9.18.1/config/apps/SOLIDTUMOR.app" -i "bwamem.gatkUG_SOLIDTUMOR.howard,bwamem.gatkHC_SOLIDTUMOR.howard,bwamem.VarScan_SOLIDTUMOR.howard" -k test -r /STARK/output/results
 
 ####################################################################################################################################
 # Checking the input parameter

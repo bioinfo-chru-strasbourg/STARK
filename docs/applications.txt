@@ -3,404 +3,124 @@
 # Stellar Tools for variants          #
 #    Analysis and RanKing             #
 # Author: Antony Le Bechec            #
-# Copyright: IRC                      #
-# Licence: GNU-GPL/CeCILL             #
+# Copyright: HUS                      #
+# License: GNU GPLA V3                #
 #######################################
 
 #######################################
-# Release : 0.9.16b                   #
-# Date : 20180615                     #
+# Release: 0.9.18.1                   #
+# Date: 20200602                      #
 #######################################
 
+#[INFO] ######################
+#[INFO] #### APPLICATIONS ####
+#[INFO] ######################
 
-######################
-#### APPLICATIONS ####
-######################
 
-### CANOE [env.CANOE.sh]
-#    RAW DATA /home1/IRC/DATA/RAW/MSR
-#    RES DATA /home1/IRC/DATA/DEV
-#    PIPELINES
-#       bwamem.canoes.howard
-#    POST_ALIGNMENT .compress.realignment.markduplicates.sorting
-#    POST_ALIGNMENT_STEPS sorting markduplicates realignment compress
-### CPSGEN.HCSOP [env.CPSGEN.HCSOP.sh]
-#    RAW DATA /home1/IRC/DATA/RAW/MSR
-#    RES DATA /home1/IRC/DATA/DEV
-#    PIPELINES
-#       bwamem.canoes.howard
-#       bwamem.gatkHC_CPSGEN_MASTR.howard
-#       bwamem.gatkUG_CPSGEN_MASTR.howard
-#    POST_ALIGNMENT .compress.realignment.markduplicates.sorting
-#    POST_ALIGNMENT_STEPS sorting markduplicates realignment compress
-### CPSGEN.MASTR [env.CPSGEN.MASTR.sh]
-#    RAW DATA /home1/IRC/DATA/RAW/MSR
-#    RES DATA /home1/IRC/DATA/DEV
-#    PIPELINES
-#       bwamem.canoes.howard
-#       bwamem.gatkHC_CPSGEN_MASTR.howard
-#       bwamem.gatkUG_CPSGEN_MASTR.howard
-#    POST_ALIGNMENT .compress.clipping.recalibration.realignment.sorting
-#    POST_ALIGNMENT_STEPS sorting realignment recalibration clipping compress
-### CPSGEN.SUR [env.CPSGEN.SUR.sh]
-#    RAW DATA /home1/IRC/DATA/RAW/MSR
-#    RES DATA /home1/IRC/DATA/DEV
-#    PIPELINES
-#       bwamem.canoes.howard
-#       bwamem.gatkHC_CPSGEN_MASTR.howard
-#       bwamem.gatkUG_CPSGEN_MASTR.howard
-#    POST_ALIGNMENT .compress.realignment.markduplicates.sorting
-#    POST_ALIGNMENT_STEPS sorting markduplicates realignment compress
-### CPSGEN.TumorMASTR [env.CPSGEN.TumorMASTR.sh]
-#    RAW DATA /home1/IRC/DATA/RAW/MSR
-#    RES DATA /home1/IRC/DATA/DEV
-#    PIPELINES
-#       bwamem.canoes.howard
-#       bwamem.gatkHC_CPSGEN_MASTR.howard
-#       bwamem.gatkUG_CPSGEN_MASTR.howard
-#    POST_ALIGNMENT .compress.clipping.recalibration.realignment.sorting
-#    POST_ALIGNMENT_STEPS sorting realignment recalibration clipping compress
-### CPSGEN [env.CPSGEN.sh]
-#    RAW DATA /home1/IRC/DATA/RAW/MSR
-#    RES DATA /home1/IRC/DATA/DEV
-#    PIPELINES
-#       bwamem.canoes.howard
-#       bwamem.gatkHC_CPSGEN_MASTR.howard
-#       bwamem.gatkUG_CPSGEN_MASTR.howard
-#    POST_ALIGNMENT .compress.realignment.markduplicates.sorting
-#    POST_ALIGNMENT_STEPS sorting markduplicates realignment compress
-### DIAG.BBS [env.DIAG.BBS.sh]
-#    RAW DATA /home1/FICGEN/DIAG/DATA/NGS/Raw
-#    RES DATA /home1/IRC/DATA/DEV
-#    PIPELINES
-#       bwamem.canoes.howard
-#       bwamem.gatkHC_DIAG_IP.howard
-#       bwamem.gatkUG_DIAG_IP.howard
-#    POST_ALIGNMENT .compress.realignment.markduplicates.sorting
-#    POST_ALIGNMENT_STEPS sorting markduplicates realignment compress
-### DIAG.DI [env.DIAG.DI.sh]
-#    RAW DATA /home1/FICGEN/DIAG/DATA/NGS/Raw
-#    RES DATA /home1/IRC/DATA/DEV
-#    PIPELINES
-#       bwamem.canoes.howard
-#       bwamem.gatkHC_DIAG_IP.howard
-#       bwamem.gatkUG_DIAG_IP.howard
-#    POST_ALIGNMENT .compress.realignment.markduplicates.sorting
-#    POST_ALIGNMENT_STEPS sorting markduplicates realignment compress
-### DIAG.DPNI_DI [env.DIAG.DPNI_DI.sh]
-#    RAW DATA /home1/FICGEN/DIAG/DATA/NGS/Raw
-#    RES DATA /home1/IRC/DATA/DEV
-#    PIPELINES
-#       bwamem.canoes.howard
-#       bwamem.gatkHC_DIAG_IP.howard
-#       bwamem.gatkUG_DIAG_IP.howard
-#    POST_ALIGNMENT .compress.realignment.markduplicates.sorting
-#    POST_ALIGNMENT_STEPS sorting markduplicates realignment compress
-### DIAG.GENODENT [env.DIAG.GENODENT.sh]
-#    RAW DATA /home1/FICGEN/DIAG/DATA/NGS/Raw
-#    RES DATA /home1/IRC/DATA/DEV
-#    PIPELINES
-#       bwamem.canoes.howard
-#       bwamem.gatkHC_DIAG_IP.howard
-#       bwamem.gatkUG_DIAG_IP.howard
-#    POST_ALIGNMENT .compress.realignment.markduplicates.sorting
-#    POST_ALIGNMENT_STEPS sorting markduplicates realignment compress
-### DIAG.MORT_SUBITE [env.DIAG.MORT_SUBITE.sh]
-#    RAW DATA /home1/FICGEN/DIAG/DATA/NGS/Raw
-#    RES DATA /home1/IRC/DATA/DEV
-#    PIPELINES
-#       bwamem.canoes.howard
-#       bwamem.gatkHC_DIAG_IP.howard
-#       bwamem.gatkUG_DIAG_IP.howard
-#    POST_ALIGNMENT .compress.realignment.markduplicates.sorting
-#    POST_ALIGNMENT_STEPS sorting markduplicates realignment compress
-### DIAG.MYOPATHIE [env.DIAG.MYOPATHIE.sh]
-#    RAW DATA /home1/FICGEN/DIAG/DATA/NGS/Raw
-#    RES DATA /home1/IRC/DATA/DEV
-#    PIPELINES
-#       bwamem.canoes.howard
-#       bwamem.gatkHC_DIAG_IP.howard
-#       bwamem.gatkUG_DIAG_IP.howard
-#    POST_ALIGNMENT .compress.realignment.markduplicates.sorting
-#    POST_ALIGNMENT_STEPS sorting markduplicates realignment compress
-### DIAG.PC_NEURO [env.DIAG.PC_NEURO.sh]
-#    RAW DATA /home1/FICGEN/DIAG/DATA/NGS/Raw
-#    RES DATA /home1/IRC/DATA/DEV
-#    PIPELINES
-#       bwamem.canoes.howard
-#       bwamem.gatkHC_DIAG_IP.howard
-#       bwamem.gatkUG_DIAG_IP.howard
-#    POST_ALIGNMENT .compress.realignment.markduplicates.sorting
-#    POST_ALIGNMENT_STEPS sorting markduplicates realignment compress
-### DIAG.PC_NEURO_MOSAIC [env.DIAG.PC_NEURO_MOSAIC.sh]
-#    RAW DATA /home1/FICGEN/DIAG/DATA/NGS/Raw
-#    RES DATA /home1/IRC/DATA/DEV
-#    PIPELINES
-#       bwamem.canoes.howard
-#       bwamem.gatkHC_DIAG_IP.howard
-#       bwamem.gatkHC_DIAG_MOSAIC.howard
-#       bwamem.gatkUG_DIAG_IP.howard
-#       bwamem.gatkUG_DIAG_MOSAIC.howard
-#    POST_ALIGNMENT .compress.realignment.markduplicates.sorting
-#    POST_ALIGNMENT_STEPS sorting markduplicates realignment compress
-### DIAG.PC_NEURO_MYOPATHIE [env.DIAG.PC_NEURO_MYOPATHIE.sh]
-#    RAW DATA /home1/FICGEN/DIAG/DATA/NGS/Raw
-#    RES DATA /home1/IRC/DATA/DEV
-#    PIPELINES
-#       bwamem.canoes.howard
-#       bwamem.gatkHC_DIAG_IP.howard
-#       bwamem.gatkUG_DIAG_IP.howard
-#    POST_ALIGNMENT .compress.realignment.markduplicates.sorting
-#    POST_ALIGNMENT_STEPS sorting markduplicates realignment compress
-### DIAG.PC_NEURO_PLOIDY [env.DIAG.PC_NEURO_PLOIDY.sh]
-#    RAW DATA /home1/FICGEN/DIAG/DATA/NGS/Raw
-#    RES DATA /home1/IRC/DATA/DEV
-#    PIPELINES
-#       bwamem.canoes.howard
-#       bwamem.gatkHC_DIAG_IP.howard
-#       bwamem.gatkHC_DIAG_MOSAIC.howard
-#       bwamem.gatkUG_DIAG_IP.howard
-#       bwamem.gatkUG_DIAG_MOSAIC.howard
-#    POST_ALIGNMENT .compress.realignment.markduplicates.sorting
-#    POST_ALIGNMENT_STEPS sorting markduplicates realignment compress
-### DIAG.PMD [env.DIAG.PMD.sh]
-#    RAW DATA /home1/FICGEN/DIAG/DATA/NGS/Raw
-#    RES DATA /home1/IRC/DATA/DEV
-#    PIPELINES
-#       bwamem.canoes.howard
-#       bwamem.gatkHC_DIAG_IP.howard
-#       bwamem.gatkUG_DIAG_IP.howard
-#    POST_ALIGNMENT .compress.realignment.markduplicates.sorting
-#    POST_ALIGNMENT_STEPS sorting markduplicates realignment compress
-### DIAG.PMDA [env.DIAG.PMDA.sh]
-#    RAW DATA /home1/FICGEN/DIAG/DATA/NGS/Raw
-#    RES DATA /home1/IRC/DATA/DEV
-#    PIPELINES
-#       bwamem.canoes.howard
-#       bwamem.gatkHC_DIAG_IP.howard
-#       bwamem.gatkUG_DIAG_IP.howard
-#    POST_ALIGNMENT .compress.realignment.markduplicates.sorting
-#    POST_ALIGNMENT_STEPS sorting markduplicates realignment compress
-### DIAG.PMDAv2 [env.DIAG.PMDAv2.sh]
-#    RAW DATA /home1/FICGEN/DIAG/DATA/NGS/Raw
-#    RES DATA /home1/IRC/DATA/DEV
-#    PIPELINES
-#       bwamem.canoes.howard
-#       bwamem.gatkHC_DIAG_IP.howard
-#       bwamem.gatkUG_DIAG_IP.howard
-#    POST_ALIGNMENT .compress.realignment.markduplicates.sorting
-#    POST_ALIGNMENT_STEPS sorting markduplicates realignment compress
-### DIAG.POOL [env.DIAG.POOL.sh]
-#    RAW DATA /home1/FICGEN/DIAG/DATA/NGS/Raw
-#    RES DATA /home1/IRC/DATA/DEV
-#    PIPELINES
-#       bowtie.canoes.howard
-#       bowtie.gatkHC_DIAG_IP.howard
-#       bowtie.gatkUG_DIAG_IP.howard
-#       bwamem.canoes.howard
-#       bwamem.gatkHC_DIAG_IP.howard
-#       bwamem.gatkUG_DIAG_IP.howard
-#    POST_ALIGNMENT .compress.realignment.markduplicates.sorting
-#    POST_ALIGNMENT_STEPS sorting markduplicates realignment compress
-### DIAG.RP [env.DIAG.RP.sh]
-#    RAW DATA /home1/FICGEN/DIAG/DATA/NGS/Raw
-#    RES DATA /home1/IRC/DATA/DEV
-#    PIPELINES
-#       bwamem.canoes.howard
-#       bwamem.gatkHC_DIAG_IP.howard
-#       bwamem.gatkUG_DIAG_IP.howard
-#    POST_ALIGNMENT .compress.realignment.markduplicates.sorting
-#    POST_ALIGNMENT_STEPS sorting markduplicates realignment compress
-### DIAG.TEST [env.DIAG.TEST.sh]
-#    RAW DATA /home1/TOOLS/data/RAW/RUNS
-#    RES DATA /home1/IRC/DATA/DEV
-#    PIPELINES
-#       bwamem.canoes.howard
-#       bwamem.gatkHC_DIAG_IP.howard
-#       bwamem.gatkUG_DIAG_IP.howard
-#    POST_ALIGNMENT .compress.realignment.markduplicates.sorting
-#    POST_ALIGNMENT_STEPS sorting markduplicates realignment compress
-### DIAG.WES_Agilent [env.DIAG.WES_Agilent.sh]
-#    RAW DATA /home1/FICGEN/DIAG/DATA/NGS/Raw
-#    RES DATA /home1/IRC/DATA/DEV
-#    PIPELINES
-#       bwamem.canoes.howard
-#       bwamem.gatkHC_DIAG_IP.howard
-#       bwamem.gatkUG_DIAG_IP.howard
-#    POST_ALIGNMENT .compress.realignment.markduplicates.sorting
-#    POST_ALIGNMENT_STEPS sorting markduplicates realignment compress
-### DIAG.WES_Roche [env.DIAG.WES_Roche.sh]
-#    RAW DATA /home1/FICGEN/DIAG/DATA/NGS/Raw
-#    RES DATA /home1/IRC/DATA/DEV
-#    PIPELINES
-#       bwamem.canoes.howard
-#       bwamem.gatkHC_DIAG_IP.howard
-#       bwamem.gatkUG_DIAG_IP.howard
-#    POST_ALIGNMENT .compress.realignment.markduplicates.sorting
-#    POST_ALIGNMENT_STEPS sorting markduplicates realignment compress
-### DIAG [env.DIAG.sh]
-#    RAW DATA /home1/FICGEN/DIAG/DATA/NGS/Raw
-#    RES DATA /home1/IRC/DATA/DEV
-#    PIPELINES
-#       bwamem.canoes.howard
-#       bwamem.gatkHC_DIAG_IP.howard
-#       bwamem.gatkUG_DIAG_IP.howard
-#    POST_ALIGNMENT .compress.realignment.markduplicates.sorting
-#    POST_ALIGNMENT_STEPS sorting markduplicates realignment compress
-### EXOME [env.EXOME.sh]
-#    RAW DATA /home1/IRC/DATA/RAW/MSR
-#    RES DATA /home1/IRC/DATA/DEV
-#    PIPELINES
-#       bwamem.canoes.howard
-#       bwamem.gatkHC_EXOME.howard
-#       bwamem.gatkUG_EXOME.howard
-#    POST_ALIGNMENT .compress.realignment.markduplicates.sorting
-#    POST_ALIGNMENT_STEPS sorting markduplicates realignment compress
-### EXOME_SOMATIC [env.EXOME_SOMATIC.sh]
-#    RAW DATA /home1/IRC/DATA/RAW/MSR
-#    RES DATA /home1/IRC/DATA/DEV
-#    PIPELINES
-#       bwamem.VarScan_EXOME_SOMATIC.howard
-#       bwamem.gatkHC_EXOME_SOMATIC.howard
-#       bwamem.gatkUG_EXOME_SOMATIC.howard
-#    POST_ALIGNMENT .compress.realignment.markduplicates.sorting
-#    POST_ALIGNMENT_STEPS sorting markduplicates realignment compress
-### GENOME [env.GENOME.sh]
-#    RAW DATA /home1/IRC/DATA/RAW/MSR
-#    RES DATA /home1/IRC/DATA/DEV
-#    PIPELINES
-#       bwamem.gatkHC_GENOME.howard
-#       bwamem.gatkUG_GENOME.howard
-#    POST_ALIGNMENT .compress.realignment.markduplicates.sorting
-#    POST_ALIGNMENT_STEPS sorting markduplicates realignment compress
-### GERMLINE [env.GERMLINE.sh]
-#    RAW DATA /home1/IRC/DATA/RAW/MSR
-#    RES DATA /home1/IRC/DATA/DEV
-#    PIPELINES
-#       bwamem.canoes.howard
-#       bwamem.gatkHC_GERMLINE.howard
-#       bwamem.gatkUG_GERMLINE.howard
-#    POST_ALIGNMENT .compress.realignment.markduplicates.sorting
-#    POST_ALIGNMENT_STEPS sorting markduplicates realignment compress
-### HEMATOLOGY [env.HEMATOLOGY.sh]
-#    RAW DATA /home1/IRC/DATA/RAW/MSR
-#    RES DATA /home1/IRC/DATA/DEV
-#    PIPELINES
-#       bwamem.VarScan_HEMATOLOGY.howard
-#       bwamem.gatkUG_HEMATOLOGY.howard
-#    POST_ALIGNMENT .compress.clipping.recalibration.realignment.sorting
-#    POST_ALIGNMENT_STEPS sorting realignment recalibration clipping compress
-### HUSDIAGGEN.DIGGYNECOL0705491 [env.HUSDIAGGEN.DIGGYNECOL0705491.sh]
-#    RAW DATA /home1/IRC/DATA/RAW/MSR
-#    RES DATA /home1/IRC/DATA/DEV
-#    PIPELINES
-#       bwamem.canoes.howard
-#       bwamem.gatkHC_HUSDIAGGEN.howard
-#       bwamem.gatkUG_HUSDIAGGEN.howard
-#    POST_ALIGNMENT .compress.realignment.markduplicates.sorting
-#    POST_ALIGNMENT_STEPS sorting markduplicates realignment compress
-### HUSDIAGGEN [env.HUSDIAGGEN.sh]
-#    RAW DATA /home1/IRC/DATA/RAW/MSR
-#    RES DATA /home1/IRC/DATA/DEV
-#    PIPELINES
-#       bwamem.canoes.howard
-#       bwamem.gatkHC_HUSDIAGGEN.howard
-#       bwamem.gatkUG_HUSDIAGGEN.howard
-#    POST_ALIGNMENT .compress.realignment.markduplicates.sorting
-#    POST_ALIGNMENT_STEPS sorting markduplicates realignment compress
-### HUSHEMATO.LYMPHOPANEL [env.HUSHEMATO.LYMPHOPANEL.sh]
-#    RAW DATA /home1/IRC/DATA/RAW/MSR
-#    RES DATA /home1/IRC/DATA/DEV
-#    PIPELINES
-#       bwamem.VarScan_HUSHEMATO.howard
-#       bwamem.canoes.howard
-#       bwamem.gatkUG_HUSHEMATO.howard
-#       bwamem.itdseek.howard
-#       bwamem.samtools_HUSHEMATO.howard
-#    POST_ALIGNMENT .compress.clipping.recalibration.realignment.sorting
-#    POST_ALIGNMENT_STEPS sorting realignment recalibration clipping compress
-### HUSHEMATO.TSOMYELOID [env.HUSHEMATO.TSOMYELOID.sh]
-#    RAW DATA /home1/IRC/DATA/RAW/MSR
-#    RES DATA /home1/IRC/DATA/DEV
-#    PIPELINES
-#       bwamem.VarScan_HUSHEMATO.howard
-#       bwamem.canoes.howard
-#       bwamem.gatkUG_HUSHEMATO.howard
-#       bwamem.itdseek.howard
-#       bwamem.samtools_HUSHEMATO.howard
-#    POST_ALIGNMENT .compress.clipping.recalibration.realignment.sorting
-#    POST_ALIGNMENT_STEPS sorting realignment recalibration clipping compress
-### HUSHEMATO [env.HUSHEMATO.sh]
-#    RAW DATA /home1/IRC/DATA/RAW/MSR
-#    RES DATA /home1/IRC/DATA/DEV
-#    PIPELINES
-#       bwamem.VarScan_HUSHEMATO.howard
-#       bwamem.canoes.howard
-#       bwamem.gatkUG_HUSHEMATO.howard
-#       bwamem.itdseek.howard
-#       bwamem.samtools_HUSHEMATO.howard
-#    POST_ALIGNMENT .compress.clipping.recalibration.realignment.sorting
-#    POST_ALIGNMENT_STEPS sorting realignment recalibration clipping compress
-### HUSTUMSOL.MTPTHS [env.HUSTUMSOL.MTPTHS.sh]
-#    RAW DATA /home1/IRC/DATA/RAW/MSR
-#    RES DATA /home1/IRC/DATA/DEV
-#    PIPELINES
-#       bwamem.VarScan_HUSTUMSOL.howard
-#       bwamem.canoes.howard
-#       bwamem.gatkHC_HUSTUMSOL.howard
-#       bwamem.gatkUG_HUSTUMSOL.howard
-#    POST_ALIGNMENT .compress.clipping.recalibration.realignment.sorting
-#    POST_ALIGNMENT_STEPS sorting realignment recalibration clipping compress
-### HUSTUMSOL [env.HUSTUMSOL.sh]
-#    RAW DATA /home1/IRC/DATA/RAW/MSR
-#    RES DATA /home1/IRC/DATA/DEV
-#    PIPELINES
-#       bwamem.VarScan_HUSTUMSOL.howard
-#       bwamem.canoes.howard
-#       bwamem.gatkHC_HUSTUMSOL.howard
-#       bwamem.gatkUG_HUSTUMSOL.howard
-#    POST_ALIGNMENT .compress.clipping.recalibration.realignment.sorting
-#    POST_ALIGNMENT_STEPS sorting realignment recalibration clipping compress
-### ITD [env.ITD.sh]
-#    RAW DATA /home1/IRC/DATA/RAW/MSR
-#    RES DATA /home1/IRC/DATA/DEV
-#    PIPELINES
-#       bwamem.itdseek.howard
-#    POST_ALIGNMENT .compress.clipping.recalibration.realignment.sorting
-#    POST_ALIGNMENT_STEPS sorting realignment recalibration clipping compress
-### ONCOGENET [env.ONCOGENET.sh]
-#    RAW DATA /home1/IRC/DATA/RAW/MSR
-#    RES DATA /home1/IRC/DATA/DEV
-#    PIPELINES
-#       bwamem.canoes.howard
-#       bwamem.gatkHC_ONCOGENET.howard
-#       bwamem.gatkUG_ONCOGENET.howard
-#    POST_ALIGNMENT .compress.realignment.markduplicates.sorting
-#    POST_ALIGNMENT_STEPS sorting markduplicates realignment compress
-### RAW_PROD_IRC [env.RAW_PROD_IRC.sh]
-#    RAW DATA
-#    RES DATA /home1/IRC/DATA/DEV
-#    PIPELINES
-#       bwamem.canoes.howard
-#       bwamem.gatkHC_ONCOGENET.howard
-#       bwamem.gatkUG_ONCOGENET.howard
-#    POST_ALIGNMENT .compress.realignment.markduplicates.sorting
-#    POST_ALIGNMENT_STEPS
-### SOLIDTUMOR [env.SOLIDTUMOR.sh]
-#    RAW DATA /home1/IRC/DATA/RAW/MSR
-#    RES DATA /home1/IRC/DATA/DEV
-#    PIPELINES
-#       bwamem.VarScan_SOLIDTUMOR.howard
-#       bwamem.gatkUG_SOLIDTUMOR.howard
-#    POST_ALIGNMENT .compress.clipping.recalibration.realignment.sorting
-#    POST_ALIGNMENT_STEPS sorting realignment recalibration clipping compress
-### default [env.sh]
-#    RAW DATA /home1/IRC/DATA/RAW/MSR
-#    RES DATA /home1/IRC/DATA/DEV
-#    PIPELINES
-#       bwamem.gatkHC.howard
-#    POST_ALIGNMENT .compress.clipping.recalibration.realignment.sorting
-#    POST_ALIGNMENT_STEPS sorting realignment recalibration clipping compress 
-#
-# USE STARK --applications_infos --runs=<RUN> to detect RAW FOLDER and APPLICATION of RUN
-#
+#[INFO] EXOME:1.0 [EXOME.app] [APP] 
+#[INFO]    DESCRIPTION            Application to detect germline mutations in exome sequencing data
+#[INFO]    GROUP                  GENETIC
+#[INFO]    PROJECT                EXOME
+#[INFO]    RUN                    /STARK/input/runs
+#[INFO]    RESULTS                /STARK/output/results
+#[INFO]    REPOSITORY             /STARK/output/repository
+#[INFO]    ARCHIVE                /STARK/output/archive
+#[INFO]    PIPELINES              bwamem.gatkHC_EXOME.howard bwamem.gatkUG_EXOME.howard 
+#[INFO]    POST ALIGNMENT STEPS   sorting markduplicates realignment recalibration compress 
+#[INFO]    ANNOTATIONS            core,frequency,score,annotation,prediction,snpeff_split 
+
+#[INFO] EXOME_SOMATIC:1.0 [EXOME_SOMATIC.app] [APP] 
+#[INFO]    DESCRIPTION            Application to detect somatic mutations in exome sequencing data
+#[INFO]    GROUP                  SOMATIC
+#[INFO]    PROJECT                EXOME
+#[INFO]    RUN                    /STARK/input/runs
+#[INFO]    RESULTS                /STARK/output/results
+#[INFO]    REPOSITORY             /STARK/output/repository
+#[INFO]    ARCHIVE                /STARK/output/archive
+#[INFO]    PIPELINES              bwamem.gatkHC_EXOME_SOMATIC.howard bwamem.gatkUG_EXOME_SOMATIC.howard bwamem.outLyzer.howard bwamem.MuTect2.howard 
+#[INFO]    POST ALIGNMENT STEPS   sorting realignment recalibration clipping compress 
+#[INFO]    ANNOTATIONS            core,frequency,score,annotation,prediction,snpeff_split 
+
+#[INFO] GENOME:1.0 [GENOME.app] [APP] 
+#[INFO]    DESCRIPTION            Application to detect germline mutations in genome sequencing data
+#[INFO]    GROUP                  GENETIC
+#[INFO]    PROJECT                GENOME
+#[INFO]    RUN                    /STARK/input/runs
+#[INFO]    RESULTS                /STARK/output/results
+#[INFO]    REPOSITORY             /STARK/output/repository
+#[INFO]    ARCHIVE                /STARK/output/archive
+#[INFO]    PIPELINES              bwamem.gatkHC_GENOME.howard bwamem.gatkUG_GENOME.howard 
+#[INFO]    POST ALIGNMENT STEPS   sorting markduplicates realignment recalibration compress 
+#[INFO]    ANNOTATIONS            core,snpeff_split 
+
+#[INFO] GERMLINE:1.0 [GERMLINE.app] [APP] 
+#[INFO]    DESCRIPTION            Application to detect germline mutations in gene panel sequencing data
+#[INFO]    GROUP                  GENETIC
+#[INFO]    PROJECT                GERMLINE
+#[INFO]    RUN                    /STARK/input/runs
+#[INFO]    RESULTS                /STARK/output/results
+#[INFO]    REPOSITORY             /STARK/output/repository
+#[INFO]    ARCHIVE                /STARK/output/archive
+#[INFO]    PIPELINES              bwamem.gatkHC_GERMLINE.howard bwamem.gatkUG_GERMLINE.howard 
+#[INFO]    POST ALIGNMENT STEPS   sorting markduplicates realignment recalibration compress 
+#[INFO]    ANNOTATIONS            core,frequency,score,annotation,prediction,snpeff,snpeff_hgvs,snpeff_split 
+
+#[INFO] HEMATOLOGY:1.1 [HEMATOLOGY.app] [APP] 
+#[INFO]    DESCRIPTION            Application to detect somatic mutations in hematology gene panel sequencing data
+#[INFO]    GROUP                  SOMATIC
+#[INFO]    PROJECT                HEMATOLOGY
+#[INFO]    RUN                    /STARK/input/runs
+#[INFO]    RESULTS                /STARK/output/results
+#[INFO]    REPOSITORY             /STARK/output/repository
+#[INFO]    ARCHIVE                /STARK/output/archive
+#[INFO]    PIPELINES              bwamem.gatkUG_HEMATOLOGY.howard bwamem.outLyzer.howard bwamem.MuTect2.howard bwamem.itdseek.howard 
+#[INFO]    POST ALIGNMENT STEPS   sorting realignment recalibration clipping compress 
+#[INFO]    ANNOTATIONS            core,frequency,score,annotation,prediction,snpeff,snpeff_hgvs,snpeff_split 
+
+#[INFO] ONCOGENET:1.0 [ONCOGENET.app] [APP] 
+#[INFO]    DESCRIPTION            Application to detect germline mutations in oncology gene panel sequencing data
+#[INFO]    GROUP                  GENETIC
+#[INFO]    PROJECT                ONCOGENETIC
+#[INFO]    RUN                    /STARK/input/runs
+#[INFO]    RESULTS                /STARK/output/results
+#[INFO]    REPOSITORY             /STARK/output/repository
+#[INFO]    ARCHIVE                /STARK/output/archive
+#[INFO]    PIPELINES              bwamem.gatkHC_ONCOGENET.howard bwamem.gatkUG_ONCOGENET.howard 
+#[INFO]    POST ALIGNMENT STEPS   sorting markduplicates realignment recalibration compress 
+#[INFO]    ANNOTATIONS            core,frequency,score,annotation,prediction,snpeff,snpeff_hgvs,snpeff_split 
+
+#[INFO] SOLIDTUMOR:1.0 [SOLIDTUMOR.app] [APP] 
+#[INFO]    DESCRIPTION            Application to detect somatic mutations in solid tumor gene panel sequencing data
+#[INFO]    GROUP                  SOMATIC
+#[INFO]    PROJECT                SOLIDTUMOR
+#[INFO]    RUN                    /STARK/input/runs
+#[INFO]    RESULTS                /STARK/output/results
+#[INFO]    REPOSITORY             /STARK/output/repository
+#[INFO]    ARCHIVE                /STARK/output/archive
+#[INFO]    PIPELINES              bwamem.gatkUG_SOLIDTUMOR.howard bwamem.gatkHC_SOLIDTUMOR.howard bwamem.outLyzer.howard bwamem.MuTect2.howard 
+#[INFO]    POST ALIGNMENT STEPS   sorting realignment recalibration clipping compress 
+#[INFO]    ANNOTATIONS            core,frequency,score,annotation,prediction,snpeff,snpeff_hgvs,snpeff_split 
+
+#[INFO] SOMATIC:1.0 [SOMATIC.app] [APP] 
+#[INFO]    DESCRIPTION            Application to detect somatic mutations in solid tumor gene panel sequencing data
+#[INFO]    GROUP                  SOMATIC
+#[INFO]    PROJECT                UNKNOWN
+#[INFO]    RUN                    /STARK/input/runs
+#[INFO]    RESULTS                /STARK/output/results
+#[INFO]    REPOSITORY             /STARK/output/repository
+#[INFO]    ARCHIVE                /STARK/output/archive
+#[INFO]    PIPELINES              bwamem.gatkUG_SOMATIC.howard bwamem.gatkHC_SOMATIC.howard bwamem.outLyzer.howard bwamem.MuTect2.howard 
+#[INFO]    POST ALIGNMENT STEPS   sorting realignment recalibration clipping compress 
+#[INFO]    ANNOTATIONS            core,frequency,score,annotation,prediction,snpeff,snpeff_hgvs,snpeff_split 
+
+#[INFO] DEFAULT:1.1 [default.app] [APP] 
+#[INFO]    DESCRIPTION            Default application
+#[INFO]    GROUP                  UNKNOWN
+#[INFO]    PROJECT                UNKNOWN
+#[INFO]    RUN                    /STARK/input/runs
+#[INFO]    RESULTS                /STARK/output/results
+#[INFO]    REPOSITORY             /STARK/output/repository
+#[INFO]    ARCHIVE                /STARK/output/archive
+#[INFO]    PIPELINES              bwamem.gatkHC.howard 
+#[INFO]    POST ALIGNMENT STEPS   sorting markduplicates realignment recalibration compress 
+#[INFO]    ANNOTATIONS            core,frequency,score,annotation,prediction,snpeff,snpeff_hgvs,snpeff_split 

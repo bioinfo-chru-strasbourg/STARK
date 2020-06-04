@@ -46,7 +46,7 @@ COVERAGE_CRITERIA?=1,5,10,20,30,50,100,200,300
 METRICS_MINIMUM_MAPPING_QUALITY?=20
 METRICS_MINIMUM_BASE_QUALITY?=20
 CLIP_OVERLAPPING_READS?=1
-METRICS_FLAGS=UNMAP,SECONDARY,QCFAIL,DUP
+METRICS_FLAGS?=UNMAP,SECONDARY,QCFAIL,DUP
 
 # GATK Guidelines
 # https://software.broadinstitute.org/gatk/documentation/tooldocs/4.0.5.1/picard_analysis_directed_CollectHsMetrics.php
@@ -360,10 +360,16 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 			awk -f $(STARK_FOLDER_BIN)/per_target_coverage_flag.awk -F"\t" -v EXPECTED_DEPTH=$(EXPECTED_DEPTH) -v MINIMUM_DEPTH=$(MINIMUM_DEPTH) $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_target_coverage.tmp > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_target_coverage.flags; \
 			$(GZ) -c $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.gz; \
 			rm $(@D)/$(*F).$$(basename $$one_bed).4fields $(@D)/$(*F).$$(basename $$one_bed).interval $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_target_coverage.tmp $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp; \
+		else \
+			# BED empty \
+			cp $*.empty.HsMetrics $(@D)/$(*F).$$(basename $$one_bed).HsMetrics; \
+			echo "#[WARNING] BAM PICARD Metrics warning. Empty HsMetrics file generated. See '$(@D)/$(*F).$$(basename $$one_bed).HsMetrics.err'" >> $@; \
 		fi; \
 		if [ ! -s $(@D)/$(*F).$$(basename $$one_bed).HsMetrics ]; then \
-			cp $*.empty.HsMetrics $(@D)/$(*F).$$(basename $$one_bed).HsMetrics; \
-			echo "#[ERROR] BAM PICARD Metrics failed. Empty HsMetrics file generated. See '$(@D)/$(*F).$$(basename $$one_bed).HsMetrics.err'" >> $@; \
+			#cp $*.empty.HsMetrics $(@D)/$(*F).$$(basename $$one_bed).HsMetrics; \
+			echo "#[ERROR] BAM PICARD Metrics failed. See '$(@D)/$(*F).$$(basename $$one_bed).HsMetrics.err'" >> $@; \
+			# Exit to fail rule \
+			exit_0; \
 		else \
 			echo "#[INFO] BAM PICARD Metrics done. HsMetrics file generated. See '$(@D)/$(*F).$$(basename $$one_bed).HsMetrics'" >> $@; \
 		fi \

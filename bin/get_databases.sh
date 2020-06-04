@@ -171,13 +171,6 @@ export APP
 (($VERBOSE)) && [ ! -z "$APP" ] && [ ! -z "$ENV" ] && echo "#[INFO] Application '$APP' found ('$ENV')"
 (($VERBOSE)) && [ ! -z "$APP" ] && [ -z "$ENV" ] && echo "#[INFO] Application '$APP' NOT found"
 
-if ((0)); then
-	echo "FOLDER_DATABASES=$FOLDER_DATABASES"
-	echo "ANNOVAR_DATABASES=$ANNOVAR_DATABASES"
-	echo "SNPEFF_DATABASES=$SNPEFF_DATABASES"
-	echo "FOLDER_DATABASES_ANNOVAR=$FOLDER_DATABASES_ANNOVAR"
-	echo "HOWARD_ANNOTATION=$HOWARD_ANNOTATION"
-fi;
 
 # CORES
 re='^[0-9]+$'

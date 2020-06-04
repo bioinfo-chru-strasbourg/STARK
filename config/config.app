@@ -5,8 +5,8 @@
 
 export ENV_NAME="STARK"
 export ENV_DESCRIPTION="Stellar Tools for variants Analysis and RanKing"
-export ENV_RELEASE="0.9.18"
-export ENV_DATE="16/12/2019"
+export ENV_RELEASE="0.9.18.1"
+export ENV_DATE="02/06/2020"
 export ENV_AUTHOR="Antony Le Bechec/Amandine Velt/Sinthuja Pachchek/Vincent Zilliox/Samuel Nicaise/Jean Muller"
 export ENV_COPYRIGHT="HUS"
 export ENV_LICENCE="GNU GPLA V3"

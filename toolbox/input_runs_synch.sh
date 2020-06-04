@@ -169,14 +169,16 @@ for SOURCE_RUNS in $SOURCES_RUNS; do
 			echo $RUN_SOURCE_FOLDER
 			echo $RUN_DEST_FOLDER
 
-			(($DEBUG)) && echo "rsync -avz --exclude 'SampleSheet.csv' $RUN_SOURCE_FOLDER/ $RUN_DEST_FOLDER/"
-			(($DEBUG)) && echo "rsync -avz --include 'SampleSheet.csv' $RUN_SOURCE_FOLDER/ $RUN_DEST_FOLDER/"
+			EXCLUDE=" --exclude '*Images' "
+
+			(($DEBUG)) && echo "rsync -avz --exclude 'SampleSheet.csv' $EXCLUDE $RUN_SOURCE_FOLDER/ $RUN_DEST_FOLDER/"
+			(($DEBUG)) && echo "rsync -avz --include 'SampleSheet.csv' $EXCLUDE $RUN_SOURCE_FOLDER/ $RUN_DEST_FOLDER/"
 
 			if ((1)); then
 				#mkdir -p $RUN_DEST_FOLDER
-				rsync -avz --exclude 'SampleSheet.csv' $RUN_SOURCE_FOLDER/ $RUN_DEST_FOLDER/
+				rsync -avz --exclude 'SampleSheet.csv' $EXCLUDE $RUN_SOURCE_FOLDER/ $RUN_DEST_FOLDER/
 				# #ls -l $RUN_SOURCE_FOLDER/RTAComplete.txt
-				[ -e $RUN_DEST_FOLDER/RTAComplete.txt ] && rsync -avz --include 'SampleSheet.csv' $RUN_SOURCE_FOLDER/ $RUN_DEST_FOLDER/
+				[ -e $RUN_DEST_FOLDER/RTAComplete.txt ] && rsync -avz --include 'SampleSheet.csv' $EXCLUDE $RUN_SOURCE_FOLDER/ $RUN_DEST_FOLDER/
 			fi;
 
 		done;
