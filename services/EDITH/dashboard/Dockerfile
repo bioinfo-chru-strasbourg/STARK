@@ -23,5 +23,5 @@ RUN a2enmod rewrite remoteip
 ADD conf/vhost.conf /etc/apache2/sites-available/000-default.conf
 ADD conf/apache.conf /etc/apache2/conf-available/z-app.conf
 RUN a2enconf z-app
-ADD www/* /app/
+ADD www /app
 RUN chmod 0755 /app/* -R
