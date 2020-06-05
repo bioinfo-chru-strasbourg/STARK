@@ -175,6 +175,11 @@ TMP_FOLDER=/tmp/STARK/services.$RANDOM
 mkdir -p $TMP_FOLDER
 
 
+# DOCKER
+DOCKER_VERSION=$(docker --version)
+(($VERBOSE)) && echo "#[INFO] Docker version '$DOCKER_VERSION'"
+
+
 # ENV
 if [ -z "$ENV" ]; then
   if [ -e "$SCRIPT_DIR/../.env" ]; then
@@ -334,7 +339,7 @@ for service_module in $(ls -d $SCRIPT_DIR/$MODULES 2>/dev/null); do
 
 			# patch for --env-file unavailable
 			if (( $(docker-compose --help | grep "\-\-env\-file" -c) )); then
-			
+				
 				# Command
 				if docker-compose --file $service_module_yml --env-file $TMP_FOLDER/.env -p $module_name config 1>$TMP_FOLDER/docker-compose.log 2>$TMP_FOLDER/docker-compose.err; then
 				    docker-compose --file $service_module_yml --env-file $TMP_FOLDER/.env -p $module_name $COMMAND $SERVICES
@@ -345,6 +350,8 @@ for service_module in $(ls -d $SCRIPT_DIR/$MODULES 2>/dev/null); do
 				fi;
 
 			else
+
+				(($VERBOSE)) &&  echo "#[WARNING] Docker version does not provide '--env-file' parameter. STARK module is patched to work, but please update your docker version."
 
 				# Command
 				if env $(cat $TMP_FOLDER/.env | grep "#" -v) docker-compose --file $service_module_yml -p $module_name config 1>$TMP_FOLDER/docker-compose.log 2>$TMP_FOLDER/docker-compose.err; then
