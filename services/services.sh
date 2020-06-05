@@ -331,13 +331,30 @@ for service_module in $(ls -d $SCRIPT_DIR/$MODULES 2>/dev/null); do
 			(($DEBUG)) && echo "    docker-compose --file $service_module_yml --env-file $TMP_FOLDER/.env -p $module_name $COMMAND"
 			(($DEBUG)) && docker-compose --file $service_module_yml --env-file $TMP_FOLDER/.env -p $module_name config
 
-			# Command
-			if docker-compose --file $service_module_yml --env-file $TMP_FOLDER/.env -p $module_name config 1>$TMP_FOLDER/docker-compose.log 2>$TMP_FOLDER/docker-compose.err; then
-			    docker-compose --file $service_module_yml --env-file $TMP_FOLDER/.env -p $module_name $COMMAND $SERVICES
+
+			# patch for --env-file unavailable
+			if (( $(docker-compose --help | grep "\-\-env\-file" -c) )); then
+			
+				# Command
+				if docker-compose --file $service_module_yml --env-file $TMP_FOLDER/.env -p $module_name config 1>$TMP_FOLDER/docker-compose.log 2>$TMP_FOLDER/docker-compose.err; then
+				    docker-compose --file $service_module_yml --env-file $TMP_FOLDER/.env -p $module_name $COMMAND $SERVICES
+				else
+					echo "#[ERROR] docker-compose error";
+					cat $TMP_FOLDER/docker-compose.log $TMP_FOLDER/docker-compose.err;
+					exit 1;
+				fi;
+
 			else
-				echo "#[ERROR] docker-compose error";
-				cat $TMP_FOLDER/docker-compose.log $TMP_FOLDER/docker-compose.err;
-				exit 1;
+
+				# Command
+				if env $(cat $TMP_FOLDER/.env | grep "#" -v) docker-compose --file $service_module_yml -p $module_name config 1>$TMP_FOLDER/docker-compose.log 2>$TMP_FOLDER/docker-compose.err; then
+				    env $(cat $TMP_FOLDER/.env | grep "#" -v) docker-compose --file $service_module_yml -p $module_name $COMMAND $SERVICES
+				else
+					echo "#[ERROR] docker-compose error";
+					cat $TMP_FOLDER/docker-compose.log $TMP_FOLDER/docker-compose.err;
+					exit 1;
+				fi;
+
 			fi;
 		else
 			(($VERBOSE)) && echo "#[INFO] Folder '$module_name'  is not a Service module (no STARK.docker-compose.yml, STARK.env and STARK.module)"
