@@ -148,6 +148,8 @@ ACTION=0
 [ $BUILD ] || [ $REBUILD ] || [ $UPDATE ] && ACTION=1;
 
 
+
+
 # DATABASES FOLDER
 ####################
 
@@ -201,6 +203,13 @@ DATE=$(date '+%Y%m%d-%H%M%S')
 COPY_MODE_DEFAULT="rsync -rtvu"
 
 
+# DATABASES RELEASE
+#####################
+
+DATABASES_RELEASE=$DATE
+
+
+
 # variables
 #############
 
@@ -214,6 +223,7 @@ COPY_MODE_DEFAULT="rsync -rtvu"
 ##########
 
 echo "#"
+echo "# DATABASES_RELEASE=$DATABASES_RELEASE"
 echo "# ASSEMBY=$ASSEMBLY"
 echo "# REF=$REF"
 echo "# REFSEQ_GENES=$REFSEQ_GENES"
@@ -435,6 +445,7 @@ if [ ! -e $REFSEQ_GENES ]; then
 		$GZ -N -d $TMP_DATABASES_DOWNLOAD_FOLDER/$ASSEMBLY/refGene.txt.gz 
 		if [ '$TMP_DATABASES_DOWNLOAD_FOLDER/$ASSEMBLY/refGene.txt' != '$TMP_DATABASES_DOWNLOAD_FOLDER/$ASSEMBLY/$REFSEQ_GENES_TXT_FILE' ]; then \
 			cp -p $TMP_DATABASES_DOWNLOAD_FOLDER/$ASSEMBLY/refGene.txt $TMP_DATABASES_DOWNLOAD_FOLDER/$ASSEMBLY/$REFSEQ_GENES_TXT_FILE; \
+			rm $TMP_DATABASES_DOWNLOAD_FOLDER/$ASSEMBLY/refGene.txt; \
 		fi;
 	" >> $MK
 	# Copy in database folder
@@ -468,7 +479,7 @@ if [ ! -e $REFSEQ_GENES ]; then
 	# Generates refGene genes file from bed file
 	echo "$TMP_DATABASES_DOWNLOAD_FOLDER/$ASSEMBLY/$REFSEQ_GENES_GENES_FILE: $DBFOLDER $TMP_DATABASES_DOWNLOAD_FOLDER/$ASSEMBLY/$REFSEQ_GENES_FILE "$(dirname $REF)/$ASSEMBLY.dict"
 		mkdir -p $TMP_DATABASES_DOWNLOAD_FOLDER/$ASSEMBLY
-		awk -F'\t' 'substr(\$\$6,1,2)=='NM' {print \$\$0}' $REFSEQ_GENES | grep \$\$(grep \"@SQ\" "$(dirname $REF)/$ASSEMBLY.dict" | cut -f2 | cut -d: -f2 | tr '\n' ' ' | sed 's/chr/ -e ^chr/gi') > $TMP_DATABASES_DOWNLOAD_FOLDER/$ASSEMBLY/$REFSEQ_GENES_GENES_FILE
+		awk -F'\t' 'substr(\$\$6,1,2)==\"NM\" {print \$\$0}' $TMP_DATABASES_DOWNLOAD_FOLDER/$ASSEMBLY/$REFSEQ_GENES_FILE | grep \$\$(grep \"@SQ\" "$(dirname $REF)/$ASSEMBLY.dict" | cut -f2 | cut -d: -f2 | tr '\n' ' ' | sed 's/chr/ -e ^chr/gi') > $TMP_DATABASES_DOWNLOAD_FOLDER/$ASSEMBLY/$REFSEQ_GENES_GENES_FILE
 	" >> $MK
 
 	# Generates refGene genes file from bed file
@@ -697,6 +708,7 @@ fi;
 ######
 
 echo "all: $MK_ALL
+echo '# Build release: $DATABASES_RELEASE' >> $DATABASES/build.release
 " >> $MK
 
 echo "### MAKEFILE"
