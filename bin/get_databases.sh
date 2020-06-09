@@ -708,7 +708,7 @@ fi;
 ######
 
 echo "all: $MK_ALL
-echo '# Build release: $DATABASES_RELEASE' >> $DATABASES/build.release
+	echo '# Build release: $DATABASES_RELEASE' >> $DATABASES/build.release
 " >> $MK
 
 echo "### MAKEFILE"
@@ -741,7 +741,9 @@ else
 fi;
 
 # CLEAN
+if ((0)); then
 rm -Rf $TMP_DATABASES_DOWNLOAD_FOLDER
 rm -Rf $TMP_DATABASES_DOWNLOAD_RAM
+fi;
 
 exit 0;
