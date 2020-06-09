@@ -75,14 +75,14 @@ services:
         image: ${DOCKER_STARK_IMAGE}
         container_name: STARK-databases
         entrypoint: /bin/bash
-        command: -c "echo -e '\n\n\n# STARKDatabases BUILD DATE:'`date '+%Y%m%d-%H%M%S'` 1>>/STARK/databases/build.log && echo -e '\n\n\n# STARKDatabases BUILD DATE:'`date '+%Y%m%d-%H%M%S'` 1>>/STARK/databases/build.err && /tool/bin/get_databases.sh --build --threads=${DOCKER_STARK_GET_DATABASES_THREADS} --additional_annotations=${DOCKER_STARK_GET_DATABASES_ADDITIONAL_ANNOTATIONS} --verbose 1>>/STARK/databases/build.log 2>>/STARK/databases/build.err"
+        command: -c "echo -e '\n\n\n# STARKDatabases BUILD DATE:'`date '+%Y%m%d-%H%M%S'` 1>>${DOCKER_STARK_INNER_FOLDER_DATABASES}/build.log && echo -e '\n\n\n# STARKDatabases BUILD DATE:'`date '+%Y%m%d-%H%M%S'` 1>>${DOCKER_STARK_INNER_FOLDER_DATABASES}/build.err && /tool/bin/get_databases.sh --build --databases=${DOCKER_STARK_INNER_FOLDER_DATABASES} --threads=${DOCKER_STARK_GET_DATABASES_THREADS} --additional_annotations=${DOCKER_STARK_GET_DATABASES_ADDITIONAL_ANNOTATIONS} --verbose 1>>${DOCKER_STARK_INNER_FOLDER_DATABASES}/build.log 2>>${DOCKER_STARK_INNER_FOLDER_DATABASES}/build.err"
         volumes:
             # Databases folder
             - databases:${DOCKER_STARK_INNER_FOLDER_DATABASES}:rw
             # HOWARD databases defintions (if already exists)
             #- ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_CONFIG_HOWARD}:${DOCKER_STARK_INNER_FOLDER_CONFIG_HOWARD}:ro
-        env_file:
-            - ${DOCKER_COMPOSE_ENV}
+        #env_file:
+        #    - ${DOCKER_COMPOSE_ENV}
         depends_on:
             - stark
             - stark-folders

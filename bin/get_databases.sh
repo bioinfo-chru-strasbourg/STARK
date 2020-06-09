@@ -643,8 +643,9 @@ if [ ! -e $DBFOLDER/HOWARD.download.complete ] || (($UPDATE)); then
 
 	if [ "$SNPEFF" != "" ]; then
 		SNPEFF_CMD="$JAVA $JAVA_FLAGS -jar $SNPEFF download $ASSEMBLY -dataDir $TMP_DATABASES_DOWNLOAD_FOLDER/$SNPEFF_DATABASES 2>$TMP_DATABASES_DOWNLOAD_FOLDER/snpeff.err";
-		SNPEFF_CMD="$SNPEFF_CMD; if ((\$\$(grep 'ERROR while connecting to' $TMP_DATABASES_DOWNLOAD_FOLDER/snpeff.err -c))); then wget --no-verbose -O $TMP_DATABASES_DOWNLOAD_FOLDER/$SNPEFF_DATABASES/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip \$\$(grep 'ERROR while connecting to' err | cut -f2 | cut -d' ' -f5); unzip $TMP_DATABASES_DOWNLOAD_FOLDER/$SNPEFF_DATABASES/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip -d $TMP_DATABASES_DOWNLOAD_FOLDER/$SNPEFF_DATABASES/; mv $TMP_DATABASES_DOWNLOAD_FOLDER/$SNPEFF_DATABASES/data/* $TMP_DATABASES_DOWNLOAD_FOLDER/$SNPEFF_DATABASES/; fi"
+		SNPEFF_CMD_ALT="if ((\$\$(grep 'ERROR while connecting to' $TMP_DATABASES_DOWNLOAD_FOLDER/snpeff.err -c))); then wget --no-verbose -O $TMP_DATABASES_DOWNLOAD_FOLDER/$SNPEFF_DATABASES/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip \$\$(grep 'ERROR while connecting to' $TMP_DATABASES_DOWNLOAD_FOLDER/snpeff.err | cut -f2 | cut -d' ' -f5); unzip $TMP_DATABASES_DOWNLOAD_FOLDER/$SNPEFF_DATABASES/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip -d $TMP_DATABASES_DOWNLOAD_FOLDER/$SNPEFF_DATABASES/; mv $TMP_DATABASES_DOWNLOAD_FOLDER/$SNPEFF_DATABASES/data/* $TMP_DATABASES_DOWNLOAD_FOLDER/$SNPEFF_DATABASES/; fi"
 		echo "# CMD= $SNPEFF_CMD"
+		echo "# CMD= $SNPEFF_CMD_ALT"
 		echo "#"
 	fi;
 
@@ -662,7 +663,6 @@ if [ ! -e $DBFOLDER/HOWARD.download.complete ] || (($UPDATE)); then
 		fi;
 		#INPUT_VCF=$HOWARDDIR/docs/example.vcf
 		HOWARD_CMD="$HOWARD --input=$INPUT_VCF --output=$DBFOLDER/HOWARD.download.vcf --env=$CONFIG_TOOLS --annotation=$HOWARD_DB --annovar_folder=$ANNOVAR --annovar_databases=$TMP_DATABASES_DOWNLOAD_FOLDER/$ANNOVAR_DATABASES --config_annotation=$HOWARD_CONFIG_ANNOTATION --snpeff_jar=$SNPEFF --snpeff_databases=$TMP_DATABASES_DOWNLOAD_FOLDER/$SNPEFF_DATABASES --snpeff_threads=$THREADS --tmp=$TMP_DATABASES_DOWNLOAD_FOLDER/HOWARD --assembly=$ASSEMBLY --java=$JAVA --java_flags='\"$JAVA_FLAGS\"' --verbose --threads=1 >$DBFOLDER/HOWARD.download.log;"
-		#HOWARD_CMD="$HOWARD --input=$INPUT_VCF --output=$DBFOLDER/HOWARD.download.vcf  --annotation=location --annovar_folder=$ANNOVAR --annovar_databases=$TMP_DATABASES_DOWNLOAD_FOLDER/$ANNOVAR_DATABASES --config_annotation=$HOWARD_CONFIG_ANNOTATION --snpeff_jar=$SNPEFF --snpeff_databases=$TMP_DATABASES_DOWNLOAD_FOLDER/$SNPEFF_DATABASES --snpeff_threads=$THREADS --tmp=$TMP_DATABASES_DOWNLOAD_FOLDER/HOWARD --assembly=$ASSEMBLY --java=$JAVA --java_flags='\"$JAVA_FLAGS\"' --verbose --threads=1 >$DBFOLDER/HOWARD.download.log;"
 		echo "# CMD= $HOWARD_CMD"
 		echo "#"
 	fi;
@@ -673,8 +673,9 @@ if [ ! -e $DBFOLDER/HOWARD.download.complete ] || (($UPDATE)); then
 		chmod 0775 $TMP_DATABASES_DOWNLOAD_FOLDER/$ANNOVAR_DATABASES
 		mkdir -p $TMP_DATABASES_DOWNLOAD_FOLDER/$SNPEFF_DATABASES;
 		chmod 0775 $TMP_DATABASES_DOWNLOAD_FOLDER/$SNPEFF_DATABASES
-		$SNPEFF_CMD
 		$HOWARD_CMD
+		-$SNPEFF_CMD
+		$SNPEFF_CMD_ALT
 		$COPY_MODE_HOWARD $TMP_DATABASES_DOWNLOAD_FOLDER/$ANNOVAR_DATABASES/ $ANNOVAR_DATABASES/;
 		$COPY_MODE_HOWARD $TMP_DATABASES_DOWNLOAD_FOLDER/$SNPEFF_DATABASES/ $SNPEFF_DATABASES/;
 		if ! ((\$\$(grep -c '\[ERROR\]' $DBFOLDER/HOWARD.download.log))); then \
@@ -683,9 +684,6 @@ if [ ! -e $DBFOLDER/HOWARD.download.complete ] || (($UPDATE)); then
 		rm -rf $TMP_DATABASES_DOWNLOAD_FOLDER/$ANNOVAR_DATABASES;
 		rm -rf $TMP_DATABASES_DOWNLOAD_FOLDER/$SNPEFF_DATABASES;
 	" >> $MK
-
-	# $HOWARD --input=$HOWARDDIR/docs/example.vcf --output=$DBFOLDER/HOWARD.download.vcf  --annotation=$HOWARD_DB --annovar_folder=$ANNOVAR --annovar_databases=$TMP_DATABASES_DOWNLOAD_FOLDER/$ANNOVAR_DATABASES --config_annotation=$HOWARD_CONFIG_ANNOTATION --snpeff_jar=$SNPEFF --snpeff_databases=$TMP_DATABASES_DOWNLOAD_FOLDER/$SNPEFF_DATABASES --snpeff_threads=$THREADS --tmp=$TMP_DATABASES_DOWNLOAD_FOLDER/HOWARD --assembly=$ASSEMBLY --java=$JAVA --java_flags=\"'$JAVA_FLAGS\"' --verbose --threads=1;
-	# $HOWARD --input=$HOWARDDIR/docs/example.vcf --output=$DBFOLDER/HOWARD.download.vcf  --annotation=$HOWARD_DB --annovar_folder=$ANNOVAR --annovar_databases=$TMP_DATABASES_DOWNLOAD_FOLDER/$ANNOVAR_DATABASES --config_annotation=$HOWARD_CONFIG_ANNOTATION --snpeff_jar=$SNPEFF --snpeff_databases=$TMP_DATABASES_DOWNLOAD_FOLDER/$SNPEFF_DATABASES --snpeff_threads=$THREADS --tmp=$TMP_DATABASES_DOWNLOAD_FOLDER/HOWARD --assembly=$ASSEMBLY --java=$JAVA --java_flags='$JAVA_FLAGS' --verbose --threads=1;
 
 	MK_ALL="$MK_ALL $DBFOLDER/HOWARD.download.complete"
 
