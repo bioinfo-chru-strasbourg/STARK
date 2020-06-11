@@ -157,22 +157,35 @@ if ($DOCKER_STARK_SERVICE_DASHBOARD_INNER_FOLDER=="") { $DOCKER_STARK_SERVICE_DA
 ############
 
 # IGV URL
-$IGV_URL=str_replace("//","/","$DOCKER_STARK_SERVER_NAME:$DOCKER_STARK_SERVICE_PORT_PATTERN$DOCKER_STARK_SERVICE_IGV_PORT");
-$IGV_URL=$uri_igv;
-$IGV_URL="http://localhost:4203";
+if ($uri_igv == "") {
+	if ($_ENV["URI_IGV"] != "") {
+		$uri_igv=$_ENV["URI_IGV"];
+	} elseif ($modules_obj_array["GENOMEBROWSER"]->{"services"}->{"IGV"}->{"href"}!="") {
+		$uri_igv=$modules_obj_array["GENOMEBROWSER"]->{"services"}->{"IGV"}->{"href"};
+	} else {
+		$uri_igv="";
+	};
+};
+
 
 # DATA URL
-$DATA_URL=preg_replace("/\/$/", "", str_replace("//","/","$DOCKER_STARK_SERVER_NAME:$DOCKER_STARK_SERVICE_PORT_PATTERN$DOCKER_STARK_SERVICE_DATA_PORT/$DOCKER_STARK_SERVICE_DATA_PUBLIC_DIR"));
-$DATA_URL=$uri_das;
-$DATA_URL="http://STARK-service-DAS:5000/static/data/public";
-$DATA_URL="http://localhost:4201/static/data/public";
 
-$uri_das="http://localhost:4201/static/data/public";
+if ($uri_das == "") {
+	if ($_ENV["URI_DAS"] != "") {
+		$uri_das=$_ENV["URI_DAS"];
+	} elseif ($modules_obj_array["STARK"]->{"services"}->{"DAS"}->{"href"}!="") {
+		$uri_das=$modules_obj_array["STARK"]->{"services"}->{"DAS"}->{"href"};
+	} else {
+		$uri_das="";
+	};
+};
+
+
 
 #DEV
 if ($DEBUG) {
-	echo "<pre>$IGV_URL</pre>";
-	echo "<pre>$DATA_URL</pre>";
+	echo "<pre>$uri_igv</pre>";
+	echo "<pre>$uri_das</pre>";
 };
 
 
@@ -430,9 +443,8 @@ fclose($myfile);
 ####################
 
 # FINAL URL
-#$FINAL_URL="http://$IGV_URL?file=http://$DATA_URL/$DOCKER_STARK_SERVICE_DATA_SUBFOLDER_SERVICES_IGV/$IGV_JSON_FILENAME";
-$FINAL_URL="$IGV_URL?file=$DATA_URL/$DOCKER_STARK_SERVICE_IGV_FOLDER_LOG/$IGV_JSON_FILENAME";
-$FINAL_URL="$IGV_URL?file=$DATA_URL/services/GENOMEBROWSER/IGV/$IGV_JSON_FILENAME";
+$FINAL_URL="$uri_igv?file=$uri_das/$DOCKER_STARK_SERVICE_IGV_FOLDER_LOG/$IGV_JSON_FILENAME";
+$FINAL_URL="$uri_igv?file=$uri_das/services/GENOMEBROWSER/IGV/$IGV_JSON_FILENAME";
 
 # DEV
 if ($DEBUG) {

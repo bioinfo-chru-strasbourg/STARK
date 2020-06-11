@@ -239,6 +239,16 @@ if ($_ENV["URINNER_DAS"] != "") {
 	$urinner_das="";
 };
 
+# DAS
+if ($_ENV["URI_DAS"] != "") {
+	$uri_das=$_ENV["URI_DAS"];
+} elseif ($modules_obj_array["STARK"]->{"services"}->{"DAS"}->{"href"}!="") {
+	$uri_das=$modules_obj_array["STARK"]->{"services"}->{"DAS"}->{"href"};
+} else {
+	$uri_das="";
+};
+
+
 
 # IGV
 if ($_ENV["URINNER_IGV"] != "") {
@@ -247,6 +257,15 @@ if ($_ENV["URINNER_IGV"] != "") {
 	$urinner_igv=$modules_obj_array["GENOMEBROWSER"]->{"services"}->{"IGV"}->{"href_inner"};
 } else {
 	$urinner_igv="";
+};
+
+# IGV
+if ($_ENV["URI_IGV"] != "") {
+	$uri_igv=$_ENV["URI_IGV"];
+} elseif ($modules_obj_array["GENOMEBROWSER"]->{"services"}->{"IGV"}->{"href"}!="") {
+	$uri_igv=$modules_obj_array["GENOMEBROWSER"]->{"services"}->{"IGV"}->{"href"};
+} else {
+	$uri_igv="";
 };
 
 

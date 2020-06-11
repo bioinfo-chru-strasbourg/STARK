@@ -19,7 +19,7 @@
         "protocol": "http",
         "ip": "",
         "port": "4203",
-        "port_inner": "",
+        "port_inner": "8080",
         "path": ""
       }
     },

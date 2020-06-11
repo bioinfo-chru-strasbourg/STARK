@@ -30,7 +30,7 @@ services:
             - URI_API=  # will find STARK/API service and construct URI
         volumes:
             # Docker sock - if sock access ok
-            #- /var/run/docker.sock:/var/run/docker.sockk
+            #- /var/run/docker.sock:/var/run/docker.sock
             # EDITH dashboard Config
             #- ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_CONFIG}/${DOCKER_STARK_SERVICES_FOLDER_EDITH_DASHBOARD}:${DOCKER_STARK_SERVICE_EDITH_DASHBOARD_INNER_FOLDER_CONFIG}:ro
             # Data folders available (need to be coherent with other services)
