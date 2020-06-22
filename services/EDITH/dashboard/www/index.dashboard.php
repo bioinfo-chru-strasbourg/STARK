@@ -150,6 +150,13 @@ foreach ($ACTIVITY_STATUS as $activity=>$status_list) {
 };
 
 
+# Default Repository 
+$repository_default="repositories/Repository";
+if (is_dir("repositories/Repository")) {
+	$repository_default="repositories/Repository";
+};
+#echo $repository_default;
+
 
 
 
@@ -213,7 +220,7 @@ $CONTENT_SECTION_DASHBOARD='
 						<div class="p-2 col-12" style="float: left;">
 						<p class="mbr-text mbr-fonts-style display-7" style="text-align: $align;">
 							<b>Search a analysis/sample in repositories</b>
-							<form action="index.reports.php" method="POST" >
+							<form action="index.reports.php?PATH='.$repository_default.' method="POST" >
 								<span class="head-item mbr-fonts-style display-7">
 								<input name="analysis" value="" style="width:150px" class=""></input>
 								<input name="sample" value="" style="width:100px" class=""></input>
@@ -294,12 +301,14 @@ foreach ($modules_obj_array as $module_name=>$module_obj) {
 			$service_available=$service_infos->{'available'};
 			$service_href='';
 			
-			if ($service_type=="IHM" && $service_infos->{'link'}!="" && $service_infos->{'link'}->{'available'}) {
+			if ( ($service_type=="IHM" || $service_type=="WEB")
+				&& $service_infos->{'link'}!="" && $service_infos->{'link'}->{'available'}) {
 				$service_href=$service_infos->{'href'};
 				$service_href_html=" href='$service_href'";
 			};
 
-			if ($service_type=="IHM" && $service_available) {
+			if ( ($service_type=="IHM" || $service_type=="WEB")
+				&& $service_available) {
 				$CONTENT_SECTION_MODULES_SERVICES_CONTENT.="
 				<p class='mbr-text mbr-fonts-style display-7'>
 					+ <a $service_href_html $service_link_target title='[$service_type] $service_description'>

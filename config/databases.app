@@ -13,7 +13,8 @@ DATABASES_CONFIG_LIST=""
 ############
 
 DBFOLDER_REFGENE=$DBFOLDER/refGene
-export REFSEQ_GENES=$DBFOLDER_REFGENE/refGene.$ASSEMBLY.bed
+#export REFSEQ_GENES=$DBFOLDER_REFGENE/refGene.$ASSEMBLY.bed
+export REFSEQ_GENES=$DBFOLDER_REFGENE/current/refGene.$ASSEMBLY.bed
 
 
 
@@ -25,7 +26,8 @@ export REFSEQ_GENES=$DBFOLDER_REFGENE/refGene.$ASSEMBLY.bed
 DBFOLDER_DBSNP=$DBFOLDER/dbsnp
 
 # BDSNP DB (used for calling, espacially with GATK)
-export VCFDBSNP=$DBFOLDER_DBSNP/dbsnp.$ASSEMBLY.vcf.gz	#snp138.vcf.gz
+#export VCFDBSNP=$DBFOLDER_DBSNP/dbsnp.$ASSEMBLY.vcf.gz	#snp138.vcf.gz
+export VCFDBSNP=$DBFOLDER_DBSNP/current/dbsnp.$ASSEMBLY.vcf.gz	#snp138.vcf.gz
 if [ ! -e $VCFDBSNP ]; then
 	echo "#[WARNING] No VCFDBSNP '$VCFDBSNP' in the database. Calling step impossible. Please check '$DBFOLDER' folder or configuration file" >>/dev/stderr
 	#exit 1;
@@ -100,21 +102,24 @@ DATABASES_CONFIG_LIST=$DATABASES_CONFIG_LIST" SNPEFF_CONFIG"
 if [ ! -z $FOLDER_DATABASES_ANNOVAR ] && [ "$FOLDER_DATABASES_ANNOVAR" != "" ]; then
 	ANNOVAR_DATABASES=$FOLDER_DATABASES_ANNOVAR
 else
-	ANNOVAR_DATABASES=$DBFOLDER/annovar
+	#ANNOVAR_DATABASES=$DBFOLDER/annovar
+	ANNOVAR_DATABASES=$DBFOLDER/annovar/current
 fi;
-mkdir -p $ANNOVAR_DATABASES 2>/dev/null
+#mkdir -p $ANNOVAR_DATABASES 2>/dev/null
 #fi;
 export ANNOVAR_DATABASES
 DATABASES_CONFIG_LIST=$DATABASES_CONFIG_LIST" ANNOVAR_DATABASES"
 
 #export SNPEFF_CONFIG=$SNPEFF_FOLDER/snpeff.config	# CONFIG # NOT USED !!! # CHANGE CONFIG FILE in SNPEFF TOOL if necessary
 #if [ -z $SNPEFF_DATABASES ] || [ ! -e $SNPEFF_DATABASES ]; then
-if [ ! -z $FOLDER_DATABASES_SNPEFF ] && [ "$FOLDER_DATABASES_SNPEFF" != "" ]; then
+if [ ! -z $FOLDER_DATABASES_SNPEFF ] && [ "$FOLDER_DATABASES_SNPEFF" != "" ] && [ -d "$FOLDER_DATABASES_SNPEFF" ]; then
 	SNPEFF_DATABASES=$FOLDER_DATABASES_SNPEFF
-else
+elif  [ ! -z $DBFOLDER/snpeff/$SNPEFF_VERSION ] && [ "$DBFOLDER/snpeff/$SNPEFF_VERSION" != "" ] && [ -d "$DBFOLDER/snpeff/$SNPEFF_VERSION" ]; then
 	SNPEFF_DATABASES=$DBFOLDER/snpeff/$SNPEFF_VERSION
+else
+	SNPEFF_DATABASES=$DBFOLDER/snpeff/current
 fi;
-mkdir -p $SNPEFF_DATABASES 2>/dev/null
+#mkdir -p $SNPEFF_DATABASES 2>/dev/null
 #SNPEFF_DATABASES=$DBFOLDER/snpeff/$SNPEFF_VERSION
 #fi;
 export SNPEFF_DATABASES

@@ -34,15 +34,18 @@ PICARDLIB?=$(NGSbin)/picard-tools
 	
 # write the genome file in a file
 %.genome: %.assembly
-	if [ -s $(GENOMES)/`cat $<`/`cat $<`.fa ]; then \
+	if [ -s $(REF) ]; then \
+		echo $(REF) > $@; \
+		echo "# GENOME FILE: "$(REF); \
+	elif [ -s $(GENOMES)/`cat $<`/`cat $<`.fa ]; then \
 		echo $(GENOMES)/`cat $<`/`cat $<`.fa > $@; \
 		echo "# GENOME FILE: "$(GENOMES)/`cat $<`/`cat $<`.fa; \
+	elif [ -s $(GENOMES)/current/`cat $<`.fa ]; then \
+		echo $(GENOMES)/current/`cat $<`.fa > $@; \
+		echo "# GENOME FILE: "$(GENOMES)/current/`cat $<`.fa; \
 	else \
 		echo "# NO GENOME FILE '"$(GENOMES)/`cat $<`/`cat $<`.fa"'"; \
 	fi;
-	
-	# DOWNLOQD ref genome ?
-	# ftp://ftp.ncbi.nlm.nih.gov/genbank/genomes/Eukaryotes/vertebrates_mammals/Homo_sapiens/GRCh37.p13/Primary_Assembly/assembled_chromosomes/FASTA/
 	
 	# index the reference for bwa
 	if [ ! -s `cat $@`.bwt ] \
@@ -58,17 +61,6 @@ PICARDLIB?=$(NGSbin)/picard-tools
 		$(SAMTOOLS) faidx `cat $@`; \
 	fi;
 	
-	# index the reference for samtools
-	#if [ ! -s $$(dirname $$(cat $@)).dict ]; then
-	#if [ ! -s "`cat $@ | sed s/\.fa//`.dict" ]; then \ 
-	#	echo "# DICT TODO"; \
-	#fi;
-	#sed 's/\..*/.dict/g'
-	#if [ ! -s $$(cat $@ | sed 's/\..*/.dict/g') ]; then \
-	#	#$(JAVA) -jar $(PICARDLIB)/CreateSequenceDictionary.jar REFERENCE=`cat $@` OUTPUT=$$(cat $@ | sed s/\.fa$$//).dict; \
-	#	echo "# Dictionnary $$(cat $@ | sed 's/\..*/.dict/g') need to be created from REFERENCE=`cat $@`"; \
-	#	echo "$(JAVA) -jar $(PICARD) CreateSequenceDictionary REFERENCE=`cat $@` OUTPUT=$$(cat $@ | sed 's/\..*/.dict/g');"; \
-	#fi;
 
 %.dict: %.genome
 	cat $< | sed 's/\.fa$$/.dict/g' > $@

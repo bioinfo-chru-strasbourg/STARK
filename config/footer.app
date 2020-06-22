@@ -201,15 +201,25 @@ export RULES=$(find $RULES $RULES_APP -maxdepth 0 -type f 2>/dev/null | sort -u 
 #echo $APP_PROJECT
 
 
-# ASSEMBLY
-##########
+# ASSEMBLY & REF
+################
 
 # default Assembly
 if [ -z $ASSEMBLY ] || [ "$ASSEMBLY" == "" ]; then
 	ASSEMBLY=hg19
 fi;
 export ASSEMBLY
-export REF=$GENOMES/$ASSEMBLY/$ASSEMBLY.fa	# Defautl REF
+
+# default REF
+if [ -s $GENOMES/$ASSEMBLY/$ASSEMBLY.fa ]; then
+	REF=$GENOMES/$ASSEMBLY/$ASSEMBLY.fa
+elif [ -s $GENOMES/current/$ASSEMBLY.fa ]; then
+	REF=$GENOMES/current/$ASSEMBLY.fa
+fi;
+if [ ! -s $REF ] || [ "$REF" == "" ]; then
+	REF=$GENOMES/current/$ASSEMBLY.fa
+fi;
+export REF
 
 
 

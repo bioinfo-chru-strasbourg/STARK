@@ -61,31 +61,31 @@ $ docker-compose build
 ---
 **4. Setup**
 
-The setup step will create folders (if not exist), populate databases folder if needed, and incrementally archive tools setup sources and binaries.
+The setup step will create folders (if not exist), populate databases folder if needed, and incrementally archive tools setup sources and binaries. Use --project-name if STARK scripts are not in a folder named "STARK". Variable DOCKER_STARK_MAIN_FOLDER corresponds to variable in ".env" configuration file.
 
 ```
-$ source .env
+$ DOCKER_STARK_MAIN_FOLDER=<STARK_main_folder>
 $ mkdir -p $DOCKER_STARK_MAIN_FOLDER
-$ docker-compose up stark-folders
-$ docker-compose up stark-databases
-$ docker-compose up stark-sources-archive
+$ docker-compose --project-name STARK up stark-folders
+$ docker-compose --project-name STARK up stark-databases
+$ docker-compose --project-name STARK up stark-sources-archive
 ```
 
 ---
 **5. Services**
 
-Services are located in the folder 'services', and are organized in separated modules (folders), containing 'STARK.docker-compose.yml' file describing services,  'STARK.env' file including all parameters, and 'STARK.module' file describing the module and all services, especially to share information and access to other modules.
+Services are located in the folder 'services', and are organized in separated modules (folders), containing 'STARK.docker-compose.yml' file describing services, 'STARK.env' file including all parameters, and 'STARK.module' file describing the module and all services, especially to share information and access to other modules.
 
 To automatically start all services modules:
 
 ```
-$ services/services.sh
+$ services/services.sh --module=* --command=up
 ```
 
 Main STARK services in the folder 'services/STARK' contains a CLI (Command Line Interface), an API (Application Program Interface), a Listener and its cleaner, and a DAS service (DAta Sharing).
 
 ```
-$ services.sh --module=STARK
+$ services/services.sh --module=STARK --command=up
 ```
 
 

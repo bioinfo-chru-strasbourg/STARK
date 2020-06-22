@@ -40,7 +40,8 @@ TMP_FOLDER_TMP?=/tmp				# NGS Temporary folder
 TMP_SYS_FOLDER?=/tmp				# System Temporary folder
 ASSEMBLY?=hg19					# Default assembly
 GENOMES?=genomes				# Genomes folder
-REF?=$(GENOMES)/$(ASSEMBLY)/$(ASSEMBLY).fa	# Default Reference genome FASTA file
+#REF?=$(GENOMES)/$(ASSEMBLY)/$(ASSEMBLY).fa	# Default Reference genome FASTA file
+REF?=$(GENOMES)/current/$(ASSEMBLY).fa	# Default Reference genome FASTA file
 
 # OPTIONS
 JAVA_MEMORY?=4

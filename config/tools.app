@@ -230,7 +230,7 @@ TOOLS_LIST=$TOOLS_LIST" BEDTOOLS"
 
 # ANNOVAR
 export ANNOVAR=$NGS_TOOLS/annovar/current/bin			# DIR
-export ANNOVAR_VERSION=2018Apr16						# VER
+export ANNOVAR_VERSION=2019Oct24						# VER
 export ANNOVAR_DESCRIPTION="an efficient software tool to utilize update-to-date information to functionally annotate genetic variants detected from diverse genomes"
 export ANNOVAR_REF="Wang K, Li M, Hakonarson H. ANNOVAR: Functional annotation of genetic variants from next-generation sequencing data Nucleic Acids Research, 38:e164, 2010"
 TOOLS_LIST=$TOOLS_LIST" ANNOVAR"
