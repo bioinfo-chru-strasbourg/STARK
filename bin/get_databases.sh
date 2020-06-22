@@ -537,8 +537,8 @@ if ((1)); then
 	DB_ASSEMBLY=$ASSEMBLY; 										# hg19
 	DB_TARGET_FILE=$(basename $DB_TARGET);						# refGene.hg19.bed
 	DB_TARGET_FOLDER=$(dirname $DB_TARGET);						# /STARK/databases/refGene/current
-	#DB_TARGET_RELEASE=$(basename $DB_TARGET_FOLDER);			# current
-	DB_TARGET_RELEASE=$DATABASES_RELEASE;						# DATE
+	DB_TARGET_RELEASE=$(basename $DB_TARGET_FOLDER);			# current
+	#DB_TARGET_RELEASE=$DATABASES_RELEASE;						# DATE
 	DB_TARGET_DB_FOLDER=$(dirname $DB_TARGET_FOLDER);			# /STARK/databases/refGene
 
 	# DB RELEASE
@@ -689,9 +689,12 @@ if ((1)); then
 
 		# Copy in database folder
 		echo "$DB_TARGET: $DB_RELEASE_FILE_PATH $DB_RELEASE_FILE_PATH_TXT $DB_RELEASE_FILE_PATH_GENES
+			# folder
+			mkdir -p $DB_RELEASE_FOLDER
+			chmod 0775 $DB_RELEASE_FOLDER
 			# database release info
 			[ ! -s $DB_TARGET_DB_FOLDER/STARK.database ] && cp $DB_TMP/STARK.database $DB_TARGET_DB_FOLDER/STARK.database
-			cp $DB_TMP/STARK.database.release $DB_RELEASE_FOLDER
+			cp $DB_TMP/STARK.database.release $DB_RELEASE_FOLDER/
 			# links
 			[ $DB_TARGET_RELEASE != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_FOLDER
 			[ latest != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_DB_FOLDER/latest
@@ -1088,7 +1091,8 @@ if ((1)); then
 		(($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME' release '$DB_RELEASE' for '$DB_TARGET_RELEASE' [$DB_ASSEMBLY]"
 
 		# COPY mode
-		COPY_MODE_ANNOVAR=$COPY_MODE_DEFAULT #"cp -rf"
+		#COPY_MODE_ANNOVAR=$COPY_MODE_DEFAULT #"cp -rf"
+		COPY_MODE_ANNOVAR="mv "
 
 		HOWARD_DB="$HOWARD_ANNOTATION,$HOWARD_ANNOTATION_REPORT,$HOWARD_ANNOTATION_MINIMAL,$ADDITIONAL_ANNOTATIONS" # ALL, CORE, snpeff $HOWARD_ANNOTATION
 
@@ -1234,8 +1238,8 @@ if (($DEBUG)); then
 	echo "# LOG=$MK_LOG"
 	echo ""
 	cat -n $MK;
-	cat -n $MK_LOG;
-	cat -n $MK_ERR;
+	#cat -n $MK_LOG;
+	#cat -n $MK_ERR;
 fi;
 
 
