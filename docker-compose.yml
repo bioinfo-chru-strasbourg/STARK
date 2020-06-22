@@ -81,7 +81,6 @@ services:
             - databases:${DOCKER_STARK_INNER_FOLDER_DATABASES}:rw
             # HOWARD databases defintions (if already exists, need to define DOCKER_STARK_FOLDER_CONFIG_HOWARD and DOCKER_STARK_INNER_FOLDER_CONFIG_HOWARD)
             #- ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_CONFIG_HOWARD}:${DOCKER_STARK_INNER_FOLDER_CONFIG_HOWARD}:ro
-            - ${DOCKER_STARK_MAIN_FOLDER}/config/howard:/STARK/config/howard:ro
         #env_file:
         #    - ${DOCKER_COMPOSE_ENV}
         depends_on:
