@@ -133,7 +133,7 @@ volumes:
         driver: local
         driver_opts:
             type: none
-            device: ${DOCKER_STARK_FOLDER_OUTPUT_DEMULTIPLEXING}
+            device: ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_OUTPUT_DEMULTIPLEXING}
             o: bind
 
     # RESULTS
@@ -141,7 +141,7 @@ volumes:
         driver: local
         driver_opts:
             type: none
-            device: ${DOCKER_STARK_FOLDER_OUTPUT_RESULTS}
+            device: ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_OUTPUT_RESULTS}
             o: bind
 
     # REPOSITORY
