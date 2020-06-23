@@ -346,7 +346,11 @@ if ((1)); then
 		UCSC_GENOME_URL_FILE="md5sum.txt";
 
 		(($VERBOSE)) && echo "#[INFO] Check chromosomes files on '$UCSC_GENOME_URL'..."
-		CHRS=$(curl $UCSC_GENOME_URL/chr*.fa.gz --list-only -s | grep fa.gz* | grep -v "_" | sort -u -k1,1 -V)
+		CHRS=""
+		CHRS=$(curl $UCSC_GENOME_URL/chr*.fa.gz --list-only -s | grep fa.gz$ | grep -v "_" | sort -u -k1,1 -V)
+		if [ "$CHRS" == "" ]; then
+			CHRS=$(curl -s $UCSC_GENOME_URL | awk -F".fa.gz\">" '{print $2}' | awk -F"</A>" '{print $1}' | grep fa.gz* | grep -v "_" | sort -u -k1,1 -V)
+		fi;
 		CHRS_LIST=$(echo $CHRS | tr "\n" " ")
 		(($VERBOSE)) && echo "#[INFO] Chromosomes files: '$CHRS_LIST'"
 
