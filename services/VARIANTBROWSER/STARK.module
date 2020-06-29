@@ -20,21 +20,6 @@
         "port": "4204",
         "path": "vision.php"
       }
-    },
-    "FRIDAY": {
-      "code": "FRIDAY",
-      "name": "Variant Browser JARVIS/FRIDAY",
-      "description": "VCF Browser JARVIS [Just A Rather Marvellous Variant Interface System] - FRIDAY [Full Row Interface to Deal with Annotation dictionnarY] - FRIDAY is an spreadsheet like interface providing genetic variants proritization and visualization in VCF format",
-      "release": "1.0.2b",
-      "type": "IHM",
-      "available": false,
-      "link": {
-        "available": true,
-        "protocol": "http",
-        "ip": "",
-        "port": "4205",
-        "path": "friday.php"
-      }
     }
   }
 }
