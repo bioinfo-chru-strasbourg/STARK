@@ -62,7 +62,7 @@ header;
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
-ARGS=$(getopt -o "e:r:uvdnh" --long "update,app_folder:,application_folder:,repo_folder:,repo_folder:,tmp:,bcftools:,tabix:,bgzip:,annovar:,verbose,debug,release,help" -- "$@" 2> /dev/null)
+ARGS=$(getopt -o "e:r:uvdnh" --long "update,app_folder:,application_folder:,repo_folder:,dejavu_folder:,tmp:,bcftools:,tabix:,bgzip:,annovar:,verbose,debug,release,help" -- "$@" 2> /dev/null)
 
 eval set -- "$ARGS"
 while true
@@ -311,8 +311,8 @@ for GP_FOLDER in $GP_FOLDER_LIST_UNIQ; do
 		# TMP folder creation
 		mkdir -p $TMP/$GROUP/$PROJECT
 		cp -f $(find $GP_FOLDER/*/*/ -maxdepth 1 -name '*.final.vcf.gz' -a ! -name '*.*-*.final.vcf.gz') $TMP/$GROUP/$PROJECT/ 2>/dev/null
-		NB_VCF_FOUND=$(ls $TMP/$GROUP/$PROJECT/ | wc -w)
-		#(($VERBOSE)) && echo "#[INFO] DEJAVU database '$GROUP/$PROJECT' $NB_VCF_FOUND VCF copied files (some files may be found multiple times)"
+		NB_VCF_FOUND=$(ls $TMP/$GROUP/$PROJECT/*.vcf.gz | wc -w)
+		(($VERBOSE)) && echo "#[INFO] DEJAVU database '$GROUP/$PROJECT' $NB_VCF_FOUND VCF considered files (some files may be found multiple times)"
 		
 	fi;
 
@@ -484,6 +484,10 @@ for GP_FOLDER in $GP_FOLDER_LIST_UNIQ; do
 	fi;
 	#fi;
 done
+
+# TODO: Add STARK.database and STARK.database.release
+
+
 
 (($VERBOSE)) && echo "#"
 (($VERBOSE)) && echo "#[INFO] DEJAVU database release '$RELEASE' done."
