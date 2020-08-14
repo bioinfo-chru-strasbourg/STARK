@@ -155,7 +155,7 @@ $repository_default="repositories/Repository";
 if (is_dir("repositories/Repository")) {
 	$repository_default="repositories/Repository";
 };
-#echo $repository_default;
+
 
 
 
@@ -205,7 +205,7 @@ $CONTENT_SECTION_DASHBOARD='
 			</div>
 
 			<div class="card p-3 col-12 col-md-4 mb-4">
-				<a href="index.reports.php" class="navbar-caption text-secondary ">
+				<a href="index.reports.php?PATH='.$repository_default.'" class="navbar-caption text-secondary ">
 					<div class="media mb-2">
 						<div class="card-img align-self-center">
 							<span class="mbr-iconfont mbri-file" style="color: rgb(20, 157, 204); fill: rgb(20, 157, 204);"></span>
@@ -220,7 +220,7 @@ $CONTENT_SECTION_DASHBOARD='
 						<div class="p-2 col-12" style="float: left;">
 						<p class="mbr-text mbr-fonts-style display-7" style="text-align: $align;">
 							<b>Search a analysis/sample in repositories</b>
-							<form action="index.reports.php?PATH='.$repository_default.' method="POST" >
+							<form action="index.reports.php method="POST" >
 								<span class="head-item mbr-fonts-style display-7">
 								<input name="analysis" value="" style="width:150px" class=""></input>
 								<input name="sample" value="" style="width:100px" class=""></input>
