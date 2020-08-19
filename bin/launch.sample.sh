@@ -305,7 +305,6 @@ COMMAND_COPY="rsync -auczqAXhi --no-links --no-perms --no-owner --no-group"
 COMMAND_LINK="ln " # "cp -auv" or "rsync -auv" # auvpAXog
 PERMS="a+rwx"
 
-
 # FASTQ
 FASTQ_R1_RELOCATED=""
 for F in $FASTQ; do
@@ -751,6 +750,7 @@ if [ -z "$APP_NAME" ]; then APP_NAME="UNKNOWN"; fi;
 if [ -z "$SAMPLE_GROUP" ]; then SAMPLE_GROUP="UNKNOWN"; fi;
 if [ -z "$SAMPLE_PROJECT" ]; then SAMPLE_PROJECT="UNKNOWN"; fi;
 
+
 if ((0)); then
 
 	if [ ! -z "$GROUP" ]; then
@@ -1044,109 +1044,112 @@ for RUU in $RUN_UNIQ; do
 		fi;
 
 		# Copy BED
-		if [ ! -e $RUN_SAMPLE_DIR/$S.bed ]; then
-			if [ "$B" != "" ]; then
-				if [[ $B =~ .bed$ ]]; then
-					if [ -e $B ] && [ "$B" != "" ] && [ ! -e $RUN_SAMPLE_DIR/$S.bed ]; then
-						echo "#[INFO] Sort/Merge/Normalize BED file."
-						#cp -p $B $RUN_SAMPLE_DIR/$S.bed;
-						#cp -p $B $RUN_SAMPLE_DIR/$S.metrics.bed;
-						#$COMMAND_COPY $B $RUN_SAMPLE_DIR/$S.bed;
-						$BEDTOOLS sort -i $B | $BEDTOOLS merge -i - | awk -F"\t" '
-							{chr=$1}
-							{start=$2}
-							{stop=$3}
-							{strand=$4}
-							{gene=$5}
-							strand !~ /[+-]/ {strand="+"}
-							gene == "" { if ($4 !~ /[+-]/ && $4 != "") {gene=$4} else {gene=chr"_"start"_"stop} }
-							{print chr"\t"start"\t"stop"\t"strand"\t"gene}
-						' > $RUN_SAMPLE_DIR/$S.bed;
-						touch $RUN_SAMPLE_DIR/$S.bed -r $B;
-						$COMMAND_COPY $B $RUN_SAMPLE_DIR/$S.metrics.bed;
-						touch $RUN_SAMPLE_DIR/$S.manifest;
-						touch $RUN_SAMPLE_DIR/$S.manifest -r $B;
-						touch $RUN_SAMPLE_DIR/$S.metrics.bed -r $B;
-						echo -e $(basename $B)"\tfrom option - bed" > $RUN_SAMPLE_DIR/$S.bed_name
-						echo -e $(basename $B)"\tfrom option - bed" > $RUN_SAMPLE_DIR/$S.manifest_name
-						#export BED=$RUN_SAMPLE_DIR/$S.bed
-					fi;
-				else
-					if [ -e $B ] && [ "$B" != "" ] && [ ! -e $RUN_SAMPLE_DIR/$S.manifest ]; then
-						echo "#[INFO] Copy Manifest file."
-						#cp -p $B $RUN_SAMPLE_DIR/$S.manifest;
-						$COMMAND_COPY -p $B $RUN_SAMPLE_DIR/$S.manifest;
-						touch $RUN_SAMPLE_DIR/$S.manifest -r $B;
-						#echo -e "\tfrom manifest file" > $RUN_SAMPLE_DIR/$S.bed_name
-						echo -e $(basename $B)"\tfrom option - manifest" > $RUN_SAMPLE_DIR/$S.bed_name
-						echo -e $(basename $B)"\tfrom option - manifest" > $RUN_SAMPLE_DIR/$S.manifest_name
-						#export MANIFEST=$RUN_SAMPLE_DIR/$S.manifest;
+
+		if true; then
+			if [ ! -e $RUN_SAMPLE_DIR/$S.bed ]; then
+				if [ "$B" != "" ]; then
+					if [[ $B =~ .bed$ ]]; then
+						if [ -e $B ] && [ "$B" != "" ] && [ ! -e $RUN_SAMPLE_DIR/$S.bed ]; then
+
+							echo "#[INFO] Copy original BED file."
+							$COMMAND_COPY -p $B $RUN_SAMPLE_DIR/$S.original.bed;
+
+							echo "#[INFO] Sort/Merge/Normalize BED file."
+							$BEDTOOLS sort -i $B  | $STARK_BED_NORMALIZATION | $BEDTOOLS merge -i - -c 4 -o distinct > $RUN_SAMPLE_DIR/$S.bed;
+							
+							touch $RUN_SAMPLE_DIR/$S.bed -r $B;
+							$COMMAND_COPY $B $RUN_SAMPLE_DIR/$S.metrics.bed;
+							touch $RUN_SAMPLE_DIR/$S.manifest;
+							touch $RUN_SAMPLE_DIR/$S.manifest -r $B;
+							touch $RUN_SAMPLE_DIR/$S.metrics.bed -r $B;
+							echo -e $(basename $B)"\tfrom option - bed" > $RUN_SAMPLE_DIR/$S.bed_name
+							echo -e $(basename $B)"\tfrom option - bed" > $RUN_SAMPLE_DIR/$S.manifest_name
+							#export BED=$RUN_SAMPLE_DIR/$S.bed
+						fi;
+					else
+						if [ -e $B ] && [ "$B" != "" ] && [ ! -e $RUN_SAMPLE_DIR/$S.manifest ]; then
+							echo "#[INFO] Copy Manifest file."
+							#cp -p $B $RUN_SAMPLE_DIR/$S.manifest;
+							$COMMAND_COPY -p $B $RUN_SAMPLE_DIR/$S.manifest;
+							touch $RUN_SAMPLE_DIR/$S.manifest -r $B;
+							#echo -e "\tfrom manifest file" > $RUN_SAMPLE_DIR/$S.bed_name
+							echo -e $(basename $B)"\tfrom option - manifest" > $RUN_SAMPLE_DIR/$S.bed_name
+							echo -e $(basename $B)"\tfrom option - manifest" > $RUN_SAMPLE_DIR/$S.manifest_name
+							#export MANIFEST=$RUN_SAMPLE_DIR/$S.manifest;
+						fi;
 					fi;
 				fi;
 			fi;
 		fi;
 
-		
-		# Name of LIST.GENES
-		BEDFILE_GENES_LIST_ONE=$RUN_SAMPLE_DIR/$S.list.genes
-		if [ ! -e $BEDFILE_GENES_LIST_ONE ]; then
-			# Add Genes
-			if [ "$G" != "" ]; then
-				echo "#[INFO] Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' and copy .genes files."
-				#> $RUN_SAMPLE_DIR/$S.list.genes;
-				for G_ONE in $(echo $G | tr "+" " "); do
-					# add '.genes' extension if not exists
-					[ "${G_ONE##*.}" != "genes" ] && G_ONE_TARGET=$(basename $G_ONE)".genes" || G_ONE_TARGET=$(basename $G_ONE);
-					# remove Sample name (mainly in case of relauch)
-					G_ONE_TARGET=$(echo $G_ONE_TARGET | sed "s/$S\.//gi")
-					#$COMMAND_COPY $G_ONE $RUN_SAMPLE_DIR/$S.$G_ONE_TARGET;
-					$BEDTOOLS sort -i $G_ONE | $STARK_FOLDER_BIN/bed_normalization.awk > $RUN_SAMPLE_DIR/$S.$G_ONE_TARGET;
-					echo $S.$G_ONE_TARGET >> $BEDFILE_GENES_LIST_ONE
-				done;
-			elif [ -s $B ] && [ "$B" != "" ]; then
-				# GEnerate BEDFILE_GENES from design
-				#if [ -s $B ]; then
-				echo "#[INFO] Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' from Design file '$B'."
-				# Generate intermediate bed from Design (BED or manifest)
-				BEDFILE_GENES_INTERMEDIATE=$RUN_SAMPLE_DIR/$S.genes.tmp
-				BEDFILE_GENES_ONE=$RUN_SAMPLE_DIR/$S.from_design.genes
+		# Genes list
 
-				if [[ $B =~ .bed$ ]]; then
-					#cut -f1,2,3 $B > $BEDFILE_GENES_INTERMEDIATE;
-					$BEDTOOLS sort -i $B | $BEDTOOLS merge -i - | cut -f1,2,3 > $BEDFILE_GENES_INTERMEDIATE;
-				else
-					$CAP_ManifestToBED --input $B --output $BEDFILE_GENES_INTERMEDIATE.tmp --output_type "region" --type=PCR 1>/dev/null;
-					#cut -f1,2,3 $BEDFILE_GENES_INTERMEDIATE.tmp > $BEDFILE_GENES_INTERMEDIATE;
-					$BEDTOOLS sort -i $BEDFILE_GENES_INTERMEDIATE.tmp | $BEDTOOLS merge -i - | cut -f1,2,3 > $BEDFILE_GENES_INTERMEDIATE;
-					rm -f $BEDFILE_GENES_INTERMEDIATE.tmp;
+		if true; then
+			# Name of LIST.GENES
+			BEDFILE_GENES_LIST_ONE=$RUN_SAMPLE_DIR/$S.list.genes
+			if [ ! -e $BEDFILE_GENES_LIST_ONE ]; then
+				# Add Genes
+				if [ "$G" != "" ]; then
+					echo "#[INFO] Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' and copy .genes files."
+					#> $RUN_SAMPLE_DIR/$S.list.genes;
+					for G_ONE in $(echo $G | tr "+" " "); do
+						# add '.genes' extension if not exists
+						[ "${G_ONE##*.}" != "genes" ] && G_ONE_TARGET=$(basename $G_ONE)".genes" || G_ONE_TARGET=$(basename $G_ONE);
+						# remove Sample name (mainly in case of relauch)
+						G_ONE_TARGET=$(echo $G_ONE_TARGET | sed "s/$S\.//gi")
+						#$COMMAND_COPY $G_ONE $RUN_SAMPLE_DIR/$S.$G_ONE_TARGET;
+						$BEDTOOLS sort -i $G_ONE | $STARK_BED_NORMALIZATION > $RUN_SAMPLE_DIR/$S.$G_ONE_TARGET;
+						echo $S.$G_ONE_TARGET >> $BEDFILE_GENES_LIST_ONE
+					done;
+				elif [ -s $B ] && [ "$B" != "" ]; then
+					# GEnerate BEDFILE_GENES from design
+					#if [ -s $B ]; then
+					echo "#[INFO] Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' from Design file '$B'."
+					# Generate intermediate bed from Design (BED or manifest)
+					BEDFILE_GENES_INTERMEDIATE=$RUN_SAMPLE_DIR/$S.genes.tmp
+					BEDFILE_GENES_ONE=$RUN_SAMPLE_DIR/$S.from_design.genes
+
+					if [[ $B =~ .bed$ ]]; then
+						#cut -f1,2,3 $B > $BEDFILE_GENES_INTERMEDIATE;
+						$BEDTOOLS sort -i $B | $BEDTOOLS merge -i - | cut -f1,2,3 > $BEDFILE_GENES_INTERMEDIATE;
+					else
+						$CAP_ManifestToBED --input $B --output $BEDFILE_GENES_INTERMEDIATE.tmp --output_type "region" --type=PCR 1>/dev/null;
+						#cut -f1,2,3 $BEDFILE_GENES_INTERMEDIATE.tmp > $BEDFILE_GENES_INTERMEDIATE;
+						$BEDTOOLS sort -i $BEDFILE_GENES_INTERMEDIATE.tmp | $BEDTOOLS merge -i - | cut -f1,2,3 > $BEDFILE_GENES_INTERMEDIATE;
+						rm -f $BEDFILE_GENES_INTERMEDIATE.tmp;
+					fi;
+
+					if [ -s $BEDFILE_GENES_INTERMEDIATE ] ; then
+						(($VERBOSE)) && echo "#[INFO] Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' with intersection between Design file '$B' and RefSeq '$REFSEQ_GENES'."
+						#echo "MANIFEST.bed to bedfile_genes_list : $bedfile_genes_list";
+						$BEDTOOLS intersect -wb -a $BEDFILE_GENES_INTERMEDIATE -b $REFSEQ_GENES | cut -f7 | sort -u > $BEDFILE_GENES_INTERMEDIATE.intersect;
+						sort -k4 $REFSEQ_GENES > $BEDFILE_GENES_INTERMEDIATE.refseq;
+						# Join
+						join -1 1 -2 4 $BEDFILE_GENES_INTERMEDIATE.intersect $BEDFILE_GENES_INTERMEDIATE.refseq -o 2.1,2.2,2.3,2.4,2.5,2.6 | sort -u -k1,2 | tr " " "\t" | $BEDTOOLS sort| $BEDTOOLS merge -c 4,5,6 -o distinct,collapse,first | awk -F"\t" '{print $1"\t"$2"\t"$3"\t"$4"\t0\t"$6}' | $STARK_BED_NORMALIZATION > $BEDFILE_GENES_ONE;
+						echo $(basename $BEDFILE_GENES_ONE) > $BEDFILE_GENES_LIST_ONE;
+					else
+						(($VERBOSE)) && echo "#[ERROR] Generating GENES failed";
+					fi;
+
+					rm -f $BEDFILE_GENES_INTERMEDIATE*
+					# ADD GENES in input files
+					G=$BEDFILE_GENES_ONE
+
 				fi;
 
-				if [ -s $BEDFILE_GENES_INTERMEDIATE ] ; then
-					(($VERBOSE)) && echo "#[INFO] Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' with intersection between Design file '$B' and RefSeq '$REFSEQ_GENES'."
-					#echo "MANIFEST.bed to bedfile_genes_list : $bedfile_genes_list";
-					$BEDTOOLS intersect -wb -a $BEDFILE_GENES_INTERMEDIATE -b $REFSEQ_GENES | cut -f8 | sort -u > $BEDFILE_GENES_INTERMEDIATE.intersect;
-					sort -k5 $REFSEQ_GENES > $BEDFILE_GENES_INTERMEDIATE.refseq;
-					join -1 1 -2 5 $BEDFILE_GENES_INTERMEDIATE.intersect $BEDFILE_GENES_INTERMEDIATE.refseq -o 2.1,2.2,2.3,2.5 | sort -u -k1,2 | tr " " "\t" | awk -F"\t" '{print $1"\t"$2"\t"$3"\t+\t"$4}' | $STARK_FOLDER_BIN/bed_normalization.awk > $BEDFILE_GENES_ONE;
-					echo $(basename $BEDFILE_GENES_ONE) > $BEDFILE_GENES_LIST_ONE;
-				else
-					(($VERBOSE)) && echo "#[ERROR] Generating GENES failed";
-				fi;
-
-				rm -f $BEDFILE_GENES_INTERMEDIATE*
-				# ADD GENES in input files
-				G=$BEDFILE_GENES_ONE
-
+			else
+				echo "#[INFO] LIST.GENES already exists."
 			fi;
-
-		else
-			echo "#[INFO] LIST.GENES already exists."
 		fi;
+
 
 		# Create genes.bed from genes
 		echo "#[INFO] Generate genes.bed from .genes files within LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes'."
-		for BEDFILE_GENES_LIST_ONE_GENES_FILE in $(cat $BEDFILE_GENES_LIST_ONE); do
-			cp -p $RUN_SAMPLE_DIR/$BEDFILE_GENES_LIST_ONE_GENES_FILE $RUN_SAMPLE_DIR/$BEDFILE_GENES_LIST_ONE_GENES_FILE.bed
-		done;
+		if [ -e $BEDFILE_GENES_LIST_ONE ]; then
+			for BEDFILE_GENES_LIST_ONE_GENES_FILE in $(cat $BEDFILE_GENES_LIST_ONE); do
+				cp -p $RUN_SAMPLE_DIR/$BEDFILE_GENES_LIST_ONE_GENES_FILE $RUN_SAMPLE_DIR/$BEDFILE_GENES_LIST_ONE_GENES_FILE.bed
+			done;
+		fi;
 
 
 		# Copy TRANSCRIPTS

@@ -668,12 +668,14 @@ if ((1)); then
 				echo \$\$line | awk '{print \$\$10}' | tr \",\" \"\\n\" | grep -v '^\$\$' > $TMP_DATABASES_DOWNLOAD_RAM/refGene.unsorted.bed.NM1 ; \
 				echo \$\$line | awk '{print \$\$11}' | tr \",\" \"\\n\" | grep -v '^\$\$' > $TMP_DATABASES_DOWNLOAD_RAM/refGene.unsorted.bed.NM2; \
 				paste $TMP_DATABASES_DOWNLOAD_RAM/refGene.unsorted.bed.NM1 $TMP_DATABASES_DOWNLOAD_RAM/refGene.unsorted.bed.NM2 | while read SS ; do \
-					echo -e \"\$\$CHROM\t\$\$SS\t\$\$STRAND\t\$\$GENE\t\$\$NM\" >> $DB_TMP/refGene.unsorted.bed; \
+					echo -e \"\$\$CHROM\t\$\$SS\t\$\$GENE\t\$\$NM\t\$\$STRAND\" >> $DB_TMP/refGene.unsorted.bed; \
 				done; \
 			done
 			cat $DB_TMP/refGene.unsorted.bed | sort -k1,1V -k2,2n -k3,3n > $DB_TMP/$DB_RELEASE_FILE
 			#rm -f $DB_RELEASE_FILE_PATH_TXT.NM1 $DB_RELEASE_FILE_PATH_TXT.NM2;
 		" >> $MK
+
+		# echo -e \"\$\$CHROM\t\$\$SS\t\$\$STRAND\t\$\$GENE\t\$\$NM\" >> $DB_TMP/refGene.unsorted.bed; \
 
 		# Generates refGene genes file from bed file
 		echo "$DB_RELEASE_FILE_PATH: $DBFOLDER $DB_TMP/$DB_RELEASE_FILE

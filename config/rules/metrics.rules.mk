@@ -99,7 +99,8 @@ CAP_METRICS_OPTIONS?=$(CAP_METRICS_OPTIONS_CLIP_OVERLAPPING_READS) $(CAP_METRICS
 %.bam.bed: %.bam %.bam.bai
 	#BAM.BED from BAM
 	# samtools view P1335.bwamem.bam -b | /STARK/tools/bedtools/current/bin/bedtools genomecov -ibam stdin -bg | /STARK/tools/bedtools/current/bin/bedtools merge -i stdin
-	$(BEDTOOLS) bamtobed -i $< | $(BEDTOOLS) merge -i - | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$1":"$$2"-"$$3}' > $@
+	#$(BEDTOOLS) bamtobed -i $< | $(BEDTOOLS) merge -i - | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$1":"$$2"-"$$3}' > $@
+	$(BEDTOOLS) bamtobed -i $< | $(BEDTOOLS) merge -i - | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$1":"$$2"-"$$3}' > $@
 
 
 
@@ -132,26 +133,6 @@ CAP_METRICS_OPTIONS?=$(CAP_METRICS_OPTIONS_CLIP_OVERLAPPING_READS) $(CAP_METRICS
 	+if [ "`grep ^ -c $*.metrics.bed`" == "0" ] && [ "`grep ^ -c $*.metrics.region_clipped.bed`" == "0" ]; then \
 		echo "# No BED file provided... BED from the BAM file"; \
 		cp $*.bam.bed $@; \
-		if ((0)); then \
-			if (($$($(SAMTOOLS) idxstats $< | awk '{SUM+=$$3+$$4} END {print SUM}'))); then \
-				rm -f $<.genomeCoverageBed.mk $<.genomeCoverageBed1.mk $<.genomeCoverageBed2.mk $<.genomeCoverageBed3.mk; \
-				for chr in $$($(SAMTOOLS) idxstats $< | grep -v "\*" | awk '{ if ($$3+$$4>0) print $$1 }'); do \
-					echo "$<.genomeCoverageBed.$$chr.bed: $<" >> $<.genomeCoverageBed1.mk; \
-					#echo "	$(SAMTOOLS) view $< -b "$$chr" | $(BEDTOOLS)/genomeCoverageBed -ibam stdin -bg | $(BEDTOOLS)/mergeBed -i - | awk -F'\t' '{print "'$$1"\t"$$2"\t"$$3"\t+\t\"$$1"_"$$2"_"$$3'"}' > $<.genomeCoverageBed."$$chr".bed " >> $<.genomeCoverageBed1.mk; \
-					echo "	$(SAMTOOLS) view $< -b "$$chr" | $(BEDTOOLS) genomecov -ibam stdin -bg | $(BEDTOOLS) merge -i - > $<.genomeCoverageBed."$$chr".bed " >> $<.genomeCoverageBed1.mk; \
-					echo -n " $<.genomeCoverageBed.$$chr.bed" >> $<.genomeCoverageBed2.mk; \
-				done; \
-				echo -n "$@.tmp: " | cat - $<.genomeCoverageBed2.mk > $<.genomeCoverageBed3.mk; \
-				echo ""  >> $<.genomeCoverageBed3.mk; \
-				echo "	cat $$^ > $@.tmp " >> $<.genomeCoverageBed3.mk; \
-				echo "	-rm -f $$^ " >> $<.genomeCoverageBed3.mk; \
-				cat $<.genomeCoverageBed1.mk $<.genomeCoverageBed3.mk >> $<.genomeCoverageBed.mk; \
-				make -j $(THREADS) -i -f $<.genomeCoverageBed.mk $@.tmp 1>$<.genomeCoverageBed.mk.log 2>$<.genomeCoverageBed.mk.err; \
-				awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$1"_"$$2"_"$$3}' $@.tmp > $@ ; \
-				#rm $@.tmp ; \
-				rm $<.genomeCoverageBed*.mk; \
-			fi; \
-		fi; \
 	else \
 		echo "# BED file provided..."; \
 		echo "# Extract BAM Header"; \
@@ -190,7 +171,8 @@ CAP_METRICS_OPTIONS?=$(CAP_METRICS_OPTIONS_CLIP_OVERLAPPING_READS) $(CAP_METRICS
 		echo "[INFO] File '$@' generated from '$<'"; \
 		grep ^@ $< > $@; \
 		grep -v ^@ $< > $*.withoutheader.for_metrics_bed.3fields.bed; \
-		cat $*.withoutheader.for_metrics_bed.3fields.bed | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$1":"$$2"-"$$3}' >> $@; \
+		#cat $*.withoutheader.for_metrics_bed.3fields.bed | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$1":"$$2"-"$$3}' >> $@; \
+		cat $*.withoutheader.for_metrics_bed.3fields.bed | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$1":"$$2"-"$$3}' >> $@; \
 		rm $*.withoutheader.for_metrics_bed.3fields.bed; \
 	fi;
 	if [ ! -e $@ ]; then touch $@; fi
@@ -296,8 +278,6 @@ CAP_METRICS_OPTIONS?=$(CAP_METRICS_OPTIONS_CLIP_OVERLAPPING_READS) $(CAP_METRICS
 	#cat $(@D)/$(*F).amplicon_coverage.log $(@D)/$(*F).HsMetrics.per_amplicon_coverage.err;
 	echo "#[INFO] BAM Amplicon Coverage Metrics done" > $@;
 
-#+$(CAP) --function=coverage --env=$(CONFIG_TOOLS) --ref=$$(cat $*.genome) --bam=$< --output=$(@D)/$(*F).HsMetrics.per_amplicon_coverage.tmp --manifest=$*.manifest --threads=$(THREADS) $(CAP_METRICS_OPTIONS_CLIP_OVERLAPPING_READS) --bedtools=$(BEDTOOLS) --verbose --tmp=$(CAP_TMP_FOLDER) 1>$(@D)/$(*F).HsMetrics.per_amplicon_coverage.log 2>$(@D)/$(*F).HsMetrics.per_amplicon_coverage.err;
-
 
 #%.validation.bam %.validation.bam.bai
 
@@ -353,7 +333,8 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 	for one_bed in $$(cat $*.list.genes) $*.design.bed; do \
 		if [ -s $$one_bed ]; then \
 			#awk -F"\t" '{print $$1"\t"$$2-1"\t"$$3"\t"$$5}' $$one_bed > $(@D)/$(*F).$$(basename $$one_bed).4fields ; \
-			awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$5}' $$one_bed > $(@D)/$(*F).$$(basename $$one_bed).4fields ; \
+			#awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$5}' $$one_bed > $(@D)/$(*F).$$(basename $$one_bed).4fields ; \
+			awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$4}' $$one_bed > $(@D)/$(*F).$$(basename $$one_bed).4fields ; \
 			$(JAVA) $(JAVA_FLAGS_BY_SAMPLE) -jar $(PICARD) BedToIntervalList I=$(@D)/$(*F).$$(basename $$one_bed).4fields O=$(@D)/$(*F).$$(basename $$one_bed).interval SD=$$(cat $*.dict); \
 			$(JAVA) $(JAVA_FLAGS_BY_SAMPLE) -jar $(PICARD) CollectHsMetrics INPUT=$*.validation.bam OUTPUT=$(@D)/$(*F).$$(basename $$one_bed).HsMetrics R=$$(cat $*.genome) BAIT_INTERVALS=$(@D)/$(*F).$$(basename $$one_bed).interval TARGET_INTERVALS=$(@D)/$(*F).$$(basename $$one_bed).interval PER_TARGET_COVERAGE=$(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_target_coverage.tmp PER_BASE_COVERAGE=$(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp $(PICARD_CollectHsMetrics_PARAM) VALIDATION_STRINGENCY=SILENT 2>$(@D)/$(*F).$$(basename $$one_bed).HsMetrics.err ; \
 			# fLAG HsMetrics per_target_coverage \
@@ -605,8 +586,6 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 ########
 
 
-# cat F09.fastp.json | python -c "import sys, json; print json.load(sys.stdin)['summary']['before_filtering']['q30_rate']"
-
 %.sequencing/metrics.Q30: %.sequencing
 	cat $(@D)/*.fastp.json | python -c "import sys, json; print json.load(sys.stdin)['summary']['after_filtering']['q30_rate']" > $@.txt
 	echo "#[INFO] Q30 calculation done. See 'metrics.Q30.txt' file." > $@;
@@ -742,8 +721,6 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 %.vcf.metrics/metrics.genes: %.vcf.gz %.vcf.gz.tbi %.list.genes
 	mkdir -p $(@D);
 	> $@;
-	echo "LIST_GENES:"
-	cat $*.list.genes;
 	+for one_bed in $$(cat $*.list.genes) $*.design.bed; do \
 		#cat "ONE_BED: "$$one_bed; \
 		if [ -s $$one_bed ]; then \
@@ -774,7 +751,6 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 
 %.list.genes: %.bed %.manifest %.bams.for_metrics_bed
 	mkdir -p $(@D);
-	#touch $@;
 	+if [ ! -s $@ ]; then \
 		if [ -s $$(sample=$$(basename $* | cut -d. -f1 ); echo "$(*D)/$$sample.list.genes") ] ; then \
 			echo "BEDFILE_GENES for $* from SAMPLE.list.genes in same directory"; \
@@ -803,29 +779,31 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 			done; \
 		else \
 			echo "BEDFILE_GENES for $* generated from SAMPLE.bed, SAMPLE.manifest or from BAMs"; \
-			bedfile_genes_list=`file=$$( echo $* | cut -d. -f1 ); echo "$$file.from_design.genes"`; \
+			bedfile_genes_list=`file=$$( basename $* | cut -d. -f1 ); echo "$$file.from_design.genes"`; \
 			# Look for defined Design (bed or manifest) \
 			if [ -s $*.bed ] ; then \
 				#echo "genes from BED '$$bed'" >> $*.test; \
 				cut -f1,2,3 $*.bed > $@.manifest.bed ; \
-				bedfile_genes_list=`file=$$( echo $* | cut -d. -f1 ); echo "$$file.from_bed.genes"`; \
+				bedfile_genes_list=`file=$$( basename $* | cut -d. -f1 ); echo "$$file.from_bed.genes"`; \
 			#elif [ -s `echo "$$manifest"` ] ; then \
 			elif [ -s $*.manifest ] ; then \
 				# manifest to bed ; \
 				$(CAP_ManifestToBED) --input "$*.manifest" --output "$@.manifest.bed.tmp" --output_type "region" --type=PCR; \
 				cut -f1,2,3 $@.manifest.bed.tmp > $@.manifest.bed ; \
-				bedfile_genes_list=`file=$$( echo $* | cut -d. -f1 ); echo "$$file.from_manifest.genes"`; \
+				bedfile_genes_list=`file=$$( basename $* | cut -d. -f1 ); echo "$$file.from_manifest.genes"`; \
 				#rm $@.manifest.bed.tmp ; \
 			elif [ -s $*.bams.for_metrics_bed ] ; then \
 				cut -f1,2,3 $*.bams.for_metrics_bed > $@.manifest.bed ; \
-				bedfile_genes_list=`file=$$( echo $* | cut -d. -f1 ); echo "$$file.from_alignments.genes"`; \
+				bedfile_genes_list=`file=$$( basename $* | cut -d. -f1 ); echo "$$file.from_alignments.genes"`; \
 			fi; \
 			# Generate BEDGENES \
 			if [ -s $@.manifest.bed ] ; then \
-				echo "MANIFEST.bed to bedfile_genes_list : $bedfile_genes_list"; \
-				$(BEDTOOLS) intersect -wb -a $@.manifest.bed -b $(REFSEQ_GENES) | cut -f8 | sort -u > $@.manifest.bed.intersect; \
-				sort -k5 $(REFSEQ_GENES) > $@.manifest.bed.refseq; \
-				join -1 1 -2 5 $@.manifest.bed.intersect $@.manifest.bed.refseq -o 2.1,2.2,2.3,2.5 | sort -u -k1,2 | tr " " "\t" | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$4}' > $$bedfile_genes_list; \
+				echo "MANIFEST.bed to bedfile_genes_list : $$bedfile_genes_list"; \
+				$(BEDTOOLS) intersect -wb -a $@.manifest.bed -b $(REFSEQ_GENES) | cut -f7 | sort -u > $@.manifest.bed.intersect; \
+				#sort -k5 $(REFSEQ_GENES) > $@.manifest.bed.refseq; \
+				sort -k4 $(REFSEQ_GENES) > $@.manifest.bed.refseq; \
+				#join -1 1 -2 5 $@.manifest.bed.intersect $@.manifest.bed.refseq -o 2.1,2.2,2.3,2.5 | sort -u -k1,2 | tr " " "\t" | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$4}' > $$bedfile_genes_list; \
+				join -1 1 -2 4 $@.manifest.bed.intersect $@.manifest.bed.refseq -o 2.1,2.2,2.3,2.4,2.5,2.6 | sort -u -k1,2 | tr " " "\t" | $(BEDTOOLS) sort | $(BEDTOOLS) merge -c 4,5,6 -o distinct,collapse,first | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$4"\t0\t"$$6}' | $(STARK_BED_NORMALIZATION) > $$bedfile_genes_list; \
 				#rm -f $*.manifest.bed.intersect $*.manifest.bed.refseq; \
 			else \
 				#echo "" > $$bedfile_genes_list ; \
@@ -837,6 +815,8 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 		fi; \
 		echo "bed_file list is : `echo $$bedfile_genes_list` "; \
 		echo $$bedfile_genes_list | tr " " "\n" > $@ ; \
+		#echo "List of genes list: "; cat $@ ; \
+		#echo "List of genes: "; cat $$bedfile_genes_list ; \
 	else \
 		echo "BEDFILE_GENES exists!!! "; \
 	fi;
@@ -876,14 +856,17 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 
 # Global run metrics (Sam)
 #############################
-%.reads.metrics: $(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(foreach PIPELINE,$(PIPELINES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).$(call aligner,$(PIPELINE)).bam.metrics/metrics ))
+%.reads.metrics: $(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(foreach PIPELINE,$(PIPELINES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).$(call aligner,$(PIPELINE)).bam.metrics/metrics )) #$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).list.genes )
 	# creates different files in the run directory:
 	# <run>.reads.metrics
 	# <run>.genes.metrics
 	# <run>.design.metrics
 	# <run>.amplicon.metrics if applicable
 	# see python script for documentation
-	$(PYTHON3) $(STARK_FOLDER_BIN)/runmetrics.py --metricsFileList $$(echo $^ | tr " " ",") --outputPrefix $*. ;
+	#echo "reads.metrics test: ";
+	#ls -l $$(dirname $@)/*/*.list.genes;
+	#cat $$(dirname $@)/*/*.list.genes;
+	$(PYTHON3) $(STARK_RUN_METRICS) --metricsFileList $$(echo $^ | tr " " ",") --outputPrefix $*. ;
 	touch $@;
 
 
