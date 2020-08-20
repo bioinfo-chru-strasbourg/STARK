@@ -7,16 +7,17 @@
 
 SCRIPT_NAME="STARK_DEJAVU"
 SCRIPT_DESCRIPTION="STARK DEJAVU ANNOVAR databases generation"
-SCRIPT_RELEASE="0.9.2b"
-SCRIPT_DATE="02/11/2017"
+SCRIPT_RELEASE="0.10.0"
+SCRIPT_DATE="12/08/2020"
 SCRIPT_AUTHOR="Antony Le Bechec"
-SCRIPT_COPYRIGHT="IRC"
-SCRIPT_LICENCE="GNU-GPL"
+SCRIPT_COPYRIGHT="HUS"
+SCRIPT_LICENCE="GNU-AGPL"
 
 # Realse note
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9b-05/09/2017: Script creation\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.1b-07/09/2017: Add generation of ANNOVAR generic database.\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.2b-02/11/2018: Use BCFTOOLS instead of VCFTOOLS.\n";
+RELEASE_NOTES=$RELEASE_NOTES"# 0.10.0-12/08/2020: Many changes.\n";
 
 # Script folder
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -62,7 +63,7 @@ header;
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
-ARGS=$(getopt -o "e:r:uvdnh" --long "update,app_folder:,application_folder:,repo_folder:,repo_folder:,tmp:,bcftools:,tabix:,bgzip:,annovar:,verbose,debug,release,help" -- "$@" 2> /dev/null)
+ARGS=$(getopt -o "e:r:uvdnh" --long "update,app_folder:,application_folder:,repo_folder:,dejavu_folder:,dejavu_annotation:,tmp:,bcftools:,tabix:,bgzip:,annovar:,verbose,debug,release,help" -- "$@" 2> /dev/null)
 
 eval set -- "$ARGS"
 while true
@@ -82,6 +83,10 @@ do
 			;;
 		--dejavu_folder)
 			DEJAVU_FOLDER="$2";
+			shift 2
+			;;
+		--dejavu_annotation)
+			DEJAVU_ANNOTATION="$2";
 			shift 2
 			;;
 		--tmp)
@@ -163,6 +168,8 @@ if [ -z "$BGZIP" ]; then
     BGZIP="bgzip"
 fi;
 
+# DEJAVU ANNOTATION
+#DEJAVU_ANNOTATION=ALL
 
 # DEJAVU
 DEJAVU=$DEJAVU_FOLDER
@@ -174,6 +181,10 @@ mkdir -p $DEJAVU/$RELEASE
 
 ASSEMBLY_PREFIX_DEFAULT="hg19"
 
+
+# VCF pattern
+
+VCF_PATTERN=".final.vcf.gz"
 
 
 # INFO SUFFIX (e.g. release): $PREFIX_dejavu.$GROUP.$PROJECT$SUFFIX.txt
@@ -292,6 +303,10 @@ GP_FOLDER_LIST_UNIQ_COUNT=$(echo $GP_FOLDER_LIST_UNIQ | wc -w)
 (($VERBOSE)) && echo "#"
 (($VERBOSE)) && echo "#[INFO] DEJAVU database file copy"
 
+(($DEBUG)) && echo "#[INFO] DEJAVU database file pattern '$VCF_PATTERN'"
+
+
+
 for GP_FOLDER in $GP_FOLDER_LIST_UNIQ; do
 
 	REPO=$(dirname $(dirname $GP_FOLDER))
@@ -299,7 +314,8 @@ for GP_FOLDER in $GP_FOLDER_LIST_UNIQ; do
 	PROJECT=$(basename $GP_FOLDER)
 
 	# NB VARIANT
-	NB_VCF=$(find $GP_FOLDER/*/*/ -maxdepth 1 -name '*.final.vcf.gz' -a ! -name '*.*-*.final.vcf.gz' 2>/dev/null | wc -l)
+	#NB_VCF=$(find $GP_FOLDER/*/*/ -maxdepth 1 -name '*.final.vcf.gz' -a ! -name '*.*-*.final.vcf.gz' 2>/dev/null | wc -l)
+	NB_VCF=$(find $GP_FOLDER/*/*/ -maxdepth 1 -name '*'$VCF_PATTERN -a ! -name '*.*-*'$VCF_PATTERN 2>/dev/null | wc -l)
 
 	(($VERBOSE)) && echo "#[INFO] DEJAVU database '$GROUP/$PROJECT' repository '$REPO' $NB_VCF VCF found"
 
@@ -310,9 +326,9 @@ for GP_FOLDER in $GP_FOLDER_LIST_UNIQ; do
 
 		# TMP folder creation
 		mkdir -p $TMP/$GROUP/$PROJECT
-		cp -f $(find $GP_FOLDER/*/*/ -maxdepth 1 -name '*.final.vcf.gz' -a ! -name '*.*-*.final.vcf.gz') $TMP/$GROUP/$PROJECT/ 2>/dev/null
-		NB_VCF_FOUND=$(ls $TMP/$GROUP/$PROJECT/ | wc -w)
-		#(($VERBOSE)) && echo "#[INFO] DEJAVU database '$GROUP/$PROJECT' $NB_VCF_FOUND VCF copied files (some files may be found multiple times)"
+		cp -f $(find $GP_FOLDER/*/*/ -maxdepth 1 -name '*'$VCF_PATTERN -a ! -name '*.*-*'$VCF_PATTERN) $TMP/$GROUP/$PROJECT/ 2>/dev/null
+		NB_VCF_FOUND=$(ls $TMP/$GROUP/$PROJECT/*.vcf.gz | wc -w)
+		(($VERBOSE)) && echo "#[INFO] DEJAVU database '$GROUP/$PROJECT' $NB_VCF_FOUND VCF considered files (some files may be found multiple times)"
 		
 	fi;
 
@@ -351,29 +367,42 @@ for GP_FOLDER in $GP_FOLDER_LIST_UNIQ; do
 		for VCF in $TMP/$GROUP/$PROJECT/*; do
 			#echo "VCF: "$VCF
 			if [ -s $VCF ] && (($(grep ^# -cv $VCF))); then
-
-				echo "$VCF.gz: $VCF $VCF.tbi
+				echo "$VCF.simple.vcf.gz: $VCF
 				mkdir $<.sort.
-				$BCFTOOLS sort $< -T $<.sort. 2>/dev/null | $BCFTOOLS annotate -x FILTER,QUAL,^INFO/AN,^FORMAT/GT -o \$@ -O z 2>/dev/null;
+				$BCFTOOLS norm -m -any -c s --fasta-ref $GENOMES/current/$ASSEMBLY.fa | $BCFTOOLS +fixploidy $< -- -f 2 | $BCFTOOLS +setGT  -- -t . -n 0 | $BCFTOOLS sort -T $<.sort. 2>/dev/null | $BCFTOOLS annotate -x FILTER,QUAL,ID,INFO,^FORMAT/GT -o \$@ -O z 2>/dev/null;
+				#$BCFTOOLS norm -m +any -c s --fasta-ref $GENOMES/current/$ASSEMBLY.fa $< | $BCFTOOLS norm -m -any -c s --fasta-ref $GENOMES/current/$ASSEMBLY.fa | $BCFTOOLS sort -T $<.sort. 2>/dev/null | $BCFTOOLS annotate -x FILTER,QUAL,ID,^INFO/AN,^FORMAT/GT -o \$@ -O z 2>/dev/null;
 				$TABIX \$@;
 				rm -f $<.sort.*
-				
 
 				" >> $MK
-				VCFGZ_LIST="$VCFGZ_LIST $VCF.gz"
+				VCFGZ_LIST="$VCFGZ_LIST $VCF.simple.vcf.gz"
 				((VCFGZ_NB++))
 				#| sed s/ID=PL,Number=G/ID=PL,Number=./gi
 			fi;
 		done
 
 		
-		echo "$TMP/$GROUP/$PROJECT/dejavu.vcf: $VCFGZ_LIST
+		echo "$TMP/$GROUP/$PROJECT/dejavu.simple.vcf: $VCFGZ_LIST
 		if [ $VCFGZ_NB -gt 1 ]; then \
-			$BCFTOOLS merge $TMP/$GROUP/$PROJECT/*.vcf.gz | $BCFTOOLS norm -m -any > \$@; \
+			$BCFTOOLS merge $TMP/$GROUP/$PROJECT/*.simple.vcf.gz | $BCFTOOLS norm -m -any | $BCFTOOLS +setGT  -- -t . -n 0 | $BCFTOOLS +fill-tags -- -t AN,AC,AF > \$@; \
 		else \
-			$BCFTOOLS norm -m -any $VCFGZ_LIST > \$@; \
+			$BCFTOOLS norm -m -any $VCFGZ_LIST | $BCFTOOLS +setGT  -- -t . -n 0 | $BCFTOOLS +fill-tags -- -t AN,AC,AF > \$@; \
 		fi;
 		" >> $MK
+
+		if [ "$DEJAVU_ANNOTATION" != "" ]; then
+			echo "$TMP/$GROUP/$PROJECT/dejavu.vcf: $TMP/$GROUP/$PROJECT/dejavu.simple.vcf
+				#+$HOWARD --input=$< --output=\$@ --config=$HOWARD_CONFIG --config_annotation=$HOWARD_CONFIG_ANNOTATION  --annotation=$HOWARD_ANNOTATION --calculation=$HOWARD_CALCULATION --nomen_fields=$HOWARD_NOMEN_FIELDS --annovar_folder=$ANNOVAR --annovar_databases=$ANNOVAR_DATABASES --snpeff_jar=$SNPEFF --snpeff_databases=$SNPEFF_DATABASES --multithreading --threads=$THREADS --snpeff_threads=$THREADS --tmp=$TMP_FOLDER_TMP --env=$CONFIG_TOOLS
+				+$HOWARD --input=$< --output=\$@.annotated.vcf --config=$HOWARD_CONFIG --config_annotation=$HOWARD_CONFIG_ANNOTATION  --annotation=$DEJAVU_ANNOTATION --calculation=$HOWARD_CALCULATION --nomen_fields=$HOWARD_NOMEN_FIELDS --annovar_folder=$ANNOVAR --annovar_databases=$ANNOVAR_DATABASES --snpeff_jar=$SNPEFF --snpeff_databases=$SNPEFF_DATABASES --multithreading --threads=$THREADS --snpeff_threads=$THREADS --tmp=$TMP_FOLDER_TMP --env=$CONFIG_TOOLS
+				$BCFTOOLS annotate -x INFO/AN,INFO/AC,INFO/AF \$@.annotated.vcf | $BCFTOOLS +fill-tags -- -t AN,AC,AF  > \$@;
+				rm \$@.annotated.vcf
+			" >> $MK
+			# --multithreading --threads=$THREADS
+		else
+			echo "$TMP/$GROUP/$PROJECT/dejavu.vcf: $TMP/$GROUP/$PROJECT/dejavu.simple.vcf
+				cp $TMP/$GROUP/$PROJECT/dejavu.simple.vcf $TMP/$GROUP/$PROJECT/dejavu.vcf
+			" >> $MK
+		fi;
 
 		echo "$TMP/$GROUP/$PROJECT/VCF_LIST: $VCFGZ_LIST
 		ls $^ > $TMP/$GROUP/$PROJECT/VCF_LIST
@@ -395,7 +424,8 @@ for GP_FOLDER in $GP_FOLDER_LIST_UNIQ; do
 
 		#echo "$DEJAVU/$RELEASE/dejavu.$GROUP.$PROJECT.txt: $TMP/$GROUP/$PROJECT/dejavu.vcf
 		echo "$TMP/$GROUP/$PROJECT/dejavu.percent: $TMP/$GROUP/$PROJECT/dejavu.vcf
-			$BCFTOOLS query -f'%CHROM\t%POS\t%REF\t%ALT\t%AN\n' $< | awk -F'\t' '{AF=\$\$5/($NB_VCF_FOUND*2)} {print \$\$1\"\\t\"\$\$2\"\\t\"\$\$3\"\\t\"\$\$4\"\\t\"AF}' > \$@
+			#$BCFTOOLS query -f'%CHROM\t%POS\t%REF\t%ALT\t%AN\n' $< | awk -F'\t' '{AF=\$\$5/($NB_VCF_FOUND*2)} {print \$\$1\"\\t\"\$\$2\"\\t\"\$\$3\"\\t\"\$\$4\"\\t\"AF}' > \$@
+			$BCFTOOLS query -f'%CHROM\t%POS\t%REF\t%ALT\t%AF\n' $< > \$@
 
 		" >> $MK
 
@@ -484,6 +514,10 @@ for GP_FOLDER in $GP_FOLDER_LIST_UNIQ; do
 	fi;
 	#fi;
 done
+
+# TODO: Add STARK.database and STARK.database.release
+
+
 
 (($VERBOSE)) && echo "#"
 (($VERBOSE)) && echo "#[INFO] DEJAVU database release '$RELEASE' done."

@@ -434,9 +434,8 @@ GATKRR_FLAGS=
 	# INTERVAL WITH PICARD
 	if [ -s $@.bed ]; then \
 		echo "[INFO] Generate $@ from $@.bed with PICARD BedToIntervalList" ; \
-		#cut $@.bed -f1-3,5 > $@.bed.4fields ; \
-		#awk -F"\t" '{print $$1"\t"$$2-1"\t"$$3"\t"$$5}' $@.bed > $@.bed.4fields ; # BED in 1-based \
-		awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$5}' $@.bed > $@.bed.4fields ; \
+		#awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$5}' $@.bed > $@.bed.4fields ; \
+		awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$4}' $@.bed > $@.bed.4fields ; \
 		$(JAVA) -jar $(PICARD) BedToIntervalList I=$@.bed.4fields O=$@ SD=$$(cat $*.dict) ; \
 		rm $@.bed.4fields ; \
 	fi;
@@ -456,7 +455,8 @@ GATKRR_FLAGS=
 	# BED to Intervals (not needed?)
 	# INTERVAL WITH PICARD
 	if [ -s $< ]; then \
-		cut $< -f1-3,5 > $@.4fields ; \
+		#cut $< -f1-3,5 > $@.4fields ; \
+		awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$4}' $< > $@.4fields ; \
 		$(JAVA) -jar $(PICARD) BedToIntervalList INPUT=$@.4fields OUTPUT=$@ SEQUENCE_DICTIONARY=$$(cat $*.dict) ; \
 		rm $@.4fields ; \
 	fi;
@@ -498,7 +498,8 @@ GATKRR_FLAGS=
 		rm -f $@.tmp $@.sorted.tmp; \
 		$(CAP_ManifestToBED) --input=$< --output=$@.tmp --output_type=region_clipped; \
 		#$(BEDTOOLS) sort -i $@.tmp | $(BEDTOOLS) merge -c 5 -o collapse  | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$4}' > $@; \
-		$(BEDTOOLS) sort -i $@.tmp | $(BEDTOOLS) merge -c 4,5 -o first,collapse  | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$4"\t"$$5}' > $@; \
+		#$(BEDTOOLS) sort -i $@.tmp | $(BEDTOOLS) merge -c 4,5 -o first,collapse  | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$4"\t"$$5}' > $@; \
+		$(BEDTOOLS) sort -i $@.tmp | $(BEDTOOLS) merge -c 4,5 -o first,distinct  | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$5"\t0\t+"}' > $@; \
 		rm -f $@.tmp; \
 	elif [ -e "$(BED)" ] && [ "$(BED)" != "" ]; then \
 		echo "# Input BED '$(BED)' exists" ; \
@@ -585,7 +586,8 @@ GATKRR_FLAGS=
 		echo "# Region Clipped BED for the sample generated from the manifest '$<'" ; \
 		rm -f $@.tmp $@.sorted.tmp; \
 		$(CAP_ManifestToBED) --input=$< --output=$@.tmp --output_type=region_clipped; \
-		$(BEDTOOLS) sort -i $@.tmp | $(BEDTOOLS) merge -c 4,5 -o first,collapse  | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$4"\t"$$5}' > $@; \
+		#$(BEDTOOLS) sort -i $@.tmp | $(BEDTOOLS) merge -c 4,5 -o first,collapse  | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$4"\t"$$5}' > $@; \
+		$(BEDTOOLS) sort -i $@.tmp | $(BEDTOOLS) merge -c 4,5 -o first,distinct | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$5"\t0\t"$$4}' > $@; \
 		rm -f $@.tmp; \
 	else \
 		echo "# Error creating region BED"; \

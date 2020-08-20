@@ -46,7 +46,7 @@
         "ip": "",
         "port": "4201",
         "port_inner": "5000",
-        "path": "static/data/public"
+        "path": ""
       }
     },
     "listener": {

@@ -313,6 +313,10 @@ export HOWARD_REF="inhouse"
 TOOLS_LIST=$TOOLS_LIST" HOWARD"
 
 
+# SCRIPTS
+export STARK_BED_NORMALIZATION=$STARK_FOLDER_BIN/bed_normalization.awk
+export STARK_RUN_METRICS=$STARK_FOLDER_BIN/runmetrics.py
+
 # PERL5LIB
 ENV_PERLLIB=$NGS_FOLDER/tools/perl/lib
 

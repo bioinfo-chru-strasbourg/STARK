@@ -54,7 +54,7 @@ HOWARD_CALCULATION?=VAF,NOMEN,VAF_STATS,VARTYPE
 # HOWARD MINIMAL ANNOTATION
 %.howard_minimal$(POST_ANNOTATION).vcf: %.vcf %.empty.vcf %.transcripts %.genome
 	# Annotation step
-	+$(HOWARD) --input=$< --output=$@ --transcripts=$*.transcripts --config=$(HOWARD_CONFIG) --config_annotation=$(HOWARD_CONFIG_PRIORITIZATION_MINIMAL) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION_MINIMAL) --annotation=$(HOWARD_ANNOTATION_MINIMAL) --calculation=$(HOWARD_CALCULATION_MINIMAL) --nomen_fields=$(HOWARD_NOMEN_FIELDS) --prioritization=$(HOWARD_PRIORITIZATION_MINIMAL) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --norm=$$(cat $*.genome);
+	+$(HOWARD) --input=$< --output=$@ --transcripts=$*.transcripts --config=$(HOWARD_CONFIG) --config_annotation=$(HOWARD_CONFIG_ANNOTATION_MINIMAL) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION_MINIMAL) --annotation=$(HOWARD_ANNOTATION_MINIMAL) --calculation=$(HOWARD_CALCULATION_MINIMAL) --nomen_fields=$(HOWARD_NOMEN_FIELDS) --prioritization=$(HOWARD_PRIORITIZATION_MINIMAL) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --norm=$$(cat $*.genome);
 	-if [ ! -e $@ ]; then cp $*.empty.vcf $@; fi;
 	# Downgrading VCF format 4.2 to 4.1
 	-cat $@ | sed "s/##fileformat=VCFv4.2/##fileformat=VCFv4.1/" > $@.dowgrade.4.2.to.4.1.tmp;

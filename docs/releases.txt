@@ -8,8 +8,8 @@
 #######################################
 
 #######################################
-# Release: 0.9.18.1                   #
-# Date: 20200602                      #
+# Release: 0.9.18.2                   #
+# Date: 20200820                      #
 #######################################
 
 ##################
@@ -19,13 +19,13 @@
 
 ###################
 # STARK - Stellar Tools for variants Analysis and RanKing
-# RELEASE 0.9.18.1 [02/06/2020]
+# RELEASE 0.9.18.2 [02/06/2020]
 # AUTHORS Antony Le Bechec/Amandine Velt/Sinthuja Pachchek/Vincent Zilliox/Samuel Nicaise/Jean Muller
 # COPYRIGHT HUS
 # LICENCE GNU GPLA V3
 ###################
 
-## STARK_RELEASE: 0.9.18.1
+## STARK_RELEASE: 0.9.18.2
 
 ## APP_NAME: DEFAULT
 
@@ -47,8 +47,8 @@
 #######################################
 
 #######################################
-# Release: 0.9.18.1                   #
-# Date: 20200602                      #
+# Release: 0.9.18.2                   #
+# Date: 20200820                      #
 #######################################
 
 ####################
@@ -206,7 +206,7 @@
 # A program for annotating and predicting the effects of single nucleotide polymorphisms, SnpEff: SNPs in the genome of Drosophila melanogaster strain w1118; iso-2; iso-3., Cingolani P, Platts A, Wang le L, Coon M, Nguyen T, Wang L, Land SJ, Lu X, Ruden DM. Fly (Austin). 2012 Apr-Jun;6(2):80-92
 
 
-## STARK [0.9.18.1]
+## STARK [0.9.18.2]
 # Stellar Tools for varaints Analysis and RanKing
 # inhouse
 
@@ -230,8 +230,8 @@
 #######################################
 
 #######################################
-# Release: 0.9.18.1                   #
-# Date: 20200602                      #
+# Release: 0.9.18.2                   #
+# Date: 20200820                      #
 #######################################
 
 ########################
@@ -258,11 +258,11 @@
 #### DATABASES CONFIG ####
 ##########################
 
-## HOWARD_CONFIG: /STARK/tools/stark/0.9.18.1/config/howard/config.ini
+## HOWARD_CONFIG: /STARK/tools/stark/0.9.18.2/config/howard/config.ini
 
-## HOWARD_CONFIG_ANNOTATION: /STARK/tools/stark/0.9.18.1/config/howard/config.annotation.ini
+## HOWARD_CONFIG_ANNOTATION: /STARK/tools/stark/0.9.18.2/config/howard/config.annotation.ini
 
-## HOWARD_CONFIG_PRIORITIZATION: /STARK/tools/stark/0.9.18.1/config/howard/config.prioritization.ini
+## HOWARD_CONFIG_PRIORITIZATION: /STARK/tools/stark/0.9.18.2/config/howard/config.prioritization.ini
 
 ## SNPEFF_CONFIG: /STARK/tools/snpeff/current/bin/snpeff.config
 
@@ -274,7 +274,7 @@
 #### OTHER INFORMATIONS ####
 ############################
 
-## CONFIG FILES: CONFIG=/STARK/tools/stark/0.9.18.1/config/rules/config.mk, FUNCTIONS=/STARK/tools/stark/0.9.18.1/bin/functions.mk, PARAM=/STARK/output/tmp/142689538.param
+## CONFIG FILES: CONFIG=/STARK/tools/stark/0.9.18.2/config/rules/config.mk, FUNCTIONS=/STARK/tools/stark/0.9.18.2/bin/functions.mk, PARAM=/STARK/output/tmp/142689538.param
 
 #################################
 #### INFORMATIONS ON RULES ####

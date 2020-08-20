@@ -5,7 +5,7 @@ STARK module prodives services to run analyses
 * Author: Antony Le Béchec
 * Copyright: HUS/CPS
 * License: GNU GPLA V3
-* Release : 0.9.18.1
+* Release : 0.9.18.2
 * Date : 20200602
 
 
@@ -60,7 +60,7 @@ $ curl http://<ip>:<port>/queue?list # List of analysis running, queued and fini
 **STARK DAta Sharing (DAS)**
 
 
-A STARK DAta Sharing (DAS) web server provides data publically through URI http://\<ip\>:\<port\> (default http://localhost:4201/static/data/public/<path\>). This server may be used with application able to open file through URI (such as IGV), or to share data and files between other STARK modules and services.
+A STARK DAta Sharing (DAS) web server provides data publically through URI http://\<ip\>:\<port\> (default http://localhost:4201/<path\>). This server may be used with application able to open file through URI (such as IGV), or to share data and files between other STARK modules and services.
 
 
 By default, data available are (\<path\>):
