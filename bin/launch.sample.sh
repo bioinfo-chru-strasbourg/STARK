@@ -871,12 +871,12 @@ for RUU in $RUN_UNIQ; do
 				echo "#[INFO] Create Input data from FASTQ file(s)"
 
 				# Create FASTQ
-				$COMMAND_COPY $F $RUN_SAMPLE_DIR/$S.R1.fastq.gz;
-				#$COMMAND_COPY_NO_COMPRESS $F $RUN_SAMPLE_DIR/$S.R1.fastq.gz;
+				#$COMMAND_COPY $F $RUN_SAMPLE_DIR/$S.R1.fastq.gz;
+				$COMMAND_COPY_NO_COMPRESS $F $RUN_SAMPLE_DIR/$S.R1.fastq.gz;
 
 				if [ -s "$F_R2" ]; then
-					$COMMAND_COPY $F_R2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz
-					#$COMMAND_COPY_NO_COMPRESS $F_R2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz
+					#$COMMAND_COPY $F_R2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz
+					$COMMAND_COPY_NO_COMPRESS $F_R2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz
 				else
 					touch $RUN_SAMPLE_DIR/$S.R2.fastq
 					$GZ $RUN_SAMPLE_DIR/$S.R2.fastq
