@@ -682,19 +682,23 @@ if ((1)); then
 			$COPY_MODE_REFSEQ_GENES $DB_TMP/$DB_RELEASE_FILE $DB_RELEASE_FILE_PATH
 		" >> $MK
 		
-		# Generates refGene genes file from bed file
-		echo "$DB_TMP/$DB_RELEASE_FILE_GENES: $DBFOLDER $DB_TMP/$DB_RELEASE_FILE "$(dirname $REF)/$ASSEMBLY.dict"
-			mkdir -p $DB_TMP
-			awk -F'\t' 'substr(\$\$6,1,2)==\"NM\" {print \$\$0}' $DB_TMP/$DB_RELEASE_FILE | grep \$\$(grep \"@SQ\" "$(dirname $REF)/$ASSEMBLY.dict" | cut -f2 | cut -d: -f2 | tr '\n' ' ' | sed 's/chr/ -e ^chr/gi') > $DB_TMP/$DB_RELEASE_FILE_GENES
-		" >> $MK
+		if false; then
 
-		# Generates refGene genes file from bed file
-		echo "$DB_RELEASE_FILE_PATH_GENES: $DBFOLDER $DB_TMP/$DB_RELEASE_FILE_GENES
-			$COPY_MODE_REFSEQ_GENES $DB_TMP/$DB_RELEASE_FILE_GENES $DB_RELEASE_FILE_PATH_GENES
-		" >> $MK
+			# Generates refGene genes file from bed file
+			echo "$DB_TMP/$DB_RELEASE_FILE_GENES: $DBFOLDER $DB_TMP/$DB_RELEASE_FILE "$(dirname $REF)/$ASSEMBLY.dict"
+				mkdir -p $DB_TMP
+				awk -F'\t' 'substr(\$\$6,1,2)==\"NM\" {print \$\$0}' $DB_TMP/$DB_RELEASE_FILE | grep \$\$(grep \"@SQ\" "$(dirname $REF)/$ASSEMBLY.dict" | cut -f2 | cut -d: -f2 | tr '\n' ' ' | sed 's/chr/ -e ^chr/gi') > $DB_TMP/$DB_RELEASE_FILE_GENES
+			" >> $MK
+
+			# Generates refGene genes file from bed file
+			echo "$DB_RELEASE_FILE_PATH_GENES: $DBFOLDER $DB_TMP/$DB_RELEASE_FILE_GENES
+				$COPY_MODE_REFSEQ_GENES $DB_TMP/$DB_RELEASE_FILE_GENES $DB_RELEASE_FILE_PATH_GENES
+			" >> $MK
+
+		fi;
 
 		# Copy in database folder
-		echo "$DB_TARGET: $DB_RELEASE_FILE_PATH $DB_RELEASE_FILE_PATH_TXT $DB_RELEASE_FILE_PATH_GENES
+		echo "$DB_TARGET: $DB_RELEASE_FILE_PATH $DB_RELEASE_FILE_PATH_TXT #$DB_RELEASE_FILE_PATH_GENES
 			# folder
 			mkdir -p $DB_RELEASE_FOLDER
 			chmod 0775 $DB_RELEASE_FOLDER
@@ -709,7 +713,7 @@ if ((1)); then
 			rm -rf $DB_TMP;
 		" >> $MK
 
-		MK_ALL="$MK_ALL $DB_TARGET $DB_RELEASE_FILE_PATH $DB_RELEASE_FILE_PATH_TXT $DB_RELEASE_FILE_PATH_GENES"
+		MK_ALL="$MK_ALL $DB_TARGET $DB_RELEASE_FILE_PATH $DB_RELEASE_FILE_PATH_TXT" #$DB_RELEASE_FILE_PATH_GENES
 
 	fi;
 

@@ -302,6 +302,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 #COMMAND_COPY="rsync -aucqpAXoghi --no-links --no-perms --no-owner --no-group" # "cp -auv" or "rsync -auv" # auvpAXog
 COMMAND_COPY="rsync -auczqAXhi --no-links --no-perms --no-owner --no-group"
+COMMAND_COPY_NO_COMPRESS="rsync -aucqAXhi --no-links --no-perms --no-owner --no-group"
 COMMAND_LINK="ln " # "cp -auv" or "rsync -auv" # auvpAXog
 PERMS="a+rwx"
 
@@ -750,29 +751,7 @@ if [ -z "$APP_NAME" ]; then APP_NAME="UNKNOWN"; fi;
 if [ -z "$SAMPLE_GROUP" ]; then SAMPLE_GROUP="UNKNOWN"; fi;
 if [ -z "$SAMPLE_PROJECT" ]; then SAMPLE_PROJECT="UNKNOWN"; fi;
 
-
-if ((0)); then
-
-	if [ ! -z "$GROUP" ]; then
-		SAMPLE_GROUP=$GROUP
-	else
-		SAMPLE_GROUP=$(echo $APP_NAME | awk -F- '{print $1}');
-	fi;
-	if [ "$SAMPLE_GROUP" == "" ]; then SAMPLE_GROUP="UNKNOWN"; fi;
-	if [ ! -z "$PROJECT" ]; then
-		SAMPLE_PROJECT=$PROJECT
-	else
-		SAMPLE_PROJECT=$(echo $APP_NAME | awk -F- '{print $2}');
-	fi;
-	if [ "$SAMPLE_PROJECT" == "" ]; then SAMPLE_PROJECT="UNKNOWN"; fi;
-
-	SAMPLE_USER=$(echo $APP_NAME | awk -F- '{print $3}'); if [ "$SAMPLE_USER" == "" ]; then SAMPLE_USER="UNKNOWN"; fi;
-
-fi;
-
 if [ -z "$APP_NAME" ]; then APP_NAME="UNKNOWN"; fi;
-
-
 
 
 if (($DEBUG)); then
@@ -893,9 +872,11 @@ for RUU in $RUN_UNIQ; do
 
 				# Create FASTQ
 				$COMMAND_COPY $F $RUN_SAMPLE_DIR/$S.R1.fastq.gz;
+				#$COMMAND_COPY_NO_COMPRESS $F $RUN_SAMPLE_DIR/$S.R1.fastq.gz;
 
 				if [ -s "$F_R2" ]; then
 					$COMMAND_COPY $F_R2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz
+					#$COMMAND_COPY_NO_COMPRESS $F_R2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz
 				else
 					touch $RUN_SAMPLE_DIR/$S.R2.fastq
 					$GZ $RUN_SAMPLE_DIR/$S.R2.fastq
