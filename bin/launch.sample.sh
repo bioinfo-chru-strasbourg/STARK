@@ -1106,7 +1106,7 @@ for RUU in $RUN_UNIQ; do
 						$BEDTOOLS intersect -wb -a $BEDFILE_GENES_INTERMEDIATE -b $REFSEQ_GENES | cut -f7 | sort -u > $BEDFILE_GENES_INTERMEDIATE.intersect;
 						sort -k4 $REFSEQ_GENES > $BEDFILE_GENES_INTERMEDIATE.refseq;
 						# Join
-						join -1 1 -2 4 $BEDFILE_GENES_INTERMEDIATE.intersect $BEDFILE_GENES_INTERMEDIATE.refseq -o 2.1,2.2,2.3,2.4,2.5,2.6 | sort -u -k1,2 | tr " " "\t" | $BEDTOOLS sort| $BEDTOOLS merge -c 4,5,6 -o distinct,collapse,first | awk -F"\t" '{print $1"\t"$2"\t"$3"\t"$4"\t0\t"$6}' | $STARK_BED_NORMALIZATION > $BEDFILE_GENES_ONE;
+						join -1 1 -2 4 $BEDFILE_GENES_INTERMEDIATE.intersect $BEDFILE_GENES_INTERMEDIATE.refseq -o 2.1,2.2,2.3,2.4,2.5,2.6 | sort -u -k1,2 | tr " " "\t" | $BEDTOOLS sort | $BEDTOOLS merge -c 4,5,6 -o distinct,collapse,first | awk -F"\t" '{print $1"\t"$2"\t"$3"\t"$4"\t0\t"$6}' | $STARK_BED_NORMALIZATION > $BEDFILE_GENES_ONE;
 						echo $(basename $BEDFILE_GENES_ONE) > $BEDFILE_GENES_LIST_ONE;
 					else
 						(($VERBOSE)) && echo "#[ERROR] Generating GENES failed";

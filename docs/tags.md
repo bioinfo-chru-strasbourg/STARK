@@ -5,8 +5,8 @@ STARK is a Next-Generation Sequencing data analysis pipeline for clinical diagno
 * Author: Antony Le Béchec
 * Copyright: HUS/CPS
 * License: GNU GPLA V3
-* Release : 0.9.18.1
-* Date : 20200602
+* Release : 0.9.18.2
+* Date : 20200820
 
 
 

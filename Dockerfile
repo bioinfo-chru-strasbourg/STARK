@@ -2,7 +2,7 @@
 ##############################################################
 # Dockerfile Version:   1.1
 # Software:             STARK
-# Software Version:     0.9.18.1
+# Software Version:     0.9.18.2
 # Software Website:     https://gitlab.bioinfo-diag.fr/Strasbourg/STARK
 # Licence:              GNU Affero General Public License (AGPL)
 # Description:          STARK
@@ -40,7 +40,7 @@
 FROM centos:7
 MAINTAINER Antony Le Bechec <antony.lebechec@gmail.com>
 LABEL Software="STARK" \
-	Version="0.9.18.1" \
+	Version="0.9.18.2" \
 	Website="https://gitlab.bioinfo-diag.fr/Strasbourg/STARK" \
 	Description="STARK" \
 	License="GNU Affero General Public License (AGPL)" \
@@ -938,7 +938,7 @@ RUN source $TOOL_INIT && \
 
 # TOOL INFO
 ENV TOOL_NAME="stark"
-ENV TOOL_VERSION="0.9.18.1"
+ENV TOOL_VERSION="0.9.18.2"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
 ENV TOOL="/tool"

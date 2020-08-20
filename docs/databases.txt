@@ -8,8 +8,8 @@
 #######################################
 
 #######################################
-# Release: 0.9.18.1                   #
-# Date: 20200602                      #
+# Release: 0.9.18.2                   #
+# Date: 20200820                      #
 #######################################
 
 ########################
@@ -27,9 +27,9 @@
 ##########################
 #### DATABASES CONFIG ####
 ##########################
-## HOWARD_CONFIG: /STARK/tools/stark/0.9.18.1/config/howard/config.ini
-## HOWARD_CONFIG_ANNOTATION: /STARK/tools/stark/0.9.18.1/config/howard/config.annotation.ini
-## HOWARD_CONFIG_PRIORITIZATION: /STARK/tools/stark/0.9.18.1/config/howard/config.prioritization.ini
+## HOWARD_CONFIG: /STARK/tools/stark/0.9.18.2/config/howard/config.ini
+## HOWARD_CONFIG_ANNOTATION: /STARK/tools/stark/0.9.18.2/config/howard/config.annotation.ini
+## HOWARD_CONFIG_PRIORITIZATION: /STARK/tools/stark/0.9.18.2/config/howard/config.prioritization.ini
 ## SNPEFF_CONFIG: /STARK/tools/snpeff/current/bin/snpeff.config
 ## ANNOVAR_DATABASES: /STARK/databases/annovar
 ## SNPEFF_DATABASES: /STARK/databases/snpeff/4.3t
