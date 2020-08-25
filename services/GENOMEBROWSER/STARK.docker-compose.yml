@@ -37,11 +37,14 @@ services:
 
 networks:
 
-    genomebrowser:
-        driver: "bridge"
-
     stark_stark:
         external: true
 
-
+    genomebrowser:
+        driver: "bridge"
+        ipam:
+            driver: default
+            config:
+                - subnet: ${DOCKER_STARK_SERVICE_SUBNET_PATTERN}${DOCKER_STARK_SERVICE_GENOMEBROWSER_SUBNET}
+                #  gateway: ${DOCKER_STARK_SERVICE_SUBNET_PATTERN}${DOCKER_STARK_SERVICE_GENOMEBROWSER_GATEWAY}
 

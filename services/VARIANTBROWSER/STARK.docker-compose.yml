@@ -39,11 +39,15 @@ services:
 
 networks:
 
-    variantbrowser:
-        driver: "bridge"
-
     stark_stark:
         external: true
 
+    variantbrowser:
+        driver: "bridge"
+        ipam:
+            driver: default
+            config:
+                - subnet: ${DOCKER_STARK_SERVICE_SUBNET_PATTERN}${DOCKER_STARK_SERVICE_VARIANTBROWSER_SUBNET}
+                #  gateway: ${DOCKER_STARK_SERVICE_SUBNET_PATTERN}${DOCKER_STARK_SERVICE_VARIANTBROWSER_GATEWAY}
 
 

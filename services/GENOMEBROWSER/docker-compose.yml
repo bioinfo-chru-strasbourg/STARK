@@ -23,8 +23,17 @@ services:
             - ${IGV_PORT}:${IGV_PORT_INNER}
         deploy:
             replicas: 2
+        networks: 
+            - igv
 
 
+networks:
+    igv:
+        driver: "bridge"
+        ipam:
+            driver: default
+            config:
+                - subnet: 172.42.0.0/30
 
-
+                
 

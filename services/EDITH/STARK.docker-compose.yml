@@ -57,12 +57,15 @@ services:
 
 networks:
     
-    edith:
-        driver: "bridge"
-
     stark_stark:
         external: true
+    
+    edith:
+        driver: "bridge"
+        ipam:
+            driver: default
+            config:
+                - subnet: ${DOCKER_STARK_SERVICE_SUBNET_PATTERN}${DOCKER_STARK_SERVICE_EDITH_SUBNET}
+                #  gateway: ${DOCKER_STARK_SERVICE_SUBNET_PATTERN}${DOCKER_STARK_SERVICE_EDITH_GATEWAY}
 
-
-
-
+    

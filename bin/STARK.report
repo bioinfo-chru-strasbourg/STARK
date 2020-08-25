@@ -788,7 +788,8 @@ LIST_GENE_PANEL="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.list.genes"
 GENE_PANEL_FILES_NAME=$(grep -v "^#" $LIST_GENE_PANEL | tr '\n' ' ' | sed 's/ /<br>/gi')
 #echo $GENE_PANEL_FILES_NAME
 # Gene number
-GENES_NUMBER=$(cd $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/; cat $(cat $LIST_GENE_PANEL) | $STARK_FOLDER_BIN/bed_normalization.awk | cut -f5 | sort -u | wc -l)
+
+GENES_NUMBER=$(cd $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/; cat $(cat $LIST_GENE_PANEL) | $STARK_BED_NORMALIZATION | cut -f4 | sort -u | wc -l)
 GENE_PANEL_NUMBER=$(grep -vc "^#" $LIST_GENE_PANEL)
 # HTML
 if (($GENE_PANEL_NUMBER)); then
@@ -919,11 +920,25 @@ AFTER_TOTAL_SEQUENCES_PERCENT=$(echo "scale = 4; ($AFTER_TOTAL_SEQUENCES / $BEFO
 
 # Q30
 BEFORE_Q30=$(cat $SEQUENCING_FASTP_JSON | $PYTHON2 -c "import sys, json; print json.load(sys.stdin)['summary']['before_filtering']['q30_rate']")
-[ "$BEFORE_Q30" == "1" ] && BEFORE_Q30_HTML="100" || BEFORE_Q30_HTML=$(echo "scale = 2; ($BEFORE_Q30 * 100)/1" | bc | sed s/[0]*$//)
+if [ "$BEFORE_Q30" == "1" ]; then
+	BEFORE_Q30_HTML="100"
+elif [ "$BEFORE_Q30" == "0" ]; then
+	BEFORE_Q30_HTML="0"
+else
+	BEFORE_Q30_HTML=$(echo "scale = 2; ($BEFORE_Q30 * 100)/1" | bc | sed s/[0]*$//)
+fi;
 [ "$BEFORE_Q30_HTML" == "" ] && BEFORE_Q30_HTML="?"
+
 AFTER_Q30=$(cat $SEQUENCING_FASTP_JSON | $PYTHON2 -c "import sys, json; print json.load(sys.stdin)['summary']['after_filtering']['q30_rate']")
-[ "$AFTER_Q30" == "1" ] && AFTER_Q30_HTML="100" || AFTER_Q30_HTML=$(echo "scale = 2; ($AFTER_Q30 * 100)/1" | bc | sed s/[0]*$//)
+if [ "$AFTER_Q30" == "1" ]; then
+	AFTER_Q30_HTML="100"
+elif [ "$AFTER_Q30" == "0" ]; then
+	AFTER_Q30_HTML="0"
+else
+	AFTER_Q30_HTML=$(echo "scale = 2; ($AFTER_Q30 * 100)/1" | bc | sed s/[0]*$//)
+fi;
 [ "$AFTER_Q30_HTML" == "" ] && AFTER_Q30_HTML="?"
+
 
 
 # SEQUENCING TECHNOLOGY
@@ -1075,7 +1090,7 @@ HTML_LOGO="$HTMLFOLDER/$(basename $LOGO)"
 
 
 echo '
-<div class="progress1 pb-5">
+<div class="progress1 pb-4" style="border-style: solid none none none ; border-color: rgb(20, 157, 204); border-radius: 0px;">
 	<div class="title-wrap">
 		<div class="progressbar-title mbr-fonts-style display-7">
 			<p>
@@ -1086,25 +1101,30 @@ echo '
 			<span>100.00%</span>
 		</div>
 	</div>
-	<progress class="progress progress-primary" max="'$BEFORE_TOTAL_SEQUENCES'" value="'$BEFORE_TOTAL_SEQUENCES'">
-	</progress>
+	
 </div>
-<div class="progress1 pb-5">
-	<div class="title-wrap">
-		<div class="progressbar-title mbr-fonts-style display-7">
-			<p>
-				FastQ - Total number of sequenced reads filtered | '$AFTER_TOTAL_SEQUENCES_HTML'
-			</p>
+
+<div style="margin-left:50px;">
+
+	<div class="progress1 pb-4">
+		<progress class="progress progress-primary" max="'$BEFORE_TOTAL_SEQUENCES'" value="'$AFTER_TOTAL_SEQUENCES'"></progress>
+		<div class="title-wrap">
+			<div class="progressbar-title mbr-fonts-style display-7">
+				<p>
+					FastQ - Total number of sequenced reads filtered | '$AFTER_TOTAL_SEQUENCES_HTML'
+				</p>
+			</div>
+			<div class="progress_value mbr-fonts-style display-7">
+				<span>'$AFTER_TOTAL_SEQUENCES_PERCENT'%</span>
+			</div>
 		</div>
-		<div class="progress_value mbr-fonts-style display-7">
-			<span>'$AFTER_TOTAL_SEQUENCES_PERCENT'%</span>
-		</div>
+		
 	</div>
-	<progress class="progress progress-primary" max="'$BEFORE_TOTAL_SEQUENCES'" value="'$AFTER_TOTAL_SEQUENCES'">
-	</progress>
+
 </div>
 ' > $HTMLFILE_SEQUENCING.total_sequences
 
+# <progress class="progress progress-primary" max="'$BEFORE_TOTAL_SEQUENCES'" value="'$BEFORE_TOTAL_SEQUENCES'"></progress>
 
 # ALIGNERS
 
@@ -1116,7 +1136,9 @@ for ALIGNER in $ALIGNERS; do
 
 	# Files
 	DESIGN_FLAGSTAT="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.flagstat"
+	DESIGN_VALIDATION_FLAGSTAT="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.validation.flagstat"
 	DESIGN_ON_TARGET="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$SAMPLE.$ALIGNER.design.bed.on.target"
+	DESIGN_OFF_TARGET="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$SAMPLE.$ALIGNER.design.bed.off.target"
 
 	#(($DEBUG)) && cat $DESIGN_FLAGSTAT;
 
@@ -1136,19 +1158,56 @@ for ALIGNER in $ALIGNERS; do
 	UNIQ_READS_PERCENT=$(awk 'BEGIN{printf("%.2f\n",('$UNIQ_READS'/'$ALIGNER_TOTAL_READS')*100)}')
 
 
+	# paired in sequencing reads
+	PAIRED_IN_SEQUENCING_READS=$(grep " properly paired (" $DESIGN_FLAGSTAT | awk '{print $1+$3}')
+	PAIRED_IN_SEQUENCING_READS_HTML=$(echo $PAIRED_IN_SEQUENCING_READS | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
+	PAIRED_IN_SEQUENCING_READS_PERCENT=$(awk 'BEGIN{printf("%.2f\n",('$PAIRED_IN_SEQUENCING_READS'/'$ALIGNER_TOTAL_READS')*100)}')
+
+
 	# Aligned reads
 	ALIGNED_READS=$(grep " mapped (" $DESIGN_FLAGSTAT | awk '{print $1+$3}')
 	ALIGNED_READS_HTML=$(echo $ALIGNED_READS | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
 	ALIGNED_READS_PERCENT=$(awk 'BEGIN{printf("%.2f\n",('$ALIGNED_READS'/'$ALIGNER_TOTAL_READS')*100)}')
+
+
+	# Properly paired reads
+	PROPERLY_PAIRED_READS=$(grep " properly paired (" $DESIGN_FLAGSTAT | awk '{print $1+$3}')
+	PROPERLY_PAIRED_READS_HTML=$(echo $PROPERLY_PAIRED_READS | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
+	PROPERLY_PAIRED_READS_PERCENT=$(awk 'BEGIN{printf("%.2f\n",('$PROPERLY_PAIRED_READS'/'$ALIGNER_TOTAL_READS')*100)}')
+
+
+	# Validation reads
+	VALIDATION_ALIGNED_READS=$(grep " mapped (" $DESIGN_VALIDATION_FLAGSTAT | awk '{print $1+$3}')
+	VALIDATION_ALIGNED_READS_HTML=$(echo $VALIDATION_ALIGNED_READS | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
+	VALIDATION_ALIGNED_READS_PERCENT=$(awk 'BEGIN{printf("%.2f\n",('$VALIDATION_ALIGNED_READS'/'$ALIGNER_TOTAL_READS')*100)}')
+
+
+	# Validation reads
+	# VALIDATION_READS=$(grep " mapped (" $DESIGN_VALIDATION_FLAGSTAT | awk '{print $1+$3}')
+	# VALIDATION_READS_HTML=$(echo $VALIDATION_READS | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
+	# VALIDATION_READS_PERCENT=$(awk 'BEGIN{printf("%.2f\n",('$VALIDATION_READS'/'$ALIGNER_TOTAL_READS')*100)}')
+
 
 	# On target reads
 	ON_TARGET_READS=$(cat $DESIGN_ON_TARGET)
 	ON_TARGET_READS_HTML=$(echo $ON_TARGET_READS | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
 	ON_TARGET_READS_PERCENT=$(awk 'BEGIN{printf("%.2f\n",('$ON_TARGET_READS'/'$ALIGNER_TOTAL_READS')*100)}')
 
+	# Off target reads
+	OFF_TARGET_READS=$(cat $DESIGN_OFF_TARGET)
+	OFF_TARGET_READS_HTML=$(echo $OFF_TARGET_READS | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
+	OFF_TARGET_READS_PERCENT=$(awk 'BEGIN{printf("%.2f\n",('$OFF_TARGET_READS'/'$ALIGNER_TOTAL_READS')*100)}')
+
+	ONOFF_TARGET_READS=$VALIDATION_ALIGNED_READS #$(echo "$ON_TARGET_READS + $OFF_TARGET_READS" | bc )
+	ONOFF_TARGET_READS_HTML=$VALIDATION_ALIGNED_READS_HTML #$(echo $ONOFF_TARGET_READS | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
+	ONOFF_TARGET_READS_PERCENT=$(awk 'BEGIN{printf("%.2f\n",('$ON_TARGET_READS'/'$ONOFF_TARGET_READS')*100)}')
+	OFFON_TARGET_READS_PERCENT=$(awk 'BEGIN{printf("%.2f\n",('$OFF_TARGET_READS'/'$ONOFF_TARGET_READS')*100)}')
+
 	echo '
 
+		<!--
 		<div class="progress2 pb-5">
+			<progress class="progress progress-primary" color="red" max="'$ALIGNER_TOTAL_READS'" value="'$ALIGNER_TOTAL_READS'"></progress>
 			<div class="title-wrap">
 				<div class="progressbar-title mbr-fonts-style display-7">
 					<p>
@@ -1159,74 +1218,281 @@ for ALIGNER in $ALIGNERS; do
 					<span>'$ALIGNER_TOTAL_READS_PERCENT'%</span>
 				</div>
 			</div>
-			<progress class="progress progress-primary" max="'$ALIGNER_TOTAL_READS'" value="'$ALIGNER_TOTAL_READS'">
-			</progress>
-		</div>
-
-		<div class="progress2 pb-5">
-			<div class="title-wrap">
-				<div class="progressbar-title mbr-fonts-style display-7">
-					<p>
-						BAM - '$ALIGNER' - Duplicated reads | '$DUPLICATES_READS_HTML'
-					</p>
-				</div>
-				<div class="progress_value mbr-fonts-style display-7">
-					<span>'$DUPLICATES_READS_PERCENT'%</span>
-				</div>
-			</div>
-			<progress class="progress progress-primary" max="'$ALIGNER_TOTAL_READS'" value="'$DUPLICATES_READS'">
-			</progress>
-		</div>
-
-
-		<!--
-		<div class="progress2 pb-5">
-			<div class="title-wrap">
-				<div class="progressbar-title mbr-fonts-style display-7">
-					<p>
-						BAM - '$ALIGNER' - Uniq reads | '$UNIQ_READS_HTML'
-					</p>
-				</div>
-				<div class="progress_value mbr-fonts-style display-7">
-					<span>'$UNIQ_READS_PERCENT'%</span>
-				</div>
-			</div>
-			<progress class="progress progress-primary" max="'$ALIGNER_TOTAL_READS'" value="'$UNIQ_READS'">
-			</progress>
 		</div>
 		-->
 
-		<div class="progress3 pb-5">
+		<div class=" pb-4" style="border-style: solid none none none ; border-color: rgb(20, 157, 204); border-radius: 0px;">
 			<div class="title-wrap">
-				<div class="progressbar-title mbr-fonts-style display-7">
+				<div class=" mbr-fonts-style display-7">
 					<p>
-						BAM - '$ALIGNER' - Aligned reads | '$ALIGNED_READS_HTML'
+						BAM - '$ALIGNER' - Total reads | '$ALIGNER_TOTAL_READS_HTML'
 					</p>
 				</div>
-				<div class="progress_value mbr-fonts-style display-7">
-					<span>'$ALIGNED_READS_PERCENT'%</span>
+				<div class="progress_value mbr-fonts-style display-7" style="color:silver">
+					<span>'$ALIGNER_TOTAL_READS_PERCENT'%</span>
 				</div>
 			</div>
-			<progress class="progress progress-primary" max="'$ALIGNER_TOTAL_READS'" value="'$ALIGNED_READS'">
-			</progress>
 		</div>
 
-		<div class="progress4 pb-5">
-			<div class="title-wrap">
-				<div class="progressbar-title mbr-fonts-style display-7">
-					<p>
-						BAM - '$ALIGNER' - On target reads | '$ON_TARGET_READS_HTML'
-					</p>
-				</div>
-				<div class="progress_value mbr-fonts-style display-7">
-					<span>'$ON_TARGET_READS_PERCENT'%</span>
+		<div style="margin-left:50px;">
+		
+			<div class="progress2 pb-4 red">
+				<progress class="progress progress-primary" max="'$ALIGNER_TOTAL_READS'" value="'$DUPLICATES_READS'"></progress>
+				<div class="title-wrap pb-1">
+					<div class="progressbar-title mbr-fonts-style display-7">
+						<p>
+							Duplicated reads | '$DUPLICATES_READS_HTML'
+						</p>
+					</div>
+					<div class="progress_value mbr-fonts-style display-7">
+						<span>'$DUPLICATES_READS_PERCENT'%</span>
+					</div>
+					
+				</div>				
+			</div>
+
+
+
+			<!--
+			<div class="progress2 pb-4">
+				<progress class="progress progress-primary" max="'$ALIGNER_TOTAL_READS'" value="'$UNIQ_READS'"></progress>
+				<div class="title-wrap">
+					<div class="progressbar-title mbr-fonts-style display-7">
+						<p>
+							Uniq reads | '$UNIQ_READS_HTML'
+						</p>
+					</div>
+					<div class="progress_value mbr-fonts-style display-7">
+						<span>'$UNIQ_READS_PERCENT'%</span>
+					</div>
 				</div>
 			</div>
-			<progress class="progress progress-primary" max="'$ALIGNER_TOTAL_READS'" value="'$ON_TARGET_READS'">
-			</progress>
+			-->
+
+			<div class="progress3 pb-4">
+				<progress class="progress progress-primary" max="'$ALIGNER_TOTAL_READS'" value="'$PAIRED_IN_SEQUENCING_READS'"></progress>
+				<div class="title-wrap">
+					<div class="progressbar-title mbr-fonts-style display-7">
+						<p>
+							Properly paired reads | '$PAIRED_IN_SEQUENCING_READS_HTML'
+						</p>
+					</div>
+					<div class="progress_value mbr-fonts-style display-7">
+						<span>'$PAIRED_IN_SEQUENCING_READS_PERCENT'%</span>
+					</div>
+				</div>
+			</div>
+
+			<div class="progress3 pb-4">
+				<progress class="progress progress-primary" max="'$ALIGNER_TOTAL_READS'" value="'$ALIGNED_READS'"></progress>
+				<div class="title-wrap">
+					<div class="progressbar-title mbr-fonts-style display-7">
+						<p>
+							Aligned reads | '$ALIGNED_READS_HTML'
+						</p>
+					</div>
+					<div class="progress_value mbr-fonts-style display-7">
+						<span>'$ALIGNED_READS_PERCENT'%</span>
+					</div>
+				</div>
+			</div>
+
+			<!--
+			<div class="progress3 pb-4">
+				<progress class="progress progress-primary" max="'$ALIGNER_TOTAL_READS'" value="'$PROPERLY_PAIRED_READS'"></progress>
+				<div class="title-wrap">
+					<div class="progressbar-title mbr-fonts-style display-7">
+						<p>
+							Properly paired reads | '$PROPERLY_PAIRED_READS_HTML'
+						</p>
+					</div>
+					<div class="progress_value mbr-fonts-style display-7">
+						<span>'$PROPERLY_PAIRED_READS_PERCENT'%</span>
+					</div>
+				</div>
+			</div>
+			-->
+
+			<div class="progress3 pb-4">
+				<progress class="progress progress-primary" max="'$ALIGNER_TOTAL_READS'" value="'$VALIDATION_ALIGNED_READS'"></progress>
+				<div class="title-wrap">
+					<div class="progressbar-title mbr-fonts-style display-7">
+						<p>
+							Validated Aligned reads | '$VALIDATION_ALIGNED_READS_HTML'
+						</p>
+					</div>
+					<div class="progress_value mbr-fonts-style display-7">
+						<span>'$VALIDATION_ALIGNED_READS_PERCENT'%</span>
+					</div>
+				</div>
+			</div>
+
+			<div style="margin-left:50px;">
+
+				<div class="progress4 pb-4">
+					<progress class="progress progress-primary" max="'$ONOFF_TARGET_READS'" value="'$ON_TARGET_READS'"></progress>
+					<div class="title-wrap">
+						<div class="progressbar-title mbr-fonts-style display-7">
+							<p>
+								Validated Aligned On target reads | '$ON_TARGET_READS_HTML' 
+							</p>
+						</div>
+						<div class="progress_value mbr-fonts-style display-7">
+							<span>'$ONOFF_TARGET_READS_PERCENT'%</span>
+						</div>
+					</div>
+					<br>
+					<progress class="progress progress-primary" max="'$ONOFF_TARGET_READS'" value="'$OFF_TARGET_READS'"></progress>
+					<div class="title-wrap">
+						<div class="progressbar-title mbr-fonts-style display-7">
+							<p>
+								Validated Aligned Off target reads | '$OFF_TARGET_READS_HTML' 
+							</p>
+						</div>
+						<div class="progress_value mbr-fonts-style display-7">
+							<span>'$OFFON_TARGET_READS_PERCENT'%</span>
+						</div>
+					</div>
+				</div>
+
+			</div>
+
 		</div>
 
 	' >> $HTMLFILE_SEQUENCING.aligners
+
+
+	# echo '
+
+	# 	<!--
+	# 	<div class="progress2 pb-5">
+	# 		<div class="title-wrap">
+	# 			<div class="progressbar-title mbr-fonts-style display-7">
+	# 				<p>
+	# 					BAM - '$ALIGNER' - Total reads | '$ALIGNER_TOTAL_READS_HTML'
+	# 				</p>
+	# 			</div>
+	# 			<div class="progress_value mbr-fonts-style display-7" style="color:silver">
+	# 				<span>'$ALIGNER_TOTAL_READS_PERCENT'%</span>
+	# 			</div>
+	# 		</div>
+	# 		<progress class="progress progress-primary" color="red" max="'$ALIGNER_TOTAL_READS'" value="'$ALIGNER_TOTAL_READS'">
+	# 		</progress>
+	# 	</div>
+	# 	-->
+
+	# 	<div class=" pb-5">
+	# 		<div class="title-wrap">
+	# 			<div class=" mbr-fonts-style display-7">
+	# 				<p>
+	# 					BAM - '$ALIGNER' - Total reads | '$ALIGNER_TOTAL_READS_HTML'
+	# 				</p>
+	# 			</div>
+	# 		</div>
+	# 	</div>
+
+	# 	<div style="margin-left:0px;">
+		
+	# 		<div class="progress2 pb-5">
+	# 			<div class="title-wrap">
+	# 				<div class="progressbar-title mbr-fonts-style display-7">
+	# 					<p>
+	# 						BAM - '$ALIGNER' - Duplicated reads | '$DUPLICATES_READS_HTML'
+	# 					</p>
+	# 				</div>
+	# 				<div class="progress_value mbr-fonts-style display-7">
+	# 					<span>'$DUPLICATES_READS_PERCENT'%</span>
+	# 				</div>
+	# 			</div>
+	# 			<progress class="progress progress-primary" max="'$ALIGNER_TOTAL_READS'" value="'$DUPLICATES_READS'">
+	# 			</progress>
+	# 		</div>
+
+
+
+	# 		<!--
+	# 		<div class="progress2 pb-5">
+	# 			<div class="title-wrap">
+	# 				<div class="progressbar-title mbr-fonts-style display-7">
+	# 					<p>
+	# 						BAM - '$ALIGNER' - Uniq reads | '$UNIQ_READS_HTML'
+	# 					</p>
+	# 				</div>
+	# 				<div class="progress_value mbr-fonts-style display-7">
+	# 					<span>'$UNIQ_READS_PERCENT'%</span>
+	# 				</div>
+	# 			</div>
+	# 			<progress class="progress progress-primary" max="'$ALIGNER_TOTAL_READS'" value="'$UNIQ_READS'">
+	# 			</progress>
+	# 		</div>
+	# 		-->
+
+	# 		<div class="progress3 pb-5">
+	# 			<div class="title-wrap">
+	# 				<div class="progressbar-title mbr-fonts-style display-7">
+	# 					<p>
+	# 						BAM - '$ALIGNER' - Aligned reads | '$ALIGNED_READS_HTML'
+	# 					</p>
+	# 				</div>
+	# 				<div class="progress_value mbr-fonts-style display-7">
+	# 					<span>'$ALIGNED_READS_PERCENT'%</span>
+	# 				</div>
+	# 			</div>
+	# 			<progress class="progress progress-primary" max="'$ALIGNER_TOTAL_READS'" value="'$ALIGNED_READS'">
+	# 			</progress>
+	# 		</div>
+
+	# 		<!--
+	# 		<div class="progress3 pb-5">
+	# 			<div class="title-wrap">
+	# 				<div class="progressbar-title mbr-fonts-style display-7">
+	# 					<p>
+	# 						BAM - '$ALIGNER' - Validated reads | '$VALIDATION_READS_HTML'
+	# 					</p>
+	# 				</div>
+	# 				<div class="progress_value mbr-fonts-style display-7">
+	# 					<span>'$VALIDATION_READS_PERCENT'%</span>
+	# 				</div>
+	# 			</div>
+	# 			<progress class="progress progress-primary" max="'$ALIGNER_TOTAL_READS'" value="'$VALIDATION_READS'">
+	# 			</progress>
+	# 		</div>
+	# 		-->
+
+	# 		<div class="progress3 pb-5">
+	# 			<div class="title-wrap">
+	# 				<div class="progressbar-title mbr-fonts-style display-7">
+	# 					<p>
+	# 						BAM - '$ALIGNER' - Validated Aligned reads | '$VALIDATION_ALIGNED_READS_HTML'
+	# 					</p>
+	# 				</div>
+	# 				<div class="progress_value mbr-fonts-style display-7">
+	# 					<span>'$VALIDATION_ALIGNED_READS_PERCENT'%</span>
+	# 				</div>
+	# 			</div>
+	# 			<progress class="progress progress-primary" max="'$ALIGNER_TOTAL_READS'" value="'$VALIDATION_ALIGNED_READS'">
+	# 			</progress>
+	# 		</div>
+
+	# 		<div class="progress4 pb-5">
+	# 			<div class="title-wrap">
+	# 				<div class="progressbar-title mbr-fonts-style display-7">
+	# 					<p>
+	# 						BAM - '$ALIGNER' - On target reads | '$ON_TARGET_READS_HTML' | '$ONOFF_TARGET_READS_PERCENT'% of validated aligned reads
+	# 					</p>
+	# 				</div>
+	# 				<div class="progress_value mbr-fonts-style display-7">
+	# 					<span>'$ON_TARGET_READS_PERCENT'%</span>
+	# 				</div>
+	# 			</div>
+	# 			<progress class="progress progress-primary" max="'$ALIGNER_TOTAL_READS'" value="'$ON_TARGET_READS'">
+	# 			</progress>
+	# 		</div>
+
+	# 	</div>
+
+	# ' >> $HTMLFILE_SEQUENCING.aligners
+
 
 done;
 
@@ -1250,9 +1516,12 @@ echo '
 				<br>
 				Reads statistics were determined with <strong>fastp</strong> (FastQ) and <strong>Samtools flagstat</strong> (BAM) on each aligners.
 				<br>
-				<strong>On target reads</strong> calculated with Target Design on BAM for validation
+				<strong>Validated Aligned reads</strong> calculated on BAM for validation
 				<br>
 				('$BAM_VALIDATION_TEXT_HTML').
+				<br>
+				<strong>On target reads</strong> calculated on BAM for validation with Target Design 
+				
 			</p>
 
 			<div class="row pt-1 mt-5">
@@ -2171,7 +2440,7 @@ for GENES_PANEL in "Target Design" $(cat $LIST_GENES_PANEL_BASENAME); do # $LIST
 	if [ "$BCFTOOLS_STATS" != "" ] && [ -s $BCFTOOLS_STATS ]; then
 
 		# GENES PANEL INFO
-		GENES_PANEL_GENES_NUMBER=$(cat $GENES_PANEL_FILE | grep -v "^#" | grep -v "^@" | cut -f5 | sort -u | wc -l)
+		GENES_PANEL_GENES_NUMBER=$(cat $GENES_PANEL_FILE | grep -v "^#" | grep -v "^@" | cut -f4 | sort -u | wc -l)
 		GENES_PANEL_GENES_NUMBER_HTML=$(echo $GENES_PANEL_GENES_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
 
 		GENES_PANEL_REGIONS_NUMBER=$(cat $GENES_PANEL_FILE | grep -v "^#" | grep -v "^@" | wc -l)
