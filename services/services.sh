@@ -225,7 +225,7 @@ if [ -z "$FOLDER_SERVICES" ]; then
 fi;
 
 mkdir -p $FOLDER_SERVICES
-chmod o+x $FOLDER_SERVICES
+chmod o+x $FOLDER_SERVICES  2>/dev/null
 
 (($VERBOSE)) && echo "#[INFO] STARK services modules folder '$FOLDER_SERVICES'"
 
@@ -326,7 +326,7 @@ for service_module in $(ls -d $SCRIPT_DIR/$MODULES 2>/dev/null); do
 
 			# Create folder
 			mkdir -p $FOLDER_SERVICES/$module_name
-			chmod o+x $FOLDER_SERVICES/$module_name
+			chmod o+x $FOLDER_SERVICES/$module_name 2>/dev/null
 
 			# Module configuration file
 			(($DEBUG)) && echo "#[INFO] Service module '$module_name' - Module configuration file copy"
@@ -339,7 +339,7 @@ for service_module in $(ls -d $SCRIPT_DIR/$MODULES 2>/dev/null); do
 			fi;
 			
 			# Files permissions
-			chmod o+r -R $FOLDER_SERVICES/$module_name/*
+			chmod o+r -R $FOLDER_SERVICES/$module_name/* 2>/dev/null
 
 			# DEBUG
 			(($DEBUG)) && cat $TMP_FOLDER/.env $TMP_FOLDER/.env.err

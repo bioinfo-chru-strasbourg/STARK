@@ -885,7 +885,7 @@ for RUU in $RUN_UNIQ; do
 
 				# INDEX1
 				if [ -s "$I1" ]; then
-					$COMMAND_COPY $I1 $RUN_SAMPLE_DIR/$S.I1.fastq.gz
+					$COMMAND_COPY_NO_COMPRESS $I1 $RUN_SAMPLE_DIR/$S.I1.fastq.gz
 				else
 					touch $RUN_SAMPLE_DIR/$S.I1.fastq
 					$GZ $RUN_SAMPLE_DIR/$S.I1.fastq
@@ -893,7 +893,7 @@ for RUU in $RUN_UNIQ; do
 
 				# INDEX2
 				if [ -s "$I2" ]; then
-					$COMMAND_COPY $I2 $RUN_SAMPLE_DIR/$S.I2.fastq.gz
+					$COMMAND_COPY_NO_COMPRESS $I2 $RUN_SAMPLE_DIR/$S.I2.fastq.gz
 				else
 					touch $RUN_SAMPLE_DIR/$S.I2.fastq
 					$GZ $RUN_SAMPLE_DIR/$S.I2.fastq
@@ -989,8 +989,8 @@ for RUU in $RUN_UNIQ; do
 				#cat $FASTP_LOG $FASTP_ERR
 
 				# Copy fastq files
-				[ -e $RUN_SAMPLE_DIR/$S.R1.fastq.gz ] && $COMMAND_COPY $RUN_SAMPLE_DIR/$S.R1.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.demultiplexing.fastq.gz
-				[ -e $RUN_SAMPLE_DIR/$S.R2.fastq.gz ] && $COMMAND_COPY $RUN_SAMPLE_DIR/$S.R2.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.demultiplexing.fastq.gz
+				[ -e $RUN_SAMPLE_DIR/$S.R1.fastq.gz ] && $COMMAND_COPY_NO_COMPRESS $RUN_SAMPLE_DIR/$S.R1.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.demultiplexing.fastq.gz
+				[ -e $RUN_SAMPLE_DIR/$S.R2.fastq.gz ] && $COMMAND_COPY_NO_COMPRESS $RUN_SAMPLE_DIR/$S.R2.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.demultiplexing.fastq.gz
 				[ -e $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.processed.fastq.gz ] && mv $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.processed.fastq.gz $RUN_SAMPLE_DIR/$S.R1.fastq.gz
 				[ -e $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.processed.fastq.gz ] && mv $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.processed.fastq.gz $RUN_SAMPLE_DIR/$S.R2.fastq.gz
 

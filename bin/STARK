@@ -1356,7 +1356,7 @@ if [ ! -z "$RUNS" ]; then
 						#SAMPLE_APP="$(echo $L | cut -d, -f$SAMPLE_PROJECT_FIELD | awk -F[$TAG_DELIMITER ] '{print $1}' | tr " " "+" | tr "," "+")"
 						# NEW APP extraction format
 						SAMPLE_DESCRIPTION_FIELD_VALUE=$(echo $L | cut -d, -f$SAMPLE_DESCRIPTION_FIELD)
-						SAMPLE_TAG=$(echo $L | cut -d, -f$SAMPLE_DESCRIPTION_FIELD | tr " " "!")
+						SAMPLE_TAG=$(echo $L | cut -d, -f$SAMPLE_DESCRIPTION_FIELD | tr " " "!")"!"
 						SAMPLE_APP=$(extract_tag "$SAMPLE_DESCRIPTION_FIELD_VALUE" "APP" | tr " " "+")
 						[ -z "$SAMPLE_APP" ] && SAMPLE_APP="$MAIN_APP"
 						[ ! -z $APP ] && SAMPLE_APP=$(echo $APP | tr " " "+" | tr "," "+") && echo "APP forced" # Force APP if in parameters
