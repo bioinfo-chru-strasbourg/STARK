@@ -5,6 +5,7 @@
 ##################
 
 
+
 ### Task Spooler List (as Array)
 ##########
 
@@ -119,7 +120,8 @@ foreach ($TS_LIST as $TASK_KEY => $ONE_TASK) {
 			$ONE_TASK_TIME_COLOR="";
 		};
 
-		if (!isset($run_task[$ONE_TASK_RUN])) {
+		#if (!isset($run_task[$ONE_TASK_RUN])) {
+		if (!isset($run_task[$ONE_TASK_RUN]) || $ONE_TASK_STATE!="error" ) {
 
 			$full_task[$ONE_TASK_RUN_TYPE][$ONE_TASK_RUN]["task"]["status"]=$ONE_TASK_STATE;
 			$full_task[$ONE_TASK_RUN_TYPE][$ONE_TASK_RUN]["task"]["color"]=$ONE_TASK_STATE_COLOR;
@@ -155,6 +157,12 @@ foreach ($TS_LIST as $TASK_KEY => $ONE_TASK) {
 
 };
 
+if ($DEBUG) {
+	echo "<pre>";
+	#print_r($full_task);
+	print_r($run_task);
+	echo "</pre>";
+};
 
 
 ############
@@ -313,8 +321,26 @@ foreach ($runs_launcher_log as $runs_launcher_log_key=>$runs_launcher_log_file) 
 
 
 	if ($run!="") {
-		#$runs_infos[$run]["launcher"][$runs_launcher_log_file]["run"]=$run;
-		$runs_infos[$run]["launcher"][$ext]=$runs_launcher_log_file;
+
+		# Full list
+		$runs_infos[$run]["launcher_list"][$ext][]=$runs_launcher_log_file;
+
+		# Final output (test exit code)
+		$run_launcher_info_split=file($runs_launcher_log_file);
+		foreach ($run_launcher_info_split as $key => $value) {
+			preg_match("/Exit status: died with exit code (.*)/i", $value,$run_launcher_info_split_matches);
+			if (isset($run_launcher_info_split_matches[1])) {
+				# If exit without error
+				if ($run_launcher_info_split_matches[1]==0) {
+					$runs_infos[$run]["launcher"][$ext]=$runs_launcher_log_file;
+				# If exit with error and no other output
+				} elseif (!isset($runs_infos[$run]["launcher"][$ext])) {
+					$runs_infos[$run]["launcher"][$ext]=$runs_launcher_log_file;
+				}
+			}
+		};
+		#$runs_infos[$run]["launcher"][$ext]=$runs_launcher_log_file;
+
 	};
 
 };
@@ -379,11 +405,11 @@ foreach ($runs_infos as $run=>$run_infos) {
 
 	$sequencing_message_plus="";
 	if (isset($runs_infos[$run]["inputs"]["run_files"]["RTAComplete.txt"])) {
-		$sequencing_message_plus.="<br><br>".implode(file($runs_infos[$run]["inputs"]["run_files"]["RTAComplete.txt"]["file"]))."";
+		$sequencing_message_plus.="<br>".implode(file($runs_infos[$run]["inputs"]["run_files"]["RTAComplete.txt"]["file"]))."";
 	}
 	if (count($runs_infos[$run]["inputs"]["run_files"]["SampleSheet.csv"]["samples"])) {
-		$sequencing_message_plus.="<br><br><a target='SampleSheet' href='".$runs_infos[$run]["inputs"]["run_files"]["SampleSheet.csv"]["file"]."'>SampleSheet</a>";
-		$sequencing_message_plus.="<br>".implode(" ",array_keys($runs_infos[$run]["inputs"]["run_files"]["SampleSheet.csv"]["samples"]));
+		$sequencing_message_plus.="<br><a target='SampleSheet' href='".$runs_infos[$run]["inputs"]["run_files"]["SampleSheet.csv"]["file"]."'>SampleSheet</a>";
+		$sequencing_message_plus.="<br><span style='color:gray'>".implode("&nbsp;&nbsp;&nbsp;",array_keys($runs_infos[$run]["inputs"]["run_files"]["SampleSheet.csv"]["samples"]))."</span>";
 	}
 
 	// echo "<pre>";
@@ -528,8 +554,34 @@ foreach ($runs_infos as $run=>$run_infos) {
 	$analysis_message_plus=($analysis_message_plus=="")?"":$analysis_message_plus;
 
 	$analysis_message_plus="";
-	if (isset($runs_infos[$run]["launcher"]["output"])) {
-		$analysis_message_plus.="<br><br><a target='Output' href='".$runs_infos[$run]["launcher"]["output"]."' download>Output</a>";
+	// if (isset($runs_infos[$run]["launcher"]["output"])) {
+	// 	$analysis_message_plus.="<br><br><a target='Output' href='".$runs_infos[$run]["launcher"]["output"]."' download>Output</a>";
+	// };
+	if (isset($runs_infos[$run]["launcher_list"]["output"])) {
+		$analysis_message_plus.="";
+		foreach ($runs_infos[$run]["launcher_list"]["output"] as $output_nb=>$output_file) {
+			#print_r(file($runs_infos[$run]["launcher_list"]["info"][$output_nb]));
+
+			# Final output (test exit code)
+			$output_exit_msg="";
+			$run_launcher_info_split=file($runs_infos[$run]["launcher_list"]["info"][$output_nb]);
+			foreach ($run_launcher_info_split as $key => $value) {
+				preg_match("/Exit status: died with exit code (.*)/i", $value,$run_launcher_info_split_matches);
+				if (isset($run_launcher_info_split_matches[1])) {
+					# If exit without error
+					if ($run_launcher_info_split_matches[1]==0) {
+						$output_exit_msg=" [<span style='color:green'>finished</span>]";
+					# If exit with error and no other output
+					} else {
+						$output_exit_msg=" [<span style='color:red'>error</span>]";
+					}
+				}
+			};
+
+
+			$analysis_message_plus="<br><a target='Output' href='".$output_file."' download>Output".$output_exit_msg."</a>".$analysis_message_plus;
+		};
+		#$analysis_message_plus.="<br><br><a target='Output' href='".$runs_infos[$run]["launcher"]["output"]."' download>Output</a>";
 	};
 
 	$run_progress[$run]["analysis"]["status"]=$analysis_status;

@@ -198,9 +198,11 @@ foreach ($SAMPLE_PATH as $key_sample => $ONE_SAMPLE_PATH) {
 
 	# Search files
 	$design=array();
-	$design_root=glob("$ONE_SAMPLE_PATH$PATH_LEVEL/*{bed,genes}",GLOB_BRACE);
+	#$design_root=glob("$ONE_SAMPLE_PATH$PATH_LEVEL/*{bed,genes}",GLOB_BRACE);
+	$design_root=glob("$ONE_SAMPLE_PATH$PATH_LEVEL/*{bed}",GLOB_BRACE);
 	if ($CHECK_SUBFOLDER_DATA) {
-		$design_data=glob("$ONE_SAMPLE_PATH$PATH_LEVEL/$RESULTS_SUBFOLDER_DATA/*{bed,genes}",GLOB_BRACE);
+		#$design_data=glob("$ONE_SAMPLE_PATH$PATH_LEVEL/$RESULTS_SUBFOLDER_DATA/*{bed,genes}",GLOB_BRACE);
+		$design_data=glob("$ONE_SAMPLE_PATH$PATH_LEVEL/$RESULTS_SUBFOLDER_DATA/*{bed}",GLOB_BRACE);
 	} else {
 		$design_data=array();
 	};

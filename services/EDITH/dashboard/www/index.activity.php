@@ -35,7 +35,8 @@ include "header.inc.php";
 ### VARIABLES
 ###############
 
-$DEBUG=1;
+#$DEBUG=0;
+$DEBUG=$_REQUEST["DEBUG"];
 $TS_SHOW=$_REQUEST["TS_SHOW"];
 
 
@@ -76,7 +77,8 @@ $thead_task_spooler='
 
 $tbody__task_spooler="";
 
-foreach ($full_task["STARK"] as $ONE_TASK_RUN=>$ONE_TASK_RUN_INFO) {
+#foreach ($full_task["STARK"] as $ONE_TASK_RUN=>$ONE_TASK_RUN_INFO) {
+foreach ($run_task as $ONE_TASK_RUN=>$ONE_TASK_RUN_INFO) {
 
 	$ONE_TASK_ID=$ONE_TASK_RUN_INFO["task"]["id"];
 	$ONE_TASK_STATE_COLOR=$ONE_TASK_RUN_INFO["task"]["color"];

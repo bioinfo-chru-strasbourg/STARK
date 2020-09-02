@@ -126,6 +126,7 @@ services:
         restart: always
         depends_on:
             - STARK-module-STARK-service-API
+            - STARK-module-STARK-service-listener-clear
         networks:
             - ${DOCKER_STARK_NETWORK}
 
