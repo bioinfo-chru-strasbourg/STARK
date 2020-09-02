@@ -79,13 +79,13 @@ Services are located in the folder 'services', and are organized in separated mo
 To automatically start all services modules:
 
 ```
-$ services/services.sh --module=* --command=up
+$ services/services.sh --modules=* --command=up
 ```
 
 Main STARK services in the folder 'services/STARK' contains a CLI (Command Line Interface), an API (Application Program Interface), a Listener and its cleaner, and a DAS service (DAta Sharing).
 
 ```
-$ services/services.sh --module=STARK --command=up
+$ services/services.sh --modules=STARK --command=up
 ```
 
 
