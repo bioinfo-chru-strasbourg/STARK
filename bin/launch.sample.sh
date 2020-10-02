@@ -70,8 +70,8 @@ function usage {
 	echo "#                                             Default: Defined in APP, or first --reads file folder";
 	echo "# -u|--repository=<FOLDER>                    Repository directory to generate GROUP|PROJECT|RUN|SAMPLE|* specific files";
 	echo "#                                             Default: no copy in a repository";
-	echo "# --archive=<FOLDER>                          Archive directory to generate GROUP|PROJECT|RUN|SAMPLE|* specific files";
-	echo "#                                             Default: no copy in a archive";
+	echo "# --archives=<FOLDER>                         Archives directory to generate GROUP|PROJECT|RUN|SAMPLE|* specific files";
+	echo "#                                             Default: no copy in a archives";
 	echo "# --databases=<FOLDER>                        Databases folder (requires STARK databases folder structure)";
 	echo "# -p|--pipelines=<STRING1,STRING2,...>        PIPELINES to launch, in the format ALIGNER.CALLER.ANNOTATOR, separated by a comma";
 	echo "#                                             Default: 'bwamem.gatkHC.howard'";
@@ -100,7 +100,7 @@ header;
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
-ARGS=$(getopt -o "e:f:q:b:j:m:s:r:o:u:p:t:ga:vdnh" --long "env:,app:,application:,reads:,fastq:,reads1:,reads:,fastq_R1:,fastq_R2:,reads2:,index1:,index2:,analysis_tag:,sample_tag:,other_files:,design:,bed:,manifest:,genes:,transcripts:,sample:,sample_list:,sample_filter:,runs:,demultiplexing:,demultiplexing_only,samplesheet:,analysis:,analysis_name:,output:,analysis_dir:,results:,repository:,archive:,databases:,input:,output:,tmp:,log:,pipelines:,threads:,no_header,by_sample,adapters:,verbose,debug,release,help" -- "$@" 2> /dev/null)
+ARGS=$(getopt -o "e:f:q:b:j:m:s:r:o:u:p:t:ga:vdnh" --long "env:,app:,application:,reads:,fastq:,reads1:,reads:,fastq_R1:,fastq_R2:,reads2:,index1:,index2:,analysis_tag:,sample_tag:,other_files:,design:,bed:,manifest:,genes:,transcripts:,sample:,sample_list:,sample_filter:,runs:,demultiplexing:,demultiplexing_only,samplesheet:,analysis:,analysis_name:,output:,analysis_dir:,results:,repository:,archives:,databases:,input:,output:,tmp:,log:,pipelines:,threads:,no_header,by_sample,adapters:,verbose,debug,release,help" -- "$@" 2> /dev/null)
 [ $? -ne 0 ] && \
 	echo "#[ERROR] Error in the argument list." "Use -h or --help to display the help." >&2 && usage && \
 	exit 1
@@ -196,8 +196,8 @@ do
 			REPOSITORY="$2"
 			shift 2
 			;;
-		--archive)
-			ARCHIVE="$2"
+		--archives)
+			ARCHIVES="$2"
 			shift 2
 			;;
 		--databases)
@@ -1302,7 +1302,7 @@ for RUU in $RUN_UNIQ; do
 	echo "#[INFO] POST ANNOTATION           "$(echo $POST_ANNOTATION | tr "." "\n" | tac | tr "\n" " " )""
 	echo "#[INFO] RESULTS                   $RESULTS"
 	echo "#[INFO] REPOSITORY                $REPOSITORY"
-	echo "#[INFO] ARCHIVE                   $ARCHIVE"
+	echo "#[INFO] ARCHIVES                  $ARCHIVES"
 	echo "#[INFO] RELEASE INFOS             $RELEASE_RUN"
 	echo "#[INFO] MAKEFILE CONFIGURATION    $MAKEFILE_ANALYSIS_RUN"
 	echo "#[INFO] SHELL CONFIGURATION       $SHELL_ANALYSIS_RUN"
@@ -1442,13 +1442,13 @@ for RUU in $RUN_UNIQ; do
 			fi;
 		fi;
 
-		# ARCHIVE
+		# ARCHIVES
 		if ((1)); then
 			# COPY of run/sample
 			# List of folders
-			if [ "$ARCHIVE" != "" ] ; then
+			if [ "$ARCHIVES" != "" ] ; then
 				RESULTS_FOLDER_COPY_ALL=""
-				for RESULTS_FOLDER_COPY_FOLDER in $(echo $ARCHIVE | tr "," " " | tr " " "\n" | sort -u ); do
+				for RESULTS_FOLDER_COPY_FOLDER in $(echo $ARCHIVES | tr "," " " | tr " " "\n" | sort -u ); do
 					#mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT;
 					if [ ! -d $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT ]; then
 						mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT;
@@ -1465,14 +1465,14 @@ for RUU in $RUN_UNIQ; do
 				for RESULTS_FOLDER_COPY_FOLDER in $RESULTS_FOLDER_COPY_ALL;
 				do
 					#echo "#[INFO] Copying '$RUU/$S' files from '$RESULTS/$RUU/$S' to '$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S'..."
-					echo "#[INFO] Copying ARCHIVE files patterns to $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S..."
+					echo "#[INFO] Copying ARCHIVES files patterns to $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S..."
 
 					# Copy SAMPLE files
 					chmod $PERMS -R $RESULTS/$RUU/$S 1>/dev/null 2>/dev/null
 					mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S
 					
 					# Copy ROOT FILE PATTERNS
-					for ROOT_FILE_PATTERN_INFO in $ARCHIVE_FILE_PATTERNS; do
+					for ROOT_FILE_PATTERN_INFO in $ARCHIVES_FILE_PATTERNS; do
 
 						ROOT_FILE_PATTERN=$(echo $ROOT_FILE_PATTERN_INFO | awk -F: '{print $1}')
 						ROOT_FILE_PATTERN_TYPE=$(echo $ROOT_FILE_PATTERN_INFO | awk -F: '{print $2}')

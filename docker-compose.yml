@@ -91,13 +91,13 @@ services:
 
 
     # STARK SOURCES
-    stark-sources-archive:
+    stark-sources-archives:
         image: ${DOCKER_STARK_SOURCES_IMAGE}
-        container_name: STARK-sources-archive
+        container_name: STARK-sources-archives
         entrypoint: /bin/bash
-        command: -c "rsync -auczAXhiv --no-links --no-perms --no-owner --no-group ${DOCKER_STARK_INNER_FOLDER_SOURCES}/* /sources-archive/ 1>>/sources-archive/archive.log 2>>/sources-archive/archive.err && rsync -auczAXhiv --no-links --no-perms --no-owner --no-group ${DOCKER_STARK_INNER_FOLDER_MAIN}/tools/* /sources-archive/sources/tools/ 1>>/sources-archive/archive.log 2>>/sources-archive/archive.err "
+        command: -c "rsync -auczAXhiv --no-links --no-perms --no-owner --no-group ${DOCKER_STARK_INNER_FOLDER_SOURCES}/* /sources-archives/ 1>>/sources-archives/archives.log 2>>/sources-archives/archives.err && rsync -auczAXhiv --no-links --no-perms --no-owner --no-group ${DOCKER_STARK_INNER_FOLDER_MAIN}/tools/* /sources-archives/sources/tools/ 1>>/sources-archives/archives.log 2>>/sources-archives/archives.err "
         volumes:
-            - sources:/sources-archive:rw
+            - sources:/sources-archives:rw
         env_file:
             - ${DOCKER_COMPOSE_ENV}
         depends_on:
@@ -151,13 +151,21 @@ volumes:
             type: none
             device: ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_OUTPUT_REPOSITORY}
             o: bind
-
-    # ARCHIVE
-    archive:
+    
+    # DEPOSITORY
+    depository:
         driver: local
         driver_opts:
             type: none
-            device: ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_OUTPUT_ARCHIVE}
+            device: ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_OUTPUT_DEPOSITORY}
+            o: bind
+
+    # ARCHIVES
+    archives:
+        driver: local
+        driver_opts:
+            type: none
+            device: ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_OUTPUT_ARCHIVES}
             o: bind
 
     # DATA

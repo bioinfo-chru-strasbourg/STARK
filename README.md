@@ -61,14 +61,14 @@ $ docker-compose build
 ---
 **4. Setup**
 
-The setup step will create folders (if not exist), populate databases folder if needed, and incrementally archive tools setup sources and binaries. Use --project-name if STARK scripts are not in a folder named "STARK". Variable DOCKER_STARK_MAIN_FOLDER corresponds to variable in ".env" configuration file.
+The setup step will create folders (if not exist), populate databases folder if needed, and incrementally archives tools setup sources and binaries. Use --project-name if STARK scripts are not in a folder named "STARK". Variable DOCKER_STARK_MAIN_FOLDER corresponds to variable in ".env" configuration file.
 
 ```
 $ DOCKER_STARK_MAIN_FOLDER=<STARK_main_folder>
 $ mkdir -p $DOCKER_STARK_MAIN_FOLDER
 $ docker-compose --project-name STARK up stark-folders
 $ docker-compose --project-name STARK up stark-databases
-$ docker-compose --project-name STARK up stark-sources-archive
+$ docker-compose --project-name STARK up stark-sources-archives
 ```
 
 ---
@@ -137,7 +137,7 @@ A STARK DAta Sharing (DAS) web server provides data publically through URI http:
 By default, data available are (\<path\>):
 - runs: inputs/Input/runs
 - repository: repositories/Repository
-- archive: repositories/Archive
+- archives: repositories/Archives
 - data: data
 - databases: databases
 

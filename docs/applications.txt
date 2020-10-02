@@ -24,7 +24,7 @@
 #[INFO]    RUN                    /STARK/input/runs
 #[INFO]    RESULTS                /STARK/output/results
 #[INFO]    REPOSITORY             /STARK/output/repository
-#[INFO]    ARCHIVE                /STARK/output/archive
+#[INFO]    ARCHIVES               /STARK/output/archives
 #[INFO]    PIPELINES              bwamem.gatkHC_EXOME.howard bwamem.gatkUG_EXOME.howard 
 #[INFO]    POST ALIGNMENT STEPS   sorting markduplicates realignment recalibration compress 
 #[INFO]    ANNOTATIONS            core,frequency,score,annotation,prediction,snpeff_split 
@@ -36,7 +36,7 @@
 #[INFO]    RUN                    /STARK/input/runs
 #[INFO]    RESULTS                /STARK/output/results
 #[INFO]    REPOSITORY             /STARK/output/repository
-#[INFO]    ARCHIVE                /STARK/output/archive
+#[INFO]    ARCHIVES               /STARK/output/archives
 #[INFO]    PIPELINES              bwamem.gatkHC_EXOME_SOMATIC.howard bwamem.gatkUG_EXOME_SOMATIC.howard bwamem.outLyzer.howard bwamem.MuTect2.howard 
 #[INFO]    POST ALIGNMENT STEPS   sorting realignment recalibration clipping compress 
 #[INFO]    ANNOTATIONS            core,frequency,score,annotation,prediction,snpeff_split 
@@ -48,7 +48,7 @@
 #[INFO]    RUN                    /STARK/input/runs
 #[INFO]    RESULTS                /STARK/output/results
 #[INFO]    REPOSITORY             /STARK/output/repository
-#[INFO]    ARCHIVE                /STARK/output/archive
+#[INFO]    ARCHIVES               /STARK/output/archives
 #[INFO]    PIPELINES              bwamem.gatkHC_GENOME.howard bwamem.gatkUG_GENOME.howard 
 #[INFO]    POST ALIGNMENT STEPS   sorting markduplicates realignment recalibration compress 
 #[INFO]    ANNOTATIONS            core,snpeff_split 
@@ -60,7 +60,7 @@
 #[INFO]    RUN                    /STARK/input/runs
 #[INFO]    RESULTS                /STARK/output/results
 #[INFO]    REPOSITORY             /STARK/output/repository
-#[INFO]    ARCHIVE                /STARK/output/archive
+#[INFO]    ARCHIVES               /STARK/output/archives
 #[INFO]    PIPELINES              bwamem.gatkHC_GERMLINE.howard bwamem.gatkUG_GERMLINE.howard 
 #[INFO]    POST ALIGNMENT STEPS   sorting markduplicates realignment recalibration compress 
 #[INFO]    ANNOTATIONS            core,frequency,score,annotation,prediction,snpeff,snpeff_hgvs,snpeff_split 
@@ -72,7 +72,7 @@
 #[INFO]    RUN                    /STARK/input/runs
 #[INFO]    RESULTS                /STARK/output/results
 #[INFO]    REPOSITORY             /STARK/output/repository
-#[INFO]    ARCHIVE                /STARK/output/archive
+#[INFO]    ARCHIVES               /STARK/output/archives
 #[INFO]    PIPELINES              bwamem.gatkUG_HEMATOLOGY.howard bwamem.outLyzer.howard bwamem.MuTect2.howard bwamem.itdseek.howard 
 #[INFO]    POST ALIGNMENT STEPS   sorting realignment recalibration clipping compress 
 #[INFO]    ANNOTATIONS            core,frequency,score,annotation,prediction,snpeff,snpeff_hgvs,snpeff_split 
@@ -84,7 +84,7 @@
 #[INFO]    RUN                    /STARK/input/runs
 #[INFO]    RESULTS                /STARK/output/results
 #[INFO]    REPOSITORY             /STARK/output/repository
-#[INFO]    ARCHIVE                /STARK/output/archive
+#[INFO]    ARCHIVES               /STARK/output/archives
 #[INFO]    PIPELINES              bwamem.gatkHC_ONCOGENET.howard bwamem.gatkUG_ONCOGENET.howard 
 #[INFO]    POST ALIGNMENT STEPS   sorting markduplicates realignment recalibration compress 
 #[INFO]    ANNOTATIONS            core,frequency,score,annotation,prediction,snpeff,snpeff_hgvs,snpeff_split 
@@ -96,7 +96,7 @@
 #[INFO]    RUN                    /STARK/input/runs
 #[INFO]    RESULTS                /STARK/output/results
 #[INFO]    REPOSITORY             /STARK/output/repository
-#[INFO]    ARCHIVE                /STARK/output/archive
+#[INFO]    ARCHIVES               /STARK/output/archives
 #[INFO]    PIPELINES              bwamem.gatkUG_SOLIDTUMOR.howard bwamem.gatkHC_SOLIDTUMOR.howard bwamem.outLyzer.howard bwamem.MuTect2.howard 
 #[INFO]    POST ALIGNMENT STEPS   sorting realignment recalibration clipping compress 
 #[INFO]    ANNOTATIONS            core,frequency,score,annotation,prediction,snpeff,snpeff_hgvs,snpeff_split 
@@ -108,7 +108,7 @@
 #[INFO]    RUN                    /STARK/input/runs
 #[INFO]    RESULTS                /STARK/output/results
 #[INFO]    REPOSITORY             /STARK/output/repository
-#[INFO]    ARCHIVE                /STARK/output/archive
+#[INFO]    ARCHIVES               /STARK/output/archives
 #[INFO]    PIPELINES              bwamem.gatkUG_SOMATIC.howard bwamem.gatkHC_SOMATIC.howard bwamem.outLyzer.howard bwamem.MuTect2.howard 
 #[INFO]    POST ALIGNMENT STEPS   sorting realignment recalibration clipping compress 
 #[INFO]    ANNOTATIONS            core,frequency,score,annotation,prediction,snpeff,snpeff_hgvs,snpeff_split 
@@ -120,7 +120,7 @@
 #[INFO]    RUN                    /STARK/input/runs
 #[INFO]    RESULTS                /STARK/output/results
 #[INFO]    REPOSITORY             /STARK/output/repository
-#[INFO]    ARCHIVE                /STARK/output/archive
+#[INFO]    ARCHIVES               /STARK/output/archives
 #[INFO]    PIPELINES              bwamem.gatkHC.howard 
 #[INFO]    POST ALIGNMENT STEPS   sorting markduplicates realignment recalibration compress 
 #[INFO]    ANNOTATIONS            core,frequency,score,annotation,prediction,snpeff,snpeff_hgvs,snpeff_split 

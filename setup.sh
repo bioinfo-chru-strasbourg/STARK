@@ -257,12 +257,12 @@ else
 	exit 1;
 fi;
 
-# Sources archive
-(($VERBOSE)) && echo "#[INFO] STARK Docker Compose Setup - Sources Archive"
-if docker-compose --project-name STARK up stark-sources-archive >> $DOCKER_STARK_SETUP_LOG 2>> $DOCKER_STARK_SETUP_LOG; then
-	(($VERBOSE)) && echo "#[INFO] STARK Docker Compose Setup - Sources Archive done."
+# Sources archives
+(($VERBOSE)) && echo "#[INFO] STARK Docker Compose Setup - Sources Archives"
+if docker-compose --project-name STARK up stark-sources-archives >> $DOCKER_STARK_SETUP_LOG 2>> $DOCKER_STARK_SETUP_LOG; then
+	(($VERBOSE)) && echo "#[INFO] STARK Docker Compose Setup - Sources Archives done."
 else
-	echo "#[ERROR] STARK Docker Compose Setup - Sources Archive failed"
+	echo "#[ERROR] STARK Docker Compose Setup - Sources Archives failed"
 	exit 1;
 fi;
 

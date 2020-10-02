@@ -50,11 +50,11 @@ FOLDER_OUTPUT=$STARK_FOLDER_MAIN/output
 # TMP: temporary files
 #FOLDER_TMP=$FOLDER_OUTPUT/tmp
 
-# REPOSITORY and ARCHIVE folder
+# REPOSITORY and ARCHIVES folder
 # Results data can be copy in a repository folder. leave it blank for no copy
 FOLDER_REPOSITORY=$FOLDER_OUTPUT/repository
-# Results data can be copy in a archive folder. leave it blank for no copy
-FOLDER_ARCHIVE=$FOLDER_OUTPUT/archive
+# Results data can be copy in a archives folder. leave it blank for no copy
+FOLDER_ARCHIVES=$FOLDER_OUTPUT/archives
 
 
 # PARAMETERS
@@ -389,9 +389,9 @@ HOWARD_SORT_BY_REPORT="PZFlag,PZScore"
 HOWARD_ORDER_BY_REPORT="DESC,DESC"
 
 
-# REPOSITORY and ARCHIVE
-# Copy files into folders for repository and archive
+# REPOSITORY and ARCHIVES
+# Copy files into folders for repository and archives
 # Repository files patterns to add
 REPOSITORY_FILE_PATTERNS=""
-# Archive files patterns to add
-ARCHIVE_FILE_PATTERNS=""
+# Archives files patterns to add
+ARCHIVES_FILE_PATTERNS=""

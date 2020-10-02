@@ -964,10 +964,12 @@ RUN mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
 	# MYAPPS CONFIG FOLDER \
 	mkdir -p $CONFIG_MYAPPS_FOLDER && \
 	cp -R $TOOLS/$TOOL_NAME/$TOOL_VERSION/config/apps/myapps/* $CONFIG_MYAPPS_FOLDER/ && \
-	ln -sf $CONFIG_MYAPPS_FOLDER $TOOLS/$TOOL_NAME/$TOOL_VERSION/config/apps/myapps && \
+	rm -rf $TOOLS/$TOOL_NAME/$TOOL_VERSION/config/apps/myapps && \
+	ln -sf $CONFIG_MYAPPS_FOLDER/ $TOOLS/$TOOL_NAME/$TOOL_VERSION/config/apps/myapps && \
 	# HOWARD CONFIG FOLDER \
 	mkdir -p $CONFIG_HOWARD_FOLDER && \
 	cp -R $TOOLS/$TOOL_NAME/$TOOL_VERSION/config/howard/* $CONFIG_HOWARD_FOLDER && \
+	rm -rf $TOOLS/$TOOL_NAME/$TOOL_VERSION/config/howard && \
 	ln -sf $CONFIG_HOWARD_FOLDER $TOOLS/$TOOL_NAME/$TOOL_VERSION/config/howard ;
 
 

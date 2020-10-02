@@ -226,8 +226,8 @@ if [ ! -z "$REPO_FOLDER" ]; then
 fi;
 
 # DEV
-#GP_FOLDER_LIST="/STARK/output/archive/HUSTUMSOL/MTPTHS /STARK/output/archive/SOMATIC/SOLIDTUMOR"
-#GP_FOLDER_LIST="/STARK/output/archive/HUSTUMSOL/MTPTHS /STARK/output/archive/SOMATIC/SOLIDTUMOR /STARK/output/repository/HUSTUMSOL/MTPTHS /STARK/output/repository/SOMATIC/SOLIDTUMOR"
+#GP_FOLDER_LIST="/STARK/output/archives/HUSTUMSOL/MTPTHS /STARK/output/archives/SOMATIC/SOLIDTUMOR"
+#GP_FOLDER_LIST="/STARK/output/archives/HUSTUMSOL/MTPTHS /STARK/output/archives/SOMATIC/SOLIDTUMOR /STARK/output/repository/HUSTUMSOL/MTPTHS /STARK/output/repository/SOMATIC/SOLIDTUMOR"
 
 
 (($VERBOSE)) && echo "#"
@@ -238,7 +238,7 @@ if [ -z "$GP_FOLDER_LIST" ]; then
     for ENV_DEF in $(find -L $STARK_FOLDER_APPS -name '*.app' -type f | sed s#$STARK_FOLDER_APPS/## | sort -f -t'/' -k2.3 -k2.2 -k2.1) $(find -L $STARK_FOLDER_APPS -name '*.plugapp' -type f | sed s#$STARK_FOLDER_APPS/## | sort -f -t'/' -k2.3 -k2.2 -k2.1); do
     
     	# APP INFO
-        APP_FOLDER_ARCHIVE=$(source_app "$ENV_DEF"  2>/dev/null; echo $FOLDER_ARCHIVE)
+        APP_FOLDER_ARCHIVES=$(source_app "$ENV_DEF"  2>/dev/null; echo $FOLDER_ARCHIVES)
         APP_FOLDER_REPOSITORY=$(source_app "$ENV_DEF"  2>/dev/null; echo $FOLDER_REPOSITORY)
         APP_GROUP=$(source_app "$ENV_DEF"  2>/dev/null; echo $APP_GROUP)
         APP_PROJECT=$(source_app "$ENV_DEF"  2>/dev/null; echo $APP_PROJECT)
@@ -259,9 +259,9 @@ if [ -z "$GP_FOLDER_LIST" ]; then
         fi;
         
         # Add repository group project folder 
-        if [ ! -z "$APP_FOLDER_ARCHIVE" ] && [ ! -z "$APP_GROUP" ] && [ ! -z "$APP_PROJECT" ] && [ -d "$APP_FOLDER_ARCHIVE/$APP_GROUP/$APP_PROJECT" ]; then
-	        (($VERBOSE)) && echo "#[INFO] DEJAVU database '$APP_GROUP/$APP_PROJECT' repository '$APP_FOLDER_ARCHIVE' found"
-	        GP_FOLDER_LIST="$GP_FOLDER_LIST\n$APP_FOLDER_ARCHIVE/$APP_GROUP/$APP_PROJECT"
+        if [ ! -z "$APP_FOLDER_ARCHIVES" ] && [ ! -z "$APP_GROUP" ] && [ ! -z "$APP_PROJECT" ] && [ -d "$APP_FOLDER_ARCHIVES/$APP_GROUP/$APP_PROJECT" ]; then
+	        (($VERBOSE)) && echo "#[INFO] DEJAVU database '$APP_GROUP/$APP_PROJECT' repository '$APP_FOLDER_ARCHIVES' found"
+	        GP_FOLDER_LIST="$GP_FOLDER_LIST\n$APP_FOLDER_ARCHIVES/$APP_GROUP/$APP_PROJECT"
 	    fi;
 	    if [ ! -z "$APP_FOLDER_REPOSITORY" ] && [ ! -z "$APP_GROUP" ] && [ ! -z "$APP_PROJECT" ] && [ -d "$APP_FOLDER_REPOSITORY/$APP_GROUP/$APP_PROJECT" ]; then
 	        (($VERBOSE)) && echo "#[INFO] DEJAVU database '$APP_GROUP/$APP_PROJECT' repository '$APP_FOLDER_REPOSITORY' found"
@@ -280,7 +280,7 @@ else
 			PROJECT=$(basename $GP_FOLDER)
 
 	        (($VERBOSE)) && echo "#[INFO] DEJAVU database '$GROUP/$PROJECT' repository '$REPO' "
-	        #GP_FOLDER_LIST="$GP_FOLDER_LIST\n$APP_FOLDER_ARCHIVE/$APP_GROUP/$APP_PROJECT"
+	        #GP_FOLDER_LIST="$GP_FOLDER_LIST\n$APP_FOLDER_ARCHIVES/$APP_GROUP/$APP_PROJECT"
 	    fi;
 	done;
 
