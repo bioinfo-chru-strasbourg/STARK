@@ -812,7 +812,8 @@ if [ -s $TRANSCRIPTS ]; then
 	fi;
 	# HTML
 	if (($TRANSCRIPTS_NUMBER)); then
-		TRANSCRIPTS_NUMBER_HTML="<br>Transcript list"$([ $TRANSCRIPTS_FILES_NUMBER -gt 1 ] && echo "s")" includes <strong>$TRANSCRIPTS_NUMBER transcript"$([ $TRANSCRIPTS_NUMBER -gt 1 ] && echo "s")"</strong> ($TRANSCRIPTS_GENES_NUMBER gene"$([ $TRANSCRIPTS_GENES_NUMBER -gt 1 ] && echo "s")")"
+		#TRANSCRIPTS_NUMBER_HTML="<br>Transcript list"$([ $TRANSCRIPTS_FILES_NUMBER -gt 1 ] && echo "s")" includes <strong>$TRANSCRIPTS_NUMBER transcript"$([ $TRANSCRIPTS_NUMBER -gt 1 ] && echo "s")"</strong> ($TRANSCRIPTS_GENES_NUMBER gene"$([ $TRANSCRIPTS_GENES_NUMBER -gt 1 ] && echo "s")")"
+		TRANSCRIPTS_NUMBER_HTML="<br>Transcript list includes <strong>$TRANSCRIPTS_NUMBER transcript"$([ $TRANSCRIPTS_NUMBER -gt 1 ] && echo "s")"</strong> ($TRANSCRIPTS_GENES_NUMBER gene"$([ $TRANSCRIPTS_GENES_NUMBER -gt 1 ] && echo "s")")"
 		#if [ "$TRANSCRIPTS_FILES_NAME" != "" ]; then
 		#	TRANSCRIPTS_NUMBER_HTML=$TRANSCRIPTS_NUMBER_HTML"<br><strong>'$GENE_PANEL_FILES_NAME'</strong>"
 		#fi;
@@ -1593,12 +1594,23 @@ echo '
 HTMLFILE_COVERAGE=$HTMLFILE".coverage"
 HTMLFILE_DEPTH=$HTMLFILE".depth"
 
+# COLORS
+PASS_COLOR_RGB="0,255,0";
+WARN_COLOR_RGB="252,161,6";
+FAIL_COLOR_RGB="255,0,0";
+MISS_COLOR_RGB="139,0,0";
+FILTERED_COLOR_RGB="252,161,6";
 
 # FLAGS
-PASS_FLAG_ICON='class="mbr-iconfont mbri-smile-face" style="color: rgb(0, 255, 0); fill: rgb(0, 255, 0);"'
-WARN_FLAG_ICON='class="mbr-iconfont mbri-sad-face" style="color: rgb(252, 161, 6); fill: rgb(252, 161, 6);"'
-FAIL_FLAG_ICON='class="mbr-iconfont mbri-sad-face" style="color: rgb(255, 0, 0); fill: rgb(255, 0, 0);"'
-MISS_FLAG_ICON='class="mbr-iconfont mbri-sad-face" style="color: rgb(255, 0, 0); fill: rgb(255, 0, 0); font-weight:bold"'
+PASS_FLAG_ICON='class="mbr-iconfont mbri-smile-face" style="color: rgb('$PASS_COLOR_RGB'); fill: rgb('$PASS_COLOR_RGB');"'
+WARN_FLAG_ICON='class="mbr-iconfont mbri-sad-face" style="color: rgb('$WARN_COLOR_RGB'); fill: rgb('$WARN_COLOR_RGB');"'
+FAIL_FLAG_ICON='class="mbr-iconfont mbri-sad-face" style="color: rgb('$FAIL_COLOR_RGB'); fill: rgb('$FAIL_COLOR_RGB');"'
+#MISS_FLAG_ICON='class="mbr-iconfont mbri-sad-face" style="color: rgb('$MISS_COLOR_RGB'); fill: rgb('$MISS_COLOR_RGB'); font-weight:bold"'
+MISS_FLAG_ICON='class="mbr-iconfont mbri-sad-face" style="color: rgb('$MISS_COLOR_RGB'); fill: rgb('$MISS_COLOR_RGB');"'
+FILTERED_FLAG_ICON='class="mbr-iconfont mbri-sad-face" style="color: rgb('$FILTERED_COLOR_RGB'); fill: rgb('$FILTERED_COLOR_RGB');"'
+
+#SPECIAL_VALUE_COLOR
+SPECIAL_VALUE_COLOR="PASS=rgb($PASS_COLOR_RGB)|WARN=rgb($WARN_COLOR_RGB)|FAIL=rgb($FAIL_COLOR_RGB)|MISS=rgb($MISS_COLOR_RGB)|FILTERED=rgb($FILTERED_COLOR_RGB)"
 
 
 # FILES
@@ -2750,6 +2762,10 @@ HTMLFILE_ANNEX_PLAN_LINKS_AMPLICON=$HTMLFILE_ANNEX_PLAN_LINKS".amplicon"
 > $HTMLFILE_ANNEX_PLAN_LINKS_AMPLICON
 
 
+# LIMIT_STRING
+LIMIT_STRING=30
+
+# INIT
 GENES_PANEL_NUM=0
 
 for ALIGNER in $ALIGNERS; do
@@ -2854,12 +2870,11 @@ for ALIGNER in $ALIGNERS; do
 	if [ -s $GENES_PANEL_AMPLICON ]; then
 
 		GENES_PANEL_AMPLICON_NB_LINES=$(echo $(cat $GENES_PANEL_AMPLICON | wc -l)" - 1" | bc)
-
 		#if [ "$GENES_PANEL_AMPLICON_NB_LINES" < $TABLE_LIMIT ]; then
 		if (( $GENES_PANEL_AMPLICON_NB_LINES > $TABLE_LIMIT )); then
 			GENES_PANEL_AMPLICON_HTML=$TABLE_LIMIT_MSG_HTML
 		else
-			GENES_PANEL_AMPLICON_HTML=$(cat $GENES_PANEL_AMPLICON | tr "," " " | $STARK_FOLDER_BIN/csv_to_html.awk -v limit=$TABLE_LIMIT_CUT -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
+			GENES_PANEL_AMPLICON_HTML=$(cat $GENES_PANEL_AMPLICON | tr "," " " | awk -F"\t" '{print $5 "\t" $1":"$2"-"$3 "\t" $4 "\t" $7 "\t" $13 "\t" $6 "\t" $9}' | sed 's/^name/Amplicons/g' | sed 's/chrom.start.end/Location/g' | sed 's/minimum_threshold/Flag Minimum Depth/g'| sed 's/average_threshold/Flag Mean Depth/g' | sed 's/min_coverage/Minimum Depth/g' | sed 's/mean_coverage/Mean Depth/g' | sed 's/length/#Bases/g' | $STARK_FOLDER_BIN/csv_to_html.awk -v limit_string=$LIMIT_STRING -v special_value_color="$SPECIAL_VALUE_COLOR" -v limit=$TABLE_LIMIT_CUT -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
 		fi;
 
 
@@ -2952,8 +2967,12 @@ for ALIGNER in $ALIGNERS; do
 		#GENES_PANEL_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$GENES_PANEL"
 		if [ -s $GENES_PANEL_FILE ]; then GENES_PANEL_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$GENES_PANEL"; fi;
 
+		GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.HsMetrics.per_base_coverage.gz"
+		GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE_FAIL="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.HsMetrics.per_base_coverage.FAIL.bed"
+		GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE_WARN="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.HsMetrics.per_base_coverage.WARN.bed"
 		GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.coverage"
 		GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.genes.txt"
+		GENES_PANEL_HSMETRICS_PER_TARGET_GENES_REPORT_COVERAGE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.report.genes.txt"
 		GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.HsMetrics.per_target_coverage.flags"
 		GENES_PANEL_GENES_FLAGS_PATTERN="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.genes"
 		#echo "PASS" && head $GENES_PANEL_GENES_FLAGS_PATTERN".PASS.txt"
@@ -2963,6 +2982,31 @@ for ALIGNER in $ALIGNERS; do
 
 
 		# COPY FILES
+
+		# PER_BASE_COVERAGE FAIL
+		if [ ! -s $GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE_FAIL ]; then
+			> $GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE_FAIL 
+			$GZ -cd $GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE | awk -v FAIL=$MINIMUM_DEPTH '($4<FAIL) {print $1 "\t" $2-1 "\t" $2 "\t" $3 "\t" $4}' | $BEDTOOLS merge -c 4,5,5,5,5 -o distinct,mean,min,max,count > $GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE_FAIL 2>/dev/null
+		fi;
+		if [ -s $GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE_FAIL ]; then
+			GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE_FAIL_DOWNLOAD_FILENAME=$(basename $GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE_FAIL).gz
+			$GZ $GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE_FAIL -c > $OUTPUT_FILES_HTMLDIR/$GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE_FAIL_DOWNLOAD_FILENAME
+			GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE_FAIL_DOWNLOAD_FILE=$OUTPUT_FILES_HTMLFOLDER/$GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE_FAIL_DOWNLOAD_FILENAME
+			GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE_FAIL_DOWNLOAD_FILE_HTML="<a href='$GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE_FAIL_DOWNLOAD_FILE' download>$DOWNLOAD_FILE_MSG FAIL Regions</a>"
+		fi;
+
+		# PER_BASE_COVERAGE WARN
+		if [ ! -s $GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE_WARN ]; then
+			> $GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE_WARN
+			$GZ -cd $GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE | awk -v FAIL=$EXPECTED_DEPTH '($4<WARN) {print $1 "\t" $2-1 "\t" $2 "\t" $3 "\t" $4}' | $BEDTOOLS merge -c 4,5,5,5,5 -o distinct,mean,min,max,count > $GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE_WARN 2>/dev/null
+		fi;
+		if [ -s $GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE_WARN ]; then
+			GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE_WARN_DOWNLOAD_FILENAME=$(basename $GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE_WARN).gz
+			$GZ $GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE_WARN -c > $OUTPUT_FILES_HTMLDIR/$GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE_WARN_DOWNLOAD_FILENAME
+			GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE_WARN_DOWNLOAD_FILE=$OUTPUT_FILES_HTMLFOLDER/$GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE_WARN_DOWNLOAD_FILENAME
+			GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE_WARN_DOWNLOAD_FILE_HTML="<a href='$GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE_WARN_DOWNLOAD_FILE' download>$DOWNLOAD_FILE_MSG WARN regions</a>"
+		fi;
+
 
 		# PER_TARGET_COVERAGE
 		GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_DOWNLOAD_FILENAME=$(basename $GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE).gz
@@ -2976,6 +3020,12 @@ for ALIGNER in $ALIGNERS; do
 		GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_DOWNLOAD_FILE=$OUTPUT_FILES_HTMLFOLDER/$GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_DOWNLOAD_FILENAME
 		GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_DOWNLOAD_FILE_HTML="<a href='$GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_DOWNLOAD_FILE' download>$DOWNLOAD_FILE_MSG</a>"
 
+		# PER_TARGET_GENES_REPORT_COVERAGE
+		GENES_PANEL_HSMETRICS_PER_TARGET_GENES_REPORT_COVERAGE_DOWNLOAD_FILENAME=$(basename $GENES_PANEL_HSMETRICS_PER_TARGET_GENES_REPORT_COVERAGE).gz
+		$GZ $GENES_PANEL_HSMETRICS_PER_TARGET_GENES_REPORT_COVERAGE -c > $OUTPUT_FILES_HTMLDIR/$GENES_PANEL_HSMETRICS_PER_TARGET_GENES_REPORT_COVERAGE_DOWNLOAD_FILENAME
+		GENES_PANEL_HSMETRICS_PER_TARGET_GENES_REPORT_COVERAGE_DOWNLOAD_FILE=$OUTPUT_FILES_HTMLFOLDER/$GENES_PANEL_HSMETRICS_PER_TARGET_GENES_REPORT_COVERAGE_DOWNLOAD_FILENAME
+		GENES_PANEL_HSMETRICS_PER_TARGET_GENES_REPORT_COVERAGE_DOWNLOAD_FILE_HTML="<a href='$GENES_PANEL_HSMETRICS_PER_TARGET_GENES_REPORT_COVERAGE_DOWNLOAD_FILE' download>$DOWNLOAD_FILE_MSG Report</a>"
+
 		# PER_TARGET_DEPTH
 		GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH_DOWNLOAD_FILENAME=$(basename $GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH).gz
 		$GZ $GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH -c > $OUTPUT_FILES_HTMLDIR/$GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH_DOWNLOAD_FILENAME
@@ -2987,6 +3037,7 @@ for ALIGNER in $ALIGNERS; do
 		#if [ -s $GENES_PANEL_FILE ]; then
 		if [ -s $GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE ] \
 			&& [ -s $GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE ] \
+			&& [ -s $GENES_PANEL_HSMETRICS_PER_TARGET_GENES_REPORT_COVERAGE ] \
 		; then
 		#	&& [ -s $GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH ] \
 
@@ -2996,10 +3047,12 @@ for ALIGNER in $ALIGNERS; do
 				GENES_PANEL_NAME="Target Design"
 				GENE_PANEL_NAME_HTML="$GENES_PANEL_NAME"
 				GENE_PANEL_TYPE_HTML="Target<br>Regions"
+				GENE_PANEL_TYPE_TABLE="Targets"
 			else
 				GENES_PANEL_NAME=$(echo $GENES_PANEL | sed "s/^$SAMPLE.//" | sed "s/.genes$//")
 				GENE_PANEL_NAME_HTML="Gene Panel<br>$GENES_PANEL_NAME"
 				GENE_PANEL_TYPE_HTML="Gene<br>Panel"
+				GENE_PANEL_TYPE_TABLE="Genes"
 			fi;
 
 
@@ -3013,25 +3066,24 @@ for ALIGNER in $ALIGNERS; do
 			if (( $GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_NB_LINES > $TABLE_LIMIT )); then
 				GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML=$TABLE_LIMIT_MSG_HTML
 			else
-				GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML=$(cat $GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE | tr "," " " | $STARK_FOLDER_BIN/csv_to_html.awk -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
+				GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML=$(cat $GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE | tr "," " "  | $STARK_FOLDER_BIN/csv_to_html.awk -v limit_string=$LIMIT_STRING -v special_value_color="$SPECIAL_VALUE_COLOR" -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
 			fi;
-			# GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML=""
-			# if [ -s $GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE ]; then
-			# 	GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML=$(cat $GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE | tr "," " " | $STARK_FOLDER_BIN/csv_to_html.awk -v limit=$TABLE_LIMIT_CUT -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
-			# fi;
-
 
 			# GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE
 			GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_NB_LINES=$(echo $(cat $GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE | wc -l)" - 1" | bc)
 			if (( $GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_NB_LINES > $TABLE_LIMIT )); then
 				GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML=$TABLE_LIMIT_MSG_HTML
 			else
-				GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML=$(cat $GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE | tr "," " " | $STARK_FOLDER_BIN/csv_to_html.awk -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
+				GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML=$(cat $GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE | tr "," " " | sed 's/#Gene/'$GENE_PANEL_TYPE_TABLE'/g' | $STARK_FOLDER_BIN/csv_to_html.awk -v limit_string=$LIMIT_STRING -v special_value_color="$SPECIAL_VALUE_COLOR" -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
 			fi;
-			# GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML=""
-			# if [ -s $GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE ]; then
-			# 	GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML=$(cat $GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE | tr "," " " | $STARK_FOLDER_BIN/csv_to_html.awk -v limit=$TABLE_LIMIT_CUT -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
-			# fi;
+
+			# GENES_PANEL_HSMETRICS_PER_TARGET_GENES_REPORT_COVERAGE
+			GENES_PANEL_HSMETRICS_PER_TARGET_GENES_REPORT_COVERAGE_NB_LINES=$(echo $(cat $GENES_PANEL_HSMETRICS_PER_TARGET_GENES_REPORT_COVERAGE | wc -l)" - 1" | bc)
+			if (( $GENES_PANEL_HSMETRICS_PER_TARGET_GENES_REPORT_COVERAGE_NB_LINES > $TABLE_LIMIT )); then
+				GENES_PANEL_HSMETRICS_PER_TARGET_GENES_REPORT_COVERAGE_HTML=$TABLE_LIMIT_MSG_HTML
+			else
+				GENES_PANEL_HSMETRICS_PER_TARGET_GENES_REPORT_COVERAGE_HTML=$(cat $GENES_PANEL_HSMETRICS_PER_TARGET_GENES_REPORT_COVERAGE | tr "," " "  | sed 's/#Gene/'$GENE_PANEL_TYPE_TABLE'/g' | $STARK_FOLDER_BIN/csv_to_html.awk -v limit_string=$LIMIT_STRING -v special_value_color="$SPECIAL_VALUE_COLOR" -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
+			fi;
 
 
 			# GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH
@@ -3039,12 +3091,9 @@ for ALIGNER in $ALIGNERS; do
 			if (( $GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH_NB_LINES > $TABLE_LIMIT )); then
 				GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH_HTML=$TABLE_LIMIT_MSG_HTML
 			else
-				GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH_HTML=$(cat $GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH | tr "," " " | $STARK_FOLDER_BIN/csv_to_html.awk -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
+				GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH_HTML=$(cat $GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH | tr "," " " | awk -F"\t" '{print $5 "\t" $1":"$2"-"$3 "\t" $4 "\t" $7 "\t" $13 "\t" $6 "\t" $9}' | sed 's/^name/'$GENE_PANEL_TYPE_TABLE'/g' | sed 's/chrom.start.end/Location/g' | sed 's/minimum_threshold/Flag Minimum Depth/g'| sed 's/average_threshold/Flag Mean Depth/g' | sed 's/min_coverage/Minimum Depth/g' | sed 's/mean_coverage/Mean Depth/g' | sed 's/length/#Bases/g' | $STARK_FOLDER_BIN/csv_to_html.awk -v limit_string=$LIMIT_STRING -v special_value_color="$SPECIAL_VALUE_COLOR" -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
 			fi;
-			# GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH_HTML=""
-			# if [ -s $GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH ]; then
-			# 	GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH_HTML=$(cat $GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH | tr "," " " | $STARK_FOLDER_BIN/csv_to_html.awk -v limit=$TABLE_LIMIT_CUT -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
-			# fi;
+
 
 			# FLAGS
 			# PASS
@@ -3128,7 +3177,6 @@ for ALIGNER in $ALIGNERS; do
 
 			<section class="section-table cid-ruiBoanIwc" id="COVERAGE_'$GENES_PANEL'-'$ALIGNER'" >
 
-
 			  <div class="container container-table">
 
 				  <h3 class="mbr-section-subtitle mbr-fonts-style align-center mbr-light display-5" '$GENES_PANEL_BREAK'>
@@ -3175,80 +3223,33 @@ for ALIGNER in $ALIGNERS; do
 					  </div>
 					</div>
 
-
 				  </div>
+
 				</div>
 
 			</section>
 
 			' >> $HTMLFILE_ANNEX_GENES_PANEL_COVERAGE
 
-			echo '
-
-			<section class="section-table cid-ruiBoanIwc" id="GENES_COVERAGE_'$GENES_PANEL'-'$ALIGNER'">
-
-
-			  <div class="container container-table">
-
-				  <h3 class="mbr-section-subtitle mbr-fonts-style align-center mbr-light display-5" '$GENES_PANEL_BREAK'>
-				  <br>
-					'$GENE_PANEL_NAME_HTML' ('$ALIGNER')
-				  </h3>
-
-				  <p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
-				    '$GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_DOWNLOAD_FILE_HTML'
-				  </p>
-
-				  <div class="table-wrapper">
-					<div class="container">
-					  <div class="row search">
-						<div class="col-md-6"></div>
-						<div class="col-md-6">
-							<div class="dataTables_filter">
-							  <label class="searchInfo mbr-fonts-style display-7">Search:</label>
-							  <input class="form-control input-sm" disabled="">
-							</div>
-						</div>
-					  </div>
-					</div>
-
-					<div class="container scroll">
-						<table class="table isSearch" cellspacing="0">
-							'$GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML'
-						</table>
-					</div>
-
-					<div class="container table-info-container">
-					  <div class="row info">
-						<div class="col-md-6">
-						  <div class="dataTables_info mbr-fonts-style display-7">
-							<span class="infoBefore">Showing</span>
-							<span class="inactive infoRows"></span>
-							<span class="infoAfter">entries</span>
-							<span class="infoFilteredBefore">(filtered from</span>
-							<span class="inactive infoRows"></span>
-							<span class="infoFilteredAfter"> total entries)</span>
-						  </div>
-						</div>
-						<div class="col-md-6"></div>
-					  </div>
-					</div>
-
-
-				  </div>
-				</div>
-
-			</section>
-
-			' >> $HTMLFILE_ANNEX_GENES_PANEL_GENES_COVERAGE
-
 
 			echo '
 
 			<section class="section-table cid-ruiBoanIwc" id="FLAGS_'$GENES_PANEL'-'$ALIGNER'">
 
-
 			  <div class="container container-table">
+
+				  <h3 class="mbr-section-subtitle mbr-fonts-style align-center mbr-light display-5" '$GENES_PANEL_BREAK'>
+				  	<br>
+					'$GENE_PANEL_NAME_HTML' Report ('$ALIGNER')
+				  </h3>
+
+				  <p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
+				    '$GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_DOWNLOAD_FILE_HTML'
+					<br>
+					'$GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE_FAIL_DOWNLOAD_FILE_HTML'
+					<br>
+					'$GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE_WARN_DOWNLOAD_FILE_HTML'
+				  </p>
 
 				  <div class="table-wrapper">
 					<div class="container">
@@ -3285,6 +3286,56 @@ for ALIGNER in $ALIGNERS; do
 					  </div>
 					</div>
 
+				  </div>
+
+				</div>
+
+			</section>
+
+			' >> $HTMLFILE_ANNEX_GENES_PANEL_GENES_COVERAGE
+
+
+			echo '
+
+			<section class="section-table cid-ruiBoanIwc" id="GENES_REPORT_COVERAGE_'$GENES_PANEL'-'$ALIGNER'">
+
+			  <div class="container container-table">
+
+				  <div class="table-wrapper">
+					<div class="container">
+					  <div class="row search">
+						<div class="col-md-6"></div>
+						<div class="col-md-6">
+							<div class="dataTables_filter">
+							  <label class="searchInfo mbr-fonts-style display-7">Search:</label>
+							  <input class="form-control input-sm" disabled="">
+							</div>
+						</div>
+					  </div>
+					</div>
+
+					<div class="container scroll">
+						<table class="table isSearch" cellspacing="0">
+							'$GENES_PANEL_HSMETRICS_PER_TARGET_GENES_REPORT_COVERAGE_HTML'
+						</table>
+					</div>
+
+					<div class="container table-info-container">
+					  <div class="row info">
+						<div class="col-md-6">
+						  <div class="dataTables_info mbr-fonts-style display-7">
+							<span class="infoBefore">Showing</span>
+							<span class="inactive infoRows"></span>
+							<span class="infoAfter">entries</span>
+							<span class="infoFilteredBefore">(filtered from</span>
+							<span class="inactive infoRows"></span>
+							<span class="infoFilteredAfter"> total entries)</span>
+						  </div>
+						</div>
+						<div class="col-md-6"></div>
+					  </div>
+					</div>
+
 
 				  </div>
 				</div>
@@ -3292,7 +3343,66 @@ for ALIGNER in $ALIGNERS; do
 			</section>
 
 			' >> $HTMLFILE_ANNEX_GENES_PANEL_GENES_COVERAGE
-			#' >> $HTMLFILE_ANNEX_GENES_PANEL_FLAGS
+
+			
+			# echo '
+
+			# <section class="section-table cid-ruiBoanIwc" id="GENES_COVERAGE_'$GENES_PANEL'-'$ALIGNER'">
+
+			#   <div class="container container-table">
+
+			# 	  <h3 class="mbr-section-subtitle mbr-fonts-style align-center mbr-light display-5" '$GENES_PANEL_BREAK'>
+			# 	  <br>
+			# 		'$GENE_PANEL_NAME_HTML' ('$ALIGNER')
+			# 	  </h3>
+
+			# 	  <p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
+			# 	    '$GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_DOWNLOAD_FILE_HTML'
+			# 	  </p>
+
+			# 	  <div class="table-wrapper">
+			# 		<div class="container">
+			# 		  <div class="row search">
+			# 			<div class="col-md-6"></div>
+			# 			<div class="col-md-6">
+			# 				<div class="dataTables_filter">
+			# 				  <label class="searchInfo mbr-fonts-style display-7">Search:</label>
+			# 				  <input class="form-control input-sm" disabled="">
+			# 				</div>
+			# 			</div>
+			# 		  </div>
+			# 		</div>
+
+			# 		<div class="container scroll">
+			# 			<table class="table isSearch" cellspacing="0">
+			# 				'$GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML'
+			# 			</table>
+			# 		</div>
+
+			# 		<div class="container table-info-container">
+			# 		  <div class="row info">
+			# 			<div class="col-md-6">
+			# 			  <div class="dataTables_info mbr-fonts-style display-7">
+			# 				<span class="infoBefore">Showing</span>
+			# 				<span class="inactive infoRows"></span>
+			# 				<span class="infoAfter">entries</span>
+			# 				<span class="infoFilteredBefore">(filtered from</span>
+			# 				<span class="inactive infoRows"></span>
+			# 				<span class="infoFilteredAfter"> total entries)</span>
+			# 			  </div>
+			# 			</div>
+			# 			<div class="col-md-6"></div>
+			# 		  </div>
+			# 		</div>
+
+			# 	  </div>
+
+			# 	</div>
+
+			# </section>
+
+			# ' >> $HTMLFILE_ANNEX_GENES_PANEL_GENES_COVERAGE
+
 
 
 			echo '
@@ -3644,7 +3754,7 @@ GENES_PANEL_NUM=0
 				if (( $GENES_PANEL_REPORT_TSV_NB_LINES > $TABLE_LIMIT )); then
 					GENES_PANEL_VARIANTS_HTML=$TABLE_LIMIT_MSG_HTML
 				else
-					GENES_PANEL_VARIANTS_HTML=$(cat $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV | tr "," " " | $STARK_FOLDER_BIN/csv_to_html.awk -v limit=$TABLE_LIMIT_CUT -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
+					GENES_PANEL_VARIANTS_HTML=$(cat $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV | tr "," " " | $STARK_FOLDER_BIN/csv_to_html.awk -v special_value_color="$SPECIAL_VALUE_COLOR" -v limit=$TABLE_LIMIT_CUT -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
 				fi;
 
 
@@ -3654,7 +3764,7 @@ GENES_PANEL_NUM=0
 
 
 			# Contruct file
-			echo "Annotation	Value	Count" > $HTMLFILE_ANNEX_GENES_PANEL_ANNOTATIONS.tmp
+			echo -e "Annotation\tValue\tCount" > $HTMLFILE_ANNEX_GENES_PANEL_ANNOTATIONS.tmp
 			cat $GENES_PANEL_INFO_FIELD_STATS | grep "^#" -v >> $HTMLFILE_ANNEX_GENES_PANEL_ANNOTATIONS.tmp
 
 			# NB lines/variants

@@ -1359,7 +1359,7 @@ if [ ! -z "$RUNS" ]; then
 						SAMPLE_TAG=$(echo $L | cut -d, -f$SAMPLE_DESCRIPTION_FIELD | tr " " "!")"!"
 						SAMPLE_APP=$(extract_tag "$SAMPLE_DESCRIPTION_FIELD_VALUE" "APP" | tr " " "+")
 						[ -z "$SAMPLE_APP" ] && SAMPLE_APP="$MAIN_APP"
-						[ ! -z $APP ] && SAMPLE_APP=$(echo $APP | tr " " "+" | tr "," "+") && echo "APP forced" # Force APP if in parameters
+						[ ! -z $APP ] && SAMPLE_APP=$(echo $APP | tr " " "+" | tr "," "+") && echo "#[INFO] APP forced '$SAMPLE_APP'" # Force APP if in parameters
 
 						CONFIG_FILE_TAB=$TMP_FOLDER_TMP_R/$SAMPLE_APP.config.tab
 						CONFIG_FILE_TAB_LIST=$(echo "$CONFIG_FILE_TAB_LIST$CONFIG_FILE_TAB " | tr " " "\n" | sort -u | tr "\n" " ")

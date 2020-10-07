@@ -337,8 +337,12 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 			awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$4}' $$one_bed > $(@D)/$(*F).$$(basename $$one_bed).4fields ; \
 			$(JAVA) $(JAVA_FLAGS_BY_SAMPLE) -jar $(PICARD) BedToIntervalList I=$(@D)/$(*F).$$(basename $$one_bed).4fields O=$(@D)/$(*F).$$(basename $$one_bed).interval SD=$$(cat $*.dict); \
 			$(JAVA) $(JAVA_FLAGS_BY_SAMPLE) -jar $(PICARD) CollectHsMetrics INPUT=$*.validation.bam OUTPUT=$(@D)/$(*F).$$(basename $$one_bed).HsMetrics R=$$(cat $*.genome) BAIT_INTERVALS=$(@D)/$(*F).$$(basename $$one_bed).interval TARGET_INTERVALS=$(@D)/$(*F).$$(basename $$one_bed).interval PER_TARGET_COVERAGE=$(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_target_coverage.tmp PER_BASE_COVERAGE=$(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp $(PICARD_CollectHsMetrics_PARAM) VALIDATION_STRINGENCY=SILENT 2>$(@D)/$(*F).$$(basename $$one_bed).HsMetrics.err ; \
-			# fLAG HsMetrics per_target_coverage \
+			# Flag HsMetrics per_target_coverage \
 			awk -f $(STARK_FOLDER_BIN)/per_target_coverage_flag.awk -F"\t" -v EXPECTED_DEPTH=$(EXPECTED_DEPTH) -v MINIMUM_DEPTH=$(MINIMUM_DEPTH) $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_target_coverage.tmp > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_target_coverage.flags; \
+			echo "" > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.FAIL.bed; \
+			cat $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp | awk -F"\t" -v FAIL=$(MINIMUM_DEPTH) '($$4<FAIL) {print $$1 "\t" $$2-1 "\t" $$2 "\t" $$3 "\t" $$4}' | $(BEDTOOLS) merge -c 4,5,5,5,5 -o distinct,mean,min,max,count > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.FAIL.bed 2>/dev/null; \
+			echo "" > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.WARN.bed; \
+			cat $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp | awk -F"\t" -v WARN=$(EXPECTED_DEPTH) '($$4<WARN) {print $$1 "\t" $$2-1 "\t" $$2 "\t" $$3 "\t" $$4}' | $(BEDTOOLS) merge -c 4,5,5,5,5 -o distinct,mean,min,max,count > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.WARN.bed 2>/dev/null; \
 			$(GZ) -c $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.gz; \
 			rm $(@D)/$(*F).$$(basename $$one_bed).4fields $(@D)/$(*F).$$(basename $$one_bed).interval $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_target_coverage.tmp $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp; \
 		else \
@@ -838,6 +842,7 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 					#$(@D)/$(*F).$$bedfile_name.HsMetrics.per_base_coverage ; \
 					$(UNGZ) -c $(@D)/$(*F).$$bedfile_name.HsMetrics.per_base_coverage.gz | awk 'NR!=1{print $$4"\t"$$3}' > $(@D)/$(*F).$$bedfile_name.HsMetrics.per_base_coverage.2cols ; \
 					$(NGSscripts)/genesCoverage.sh -f $*.bam -b $$one_bed -c "$(COVERAGE_CRITERIA)" --coverage-bases=$(@D)/$(*F).$$bedfile_name.HsMetrics.per_base_coverage.2cols --dp_fail=$(MINIMUM_DEPTH) --dp_warn=$(EXPECTED_DEPTH) --dp_threshold=$(DEPTH_COVERAGE_THRESHOLD) -n $(NB_BASES_AROUND) -t $(BEDTOOLS) -s $(SAMTOOLS) --threads=$(THREADS) -o $(@D)/$(*F).$$bedfile_name; \
+					$(NGSscripts)/genesCoverage.sh -f $*.bam -b $$one_bed -c "$(MINIMUM_DEPTH),$(EXPECTED_DEPTH)" --coverage-bases=$(@D)/$(*F).$$bedfile_name.HsMetrics.per_base_coverage.2cols --dp_fail=$(MINIMUM_DEPTH) --dp_warn=$(EXPECTED_DEPTH) --dp_threshold=$(DEPTH_COVERAGE_THRESHOLD) -n $(NB_BASES_AROUND) -t $(BEDTOOLS) -s $(SAMTOOLS) --threads=$(THREADS) -o $(@D)/$(*F).$$bedfile_name.report; \
 					rm $(@D)/$(*F).$$bedfile_name.HsMetrics.per_base_coverage.2cols ; \
 					echo "#[INFO] BAM Metrics on Regions coverage with $$bedfile_name BED file done" >> $@; \
 				else \

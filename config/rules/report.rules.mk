@@ -81,7 +81,8 @@ HOWARD_NOMEN_FIELDS?="hgvs"
 	echo "\"design\": [\"$(*F).$$([[ -s $*.manifest ]] && echo 'manifest' || echo 'bed')\"]," >> $@;
 	if [ -s $*.list.genes ]; then echo "\"genes\": [\""$$(for g in $$(cat $*.list.genes); do basename $$g; done | tr '\n' '+' | sed s/+$$//gi)"\"]," >> $@; fi;
 	if [ -s $*.transcripts ]; then echo "\"transcripts\": [\"$(*F).transcripts\"]," >> $@; fi;
-	echo "\"sample_tag\": [\"$$(cat $*.tag | tr ' ' '!')\"]" >> $@;
+	echo "\"sample_tag\": [\"$$(cat $*.tag | tr ' ' '!')\"]," >> $@;
+	echo "\"application\": [\"$(APP)\"]" >> $@;
 	echo "}" >> $@;
 
 
