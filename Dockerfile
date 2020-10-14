@@ -1,6 +1,6 @@
 
 ##############################################################
-# Dockerfile Version:   1.1
+# Dockerfile Version:   1.2
 # Software:             STARK
 # Software Version:     0.9.18.2
 # Software Website:     https://gitlab.bioinfo-diag.fr/Strasbourg/STARK
@@ -129,11 +129,11 @@ WORKDIR $WORKDIR
 # YUM INSTALL #
 ###############
 
-ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git lzma lzma-devel make ncurses-devel perl perl-Data-Dumper perl-Digest-MD5 perl-Switch perl-devel perl-Tk tbb-devel unzip rsync wget which xz xz-devel zlib zlib-devel zlib2 zlib2-devel docker java-1.7.0 java-1.8.0 python2 python2-pip python3 python3-pip"
+ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git lzma lzma-devel make ncurses-devel perl perl-Data-Dumper perl-Digest-MD5 perl-Switch perl-devel perl-Tk tbb-devel unzip rsync wget which xz xz-devel zlib zlib-devel zlib2 zlib2-devel docker java-1.7.0 java-1.8.0 python2 python2-pip python3 python3-pip curl-devel"
 #ENV YUM_INSTALL=" wget rsync python2 python2-pip python3 python3-pip"
-ENV YUM_REMOVE="autoconf automake bzip2-devel lzma-devel ncurses-devel perl-devel tbb-devel xz-devel zlib-devel zlib2-devel python3-devel"
+ENV YUM_REMOVE="autoconf automake bzip2-devel lzma-devel ncurses-devel perl-devel tbb-devel xz-devel zlib-devel zlib2-devel python3-devel curl-devel"
 ENV PYTHON_MODULE=""
-ENV PYTHON2_MODULE=$PYTHON_MODULE" numpy scipy argparse"
+ENV PYTHON2_MODULE=$PYTHON_MODULE" pathos numpy scipy argparse multiprocess"
 ENV PYTHON3_MODULE=$PYTHON_MODULE""
 
 
@@ -457,6 +457,34 @@ RUN mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
 ################
 
 
+##########
+# PATHOS #
+##########
+
+# # TOOL INFO
+# ENV TOOL_NAME="pathos"
+# ENV TOOL_VERSION="master"
+# ENV TOOL_TARBALL="$TOOL_VERSION.tar.gz"
+# ENV TOOL_SOURCE_EXTERNAL="https://github.com/uqfoundation/pathos/archive/$TOOL_TARBALL"
+# ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+# # TOOL PARAMETERS
+# ENV TOOL_TARBALL_FOLDER="$TOOL_NAME-$TOOL_VERSION"
+
+# # TOOL INSTALLATION
+# RUN source $TOOL_INIT && \
+# 	echo "#[INFO] TOOL installation" && \
+# 	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
+# 	echo "#[INFO] TOOL installation - pip2 install" && \
+# 	pip2 install pathos==0.2.6 && \
+# 	echo "#[INFO] TOOL installation - python2 setup.py build" && \
+# 	(cd $TOOL_SOURCE_BUILD/$TOOL_TARBALL_FOLDER/; python2 setup.py build) && \
+# 	echo "#[INFO] TOOL installation - python2 setup.py install" && \
+# 	(cd $TOOL_SOURCE_BUILD/$TOOL_TARBALL_FOLDER/; python2 setup.py install) && \
+#     $TOOL_CHECK ;
+
+
+# #pip2 --no-cache-dir install dill pox klepto multiprocess ppft pyina pathos numpy scipy argparse && \
+
 
 ###########
 # ANNOVAR #
@@ -493,7 +521,7 @@ RUN source $TOOL_INIT && \
 
 # TOOL INFO
 ENV TOOL_NAME="htslib"
-ENV TOOL_VERSION="1.9"
+ENV TOOL_VERSION="1.11"
 ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.tar.bz2"
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/samtools/$TOOL_NAME/releases/download/$TOOL_VERSION/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
@@ -514,7 +542,7 @@ RUN source $TOOL_INIT && \
 
 # TOOL INFO
 ENV TOOL_NAME="bcftools"
-ENV TOOL_VERSION="1.9"
+ENV TOOL_VERSION="1.11"
 ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.tar.bz2"
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/samtools/$TOOL_NAME/releases/download/$TOOL_VERSION/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
@@ -556,7 +584,7 @@ RUN source $TOOL_INIT && \
 
 # TOOL INFO
 ENV TOOL_NAME="bedtools"
-ENV TOOL_VERSION="2.29.0"
+ENV TOOL_VERSION="2.29.2"
 ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.tar.gz"
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/arq5x/bedtools2/releases/download/v$TOOL_VERSION/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
@@ -577,7 +605,7 @@ RUN source $TOOL_INIT && \
 
 # TOOL INFO
 ENV TOOL_NAME="bowtie2"
-ENV TOOL_VERSION="2.3.5.1"
+ENV TOOL_VERSION="2.4.2"
 ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION-linux-x86_64.zip"
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/BenLangmead/bowtie2/releases/download/v$TOOL_VERSION/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
@@ -686,7 +714,7 @@ RUN source $TOOL_INIT && \
 
 # TOOL INFO
 ENV TOOL_NAME="gatk"
-ENV TOOL_VERSION="4.1.4.0"
+ENV TOOL_VERSION="4.1.9.0"
 ENV TOOL_TARBALL="gatk-$TOOL_VERSION.zip"
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/broadinstitute/gatk/releases/download/$TOOL_VERSION/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
@@ -708,7 +736,7 @@ RUN source $TOOL_INIT && \
 
 # TOOL INFO
 ENV TOOL_NAME="howard"
-ENV TOOL_VERSION="0.9.15.1b"
+ENV TOOL_VERSION="0.9.15.2"
 ENV TOOL_TARBALL="archive.tar.gz"
 ENV TOOL_SOURCE_EXTERNAL="https://gitlab.bioinfo-diag.fr/Strasbourg/HOWARD/repository/$TOOL_VERSION/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
@@ -737,9 +765,10 @@ RUN source $TOOL_INIT && \
 
 # TOOL INFO
 ENV TOOL_NAME="igvtools"
-ENV TOOL_VERSION="2.4"
-ENV TOOL_TARBALL="igvtools_2.4.16.zip"
-ENV TOOL_SOURCE_EXTERNAL="http://data.broadinstitute.org/igv/projects/downloads/$TOOL_VERSION/$TOOL_TARBALL"
+ENV TOOL_VERSION="2.4.19"
+ENV TOOL_TARBALL="igvtools_$TOOL_VERSION.zip"
+ENV TOOL_VERSION_MAIN="2.4"
+ENV TOOL_SOURCE_EXTERNAL="http://data.broadinstitute.org/igv/projects/downloads/$TOOL_VERSION_MAIN/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
 
@@ -821,22 +850,26 @@ RUN source $TOOL_INIT && \
 # PATHOS #
 ##########
 
-# TOOL INFO
-ENV TOOL_NAME="pathos"
-ENV TOOL_VERSION="master"
-ENV TOOL_TARBALL="$TOOL_VERSION.tar.gz"
-ENV TOOL_SOURCE_EXTERNAL="https://github.com/uqfoundation/pathos/archive/$TOOL_TARBALL"
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-# TOOL PARAMETERS
-ENV TOOL_TARBALL_FOLDER="$TOOL_NAME-$TOOL_VERSION"
+# # TOOL INFO
+# ENV TOOL_NAME="pathos"
+# ENV TOOL_VERSION="master"
+# ENV TOOL_TARBALL="$TOOL_VERSION.tar.gz"
+# ENV TOOL_SOURCE_EXTERNAL="https://github.com/uqfoundation/pathos/archive/$TOOL_TARBALL"
+# ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+# # TOOL PARAMETERS
+# ENV TOOL_TARBALL_FOLDER="$TOOL_NAME-$TOOL_VERSION"
 
-# TOOL INSTALLATION
-RUN source $TOOL_INIT && \
-	echo "#[INFO] TOOL installation" && \
-	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
-	(cd $TOOL_SOURCE_BUILD/$TOOL_TARBALL_FOLDER/; python2 setup.py build) && \
-	(cd $TOOL_SOURCE_BUILD/$TOOL_TARBALL_FOLDER/; python2 setup.py install) && \
-    $TOOL_CHECK ;
+# # TOOL INSTALLATION
+# RUN source $TOOL_INIT && \
+# 	echo "#[INFO] TOOL installation" && \
+# 	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
+# 	echo "#[INFO] TOOL installation - pip2 install" && \
+# 	pip2 install pathos==0.2.6 && \
+# 	echo "#[INFO] TOOL installation - python2 setup.py build" && \
+# 	(cd $TOOL_SOURCE_BUILD/$TOOL_TARBALL_FOLDER/; python2 setup.py build) && \
+# 	echo "#[INFO] TOOL installation - python2 setup.py install" && \
+# 	(cd $TOOL_SOURCE_BUILD/$TOOL_TARBALL_FOLDER/; python2 setup.py install) && \
+#     $TOOL_CHECK ;
 
 
 
@@ -846,7 +879,7 @@ RUN source $TOOL_INIT && \
 
 # TOOL INFO
 ENV TOOL_NAME="picard"
-ENV TOOL_VERSION="2.18.5"
+ENV TOOL_VERSION="2.23.7"
 ENV TOOL_TARBALL="picard.jar"
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/broadinstitute/picard/releases/download/$TOOL_VERSION/picard.jar"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH

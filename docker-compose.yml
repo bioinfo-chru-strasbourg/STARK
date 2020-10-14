@@ -19,7 +19,7 @@ services:
     stark-sources:
         image: ${DOCKER_STARK_SOURCES_IMAGE}
         build:
-            context: ${DOCKER_STARK_CONTEXT}
+            context: ${DOCKER_STARK_IMAGE_CONTEXT}
             dockerfile: Dockerfile
             args:
                 - THREADS=${DOCKER_STARK_BUILD_THREADS}
@@ -37,7 +37,7 @@ services:
     stark:
         image: ${DOCKER_STARK_IMAGE}
         build:
-            context: ${DOCKER_STARK_CONTEXT}
+            context: ${DOCKER_STARK_IMAGE_CONTEXT}
             dockerfile: Dockerfile
             args:
                 - THREADS=${DOCKER_STARK_BUILD_THREADS}
