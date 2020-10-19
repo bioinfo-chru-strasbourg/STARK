@@ -18,7 +18,7 @@ APP_PROJECT="UNKNOWN"
 
 # PIPELINES
 #PIPELINES="bowtie.gatkHC.howard bwamem.gatkHC.howard" #
-#PIPELINES="bowtie.gatk4HC.howard" #
+PIPELINES="bowtie.gatk4HC.howard" #
 #PIPELINES="bwamem.gatkHC.howard" #
 #PIPELINES="bwamem.gatkHC.howard bwamem.gatkUG.howard bwamem.outLyzer.howard bwamem.MuTect2.howard bwamem.itdseek.howard bwamem.VarScan.howard " 
-PIPELINES="bowtie2.gatkHC.howard bowtie2.gatk4HC.howard bowtie2.gatkUG.howard bowtie2.outLyzer.howard bowtie2.MuTect2.howard bowtie2.itdseek.howard bowtie2.VarScan.howard bwamem.gatkHC.howard bwamem.gatk4HC.howard bwamem.gatkUG.howard bwamem.outLyzer.howard bwamem.MuTect2.howard bwamem.itdseek.howard bwamem.VarScan.howard " 
+#PIPELINES="bowtie2.gatkHC.howard bowtie2.gatk4HC.howard bowtie2.gatkUG.howard bowtie2.outLyzer.howard bowtie2.MuTect2.howard bowtie2.itdseek.howard bowtie2.VarScan.howard bwamem.gatkHC.howard bwamem.gatk4HC.howard bwamem.gatkUG.howard bwamem.outLyzer.howard bwamem.MuTect2.howard bwamem.itdseek.howard bwamem.VarScan.howard " 
