@@ -225,6 +225,33 @@ if [ ! -s $REF ] || [ "$REF" == "" ]; then
 fi;
 export REF
 
+# REF_CACHE_FOLDER and REF_CACHE and REF_PATH
+
+if [ -z $REF_PATH ] || [ "$REF_PATH" == "" ]; then
+	REF_PATH="http://www.ebi.ac.uk/ena/cram/md5/%s"
+fi;
+
+if [ -z $REF_CACHE_FOLDER ] || [ "$REF_CACHE_FOLDER" == "" ] || [ ! -d $REF_CACHE_FOLDER ]; then
+	if [ -d $REF.hts-ref ] && [ "$(ls -A $REF.hts-ref 2>/dev/null)" ]; then
+		REF_CACHE_FOLDER=$REF.hts-ref
+	elif mkdir -p $REF.hts-ref 2>/dev/null; then
+		REF_CACHE_FOLDER=$REF.hts-ref
+	else
+		REF_CACHE_FOLDER=$HOME/.cache/hts-ref
+		mkdir -p $REF_CACHE_FOLDER
+	fi;
+else
+	REF_CACHE="$REF_CACHE_FOLDER/%2s/%2s/%s"
+fi;
+
+if [ ! "$(ls -A $REF_CACHE_FOLDER 2>/dev/null)" ] && [ -w $REF_CACHE_FOLDER ] && [ "$(whereis samtools | cut -d' ' -f2)" ]; then \
+	perl $(dirname $(whereis samtools | cut -d' ' -f2))/seq_cache_populate.pl -root $REF_CACHE_FOLDER $REF ; \
+fi;
+
+export REF_CACHE_FOLDER
+export REF_PATH
+export REF_CACHE="$REF_CACHE_FOLDER/%2s/%2s/%s"
+
 
 
 # TOOLS

@@ -74,12 +74,12 @@ GATKUG_FLAGS= -nct $(THREADS_GATKUG) -glm BOTH \
 # Minimum coverage for a variant called by gatkUG
 DPMIN=1
 
-%.gatkUG$(POST_CALLING).vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
+%.gatkUG$(POST_CALLING).vcf: %.bam %.bam.bai %.from_manifest.interval_list %.empty.vcf %.genome
 	#
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKUG_FLAGS) \
 		-T UnifiedGenotyper \
 		-R `cat $*.genome` \
-		$$(if [ "`grep ^ -c $*.from_manifest.intervals`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.intervals"; fi;) \
+		$$(if [ "`grep ^ -c $*.from_manifest.interval_list`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.interval_list"; fi;) \
 		-I $< \
 		-ip $(INTERVAL_PADDING) \
 		-o $@.tmp;
@@ -111,12 +111,12 @@ GATKUG_GERMLINE_FLAGS= -nct $(GATKUG_THREADS_GERMLINE) -glm BOTH \
 		-stand_call_conf $(STAND_CALL_CONF_UG_GERMLINE) -dfrac $(DFRAC_UG_GERMLINE) --dbsnp $(VCFDBSNP) -mbq $(MBQ_UG_UG_GERMLINE) -rf BadCigar -dt NONE
 # Minimum coverage for a variant called by gatkUG
 
-%.gatkUG_GERMLINE$(POST_CALLING).vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
+%.gatkUG_GERMLINE$(POST_CALLING).vcf: %.bam %.bam.bai %.from_manifest.interval_list %.empty.vcf %.genome
 	#
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKUG_GERMLINE_FLAGS) \
 		-T UnifiedGenotyper \
 		-R `cat $*.genome` \
-		$$(if [ "`grep ^ -c $*.from_manifest.intervals`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.intervals"; fi;) \
+		$$(if [ "`grep ^ -c $*.from_manifest.interval_list`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.interval_list"; fi;) \
 		-I $< \
 		-ip $(INTERVAL_PADDING) \
 		-o $@.tmp;
@@ -150,12 +150,12 @@ GATKUG_EXOME_FLAGS= -nct $(GATKUG_THREADS_EXOME) -glm BOTH \
 		-stand_call_conf $(STAND_CALL_CONF_UG_EXOME) -dfrac $(DFRAC_UG_EXOME) --dbsnp $(VCFDBSNP) -mbq $(MBQ_UG_UG_EXOME) -rf BadCigar -dt NONE
 # Minimum coverage for a variant called by gatkUG
 
-%.gatkUG_EXOME$(POST_CALLING).vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
+%.gatkUG_EXOME$(POST_CALLING).vcf: %.bam %.bam.bai %.from_manifest.interval_list %.empty.vcf %.genome
 	#
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKUG_EXOME_FLAGS) \
 		-T UnifiedGenotyper \
 		-R `cat $*.genome` \
-		$$(if [ "`grep ^ -c $*.from_manifest.intervals`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.intervals"; fi;) \
+		$$(if [ "`grep ^ -c $*.from_manifest.interval_list`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.interval_list"; fi;) \
 		-I $< \
 		-ip $(INTERVAL_PADDING) \
 		-o $@.tmp;
@@ -189,12 +189,12 @@ GATKUG_EXOME_SOMATIC_FLAGS= -nct $(GATKUG_THREADS_EXOME_SOMATIC) -glm BOTH \
 		-stand_call_conf $(STAND_CALL_CONF_UG_EXOME_SOMATIC) -dfrac $(DFRAC_UG_EXOME_SOMATIC) --dbsnp $(VCFDBSNP) -mbq $(MBQ_UG_UG_EXOME_SOMATIC) -rf BadCigar -dt NONE
 # Minimum coverage for a variant called by gatkUG
 
-%.gatkUG_EXOME_SOMATIC$(POST_CALLING).vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
+%.gatkUG_EXOME_SOMATIC$(POST_CALLING).vcf: %.bam %.bam.bai %.from_manifest.interval_list %.empty.vcf %.genome
 	#
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKUG_EXOME_SOMATIC_FLAGS) \
 		-T UnifiedGenotyper \
 		-R `cat $*.genome` \
-		$$(if [ "`grep ^ -c $*.from_manifest.intervals`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.intervals"; fi;) \
+		$$(if [ "`grep ^ -c $*.from_manifest.interval_list`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.interval_list"; fi;) \
 		-I $< \
 		-ip $(INTERVAL_PADDING) \
 		-o $@.tmp;
@@ -227,12 +227,12 @@ GATKUG_GENOME_FLAGS= -nct $(GATKUG_THREADS_GENOME) -glm BOTH \
 		-stand_call_conf $(STAND_CALL_CONF_UG_GENOME) -dfrac $(DFRAC_UG_GENOME) --dbsnp $(VCFDBSNP) -mbq $(MBQ_UG_UG_GENOME) -rf BadCigar -dt NONE
 # Minimum coverage for a variant called by gatkUG
 
-%.gatkUG_GENOME$(POST_CALLING).vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
+%.gatkUG_GENOME$(POST_CALLING).vcf: %.bam %.bam.bai %.from_manifest.interval_list %.empty.vcf %.genome
 	#
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKUG_GENOME_FLAGS) \
 		-T UnifiedGenotyper \
 		-R `cat $*.genome` \
-		$$(if [ "`grep ^ -c $*.from_manifest.intervals`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.intervals"; fi;) \
+		$$(if [ "`grep ^ -c $*.from_manifest.interval_list`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.interval_list"; fi;) \
 		-I $< \
 		-ip $(INTERVAL_PADDING) \
 		-o $@.tmp;
@@ -261,12 +261,12 @@ GATKUG_HEMATOLOGY_FLAGS= -nct $(THREADS_GATKUG_HEMATOLOGY) -glm BOTH \
 # Minimum coverage for a variant called by GATKUG_HEMATOLOGY
 DPMIN_HEMATOLOGY=1
 
-%.gatkUG_HEMATOLOGY$(POST_CALLING).vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
+%.gatkUG_HEMATOLOGY$(POST_CALLING).vcf: %.bam %.bam.bai %.from_manifest.interval_list %.empty.vcf %.genome
 	#
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKUG_HEMATOLOGY_FLAGS) \
 		-T UnifiedGenotyper \
 		-R `cat $*.genome` \
-		$$(if [ "`grep ^ -c $*.from_manifest.intervals`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.intervals"; fi;) \
+		$$(if [ "`grep ^ -c $*.from_manifest.interval_list`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.interval_list"; fi;) \
 		-I $< \
 		-ip $(INTERVAL_PADDING) \
 		-o $@.tmp;
@@ -295,12 +295,12 @@ GATKUG_SOLIDTUMOR_FLAGS= -nct $(THREADS_GATKUG_SOLIDTUMOR) -glm BOTH \
 # Minimum coverage for a variant called by GATKUG_SOLIDTUMOR
 DPMIN_SOLIDTUMOR=1
 
-%.gatkUG_SOLIDTUMOR$(POST_CALLING).vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
+%.gatkUG_SOLIDTUMOR$(POST_CALLING).vcf: %.bam %.bam.bai %.from_manifest.interval_list %.empty.vcf %.genome
 	#
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKUG_SOLIDTUMOR_FLAGS) \
 		-T UnifiedGenotyper \
 		-R `cat $*.genome` \
-		$$(if [ "`grep ^ -c $*.from_manifest.intervals`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.intervals"; fi;) \
+		$$(if [ "`grep ^ -c $*.from_manifest.interval_list`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.interval_list"; fi;) \
 		-I $< \
 		-ip $(INTERVAL_PADDING) \
 		-o $@.tmp;
@@ -330,12 +330,12 @@ GATKUG_SOMATIC_FLAGS= -nct $(THREADS_GATKUG_SOMATIC) -glm BOTH \
 # Minimum coverage for a variant called by GATKUG_SOMATIC
 DPMIN_SOMATIC=1
 
-%.gatkUG_SOMATIC$(POST_CALLING).vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
+%.gatkUG_SOMATIC$(POST_CALLING).vcf: %.bam %.bam.bai %.from_manifest.interval_list %.empty.vcf %.genome
 	#
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKUG_SOMATIC_FLAGS) \
 		-T UnifiedGenotyper \
 		-R `cat $*.genome` \
-		$$(if [ "`grep ^ -c $*.from_manifest.intervals`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.intervals"; fi;) \
+		$$(if [ "`grep ^ -c $*.from_manifest.interval_list`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.interval_list"; fi;) \
 		-I $< \
 		-ip $(INTERVAL_PADDING) \
 		-o $@.tmp;
@@ -373,12 +373,12 @@ GATKUG_ONCOGENET_FLAGS= -nct $(GATKUG_THREADS_ONCOGENET) -glm BOTH \
 # Minimum coverage for a variant called by gatkUG
 DPMIN_ONCOGENET=4
 
-%.gatkUG_ONCOGENET$(POST_CALLING).vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
+%.gatkUG_ONCOGENET$(POST_CALLING).vcf: %.bam %.bam.bai %.from_manifest.interval_list %.empty.vcf %.genome
 	#
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKUG_ONCOGENET_FLAGS) \
 		-T UnifiedGenotyper \
 		-R `cat $*.genome` \
-		$$(if [ "`grep ^ -c $*.from_manifest.intervals`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.intervals"; fi;) \
+		$$(if [ "`grep ^ -c $*.from_manifest.interval_list`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.interval_list"; fi;) \
 		-I $< \
 		-ip $(INTERVAL_PADDING) \
 		-o $@.tmp;
@@ -419,12 +419,12 @@ THREADS_GATKHC?=$(THREADS_GATK)
 maxReadsInRegionPerSample=250
 GATKHC_FLAGS= -nct $(THREADS_GATKHC) -stand_call_conf 10 -dfrac $(DFRAC) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC) -minPruning $(MINPRUNING) $(GATKHC_FLAGS_SHARED)
 
-%.gatkHC$(POST_CALLING).vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
+%.gatkHC$(POST_CALLING).vcf: %.bam %.bam.bai %.from_manifest.interval_list %.empty.vcf %.genome
 	#
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKHC_FLAGS) \
 		-T HaplotypeCaller \
 		-R `cat $*.genome` \
-		$$(if [ "`grep ^ -c $*.from_manifest.intervals`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.intervals"; fi;) \
+		$$(if [ "`grep ^ -c $*.from_manifest.interval_list`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.interval_list"; fi;) \
 		-I $< \
 		-ip $(INTERVAL_PADDING) \
 		-o $@;
@@ -449,11 +449,11 @@ DPMIN_HC_GERMLINE=4
 
 GATKHC_GERMLINE_FLAGS= -nct $(THREADS_GATKHC_GERMLINE) -stand_call_conf $(STAND_CALL_CONF_HC_GERMLINE) -dfrac $(DFRAC_HC_GERMLINE) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample_HC_GERMLINE) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC_GERMLINE) -minPruning $(MINPRUNING_HC_GERMLINE)  $(GATKHC_FLAGS_SHARED)
 
-%.gatkHC_GERMLINE$(POST_CALLING).vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
+%.gatkHC_GERMLINE$(POST_CALLING).vcf: %.bam %.bam.bai %.from_manifest.interval_list %.empty.vcf %.genome
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKHC_GERMLINE_FLAGS) \
 		-T HaplotypeCaller \
 		-R `cat $*.genome` \
-		$$(if [ "`grep ^ -c $*.from_manifest.intervals`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.intervals"; fi;) \
+		$$(if [ "`grep ^ -c $*.from_manifest.interval_list`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.interval_list"; fi;) \
 		-I $< \
 		-ip $(INTERVAL_PADDING) \
 		-o $@.tmp;
@@ -480,11 +480,11 @@ DPMIN_HC_EXOME=4
 
 GATKHC_EXOME_FLAGS= -nct $(THREADS_GATKHC_EXOME) -stand_call_conf $(STAND_CALL_CONF_HC_EXOME) -dfrac $(DFRAC_HC_EXOME) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample_HC_EXOME) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC_EXOME) -minPruning $(MINPRUNING_HC_EXOME)  $(GATKHC_FLAGS_SHARED)
 
-%.gatkHC_EXOME$(POST_CALLING).vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
+%.gatkHC_EXOME$(POST_CALLING).vcf: %.bam %.bam.bai %.from_manifest.interval_list %.empty.vcf %.genome
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKHC_EXOME_FLAGS) \
 		-T HaplotypeCaller \
 		-R `cat $*.genome` \
-		$$(if [ "`grep ^ -c $*.from_manifest.intervals`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.intervals"; fi;) \
+		$$(if [ "`grep ^ -c $*.from_manifest.interval_list`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.interval_list"; fi;) \
 		-I $< \
 		-ip $(INTERVAL_PADDING) \
 		-o $@.tmp;
@@ -511,11 +511,11 @@ DPMIN_HC_EXOME_SOMATIC=50
 
 GATKHC_EXOME_SOMATIC_FLAGS= -nct $(THREADS_GATKHC_EXOME_SOMATIC) -stand_call_conf $(STAND_CALL_CONF_HC_EXOME_SOMATIC) -dfrac $(DFRAC_HC_EXOME_SOMATIC) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample_HC_EXOME_SOMATIC) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC_EXOME_SOMATIC) -minPruning $(MINPRUNING_HC_EXOME_SOMATIC)  $(GATKHC_FLAGS_SHARED)
 
-%.gatkHC_EXOME_SOMATIC$(POST_CALLING).vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
+%.gatkHC_EXOME_SOMATIC$(POST_CALLING).vcf: %.bam %.bam.bai %.from_manifest.interval_list %.empty.vcf %.genome
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKHC_EXOME_SOMATIC_FLAGS) \
 		-T HaplotypeCaller \
 		-R `cat $*.genome` \
-		$$(if [ "`grep ^ -c $*.from_manifest.intervals`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.intervals"; fi;) \
+		$$(if [ "`grep ^ -c $*.from_manifest.interval_list`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.interval_list"; fi;) \
 		-I $< \
 		-ip $(INTERVAL_PADDING) \
 		-o $@.tmp;
@@ -543,12 +543,12 @@ DPMIN_HC_GENOME=4
 
 GATKHC_GENOME_FLAGS= -nct $(THREADS_GATKHC_GENOME) -stand_call_conf $(STAND_CALL_CONF_HC_GENOME) -dfrac $(DFRAC_HC_GENOME) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample_HC_GENOME) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC_GENOME) -minPruning $(MINPRUNING_HC_GENOME)  $(GATKHC_FLAGS_SHARED)
 
-%.gatkHC_GENOME$(POST_CALLING).vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
+%.gatkHC_GENOME$(POST_CALLING).vcf: %.bam %.bam.bai %.from_manifest.interval_list %.empty.vcf %.genome
 	#
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKHC_GENOME_FLAGS) \
 		-T HaplotypeCaller \
 		-R `cat $*.genome` \
-		$$(if [ "`grep ^ -c $*.from_manifest.intervals`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.intervals"; fi;) \
+		$$(if [ "`grep ^ -c $*.from_manifest.interval_list`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.interval_list"; fi;) \
 		-I $< \
 		-ip $(INTERVAL_PADDING) \
 		-o $@.tmp;
@@ -569,12 +569,12 @@ THREADS_GATKHC_HEMATOLOGY?=$(THREADS_GATK)
 maxReadsInRegionPerSample_HEMATOLOGY=1000
 GATKHC_HEMATOLOGY_FLAGS= -nct $(THREADS_GATKHC_HEMATOLOGY) -stand_call_conf 10 -dfrac $(DFRAC) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample_HEMATOLOGY) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC) -minPruning $(MINPRUNING_HEMATOLOGY)  $(GATKHC_FLAGS_SHARED)
 
-%.gatkHC_HEMATOLOGY$(POST_CALLING).vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
+%.gatkHC_HEMATOLOGY$(POST_CALLING).vcf: %.bam %.bam.bai %.from_manifest.interval_list %.empty.vcf %.genome
 	#
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKHC_HEMATOLOGY_FLAGS) \
 		-T HaplotypeCaller \
 		-R `cat $*.genome` \
-		$$(if [ "`grep ^ -c $*.from_manifest.intervals`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.intervals"; fi;) \
+		$$(if [ "`grep ^ -c $*.from_manifest.interval_list`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.interval_list"; fi;) \
 		-I $< \
 		-ip $(INTERVAL_PADDING) \
 		-o $@;
@@ -593,12 +593,12 @@ THREADS_GATKHC_SOLIDTUMOR?=$(THREADS_GATK)
 maxReadsInRegionPerSample_SOLIDTUMOR=1000
 GATKHC_SOLIDTUMOR_FLAGS= -nct $(THREADS_GATKHC_SOLIDTUMOR) -stand_call_conf 10 -dfrac $(DFRAC) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample_SOLIDTUMOR) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC) -minPruning $(MINPRUNING_SOLIDTUMOR)  $(GATKHC_FLAGS_SHARED)
 
-%.gatkHC_SOLIDTUMOR$(POST_CALLING).vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
+%.gatkHC_SOLIDTUMOR$(POST_CALLING).vcf: %.bam %.bam.bai %.from_manifest.interval_list %.empty.vcf %.genome
 	#
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKHC_SOLIDTUMOR_FLAGS) \
 		-T HaplotypeCaller \
 		-R `cat $*.genome` \
-		$$(if [ "`grep ^ -c $*.from_manifest.intervals`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.intervals"; fi;) \
+		$$(if [ "`grep ^ -c $*.from_manifest.interval_list`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.interval_list"; fi;) \
 		-I $< \
 		-ip $(INTERVAL_PADDING) \
 		-o $@;
@@ -618,12 +618,12 @@ THREADS_GATKHC_SOMATIC?=$(THREADS_GATK)
 maxReadsInRegionPerSample_SOMATIC=1000
 GATKHC_SOMATIC_FLAGS= -nct $(THREADS_GATKHC_SOMATIC) -stand_call_conf 10 -dfrac $(DFRAC) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample_SOMATIC) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC) -minPruning $(MINPRUNING_SOMATIC)  $(GATKHC_FLAGS_SHARED)
 
-%.gatkHC_SOMATIC$(POST_CALLING).vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
+%.gatkHC_SOMATIC$(POST_CALLING).vcf: %.bam %.bam.bai %.from_manifest.interval_list %.empty.vcf %.genome
 	#
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKHC_SOMATIC_FLAGS) \
 		-T HaplotypeCaller \
 		-R `cat $*.genome` \
-		$$(if [ "`grep ^ -c $*.from_manifest.intervals`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.intervals"; fi;) \
+		$$(if [ "`grep ^ -c $*.from_manifest.interval_list`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.interval_list"; fi;) \
 		-I $< \
 		-ip $(INTERVAL_PADDING) \
 		-o $@;
@@ -645,12 +645,12 @@ THREADS_GATKHC_ONCOGENET?=$(THREADS_GATK)
 maxReadsInRegionPerSample=8000
 GATKHC_ONCOGENET_FLAGS= -nct $(THREADS_GATKHC_ONCOGENET) -stand_call_conf 10 -dfrac $(DFRAC_ONCOGENET) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC_ONCOGENET) -minPruning $(MINPRUNING_ONCOGENET)  $(GATKHC_FLAGS_SHARED)
 
-%.gatkHC_ONCOGENET$(POST_CALLING).vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
+%.gatkHC_ONCOGENET$(POST_CALLING).vcf: %.bam %.bam.bai %.from_manifest.interval_list %.empty.vcf %.genome
 	#
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKHC_ONCOGENET_FLAGS) \
 		-T HaplotypeCaller \
 		-R `cat $*.genome` \
-		$$(if [ "`grep ^ -c $*.from_manifest.intervals`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.intervals"; fi;) \
+		$$(if [ "`grep ^ -c $*.from_manifest.interval_list`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.interval_list"; fi;) \
 		-I $< \
 		-ip $(INTERVAL_PADDING) \
 		-o $@;
@@ -662,6 +662,30 @@ GATKHC_ONCOGENET_FLAGS= -nct $(THREADS_GATKHC_ONCOGENET) -stand_call_conf 10 -df
 
 
 
+##########
+# gatk4HC #
+##########
+
+MINPRUNING?=4
+THREADS_GATK4HC?=$(THREADS_GATK)
+maxReadsInRegionPerSample=250
+GATK4HC_FLAGS= --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC) --min-pruning $(MINPRUNING) --native-pair-hmm-threads $(THREADS_GATKHC_ONCOGENET) $(GATK4HC_FLAGS_SHARED)
+
+%.gatk4HC$(POST_CALLING).vcf: %.bam %.bam.bai %.from_manifest.interval_list %.empty.vcf %.genome
+	#
+	$(JAVA) $(JAVA_FLAGS) -jar $(GATK4) HaplotypeCaller \
+		$(GATK4HC_FLAGS) \
+		-R $$(cat $*.genome) \
+		$$(if [ "`grep ^ -c $*.from_manifest.interval_list`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.interval_list"; fi;) \
+		-I $< \
+		-ip $(INTERVAL_PADDING) \
+		-O $@;
+	-if [ ! -e $@ ]; then cp $*.empty.vcf $@; fi;
+	-if [ ! -e $@ ]; then touch $@; fi;
+	-rm -f $@.idx
+
+
+
 
 ####################
 # IndelGenotyperV2 #
@@ -670,13 +694,13 @@ GATKHC_ONCOGENET_FLAGS= -nct $(THREADS_GATKHC_ONCOGENET) -stand_call_conf 10 -df
 GATKIG_FLAGS= -minFraction 0.01 -minCnt 1 -B:dbsnp,vcf $(VCFDBSNP) -rf BadCigar
 #-mnr 10000000
 
-%.gatkIG.vcf: %.bam %.bam.bai %.from_manifest.intervals %.genome
+%.gatkIG.vcf: %.bam %.bam.bai %.from_manifest.interval_list %.genome
 	if [ ! "$(GATKIG)" == ""] && [ -e $(GATKIG) ]; \
 	then \
 		$(JAVA) $(JAVA_FLAGS) -jar $(GATKIG) $(GATKIG_FLAGS) \
 			-T IndelGenotyperV2 \
 			-R `cat $*.genome` \
-			$$(if [ "`grep ^ -c $*.from_manifest.intervals`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.intervals"; fi;) \
+			$$(if [ "`grep ^ -c $*.from_manifest.interval_list`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.interval_list"; fi;) \
 			-I $< \
 			-o $@ ; \
 	fi;
@@ -743,6 +767,9 @@ RELEASE_COMMENT := "\#\# CALLING GATKHC ONCOGENET identify variants and generate
 RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
 
+RELEASE_COMMENT := "\#\# CALLING GATK4HC identify variants and generate *.gatk4HC.vcf files with parameters: GATK4HC_FLAGS='$(GATK4HC_FLAGS)'"
+RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
+
 
 PIPELINES_COMMENT := "CALLER:gatkUG:GATK Unified Genotyper - by default:GATKUG_FLAGS='$(GATKUG_FLAGS)', DPMIN='$(DPMIN)'"
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
@@ -772,7 +799,7 @@ PIPELINES_COMMENT := "CALLER:gatkUG_ONCOGENET:GATK Unified Genotyper - designed 
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
 
 
-PIPELINES_COMMENT := "CALLER:gatkHC:GATK Haplotype Caller - by default:GATKHC_FLAGS='$(GATKUG_FLAGS)'"
+PIPELINES_COMMENT := "CALLER:gatkHC:GATK Haplotype Caller - by default:GATKHC_FLAGS='$(GATKHC_FLAGS)'"
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
 
 PIPELINES_COMMENT := "CALLER:gatkHC_GERMLINE:GATK Haplotype Caller - designed for GERMLINE discovery:GATKHC_GERMLINE_FLAGS='$(GATKHC_GERMLINE_FLAGS)', DPMIN_HC_GERMLINE='$(DPMIN_HC_GERMLINE)'"
@@ -797,4 +824,8 @@ PIPELINES_COMMENT := "CALLER:gatkHC_SOMATIC:GATK Haplotype Caller - designed for
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
 
 PIPELINES_COMMENT := "CALLER:gatkHC_ONCOGENET:GATK Haplotype Caller - designed for ONCOGENET variant discovery:GATKHC_ONCOGENET_FLAGS='$(GATKHC_ONCOGENET_FLAGS)'"
+PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
+
+
+PIPELINES_COMMENT := "CALLER:gatk4HC:GATK4 Haplotype Caller - by default:GATK4HC_FLAGS='$(GATK4HC_FLAGS)'"
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )

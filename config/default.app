@@ -296,7 +296,7 @@ POST_CALLING_STEPS="normalization recalibration filtration"
 #    normalization: VCF normalization
 # Usually:
 #    "sorting normalization"
-POST_ANNOTATION_STEPS="sorting"
+POST_ANNOTATION_STEPS="sorting normalization"
 
 
 

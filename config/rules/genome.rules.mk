@@ -20,8 +20,9 @@ PICARDLIB?=$(NGSbin)/picard-tools
 ## Genome REF
 ###############
 
-	
-	
+
+
+
 %.assembly: %.manifest %.bed
 	# Find assembly from bed
 	if [ -s $*.bed ]; then grep -Po "\thg[0-9]*\t|\\\\hg[0-9]*\\\\|\\hg[0-9]*\." $*.bed | tr -d "\t\\\." | uniq > $@; fi;
@@ -67,7 +68,8 @@ PICARDLIB?=$(NGSbin)/picard-tools
 	if [ ! -s $$(cat $@) ]; then \
 		$(JAVA) -jar $(PICARD) CreateSequenceDictionary REFERENCE=$$(cat $<) OUTPUT=$$(cat $@); \
 	fi;
-	
+
+
 
 # CONFIG/RELEASE
 RELEASE_COMMENT := "\#\# GENOME '$(MK_RELEASE)': Check for genome assembly from parameters, either bed file, manifest file, or option."

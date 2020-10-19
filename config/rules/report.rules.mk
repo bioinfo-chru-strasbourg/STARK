@@ -137,10 +137,11 @@ HOWARD_NOMEN_FIELDS?="hgvs"
 	# Generate pipeline name list
 	cat $< | rev | cut -d/ -f1 | rev | sed s/\.vcf.gz//gi | cut -d. -f2- > $@.pipelines #| tr '\n' '\t' | sed 's/\t$$//'
 	# Merge VCF, noramize and rehead with pipelines names
-	$(BCFTOOLS) merge -l $< --force-samples -m none --info-rules - | $(BCFTOOLS) norm -m- -f $$(cat $*.genome) | $(BCFTOOLS) norm -d all | $(BCFTOOLS) reheader -s $@.pipelines > $@;
+	$(BCFTOOLS) merge -l $< --force-samples -m none --info-rules - | $(BCFTOOLS) norm -m- -f $$(cat $*.genome) | $(BCFTOOLS) norm --rm-dup exact | $(BCFTOOLS) reheader -s $@.pipelines > $@;
 	# Cleaning
 	-rm -f $@.tmp* $@.pipelines
 
+	
 
 ## FULL VCF: ANNOTATION OF A MERGE FILE
 %.full.sorting.vcf: %.merge.vcf %.transcripts %.genome

@@ -16,12 +16,12 @@
 MUTECT_INTERVAL_PADDING?=0
 
 
-%.MuTect$(POST_CALLING).vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
+%.MuTect$(POST_CALLING).vcf: %.bam %.bam.bai %.from_manifest.interval_list %.empty.vcf %.genome
 	# Calling
 	$(JAVA7) -jar $(MUTECT) \
 		--analysis_type MuTect \
 		--reference_sequence $$(cat $*.genome) \
-		$$(if [ "`grep ^ -c $*.from_manifest.intervals`" == "0" ]; then echo ""; else echo "--intervals $*.from_manifest.intervals"; fi;) \
+		$$(if [ "`grep ^ -c $*.from_manifest.interval_list`" == "0" ]; then echo ""; else echo "--intervals $*.from_manifest.interval_list"; fi;) \
 		--input_file:tumor $< \
 		--vcf $@.tmp1 \
 		-ip $(MUTECT_INTERVAL_PADDING);
@@ -47,12 +47,12 @@ MUTECT_INTERVAL_PADDING?=0
 GATK4_MUTECT2_FLAGS_SHARED?=--disable-read-filter MateOnSameContigOrNoMappedMateReadFilter --verbosity ERROR
 
 
-%.MuTect2$(POST_CALLING).vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
+%.MuTect2$(POST_CALLING).vcf: %.bam %.bam.bai %.from_manifest.interval_list %.empty.vcf %.genome
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK4) Mutect2 $(GATK4_MUTECT2_FLAGS_SHARED) \
 		-R $$(cat $*.genome) \
 		-I $< \
 		-tumor $$(basename $< | cut -d"." -f1) \
-		$$(if [ "`grep ^ -c $*.from_manifest.intervals`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.intervals"; fi;) \
+		$$(if [ "`grep ^ -c $*.from_manifest.interval_list`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.interval_list"; fi;) \
 		-O $@.tmp1;
 	# Normalize
 	grep "^##" $@.tmp1 | sed s/ID=TLOD,Number=A/ID=TLOD,Number=./gi > $@.tmp
@@ -84,12 +84,12 @@ maxReadsInRegionPerSample_GATK3_MUTECT2?=1000
 GATK3_MUTECT2_FLAGS= -nct $(THREADS_GATK3_MUTECT2) -stand_call_conf 10 -dfrac $(DFRAC_GATK3_MUTECT2) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample_GATK3_MUTECT2) --dbsnp $(VCFDBSNP_GATK3_MUTECT2) -mbq $(MBQ_GATK3_MUTECT2) -minPruning $(MINPRUNING_GATK3_MUTECT2)  $(GATK3_MUTECT2_FLAGS_SHARED)
 
 
-%.GATK3_MuTect2$(POST_CALLING).vcf: %.bam %.bam.bai %.from_manifest.intervals %.empty.vcf %.genome
+%.GATK3_MuTect2$(POST_CALLING).vcf: %.bam %.bam.bai %.from_manifest.interval_list %.empty.vcf %.genome
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATK3_MUTECT2_FLAGS) \
 	 	-T MuTect2 \
 		-R $$(cat $*.genome) \
 		-I:tumor $< \
-		$$(if [ "`grep ^ -c $*.from_manifest.intervals`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.intervals"; fi;) \
+		$$(if [ "`grep ^ -c $*.from_manifest.interval_list`" == "0" ]; then echo ""; else echo "-L $*.from_manifest.interval_list"; fi;) \
 		-o $@.tmp1;
 	# Clean header
 	cat $@.tmp1 | sed s/ID=QSS,Number=A/ID=QSS,Number=./gi > $@.tmp

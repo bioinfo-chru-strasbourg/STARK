@@ -133,9 +133,10 @@ ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ gi
 #ENV YUM_INSTALL=" wget rsync python2 python2-pip python3 python3-pip"
 ENV YUM_REMOVE="autoconf automake bzip2-devel lzma-devel ncurses-devel perl-devel tbb-devel xz-devel zlib-devel zlib2-devel python3-devel curl-devel"
 ENV PYTHON_MODULE=""
-ENV PYTHON2_MODULE=$PYTHON_MODULE" pathos numpy scipy argparse multiprocess"
-ENV PYTHON3_MODULE=$PYTHON_MODULE""
+ENV PYTHON2_MODULE=$PYTHON_MODULE" pathos numpy scipy argparse multiprocess" 
+ENV PYTHON3_MODULE=$PYTHON_MODULE" pathos numpy scipy argparse"
 
+#pathos
 
 ENV REPO_SYSTEM_GIT="$REPO/sources.system.tar.gz?path=sources/system"
 ENV REPO_SYSTEM_HTTP="$REPO/sources/system/"
@@ -457,6 +458,7 @@ RUN mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
 ################
 
 
+
 ##########
 # PATHOS #
 ##########
@@ -474,8 +476,6 @@ RUN mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
 # RUN source $TOOL_INIT && \
 # 	echo "#[INFO] TOOL installation" && \
 # 	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
-# 	echo "#[INFO] TOOL installation - pip2 install" && \
-# 	pip2 install pathos==0.2.6 && \
 # 	echo "#[INFO] TOOL installation - python2 setup.py build" && \
 # 	(cd $TOOL_SOURCE_BUILD/$TOOL_TARBALL_FOLDER/; python2 setup.py build) && \
 # 	echo "#[INFO] TOOL installation - python2 setup.py install" && \
@@ -483,7 +483,9 @@ RUN mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
 #     $TOOL_CHECK ;
 
 
-# #pip2 --no-cache-dir install dill pox klepto multiprocess ppft pyina pathos numpy scipy argparse && \
+#echo "#[INFO] TOOL installation - pip2 install" && \
+#	pip2 install pathos==0.2.6 && \
+	
 
 
 ###########
@@ -829,9 +831,25 @@ RUN source $TOOL_INIT && \
 # OUTLYZER #
 ############
 
+# # TOOL INFO
+# ENV TOOL_NAME="outlyzer"
+# ENV TOOL_VERSION="2"
+# ENV TOOL_TARBALL="outLyzer.py"
+# ENV TOOL_SOURCE_EXTERNAL="https://raw.githubusercontent.com/EtieM/outLyzer/master/$TOOL_TARBALL"
+# ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+# # TOOL PARAMETERS
+
+# # TOOL INSTALLATION
+# RUN source $TOOL_INIT && \
+# 	echo "#[INFO] TOOL installation" && \
+# 	cp $TOOL_SOURCE -d $TOOL_DEST/bin/ && \
+# 	chmod a+x $TOOL_DEST/bin/*.py && \
+#     $TOOL_CHECK ;
+
+
 # TOOL INFO
 ENV TOOL_NAME="outlyzer"
-ENV TOOL_VERSION="2"
+ENV TOOL_VERSION="3"
 ENV TOOL_TARBALL="outLyzer.py"
 ENV TOOL_SOURCE_EXTERNAL="https://raw.githubusercontent.com/EtieM/outLyzer/master/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
@@ -843,6 +861,7 @@ RUN source $TOOL_INIT && \
 	cp $TOOL_SOURCE -d $TOOL_DEST/bin/ && \
 	chmod a+x $TOOL_DEST/bin/*.py && \
     $TOOL_CHECK ;
+
 
 
 
@@ -899,7 +918,7 @@ RUN source $TOOL_INIT && \
 
 # TOOL INFO
 ENV TOOL_NAME="samtools"
-ENV TOOL_VERSION="1.9"
+ENV TOOL_VERSION="1.11"
 ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.tar.bz2"
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/samtools/$TOOL_NAME/releases/download/$TOOL_VERSION/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH

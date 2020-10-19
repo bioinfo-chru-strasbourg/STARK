@@ -335,14 +335,14 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 			#awk -F"\t" '{print $$1"\t"$$2-1"\t"$$3"\t"$$5}' $$one_bed > $(@D)/$(*F).$$(basename $$one_bed).4fields ; \
 			#awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$5}' $$one_bed > $(@D)/$(*F).$$(basename $$one_bed).4fields ; \
 			awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$4}' $$one_bed > $(@D)/$(*F).$$(basename $$one_bed).4fields ; \
-			$(JAVA) $(JAVA_FLAGS_BY_SAMPLE) -jar $(PICARD) BedToIntervalList I=$(@D)/$(*F).$$(basename $$one_bed).4fields O=$(@D)/$(*F).$$(basename $$one_bed).interval SD=$$(cat $*.dict); \
+			$(JAVA) $(JAVA_FLAGS_BY_SAMPLE) -jar $(PICARD) BedToIntervalList -I $(@D)/$(*F).$$(basename $$one_bed).4fields -O $(@D)/$(*F).$$(basename $$one_bed).interval -SD $$(cat $*.dict); \
 			$(JAVA) $(JAVA_FLAGS_BY_SAMPLE) -jar $(PICARD) CollectHsMetrics INPUT=$*.validation.bam OUTPUT=$(@D)/$(*F).$$(basename $$one_bed).HsMetrics R=$$(cat $*.genome) BAIT_INTERVALS=$(@D)/$(*F).$$(basename $$one_bed).interval TARGET_INTERVALS=$(@D)/$(*F).$$(basename $$one_bed).interval PER_TARGET_COVERAGE=$(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_target_coverage.tmp PER_BASE_COVERAGE=$(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp $(PICARD_CollectHsMetrics_PARAM) VALIDATION_STRINGENCY=SILENT 2>$(@D)/$(*F).$$(basename $$one_bed).HsMetrics.err ; \
 			# Flag HsMetrics per_target_coverage \
 			awk -f $(STARK_FOLDER_BIN)/per_target_coverage_flag.awk -F"\t" -v EXPECTED_DEPTH=$(EXPECTED_DEPTH) -v MINIMUM_DEPTH=$(MINIMUM_DEPTH) $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_target_coverage.tmp > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_target_coverage.flags; \
 			echo "" > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.FAIL.bed; \
 			cat $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp | awk -F"\t" -v FAIL=$(MINIMUM_DEPTH) '($$4<FAIL) {print $$1 "\t" $$2-1 "\t" $$2 "\t" $$3 "\t" $$4}' | $(BEDTOOLS) merge -c 4,5,5,5,5 -o distinct,mean,min,max,count > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.FAIL.bed 2>/dev/null; \
 			echo "" > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.WARN.bed; \
-			cat $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp | awk -F"\t" -v WARN=$(EXPECTED_DEPTH) '($$4<WARN) {print $$1 "\t" $$2-1 "\t" $$2 "\t" $$3 "\t" $$4}' | $(BEDTOOLS) merge -c 4,5,5,5,5 -o distinct,mean,min,max,count > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.WARN.bed 2>/dev/null; \
+			cat $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp | awk -F"\t" -v FAIL=$(MINIMUM_DEPTH) -v WARN=$(EXPECTED_DEPTH) '($$4<WARN && $$4>=FAIL) {print $$1 "\t" $$2-1 "\t" $$2 "\t" $$3 "\t" $$4}' | $(BEDTOOLS) merge -c 4,5,5,5,5 -o distinct,mean,min,max,count > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.WARN.bed 2>/dev/null; \
 			$(GZ) -c $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.gz; \
 			rm $(@D)/$(*F).$$(basename $$one_bed).4fields $(@D)/$(*F).$$(basename $$one_bed).interval $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_target_coverage.tmp $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp; \
 		else \
@@ -361,7 +361,8 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 	done;
 	echo "#[INFO] BAM PICARD Metrics done" >> $@
 
-
+#$(JAVA) $(JAVA_FLAGS_BY_SAMPLE) -jar $(PICARD) BedToIntervalList I=$(@D)/$(*F).$$(basename $$one_bed).4fields O=$(@D)/$(*F).$$(basename $$one_bed).interval SD=$$(cat $*.dict);
+			
 
 
 # SAMTOOLS metrics
@@ -728,9 +729,9 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 	+for one_bed in $$(cat $*.list.genes) $*.design.bed; do \
 		#cat "ONE_BED: "$$one_bed; \
 		if [ -s $$one_bed ]; then \
-			$(BCFTOOLS) view $*.vcf.gz -R $$one_bed | $(BCFTOOLS) norm --remove-duplicates > $@.$$(basename $$one_bed).vcf; \
+			$(BCFTOOLS) view $*.vcf.gz -R $$one_bed | $(BCFTOOLS) norm --rm-dup exact > $@.$$(basename $$one_bed).vcf; \
 		else \
-			$(BCFTOOLS) view $*.vcf.gz | $(BCFTOOLS) norm --remove-duplicates > $@.$$(basename $$one_bed).vcf; \
+			$(BCFTOOLS) view $*.vcf.gz | $(BCFTOOLS) norm --rm-dup exact > $@.$$(basename $$one_bed).vcf; \
 		fi ; \
 		#$(BCFTOOLS) stats $@.$$(basename $$one_bed).vcf > $@.$$(basename $$one_bed).vcf.bcftools.stats; \
 		#grep -v "^#" $@.$$(basename $$one_bed).vcf | cut -f8 | tr ";" "\n" | sort | uniq -c | sed "s/^      / /gi" | tr "=" " " | awk '{print $$2"\t"$$3"\t"$$1} {a[$$2]+=$$1} END { for (key in a) { print "#\t" key "\t" a[key] } }' | sort > $@.$$(basename $$one_bed).vcf.info_field.stats; \

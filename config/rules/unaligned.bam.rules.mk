@@ -142,7 +142,7 @@ GZ?=gzip
 		# BAM Sorting and Compression \
 		$(SAMTOOLS) sort -o $@ -l $(BAM_COMPRESSION) -@ $(THREADS_BY_SAMPLE) -T $@.SAMTOOLS.SORT $@.tmp; \
 		# Validation BAM $@.tmp \
-		$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) ValidateSamFile $(PICARD_UNALIGNED_FLAGS)  VALIDATE_INDEX=true IGNORE_WARNINGS=true INDEX_VALIDATION_STRINGENCY=EXHAUSTIVE I=$@ > $@.validation; \
+		$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) ValidateSamFile $(PICARD_UNALIGNED_FLAGS)  -VALIDATE_INDEX true -IGNORE_WARNINGS true -INDEX_VALIDATION_STRINGENCY EXHAUSTIVE -I $@ > $@.validation; \
 		if [ $$(grep "^ERROR" $@.validation -c) -gt 0 ]; then \
 			echo "[ERROR] Input file error. Generated uBAM file '$@' malformed!"; \
 			exit 0; \
@@ -192,8 +192,7 @@ GZ?=gzip
 	$(SAMTOOLS) sort -o $@ -l $(BAM_COMPRESSION) -@ $(THREADS_BY_SAMPLE) -T $@.SAMTOOLS.SORT $@.tmp;
 	#
 	# Validation BAM $@.tmp
-	#-$(JAVA) $(JAVA_FLAGS) -jar $(PICARDLIB)/ValidateSamFile.jar  $(PICARD_UNALIGNED_FLAGS) VALIDATE_INDEX=true I=$@.tmp ;
-	$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) ValidateSamFile $(PICARD_UNALIGNED_FLAGS)  VALIDATE_INDEX=true IGNORE_WARNINGS=true INDEX_VALIDATION_STRINGENCY=EXHAUSTIVE I=$@ > $@.validation;
+	$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) ValidateSamFile $(PICARD_UNALIGNED_FLAGS) -VALIDATE_INDEX true -IGNORE_WARNINGS true -INDEX_VALIDATION_STRINGENCY EXHAUSTIVE -I $@ > $@.validation;
 	if [ $$(grep "^ERROR" $@.validation -c) -gt 0 ]; then \
 		echo "[ERROR] Input file error. Generated uBAM file '$@' malformed!"; \
 		exit 0; \

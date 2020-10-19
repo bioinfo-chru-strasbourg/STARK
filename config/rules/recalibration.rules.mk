@@ -15,9 +15,9 @@ GATK?=$(NGSbin)/GenomeAnalysisTK.jar
 
 # BAM RECALIBRATION
 
-%.bam.grp: %.bam %.bam.bai %.from_manifest.intervals %.genome
+%.bam.grp: %.bam %.bam.bai %.from_manifest.interval_list %.genome
 	# Generate BaseRecalibrator grp file for recalibration
-	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) -T BaseRecalibrator -R $$(cat $*.genome) -knownSites $(VCFDBSNP) -I $< -o $@ -L $*.from_manifest.intervals -nct $(THREADS_BY_SAMPLE) -U -compress 0
+	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) -T BaseRecalibrator -R $$(cat $*.genome) -knownSites $(VCFDBSNP) -I $< -o $@ -L $*.from_manifest.interval_list -nct $(THREADS_BY_SAMPLE) -U -compress 0
 
 %.bam: %.recalibration.bam %.genome %.recalibration.bam.bai %.recalibration.bam.grp #%.recalibration.bam.bai %.from_manifest.intervals %.recalibration.from_manifest.intervals
 	# Recalibrate BAM with BaseRecalibrator grp file

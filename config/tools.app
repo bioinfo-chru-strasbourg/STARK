@@ -173,7 +173,7 @@ TOOLS_LIST=$TOOLS_LIST" MUTECT"
 
 # OUTLYZER
 export OUTLYZER=$NGS_TOOLS/outlyzer/current/bin/outLyzer.py		# BIN
-export OUTLYZER_VERSION=2										# VER
+export OUTLYZER_VERSION=3										# VER
 export OUTLYZER_DESCRIPTION="outLyzer is a computer program whose purpose is to detect variations, specifically low allele frequency variation, in next generation sequencing data (tumor samples, mosaïc mutation)."
 export OUTLYZER_REF="https://github.com/EtieM/outLyzer"
 TOOLS_LIST=$TOOLS_LIST" OUTLYZER"

@@ -19,7 +19,7 @@ MEMORY?=1
 ## FASTQ from ILLUMINA ##
 
 
-%.archive.cram: %.bams.list %.genome %.R1.fastq.gz %.R2.fastq.gz #%.R1.fastq.gz.format
+%.archive.cram: %.bams.list %.genome %.R1.fastq.gz %.R2.fastq.gz $(REF_CACHE_FOLDER) #%.R1.fastq.gz.format
 	#Archive aligned BAM only if all original reads present. otherwise, FASTQ compressed into uBAM is archived \
 	#echo "BAMS_LIST: $< $$(cat $<)" \
 	#SEPARATOR (to find aligner name), FILES_TRIED and VALID_CRAM_MSG are used for metrics file \
@@ -72,7 +72,7 @@ MEMORY?=1
 		# BAM Sorting and Compression \
 		$(SAMTOOLS) sort $@.tmp -@ $(THREADS_BY_SAMPLE) -T $@.SAMTOOLS_PREFIX | $(SAMTOOLS) view -o $@ -O CRAM -S -T `cat $*.genome` - -@ $(THREADS_BY_SAMPLE) -h; \
 		# Validation BAM $@.tmp \
-		$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) ValidateSamFile $(PICARD_UNALIGNED_FLAGS)  VALIDATE_INDEX=true IGNORE_WARNINGS=true INDEX_VALIDATION_STRINGENCY=EXHAUSTIVE I=$@ > $@.validation; \
+		$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) ValidateSamFile $(PICARD_UNALIGNED_FLAGS) -VALIDATE_INDEX true -IGNORE_WARNINGS true -INDEX_VALIDATION_STRINGENCY EXHAUSTIVE -I $@ > $@.validation; \
 		if [ $$(grep "^ERROR" $@.validation -c) -gt 0 ]; then \
 			echo "[ERROR] Input file error. Generated Archive file '$@' malformed!"; \
 			exit 0; \

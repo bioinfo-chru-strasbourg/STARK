@@ -440,6 +440,28 @@ if ((1)); then
 	# Genome index
 	##############
 
+	## REF CACHE
+
+
+	if [ ! -d $REF.hts-ref ] || [ ! "$(ls -A $REF.hts-ref)" ]; then
+
+		if [ "$SAMTOOLS" != "" ]; then
+
+		    (($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME' release '$DB_RELEASE' for '$DB_TARGET_RELEASE' REF CACHE "
+
+		    # MK
+		    echo "$REF.hts-ref/done: $REF
+				mkdir -p $REF.hts-ref;
+				perl $(dirname $SAMTOOLS)/seq_cache_populate.pl -root $REF.hts-ref $REF 1>/dev/null 2>/dev/null;
+				echo 'done.'' > $REF.hts-ref/done;
+		    " >> $MK
+
+			MK_ALL="$MK_ALL $REF.hts-ref/done"
+
+		fi;
+
+	fi;
+
 	## BOWTIE index
 
 	if [ ! -e $DB_TARGET_FOLDER/$ASSEMBLY.rev.1.bt2 ]; then
