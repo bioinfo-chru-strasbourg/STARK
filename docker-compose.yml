@@ -19,7 +19,7 @@ services:
     stark-sources:
         image: ${DOCKER_STARK_SOURCES_IMAGE}
         build:
-            context: ${DOCKER_STARK_CONTEXT}
+            context: ${DOCKER_STARK_IMAGE_CONTEXT}
             dockerfile: Dockerfile
             args:
                 - THREADS=${DOCKER_STARK_BUILD_THREADS}
@@ -27,8 +27,6 @@ services:
                 - REMOVE_SOURCES=0
         container_name: STARK-sources
         command: --help
-        env_file:
-            - ${DOCKER_COMPOSE_ENV}
         networks:
             - stark
 
@@ -37,7 +35,7 @@ services:
     stark:
         image: ${DOCKER_STARK_IMAGE}
         build:
-            context: ${DOCKER_STARK_CONTEXT}
+            context: ${DOCKER_STARK_IMAGE_CONTEXT}
             dockerfile: Dockerfile
             args:
                 - THREADS=${DOCKER_STARK_BUILD_THREADS}
@@ -45,25 +43,21 @@ services:
                 - REMOVE_SOURCES=1
         container_name: STARK
         command: --help
-        env_file:
-            - ${DOCKER_COMPOSE_ENV}
         depends_on:
             - stark-sources
         networks:
             - stark
 
 
-    # STARK CREATE FOLDERS
-    stark-folders:
+    # STARK SETUP
+    stark-setup:
         image: ${DOCKER_STARK_IMAGE}
-        container_name: STARK-folders
+        container_name: STARK-setup
         entrypoint: /bin/bash
         command: -c "/tool/bin/STARK.setup --docker-env-file=/tool/.env --setup-type=INNER --setup-main-folder-pattern=/STARK_folder_setup --verbose"
         volumes:
-            - main:/STARK_folder_setup/STARK:rw
+            - ${DOCKER_STARK_MAIN_FOLDER}:/STARK_folder_setup/STARK:rw
             - ${DOCKER_COMPOSE_ENV}:/tool/.env:ro
-        env_file:
-            - ${DOCKER_COMPOSE_ENV}
         depends_on:
             - stark
         networks:
@@ -78,124 +72,40 @@ services:
         command: -c "/tool/bin/get_databases.sh --build --databases=${DOCKER_STARK_INNER_FOLDER_DATABASES} --threads=${DOCKER_STARK_GET_DATABASES_THREADS} --additional_annotations=${DOCKER_STARK_GET_DATABASES_ADDITIONAL_ANNOTATIONS} --verbose 1>>${DOCKER_STARK_INNER_FOLDER_DATABASES}/STARK.databases.build.log 2>>${DOCKER_STARK_INNER_FOLDER_DATABASES}/STARK.databases.build.err"
         volumes:
             # Databases folder
-            - databases:${DOCKER_STARK_INNER_FOLDER_DATABASES}:rw
+            - ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_DATABASES}:${DOCKER_STARK_INNER_FOLDER_DATABASES}:rw
             # HOWARD databases defintions (if already exists, need to define DOCKER_STARK_FOLDER_CONFIG_HOWARD and DOCKER_STARK_INNER_FOLDER_CONFIG_HOWARD)
-            #- ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_CONFIG_HOWARD}:${DOCKER_STARK_INNER_FOLDER_CONFIG_HOWARD}:ro
-        #env_file:
-        #    - ${DOCKER_COMPOSE_ENV}
+            - ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_CONFIG_HOWARD}:${DOCKER_STARK_INNER_FOLDER_CONFIG_HOWARD}:ro
         depends_on:
             - stark
-            - stark-folders
+            - stark-setup
         networks:
             - stark
 
 
     # STARK SOURCES
-    stark-sources-archive:
+    stark-sources-archives:
         image: ${DOCKER_STARK_SOURCES_IMAGE}
-        container_name: STARK-sources-archive
+        container_name: STARK-sources-archives
         entrypoint: /bin/bash
-        command: -c "rsync -auczAXhiv --no-links --no-perms --no-owner --no-group ${DOCKER_STARK_INNER_FOLDER_SOURCES}/* /sources-archive/ 1>>/sources-archive/archive.log 2>>/sources-archive/archive.err && rsync -auczAXhiv --no-links --no-perms --no-owner --no-group ${DOCKER_STARK_INNER_FOLDER_MAIN}/tools/* /sources-archive/sources/tools/ 1>>/sources-archive/archive.log 2>>/sources-archive/archive.err "
+        command: -c "rsync -auczAXhiv --no-links --no-perms --no-owner --no-group ${DOCKER_STARK_INNER_FOLDER_SOURCES}/* /sources-archives/ 1>>/sources-archives/archives.log 2>>/sources-archives/archives.err && rsync -auczAXhiv --no-links --no-perms --no-owner --no-group ${DOCKER_STARK_INNER_FOLDER_MAIN}/tools/* /sources-archives/sources/tools/ 1>>/sources-archives/archives.log 2>>/sources-archives/archives.err "
         volumes:
-            - sources:/sources-archive:rw
-        env_file:
-            - ${DOCKER_COMPOSE_ENV}
+            - ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_SOURCES}:/sources-archives:rw
         depends_on:
             - stark-sources
-            - stark-folders
+            - stark-setup
         networks:
             - stark
 
-
-# VOLUMES
-#########
-
-volumes:
-
-    # MAIN STARK FOLDER
-    main:
-        driver: local
-        driver_opts:
-            type: none
-            device: ${DOCKER_STARK_MAIN_FOLDER}
-            o: bind
-
-    # INPUT
-    input:
-        driver: local
-        driver_opts:
-            type: none
-            device: ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_INPUT}
-            o: bind
-
-    # DEMULTIPLEXING
-    demultiplexing:
-        driver: local
-        driver_opts:
-            type: none
-            device: ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_OUTPUT_DEMULTIPLEXING}
-            o: bind
-
-    # RESULTS
-    results:
-        driver: local
-        driver_opts:
-            type: none
-            device: ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_OUTPUT_RESULTS}
-            o: bind
-
-    # REPOSITORY
-    repository:
-        driver: local
-        driver_opts:
-            type: none
-            device: ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_OUTPUT_REPOSITORY}
-            o: bind
-
-    # ARCHIVE
-    archive:
-        driver: local
-        driver_opts:
-            type: none
-            device: ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_OUTPUT_ARCHIVE}
-            o: bind
-
-    # DATA
-    data:
-        driver: local
-        driver_opts:
-            type: none
-            device: ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_DATA}
-            o: bind
-
-    # CONFIG
-    config:
-        driver: local
-        driver_opts:
-            type: none
-            device: ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_CONFIG}
-            o: bind
-
-    # SOURCES
-    sources:
-        driver: local
-        driver_opts:
-            type: none
-            device: ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_SOURCES}
-            o: bind
-
-    # DATABASES
-    databases:
-        driver: local
-        driver_opts:
-            type: none
-            device: ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_DATABASES}
-            o: bind
-
-
+            
 # NETWORK
 ###########
 
 networks:
     stark:
         driver: "bridge"
+        ipam:
+            driver: default
+            config:
+                - subnet: ${DOCKER_STARK_MAIN_SUBNET}
+                #  gateway: ${DOCKER_STARK_MAIN_GATEWAY}
+

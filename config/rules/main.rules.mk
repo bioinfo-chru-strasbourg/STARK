@@ -106,7 +106,13 @@ GZ?=gzip
 
 # VCF NORMALIZATION with BCFTOOLS
 %.vcf: %.normalization.vcf %.genome
-	$(BCFTOOLS) norm -m- -f `cat $*.genome` $< | $(BCFTOOLS) norm -d all > $@
+	#$(BCFTOOLS) norm -m- -f `cat $*.genome` $< | $(BCFTOOLS) norm --rm-dup exact > $@
+	$(BCFTOOLS) norm -m- -f $$(cat $*.genome) $< | $(BCFTOOLS) norm --rm-dup exact | $(BCFTOOLS) annotate -x INFO/DP | $(BCFTOOLS) +setGT  -- -t . -n 0 | $(BCFTOOLS) +fill-tags -- -t all > $@
+
+#bcftools view $VCF | bcftools norm -m- -f $GENOME | bcftools norm --rm-dup exact | bcftools annotate -x INFO/DP | bcftools +setGT  -- -t . -n 0 | bcftools +fill-tags -- -t all 
+
+
+#| $BCFTOOLS +setGT  -- -t . -n 0 | $BCFTOOLS +fill-tags -- -t AN,AC,AF
 
 
 # MERGE SNP and InDel VCF
@@ -236,7 +242,7 @@ GZ?=gzip
 # FASTQ(s) from BAM
 %.R1.fastq %.R2.fastq: %.bam
 	#$(JAVA) -jar $(PICARDLIB)/SamToFastq.jar INPUT=$< FASTQ=$*.R1.fastq SECOND_END_FASTQ=$*.R2.fastq
-	$(JAVA) -jar $(PICARD) SamToFastq INPUT=$< FASTQ=$*.R1.fastq SECOND_END_FASTQ=$*.R2.fastq
+	$(JAVA) -jar $(PICARD) SamToFastq -INPUT $< -FASTQ $*.R1.fastq -SECOND_END_FASTQ $*.R2.fastq
 
 
 # BAM reduction
@@ -418,7 +424,7 @@ GATKRR_FLAGS=
 
 
 # Interval from bed from manifest?
-%.from_manifest.intervals: %.bed %.bam %.bam.bai %.bam.bed %.dict
+%.from_manifest.interval_list: %.bed %.bam %.bam.bai %.bam.bed %.dict
 	# manifest to interval (not needed?)
 	#cat $<  | tr -d '\r' | sed -e "s/^M//" | awk -F"\t" '{print $$1":"$$2"-"$$3}' > $@
 	# try to extract from the bam if exists, in order to not call in the whome genome
@@ -436,7 +442,7 @@ GATKRR_FLAGS=
 		echo "[INFO] Generate $@ from $@.bed with PICARD BedToIntervalList" ; \
 		#awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$5}' $@.bed > $@.bed.4fields ; \
 		awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$4}' $@.bed > $@.bed.4fields ; \
-		$(JAVA) -jar $(PICARD) BedToIntervalList I=$@.bed.4fields O=$@ SD=$$(cat $*.dict) ; \
+		$(JAVA) -jar $(PICARD) BedToIntervalList -I $@.bed.4fields -O $@ -SD $$(cat $*.dict) ; \
 		rm $@.bed.4fields ; \
 	fi;
 	# If error, try intervals with GREP/SED/AWK
@@ -449,15 +455,17 @@ GATKRR_FLAGS=
 	# clean
 
 
+#$(JAVA) -jar $(PICARD) BedToIntervalList I=$@.bed.4fields O=$@ SD=$$(cat $*.dict) ;
+
 
 # Interval from BED
-%.bed.intervals: %.bed %.dict
+%.bed.interval_list: %.bed %.dict
 	# BED to Intervals (not needed?)
 	# INTERVAL WITH PICARD
 	if [ -s $< ]; then \
 		#cut $< -f1-3,5 > $@.4fields ; \
 		awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$4}' $< > $@.4fields ; \
-		$(JAVA) -jar $(PICARD) BedToIntervalList INPUT=$@.4fields OUTPUT=$@ SEQUENCE_DICTIONARY=$$(cat $*.dict) ; \
+		$(JAVA) -jar $(PICARD) BedToIntervalList -I $@.4fields -O $@ -SD $$(cat $*.dict) ; \
 		rm $@.4fields ; \
 	fi;
 	# If error, try intervals with GREP/SED/AWK
@@ -465,6 +473,12 @@ GATKRR_FLAGS=
 		grep -v ^@ $<  | tr -d '\r' | sed -e "s/^M//" | awk -F"\t" '{print $$1":"$$2"-"$$3}' | sed s/:0-/:1-/gi > $@; \
 	fi;
 	if [ ! -e $@ ]; then touch $@; fi;
+
+#$(JAVA) -jar $(PICARD) BedToIntervalList INPUT=$@.4fields OUTPUT=$@ SEQUENCE_DICTIONARY=$$(cat $*.dict) ;
+
+%.intervals: %.interval_list
+	grep -v ^@ $< > $@
+
 
 # BED primer file from a Manifest
 %.primers.bed: %.manifest

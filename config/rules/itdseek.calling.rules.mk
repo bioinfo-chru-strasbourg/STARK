@@ -18,7 +18,7 @@ VAFMIN_ITDSEEK=0.00
 %.itdseek$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.genome
 	#
 	# Generate VCF with ITDSeek
-	-$(ITDSEEK) $< `cat $*.genome` $(SAMTOOLS) > $@.tmp;
+	-$(ITDSEEK) $< $$(cat $*.genome) $(SAMTOOLS) > $@.tmp;
 	if (( $$(grep -c ^ERROR $@.tmp) )); then \
 		echo "[ERROR] ITDSeek failed: "; \
 		grep ^ERROR $@.tmp; \

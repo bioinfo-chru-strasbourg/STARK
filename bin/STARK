@@ -114,8 +114,8 @@ function usage {
 	echo "#                                          Default: Defined in Application, or first --fastq file folder";
 	echo "# --repository=<FOLDER>                    Repository directory to generate GROUP|PROJECT|RUN|SAMPLE|* specific files";
 	echo "#                                          Default: no copy in a repository";
-	echo "# --archive=<FOLDER>                       Archive directory to generate GROUP|PROJECT|RUN|SAMPLE|* specific files";
-	echo "#                                          Default: no copy in a archive";
+	echo "# --archives=<FOLDER>                      Archives directory to generate GROUP|PROJECT|RUN|SAMPLE|* specific files";
+	echo "#                                          Default: no copy in a archives";
 	echo "# --databases=<FOLDER>                     Databases folder (requires STARK databases folder structure)";
 	echo "";
 
@@ -190,7 +190,7 @@ function usage {
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
-ARGS=$(getopt -o "a:b:e:r:f:q:g:j:m:l:s:w:t:o:u:iygxvdnh" --long "env:,app:,application:,runs:,run:,fastq:,reads:,reads1:,fastq_R1:,by_sample,fastq_R2:,reads2:,index1:,index2:,other_files:,analysis_tag:,sample_tag:,adapters:,analysis:,analysis_name:,analysis_dir:,demultiplexing:,demultiplexing_only,samplesheet:,sample:,sample_filter:,design:,bed:,manifest:,genes:,transcripts:,threads:,output:,results:,repository:,archive:,databases:,input:,output:,tmp:,log:,docker-compose-file:,docker-env-file:,docker-parameters:,docker-stark-image:,docker-stark-container:,no_header,applications_infos,pipelines_infos,release_infos,tools_infos,databases_infos,verbose,debug,release,help" -- "$@" 2> /dev/null)
+ARGS=$(getopt -o "a:b:e:r:f:q:g:j:m:l:s:w:t:o:u:iygxvdnh" --long "env:,app:,application:,runs:,run:,fastq:,reads:,reads1:,fastq_R1:,by_sample,fastq_R2:,reads2:,index1:,index2:,other_files:,analysis_tag:,sample_tag:,adapters:,analysis:,analysis_name:,analysis_dir:,demultiplexing:,demultiplexing_only,samplesheet:,sample:,sample_filter:,design:,bed:,manifest:,genes:,transcripts:,threads:,output:,results:,repository:,archives:,databases:,input:,output:,tmp:,log:,docker-compose-file:,docker-env-file:,docker-parameters:,docker-stark-image:,docker-stark-container:,no_header,applications_infos,pipelines_infos,release_infos,tools_infos,databases_infos,verbose,debug,release,help" -- "$@" 2> /dev/null)
 #ARGS=$(getopt -o "e:r:f:l:w:t:iygxvdnh" --long "env:,app:,application:,runs:,fastq:,fastq_R1:,json:,ana:,analysis:,samplesheet:,threads:,application_infos,applications_infos,pipelines_infos,release_infos,tools_infos,databases_infos,verbose,debug,release,help" -- "$@" 2> /dev/null)
 #ARGS=$(getopt -o "e:r:f:l:s:w:t:iygxvdnh" --long "env:,app:,application:,runs:,fastq:,fastq_R1:,analysis:,analysis_name:,analysis_dir:,samplesheet:,sample:,sample_list:,threads:,no_header,application_infos,applications_infos,pipelines_infos,release_infos,tools_infos,databases_infos,verbose,debug,release,help" -- "$@" )
 # || [ -z $@ ]
@@ -302,8 +302,8 @@ do
 			REPOSITORY="$2"
 			shift 2
 			;;
-		--archive)
-			ARCHIVE="$2"
+		--archives)
+			ARCHIVES="$2"
 			shift 2
 			;;
 		--databases)
@@ -565,7 +565,7 @@ if (($APPLICATIONS_INFOS)); then
 		fi
 
 		#FIELD_SEP="\t"
-		APP_INFOS=$(source_app "$STARK_FOLDER_APPS/$ENV_DEF"; echo -e "$APP_RELEASE\t$APP_DESCRIPTION\t$APP_GROUP\t$APP_PROJECT\t$FOLDER_RUN\t$FOLDER_RESULTS\t$FOLDER_REPOSITORY\t$FOLDER_ARCHIVE\t$PIPELINES\t$POST_ALIGNMENT_STEPS\t$HOWARD_ANNOTATION_REPORT")
+		APP_INFOS=$(source_app "$STARK_FOLDER_APPS/$ENV_DEF"; echo -e "$APP_RELEASE\t$APP_DESCRIPTION\t$APP_GROUP\t$APP_PROJECT\t$FOLDER_RUN\t$FOLDER_RESULTS\t$FOLDER_REPOSITORY\t$FOLDER_ARCHIVES\t$PIPELINES\t$POST_ALIGNMENT_STEPS\t$HOWARD_ANNOTATION_REPORT")
 		APP_RELEASE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $1}')
 		APP_DESCRIPTION=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $2}')
 		APP_GROUP=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $3}')
@@ -573,7 +573,7 @@ if (($APPLICATIONS_INFOS)); then
 		FOLDER_RUN=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $5}')
 		FOLDER_RESULTS=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $6}')
 		FOLDER_REPOSITORY=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $7}')
-		FOLDER_ARCHIVE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $8}')
+		FOLDER_ARCHIVES=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $8}')
 		PIPELINES=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $9}')
 		POST_ALIGNMENT_STEPS=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $10}')
 		HOWARD_ANNOTATION_REPORT=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $11}')
@@ -599,7 +599,7 @@ if (($APPLICATIONS_INFOS)); then
 		echo "#[INFO]    RUN                    $FOLDER_RUN";
 		echo "#[INFO]    RESULTS                $FOLDER_RESULTS";
 		echo "#[INFO]    REPOSITORY             $FOLDER_REPOSITORY";
-		echo "#[INFO]    ARCHIVE                $FOLDER_ARCHIVE";
+		echo "#[INFO]    ARCHIVES               $FOLDER_ARCHIVES";
 		echo "#[INFO]    PIPELINES              $PIPELINES "
 		#echo -e "#[INFO]       $(echo $PIPELINES | sed "s/ /\n#[INFO]       /gi")";
 		#echo "#[INFO]    POST_ALIGNMENT $POST_ALIGNMENT "
@@ -1356,10 +1356,10 @@ if [ ! -z "$RUNS" ]; then
 						#SAMPLE_APP="$(echo $L | cut -d, -f$SAMPLE_PROJECT_FIELD | awk -F[$TAG_DELIMITER ] '{print $1}' | tr " " "+" | tr "," "+")"
 						# NEW APP extraction format
 						SAMPLE_DESCRIPTION_FIELD_VALUE=$(echo $L | cut -d, -f$SAMPLE_DESCRIPTION_FIELD)
-						SAMPLE_TAG=$(echo $L | cut -d, -f$SAMPLE_DESCRIPTION_FIELD | tr " " "!")
+						SAMPLE_TAG=$(echo $L | cut -d, -f$SAMPLE_DESCRIPTION_FIELD | tr " " "!")"!"
 						SAMPLE_APP=$(extract_tag "$SAMPLE_DESCRIPTION_FIELD_VALUE" "APP" | tr " " "+")
 						[ -z "$SAMPLE_APP" ] && SAMPLE_APP="$MAIN_APP"
-						[ ! -z $APP ] && SAMPLE_APP=$(echo $APP | tr " " "+" | tr "," "+") && echo "APP forced" # Force APP if in parameters
+						[ ! -z $APP ] && SAMPLE_APP=$(echo $APP | tr " " "+" | tr "," "+") && echo "#[INFO] APP forced '$SAMPLE_APP'" # Force APP if in parameters
 
 						CONFIG_FILE_TAB=$TMP_FOLDER_TMP_R/$SAMPLE_APP.config.tab
 						CONFIG_FILE_TAB_LIST=$(echo "$CONFIG_FILE_TAB_LIST$CONFIG_FILE_TAB " | tr " " "\n" | sort -u | tr "\n" " ")
@@ -1442,7 +1442,7 @@ if [ ! -z "$RUNS" ]; then
 
 					SAMPLE_TEST=$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u | awk -F"," -v APP=$APP_ONE '$1==APP{print $3}' | tr '\n' ',' | sed s/,$//)
 
-					APP_INFOS=$(source_app "$APP_ONE" "$STARK_FOLDER_APPS/"; echo -e "$APP_RELEASE\t$APP_DESCRIPTION\t$APP_GROUP\t$APP_PROJECT\t$FOLDER_RUN\t$FOLDER_RESULTS\t$FOLDER_REPOSITORY\t$FOLDER_ARCHIVE\t$PIPELINES\t$POST_ALIGNMENT_STEPS\t$HOWARD_ANNOTATION_REPORT")
+					APP_INFOS=$(source_app "$APP_ONE" "$STARK_FOLDER_APPS/"; echo -e "$APP_RELEASE\t$APP_DESCRIPTION\t$APP_GROUP\t$APP_PROJECT\t$FOLDER_RUN\t$FOLDER_RESULTS\t$FOLDER_REPOSITORY\t$FOLDER_ARCHIVES\t$PIPELINES\t$POST_ALIGNMENT_STEPS\t$HOWARD_ANNOTATION_REPORT")
 					#APP_RELEASE_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $1}')
 					#APP_DESCRIPTION_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $2}')
 					#APP_GROUP_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $3}')
@@ -1450,7 +1450,7 @@ if [ ! -z "$RUNS" ]; then
 					#FOLDER_RUN_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $5}')
 					#FOLDER_RESULTS_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $6}')
 					FOLDER_REPOSITORY_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $7}')
-					FOLDER_ARCHIVE_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $8}')
+					FOLDER_ARCHIVES_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $8}')
 					#PIPELINES_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $9}')
 					#POST_ALIGNMENT_STEPS_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $10}')
 					#HOWARD_ANNOTATION_REPORT_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $11}')
@@ -1495,7 +1495,7 @@ if [ ! -z "$RUNS" ]; then
 					# REPOSITORY
 					echo "\"repository\":\"$FOLDER_REPOSITORY_ONE\"," >> $RUN_CONFIG_FILE
 					# ARCHIVE
-					echo "\"archive\":\"$FOLDER_ARCHIVE_ONE\"," >> $RUN_CONFIG_FILE
+					echo "\"archives\":\"$FOLDER_ARCHIVES_ONE\"," >> $RUN_CONFIG_FILE
 
 					# SAMPLESHEET
 					echo "\"samplesheet\":\"$RUN_SAMPLESHEET\"" >> $RUN_CONFIG_FILE

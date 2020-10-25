@@ -422,6 +422,7 @@ if ((1)); then
 			# database release info
 			[ ! -s $DB_TARGET_DB_FOLDER/STARK.database ] && cp $DB_TMP/STARK.database $DB_TARGET_DB_FOLDER/STARK.database
 			cp $DB_TMP/STARK.database.release $DB_RELEASE_FOLDER
+			chmod o+r $DB_TARGET_DB_FOLDER/STARK.database $DB_RELEASE_FOLDER/STARK.database.release
 			# links
 			[ $DB_TARGET_RELEASE != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_FOLDER
 			[ latest != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_DB_FOLDER/latest
@@ -438,6 +439,28 @@ if ((1)); then
 
 	# Genome index
 	##############
+
+	## REF CACHE
+
+
+	if [ ! -d $REF.hts-ref ] || [ ! "$(ls -A $REF.hts-ref)" ]; then
+
+		if [ "$SAMTOOLS" != "" ]; then
+
+		    (($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME' release '$DB_RELEASE' for '$DB_TARGET_RELEASE' REF CACHE "
+
+		    # MK
+		    echo "$REF.hts-ref/done: $REF
+				mkdir -p $REF.hts-ref;
+				perl $(dirname $SAMTOOLS)/seq_cache_populate.pl -root $REF.hts-ref $REF 1>/dev/null 2>/dev/null;
+				echo 'done.'' > $REF.hts-ref/done;
+		    " >> $MK
+
+			MK_ALL="$MK_ALL $REF.hts-ref/done"
+
+		fi;
+
+	fi;
 
 	## BOWTIE index
 
@@ -705,6 +728,7 @@ if ((1)); then
 			# database release info
 			[ ! -s $DB_TARGET_DB_FOLDER/STARK.database ] && cp $DB_TMP/STARK.database $DB_TARGET_DB_FOLDER/STARK.database
 			cp $DB_TMP/STARK.database.release $DB_RELEASE_FOLDER/
+			chmod o+r $DB_TARGET_DB_FOLDER/STARK.database $DB_RELEASE_FOLDER/STARK.database.release
 			# links
 			[ $DB_TARGET_RELEASE != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_FOLDER
 			[ latest != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_DB_FOLDER/latest
@@ -901,6 +925,7 @@ if ((1)); then
 			# database release info
 			[ ! -s $DB_TARGET_DB_FOLDER/STARK.database ] && cp $DB_TMP/STARK.database $DB_TARGET_DB_FOLDER/STARK.database
 			cp $DB_TMP/STARK.database.release $DB_RELEASE_FOLDER
+			chmod o+r $DB_TARGET_DB_FOLDER/STARK.database $DB_RELEASE_FOLDER/STARK.database.release
 			# Links
 			[ $DB_TARGET_RELEASE != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_FOLDER
 			[ latest != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_DB_FOLDER/latest
@@ -1031,6 +1056,7 @@ if ((1)); then
 				# database release info
 				[ ! -s $DB_TARGET_DB_FOLDER/STARK.database ] && cp $DB_TMP/STARK.database $DB_TARGET_DB_FOLDER/STARK.database
 				cp $DB_TMP/STARK.database.release $DB_RELEASE_FOLDER
+				chmod o+r $DB_TARGET_DB_FOLDER/STARK.database $DB_RELEASE_FOLDER/STARK.database.release
 				# Links
 				[ $DB_TARGET_RELEASE != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_FOLDER
 				[ latest != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_DB_FOLDER/latest
@@ -1187,6 +1213,7 @@ if ((1)); then
 				# Database release info
 				[ ! -s $DB_TARGET_DB_FOLDER/STARK.database ] && cp $DB_TMP/STARK.database $DB_TARGET_DB_FOLDER/STARK.database
 				cp $DB_TMP/STARK.database.release $DB_RELEASE_FOLDER
+				chmod o+r $DB_TARGET_DB_FOLDER/STARK.database $DB_RELEASE_FOLDER/STARK.database.release
 				# Links
 				[ $DB_TARGET_RELEASE != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_FOLDER
 				[ latest != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_DB_FOLDER/latest

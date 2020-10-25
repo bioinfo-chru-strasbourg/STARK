@@ -50,11 +50,11 @@ FOLDER_OUTPUT=$STARK_FOLDER_MAIN/output
 # TMP: temporary files
 #FOLDER_TMP=$FOLDER_OUTPUT/tmp
 
-# REPOSITORY and ARCHIVE folder
+# REPOSITORY and ARCHIVES folder
 # Results data can be copy in a repository folder. leave it blank for no copy
 FOLDER_REPOSITORY=$FOLDER_OUTPUT/repository
-# Results data can be copy in a archive folder. leave it blank for no copy
-FOLDER_ARCHIVE=$FOLDER_OUTPUT/archive
+# Results data can be copy in a archives folder. leave it blank for no copy
+FOLDER_ARCHIVES=$FOLDER_OUTPUT/archives
 
 
 # PARAMETERS
@@ -296,7 +296,7 @@ POST_CALLING_STEPS="normalization recalibration filtration"
 #    normalization: VCF normalization
 # Usually:
 #    "sorting normalization"
-POST_ANNOTATION_STEPS="sorting"
+POST_ANNOTATION_STEPS="sorting normalization"
 
 
 
@@ -347,9 +347,9 @@ HOWARD_CALCULATION="VARTYPE,NOMEN"
 # Default minimal calculation with HOWARD for final VCF report
 HOWARD_CALCULATION_MINIMAL="VARTYPE,NOMEN"
 # Default calculation with HOWARD for final VCF report
-HOWARD_CALCULATION_REPORT="FindByPipelines,GenotypeConcordance,VAF,VAF_STATS,CALLING_QUALITY,CALLING_QUALITY_EXPLODE,VARTYPE,NOMEN,BARCODE"
+HOWARD_CALCULATION_REPORT="FindByPipelines,GenotypeConcordance,VAF,VAF_STATS,DP_STATS,VARTYPE,NOMEN,BARCODE"
 # Default calculation with HOWARD for whole analysis (calculation forced)
-HOWARD_CALCULATION_ANALYSIS="VAF_STATS,VARTYPE,NOMEN,BARCODE"
+HOWARD_CALCULATION_ANALYSIS="VAF_STATS,DP_STATS,VARTYPE,NOMEN,BARCODE"
 # List of annotation fields to extract NOMEN annotation (default 'hgvs', see HOWARD docs)
 HOWARD_NOMEN_FIELDS="hgvs"
 
@@ -389,9 +389,9 @@ HOWARD_SORT_BY_REPORT="PZFlag,PZScore"
 HOWARD_ORDER_BY_REPORT="DESC,DESC"
 
 
-# REPOSITORY and ARCHIVE
-# Copy files into folders for repository and archive
+# REPOSITORY and ARCHIVES
+# Copy files into folders for repository and archives
 # Repository files patterns to add
 REPOSITORY_FILE_PATTERNS=""
-# Archive files patterns to add
-ARCHIVE_FILE_PATTERNS=""
+# Archives files patterns to add
+ARCHIVES_FILE_PATTERNS=""

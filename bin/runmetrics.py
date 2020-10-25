@@ -144,7 +144,7 @@ def get_on_target_reads(sampleDir, sample, aligner):
 	#for stark before 0.9.18d
 	#offReadsFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+".off.nbreads")
 	# offReadsFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+"."+sample+".genes_from_manifest.off.nbreads")
-	offReadsFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+"."+sample+"."+aligner+".design.bed.off.nbreads")
+	offReadsFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+"."+sample+"."+aligner+".design.bed.off.target")
 	assert_file_exists_and_is_readable(offReadsFile)
 	with open(onReadsFile, "r") as fon:
 		on = int(fon.readline().rstrip())

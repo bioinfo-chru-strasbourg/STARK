@@ -17,27 +17,26 @@ BWA?=$(NGSbin)/bwa
 PICARDLIB?=$(NGSbin)/picard-tools
 # OPTIONS
 JAVA_FLAGS?= -Xmx16g
-PICARD_FLAGS=SORT_ORDER=coordinate RGLB=001 RGPL=Illumina RGPU=A3 VALIDATION_STRINGENCY=SILENT
+#PICARD_FLAGS=SORT_ORDER=coordinate RGLB=001 RGPL=Illumina RGPU=A3 VALIDATION_STRINGENCY=SILENT
+#PICARD_FLAGS?=-SORT_ORDER coordinate -RGLB 001 -RGPL ILLUMINA -RGPU PU -VALIDATION_STRINGENCY SILENT
+
 THREADS_BWA?=$(THREADS_BY_SAMPLE)
 
-PICARD_UNALIGNED_FLAGS?=COMPRESSION_LEVEL=1 MAX_RECORDS_IN_RAM=500000
 
-%.bowtie$(POST_ALIGNMENT).sam: %.unaligned.bam %.genome
+%.bowtie$(POST_ALIGNMENT).sam: %.R1$(POST_SEQUENCING).fastq.gz %.R2$(POST_SEQUENCING).fastq.gz %.genome #%.unaligned.bam
 	# SAM TO FASTQ
-	$(JAVA) -jar $(PICARD) SamToFastq I=$< FASTQ=$@.R1.fastq SECOND_END_FASTQ=$@.R2.fastq UNPAIRED_FASTQ=$@.RU.fastq
-	# ALIGNMENT
-	#$(BOWTIE) -x $$(cat $*.genome | sed -e 's/\.fa$$//gi') -1 $@.R1.fastq -2 $@.R2.fastq -S $@.aligned.sam -p $(THREADS_BY_SAMPLE)
-	#$(BOWTIE) -x $$(cat $*.genome | sed -e 's/\.fa$$//gi') -12 $@.R1.fastq,$@.R2.fastq,$@.RU.fastq -S $@.aligned.sam -p $(THREADS_BY_SAMPLE)
-	$(BOWTIE) -x $$(cat $*.genome | sed -e 's/\.fa$$//gi') -1 $@.R1.fastq -2 $@.R2.fastq -U $@.RU.fastq -S $@.aligned.sam -p $(THREADS_BY_SAMPLE)
-	-rm -f  $@.R1.fastq $@.R2.fastq $@.RU.fastq
-	# UNPAIRED READS
-	#$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) FastqToSam $(PICARD_UNALIGNED_FLAGS) FASTQ=$@.RU.fastq OUTPUT=$@.RU.sam SAMPLE_NAME=$(*F) PLATFORM=PL
-	#-rm -f $@.RU.fastq
-	# ALIGNED SAM
-	#$(SAMTOOLS) view $@.RU.sam >> $@.aligned.sam
-	#-rm -f $@.RU.sam
+	zcat $*.R1$(POST_SEQUENCING).fastq.gz > $*.R1$(POST_SEQUENCING).for_bowtie.fastq
+	zcat $*.R2$(POST_SEQUENCING).fastq.gz > $*.R2$(POST_SEQUENCING).for_bowtie.fastq
+	$(BOWTIE) -x $$(cat $*.genome | sed -e 's/\.fa$$//gi') -1 $*.R1$(POST_SEQUENCING).for_bowtie.fastq -2 $*.R2$(POST_SEQUENCING).for_bowtie.fastq -S $@.aligned.sam -p $(THREADS_BY_SAMPLE)
+	-rm -f $*.R1$(POST_SEQUENCING).for_bowtie.fastq $*.R2$(POST_SEQUENCING).for_bowtie.fastq
 	# AddOrReplaceReadGroups
-	$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) AddOrReplaceReadGroups $(PICARD_FLAGS) I=$@.aligned.sam O=$@ RGSM=$(*F)
+	if (($$($(SAMTOOLS) view $@.aligned.sam -H | grep "^@RG" -c))); then \
+		echo "# BAM $@.aligned.sam with read group"; \
+		mv $@.aligned.sam $@; \
+	else \
+		echo "# BAM $@.aligned.sam without read group"; \
+		$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) AddOrReplaceReadGroups $(PICARD_FLAGS) -I $@.aligned.sam -O $@ -COMPRESSION_LEVEL 1 -RGSM $(*F); \
+	fi;
 	-rm -f $@.aligned.sam
 
 

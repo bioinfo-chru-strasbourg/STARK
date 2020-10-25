@@ -17,7 +17,8 @@ BWA?=$(NGSbin)/bwa
 PICARDLIB?=$(NGSbin)/picard-tools
 # OPTIONS
 JAVA_FLAGS?= -Xmx16g
-PICARD_FLAGS?=SORT_ORDER=coordinate RGLB=001 RGPL=ILLUMINA RGPU=PU VALIDATION_STRINGENCY=SILENT
+#PICARD_FLAGS?=SORT_ORDER=coordinate RGLB=001 RGPL=ILLUMINA RGPU=PU VALIDATION_STRINGENCY=SILENT
+#PICARD_FLAGS?=-SORT_ORDER coordinate -RGLB 001 -RGPL ILLUMINA -RGPU PU -VALIDATION_STRINGENCY SILENT
 THREADS_BWA?=$(THREADS_BY_SAMPLE)
 
 
@@ -41,11 +42,10 @@ BWAMEM_FLAGS?= mem -C -M -t $(THREADS_BWA)
 	# Alignment
 	if (($$(zcat $*.R2.fastq.gz | head -n 1 | wc -l))); then \
 		echo "BWA MEM Paired-End"; \
-		echo "$(BWA) $(BWAMEM_FLAGS) `cat $@.RG` `cat $*.genome` $*.R1.fastq.gz $*.R2.fastq.gz | sed 's/[1-2]\:N\:0\:\([A-Z]*\)/BC\:Z\:\1/' | $(SAMTOOLS) view -o $@.tmp -b -1 -S -T `cat $*.genome` - -@ $(THREADS_SAMTOOLS);"; \
-		$(BWA) $(BWAMEM_FLAGS) `cat $@.RG` `cat $*.genome` $*.R1.fastq.gz $*.R2.fastq.gz | sed 's/[1-2]\:N\:0\:\([A-Z]*\)/BC\:Z\:\1/' | $(SAMTOOLS) view -b -1 -S -T `cat $*.genome` - -@ $(THREADS_SAMTOOLS) | $(SAMTOOLS) sort - -l 1 -O BAM -o $@.tmp -T $@.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS); \
+		$(BWA) $(BWAMEM_FLAGS) $$(cat $@.RG) $$(cat $*.genome) $*.R1$(POST_SEQUENCING).fastq.gz $*.R2$(POST_SEQUENCING).fastq.gz | sed 's/[1-2]\:N\:0\:\([A-Z]*\)/BC\:Z\:\1/' | $(SAMTOOLS) view -b -1 -S -T $$(cat $*.genome) - -@ $(THREADS_SAMTOOLS) | $(SAMTOOLS) sort - -l 1 -O BAM -o $@.tmp -T $@.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS); \
 	else \
 		echo "BWA MEM Single-End"; \
-		$(BWA) $(BWAMEM_FLAGS) `cat $@.RG` `cat $*.genome` $*.R1.fastq.gz | sed 's/[1-2]\:N\:0\:\([A-Z]*\)/BC\:Z\:\1/' | $(SAMTOOLS) view -b -1 -S -T `cat $*.genome` - -@ $(THREADS_SAMTOOLS) | $(SAMTOOLS) sort - -l 1 -O BAM -o $@.tmp -T $@.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS); \
+		$(BWA) $(BWAMEM_FLAGS) $$(cat $@.RG) $$(cat $*.genome) $*.R1$(POST_SEQUENCING).fastq.gz | sed 's/[1-2]\:N\:0\:\([A-Z]*\)/BC\:Z\:\1/' | $(SAMTOOLS) view -b -1 -S -T $$(cat $*.genome) - -@ $(THREADS_SAMTOOLS) | $(SAMTOOLS) sort - -l 1 -O BAM -o $@.tmp -T $@.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS); \
 	fi;
 	# AddOrReplaceReadGroups
 	if (($$($(SAMTOOLS) view $@.tmp -H | grep "^@RG" -c))); then \
@@ -53,10 +53,12 @@ BWAMEM_FLAGS?= mem -C -M -t $(THREADS_BWA)
 		mv $@.tmp $@; \
 	else \
 		echo "# BAM $@.tmp without read group"; \
-		$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) AddOrReplaceReadGroups $(PICARD_FLAGS) I=$@.tmp O=$@  COMPRESSION_LEVEL=1 RGSM=$(*F); \
+		$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) AddOrReplaceReadGroups $(PICARD_FLAGS) -I $@.tmp O=$@ -COMPRESSION_LEVEL 1 -RGSM $(*F); \
 	fi;
 	-rm $@.tmp $@.RG
 
+
+#$(BWA) $(BWAMEM_FLAGS) `cat $@.RG` `cat $*.genome` $*.R1.fastq.gz $*.R2.fastq.gz | sed 's/[1-2]\:N\:0\:\([A-Z]*\)/BC\:Z\:\1/' | $(SAMTOOLS) view -b -1 -S -T `cat $*.genome` - -@ $(THREADS_SAMTOOLS) | $(SAMTOOLS) sort - -l 1 -O BAM -o $@.tmp -T $@.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS); \
 
 
 

@@ -24,14 +24,14 @@ export APP_RELEASE
 
 # GROUP and PROJECT Associated with the APP
 # Use to structure data in the repository folder
-if [ "$GROUP" == "" ]; then
-	GROUP=""
+if [ "$APP_GROUP" == "" ]; then
+	APP_GROUP="UNKNOWN"
 fi;
 export GROUP
-if [ "$PROJECT" == "" ]; then
-	PROJECT=""
+if [ "$APP_PROJECT" == "" ]; then
+	APP_PROJECT="UNKNOWN"
 fi;
-export PROJECT
+export APP_PROJECT
 
 
 # SCRIPT DIR
@@ -112,8 +112,8 @@ fi;
 # EXPORT FOLDER REPOSITORY
 export FOLDER_REPOSITORY
 
-# EXPORT FOLDER ARCHIVE
-export FOLDER_ARCHIVE
+# EXPORT FOLDER ARCHIVES
+export FOLDER_ARCHIVES
 
 
 # CONFIG FOLDERS
@@ -166,15 +166,15 @@ export NGS_SCRIPTS=$STARK_FOLDER_BIN			#"$( cd "$( dirname "${BASH_SOURCE[0]}" )
 # REPOSITORY FOLDER
 export RESULTS_FOLDER_BY_GROUP_PROJECT_COPY=$FOLDER_REPOSITORY	# Copy data into group and project (if defined)
 export RESULTS_SUBFOLDER_DATA="STARK";				# Copy sample results in a SUBFOLDER
-export REPOSITORY_FILE_PATTERNS_CORE='$SAMPLE.reports/$SAMPLE.final.vcf.gz $SAMPLE.reports/$SAMPLE.full.vcf.gz $SAMPLE.reports/$SAMPLE.final.tsv $SAMPLE.reports/*.report*.html $SAMPLE.reports/*.report.html.folder:FOLDER $SAMPLE.bed $SAMPLE.manifest $SAMPLE*.genes $SAMPLE*.genes.bed $SAMPLE*.transcripts $SAMPLE*.tag $SAMPLE.archive.cram $SAMPLE.archive.cram.crai';
-export ARCHIVE_FILE_PATTERNS_CORE='$SAMPLE.reports/$SAMPLE.final.vcf.gz $SAMPLE.reports/$SAMPLE.final.tsv $SAMPLE.reports/*.report*.html $SAMPLE.reports/*.report.html.folder:FOLDER $SAMPLE.bed $SAMPLE.manifest $SAMPLE*.genes $SAMPLE*.transcripts $SAMPLE*.tag $SAMPLE.archive.cram $SAMPLE.archive.cram.crai $SAMPLE.launch.json';
+export REPOSITORY_FILE_PATTERNS_CORE='$SAMPLE.reports/$SAMPLE.final.vcf.gz $SAMPLE.reports/$SAMPLE.full.vcf.gz $SAMPLE.reports/$SAMPLE.final.tsv $SAMPLE.reports/*.report*.html $SAMPLE.reports/*.report.html.folder:FOLDER $SAMPLE.bed $SAMPLE.manifest $SAMPLE*.genes $SAMPLE*.genes.bed $SAMPLE*.transcripts $SAMPLE*.tag $SAMPLE.archive.cram $SAMPLE.archive.cram.crai $SAMPLE.launch.json';
+export ARCHIVES_FILE_PATTERNS_CORE='$SAMPLE.reports/$SAMPLE.final.vcf.gz $SAMPLE.reports/$SAMPLE.final.tsv $SAMPLE.reports/*.report*.html $SAMPLE.reports/*.report.html.folder:FOLDER $SAMPLE.bed $SAMPLE.manifest $SAMPLE*.genes $SAMPLE*.transcripts $SAMPLE*.tag $SAMPLE.archive.cram $SAMPLE.archive.cram.crai $SAMPLE.launch.json';
 # Copy some sample results files in the root sample folder, if any SUBFOLDER defined
 #export RESULTS_SUBFOLDER_ROOT_FILE_PATTERNS=$RESULTS_SUBFOLDER_ROOT_FILE_PATTERNS' $SAMPLE.reports/$SAMPLE.final.vcf $SAMPLE.reports/$SAMPLE.full.vcf $SAMPLE.reports/$SAMPLE.final.txt $SAMPLE.reports/$SAMPLE.full.txt *.reports/*.report.pdf *.reports/latex*/*pdf';
 #export RESULTS_SUBFOLDER_ROOT_FILE_PATTERNS=$RESULTS_SUBFOLDER_ROOT_FILE_PATTERNS' $SAMPLE.reports/$SAMPLE.final.vcf $SAMPLE.reports/$SAMPLE.final.vcf.idx $SAMPLE.reports/$SAMPLE.final.vcf.gz $SAMPLE.reports/$SAMPLE.final.vcf.gz.tbi $SAMPLE.reports/$SAMPLE.full.vcf $SAMPLE.reports/$SAMPLE.full.vcf.idx $SAMPLE.reports/$SAMPLE.full.vcf.gz $SAMPLE.reports/$SAMPLE.full.vcf.gz.tbi $SAMPLE.reports/$SAMPLE.final.tsv $SAMPLE.reports/$SAMPLE.full.tsv *.reports/*.report.pdf $SAMPLE.bed';
 #export REPOSITORY_FILE_PATTERNS=$(echo $REPOSITORY_FILE_PATTERNS' $SAMPLE.reports/$SAMPLE.final.vcf.gz $SAMPLE.reports/$SAMPLE.full.vcf.gz $SAMPLE.reports/$SAMPLE.final.tsv $SAMPLE.reports/$SAMPLE.full.tsv $SAMPLE.reports/*.report*.html $SAMPLE.reports/*.report.html.folder:FOLDER $SAMPLE.bed $SAMPLE.manifest $SAMPLE*.genes $SAMPLE*.transcripts $SAMPLE*.tag $SAMPLE.archive.cram $SAMPLE.archive.cram.crai' | tr "," " " | tr " " "\n" | sort -u | tr "\n" " ");
-#export ARCHIVE_FILE_PATTERNS=$(echo $ARCHIVE_FILE_PATTERNS' $SAMPLE.reports/$SAMPLE.final.vcf.gz $SAMPLE.reports/$SAMPLE.full.vcf.gz $SAMPLE.reports/$SAMPLE.final.tsv $SAMPLE.reports/$SAMPLE.full.tsv $SAMPLE.reports/*.report*.html $SAMPLE.reports/*.report.html.folder:FOLDER $SAMPLE.bed $SAMPLE.manifest $SAMPLE*.genes $SAMPLE*.transcripts $SAMPLE*.tag $SAMPLE.archive.cram $SAMPLE.archive.cram.crai $SAMPLE.launch.json' | tr "," " " | tr " " "\n" | sort -u | tr "\n" " ");
+#export ARCHIVES_FILE_PATTERNS=$(echo $ARCHIVES_FILE_PATTERNS' $SAMPLE.reports/$SAMPLE.final.vcf.gz $SAMPLE.reports/$SAMPLE.full.vcf.gz $SAMPLE.reports/$SAMPLE.final.tsv $SAMPLE.reports/$SAMPLE.full.tsv $SAMPLE.reports/*.report*.html $SAMPLE.reports/*.report.html.folder:FOLDER $SAMPLE.bed $SAMPLE.manifest $SAMPLE*.genes $SAMPLE*.transcripts $SAMPLE*.tag $SAMPLE.archive.cram $SAMPLE.archive.cram.crai $SAMPLE.launch.json' | tr "," " " | tr " " "\n" | sort -u | tr "\n" " ");
 export REPOSITORY_FILE_PATTERNS=$(echo $REPOSITORY_FILE_PATTERNS' '$REPOSITORY_FILE_PATTERNS_CORE | tr "," " " | tr " " "\n" | sort -u | tr "\n" " ");
-export ARCHIVE_FILE_PATTERNS=$(echo $ARCHIVE_FILE_PATTERNS' '$ARCHIVE_FILE_PATTERNS_CORE | tr "," " " | tr " " "\n" | sort -u | tr "\n" " ");
+export ARCHIVES_FILE_PATTERNS=$(echo $ARCHIVES_FILE_PATTERNS' '$ARCHIVES_FILE_PATTERNS_CORE | tr "," " " | tr " " "\n" | sort -u | tr "\n" " ");
 
 
 #Rules defined in the app
@@ -224,6 +224,33 @@ if [ ! -s $REF ] || [ "$REF" == "" ]; then
 	REF=$GENOMES/current/$ASSEMBLY.fa
 fi;
 export REF
+
+# REF_CACHE_FOLDER and REF_CACHE and REF_PATH
+
+if [ -z $REF_PATH ] || [ "$REF_PATH" == "" ]; then
+	REF_PATH="http://www.ebi.ac.uk/ena/cram/md5/%s"
+fi;
+
+if [ -z $REF_CACHE_FOLDER ] || [ "$REF_CACHE_FOLDER" == "" ] || [ ! -d $REF_CACHE_FOLDER ]; then
+	if [ -d $REF.hts-ref ] && [ "$(ls -A $REF.hts-ref 2>/dev/null)" ]; then
+		REF_CACHE_FOLDER=$REF.hts-ref
+	elif mkdir -p $REF.hts-ref 2>/dev/null; then
+		REF_CACHE_FOLDER=$REF.hts-ref
+	else
+		REF_CACHE_FOLDER=$HOME/.cache/hts-ref
+		mkdir -p $REF_CACHE_FOLDER
+	fi;
+else
+	REF_CACHE="$REF_CACHE_FOLDER/%2s/%2s/%s"
+fi;
+
+if [ ! "$(ls -A $REF_CACHE_FOLDER 2>/dev/null)" ] && [ -w $REF_CACHE_FOLDER ] && [ "$(whereis samtools | cut -d' ' -f2)" ]; then \
+	perl $(dirname $(whereis samtools | cut -d' ' -f2))/seq_cache_populate.pl -root $REF_CACHE_FOLDER $REF ; \
+fi;
+
+export REF_CACHE_FOLDER
+export REF_PATH
+export REF_CACHE="$REF_CACHE_FOLDER/%2s/%2s/%s"
 
 
 
@@ -649,11 +676,11 @@ if [ -z "$HOWARD_ANNOTATION" ]; then
 	#HOWARD_ANNOTATION="core,frequency,score,annotation,prediction,snpeff,snpeff_hgvs"
 fi;
 # DEJAVU
-if [ -s $ANNOVAR_DATABASES/$ASSEMBLY"_dejavu."$GROUP.$PROJECT.txt ]; then
-	HOWARD_ANNOTATION="$HOWARD_ANNOTATION,dejavu.$GROUP.$PROJECT"
+if [ -s $ANNOVAR_DATABASES/$ASSEMBLY"_dejavu."$APP_GROUP.$APP_PROJECT.txt ]; then
+	HOWARD_ANNOTATION="$HOWARD_ANNOTATION,dejavu.$APP_GROUP.$APP_PROJECT"
 fi
 # DEJAVU for all the GROUP
-for DEJAVU_DATABASE_ONE in $(find $ANNOVAR_DATABASES -name $ASSEMBLY"_dejavu."$GROUP"*.txt" 2>/dev/null); do
+for DEJAVU_DATABASE_ONE in $(find $ANNOVAR_DATABASES -name $ASSEMBLY"_dejavu."$APP_GROUP".*txt" 2>/dev/null); do
 	HOWARD_ANNOTATION=$HOWARD_ANNOTATION","$(basename $DEJAVU_DATABASE_ONE | sed s/^$ASSEMBLY"_"//g | sed s/.txt$//g );
 done;
 export HOWARD_ANNOTATION
