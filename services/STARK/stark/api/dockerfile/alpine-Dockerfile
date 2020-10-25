@@ -1,7 +1,7 @@
 FROM alpine:3.1
 
 # Update
-RUN apk add --update python py-pip docker git make gcc g++
+RUN apk add --update python py-pip docker git make gcc g++ bash
 
 # Install app dependencies
 RUN pip install Flask

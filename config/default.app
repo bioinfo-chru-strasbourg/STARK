@@ -347,9 +347,9 @@ HOWARD_CALCULATION="VARTYPE,NOMEN"
 # Default minimal calculation with HOWARD for final VCF report
 HOWARD_CALCULATION_MINIMAL="VARTYPE,NOMEN"
 # Default calculation with HOWARD for final VCF report
-HOWARD_CALCULATION_REPORT="FindByPipelines,GenotypeConcordance,VAF,VAF_STATS,CALLING_QUALITY,CALLING_QUALITY_EXPLODE,VARTYPE,NOMEN,BARCODE"
+HOWARD_CALCULATION_REPORT="FindByPipelines,GenotypeConcordance,VAF,VAF_STATS,DP_STATS,VARTYPE,NOMEN,BARCODE"
 # Default calculation with HOWARD for whole analysis (calculation forced)
-HOWARD_CALCULATION_ANALYSIS="VAF_STATS,VARTYPE,NOMEN,BARCODE"
+HOWARD_CALCULATION_ANALYSIS="VAF_STATS,DP_STATS,VARTYPE,NOMEN,BARCODE"
 # List of annotation fields to extract NOMEN annotation (default 'hgvs', see HOWARD docs)
 HOWARD_NOMEN_FIELDS="hgvs"
 

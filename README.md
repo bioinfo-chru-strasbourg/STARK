@@ -17,14 +17,14 @@ Getting Started
 Use curl from BioInfoDiag GitLab to setup STARK environment by default.
 
 ```
-$ mkdir -p ~/STARK && cd ~/STARK && curl https://gitlab.bioinfo-diag.fr/Strasbourg/STARK/raw/master/setup.sh | bash
+$ mkdir -p ${HOME}/STARK && cd ${HOME}/STARK && curl https://gitlab.bioinfo-diag.fr/Strasbourg/STARK/raw/master/setup.sh | bash
 ```
 
 
-Use STARK Command Line Interface (CLI) to execute custom analyses with data in \~/STARK/data (/STARK/data whtin the container).
+Use STARK Command Line Interface (CLI) to execute custom analyses with data in ${HOME}/STARK/data (/STARK/data whtin the container).
 
 ```
-$ docker exec STARK-CLI STARK --help
+$ docker exec stark-module-stark-submodule-stark-service-cli STARK --help
 ```
 
 
@@ -61,12 +61,12 @@ $ docker-compose build
 ---
 **4. Setup**
 
-The setup step will create folders (if not exist), populate databases folder if needed, and incrementally archives tools setup sources and binaries. Use --project-name if STARK scripts are not in a folder named "STARK". Variable DOCKER_STARK_MAIN_FOLDER corresponds to variable in ".env" configuration file.
+The setup step will create folders (if not exist), populate databases folder if needed, and incrementally archives tools setup sources and binaries. Use --project-name if STARK scripts are not in a folder named "STARK". Variable DOCKER_STARK_MAIN_FOLDER corresponds to variable in ".env" configuration file (default "$HOME/STARK").
 
 ```
 $ DOCKER_STARK_MAIN_FOLDER=<STARK_main_folder>
 $ mkdir -p $DOCKER_STARK_MAIN_FOLDER
-$ docker-compose --project-name STARK up stark-folders
+$ docker-compose --project-name STARK up stark-setup
 $ docker-compose --project-name STARK up stark-databases
 $ docker-compose --project-name STARK up stark-sources-archives
 ```
@@ -76,7 +76,7 @@ $ docker-compose --project-name STARK up stark-sources-archives
 
 Services are located in the folder 'services', and are organized in separated modules (folders), containing 'STARK.docker-compose.yml' file describing services, 'STARK.env' file including all parameters, and 'STARK.module' file describing the module and all services, especially to share information and access to other modules.
 
-To automatically start all services modules:
+To automatically start all services modules (detached):
 
 ```
 $ services/services.sh --modules=* --command=up
@@ -85,7 +85,7 @@ $ services/services.sh --modules=* --command=up
 Main STARK services in the folder 'services/STARK' contains a CLI (Command Line Interface), an API (Application Program Interface), a Listener and its cleaner, and a DAS service (DAta Sharing).
 
 ```
-$ services/services.sh --modules=STARK --command=up
+$ services/services.sh --modules=stark --command=up
 ```
 
 
@@ -99,21 +99,21 @@ Analysis
 
 A STARK Command Line Interface (CLI) is started as a container to execute custom analyses with data and runs, available in inner main folder (default /STARK/data and /STARK/data, resp.).
 
-Use STARK Command Line Interface with command 'docker exec STARK-CLI STARK', to execute a STARK command with data and runs (run names will be automatically found in input folder). For more information, use HELP option.
+Use STARK Command Line Interface with command 'docker exec stark-module-stark-submodule-stark-service-cli STARK', to execute a STARK command with data and runs (run names will be automatically found in input folder). For more information, use HELP option.
 
 ```
-$ docker exec STARK-CLI STARK --help
-$ docker exec STARK-CLI STARK --run=<my_run>
-$ docker exec STARK-CLI STARK --reads=/STARK/data/<my_data>/<my_fastq> --design=/STARK/data/<my_data>/<my_design> --application=<my_application>
+$ docker exec stark-module-stark-submodule-stark-service-cli STARK --help
+$ docker exec stark-module-stark-submodule-stark-service-cli STARK --run=<my_run>
+$ docker exec stark-module-stark-submodule-stark-service-cli STARK --reads=/STARK/data/<my_data>/<my_fastq> --design=/STARK/data/<my_data>/<my_design> --application=<my_application> --repository=/STARK/data/<my_data>/<my_output>
 ```
 
 STARK Command Line Interface can be used in interactive mode ('-ti' option). All tools used by STARK can be executed as they are in the PATH environment variable (e.g. samtools, bcftools). Available tools can be found in 'STARK/tools' folder.
 
 ```
-$ docker exec -ti STARK-CLI bash
-$ docker exec STARK-CLI samtools
-$ docker exec STARK-CLI bcftools
-$ docker exec STARK-CLI bash -c "find /STARK/tools -mindepth 2 -maxdepth 2 -type d"
+$ docker exec -ti stark-module-stark-submodule-stark-service-cli bash
+$ docker exec stark-module-stark-submodule-stark-service-cli samtools
+$ docker exec stark-module-stark-submodule-stark-service-cli bcftools
+$ docker exec stark-module-stark-submodule-stark-service-cli bash -c "find /STARK/tools -mindepth 2 -maxdepth 2 -type d"
 ```
 
 ---

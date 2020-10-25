@@ -123,7 +123,7 @@ CRAM=	$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$
 JSON=	$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).launch.json )
 
 
-FINAL=$(SAMPLE) $(BAM) $(VCF) $(CRAM) $(SEQUENCING_METRICS) $(BAM_VALIDATION)
+FINAL=$(SAMPLE) $(BAM) $(CRAM) $(VCF) $(SEQUENCING_METRICS) $(BAM_VALIDATION)
 
 
 REPORTS=$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).reports/$(call sample,$(RUN_SAMPLE)).$(ANALYSIS_DATE).report )

@@ -160,22 +160,22 @@ fi;
 (($VERBOSE)) && echo "#[INFO] Docker Compose env file '$DOCKER_COMPOSE_FILE'"
 source $DOCKER_COMPOSE_FILE
 
-
-
 if [ "$SETUP_TYPE" == "HOST" ]; then
 
 	for var in "${!DOCKER_STARK_FOLDER_@}"; do
 		#ONE_DOCKER_STARK_FOLDER_CONTAINER=$(echo ${var} | sed "s/^DOCKER_STARK_FOLDER_//g" | sed "s/_/\//g" | tr '[:upper:]' '[:lower:]' )
 		(($VERBOSE)) && echo "#[INFO] Folder '$DOCKER_STARK_MAIN_FOLDER/${!var}'"
-		[ ! -d $DOCKER_STARK_MAIN_FOLDER"/"${!var} ] && mkdir -p $DOCKER_STARK_MAIN_FOLDER"/"${!var} && echo "#[INFO] Folder '$DOCKER_STARK_MAIN_FOLDER/${!var}' created"
-		[ ! -d $DOCKER_STARK_MAIN_FOLDER/${!var} ] && echo "#[ERROR] Folder '$DOCKER_STARK_MAIN_FOLDER/${!var}' failed"
+		[ -e $DOCKER_STARK_MAIN_FOLDER/${!var} ] && echo "#[INFO] Folder '$DOCKER_STARK_MAIN_FOLDER/${!var}' exists"
+		[ ! -e $DOCKER_STARK_MAIN_FOLDER"/"${!var} ] && mkdir -p $DOCKER_STARK_MAIN_FOLDER"/"${!var} && echo "#[INFO] Folder '$DOCKER_STARK_MAIN_FOLDER/${!var}' created"
+		[ ! -e $DOCKER_STARK_MAIN_FOLDER/${!var} ] && echo "#[ERROR] Folder '$DOCKER_STARK_MAIN_FOLDER/${!var}' failed"
 	done
 
 	for var in "${!DOCKER_STARK_SERVICE_FOLDER_@}"; do
 		#ONE_DOCKER_STARK_FOLDER_CONTAINER=$(echo ${var} | sed "s/^DOCKER_STARK_SERVICE_FOLDER_//g" | sed "s/_/\//g" | tr '[:upper:]' '[:lower:]' )
 		(($VERBOSE)) && echo "#[INFO] Folder '$DOCKER_STARK_MAIN_FOLDER/${!var}'"
-		[ ! -d $DOCKER_STARK_MAIN_FOLDER"/"${!var} ] && mkdir -p $DOCKER_STARK_MAIN_FOLDER"/"${!var} && echo "#[INFO] Folder '$DOCKER_STARK_MAIN_FOLDER/${!var}' created"
-		[ ! -d $DOCKER_STARK_MAIN_FOLDER/${!var} ] && echo "#[ERROR] Folder '$DOCKER_STARK_MAIN_FOLDER/${!var}' failed"
+		[ -e $DOCKER_STARK_MAIN_FOLDER/${!var} ] && echo "#[INFO] Folder '$DOCKER_STARK_MAIN_FOLDER/${!var}' exists"
+		[ ! -e $DOCKER_STARK_MAIN_FOLDER"/"${!var} ] && mkdir -p $DOCKER_STARK_MAIN_FOLDER"/"${!var} && echo "#[INFO] Folder '$DOCKER_STARK_MAIN_FOLDER/${!var}' created"
+		[ ! -e $DOCKER_STARK_MAIN_FOLDER/${!var} ] && echo "#[ERROR] Folder '$DOCKER_STARK_MAIN_FOLDER/${!var}' failed"
 	done
 
 elif [ "$SETUP_TYPE" == "INNER" ]; then
@@ -183,7 +183,15 @@ elif [ "$SETUP_TYPE" == "INNER" ]; then
 	for var in "${!DOCKER_STARK_INNER_FOLDER_@}"; do
 		#ONE_DOCKER_STARK_FOLDER_CONTAINER=$(echo ${var} | sed "s/^DOCKER_STARK_FOLDER_//g" | sed "s/_/\//g" | tr '[:upper:]' '[:lower:]' )
 		(($VERBOSE)) && echo "#[INFO] Folder '$SETUP_MAIN_FOLDER_PATTERN${!var}'"
-		mkdir -p $SETUP_MAIN_FOLDER_PATTERN${!var} && echo "#[INFO] Folder '$SETUP_MAIN_FOLDER_PATTERN${!var}' created" || echo "#[ERROR] Folder '$SETUP_MAIN_FOLDER_PATTERN${!var}' failed"
+		if [ -d "$SETUP_MAIN_FOLDER_PATTERN"/"${!var}" ] || [ -L "$SETUP_MAIN_FOLDER_PATTERN"/"${!var}" ]; then
+			echo "#[INFO] Folder '${!var}' exists"
+		else
+			mkdir -p $SETUP_MAIN_FOLDER_PATTERN${!var} && echo "#[INFO] Folder '${!var}' created"
+		fi;
+		if [ ! -d $SETUP_MAIN_FOLDER_PATTERN"/"${!var} ] && [ ! -L $SETUP_MAIN_FOLDER_PATTERN"/"${!var} ]; then
+			echo "#[ERROR] Folder '${!var}' failed"
+		fi;
+
 		#[ ! -d $DOCKER_STARK_MAIN_FOLDER"/"${!var} ] && mkdir -p $DOCKER_STARK_MAIN_FOLDER"/"${!var} && echo "#[INFO] Folder '$DOCKER_STARK_MAIN_FOLDER/${!var}' created" # ???
 	done
 
@@ -192,3 +200,22 @@ else
 	echo "#[WARNING] Error setup type"
 
 fi;
+
+
+### HOWARD DEFAULT config
+HOWARD_FOLDER_CONFIG=$HOWARD_FOLDER/config
+
+if [ "$DOCKER_STARK_INNER_FOLDER_CONFIG_HOWARD" != "" ] && [ ! -d $SETUP_MAIN_FOLDER_PATTERN/$DOCKER_STARK_INNER_FOLDER_CONFIG_HOWARD ] && [ ! -L $SETUP_MAIN_FOLDER_PATTERN/$DOCKER_STARK_INNER_FOLDER_CONFIG_HOWARD ]; then
+	(($VERBOSE)) && echo "#[INFO] Create HOWARD configuration folder (if not exists)"
+	mkdir -p $SETUP_MAIN_FOLDER_PATTERN/$DOCKER_STARK_INNER_FOLDER_CONFIG/$HOWARD_SUBFOLDER 
+fi;
+
+if [ -d $HOWARD_FOLDER_CONFIG ] || [ -L $HOWARD_FOLDER_CONFIG ]; then
+	(($VERBOSE)) && echo "#[INFO] Copy HOWARD configuration files (if not exists)"
+	(($VERBOSE)) && echo "#[INFO] Copy '$HOWARD_FOLDER_CONFIG/*ini' to '$DOCKER_STARK_INNER_FOLDER_CONFIG_HOWARD/'"
+	cp -nr $HOWARD_FOLDER_CONFIG/*ini $SETUP_MAIN_FOLDER_PATTERN/$DOCKER_STARK_INNER_FOLDER_CONFIG_HOWARD/ #2>/dev/null
+fi;
+
+
+
+(($VERBOSE)) && echo "#[INFO] STARK Setup done."

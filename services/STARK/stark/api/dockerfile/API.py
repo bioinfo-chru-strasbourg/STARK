@@ -42,6 +42,12 @@ if 'TS_SAVELIST' in os.environ:
 else:
     ts_savelist="/ts-tmp"
 
+if 'SHELL' in os.environ:
+    shell=os.environ['SHELL']
+else:
+    shell="/bin/ash"
+
+
 #ts_env=" TS_SOCKET=" + ts_socket + " TS_SAVELIST=" + ts_savelist + " "
 ts_env=" TS_SAVELIST=" + ts_savelist + " "
 
@@ -59,7 +65,7 @@ else:
 if 'DOCKER_STARK_SERVICE_STARK_API_LOG_FOLDER' in os.environ:
     docker_stark_api_log_folder=os.environ['DOCKER_STARK_SERVICE_STARK_API_LOG_FOLDER']
 else:
-    docker_stark_api_log_Folder="/STARK/services/STARK/API"
+    docker_stark_api_log_folder="/STARK/services/stark/stark/api"
 
 # STARK API RUNS Folder 
 
@@ -108,23 +114,12 @@ def randomStringDigits(stringLength=6):
     return ''.join(random.choice(lettersAndDigits) for i in range(stringLength))
 
 
-# Task Spooler env param
-
-#TS_SOCKET="STARK"
-#TS_SAVELIST="/tmp/STARKTSLIST";
-#TS_ENV=" export TS_SOCKET=" + TS_SOCKET + " && export TS_SAVELIST=" + TS_SAVELIST + " ";
-#TS_ENV=" export TS_SAVELIST=" + TS_SAVELIST + " ";
-#TS_BIN="ts";
-#TS=TS_ENV + " && " + TS_BIN + " ";
-#TS=""
-
 
 app = Flask(__name__)
 
 #app.url_map.strict_slashes = True
 
 start = int(round(time.time()))
-
 
 
 @app.route("/", methods = ['GET','POST']) #methods = ['GET', 'POST', 'DELETE'])
@@ -199,49 +194,6 @@ def stark_launch():
     # Folders
     ###########
 
-    # Host folders
-
-    # if 'DOCKER_STARK_MAIN_FOLDER' in os.environ:
-    #     DOCKER_STARK_MAIN_FOLDER=os.environ['DOCKER_STARK_MAIN_FOLDER']
-    # else:
-    #     DOCKER_STARK_MAIN_FOLDER="~/STARK"
-
-    # if 'DOCKER_STARK_FOLDER_SERVICES' in os.environ:
-    #     DOCKER_STARK_FOLDER_SERVICES=os.environ['DOCKER_STARK_FOLDER_SERVICES']
-    # else:
-    #     DOCKER_STARK_FOLDER_SERVICES="services"
-
-    # if 'DOCKER_STARK_SERVICES_FOLDER_STARK_API' in os.environ:
-    #     DOCKER_STARK_SERVICES_FOLDER_STARK_API=os.environ['DOCKER_STARK_SERVICES_FOLDER_STARK_API']
-    # else:
-    #     DOCKER_STARK_SERVICES_FOLDER_STARK_API="STARK/API"
-
-    
-
-    # # if 'DOCKER_STARK_SERVICE_LISTENER_FOLDER_LOG' in os.environ:
-    # #     docker_stark_service_listener_folder_log=os.environ['DOCKER_STARK_SERVICE_LISTENER_FOLDER_LOG']
-    # # else:
-    # #     docker_stark_service_listener_folder_log="analyses/stark-services/listener"
-
-
-    # # Inner folders
-
-    # if 'DOCKER_STARK_INNER_FOLDER_MAIN' in os.environ:
-    #     DOCKER_STARK_INNER_FOLDER_MAIN=os.environ['DOCKER_STARK_INNER_FOLDER_MAIN']
-    # else:
-    #     DOCKER_STARK_INNER_FOLDER_MAIN="/STARK"
-
-    # if 'DOCKER_STARK_INNER_FOLDER_INPUT_RUNS' in os.environ:
-    #     DOCKER_STARK_INNER_FOLDER_INPUT_RUNS=os.environ['DOCKER_STARK_INNER_FOLDER_INPUT_RUNS']
-    # else:
-    #     DOCKER_STARK_INNER_FOLDER_INPUT_RUNS=DOCKER_STARK_INNER_FOLDER_MAIN+"/input/runs"
-
-    # if 'DOCKER_STARK_INNER_FOLDER_SERVICES' in os.environ:
-    #     DOCKER_STARK_INNER_FOLDER_SERVICES=os.environ['DOCKER_STARK_INNER_FOLDER_SERVICES']
-    # else:
-    #     DOCKER_STARK_INNER_FOLDER_SERVICES="/STARK/services"
-
-
     # analysisID
     ##############
 
@@ -270,7 +222,7 @@ def stark_launch():
             else:
                 myCmd ="echo " + name + " | sha1sum | awk '{print $1}'"
 
-            runMD5 = subprocess.check_output(myCmd, shell=True).strip();
+            runMD5 = subprocess.check_output(myCmd, shell=True).strip()
 
     if runID != "" and runMD5 !="":
         #analysesNAME=runID
@@ -289,13 +241,6 @@ def stark_launch():
         analysesRUNNAME=analysis_name
         analysesNAME=analysis_name
 
-    #print "analysesID:"+analysesID
-    # MD5
-    #MD5=$(find $IFA -maxdepth 1 -xtype f -print0 | xargs -0 sha1sum | cut -b-40 | sha1sum | awk '{print $1}')
-    #MD5=$(find $IFA -maxdepth 1 -type f -print0 | xargs -0 sha1sum | cut -b-40 | sha1sum | awk '{print $1}')
-    #RUN_NAME=$(basename $IFA)
-    #ID="ID-$MD5-NAME-$RUN_NAME"
-
 
     # DOCKER parameters
     #####################
@@ -303,36 +248,6 @@ def stark_launch():
     # DOCKER MOUNT parameters
     
     docker_mount=docker_stark_container_mount
-
-
-    # docker_mount=""
-    # docker_stark_folder_pattern="DOCKER_STARK_FOLDER_"
-    # for docker_stark_folder in os.environ:
-    #     if docker_stark_folder.startswith(docker_stark_folder_pattern):
-    #         #print "Found",docker_stark_folder
-    #         docker_stark_folder_basename=re.sub('_', '/', re.sub(docker_stark_folder_pattern, '', docker_stark_folder)).lower()
-    #         #print docker_stark_folder_basename
-    #         docker_mount+=" -v "+DOCKER_STARK_MAIN_FOLDER+"/"+os.environ[docker_stark_folder]+":"+DOCKER_STARK_INNER_FOLDER_MAIN+"/"+docker_stark_folder_basename
-    #     #print docker_stark_folder
-    
-
-
-    # # DOCKER MOUNT parameters API log
-    # docker_mount+=" -v " + DOCKER_STARK_MAIN_FOLDER+"/"+DOCKER_STARK_FOLDER_SERVICES+"/"+DOCKER_STARK_SERVICES_FOLDER_STARK_API+":"+DOCKER_STARK_INNER_FOLDER_SERVICES+"/"+DOCKER_STARK_INNER_FOLDER_SERVICES_API + " "
-
-    # # DOCKER MOUNT parameters others
-    # #      ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_SERVICES}/${DOCKER_STARK_SERVICES_FOLDER_STARK_API}:DOCKER_STARK_INNER_FOLDER_SERVICES_API
-
-    # if 'DOCKER_STARK_FOLDER_MOUNT' in os.environ:
-    #     docker_mount+=" " + DOCKER_STARK_FOLDER_MOUNT + " "
-    # #print docker_mount
-
-
-    # DOCKER ENV parameters
-
-    # docker_env=""
-    # if 'DOCKER_STARK_ENV' in os.environ:
-    #     docker_env=os.environ['DOCKER_STARK_ENV']
 
 
     # analysisIDNAME
@@ -380,8 +295,8 @@ def stark_launch():
     
     myCmd = ts_cmd + ' docker run ' + docker_parameters + ' ' + docker_stark + ' --analysis_name=' + analysesRUNNAME + ' --analysis=' + analysisFILE + ' '#+ analysisLOGERR_PARAM
     #print(myCmd);
-    getCmd = subprocess.check_output(myCmd, shell=True);
-    STARKCmdID=getCmd.strip();
+    getCmd = subprocess.check_output(myCmd, shell=True)
+    STARKCmdID=getCmd.strip()
 
     # Retrive INFO from command
     # Example :
@@ -389,11 +304,14 @@ def stark_launch():
     # ts ash -c "ts -w $FIRST_TASKID && echo there"
     if ts != "":
         # INFO
-        myPostCmd=ts_env + " " + ts + ' -L ' + PostanalysisIDNAME + ' ash -c "' + ts_env + ts + ' -i ' + STARKCmdID + ' > ' + analysisINFO + '"'
-        getPostCmd = subprocess.check_output(myPostCmd, shell=True);
+        #myPostCmd=ts_env + " " + ts + ' -L ' + PostanalysisIDNAME + ' ' + shell + ' -c "' + ts_env + ' && ' + ts + ' -i ' + STARKCmdID + ' > ' + analysisINFO + '"'
+        #getPostCmd = subprocess.check_output(myPostCmd, shell=True);
         # OUTPUT
-        myPostCmd=ts_env + " " + ts + ' -L ' + PostanalysisIDNAME + ' ash -c "' + ts_env + ts + ' -c ' + STARKCmdID + ' > ' + analysisOUTPUT + '"'
-        getPostCmd = subprocess.check_output(myPostCmd, shell=True);
+        #myPostCmd=ts_env + " " + ts + ' -L ' + PostanalysisIDNAME + ' ' + shell + ' -c "' + ts_env + ' && ' + ts + ' -c ' + STARKCmdID + ' > ' + analysisOUTPUT + '"'
+        #getPostCmd = subprocess.check_output(myPostCmd, shell=True);
+        # INFO && OUTPUT
+        myPostCmd=ts_env + " " + ts + ' -L ' + PostanalysisIDNAME + ' ' + shell + ' -c "' + ts_env + ' && ' + ts + ' -i ' + STARKCmdID + ' > ' + analysisINFO + ' && ' + ts + ' -c ' + STARKCmdID + ' > ' + analysisOUTPUT + '"'
+        getPostCmd = subprocess.check_output(myPostCmd, shell=True)
 
 
     # Notification or something else
@@ -471,13 +389,11 @@ def queue():
     return ret, ret_val
 
 
-
-
 if __name__ == '__main__':
     parser = optparse.OptionParser(usage="python simpleapp.py -p ")
     parser.add_option('-p', '--port', action='store', dest='port', help='The port to listen on.')
     (args, _) = parser.parse_args()
     if args.port == None:
-        print "Missing required argument: -p/--port"
+        print("Missing required argument: -p/--port")
         sys.exit(1)
     app.run(host='0.0.0.0', port=int(args.port), debug=False)

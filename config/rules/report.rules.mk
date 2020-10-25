@@ -27,7 +27,7 @@ HOWARD_CONFIG_ANNOTATION?="config.annotation.ini"
 HOWARD_ANNOTATION?=$(HOWARD)/VCFannotation.pl
 ANNOTATION_TYPE_MINIMAL?="Symbol,location,outcome,hgvs"
 ANNOVAR?=$(NGSscripts)
-HOWARD_CALCULATION?=VAF,NOMEN,VAF_STATS,VARTYPE
+HOWARD_CALCULATION?=VAF,NOMEN,VAF_STATS,DP_STATS,VARTYPE
 HOWARD_NOMEN_FIELDS?="hgvs"
 
 
@@ -144,13 +144,14 @@ HOWARD_NOMEN_FIELDS?="hgvs"
 	
 
 ## FULL VCF: ANNOTATION OF A MERGE FILE
-%.full.sorting.vcf: %.merge.vcf %.transcripts %.genome
+%.full.filtration.sorting.vcf: %.merge.vcf %.transcripts %.genome
 	# HOWARD annotation
 	+$(HOWARD) --input=$< --output=$@.tmp --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --annotation=$(HOWARD_ANNOTATION_REPORT) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --norm=$$(cat $*.genome);
 	# HOWARD calculation and prioritization
 	+$(HOWARD) --input=$@.tmp --output=$@  --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --calculation=$(HOWARD_CALCULATION_REPORT) --nomen_fields=$(HOWARD_NOMEN_FIELDS) --prioritization=$(HOWARD_PRIORITIZATION_REPORT) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --tmp=$(TMP_FOLDER_TMP)  --transcripts=$*.transcripts --force --multithreading --threads=$(THREADS) --env=$(CONFIG_TOOLS) --norm=$$(cat $*.genome);
 	# cleaning
 	rm -rf $@.tmp
+
 
 ## rehead full.vcf
 %.$(ANALYSIS_DATE).full.vcf: %.$(ANALYSIS_DATE).final_variants_files_vcf_gz %.full.vcf

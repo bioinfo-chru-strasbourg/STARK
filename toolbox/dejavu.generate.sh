@@ -7,8 +7,8 @@
 
 SCRIPT_NAME="STARK_DEJAVU"
 SCRIPT_DESCRIPTION="STARK DEJAVU ANNOVAR databases generation"
-SCRIPT_RELEASE="0.10.0"
-SCRIPT_DATE="12/08/2020"
+SCRIPT_RELEASE="0.11.0"
+SCRIPT_DATE="29/09/2020"
 SCRIPT_AUTHOR="Antony Le Bechec"
 SCRIPT_COPYRIGHT="HUS"
 SCRIPT_LICENCE="GNU-AGPL"
@@ -18,6 +18,7 @@ RELEASE_NOTES=$RELEASE_NOTES"# 0.9b-05/09/2017: Script creation\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.1b-07/09/2017: Add generation of ANNOVAR generic database.\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.2b-02/11/2018: Use BCFTOOLS instead of VCFTOOLS.\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.10.0-12/08/2020: Many changes.\n";
+RELEASE_NOTES=$RELEASE_NOTES"# 0.11.0-29/09/2020: Add STARK module json files.\n";
 
 # Script folder
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -174,7 +175,7 @@ fi;
 # DEJAVU
 DEJAVU=$DEJAVU_FOLDER
 RELEASE=$(date +%Y%m%d-%H%M%S)
-mkdir -p $DEJAVU/$RELEASE
+mkdir -p $DEJAVU/$RELEASE/$RELEASE
 
 
 # ASSEMBLY PREFIX
@@ -198,11 +199,11 @@ mkdir -p $TMP
 
 
 # MK
-MK=$DEJAVU/$RELEASE/$RELEASE.mk
+MK=$DEJAVU/$RELEASE/$RELEASE/$RELEASE.mk
 > $MK
 
 # LOG
-LOG=$DEJAVU/$RELEASE/$RELEASE.log
+LOG=$DEJAVU/$RELEASE/$RELEASE/$RELEASE.log
 > $LOG
 
 
@@ -245,7 +246,7 @@ if [ -z "$GP_FOLDER_LIST" ]; then
 
         # REPOSITORY FOLDER
         if [ ! -z "$REPO_FOLDER" ] && [ -d "$REPO_FOLDER" ] && [ -d "$REPO_FOLDER/$APP_GROUP/$APP_PROJECT" ]; then
-        	APP_FOLDER_ARCHIVE=$REPO_FOLDER
+        	APP_FOLDER_ARCHIVES=$REPO_FOLDER
         fi;
 
         # GROUP FOLDER
@@ -352,7 +353,7 @@ for GP_FOLDER in $GP_FOLDER_LIST_UNIQ; do
 
 
 
-	if [ ! -s $DEJAVU/$RELEASE/dejavu.$GROUP.$PROJECT.done ]; then
+	if [ ! -s $DEJAVU/$RELEASE/$RELEASE/dejavu.$GROUP.$PROJECT.done ]; then
 
 		# MK files
 		> $MK
@@ -422,7 +423,7 @@ for GP_FOLDER in $GP_FOLDER_LIST_UNIQ; do
 		#echo "awk -F'\t' '{AF=\$\$6/($NB_VCF_FOUND*2)} {print \$\$1\"\\t\"\$\$2\"\\t\"\$\$3\"\\t\"\$\$4\"\\t\"AF}'"
 		#exit 0
 
-		#echo "$DEJAVU/$RELEASE/dejavu.$GROUP.$PROJECT.txt: $TMP/$GROUP/$PROJECT/dejavu.vcf
+		#echo "$DEJAVU/$RELEASE/$RELEASE/dejavu.$GROUP.$PROJECT.txt: $TMP/$GROUP/$PROJECT/dejavu.vcf
 		echo "$TMP/$GROUP/$PROJECT/dejavu.percent: $TMP/$GROUP/$PROJECT/dejavu.vcf
 			#$BCFTOOLS query -f'%CHROM\t%POS\t%REF\t%ALT\t%AN\n' $< | awk -F'\t' '{AF=\$\$5/($NB_VCF_FOUND*2)} {print \$\$1\"\\t\"\$\$2\"\\t\"\$\$3\"\\t\"\$\$4\"\\t\"AF}' > \$@
 			$BCFTOOLS query -f'%CHROM\t%POS\t%REF\t%ALT\t%AF\n' $< > \$@
@@ -492,11 +493,49 @@ for GP_FOLDER in $GP_FOLDER_LIST_UNIQ; do
 
 			# end
 			#(($VERBOSE)) && echo "#[INFO] DEJAVU database '$GROUP/$PROJECT' generated for release $RELEASE"
-			echo "#[INFO] DEJAVU database '$GROUP/$PROJECT' generated for release $RELEASE" > $DEJAVU/$RELEASE/dejavu.$GROUP.$PROJECT.done
-			echo "#[INFO] samples=$NB_SAMPLES" >> $DEJAVU/$RELEASE/dejavu.$GROUP.$PROJECT.done
-			echo "#[INFO] variants=$NB_VARIANTS" >> $DEJAVU/$RELEASE/dejavu.$GROUP.$PROJECT.done
-			(($VERBOSE)) && echo "$RELEASE" > $DEJAVU/$RELEASE/dejavu.$GROUP.$PROJECT.release
+			echo "#[INFO] DEJAVU database '$GROUP/$PROJECT' generated for release $RELEASE" > $DEJAVU/$RELEASE/$RELEASE/dejavu.$GROUP.$PROJECT.done
+			echo "#[INFO] release=$RELEASE" >> $DEJAVU/$RELEASE/$RELEASE/dejavu.$GROUP.$PROJECT.done
+			echo "#[INFO] samples=$NB_SAMPLES" >> $DEJAVU/$RELEASE/$RELEASE/dejavu.$GROUP.$PROJECT.done
+			echo "#[INFO] variants=$NB_VARIANTS" >> $DEJAVU/$RELEASE/$RELEASE/dejavu.$GROUP.$PROJECT.done
+			(($VERBOSE)) && echo "$RELEASE" > $DEJAVU/$RELEASE/$RELEASE/dejavu.$GROUP.$PROJECT.release
 			
+
+			# STARK module json
+
+			# Database definition
+			if [ ! -s $DEJAVU/STARK.database ]; then
+				echo '
+
+					{
+						"code": "dejavu",
+						"name": "DejaVu",
+						"fullname": "STARK DejaVu databases",
+						"website": "",
+						"description": "STARK DejaVu databases is a compilation of all samples variants for each group/project, useful to calculate population frequencies"
+					}
+			
+				' > $DEJAVU/STARK.database
+			fi;
+
+			# Release information
+			echo '
+
+					{
+						"release": "'$RELEASE'",
+						"date": "'$RELEASE'",
+						"files": [ "release" ],
+						"assembly": [ "'$ASSEMBLY'" ],
+						"download": {
+							"methode": "DejaVu Databases generation script ['$SCRIPT_RELEASE'-'$SCRIPT_DATE']",
+							"date": "'.$(date).'"
+						}
+					}
+		
+
+		
+			' > $DEJAVU/$RELEASE/STARK.database.release
+
+
 			# Latest
 			rm -f $DEJAVU/latest
 			ln -s $RELEASE/ $DEJAVU/latest

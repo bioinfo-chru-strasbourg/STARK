@@ -44,8 +44,10 @@ MUTECT_INTERVAL_PADDING?=0
 #################
 
 
-GATK4_MUTECT2_FLAGS_SHARED?=--disable-read-filter MateOnSameContigOrNoMappedMateReadFilter --verbosity ERROR
+GATK4_MUTECT2_FLAGS_SHARED?=--disable-read-filter MateOnSameContigOrNoMappedMateReadFilter --max-reads-per-alignment-start 1000 --dont-use-soft-clipped-bases true --min-pruning 20 --verbosity ERROR
 
+#--max-reads-per-alignment-start
+#--dont-use-soft-clipped-bases
 
 %.MuTect2$(POST_CALLING).vcf: %.bam %.bam.bai %.from_manifest.interval_list %.empty.vcf %.genome
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK4) Mutect2 $(GATK4_MUTECT2_FLAGS_SHARED) \
