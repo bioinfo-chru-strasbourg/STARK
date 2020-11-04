@@ -426,6 +426,7 @@ if ((1)); then
 			# links
 			[ $DB_TARGET_RELEASE != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_FOLDER
 			[ latest != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_DB_FOLDER/latest
+			[ -e $DB_TARGET_DB_FOLDER/current ] && mv $DB_TARGET_DB_FOLDER/current $DB_TARGET_DB_FOLDER/current.$DATE
 			[ current != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_DB_FOLDER/current
 			# Clear
 			rm -rf $DB_TMP;
