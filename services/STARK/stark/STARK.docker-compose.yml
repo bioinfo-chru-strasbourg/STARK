@@ -148,13 +148,13 @@ services:
             - ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_INPUT}:${DOCKER_STARK_INNER_FOLDER_INPUT}:ro
         depends_on:
             - stark-module-stark-submodule-stark-service-api
-            - stark-module-stark-submodule-stark-service-listener-clear
+            - stark-module-stark-submodule-stark-service-listenerclear
         networks:
             - ${DOCKER_STARK_MAIN_NETWORK}
 
         
     # STARK SERVICE LISTENER CLEAR
-    stark-module-stark-submodule-stark-service-listener-clear:
+    stark-module-stark-submodule-stark-service-listenerclear:
         image: ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_LISTENERCLEAR_IMAGE}
         entrypoint: ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_LISTENERCLEAR_CONTAINER_ENTRYPOINT}
         command: ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_LISTENERCLEAR_CONTAINER_COMMAND}
