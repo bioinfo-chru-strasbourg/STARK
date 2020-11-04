@@ -445,7 +445,7 @@ for service_module in \
 
 					# Module configuration file
 					(($DEBUG)) && echo "#[INFO] STARK Module '$module_name' - Module configuration file copy"
-					$COMMAND_COPY $service_module_module $FOLDER_SERVICES/$module_name/$service_folder;
+					$COMMAND_COPY $service_module_module $FOLDER_SERVICES/$module_name/$service_folder 2>/dev/null;
 
 					# Readme file
 					(($DEBUG)) && echo "#[INFO] STARK Module '$module_name' - Readme file copy"
