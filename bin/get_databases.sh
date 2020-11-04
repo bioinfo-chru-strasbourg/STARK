@@ -532,8 +532,8 @@ if ((1)); then
 			# MK
 		    echo "$DB_TARGET_FOLDER/$ASSEMBLY.dict: $REF
 				$JAVA -jar $PICARD CreateSequenceDictionary \
-					REFERENCE=$REF \
-					OUTPUT=$DB_TARGET_FOLDER/$ASSEMBLY.dict ;
+					-REFERENCE $REF \
+					-OUTPUT $DB_TARGET_FOLDER/$ASSEMBLY.dict ;
 		    " >> $MK
 
 			MK_ALL="$MK_ALL $DB_TARGET_FOLDER/$ASSEMBLY.dict"
