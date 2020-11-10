@@ -440,8 +440,8 @@ for service_module in \
 
 					# Create folder
 					mkdir -p $FOLDER_SERVICES/$module_name/$service_folder
-					chmod o+wx $FOLDER_SERVICES/$module_name 2>/dev/null
-					chmod o+wx $FOLDER_SERVICES/$module_name/$service_folder 2>/dev/null
+					chmod o+rwx $FOLDER_SERVICES/$module_name 2>/dev/null
+					chmod o+rwx $FOLDER_SERVICES/$module_name/$service_folder 2>/dev/null
 
 					# Module configuration file
 					(($DEBUG)) && echo "#[INFO] STARK Module '$module_name' - Module configuration file copy"

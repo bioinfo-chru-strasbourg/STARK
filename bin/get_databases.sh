@@ -454,7 +454,7 @@ if ((1)); then
 		    echo "$REF.hts-ref/done: $REF
 				mkdir -p $REF.hts-ref;
 				perl $(dirname $SAMTOOLS)/seq_cache_populate.pl -root $REF.hts-ref $REF 1>/dev/null 2>/dev/null;
-				echo 'done.'' > $REF.hts-ref/done;
+				echo 'done.' > $REF.hts-ref/done;
 		    " >> $MK
 
 			MK_ALL="$MK_ALL $REF.hts-ref/done"
