@@ -343,9 +343,9 @@ HOWARD_ANNOTATION_ANALYSIS="null" # no more annotation
 
 # CALCULATION
 # Default calculation with HOWARD for all VCF/pipelines
-HOWARD_CALCULATION="VARTYPE,NOMEN"
+HOWARD_CALCULATION="VAF_STATS,DP_STATS,VARTYPE,NOMEN"
 # Default minimal calculation with HOWARD for final VCF report
-HOWARD_CALCULATION_MINIMAL="VARTYPE,NOMEN"
+HOWARD_CALCULATION_MINIMAL="VAF_STATS,DP_STATS,VARTYPE,NOMEN"
 # Default calculation with HOWARD for final VCF report
 HOWARD_CALCULATION_REPORT="FindByPipelines,GenotypeConcordance,VAF,VAF_STATS,DP_STATS,VARTYPE,NOMEN,BARCODE"
 # Default calculation with HOWARD for whole analysis (calculation forced)
