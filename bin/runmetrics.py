@@ -130,22 +130,25 @@ def get_total_mapped_duplicate_reads(sampleDir, sample, aligner):
 	else:
 		return [col1[0], col1[4], "NA", col1[3], "NA"]
 
-def get_on_target_reads(sampleDir, sample, aligner):
+def get_on_target_reads(sampleDir, sample, aligner, bed):
 	"""
 	Fetches on target reads (total and %). Returns them as a list.
 	More explanations in the docstring at the top of this script.
 	"""
-	#for stark before 0.9.18d
-	#onReadsFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+".on.nbreads")
-	# onReadsFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+"."+sample+".genes_from_manifest.on.nbreads")
-	# onReadsFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+"."+sample+"."+aligner+".design.bed.on.nbreads")
-	onReadsFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+"."+sample+"."+aligner+".design.bed.on.target")
-	assert_file_exists_and_is_readable(onReadsFile)
-	#for stark before 0.9.18d
-	#offReadsFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+".off.nbreads")
-	# offReadsFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+"."+sample+".genes_from_manifest.off.nbreads")
-	offReadsFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+"."+sample+"."+aligner+".design.bed.off.target")
-	assert_file_exists_and_is_readable(offReadsFile)
+	if bed == "design":
+		#for stark before 0.9.18d
+		#onReadsFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+".on.nbreads")
+		# onReadsFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+"."+sample+".genes_from_manifest.on.nbreads")
+		# onReadsFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+"."+sample+"."+aligner+".design.bed.on.nbreads")
+		onReadsFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+"."+sample+"."+aligner+".design.bed.on.target")
+		#for stark before 0.9.18d
+		#offReadsFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+".off.nbreads")
+		# offReadsFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+"."+sample+".genes_from_manifest.off.nbreads")
+		offReadsFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+"."+sample+"."+aligner+".design.bed.off.target")
+	else: #bed is a .genes file
+		onReadsFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+"."+sample+"."+bed+".on.target")
+		offReadsFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+"."+sample+"."+bed+".off.target")
+		
 	with open(onReadsFile, "r") as fon:
 		on = int(fon.readline().rstrip())
 	with open(offReadsFile, "r") as foff:
@@ -185,7 +188,7 @@ def deprecated_get_depth_metrics(sampleDir, sample, aligner):
 		covMetrics.append(format(float(l.split()[3])*100, ".2f"))
 	return covMetrics
 
-def get_depth_metrics(sampleDir, sample, aligner):
+def get_depth_metrics(sampleDir, sample, aligner, bed):
 	"""
 	coverage can now be found in files such as TEST.bwamem.TEST.from_design.genes.coverage
 	whose content is like:
@@ -201,8 +204,10 @@ def get_depth_metrics(sampleDir, sample, aligner):
 	300X    0       11413   0
 	This function extracts the % values and returns them as a list.
 	"""
-	depthFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+"."+sample+"."+aligner+".design.bed.coverage")
-	assert_file_exists_and_is_readable(depthFile)
+	if bed == "design":
+		depthFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+"."+sample+"."+aligner+".design.bed.coverage")
+	else: #.genes file
+		depthFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+"."+sample+"."+bed+".coverage")
 	covCriteria, maxCriteria = get_cov_criteria()
 	if "," in covCriteria:
 		covCriteriaList = covCriteria.split(",")
@@ -217,7 +222,7 @@ def get_depth_metrics(sampleDir, sample, aligner):
 	assert len(covMetrics) == len(covCriteriaList), "[ERROR] Content of the environment variable COVERAGE_CRITERIA did not fit the content of the coverage file "+depthFile
 	return covMetrics
 
-def get_sample_metrics(runPath, sample, fromResDir, aligner):
+def get_sample_metrics(runPath, sample, fromResDir, aligner, bed):
 	"""
 	Fetches all the metrics defined in the docstring at the top of this script for <run>.reads.metrics.
 	"""
@@ -226,8 +231,8 @@ def get_sample_metrics(runPath, sample, fromResDir, aligner):
 	else:
 		sampleDir = osj(runPath, sample, "DATA")
 	metricsList = get_total_mapped_duplicate_reads(sampleDir, sample, aligner)
-	metricsList += get_on_target_reads(sampleDir, sample, aligner)
-	metricsList += get_depth_metrics(sampleDir, sample, aligner)
+	metricsList += get_on_target_reads(sampleDir, sample, aligner, bed)
+	metricsList += get_depth_metrics(sampleDir, sample, aligner, bed)
 	return metricsList
 
 def get_tags_list(sampleList, sampleDirList, samplesheet=""):
@@ -365,11 +370,11 @@ def main_routine(metricsFileList, outputPrefix):
 
 	#2) reads.metrics (global run metrics)
 	#####
-	runMetrics={}
-	print("Getting run metrics...")
+	runMetrics = {}
+	print("Getting run metrics based on design...")
 	for metricsFile, sample, aligner in zip(metricsFileList, sampleList ,alignerList):
 		#runMetrics[sample]=[] #faster execution to debug everything else
-		runMetrics[sample]=(get_sample_metrics(run, sample, fromResDir, aligner))
+		runMetrics[sample] = get_sample_metrics(run, sample, fromResDir, aligner, "design")
 	finalTsv = osj(outputPrefix+"reads.metrics")
 	with open(finalTsv, "w") as f:
 		covHeader = "\t".join(["Cov "+v+"X" for v in get_cov_criteria()[0].split(",")])
@@ -448,6 +453,30 @@ def main_routine(metricsFileList, outputPrefix):
 				gl = gl[1:]
 			finalTsv = osj(outputPrefix+gl+".metrics")
 			write_cov_metrics_file(finalTsv, run, sampleList, dataFileList, legend, tagsList)
+
+	#2b) reads.metrics based on every .gene available
+	#####
+	runMetrics = {}
+	print("Getting run metrics based on .genes...")
+	finalTsv = osj(outputPrefix+"reads.genes.metrics")
+	with open(finalTsv, "w") as f:
+		covHeader = "\t".join(["Cov "+v+"X" for v in get_cov_criteria()[0].split(",")])
+		f.write("## Run Metrics\n"
+				"##\n"
+				"## On-target reads are reads that are aligned within the regions defined in a .genes file and that aren't duplicates, unmapped or with low mapping quality (MAPQ < 10)\n"
+				"## Cov 30X is the % of coverage with at least 30X read depth ; in the regions defined in a .genes file.\n"
+				"##\n"
+				"#Run\tSample\t.genes file\tTotal reads\tMapped reads\t% Mapped reads\tDuplicate reads\t% Duplicate reads\tOn-target reads\t% On-target reads\t"+covHeader+"\n")
+		
+		for geneFile in genesList:
+			geneFile = geneFile.replace("<sample>.", "")
+			for metricsFile, sample, aligner in zip(metricsFileList, sampleList ,alignerList):
+				runMetrics[sample] = get_sample_metrics(run, sample, fromResDir, aligner, geneFile)
+				runMetrics[sample].insert(0, geneFile)
+				
+			#"." could be converted to "," for French Excel visualization with str(v).replace(".", ",")
+			for sample in sampleList:
+				f.write(os.path.basename(run)+"\t"+sample+"\t"+"\t".join([str(v) for v in runMetrics[sample]])+"\n")
 
 	#5) amplicon coverage metrics
 	#####
