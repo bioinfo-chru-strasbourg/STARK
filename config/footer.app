@@ -924,6 +924,27 @@ export CORES_TO_USE=$THREADS
 
 export THREADS_AUTO=1					# Automatize nb of threads depending on the input and number of cores to use (TRUE if = 1)
 
+
+# THREADS_LOADING (default THREADS)
+# Number of threads used for loading demultiplexed data
+# AUTO will considere THREADS threads to use
+# The number of threads need to be between 1 and the total number of cores available (autoadjusting if bad value)
+if ! [[ $THREADS_LOADING =~ $re ]] || [ -z "$THREADS_LOADING" ] || [ "$THREADS_LOADING" == "" ] || [ $THREADS_LOADING -gt $CORES ] ; then
+	THREADS_LOADING=$THREADS
+fi;
+export THREADS_LOADING
+
+# THREADS_WRITING (default THREADS)
+# Number of threads used for writing demultiplexed data
+# AUTO will considere THREADS threads to use
+# The number of threads need to be between 1 and the total number of cores available (autoadjusting if bad value)
+if ! [[ $THREADS_WRITING =~ $re ]] || [ -z "$THREADS_WRITING" ] || [ "$THREADS_WRITING" == "" ] || [ $THREADS_WRITING -gt $CORES ] ; then
+	THREADS_WRITING=$THREADS
+fi;
+export THREADS_WRITING
+
+
+
 # MEMORY
 MEMTOTAL=$(cat /proc/meminfo 2>/dev/null | grep MemTotal | awk '{print $2}')	# MEMORY in octet
 #export MEMORY=$(($MEMTOTAL/$THREADS/1024/1024))			# MEMORY in Go
