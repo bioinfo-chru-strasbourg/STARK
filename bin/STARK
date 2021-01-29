@@ -1224,6 +1224,8 @@ if [ ! -z "$RUNS" ]; then
 
 				fi;
 
+				[ "$APP" != "" ] && APP_DEMULTIPLEXING=$APP;
+
 				# NO APP detected
 				[ "$APP_DEMULTIPLEXING" == "" ] && APP_DEMULTIPLEXING="default"
 
