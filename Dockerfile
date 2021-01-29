@@ -149,7 +149,7 @@ RUN echo "#### SYSTEM INSTALLATION" && \
 	mkdir -p $SOURCES/$SOURCES_FOLDER/system && \
 	# INSTALL WGET \
 	echo "#[INFO] System install wget package" && \
-	ls $SOURCES/$SOURCES_FOLDER/system/*.rpm && \
+	#ls $SOURCES/$SOURCES_FOLDER/system/*.rpm && \
 	if ! ls $SOURCES/$SOURCES_FOLDER/system/wget-*.rpm 1> /dev/null 2>&1; then \
 		echo "#[INFO] System wget package not locally available"; \
 		yum $YUM_PARAM install -y --nogpgcheck --downloadonly --downloaddir=$SOURCES/$SOURCES_FOLDER/system/ wget; \
