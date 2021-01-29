@@ -253,7 +253,13 @@ RUN echo "#### SYSTEM INSTALLATION" && \
 	fi && \
 	# Update PIP \
 	echo "#[INFO] System Python packages update from PIP Repository" && \
-	python2 -m pip  --no-cache-dir install --upgrade pip && \
+	echo "#[INFO] System Python packages update from PIP Repository - Python2" && \
+	mkdir -p $TOOLS/python/2/bin && \
+	curl https://bootstrap.pypa.io/2.7/get-pip.py --output $TOOLS/python/2/bin/get-pip.py && \
+	chmod u+x $TOOLS/python/2/bin/get-pip.py && \
+	$TOOLS/python/2/bin/get-pip.py && \
+	python2 -m pip --no-cache-dir install --upgrade pip && \
+	echo "#[INFO] System Python packages update from PIP Repository - Python3" && \
 	python3 -m pip  --no-cache-dir install --upgrade pip && \
 	echo "#[INFO] System Python packages downloaded & updated from PIP Repository" && \
 	echo "#[INFO] System Python packages install from PIP Repository" && \
