@@ -311,6 +311,18 @@ BAM_COMPRESSION=5
 # The number of threads need to be between 1 and the total number of cores available (autoadjusting if bad value)
 THREADS=AUTO
 
+# THREADS_LOADING (default THREADS)
+# Number of threads used for loading demultiplexed data
+# AUTO will considere THREADS threads to use
+# The number of threads need to be between 1 and the total number of cores available (autoadjusting if bad value)
+THREADS_LOADING=AUTO
+
+# THREADS_WRITING (default THREADS)
+# Number of threads used for writing demultiplexed data
+# AUTO will considere THREADS threads to use
+# The number of threads need to be between 1 and the total number of cores available (autoadjusting if bad value)
+THREADS_WRITING=AUTO
+
 
 # HOWARD ANNOTATION/PRIOTITIZATION/TRANSLATION CONFIGURATION
 

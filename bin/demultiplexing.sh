@@ -55,8 +55,12 @@ function usage {
 	echo "#                                             Default: Defined in APP, or RUN folder itself";
 	echo "# -l|--samplesheet=<FILE>                     Illumina SampleSheet.csv file";
 	echo "#                                             Default: found in RUN folder";
-	echo "# -t|--threads=<INTEGER>                      Number of thread to use";
+	echo "# -t|--threads|--threads_processing=<INTEGER> Number of thread used for processing demultiplexed data";
 	echo "#                                             Default: Defined in APP, or all cores in your system minus one";
+	echo "# -t|--threads_loading=<INTEGER>              Number of thread used for loading demultiplexed data";
+	echo "#                                             Default: Defined in APP, or thread used for processing demultiplexed data --threads";
+	echo "# -t|--threads_writing=<INTEGER>              Number of thread used for writing demultiplexed data";
+	echo "#                                             Default: Default: Defined in APP, or thread used for processing demultiplexed data --threads";
 	echo "# -b|--barcode_mismatches=<INTEGER>           Number of barcode mismatches to use";
 	echo "#                                             Default: Defined in APP, or 1";
 
@@ -80,7 +84,7 @@ header;
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
-ARGS=$(getopt -o "e:r:o:l:t:b:vdnh" --long "env:,app:,application:,run:,output:,demultiplex_folder:,samplesheet:,threads:,barcode_mismatches:,verbose,debug,release,help" -- "$@" 2> /dev/null)
+ARGS=$(getopt -o "e:r:o:l:t:b:vdnh" --long "env:,app:,application:,run:,output:,demultiplex_folder:,samplesheet:,threads:,threads_loading:,threads_writing:,barcode_mismatches:,verbose,debug,release,help" -- "$@" 2> /dev/null)
 [ $? -ne 0 ] && \
 	echo "Error in the argument list." "Use -h or --help to display the help." >&2 && usage && \
 	exit 1
@@ -110,6 +114,14 @@ do
 			;;
 		-t|--threads)
 			THREADS_INPUT="$2"
+			shift 2
+			;;
+		--threads_loading)
+			THREADS_LOADING_INPUT="$2"
+			shift 2
+			;;
+		--threads_writing)
+			THREADS_WRITING_INPUT="$2"
 			shift 2
 			;;
 		-b|--barcode_mismatches)
@@ -178,10 +190,13 @@ RUN_SAMPLESHEET=""
 [ ! -e $RUN_SAMPLESHEET ] && echo "#[ERROR] No SampleSheet for RUN '$RUN'" && exit 0;
 echo "#[INFO] SampleSheet: $RUN_SAMPLESHEET";
 
+# CORES
+CORES=$(nproc)
+
 # THREADS
 re='^[0-9]+$'
 #CORES=$(ls -d /sys/devices/system/cpu/cpu[[:digit:]]* | wc -w)
-CORES=$(nproc)
+
 if ! [[ $THREADS =~ $re ]] || [ -z "$THREADS" ] || [ "$THREADS" == "" ] || [ $THREADS -gt $CORES ] ; then
 	CORES_FREE=1
 	THREADS=$(($CORES-$CORES_FREE))
@@ -189,7 +204,26 @@ fi;
 if [[ $THREADS_INPUT =~ $re ]] && [ "$THREADS_INPUT" != "" ]; then
 	THREADS=$THREADS_INPUT;
 fi;
-echo "#[INFO] Threads: $THREADS";
+echo "#[INFO] Threads processing: $THREADS";
+
+# THREADS LOADING
+if ! [[ $THREADS_LOADING =~ $re ]] || [ -z "$THREADS_LOADING" ] || [ "$THREADS_LOADING" == "" ] || [ $THREADS_LOADING -gt $CORES ] ; then
+	THREADS_LOADING=$THREADS
+fi;
+if [[ $THREADS_LOADING_INPUT =~ $re ]] && [ "$THREADS_LOADING_INPUT" != "" ]; then
+	THREADS_LOADING=$THREADS_LOADING_INPUT;
+fi;
+echo "#[INFO] Threads loading: $THREADS_LOADING";
+
+# THREADS WRITING
+if ! [[ $THREADS_WRITING =~ $re ]] || [ -z "$THREADS_WRITING" ] || [ "$THREADS_WRITING" == "" ] || [ $THREADS_WRITING -gt $CORES ] ; then
+	THREADS_WRITING=$THREADS
+fi;
+if [[ $THREADS_WRITING_INPUT =~ $re ]] && [ "$THREADS_WRITING_INPUT" != "" ]; then
+	THREADS_WRITING=$THREADS_WRITING_INPUT;
+fi;
+echo "#[INFO] Threads writing: $THREADS_WRITING";
+
 
 # BARCODE_MISMATCHES
 if ! [[ $BARCODE_MISMATCHES =~ $re ]] || [ -z "$BARCODE_MISMATCHES" ] || [ "$BARCODE_MISMATCHES" == "" ] ; then
@@ -325,12 +359,14 @@ echo "#[`date`] COMMAND: $COMMAND" >> $LOGFILE && $COMMAND >> $LOGFILE
 
 # BCL2FASTQ Demultiplexing parameters
 NB_SAMPLE=$(tail -n $(($SAMPLE_SECTION_FIRST_LINE-$(grep ^ -c $RUN_SAMPLESHEET))) $RUN_SAMPLESHEET | sed '/^[[:space:]]*$/d' | sort -u | wc -l)
-WRITING_THREADS=$(($NB_SAMPLE>$THREADS?$THREADS:$NB_SAMPLE));
+THREADS_WRITING=$(($NB_SAMPLE>$THREADS_WRITING?$THREADS_WRITING:$NB_SAMPLE));
 ADAPTER_STRINGENCY=0.9
 FASTQ_COMPRESSION_LEVEL=4
 
 (($VERBOSE)) && echo "#[INFO] NB_SAMPLE="$NB_SAMPLE
-(($VERBOSE)) && echo "#[INFO] WRITING_THREADS="$WRITING_THREADS
+(($VERBOSE)) && echo "#[INFO] THREADS_LOADING="$THREADS_LOADING
+(($VERBOSE)) && echo "#[INFO] THREADS_WRITING="$THREADS_WRITING
+#(($VERBOSE)) && echo "#[INFO] WRITING_THREADS="$WRITING_THREADS
 (($VERBOSE)) && echo "#[INFO] ADAPTER_STRINGENCY="$ADAPTER_STRINGENCY
 (($VERBOSE)) && echo "#[INFO] FASTQ_COMPRESSION_LEVEL="$FASTQ_COMPRESSION_LEVEL
 
@@ -344,7 +380,7 @@ FASTQ_COMPRESSION_LEVEL=4
 #(($DEBUG)) && cat $MANIFESTS
 
 # Demultiplexing configuration
-COMMAND="$BCL2FASTQ --runfolder-dir $RUN  --output-dir $OUTPUT_DIR --sample-sheet $DEM_SAMPLESHEET --barcode-mismatches $BARCODE_MISMATCHES --fastq-compression-level $FASTQ_COMPRESSION_LEVEL -r $THREADS -p $THREADS -w $WRITING_THREADS --no-lane-splitting --create-fastq-for-index-reads"
+COMMAND="$BCL2FASTQ --runfolder-dir $RUN  --output-dir $OUTPUT_DIR --sample-sheet $DEM_SAMPLESHEET --barcode-mismatches $BARCODE_MISMATCHES --fastq-compression-level $FASTQ_COMPRESSION_LEVEL -r $THREADS_LOADING -p $THREADS -w $THREADS_WRITING --no-lane-splitting --create-fastq-for-index-reads"
 echo "#[`date`] COMMAND: " $COMMAND >> $LOGFILE
 (($DEBUG)) && echo "#[INFO] Command: "$COMMAND
 
