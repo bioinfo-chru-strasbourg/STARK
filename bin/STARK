@@ -1386,7 +1386,9 @@ if [ ! -z "$RUNS" ]; then
 								MANIFEST_FILE=$FOLDER_MANIFEST/$MANIFEST_FILENAME && (($VERBOSE)) && echo "#[INFO] Manifest file found for sample '$SAMPLE_NAME': $MANIFEST_FILE"
 							else
 								MANIFEST_FILE=""
-								echo "#[WARNING] Manifest file NOT found"
+								#echo "#[WARNING] Manifest file NOT found"
+								echo "#[ERROR] Manifest file NOT found: $MANIFEST_FILENAME"
+								exit 0
 							fi;
 
 							# Genes File
