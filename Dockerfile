@@ -38,10 +38,10 @@
 ########
 
 FROM centos:7
-MAINTAINER Antony Le Bechec <antony.lebechec@gmail.com>
 LABEL Software="STARK" \
 	Version="0.9.18.2" \
 	Website="https://gitlab.bioinfo-diag.fr/Strasbourg/STARK" \
+	maintainer="Antony Le Bechec <antony.lebechec@gmail.com>" \
 	Description="STARK" \
 	License="GNU Affero General Public License (AGPL)" \
 	Usage="docker run [-v [DATA FOLDER]:/STARK/data -v [DATABASE FOLDER]:/STARK/databases -v [RESULTS FOLDER]:/STARK/output/results -v [RUNS FOLDER]:/STARK/input/runs -v [MANIFESTS FOLDER]:/STARK/input/manifests] stark:version"
