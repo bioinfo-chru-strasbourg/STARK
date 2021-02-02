@@ -211,12 +211,12 @@
 # inhouse
 
 
-## CAP [0.9.12]
+## CAP [0.9.13]
 # Clipping Amplicons Primers
 # inhouse
 
 
-## HOWARD [0.9.15.1b]
+## HOWARD [0.9.15.3]
 # Highly Open and Valuable tool for Variant Annotation & Ranking
 # inhouse
 
@@ -328,9 +328,9 @@
 
 ## GENOME "0.9.1b": Check for genome assembly from parameters, either bed file, manifest file, or option.
 
-## ANNOTATION "0.9.4.1b": HOWARD annotates and prioritizes variants on a VCF, and generates *.howard.vcf file. Releases: 0.9.15.1b. Options: , HOWARD_ANNOTATION=snpeff_split, HOWARD_CALCULATION=VARTYPE,NOMEN, HOWARD_PRIORITIZATION=DEFAULT,default, SORT_BY=, ORDER_BY=
+## ANNOTATION "0.9.4.1b": HOWARD annotates and prioritizes variants on a VCF, and generates *.howard.vcf file. Releases: 0.9.15.3. Options: , HOWARD_ANNOTATION=snpeff_split, HOWARD_CALCULATION=VARTYPE,NOMEN, HOWARD_PRIORITIZATION=DEFAULT,default, SORT_BY=, ORDER_BY=
 
-## ANNOTATION "0.9.4.1b": HOWARD MINIMAL annotates and prioritizes variants on a VCF, and generates *.howard_minimal.vcf file. Releases: 0.9.15.1b. Options: , HOWARD_ANNOTATION=snpeff_split, HOWARD_CALCULATION=VARTYPE,NOMEN, HOWARD_PRIORITIZATION=DEFAULT,default, SORT_BY=, ORDER_BY=
+## ANNOTATION "0.9.4.1b": HOWARD MINIMAL annotates and prioritizes variants on a VCF, and generates *.howard_minimal.vcf file. Releases: 0.9.15.3. Options: , HOWARD_ANNOTATION=snpeff_split, HOWARD_CALCULATION=VARTYPE,NOMEN, HOWARD_PRIORITIZATION=DEFAULT,default, SORT_BY=, ORDER_BY=
 
 ## ITDSeek: FLT3 ITD detection, generate *.itdseek.vcf files with with parameters: DPMIN_ITDSEEK='20', VAFMIN_ITDSEEK='0.00'. VCF file is modified to include GT/Genotype information as 0/1 by default. Variants are excluded if DP lower than 20 AND VAF lower than 0.00
 
