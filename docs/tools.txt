@@ -136,11 +136,11 @@
 # Stellar Tools for varaints Analysis and RanKing
 # inhouse
 
-## CAP [0.9.12]
+## CAP [0.9.13]
 # Clipping Amplicons Primers
 # inhouse
 
-## HOWARD [0.9.15.1b]
+## HOWARD [0.9.15.3]
 # Highly Open and Valuable tool for Variant Annotation & Ranking
 # inhouse
 

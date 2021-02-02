@@ -16,7 +16,8 @@ echo "#Some of the genomic variants, genes, nucleic acid sequences, or genomic r
 echo "[Header]" >> $MANIFEST
 echo "ReferenceGenome	Homo_sapiens\UCSC\hg19\Sequence\WholeGenomeFASTA" >> $MANIFEST
 echo "[Regions]" >> $MANIFEST
-echo "Name	Chromosome	Amplicon Start	Amplicon End" >> $MANIFEST
+#echo "Name	Chromosome	Amplicon Start	Amplicon End" >> $MANIFEST
+echo "Name	Chromosome	Start	End" >> $MANIFEST
 # copy in manifest file
 cat $TMP_FILE.sort >> $MANIFEST
 # remove tempory files

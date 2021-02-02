@@ -289,7 +289,7 @@ TOOLS_LIST=$TOOLS_LIST" STARK"
 # CAP
 export CAP_FOLDER=$NGS_TOOLS/cap/current/bin				# DIR
 export CAP=$CAP_FOLDER/CAP									# BIN
-export CAP_VERSION=0.9.12									# VER
+export CAP_VERSION=0.9.13									# VER
 export CAP_SOFTCLIPTOQ0=$CAP_FOLDER/CAP.SoftClipToQ0.pl		# BIN-SCRIPT
 export CAP_SOFTCLIPTOQ0_VERSION=$CAP_VERSION				# VER
 export CAP_ManifestToBED=$CAP_FOLDER/CAP.ManifestToBED.pl	# BIN-SCRIPT
