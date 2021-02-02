@@ -10,30 +10,38 @@
 # OUTLYZER  #
 #############
 
-%.outLyzer2$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.genome %.dict %.from_manifest.bed
+%.outLyzer2$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.genome %.dict %.design.bed #%.from_manifest.bed
 	# create tmp Directory
 	mkdir -p $@.outlyser_tmp
 	# Generate VCF with OutLyser
-	#$(OUTLYZER) calling -bed $*.from_manifest.bed -bam $< -ref $$(cat $*.genome) -output $@.outlyser_tmp/ -verbose 1
-	$(PYTHON2) $(OUTLYZER) calling -pythonPath=$(PYTHON2) -samtools=$(SAMTOOLS) -bed $*.from_manifest.bed -bam $< -ref $$(cat $*.genome) -output $@.outlyser_tmp/ -verbose 1
-	# Normalize OutLyzer output VCF
-	cat $@.outlyser_tmp/*.vcf | awk -f $(STARK_FOLDER_BIN)/outlyzer_norm.awk > $@.tmp
-	# sort and contig
-	$(JAVA) -jar $(PICARD) SortVcf -I $@.tmp -O $@ -SD $$(cat $*.dict)
+	if [ -s $*.design.bed ]; then \
+		$(PYTHON2) $(OUTLYZER) calling -pythonPath=$(PYTHON2) -samtools=$(SAMTOOLS) -bed $*.design.bed -bam $< -ref $$(cat $*.genome) -output $@.outlyser_tmp/ -verbose 1 ; \
+		# Normalize OutLyzer output VCF ; \
+		cat $@.outlyser_tmp/*.vcf | awk -f $(STARK_FOLDER_BIN)/outlyzer_norm.awk > $@.tmp ; \
+		# sort and contig ; \
+		$(JAVA) -jar $(PICARD) SortVcf -I $@.tmp -O $@ -SD $$(cat $*.dict) ; \
+	else \
+		cp $*.empty.vcf $@ ; \
+		echo "[ERROR] Empty BED. Empty OutLyzer VCF" ; \
+	fi;
 	# Cleaning
 	rm -rf $@.outlyser_tmp $@.tmp $@.idx
 
 
-%.outLyzer$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.genome %.dict %.from_manifest.bed
+%.outLyzer$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.genome %.dict %.design.bed #%.from_manifest.bed
 	# create tmp Directory
 	mkdir -p $@.outlyser_tmp
 	# Generate VCF with OutLyser
-	#$(OUTLYZER) calling -bed $*.from_manifest.bed -bam $< -ref $$(cat $*.genome) -output $@.outlyser_tmp/ -verbose 1
-	$(PYTHON) $(OUTLYZER) calling -pythonPath=$(PYTHON) -samtools=$(SAMTOOLS) -bed $*.from_manifest.bed -bam $< -ref $$(cat $*.genome) -output $@.outlyser_tmp/ -verbose 1
-	# Normalize OutLyzer output VCF
-	cat $@.outlyser_tmp/*.vcf | awk -f $(STARK_FOLDER_BIN)/outlyzer_norm.awk > $@.tmp
-	# sort and contig
-	$(JAVA) -jar $(PICARD) SortVcf -I $@.tmp -O $@ -SD $$(cat $*.dict)
+	if [ -s $*.design.bed ]; then \
+		$(PYTHON) $(OUTLYZER) calling -pythonPath=$(PYTHON) -samtools=$(SAMTOOLS) -bed $*.design.bed -bam $< -ref $$(cat $*.genome) -output $@.outlyser_tmp/ -verbose 1; \
+		# Normalize OutLyzer output VCF ; \
+		cat $@.outlyser_tmp/*.vcf | awk -f $(STARK_FOLDER_BIN)/outlyzer_norm.awk > $@.tmp ; \
+		# sort and contig ; \
+		$(JAVA) -jar $(PICARD) SortVcf -I $@.tmp -O $@ -SD $$(cat $*.dict) ; \
+	else \
+		cp $*.empty.vcf $@ ; \
+		echo "[ERROR] Empty BED. Empty OutLyzer VCF" ; \
+	fi;
 	# Cleaning
 	rm -rf $@.outlyser_tmp $@.tmp $@.idx
 
