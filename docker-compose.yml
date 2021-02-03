@@ -96,8 +96,7 @@ services:
         networks:
             - stark
 
-        
-
+            
 # NETWORK
 ###########
 

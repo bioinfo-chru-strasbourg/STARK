@@ -952,7 +952,7 @@ if ((1)); then
 	# DB
 	DATABASE="snpeff"
 	DATABASE_NAME="SnpEff"
-	DATABASE_FULLNAME="SnpEff"
+	DATABASE_FULLNAME="SnpEff Annotations"
 	DATABASE_WEBSITE="http://snpeff.sourceforge.net/"
 	DATABASE_DESCRIPTION="Genetic variant annotation and functional effect prediction toolbox"
 
@@ -1087,7 +1087,7 @@ if ((1)); then
 	# DB
 	DATABASE="annovar"
 	DATABASE_NAME="ANNOVAR"
-	DATABASE_FULLNAME="ANNOVAR"
+	DATABASE_FULLNAME="ANNOVAR Annotations"
 	DATABASE_WEBSITE="https://doc-openbio.readthedocs.io/projects/annovar/"
 	DATABASE_DESCRIPTION="ANNOVAR is an efficient software tool to utilize update-to-date information to functionally annotate genetic variants detected from diverse genomes"
 
