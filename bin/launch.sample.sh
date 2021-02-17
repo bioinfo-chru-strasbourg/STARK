@@ -1329,8 +1329,9 @@ for RUU in $RUN_UNIQ; do
 	# FASTQ && FASTP process
 	
 	if [ -s $FASTQ_MK ] && [ -s $FASTP_MK ]; then
+		echo "#[INFO] Process Input data from FASTQ file(s) - multithreading mode"
 		make -j $THREADS -e FASTP_THREADS_BY_SAMPLE=$THREADS_BY_SAMPLE -f $FASTQ_MK -f $FASTP_MK $FASTQ_MK_ALL $FASTP_MK_ALL 1>$FASTP_MK.log 2>$FASTP_MK.err
-		#! (($DEBUG)) && rm -f $FASTP_MK $FASTP_MK.log $FASTP_MK.err
+		! (($DEBUG)) && rm -f $FASTQ_MK $FASTQ_MK.log $FASTQ_MK.err $FASTP_MK $FASTP_MK.log $FASTP_MK.err
 	fi;
 
 

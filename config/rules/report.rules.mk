@@ -211,7 +211,7 @@ REPORT_SECTIONS?=ALL
 			#cat $$(ls $(@D)/[^.]*/[^.]*.$$genes_file) | $(BEDTOOLS) sort | $(BEDTOOLS) merge > $@.tmp.GENES.$$genes_file; \
 			cat $$(echo $$List_of_genes_files) | $(BEDTOOLS) sort | $(BEDTOOLS) merge > $@.tmp.GENES.$$genes_file; \
 			echo "VCF "; \
-			$(BCFTOOLS) view --samples $$List_of_samples $@.tmp.prioritized.vcf.gz -R $@.tmp.GENES.$$genes_file > $$(echo $@ | sed s/.vcf$$//).$$genes_file.vcf; \
+			$(BCFTOOLS) view --samples $$List_of_samples --force-samples $@.tmp.prioritized.vcf.gz -R $@.tmp.GENES.$$genes_file > $$(echo $@ | sed s/.vcf$$//).$$genes_file.vcf; \
 			$(BGZIP) $$(echo $@ | sed s/.vcf$$//).$$genes_file.vcf ; \
 			#$(TABIX) $$(echo $@ | sed s/.vcf$$//).$$genes_file.vcf.gz ; \
 			$(HOWARD) --config=$(HOWARD_CONFIG) --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --format=tab  --fields="$(HOWARD_FIELDS)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)"  --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --input=$$(echo $@ | sed s/.vcf$$//).$$genes_file.vcf.gz --output=$$(echo $@ | sed s/.vcf$$//).$$genes_file.tsv --force; \
