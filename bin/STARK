@@ -1194,6 +1194,10 @@ if [ ! -z "$RUNS" ]; then
 					# MAIN APP extraction
 					MAIN_APP=$(extract_tag "$ANALYSIS_TAG" "APP" | tr " " "+")
 
+					# MAIN PLUGAPP extraction
+					MAIN_PLUGAPP=$(extract_tag "$ANALYSIS_TAG" "PLUGAPP" | tr " " "+")
+					[ "$MAIN_PLUGAPP" != "" ] && MAIN_APP=$MAIN_APP"+"$MAIN_PLUGAPP
+
 					if [ "$MAIN_APP" != ""  ]; then
 						DEMULTIPLEXING_FOLDER=$(source_app "$MAIN_APP" 2>/dev/null; echo $FOLDER_DEMULTIPLEXING)
 						APP_DEMULTIPLEXING=$MAIN_APP
@@ -1210,6 +1214,9 @@ if [ ! -z "$RUNS" ]; then
 						for L in $(cat $RUN_SAMPLESHEET | awk '/\[Data\]/,/\[[^Data]/' | grep "^\[" -v | sed '/^[[:space:]]*$/d' | tail -n +2 | tr -d '\r'); do
 							SAMPLE_TAG=$(echo $L | cut -d, -f$SAMPLE_DESCRIPTION_FIELD | tr " " "!")
 							SAMPLE_APP=$(extract_tag "$SAMPLE_TAG" "APP" | tr " " "+")
+							SAMPLE_PLUGAPP=$(extract_tag "$SAMPLE_TAG" "PLUGAPP" | tr " " "+")
+							[ "$SAMPLE_PLUGAPP" != "" ] && SAMPLE_APP=$SAMPLE_APP"+"$SAMPLE_PLUGAPP
+
 							if [ "$SAMPLE_APP" != "" ]; then
 								SAMPLE_APP_FOLDER_DEMULTIPLEXING=$(source_app "$SAMPLE_APP" 2>/dev/null; echo $FOLDER_DEMULTIPLEXING)
 								if [ "$SAMPLE_APP_FOLDER_DEMULTIPLEXING" != "" ]; then
@@ -1304,6 +1311,14 @@ if [ ! -z "$RUNS" ]; then
 				# NEW APP extraction format
 				MAIN_APP=$(extract_tag "$ANALYSIS_TAG" "APP" | tr " " "+")
 
+				# NEW PLUGAPP extration format
+				MAIN_PLUGAPP=$(extract_tag "$ANALYSIS_TAG" "PLUGAPP" | tr " " "+")
+				[ "$MAIN_PLUGAPP" != "" ] && MAIN_APP=$MAIN_APP"+"$MAIN_PLUGAPP
+
+				(($DEBUG)) && echo "MAIN_APP=$MAIN_APP"
+				(($DEBUG)) && echo "MAIN_PLUGAPP=$MAIN_PLUGAPP"
+
+
 				# If OLD APP folder
 				if [ "$MAIN_APP" == "" ]; then
 
@@ -1361,6 +1376,12 @@ if [ ! -z "$RUNS" ]; then
 						SAMPLE_TAG=$(echo $L | cut -d, -f$SAMPLE_DESCRIPTION_FIELD | tr " " "!")"!"
 						SAMPLE_APP=$(extract_tag "$SAMPLE_DESCRIPTION_FIELD_VALUE" "APP" | tr " " "+")
 						[ -z "$SAMPLE_APP" ] && SAMPLE_APP="$MAIN_APP"
+
+						SAMPLE_PLUGAPP=$(extract_tag "$SAMPLE_DESCRIPTION_FIELD_VALUE" "PLUGAPP" | tr " " "+")
+						[ "$SAMPLE_PLUGAPP" != "" ] && SAMPLE_APP=$SAMPLE_APP"+"$SAMPLE_PLUGAPP
+						(($DEBUG)) && echo "SAMPLE_APP=$SAMPLE_APP"
+						(($DEBUG)) && echo "SAMPLE_PLUGAPP=$SAMPLE_PLUGAPP"
+
 						[ ! -z $APP ] && SAMPLE_APP=$(echo $APP | tr " " "+" | tr "," "+") && echo "#[INFO] APP forced '$SAMPLE_APP'" # Force APP if in parameters
 
 						CONFIG_FILE_TAB=$TMP_FOLDER_TMP_R/$SAMPLE_APP.config.tab
@@ -1427,8 +1448,10 @@ if [ ! -z "$RUNS" ]; then
 
 				done;
 
-				#(($DEBUG)) && cat $RUN_CONFIG_FILE_TAB
-				#(($DEBUG)) && cat $R/*.config.tab | sort -u
+				#(($DEBUG)) && cat $CONFIG_FILE_TAB | column -t
+				#(($DEBUG)) && ls -l  $TMP_FOLDER_TMP_R/*.config.tab
+				#(($DEBUG)) && cat $TMP_FOLDER_TMP_R/*.config.tab | sort -u
+				(($DEBUG)) && for T in $TMP_FOLDER_TMP_R/*.config.tab; do echo ""; echo $T; cat $T | sort -u; done;
 
 				(($DEBUG)) && echo "#[INFO] CONFIG_FILE_TAB_LIST=$CONFIG_FILE_TAB_LIST"; #exit 0;
 

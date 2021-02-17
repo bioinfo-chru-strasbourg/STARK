@@ -790,12 +790,24 @@ for RUU in $RUN_UNIQ; do
 	FINAL_REPORT_FULL_RUN=$RESULTS/$RUU/analysis.V$ANALYSIS_REF.full.report
 	FINAL_REPORT_FULL_VCF=$RESULTS/$RUU/$SAMPLE.V$ANALYSIS_REF.full.vcf
 
+	FASTQ_MK=$RESULTS/$RUU/analysis.V$ANALYSIS_REF.fastq.mk
+	FASTP_MK=$RESULTS/$RUU/analysis.V$ANALYSIS_REF.fastp.mk
+
 	# MKDIR & TOUCH
 	mkdir -p $RESULTS/$RUU
 	touch $MAKEFILE_ANALYSIS_RUN
 	touch $SHELL_ANALYSIS_RUN
 	touch $LOGFILE_RES_RUN
 	#touch $LOGFILE_RES_RUN_REPORT
+
+	# FASTQ
+	> $FASTQ_MK
+	FASTQ_MK_ALL=""
+
+	# FASTP
+	> $FASTP_MK
+	FASTP_MK_ALL=""
+
 
 
 	echo "#[INFO] RUN '$RUU'"
@@ -840,8 +852,6 @@ for RUU in $RUN_UNIQ; do
 			continue;
 		fi;
 
-
-
 		RUN_SAMPLE_DIR=$RESULTS/$RU/$S
 
 		if (($DEBUG)); then
@@ -872,11 +882,21 @@ for RUU in $RUN_UNIQ; do
 
 				# Create FASTQ
 				#$COMMAND_COPY $F $RUN_SAMPLE_DIR/$S.R1.fastq.gz;
-				$COMMAND_COPY_NO_COMPRESS $F $RUN_SAMPLE_DIR/$S.R1.fastq.gz;
+				#$COMMAND_COPY_NO_COMPRESS $F $RUN_SAMPLE_DIR/$S.R1.fastq.gz;
+				# FASTQ MK
+				echo "$RUN_SAMPLE_DIR/$S.R1.fastq.gz: $F
+					$COMMAND_COPY_NO_COMPRESS $F $RUN_SAMPLE_DIR/$S.R1.fastq.gz;
+				" >> $FASTQ_MK
+				FASTQ_MK_ALL=$FASTQ_MK_ALL" $RUN_SAMPLE_DIR/$S.R1.fastq.gz"
 
 				if [ -s "$F_R2" ]; then
 					#$COMMAND_COPY $F_R2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz
-					$COMMAND_COPY_NO_COMPRESS $F_R2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz
+					#$COMMAND_COPY_NO_COMPRESS $F_R2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz
+					# FASTQ MK
+					echo "$RUN_SAMPLE_DIR/$S.R2.fastq.gz: $F_R2
+						$COMMAND_COPY_NO_COMPRESS $F_R2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz
+					" >> $FASTQ_MK
+					FASTQ_MK_ALL=$FASTQ_MK_ALL" $RUN_SAMPLE_DIR/$S.R2.fastq.gz"
 				else
 					touch $RUN_SAMPLE_DIR/$S.R2.fastq
 					$GZ $RUN_SAMPLE_DIR/$S.R2.fastq
@@ -885,7 +905,12 @@ for RUU in $RUN_UNIQ; do
 
 				# INDEX1
 				if [ -s "$I1" ]; then
-					$COMMAND_COPY_NO_COMPRESS $I1 $RUN_SAMPLE_DIR/$S.I1.fastq.gz
+					#$COMMAND_COPY_NO_COMPRESS $I1 $RUN_SAMPLE_DIR/$S.I1.fastq.gz
+					# FASTQ MK
+					echo "$RUN_SAMPLE_DIR/$S.I1.fastq.gz: $I1
+						$COMMAND_COPY_NO_COMPRESS $I1 $RUN_SAMPLE_DIR/$S.I1.fastq.gz
+					" >> $FASTQ_MK
+					FASTQ_MK_ALL=$FASTQ_MK_ALL" $RUN_SAMPLE_DIR/$S.I1.fastq.gz"
 				else
 					touch $RUN_SAMPLE_DIR/$S.I1.fastq
 					$GZ $RUN_SAMPLE_DIR/$S.I1.fastq
@@ -893,7 +918,12 @@ for RUU in $RUN_UNIQ; do
 
 				# INDEX2
 				if [ -s "$I2" ]; then
-					$COMMAND_COPY_NO_COMPRESS $I2 $RUN_SAMPLE_DIR/$S.I2.fastq.gz
+					#$COMMAND_COPY_NO_COMPRESS $I2 $RUN_SAMPLE_DIR/$S.I2.fastq.gz
+					# FASTQ MK
+					echo "$RUN_SAMPLE_DIR/$S.I2.fastq.gz: $I2
+						$COMMAND_COPY_NO_COMPRESS $I2 $RUN_SAMPLE_DIR/$S.I2.fastq.gz
+					" >> $FASTQ_MK
+					FASTQ_MK_ALL=$FASTQ_MK_ALL" $RUN_SAMPLE_DIR/$S.I2.fastq.gz"
 				else
 					touch $RUN_SAMPLE_DIR/$S.I2.fastq
 					$GZ $RUN_SAMPLE_DIR/$S.I2.fastq
@@ -944,13 +974,15 @@ for RUU in $RUN_UNIQ; do
 				mkdir -p $RUN_SAMPLE_DIR/$S.sequencing
 
 				# FASTP parameters
-				FASTP_PARAM=" --disable_trim_poly_g --disable_length_filtering --thread $THREADS "
+				FASTP_PARAM=" --disable_trim_poly_g --disable_length_filtering "
+				FASTP_THREADS=" --thread $THREADS "
 
 				# OUTPUT
 				FASTP_METRICS_OUTPUT="-h $FASTP_HTML -j $FASTP_JSON"
 
 				# Paired-End or Single-End
-				if (( $($UNGZ -c $RUN_SAMPLE_DIR/$S.R2.fastq.gz | head -n 1 | wc -l) )); then
+				#if (( $($UNGZ -c $RUN_SAMPLE_DIR/$S.R2.fastq.gz | head -n 1 | wc -l) )); then
+				if (( $($UNGZ -c $F_R2 | head -n 1 | wc -l) )); then
 					echo "#[INFO] Paired-End Processing"
 					FASTP_INPUT="-i $RUN_SAMPLE_DIR/$S.R1.fastq.gz -I $RUN_SAMPLE_DIR/$S.R2.fastq.gz"
 					FASTP_OUTPUT="-o $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.processed.fastq.gz -O $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.processed.fastq.gz"
@@ -982,17 +1014,39 @@ for RUU in $RUN_UNIQ; do
 					FASTP_PARAM=$FASTP_PARAM" --disable_quality_filtering "
 				fi;
 
-				# RUN FASTP
-				(($DEBUG)) && echo "#[INFO] FASTP CMD: $FASTP $FASTP_INPUT $FASTP_OUTPUT $FASTP_UMI_PARAM $FASTP_PARAM $FASTP_METRICS_OUTPUT"
-				$FASTP $FASTP_INPUT $FASTP_OUTPUT $FASTP_UMI_PARAM $FASTP_PARAM $FASTP_METRICS_OUTPUT --report_title="$S Sequencing Quality Report" 1>$FASTP_LOG 2>$FASTP_ERR
-				(($DEBUG)) && cat $FASTP_LOG $FASTP_ERR
-				#cat $FASTP_LOG $FASTP_ERR
 
-				# Copy fastq files
-				[ -e $RUN_SAMPLE_DIR/$S.R1.fastq.gz ] && $COMMAND_COPY_NO_COMPRESS $RUN_SAMPLE_DIR/$S.R1.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.demultiplexing.fastq.gz
-				[ -e $RUN_SAMPLE_DIR/$S.R2.fastq.gz ] && $COMMAND_COPY_NO_COMPRESS $RUN_SAMPLE_DIR/$S.R2.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.demultiplexing.fastq.gz
-				[ -e $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.processed.fastq.gz ] && mv $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.processed.fastq.gz $RUN_SAMPLE_DIR/$S.R1.fastq.gz
-				[ -e $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.processed.fastq.gz ] && mv $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.processed.fastq.gz $RUN_SAMPLE_DIR/$S.R2.fastq.gz
+				if ((0)); then
+					# RUN FASTP
+					(($DEBUG)) && echo "#[INFO] FASTP CMD: $FASTP $FASTP_INPUT $FASTP_OUTPUT $FASTP_UMI_PARAM $FASTP_PARAM $FASTP_THREADS $FASTP_METRICS_OUTPUT"
+					$FASTP $FASTP_INPUT $FASTP_OUTPUT $FASTP_UMI_PARAM $FASTP_PARAM $FASTP_METRICS_OUTPUT --report_title="$S Sequencing Quality Report" 1>$FASTP_LOG 2>$FASTP_ERR
+					(($DEBUG)) && cat $FASTP_LOG $FASTP_ERR
+					#cat $FASTP_LOG $FASTP_ERR
+
+					# Copy fastq files
+					[ -e $RUN_SAMPLE_DIR/$S.R1.fastq.gz ] && $COMMAND_COPY_NO_COMPRESS $RUN_SAMPLE_DIR/$S.R1.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.demultiplexing.fastq.gz
+					[ -e $RUN_SAMPLE_DIR/$S.R2.fastq.gz ] && $COMMAND_COPY_NO_COMPRESS $RUN_SAMPLE_DIR/$S.R2.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.demultiplexing.fastq.gz
+					[ -e $RUN_SAMPLE_DIR/$S.I1.fastq.gz ] && $COMMAND_COPY_NO_COMPRESS $RUN_SAMPLE_DIR/$S.I1.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.I1.demultiplexing.fastq.gz
+					[ -e $RUN_SAMPLE_DIR/$S.I2.fastq.gz ] && $COMMAND_COPY_NO_COMPRESS $RUN_SAMPLE_DIR/$S.I2.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.I2.demultiplexing.fastq.gz
+					[ -e $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.processed.fastq.gz ] && mv $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.processed.fastq.gz $RUN_SAMPLE_DIR/$S.R1.fastq.gz
+					[ -e $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.processed.fastq.gz ] && mv $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.processed.fastq.gz $RUN_SAMPLE_DIR/$S.R2.fastq.gz
+				fi;
+
+
+				# FASTP MK
+				echo "$RUN_SAMPLE_DIR_SEQUENCING/$S: $RUN_SAMPLE_DIR/$S.R1.fastq.gz $RUN_SAMPLE_DIR/$S.R2.fastq.gz $RUN_SAMPLE_DIR/$S.I1.fastq.gz $RUN_SAMPLE_DIR/$S.I2.fastq.gz
+					$FASTP $FASTP_INPUT $FASTP_OUTPUT $FASTP_UMI_PARAM $FASTP_PARAM $FASTP_METRICS_OUTPUT --thread \$(FASTP_THREADS_BY_SAMPLE) --report_title="$S Sequencing Quality Report" 1>$FASTP_LOG 2>$FASTP_ERR
+					[ -e $RUN_SAMPLE_DIR/$S.R1.fastq.gz ] && $COMMAND_COPY_NO_COMPRESS $RUN_SAMPLE_DIR/$S.R1.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.demultiplexing.fastq.gz
+					[ -e $RUN_SAMPLE_DIR/$S.R2.fastq.gz ] && $COMMAND_COPY_NO_COMPRESS $RUN_SAMPLE_DIR/$S.R2.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.demultiplexing.fastq.gz
+					[ -e $RUN_SAMPLE_DIR/$S.I1.fastq.gz ] && $COMMAND_COPY_NO_COMPRESS $RUN_SAMPLE_DIR/$S.I1.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.I1.demultiplexing.fastq.gz
+					[ -e $RUN_SAMPLE_DIR/$S.I2.fastq.gz ] && $COMMAND_COPY_NO_COMPRESS $RUN_SAMPLE_DIR/$S.I2.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.I2.demultiplexing.fastq.gz
+					[ -e $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.processed.fastq.gz ] && mv $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.processed.fastq.gz $RUN_SAMPLE_DIR/$S.R1.fastq.gz
+					[ -e $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.processed.fastq.gz ] && mv $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.processed.fastq.gz $RUN_SAMPLE_DIR/$S.R2.fastq.gz
+
+				" >> $FASTP_MK
+				FASTP_MK_ALL=$FASTP_MK_ALL" $RUN_SAMPLE_DIR_SEQUENCING/$S"
+
+				#cat $FASTP_MK
+
 
 			fi;
 
@@ -1269,6 +1323,16 @@ for RUU in $RUN_UNIQ; do
 	echo "RUNS_SAMPLES=\"$RUNS_SAMPLES\"" >> $SHELL_ANALYSIS_RUN
 	echo "PIPELINES=\"$PIPELINES\"" >> $SHELL_ANALYSIS_RUN
 	echo "INTERSEC=2" >> $SHELL_ANALYSIS_RUN
+
+
+
+	# FASTQ && FASTP process
+	
+	if [ -s $FASTQ_MK ] && [ -s $FASTP_MK ]; then
+		make -j $THREADS -e FASTP_THREADS_BY_SAMPLE=$THREADS_BY_SAMPLE -f $FASTQ_MK -f $FASTP_MK $FASTQ_MK_ALL $FASTP_MK_ALL 1>$FASTP_MK.log 2>$FASTP_MK.err
+		#! (($DEBUG)) && rm -f $FASTP_MK $FASTP_MK.log $FASTP_MK.err
+	fi;
+
 
 
 
