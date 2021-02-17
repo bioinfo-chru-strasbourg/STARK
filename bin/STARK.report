@@ -56,6 +56,9 @@ function usage {
 	echo "# -k|--date=<STRING>                             Release/ID/Date of the current analysis (not required)";
 	echo "# -o|--output=<STRING>                           Output file pattern (not required)";
 	echo "# -t|--output_type=<STRING>                      Output type file, either html (default html)";
+	echo "# -c|--sections=<STRING>                         List of sections (default ALL)";
+	echo "#                                                Report Sections: results_summary sequencing_mapping depth coverage variant_calling variant_stats";
+	echo "#                                                Report Annex Sections: annex_coverage annex_depth annex_genes_coverage annex_variants annex_annotations";
 	echo "# -v|--verbose                                   Verbose mode";
 	echo "# -d|--debug                                     Debug mode";
 	echo "# -n|--release                                   Script Release";
@@ -72,7 +75,7 @@ function usage {
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
-ARGS=$(getopt -o "f:p:g:u:s:e:r:i:k:o:t:vdnh" --long "analysis:,project:,group:,user:,sample:,env:,app:,application:,results:,pipelines:,date:,output:,output_type:,verbose,debug,release,help" -- "$@" 2> /dev/null)
+ARGS=$(getopt -o "f:p:g:u:s:e:r:i:k:o:t:c:vdnh" --long "analysis:,project:,group:,user:,sample:,env:,app:,application:,results:,pipelines:,date:,output:,output_type:,sections:,verbose,debug,release,help" -- "$@" 2> /dev/null)
 if [ $? -ne 0 ]; then
 	:
 	echo "#[ERROR] Error in the argument list:";
@@ -138,6 +141,11 @@ do
 			OUTPUT_TYPE_INPUT="$2"
 			shift 2
 			;;
+		-c|--sections)
+			SECTIONS_INPUT="$2"
+			SECTIONS_INPUT=$(echo $SECTIONS_INPUT | tr "," " ")
+			shift 2
+			;;
 		-h|--help)
 			usage
 			exit 0
@@ -175,8 +183,37 @@ fi
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 
-#echo "test"
-#exit 0
+# FUNCTIONS
+#############
+
+# function in_array
+# input: $element $array
+in_array () 
+{ 
+    param=$1;
+    shift;
+    for elem in "$@";
+    do
+        [[ "$param" = "$elem" ]] && return 0;
+    done;
+    return 1
+}
+
+
+# #SECTIONS="results_summary sequencing_mapping depth coverage variant_calling variant_stats annex_coverage annex_depth annex_genes_coverage annex_variants annex_annotations" 
+# SECTIONS="ALL" 
+
+# SECTION_ID="results_summary"
+# #SECTION_ID="truc"
+
+# if in_array $SECTION_ID $SECTIONS || in_array ALL $SECTIONS ; then
+# 	echo "in array";
+# else
+# 	echo "NOT in array"
+# fi;
+# exit 0
+
+
 
 # APPLICATION
 ###############
@@ -269,6 +306,19 @@ if [ -z $OUTPUT_TYPE_INPUT ]; then
 	OUTPUT_TYPE="html";
 fi;
 
+if [ ! -z "$REPORT_SECTIONS" ]; then
+	SECTIONS="$REPORT_SECTIONS"
+fi;
+if [ ! -z "$SECTIONS_INPUT" ]; then
+	SECTIONS="$SECTIONS_INPUT"
+fi;
+if [ -z "$SECTIONS" ]; then
+	SECTIONS="ALL"
+fi;
+
+
+# echo "SECTIONS=$SECTIONS"
+# exit 0
 
 # Other param
 
@@ -977,95 +1027,101 @@ PIPELINES_HTML="<strong>$PIPELINES_NUMBER pipeline"$([ $PIPELINES_NUMBER -gt 1 ]
 ALIGNERS_CALLERS_ANNOTATORS_HTML="($ALIGNERS_HTML, $CALLERS_HTML, $ANNOTATORS_HTML)"
 
 
-# PLAN
-echo '<a class="btn btn-primary-outline display-4" href="#'$SECTION_ID'">'$SECTION_NAME'</a>' >> $HTMLFILE_PLAN_LINKS
+
+if in_array $SECTION_ID $SECTIONS || in_array ALL $SECTIONS ; then
+	(($DEBUG)) && echo "show section $SECTION_ID"
+
+	# PLAN
+	echo '<a class="btn btn-primary-outline display-4" href="#'$SECTION_ID'">'$SECTION_NAME'</a>' >> $HTMLFILE_PLAN_LINKS
 
 
-echo '
+	echo '
 
-	<section class="counters1 counters cid-ru7OEFnzpz" id="'$SECTION_ID'" '$PAGE_BREAK_BEFORE'>
-	<br>
+		<section class="counters1 counters cid-ru7OEFnzpz" id="'$SECTION_ID'" '$PAGE_BREAK_BEFORE'>
+		<br>
 
-		<div class="container">
-			<h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">
-				'$SECTION_NAME'</h2>
-			<h3 class="mbr-section-subtitle mbr-fonts-style display-5">
+			<div class="container">
+				<h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">
+					'$SECTION_NAME'</h2>
+				<h3 class="mbr-section-subtitle mbr-fonts-style display-5">
 
-				<!--Main information of results, on sequenced reads, quality of bases on all reads, total number of genes targeted, and total number of variants found-->
+					<!--Main information of results, on sequenced reads, quality of bases on all reads, total number of genes targeted, and total number of variants found-->
 
-			</h3>
+				</h3>
 
-			<div class="container pt-4 mt-2">
-				<div class="media-container-row">
-					<div class="card p-3 align-center col-12 col-md-6 col-lg-4">
-						<div class="panel-item p-3">
-							<div class="card-img pb-3">
-								<span class="mbr-iconfont mbri-align-center"></span>
-							</div>
-							<div class="card-text">
-								<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
-									  '$BEFORE_TOTAL_SEQUENCES_HTML'</h3>
-								<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">Number of sequenced reads</h4>
-								<p class="mbr-content-text mbr-fonts-style display-7">
-									of <strong>'$BEFORE_SEQUENCE_LENGTH'</strong> bases length corresponding to <strong>'$BEFORE_TOTAL_BASES_HTML'</strong> bases sequenced in <strong>'$SEQUENCING_MODE_HTML'</strong> with <strong>'$SEQUENCING_TECHNOLOGY_HTML'</strong> technology</p>
-							</div>
-						</div>
-					</div>
-
-
-					<div class="card p-3 align-center col-12 col-md-6 col-lg-3">
-						<div class="panel-item p-3">
-							<div class="card-img pb-3">
-								<span class="mbr-iconfont mbri-like"></span>
-							</div>
-							<div class="card-text">
-								<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">'$BEFORE_Q30_HTML'%</h3>
-								<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
-									Q30</h4>
-								<p class="mbr-content-text mbr-fonts-style display-7">Percentage of bases with <strong>quality score >30</strong> <br>(average across the whole read length)</p>
+				<div class="container pt-4 mt-2">
+					<div class="media-container-row">
+						<div class="card p-3 align-center col-12 col-md-6 col-lg-4">
+							<div class="panel-item p-3">
+								<div class="card-img pb-3">
+									<span class="mbr-iconfont mbri-align-center"></span>
+								</div>
+								<div class="card-text">
+									<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+										'$BEFORE_TOTAL_SEQUENCES_HTML'</h3>
+									<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">Number of sequenced reads</h4>
+									<p class="mbr-content-text mbr-fonts-style display-7">
+										of <strong>'$BEFORE_SEQUENCE_LENGTH'</strong> bases length corresponding to <strong>'$BEFORE_TOTAL_BASES_HTML'</strong> bases sequenced in <strong>'$SEQUENCING_MODE_HTML'</strong> with <strong>'$SEQUENCING_TECHNOLOGY_HTML'</strong> technology</p>
+								</div>
 							</div>
 						</div>
-					</div>
 
 
-					<div class="card p-3 align-center col-12 col-md-6 col-lg-3">
-						<div class="panel-item p-3">
-							<div class="card-img pb-3">
-								<span class="mbr-iconfont mbri-menu"></span>
-							</div>
-							<div class="card-text">
-								<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
-									  '$GENES_NUMBER'</h3>
-								<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">Genes</h4>
-								<p class="mbr-content-text mbr-fonts-style display-7">defined in '$(echo "$GENE_PANEL_NUMBER Gene Panel"$([ $GENE_PANEL_NUMBER -gt 1 ] && echo "s"))', corresponding to <br><strong>'$GENES_BASES_HTML' bases</strong></p>
-							</div>
-						</div>
-					</div>
-
-
-					<div class="card p-3 align-center col-12 col-md-6 col-lg-3">
-						<div class="panel-item p-3">
-							<div class="card-img pb-3">
-								<span class="mbr-iconfont mbri-bulleted-list"></span>
-							</div>
-
-							<div class="card-texts">
-								 <h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
-									  '$VARIANT_NUMBER'</h3>
-								<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
-									Variants</h4>
-								<p class="mbr-content-text mbr-fonts-style display-7">
-										SNV, InDel, Other<br>called with '$PIPELINES_HTML'<br>'$ALIGNERS_CALLERS_ANNOTATORS_HTML'</p>
+						<div class="card p-3 align-center col-12 col-md-6 col-lg-3">
+							<div class="panel-item p-3">
+								<div class="card-img pb-3">
+									<span class="mbr-iconfont mbri-like"></span>
+								</div>
+								<div class="card-text">
+									<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">'$BEFORE_Q30_HTML'%</h3>
+									<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+										Q30</h4>
+									<p class="mbr-content-text mbr-fonts-style display-7">Percentage of bases with <strong>quality score >30</strong> <br>(average across the whole read length)</p>
+								</div>
 							</div>
 						</div>
-					</div>
 
+
+						<div class="card p-3 align-center col-12 col-md-6 col-lg-3">
+							<div class="panel-item p-3">
+								<div class="card-img pb-3">
+									<span class="mbr-iconfont mbri-menu"></span>
+								</div>
+								<div class="card-text">
+									<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+										'$GENES_NUMBER'</h3>
+									<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">Genes</h4>
+									<p class="mbr-content-text mbr-fonts-style display-7">defined in '$(echo "$GENE_PANEL_NUMBER Gene Panel"$([ $GENE_PANEL_NUMBER -gt 1 ] && echo "s"))', corresponding to <br><strong>'$GENES_BASES_HTML' bases</strong></p>
+								</div>
+							</div>
+						</div>
+
+
+						<div class="card p-3 align-center col-12 col-md-6 col-lg-3">
+							<div class="panel-item p-3">
+								<div class="card-img pb-3">
+									<span class="mbr-iconfont mbri-bulleted-list"></span>
+								</div>
+
+								<div class="card-texts">
+									<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+										'$VARIANT_NUMBER'</h3>
+									<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+										Variants</h4>
+									<p class="mbr-content-text mbr-fonts-style display-7">
+											SNV, InDel, Other<br>called with '$PIPELINES_HTML'<br>'$ALIGNERS_CALLERS_ANNOTATORS_HTML'</p>
+								</div>
+							</div>
+						</div>
+
+					</div>
 				</div>
-			</div>
-	   </div>
-	</section>
+		</div>
+		</section>
 
-' > $HTMLFILE_SUMMARY
+	' > $HTMLFILE_SUMMARY
+
+fi;
 
 
 
@@ -1497,93 +1553,95 @@ for ALIGNER in $ALIGNERS; do
 
 done;
 
+if in_array $SECTION_ID $SECTIONS || in_array ALL $SECTIONS ; then
+	(($DEBUG)) && echo "show section $SECTION_ID"
 
-# PLAN
-echo '<a class="btn btn-primary-outline display-4" href="#'$SECTION_ID'">'$SECTION_NAME'</a>' >> $HTMLFILE_PLAN_LINKS
+	# PLAN
+	echo '<a class="btn btn-primary-outline display-4" href="#'$SECTION_ID'">'$SECTION_NAME'</a>' >> $HTMLFILE_PLAN_LINKS
 
 
-echo '
+	echo '
 
-	<section class="progress-bars2 cid-ru7OEG5hcO" id="'$SECTION_ID'" '$PAGE_BREAK_BEFORE'>
-	<br>
+		<section class="progress-bars2 cid-ru7OEG5hcO" id="'$SECTION_ID'" '$PAGE_BREAK_BEFORE'>
+		<br>
 
-		<div class="container">
-			<h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">
-				'$SECTION_NAME'
-			</h2>
+			<div class="container">
+				<h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">
+					'$SECTION_NAME'
+				</h2>
 
-			<p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
-				Sequenced reads were mapped to <strong>'$ASSEMBLY'</strong> assembly using aligner'$( [ $(echo $ALIGNERS | wc -w) -gt 1 ] && echo "s")': <strong>'$ALIGNERS'</strong>.
-				<br>
-				Reads statistics were determined with <strong>fastp</strong> (FastQ) and <strong>Samtools flagstat</strong> (BAM) on each aligners.
-				<br>
-				<strong>Validated Aligned reads</strong> calculated on BAM for validation
-				<br>
-				('$BAM_VALIDATION_TEXT_HTML').
-				<br>
-				<strong>On target reads</strong> calculated on BAM for validation with Target Design 
-				
-			</p>
+				<p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
+					Sequenced reads were mapped to <strong>'$ASSEMBLY'</strong> assembly using aligner'$( [ $(echo $ALIGNERS | wc -w) -gt 1 ] && echo "s")': <strong>'$ALIGNERS'</strong>.
+					<br>
+					Reads statistics were determined with <strong>fastp</strong> (FastQ) and <strong>Samtools flagstat</strong> (BAM) on each aligners.
+					<br>
+					<strong>Validated Aligned reads</strong> calculated on BAM for validation
+					<br>
+					('$BAM_VALIDATION_TEXT_HTML').
+					<br>
+					<strong>On target reads</strong> calculated on BAM for validation with Target Design 
+					
+				</p>
 
-			<div class="row pt-1 mt-5">
+				<div class="row pt-1 mt-5">
 
-				<!--
-				<div class="col-md-6 text-elements">
+					<!--
+					<div class="col-md-6 text-elements">
 
-					<h4 class="section-content-title pb-3 align-left mbr-fonts-style display-5">Per base quality</h4>
-					<p class="section-content-text align-left mbr-fonts-style display-7">
-						<img src="'$PER_BASE_QUALITY_FILE_HTML'" width=100%>
-					</p>
+						<h4 class="section-content-title pb-3 align-left mbr-fonts-style display-5">Per base quality</h4>
+						<p class="section-content-text align-left mbr-fonts-style display-7">
+							<img src="'$PER_BASE_QUALITY_FILE_HTML'" width=100%>
+						</p>
 
-				</div>
-				-->
+					</div>
+					-->
 
-				<!--
-				<div class="col-md-3 text-elements">
+					<!--
+					<div class="col-md-3 text-elements">
 
-					<h4 class="section-content-title pb-3 align-left mbr-fonts-style display-5">Sequencing Quality</h4>
-					<p class="section-content-text align-left mbr-fonts-style display-7">
+						<h4 class="section-content-title pb-3 align-left mbr-fonts-style display-5">Sequencing Quality</h4>
+						<p class="section-content-text align-left mbr-fonts-style display-7">
+
+							<div class="mbr-section-btn align-center">
+								<a class="btn btn-primary-outline display-4" href="'$SEQUENCING_FASTP_HTML_HTML'">
+									fastp Sequencing Quality Report
+								</a>
+							</div>
+
+						</p>
+
+					</div>
+					-->
+
+					<div class="progress_elements col-md-12">
 
 						<div class="mbr-section-btn align-center">
 							<a class="btn btn-primary-outline display-4" href="'$SEQUENCING_FASTP_HTML_HTML'">
-								fastp Sequencing Quality Report
+								Sequencing Quality Report
 							</a>
 						</div>
 
-					</p>
+						<br>
 
-				</div>
-				-->
+						<!--<h4 class="section-content-title pb-3 align-left mbr-fonts-style display-5">Reads metrics</h4>-->
 
-				<div class="progress_elements col-md-12">
+						'"$(cat $HTMLFILE_SEQUENCING.total_sequences)"'
 
-					<div class="mbr-section-btn align-center">
-						<a class="btn btn-primary-outline display-4" href="'$SEQUENCING_FASTP_HTML_HTML'">
-							Sequencing Quality Report
-						</a>
+						'"$(cat $HTMLFILE_SEQUENCING.aligners)"'
+
 					</div>
 
-					<br>
-
-					<!--<h4 class="section-content-title pb-3 align-left mbr-fonts-style display-5">Reads metrics</h4>-->
-
-					'"$(cat $HTMLFILE_SEQUENCING.total_sequences)"'
-
-					'"$(cat $HTMLFILE_SEQUENCING.aligners)"'
-
 				</div>
+
+
 
 			</div>
 
+		</section>
 
+	' > $HTMLFILE_SEQUENCING
 
-		</div>
-
-	</section>
-
-' > $HTMLFILE_SEQUENCING
-
-
+fi;
 
 
 # DEPTH & COVERAGE
@@ -1799,7 +1857,11 @@ for ALIGNER in $ALIGNERS; do
 				<h3 class="mbr-section-subtitle mbr-fonts-style display-5" '$GENES_PANEL_BREAK'>
 				<br>
 					'$GENE_PANEL_NAME_HTML'
+					<p class="mbr-content-text mbr-fonts-style display-7">
+					</p>
 				</h3>
+				
+				
 
 				<div class="container pt-4 mt-2">
 					<div class="media-container-row">
@@ -1973,6 +2035,8 @@ for ALIGNER in $ALIGNERS; do
 		GENES_PANEL_GENES_FAIL_WARN_TXT="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.genes.FAIL.WARN.txt"
 		GENES_PANEL_GENES_MISS_TXT="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.genes.MISS.txt"
 		GENES_PANEL_DEPTHBED_COVS="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.coverage"
+		GENES_PANEL_ON_TARGET="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.on.target"
+		GENES_PANEL_OFF_TARGET="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.off.target"
 
 		#if [ -s $GENES_PANEL_FILE ]; then
 		if [ -e $GENES_PANEL_GENES_TXT ] \
@@ -1984,6 +2048,42 @@ for ALIGNER in $ALIGNERS; do
 			; then
 
 			((COVERAGE_GENES_PANEL_NUM++))
+
+			# ON OFF TARGET
+
+
+			# On target
+			if [ "$GENES_PANEL_ON_TARGET" != "" ] && [ -s $GENES_PANEL_ON_TARGET ] \
+				&& [ "$GENES_PANEL_OFF_TARGET" != "" ] && [ -s $GENES_PANEL_OFF_TARGET ] \
+			; then
+				GENES_PANEL_ON_TARGET_VALUE=$(cat $GENES_PANEL_ON_TARGET)
+				GENES_PANEL_OFF_TARGET_VALUE=$(cat $GENES_PANEL_OFF_TARGET)
+				GENES_PANEL_ONOFF_TARGET_VALUE=$(echo "$GENES_PANEL_ON_TARGET_VALUE+$GENES_PANEL_OFF_TARGET_VALUE+0" | bc)
+				GENES_PANEL_ON_TARGET_PERCENT=$(echo "scale=2; $GENES_PANEL_ON_TARGET_VALUE/$GENES_PANEL_ONOFF_TARGET_VALUE" | bc)
+				GENES_PANEL_OFF_TARGET_PERCENT=$(echo "scale=2; $GENES_PANEL_OFF_TARGET_VALUE/$GENES_PANEL_ONOFF_TARGET_VALUE" | bc)
+				if [ $GENES_PANEL_ON_TARGET_VALUE == "0" ]; then
+					GENES_PANEL_ON_TARGET_PERCENT="0%"
+				else
+					GENES_PANEL_ON_TARGET_PERCENT=$(awk 'BEGIN{printf("%.2f\n",('$GENES_PANEL_ON_TARGET_VALUE'/'$GENES_PANEL_ONOFF_TARGET_VALUE')*100)}')"%"
+				fi;
+				if [ $GENES_PANEL_OFF_TARGET_VALUE == "0" ]; then
+					GENES_PANEL_OFF_TARGET_PERCENT="0%"
+				else
+					GENES_PANEL_OFF_TARGET_PERCENT=$(awk 'BEGIN{printf("%.2f\n",('$GENES_PANEL_OFF_TARGET_VALUE'/'$GENES_PANEL_ONOFF_TARGET_VALUE')*100)}')"%"
+				fi;
+				#echo "$GENES_PANEL_ON_TARGET_VALUE / $GENES_PANEL_OFF_TARGET_VALUE / $GENES_PANEL_ONOFF_TARGET_VALUE / $GENES_PANEL_ON_TARGET_PERCENT / $GENES_PANEL_OFF_TARGET_PERCENT";
+				GENES_PANEL_ONOFF_TARGET_HTML_FULL='
+					'$GENES_PANEL_ON_TARGET_PERCENT' On target reads ['$GENES_PANEL_ON_TARGET_VALUE'/'$GENES_PANEL_ONOFF_TARGET_VALUE']
+					<br>
+					'$GENES_PANEL_OFF_TARGET_PERCENT' Off target reads ['$GENES_PANEL_OFF_TARGET_VALUE'/'$GENES_PANEL_ONOFF_TARGET_VALUE']
+				';
+				GENES_PANEL_ONOFF_TARGET_HTML_SIMPLE='
+					'$GENES_PANEL_ON_TARGET_PERCENT' On target reads
+				';
+				GENES_PANEL_ONOFF_TARGET_HTML=$GENES_PANEL_ONOFF_TARGET_HTML_SIMPLE;
+			else
+				GENES_PANEL_ONOFF_TARGET_HTML='';
+			fi;
 
 
 			# GENES PANEL SEQUENCING PANEL COVERAGE
@@ -2048,6 +2148,9 @@ for ALIGNER in $ALIGNERS; do
 				<h3 class="mbr-section-subtitle mbr-fonts-style display-5" '$GENES_PANEL_BREAK'>
 				<br>
 					'$GENE_PANEL_NAME_HTML'
+					<p class="mbr-content-text mbr-fonts-style display-7">
+						'$GENES_PANEL_ONOFF_TARGET_HTML'
+					</p>
 				</h3>
 
 				<div class="container pt-4 mt-2">
@@ -2216,41 +2319,45 @@ done;
 SECTION_NAME="Targets & Genes Depth"
 SECTION_ID="depth"
 
-# PLAN
-echo '<a class="btn btn-primary-outline display-4" href="#'$SECTION_ID'">'$SECTION_NAME'</a>' >> $HTMLFILE_PLAN_LINKS
 
-echo '
+if in_array $SECTION_ID $SECTIONS || in_array ALL $SECTIONS ; then
+	(($DEBUG)) && echo "show section $SECTION_ID"
 
-	<section class="counters1 counters cid-ru7OEH6r7i" id="'$SECTION_ID'" '$PAGE_BREAK_BEFORE'>
-	<br>
+	# PLAN
+	echo '<a class="btn btn-primary-outline display-4" href="#'$SECTION_ID'">'$SECTION_NAME'</a>' >> $HTMLFILE_PLAN_LINKS
 
-		<div class="container">
-			<h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">
-				'$SECTION_NAME'
-			</h2>
+	echo '
 
-			<p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
-				Depth metrics generated with <strong>Picard CollectHsMetrics</strong>
-				'$AMPLICON_TEXT_HTML'
-				<br>
-				on BAM for validation
-				<br>
-				('$BAM_VALIDATION_TEXT_HTML').
-				<br>
-				Minimum depth <strong>'$MINIMUM_DEPTH'X</strong>,
-				Expected depth <strong>'$EXPECTED_DEPTH'X</strong>
-			</p>
+		<section class="counters1 counters cid-ru7OEH6r7i" id="'$SECTION_ID'" '$PAGE_BREAK_BEFORE'>
+		<br>
 
-			'"$(cat $HTMLFILE_DEPTH_ALIGNERS)"'
+			<div class="container">
+				<h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">
+					'$SECTION_NAME'
+				</h2>
 
+				<p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
+					Depth metrics generated with <strong>Picard CollectHsMetrics</strong>
+					'$AMPLICON_TEXT_HTML'
+					<br>
+					on BAM for validation
+					<br>
+					('$BAM_VALIDATION_TEXT_HTML').
+					<br>
+					Minimum depth <strong>'$MINIMUM_DEPTH'X</strong>,
+					Expected depth <strong>'$EXPECTED_DEPTH'X</strong>
+				</p>
 
-
-	   </div>
-	</section>
-
-' > $HTMLFILE_DEPTH
+				'"$(cat $HTMLFILE_DEPTH_ALIGNERS)"'
 
 
+
+		</div>
+		</section>
+
+	' > $HTMLFILE_DEPTH
+
+fi;
 
 
 ### COVERAGE
@@ -2259,401 +2366,13 @@ echo '
 SECTION_NAME="Targets & Genes Coverage"
 SECTION_ID="coverage"
 
-# PLAN
-echo '<a class="btn btn-primary-outline display-4" href="#'$SECTION_ID'">'$SECTION_NAME'</a>' >> $HTMLFILE_PLAN_LINKS
+if in_array $SECTION_ID $SECTIONS || in_array ALL $SECTIONS ; then
+	(($DEBUG)) && echo "show section $SECTION_ID"
 
-echo '
+	# PLAN
+	echo '<a class="btn btn-primary-outline display-4" href="#'$SECTION_ID'">'$SECTION_NAME'</a>' >> $HTMLFILE_PLAN_LINKS
 
-   <section class="counters1 counters cid-ru7OEH6r7i" id="'$SECTION_ID'" '$PAGE_BREAK_BEFORE'>
-   <br>
-
-	   <div class="container">
-		   <h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">
-			   '$SECTION_NAME'
-		   </h2>
-
-		   <p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
-			   Coverage metrics generated with<strong>Picard CollectHsMetrics</strong>
-			   <br>
-			   on BAM for validation
-			   <br>
-			   ('$BAM_VALIDATION_TEXT_HTML').
-			   <br>
-			   Minimum depth <strong>'$MINIMUM_DEPTH'X</strong>,
-			   Expected depth <strong>'$EXPECTED_DEPTH'X</strong>,
-			   Sequencing coverage threshold <strong>'$(awk 'BEGIN{printf("%.1f\n",'$SEQUENCING_COVERAGE_THRESHOLD'*100)}')'%</strong>,
-			   Minimum & Expected depth coverage threshold <strong>'$(awk 'BEGIN{printf("%.1f\n",'$DEPTH_COVERAGE_THRESHOLD'*100)}')'%</strong>
-		   </p>
-
-		   '"$(cat $HTMLFILE_COVERAGE_ALIGNERS)"'
-
-
-
-	  </div>
-   </section>
-
-' > $HTMLFILE_COVERAGE
-
-
-
-
-
-if ((0)); then
-
-# VARIANT CALLING
-###################
-
-(($VERBOSE)) && echo "#[INFO] VARIANT CALLING section"
-
-HTMLFILE_CALLING=$HTMLFILE".calling"
-
-SECTION_NAME="Variant Calling"
-SECTION_ID="variant_calling"
-
-ALIGNERS_NUMBER_HTML=$ALIGNERS_NUMBER" aligner"$( [ $ALIGNERS_NUMBER -gt 1 ] && echo "s" )
-CALLERS_NUMBER_HTML=$CALLERS_NUMBER" caller"$( [ $CALLERS_NUMBER -gt 1 ] && echo "s" )
-
-
-HTMLFILE_CALLING_PIPELINES=$HTMLFILE".calling.pipelines"
-
-> $HTMLFILE_CALLING_PIPELINES
-
-for PIPELINE in $PIPELINES; do
-
-	(($DEBUG)) && echo "PIPELINE: $PIPELINE";
-
-	ALIGNERS_CALLERS_HTML=$(echo $PIPELINE | cut -d. -f1,2 --output-delimiter=. | sed "s/\./<br>/gi")
-
-
-	# FILES
-	VCF="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$PIPELINE.vcf"
-	VCF_BCFTOOLS_STATS="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$PIPELINE.vcf.metrics/metrics.bcftools.stats"
-
-	if [ -s $VCF_BCFTOOLS_STATS ]; then
-
-		VARIANTS_PIPELINE_NUMBER=$(grep "number of records:" $VCF_BCFTOOLS_STATS | cut -f4)
-		if [ $VARIANT_NUMBER == "0" ]; then
-			VARIANTS_PIPELINE_PERCENT="0%"
-		else
-			VARIANTS_PIPELINE_PERCENT=$(awk 'BEGIN{printf("%.2f\n",('$VARIANTS_PIPELINE_NUMBER'/'$VARIANT_NUMBER')*100)}')"%"
-		fi;
-
-		echo '
-
-			<div class="card p-3 align-center">
-				<div class="wrap">
-					<div class="pie_progress progress1" role="progressbar" data-goal="'$VARIANTS_PIPELINE_PERCENT'">
-						<p class="pie_progress__number mbr-fonts-style display-5">'$VARIANTS_PIPELINE_NUMBER'</p>
-					</div>
-				</div>
-				<div class="mbr-crt-title pt-3">
-					<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
-						'$VARIANTS_PIPELINE_NUMBER' variants
-					</h4>
-					<p class="mbr-content-text mbr-fonts-style display-7">
-						'$ALIGNERS_CALLERS_HTML'
-					</p>
-				</div>
-			</div>
-
-		' >> $HTMLFILE_CALLING_PIPELINES
-
-	fi;
-
-done;
-
-# PLAN
-echo '<a class="btn btn-primary-outline display-4" href="#'$SECTION_ID'">'$SECTION_NAME'</a>' >> $HTMLFILE_PLAN_LINKS
-
-echo '
-
-	<section class="progress-bars3 cid-ru7OEIGjX3" id="'$SECTION_ID'" '$PAGE_BREAK_BEFORE'>
-	<br>
-	    <div class="container">
-	        <h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">
-				'$SECTION_NAME'
-			</h2>
-
-			<p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
-			<strong>'$VARIANT_NUMBER' Variants</strong> were identified with '$ALIGNERS_NUMBER_HTML' and '$CALLERS_NUMBER_HTML'
-			</p>
-
-	        <div class="media-container-row pt-2 mt-2">
-
-			'"$(cat $HTMLFILE_CALLING_PIPELINES)"'
-
-	        </div>
-		</div>
-	</section>
-
-' > $HTMLFILE_CALLING
-
-fi;
-
-
-
-if ((1)); then
-
-# VARIANT CALLING STATS
-###################
-
-(($VERBOSE)) && echo "#[INFO] VARIANT CALLING STATS section"
-
-HTMLFILE_VARIANTS_STATS=$HTMLFILE".variants.stats"
-
-SECTION_NAME="Variants Report"
-SECTION_ID="variant_stats"
-
-
-HTMLFILE_VARIANTS_STATS_GENES_PANEL=$HTMLFILE".variants.genes_panel"
-> $HTMLFILE_VARIANTS_STATS_GENES_PANEL
-
-
-# FILES
-#LIST_GENES_PANEL="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.list.genes"
-#TARGET_DESIGN_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.design.bed"
-TARGET_DESIGN_NAME="$SAMPLE.$ALIGNER.design.bed"
-
-
-GENES_PANEL_NUM=0
-
-#for GENES_PANEL in "Target Design" $(cat $LIST_GENES_PANEL); do # $LIST_GENES_PANEL_BASENAME
-for GENES_PANEL in "Target Design" $(cat $LIST_GENES_PANEL_BASENAME); do # $LIST_GENES_PANEL_BASENAME
-
-	((GENES_PANEL_NUM++))
-
-	if [ "$GENES_PANEL" == "Target Design" ]; then
-		GENES_PANEL_NAME="Target Design"
-		GENE_PANEL_NAME_HTML="$GENES_PANEL_NAME"
-		GENE_PANEL_TYPE_HTML="Target<br>Regions"
-		GENE_PANEL_TYPE_NAME_HTML="Region"
-		GENES_PANEL_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.bed"
-	else
-		GENES_PANEL_NAME=$(echo $GENES_PANEL | sed "s/^$SAMPLE.//" | sed "s/.genes$//")
-		GENE_PANEL_NAME_HTML="Gene Panel<br>$GENES_PANEL_NAME"
-		GENE_PANEL_TYPE_HTML="Gene<br>Panel"
-		GENE_PANEL_TYPE_NAME_HTML="Gene"
-		GENES_PANEL_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$GENES_PANEL"
-	fi;
-
-
-	# FILES
-	#GENES_PANEL_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$GENES_PANEL"
-
-	# FILES
-	BCFTOOLS_STATS=""
-	if [ "$GENES_PANEL" == "Target Design" ]; then
-		BCFTOOLS_STATS=$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.bcftools.stats
-	else
-		#ls $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics*$GENES_PANEL*.bcftools.stats
-		BCFTOOLS_STATS=$(ls $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics*$GENES_PANEL*.bcftools.stats 2>/dev/null)
-	fi;
-
-	if [ "$BCFTOOLS_STATS" != "" ] && [ -s $BCFTOOLS_STATS ]; then
-
-		# GENES PANEL INFO
-		GENES_PANEL_GENES_NUMBER=$(cat $GENES_PANEL_FILE | grep -v "^#" | grep -v "^@" | cut -f4 | sort -u | wc -l)
-		GENES_PANEL_GENES_NUMBER_HTML=$(echo $GENES_PANEL_GENES_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
-
-		GENES_PANEL_REGIONS_NUMBER=$(cat $GENES_PANEL_FILE | grep -v "^#" | grep -v "^@" | wc -l)
-		GENES_PANEL_REGIONS_NUMBER_HTML=$(echo $GENES_PANEL_REGIONS_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
-		[ "$GENES_PANEL" == "Target Design" ] && GENES_PANEL_GENES_NUMBER=$GENES_PANEL_REGIONS_NUMBER && GENES_PANEL_GENES_NUMBER_HTML=$GENES_PANEL_REGIONS_NUMBER_HTML
-
-
-		#GENES_PANEL_BASES_NUMBER=$(cd $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/; $BEDTOOLS merge -i $GENES_PANEL_FILE > $REPORTDIR/merge_genes.bed; $BEDTOOLS coverage -a $REPORTDIR/merge_genes.bed  -b $REPORTDIR/merge_genes.bed | awk -F '\t' '{sum += $6} END {print sum}'; rm $REPORTDIR/merge_genes.bed; )
-		GENES_PANEL_BASES_NUMBER=$($BEDTOOLS sort -i $GENES_PANEL_FILE | $BEDTOOLS merge -i - > $REPORTDIR/merge_genes.bed; $BEDTOOLS coverage -a $REPORTDIR/merge_genes.bed  -b $REPORTDIR/merge_genes.bed | awk -F '\t' 'BEGIN{sum = 0} {sum += $6} END {print sum}'; rm $REPORTDIR/merge_genes.bed; )
-		#GENES_PANEL_BASES_NUMBER=$(cat $GENES_PANEL_FILE | grep -v "^#" | grep -v "^@" | awk '{for(i=$2;i<$3;i++) print $1"\t"i}' | sort -u | wc -l)
-		GENES_PANEL_BASES_NUMBER_HTML=$(echo $GENES_PANEL_BASES_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
-
-		#GENES_PANEL_ALIGNER=$ALIGNER
-		#GENES_PANEL_ALIGNER_HTML=$GENES_PANEL_ALIGNER
-
-		#echo "GENES_PANEL: "$GENES_PANEL
-		#echo "BCFTOOLS_STATS: "$BCFTOOLS_STATS
-
-
-		GENES_PANEL_TOTAL_VARIANT_NUMBER=$(grep "^SN	.*	number of records" $BCFTOOLS_STATS | awk -F"\t" '{print $4}')
-		GENES_PANEL_TOTAL_VARIANT_LEGEND=$(grep "^#   number of records   .." $BCFTOOLS_STATS | sed "s/^#   number of records   .. //gi")
-
-		GENES_PANEL_SNPs_VARIANT_NUMBER=$(grep "^SN	.*	number of SNPs" $BCFTOOLS_STATS | awk -F"\t" '{print $4}')
-		GENES_PANEL_SNPs_VARIANT_LEGEND=$(grep "^#   number of SNPs   .." $BCFTOOLS_STATS | sed "s/^#   number of SNPs      .. //gi")
-
-		GENES_PANEL_MNPs_VARIANT_NUMBER=$(grep "^SN	.*	number of MNPs" $BCFTOOLS_STATS | awk -F"\t" '{print $4}')
-		GENES_PANEL_MNPs_VARIANT_LEGEND=$(grep "^#   number of MNPs   .." $BCFTOOLS_STATS | sed "s/^#   number of MNPs      .. //gi")
-
-		GENES_PANEL_indels_VARIANT_NUMBER=$(grep "^SN	.*	number of indels" $BCFTOOLS_STATS | awk -F"\t" '{print $4}')
-		GENES_PANEL_indels_VARIANT_LEGEND=$(grep "^#   number of indels   .." $BCFTOOLS_STATS | sed "s/^#   number of indels    .. //gi")
-
-		GENES_PANEL_others_VARIANT_NUMBER=$(grep "^SN	.*	number of others" $BCFTOOLS_STATS | awk -F"\t" '{print $4}')
-		GENES_PANEL_others_VARIANT_LEGEND=$(grep "^#   number of others   .." $BCFTOOLS_STATS -A1 | sed "s/^#   number of others    .. //gi" | sed "s/^#                          //gi"  )
-
-
-
-		#GENE_PANEL_NAME_HTML="$GENES_PANEL"
-
-		# BREAK
-		(( $(echo "$GENES_PANEL_NUM >= 2" | bc -l) )) && GENES_PANEL_BREAK=$PAGE_BREAK_BEFORE || GENES_PANEL_BREAK=""
-
-		echo '
-
-			<h3 class="mbr-section-subtitle mbr-fonts-style display-5" '$GENES_PANEL_BREAK'>
-			<br>
-				'$GENE_PANEL_NAME_HTML'
-			</h3>
-
-			<div class="container pt-4 mt-2">
-				<div class="media-container-row">
-
-					<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
-						<div class="panel-item">
-							<div class="card-img pb-3">
-								<span class="mbr-iconfont mbri-info"></span>
-							</div>
-
-							<div class="card-text">
-								<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
-									'$GENES_PANEL_GENES_NUMBER_HTML'
-								</h3>
-								<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
-									'$GENE_PANEL_TYPE_HTML'
-								</h4>
-								<p class="mbr-content-text mbr-fonts-style display-7">
-									'$GENES_PANEL_BASES_NUMBER_HTML' bases
-									<br>
-									'$GENES_PANEL_REGIONS_NUMBER_HTML' Regions
-
-								</p>
-							</div>
-						</div>
-					</div>
-
-					<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
-						<div class="panel-item">
-							<div class="card-img pb-3">
-								<span class="mbr-iconfont mbri-info"></span>
-							</div>
-
-							<div class="card-text">
-								<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
-									'$GENES_PANEL_TOTAL_VARIANT_NUMBER'
-								</h3>
-								<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
-									Total
-									<br>
-									Variants
-								</h4>
-								<p class="mbr-content-text mbr-fonts-style display-7">
-									'$GENES_PANEL_TOTAL_VARIANT_LEGEND'
-								</p>
-							</div>
-						</div>
-					</div>
-
-					<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
-						<div class="panel-item">
-							<div class="card-img pb-3">
-								<span class="mbr-iconfont mbri-info"></span>
-							</div>
-
-							<div class="card-texts">
-								 <h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
-									'$GENES_PANEL_SNPs_VARIANT_NUMBER'
-								</h3>
-								<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
-									SNV
-									<br>
-									Variants
-								</h4>
-								<p class="mbr-content-text mbr-fonts-style display-7">
-									'$GENES_PANEL_SNPs_VARIANT_LEGEND'
-								</p>
-							</div>
-						</div>
-					</div>
-
-					<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
-						<div class="panel-item">
-							<div class="card-img pb-3">
-								<span class="mbr-iconfont mbri-info"></span>
-							</div>
-
-							<div class="card-texts">
-								 <h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
-									'$GENES_PANEL_MNPs_VARIANT_NUMBER'
-								</h3>
-								<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
-									MNP
-									<br>
-									Variants
-								</h4>
-								<p class="mbr-content-text mbr-fonts-style display-7">
-									'$GENES_PANEL_MNPs_VARIANT_LEGEND'
-								</p>
-							</div>
-						</div>
-					</div>
-
-
-					<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
-						<div class="panel-item">
-							<div class="card-img pb-3">
-								<span class="mbr-iconfont mbri-info"></span>
-							</div>
-
-							<div class="card-texts">
-								 <h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
-									'$GENES_PANEL_indels_VARIANT_NUMBER'
-								</h3>
-								<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
-									Indel
-									<br>
-									Variants
-								</h4>
-								<p class="mbr-content-text mbr-fonts-style display-7">
-									'$GENES_PANEL_indels_VARIANT_LEGEND'
-								</p>
-							</div>
-						</div>
-					</div>
-
-
-					<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
-						<div class="panel-item">
-							<div class="card-img pb-3">
-								<span class="mbr-iconfont mbri-info"></span>
-							</div>
-
-							<div class="card-texts">
-								 <h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
-									'$GENES_PANEL_others_VARIANT_NUMBER'
-								</h3>
-								<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
-									Other
-									<br>
-									Variants
-								</h4>
-								<p class="mbr-content-text mbr-fonts-style display-7">
-									'$GENES_PANEL_others_VARIANT_LEGEND'
-								</p>
-							</div>
-						</div>
-					</div>
-
-					</div>
-				</div>
-			</div>
-
-		' >> $HTMLFILE_VARIANTS_STATS_GENES_PANEL
-
-	fi;
-
-done;
-
-
-# PLAN
-echo '<a class="btn btn-primary-outline display-4" href="#'$SECTION_ID'">'$SECTION_NAME'</a>' >> $HTMLFILE_PLAN_LINKS
-
-echo '
+	echo '
 
 	<section class="counters1 counters cid-ru7OEH6r7i" id="'$SECTION_ID'" '$PAGE_BREAK_BEFORE'>
 	<br>
@@ -2664,21 +2383,419 @@ echo '
 			</h2>
 
 			<p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
-				Variant statistics generated with <strong>BCFTOOLS stats</strong> from '$PIPELINES_NUMBER' pipelines:
+				Coverage metrics generated with<strong>Picard CollectHsMetrics</strong>
 				<br>
-				'$(echo $ALIGNERS_CALLERS_ANNOTATORS | sed "s/ /<br>/gi")'
+				on BAM for validation
+				<br>
+				('$BAM_VALIDATION_TEXT_HTML').
+				<br>
+				Minimum depth <strong>'$MINIMUM_DEPTH'X</strong>,
+				Expected depth <strong>'$EXPECTED_DEPTH'X</strong>,
+				Sequencing coverage threshold <strong>'$(awk 'BEGIN{printf("%.1f\n",'$SEQUENCING_COVERAGE_THRESHOLD'*100)}')'%</strong>,
+				Minimum & Expected depth coverage threshold <strong>'$(awk 'BEGIN{printf("%.1f\n",'$DEPTH_COVERAGE_THRESHOLD'*100)}')'%</strong>
 			</p>
 
-			'"$(cat $HTMLFILE_VARIANTS_STATS_GENES_PANEL)"'
+			'"$(cat $HTMLFILE_COVERAGE_ALIGNERS)"'
 
 
 
-	   </div>
+		</div>
 	</section>
 
-' > $HTMLFILE_VARIANTS_STATS
+	' > $HTMLFILE_COVERAGE
+
+fi;
 
 
+
+if ((0)); then
+
+	# VARIANT CALLING
+	###################
+
+	(($VERBOSE)) && echo "#[INFO] VARIANT CALLING section"
+
+	HTMLFILE_CALLING=$HTMLFILE".calling"
+
+	SECTION_NAME="Variant Calling"
+	SECTION_ID="variant_calling"
+
+	ALIGNERS_NUMBER_HTML=$ALIGNERS_NUMBER" aligner"$( [ $ALIGNERS_NUMBER -gt 1 ] && echo "s" )
+	CALLERS_NUMBER_HTML=$CALLERS_NUMBER" caller"$( [ $CALLERS_NUMBER -gt 1 ] && echo "s" )
+
+
+	HTMLFILE_CALLING_PIPELINES=$HTMLFILE".calling.pipelines"
+
+	> $HTMLFILE_CALLING_PIPELINES
+
+	for PIPELINE in $PIPELINES; do
+
+		(($DEBUG)) && echo "PIPELINE: $PIPELINE";
+
+		ALIGNERS_CALLERS_HTML=$(echo $PIPELINE | cut -d. -f1,2 --output-delimiter=. | sed "s/\./<br>/gi")
+
+
+		# FILES
+		VCF="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$PIPELINE.vcf"
+		VCF_BCFTOOLS_STATS="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$PIPELINE.vcf.metrics/metrics.bcftools.stats"
+
+		if [ -s $VCF_BCFTOOLS_STATS ]; then
+
+			VARIANTS_PIPELINE_NUMBER=$(grep "number of records:" $VCF_BCFTOOLS_STATS | cut -f4)
+			if [ $VARIANT_NUMBER == "0" ]; then
+				VARIANTS_PIPELINE_PERCENT="0%"
+			else
+				VARIANTS_PIPELINE_PERCENT=$(awk 'BEGIN{printf("%.2f\n",('$VARIANTS_PIPELINE_NUMBER'/'$VARIANT_NUMBER')*100)}')"%"
+			fi;
+
+			echo '
+
+				<div class="card p-3 align-center">
+					<div class="wrap">
+						<div class="pie_progress progress1" role="progressbar" data-goal="'$VARIANTS_PIPELINE_PERCENT'">
+							<p class="pie_progress__number mbr-fonts-style display-5">'$VARIANTS_PIPELINE_NUMBER'</p>
+						</div>
+					</div>
+					<div class="mbr-crt-title pt-3">
+						<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+							'$VARIANTS_PIPELINE_NUMBER' variants
+						</h4>
+						<p class="mbr-content-text mbr-fonts-style display-7">
+							'$ALIGNERS_CALLERS_HTML'
+						</p>
+					</div>
+				</div>
+
+			' >> $HTMLFILE_CALLING_PIPELINES
+
+		fi;
+
+	done;
+
+	if in_array $SECTION_ID $SECTIONS || in_array ALL $SECTIONS ; then
+		(($DEBUG)) && echo "show section $SECTION_ID"
+
+		# PLAN
+		echo '<a class="btn btn-primary-outline display-4" href="#'$SECTION_ID'">'$SECTION_NAME'</a>' >> $HTMLFILE_PLAN_LINKS
+
+		echo '
+
+			<section class="progress-bars3 cid-ru7OEIGjX3" id="'$SECTION_ID'" '$PAGE_BREAK_BEFORE'>
+			<br>
+				<div class="container">
+					<h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">
+						'$SECTION_NAME'
+					</h2>
+
+					<p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
+					<strong>'$VARIANT_NUMBER' Variants</strong> were identified with '$ALIGNERS_NUMBER_HTML' and '$CALLERS_NUMBER_HTML'
+					</p>
+
+					<div class="media-container-row pt-2 mt-2">
+
+					'"$(cat $HTMLFILE_CALLING_PIPELINES)"'
+
+					</div>
+				</div>
+			</section>
+
+		' > $HTMLFILE_CALLING
+
+	fi;
+
+fi;
+
+
+
+if ((1)); then
+
+	# VARIANT CALLING STATS
+	###################
+
+	(($VERBOSE)) && echo "#[INFO] VARIANT CALLING STATS section"
+
+	HTMLFILE_VARIANTS_STATS=$HTMLFILE".variants.stats"
+
+	SECTION_NAME="Variants Report"
+	SECTION_ID="variant_stats"
+
+
+	HTMLFILE_VARIANTS_STATS_GENES_PANEL=$HTMLFILE".variants.genes_panel"
+	> $HTMLFILE_VARIANTS_STATS_GENES_PANEL
+
+
+	# FILES
+	#LIST_GENES_PANEL="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.list.genes"
+	#TARGET_DESIGN_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.design.bed"
+	TARGET_DESIGN_NAME="$SAMPLE.$ALIGNER.design.bed"
+
+
+	GENES_PANEL_NUM=0
+
+	#for GENES_PANEL in "Target Design" $(cat $LIST_GENES_PANEL); do # $LIST_GENES_PANEL_BASENAME
+	for GENES_PANEL in "Target Design" $(cat $LIST_GENES_PANEL_BASENAME); do # $LIST_GENES_PANEL_BASENAME
+
+		((GENES_PANEL_NUM++))
+
+		if [ "$GENES_PANEL" == "Target Design" ]; then
+			GENES_PANEL_NAME="Target Design"
+			GENE_PANEL_NAME_HTML="$GENES_PANEL_NAME"
+			GENE_PANEL_TYPE_HTML="Target<br>Regions"
+			GENE_PANEL_TYPE_NAME_HTML="Region"
+			GENES_PANEL_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.bed"
+		else
+			GENES_PANEL_NAME=$(echo $GENES_PANEL | sed "s/^$SAMPLE.//" | sed "s/.genes$//")
+			GENE_PANEL_NAME_HTML="Gene Panel<br>$GENES_PANEL_NAME"
+			GENE_PANEL_TYPE_HTML="Gene<br>Panel"
+			GENE_PANEL_TYPE_NAME_HTML="Gene"
+			GENES_PANEL_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$GENES_PANEL"
+		fi;
+
+
+		# FILES
+		#GENES_PANEL_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$GENES_PANEL"
+
+		# FILES
+		BCFTOOLS_STATS=""
+		if [ "$GENES_PANEL" == "Target Design" ]; then
+			BCFTOOLS_STATS=$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.bcftools.stats
+		else
+			#ls $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics*$GENES_PANEL*.bcftools.stats
+			BCFTOOLS_STATS=$(ls $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics*$GENES_PANEL*.bcftools.stats 2>/dev/null)
+		fi;
+
+		if [ "$BCFTOOLS_STATS" != "" ] && [ -s $BCFTOOLS_STATS ]; then
+
+			# GENES PANEL INFO
+			GENES_PANEL_GENES_NUMBER=$(cat $GENES_PANEL_FILE | grep -v "^#" | grep -v "^@" | cut -f4 | sort -u | wc -l)
+			GENES_PANEL_GENES_NUMBER_HTML=$(echo $GENES_PANEL_GENES_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
+
+			GENES_PANEL_REGIONS_NUMBER=$(cat $GENES_PANEL_FILE | grep -v "^#" | grep -v "^@" | wc -l)
+			GENES_PANEL_REGIONS_NUMBER_HTML=$(echo $GENES_PANEL_REGIONS_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
+			[ "$GENES_PANEL" == "Target Design" ] && GENES_PANEL_GENES_NUMBER=$GENES_PANEL_REGIONS_NUMBER && GENES_PANEL_GENES_NUMBER_HTML=$GENES_PANEL_REGIONS_NUMBER_HTML
+
+
+			#GENES_PANEL_BASES_NUMBER=$(cd $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/; $BEDTOOLS merge -i $GENES_PANEL_FILE > $REPORTDIR/merge_genes.bed; $BEDTOOLS coverage -a $REPORTDIR/merge_genes.bed  -b $REPORTDIR/merge_genes.bed | awk -F '\t' '{sum += $6} END {print sum}'; rm $REPORTDIR/merge_genes.bed; )
+			GENES_PANEL_BASES_NUMBER=$($BEDTOOLS sort -i $GENES_PANEL_FILE | $BEDTOOLS merge -i - > $REPORTDIR/merge_genes.bed; $BEDTOOLS coverage -a $REPORTDIR/merge_genes.bed  -b $REPORTDIR/merge_genes.bed | awk -F '\t' 'BEGIN{sum = 0} {sum += $6} END {print sum}'; rm $REPORTDIR/merge_genes.bed; )
+			#GENES_PANEL_BASES_NUMBER=$(cat $GENES_PANEL_FILE | grep -v "^#" | grep -v "^@" | awk '{for(i=$2;i<$3;i++) print $1"\t"i}' | sort -u | wc -l)
+			GENES_PANEL_BASES_NUMBER_HTML=$(echo $GENES_PANEL_BASES_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
+
+			#GENES_PANEL_ALIGNER=$ALIGNER
+			#GENES_PANEL_ALIGNER_HTML=$GENES_PANEL_ALIGNER
+
+			#echo "GENES_PANEL: "$GENES_PANEL
+			#echo "BCFTOOLS_STATS: "$BCFTOOLS_STATS
+
+
+			GENES_PANEL_TOTAL_VARIANT_NUMBER=$(grep "^SN	.*	number of records" $BCFTOOLS_STATS | awk -F"\t" '{print $4}')
+			GENES_PANEL_TOTAL_VARIANT_LEGEND=$(grep "^#   number of records   .." $BCFTOOLS_STATS | sed "s/^#   number of records   .. //gi")
+
+			GENES_PANEL_SNPs_VARIANT_NUMBER=$(grep "^SN	.*	number of SNPs" $BCFTOOLS_STATS | awk -F"\t" '{print $4}')
+			GENES_PANEL_SNPs_VARIANT_LEGEND=$(grep "^#   number of SNPs   .." $BCFTOOLS_STATS | sed "s/^#   number of SNPs      .. //gi")
+
+			GENES_PANEL_MNPs_VARIANT_NUMBER=$(grep "^SN	.*	number of MNPs" $BCFTOOLS_STATS | awk -F"\t" '{print $4}')
+			GENES_PANEL_MNPs_VARIANT_LEGEND=$(grep "^#   number of MNPs   .." $BCFTOOLS_STATS | sed "s/^#   number of MNPs      .. //gi")
+
+			GENES_PANEL_indels_VARIANT_NUMBER=$(grep "^SN	.*	number of indels" $BCFTOOLS_STATS | awk -F"\t" '{print $4}')
+			GENES_PANEL_indels_VARIANT_LEGEND=$(grep "^#   number of indels   .." $BCFTOOLS_STATS | sed "s/^#   number of indels    .. //gi")
+
+			GENES_PANEL_others_VARIANT_NUMBER=$(grep "^SN	.*	number of others" $BCFTOOLS_STATS | awk -F"\t" '{print $4}')
+			GENES_PANEL_others_VARIANT_LEGEND=$(grep "^#   number of others   .." $BCFTOOLS_STATS -A1 | sed "s/^#   number of others    .. //gi" | sed "s/^#                          //gi"  )
+
+
+
+			#GENE_PANEL_NAME_HTML="$GENES_PANEL"
+
+			# BREAK
+			(( $(echo "$GENES_PANEL_NUM >= 2" | bc -l) )) && GENES_PANEL_BREAK=$PAGE_BREAK_BEFORE || GENES_PANEL_BREAK=""
+
+			echo '
+
+				<h3 class="mbr-section-subtitle mbr-fonts-style display-5" '$GENES_PANEL_BREAK'>
+				<br>
+					'$GENE_PANEL_NAME_HTML'
+				</h3>
+
+				<div class="container pt-4 mt-2">
+					<div class="media-container-row">
+
+						<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+							<div class="panel-item">
+								<div class="card-img pb-3">
+									<span class="mbr-iconfont mbri-info"></span>
+								</div>
+
+								<div class="card-text">
+									<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+										'$GENES_PANEL_GENES_NUMBER_HTML'
+									</h3>
+									<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+										'$GENE_PANEL_TYPE_HTML'
+									</h4>
+									<p class="mbr-content-text mbr-fonts-style display-7">
+										'$GENES_PANEL_BASES_NUMBER_HTML' bases
+										<br>
+										'$GENES_PANEL_REGIONS_NUMBER_HTML' Regions
+
+									</p>
+								</div>
+							</div>
+						</div>
+
+						<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+							<div class="panel-item">
+								<div class="card-img pb-3">
+									<span class="mbr-iconfont mbri-info"></span>
+								</div>
+
+								<div class="card-text">
+									<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+										'$GENES_PANEL_TOTAL_VARIANT_NUMBER'
+									</h3>
+									<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+										Total
+										<br>
+										Variants
+									</h4>
+									<p class="mbr-content-text mbr-fonts-style display-7">
+										'$GENES_PANEL_TOTAL_VARIANT_LEGEND'
+									</p>
+								</div>
+							</div>
+						</div>
+
+						<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+							<div class="panel-item">
+								<div class="card-img pb-3">
+									<span class="mbr-iconfont mbri-info"></span>
+								</div>
+
+								<div class="card-texts">
+									<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+										'$GENES_PANEL_SNPs_VARIANT_NUMBER'
+									</h3>
+									<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+										SNV
+										<br>
+										Variants
+									</h4>
+									<p class="mbr-content-text mbr-fonts-style display-7">
+										'$GENES_PANEL_SNPs_VARIANT_LEGEND'
+									</p>
+								</div>
+							</div>
+						</div>
+
+						<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+							<div class="panel-item">
+								<div class="card-img pb-3">
+									<span class="mbr-iconfont mbri-info"></span>
+								</div>
+
+								<div class="card-texts">
+									<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+										'$GENES_PANEL_MNPs_VARIANT_NUMBER'
+									</h3>
+									<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+										MNP
+										<br>
+										Variants
+									</h4>
+									<p class="mbr-content-text mbr-fonts-style display-7">
+										'$GENES_PANEL_MNPs_VARIANT_LEGEND'
+									</p>
+								</div>
+							</div>
+						</div>
+
+
+						<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+							<div class="panel-item">
+								<div class="card-img pb-3">
+									<span class="mbr-iconfont mbri-info"></span>
+								</div>
+
+								<div class="card-texts">
+									<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+										'$GENES_PANEL_indels_VARIANT_NUMBER'
+									</h3>
+									<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+										Indel
+										<br>
+										Variants
+									</h4>
+									<p class="mbr-content-text mbr-fonts-style display-7">
+										'$GENES_PANEL_indels_VARIANT_LEGEND'
+									</p>
+								</div>
+							</div>
+						</div>
+
+
+						<div class="card p-3 align-center col-12 col-md-6 col-lg-2">
+							<div class="panel-item">
+								<div class="card-img pb-3">
+									<span class="mbr-iconfont mbri-info"></span>
+								</div>
+
+								<div class="card-texts">
+									<h3 class=" pt-3 pb-3 mbr-fonts-style display-2">
+										'$GENES_PANEL_others_VARIANT_NUMBER'
+									</h3>
+									<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">
+										Other
+										<br>
+										Variants
+									</h4>
+									<p class="mbr-content-text mbr-fonts-style display-7">
+										'$GENES_PANEL_others_VARIANT_LEGEND'
+									</p>
+								</div>
+							</div>
+						</div>
+
+						</div>
+					</div>
+				</div>
+
+			' >> $HTMLFILE_VARIANTS_STATS_GENES_PANEL
+
+		fi;
+
+	done;
+
+	if in_array $SECTION_ID $SECTIONS || in_array ALL $SECTIONS ; then
+		(($DEBUG)) && echo "show section $SECTION_ID"
+
+		# PLAN
+		echo '<a class="btn btn-primary-outline display-4" href="#'$SECTION_ID'">'$SECTION_NAME'</a>' >> $HTMLFILE_PLAN_LINKS
+
+		echo '
+
+			<section class="counters1 counters cid-ru7OEH6r7i" id="'$SECTION_ID'" '$PAGE_BREAK_BEFORE'>
+			<br>
+
+				<div class="container">
+					<h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">
+						'$SECTION_NAME'
+					</h2>
+
+					<p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
+						Variant statistics generated with <strong>BCFTOOLS stats</strong> from '$PIPELINES_NUMBER' pipelines:
+						<br>
+						'$(echo $ALIGNERS_CALLERS_ANNOTATORS | sed "s/ /<br>/gi")'
+					</p>
+
+					'"$(cat $HTMLFILE_VARIANTS_STATS_GENES_PANEL)"'
+
+
+
+			</div>
+			</section>
+
+		' > $HTMLFILE_VARIANTS_STATS
+
+	fi;
 
 
 fi;
@@ -2709,6 +2826,35 @@ echo '
     </div>
 </section>
 ' > $HTMLFILE_PLAN
+
+
+
+
+echo '
+<section class="mbr-section content8 cid-ruitEAjBmu" id="content8-1z">
+    <div class="container">
+        <div class="media-container-row title">
+            <div class="col-12 col-md-40">
+                <div class="mbr-section-btn align-center">
+				<a class="btn btn-primary-outline display-4" href="'$(basename $HTMLFILE)'">Report</a></div>
+            </div>
+        </div>
+    </div>
+</section>
+' > $HTMLFILE_PLAN.report
+
+echo '
+<section class="mbr-section content8 cid-ruitEAjBmu" id="content8-1z">
+    <div class="container">
+        <div class="media-container-row title">
+            <div class="col-12 col-md-40">
+                <div class="mbr-section-btn align-center">
+				<a class="btn btn-primary-outline display-4" href="'$(basename $HTMLFILE_ANNEX)'">Annex</a></div>
+            </div>
+        </div>
+    </div>
+</section>
+' > $HTMLFILE_PLAN.annex
 
 
 
@@ -3074,7 +3220,7 @@ for ALIGNER in $ALIGNERS; do
 			if (( $GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_NB_LINES > $TABLE_LIMIT )); then
 				GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML=$TABLE_LIMIT_MSG_HTML
 			else
-				GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML=$(cat $GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE | tr "," " " | sed 's/#Gene/'$GENE_PANEL_TYPE_TABLE'/g' | $STARK_FOLDER_BIN/csv_to_html.awk -v limit_string=$LIMIT_STRING -v special_value_color="$SPECIAL_VALUE_COLOR" -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
+				GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML=$(cat $GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE | tr "," " " | sed 's/%Coverage/%Cov/g' | sed 's/#Gene/'$GENE_PANEL_TYPE_TABLE'/g' | $STARK_FOLDER_BIN/csv_to_html.awk -v limit_string=$LIMIT_STRING -v special_value_color="$SPECIAL_VALUE_COLOR" -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
 			fi;
 
 			# GENES_PANEL_HSMETRICS_PER_TARGET_GENES_REPORT_COVERAGE
@@ -3082,7 +3228,7 @@ for ALIGNER in $ALIGNERS; do
 			if (( $GENES_PANEL_HSMETRICS_PER_TARGET_GENES_REPORT_COVERAGE_NB_LINES > $TABLE_LIMIT )); then
 				GENES_PANEL_HSMETRICS_PER_TARGET_GENES_REPORT_COVERAGE_HTML=$TABLE_LIMIT_MSG_HTML
 			else
-				GENES_PANEL_HSMETRICS_PER_TARGET_GENES_REPORT_COVERAGE_HTML=$(cat $GENES_PANEL_HSMETRICS_PER_TARGET_GENES_REPORT_COVERAGE | tr "," " "  | sed 's/#Gene/'$GENE_PANEL_TYPE_TABLE'/g' | $STARK_FOLDER_BIN/csv_to_html.awk -v limit_string=$LIMIT_STRING -v special_value_color="$SPECIAL_VALUE_COLOR" -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
+				GENES_PANEL_HSMETRICS_PER_TARGET_GENES_REPORT_COVERAGE_HTML=$(cat $GENES_PANEL_HSMETRICS_PER_TARGET_GENES_REPORT_COVERAGE | tr "," " " | sed 's/%Coverage/%Cov/g' | sed 's/#Gene/'$GENE_PANEL_TYPE_TABLE'/g' | $STARK_FOLDER_BIN/csv_to_html.awk -v limit_string=$LIMIT_STRING -v special_value_color="$SPECIAL_VALUE_COLOR" -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
 			fi;
 
 
@@ -3476,160 +3622,171 @@ done;
 SECTION_NAME="Global Coverage"
 SECTION_ID="annex_coverage"
 
-# PLAN
-echo '<a class="btn btn-primary-outline display-4" href="#'$SECTION_ID'">'$SECTION_NAME'</a>' >> $HTMLFILE_ANNEX_PLAN_LINKS
+if in_array $SECTION_ID $SECTIONS || in_array ALL $SECTIONS ; then
+	(($DEBUG)) && echo "show section $SECTION_ID"
 
-echo '
+	# PLAN
+	echo '<a class="btn btn-primary-outline display-4" href="#'$SECTION_ID'">'$SECTION_NAME'</a>' >> $HTMLFILE_ANNEX_PLAN_LINKS
 
-	<section class="cid-ruiBoanIwc" id="'$SECTION_ID'" '$PAGE_BREAK_BEFORE'>
-	<br>
+	echo '
 
-	    <div class="container">
-	        <h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">
-	            '$SECTION_NAME'
-			</h2>
+		<section class="cid-ruiBoanIwc" id="'$SECTION_ID'" '$PAGE_BREAK_BEFORE'>
+		<br>
 
-			<p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
-				Statistics generated with <strong>Samtools</strong>
-				<br>
-				on Full BAM and BAM for validation ('$BAM_VALIDATION_TEXT_HTML').
-				<br>
-				<br>
-				Coverage generated with <strong>Samtools mpileup</strong>
-				<br>
-				on BAM for validation ('$BAM_VALIDATION_TEXT_HTML').
-			</p>
+			<div class="container">
+				<h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">
+					'$SECTION_NAME'
+				</h2>
 
-			<section class="mbr-section content8 cid-ruitEAjBmu" id="content8-1z">
-			    <div class="container">
-			        <div class="media-container-row title">
-			            <div class="col-12 col-md-40">
-			                <div class="mbr-section-btn align-center">
-							'$(cat $HTMLFILE_ANNEX_PLAN_LINKS_COVERAGE)'
-			            </div>
-			        </div>
-			    </div>
-			</section>
+				<p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
+					Statistics generated with <strong>Samtools</strong>
+					<br>
+					on Full BAM and BAM for validation ('$BAM_VALIDATION_TEXT_HTML').
+					<br>
+					<br>
+					Coverage generated with <strong>Samtools mpileup</strong>
+					<br>
+					on BAM for validation ('$BAM_VALIDATION_TEXT_HTML').
+				</p>
 
-			'"$(cat $HTMLFILE_ANNEX_GENES_PANEL_COVERAGE)"'
+				<section class="mbr-section content8 cid-ruitEAjBmu" id="content8-1z">
+					<div class="container">
+						<div class="media-container-row title">
+							<div class="col-12 col-md-40">
+								<div class="mbr-section-btn align-center">
+								'$(cat $HTMLFILE_ANNEX_PLAN_LINKS_COVERAGE)'
+							</div>
+						</div>
+					</div>
+				</section>
+
+				'"$(cat $HTMLFILE_ANNEX_GENES_PANEL_COVERAGE)"'
 
 
 
-	   </div>
-	</section>
+		</div>
+		</section>
 
-' > $HTMLFILE_ANNEX_COVERAGE
+	' > $HTMLFILE_ANNEX_COVERAGE
 
+fi;
 
 
 
 SECTION_NAME="Targets & Genes Depth"
 SECTION_ID="annex_depth"
 
-# PLAN
-echo '<a class="btn btn-primary-outline display-4" href="#'$SECTION_ID'">'$SECTION_NAME'</a>' >> $HTMLFILE_ANNEX_PLAN_LINKS
+if in_array $SECTION_ID $SECTIONS || in_array ALL $SECTIONS ; then
+		(($DEBUG)) && echo "show section $SECTION_ID"
 
-echo '
+	# PLAN
+	echo '<a class="btn btn-primary-outline display-4" href="#'$SECTION_ID'">'$SECTION_NAME'</a>' >> $HTMLFILE_ANNEX_PLAN_LINKS
 
-	<section class="cid-ruiBoanIwc" id="'$SECTION_ID'" '$PAGE_BREAK_BEFORE'>
-	<br>
+	echo '
 
-	    <div class="container">
-	        <h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">
-	            '$SECTION_NAME'
-			</h2>
+		<section class="cid-ruiBoanIwc" id="'$SECTION_ID'" '$PAGE_BREAK_BEFORE'>
+		<br>
 
-			<p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
-				Depth generated with <strong>Samtools mpileup</strong> and <strong>Picard CollectHsMetrics</strong>
-				'$AMPLICON_TEXT_HTML'
-				<br>
-				on BAM for validation
-				<br>
-				('$BAM_VALIDATION_TEXT_HTML').
-				<br>
-				Minimum depth <strong>'$MINIMUM_DEPTH'X</strong>,
-				Expected depth <strong>'$EXPECTED_DEPTH'X</strong>
-				<br>
-				[Tables limited to '$TABLE_LIMIT' entries]
-			</p>
+			<div class="container">
+				<h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">
+					'$SECTION_NAME'
+				</h2>
 
-			<section class="mbr-section content8 cid-ruitEAjBmu" id="content8-1z">
-				<div class="container">
-					<div class="media-container-row title">
-						<div class="col-12 col-md-40">
-							<div class="mbr-section-btn align-center">
-							'$(cat $HTMLFILE_ANNEX_PLAN_LINKS_DEPTH)'
+				<p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
+					Depth generated with <strong>Samtools mpileup</strong> and <strong>Picard CollectHsMetrics</strong>
+					'$AMPLICON_TEXT_HTML'
+					<br>
+					on BAM for validation
+					<br>
+					('$BAM_VALIDATION_TEXT_HTML').
+					<br>
+					Minimum depth <strong>'$MINIMUM_DEPTH'X</strong>,
+					Expected depth <strong>'$EXPECTED_DEPTH'X</strong>
+					<br>
+					[Tables limited to '$TABLE_LIMIT' entries]
+				</p>
+
+				<section class="mbr-section content8 cid-ruitEAjBmu" id="content8-1z">
+					<div class="container">
+						<div class="media-container-row title">
+							<div class="col-12 col-md-40">
+								<div class="mbr-section-btn align-center">
+								'$(cat $HTMLFILE_ANNEX_PLAN_LINKS_DEPTH)'
+							</div>
 						</div>
 					</div>
-				</div>
-			</section>
+				</section>
 
-			'"$(cat $HTMLFILE_ANNEX_GENES_PANEL_DEPTH)"'
-
+				'"$(cat $HTMLFILE_ANNEX_GENES_PANEL_DEPTH)"'
 
 
-	   </div>
-	</section>
 
-' > $HTMLFILE_ANNEX_DEPTH
+		</div>
+		</section>
 
+	' > $HTMLFILE_ANNEX_DEPTH
+
+fi;
 
 
 SECTION_NAME="Targets & Genes Coverage"
 SECTION_ID="annex_genes_coverage"
 
-# PLAN
-echo '<a class="btn btn-primary-outline display-4" href="#'$SECTION_ID'">'$SECTION_NAME'</a>' >> $HTMLFILE_ANNEX_PLAN_LINKS
+if in_array $SECTION_ID $SECTIONS || in_array ALL $SECTIONS ; then
+	(($DEBUG)) && echo "show section $SECTION_ID"
 
-echo '
+	# PLAN
+	echo '<a class="btn btn-primary-outline display-4" href="#'$SECTION_ID'">'$SECTION_NAME'</a>' >> $HTMLFILE_ANNEX_PLAN_LINKS
 
-	<section class="cid-ruiBoanIwc" id="'$SECTION_ID'" '$PAGE_BREAK_BEFORE'>
-	<br>
+	echo '
 
-	    <div class="container">
-	        <h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">
-	            '$SECTION_NAME'
-			</h2>
+		<section class="cid-ruiBoanIwc" id="'$SECTION_ID'" '$PAGE_BREAK_BEFORE'>
+		<br>
 
-			<p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
-				Coverage generated with <strong>Samtools mpileup</strong>
-				<br>
-				on BAM for validation ('$BAM_VALIDATION_TEXT_HTML').
-				<br>
-				Genes flagged depending on Depth and Coverage thresholds:
-				<br>
-				Minimum depth <strong>'$MINIMUM_DEPTH'X</strong>,
-				Expected depth <strong>'$EXPECTED_DEPTH'X</strong>,
-				Sequencing coverage threshold <strong>'$(awk 'BEGIN{printf("%.1f\n",'$SEQUENCING_COVERAGE_THRESHOLD'*100)}')'%</strong>,
-				Minimum & Expected depth coverage threshold <strong>'$(awk 'BEGIN{printf("%.1f\n",'$DEPTH_COVERAGE_THRESHOLD'*100)}')'%</strong>
-				<br>
-				[Tables limited to '$TABLE_LIMIT' entries]
-			</p>
+			<div class="container">
+				<h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">
+					'$SECTION_NAME'
+				</h2>
 
-			<section class="mbr-section content8 cid-ruitEAjBmu" id="content8-1z">
-				<div class="container">
-					<div class="media-container-row title">
-						<div class="col-12 col-md-40">
-							<div class="mbr-section-btn align-center">
-							'$(cat $HTMLFILE_ANNEX_PLAN_LINKS_GENES_COVERAGE)'
+				<p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
+					Coverage generated with <strong>Samtools mpileup</strong>
+					<br>
+					on BAM for validation ('$BAM_VALIDATION_TEXT_HTML').
+					<br>
+					Genes flagged depending on Depth and Coverage thresholds:
+					<br>
+					Minimum depth <strong>'$MINIMUM_DEPTH'X</strong>,
+					Expected depth <strong>'$EXPECTED_DEPTH'X</strong>,
+					Sequencing coverage threshold <strong>'$(awk 'BEGIN{printf("%.1f\n",'$SEQUENCING_COVERAGE_THRESHOLD'*100)}')'%</strong>,
+					Minimum & Expected depth coverage threshold <strong>'$(awk 'BEGIN{printf("%.1f\n",'$DEPTH_COVERAGE_THRESHOLD'*100)}')'%</strong>
+					<br>
+					[Tables limited to '$TABLE_LIMIT' entries]
+				</p>
+
+				<section class="mbr-section content8 cid-ruitEAjBmu" id="content8-1z">
+					<div class="container">
+						<div class="media-container-row title">
+							<div class="col-12 col-md-40">
+								<div class="mbr-section-btn align-center">
+								'$(cat $HTMLFILE_ANNEX_PLAN_LINKS_GENES_COVERAGE)'
+							</div>
 						</div>
 					</div>
-				</div>
-			</section>
+				</section>
 
-			'"$(cat $HTMLFILE_ANNEX_GENES_PANEL_GENES_COVERAGE)"'
-
+				'"$(cat $HTMLFILE_ANNEX_GENES_PANEL_GENES_COVERAGE)"'
 
 
 
 
-	   </div>
-	</section>
 
-' > $HTMLFILE_ANNEX_GENES_COVERAGE
+		</div>
+		</section>
+
+	' > $HTMLFILE_ANNEX_GENES_COVERAGE
 
 #'"$(cat $HTMLFILE_ANNEX_GENES_PANEL_FLAGS)"'
-
+fi;
 
 
 # REPORT GENES VARIANTS
@@ -3920,95 +4077,102 @@ GENES_PANEL_NUM=0
 SECTION_NAME="Variants Report"
 SECTION_ID="annex_variants"
 
-# PLAN
-echo '<a class="btn btn-primary-outline display-4" href="#'$SECTION_ID'">'$SECTION_NAME'</a>' >> $HTMLFILE_ANNEX_PLAN_LINKS
+if in_array $SECTION_ID $SECTIONS || in_array ALL $SECTIONS ; then
+		(($DEBUG)) && echo "show section $SECTION_ID"
 
-echo '
+	# PLAN
+	echo '<a class="btn btn-primary-outline display-4" href="#'$SECTION_ID'">'$SECTION_NAME'</a>' >> $HTMLFILE_ANNEX_PLAN_LINKS
 
-	<section class="cid-ruiBoanIwc" id="'$SECTION_ID'" '$PAGE_BREAK_BEFORE'>
-	<br>
+	echo '
 
-	    <div class="container">
-	        <h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">
-	            '$SECTION_NAME'
-			</h2>
+		<section class="cid-ruiBoanIwc" id="'$SECTION_ID'" '$PAGE_BREAK_BEFORE'>
+		<br>
 
-			<p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
-				Variant calling from '$PIPELINES_NUMBER' pipelines:
-				<br>
-				'$(echo $ALIGNERS_CALLERS_ANNOTATORS | sed "s/ /<br>/gi")'
-				<br>
+			<div class="container">
+				<h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">
+					'$SECTION_NAME'
+				</h2>
 
-			</p>
+				<p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
+					Variant calling from '$PIPELINES_NUMBER' pipelines:
+					<br>
+					'$(echo $ALIGNERS_CALLERS_ANNOTATORS | sed "s/ /<br>/gi")'
+					<br>
 
-			<section class="mbr-section content8 cid-ruitEAjBmu" id="content8-1z">
-			    <div class="container">
-			        <div class="media-container-row title">
-			            <div class="col-12 col-md-40">
-			                <div class="mbr-section-btn align-center">
-							'$(cat $HTMLFILE_ANNEX_PLAN_LINKS_VARIANTS)'
-			            </div>
-			        </div>
-			    </div>
-			</section>
+				</p>
 
-			'"$(cat $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS)"'
+				<section class="mbr-section content8 cid-ruitEAjBmu" id="content8-1z">
+					<div class="container">
+						<div class="media-container-row title">
+							<div class="col-12 col-md-40">
+								<div class="mbr-section-btn align-center">
+								'$(cat $HTMLFILE_ANNEX_PLAN_LINKS_VARIANTS)'
+							</div>
+						</div>
+					</div>
+				</section>
+
+				'"$(cat $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS)"'
 
 
 
-	   </div>
-	</section>
+		</div>
+		</section>
 
-' > $HTMLFILE_ANNEX_VARIANTS
+	' > $HTMLFILE_ANNEX_VARIANTS
 
+fi;
 
 
 
 SECTION_NAME="Annotations Report"
 SECTION_ID="annex_annotations"
 
-# PLAN
-echo '<a class="btn btn-primary-outline display-4" href="#'$SECTION_ID'">'$SECTION_NAME'</a>' >> $HTMLFILE_ANNEX_PLAN_LINKS
+if in_array $SECTION_ID $SECTIONS || in_array ALL $SECTIONS ; then
+	(($DEBUG)) && echo "show section $SECTION_ID"
 
-echo '
+	# PLAN
+	echo '<a class="btn btn-primary-outline display-4" href="#'$SECTION_ID'">'$SECTION_NAME'</a>' >> $HTMLFILE_ANNEX_PLAN_LINKS
 
-	<section class="cid-ruiBoanIwc" id="'$SECTION_ID'" '$PAGE_BREAK_BEFORE'>
-	<br>
+	echo '
 
-	    <div class="container">
-	        <h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">
-	            '$SECTION_NAME'
-			</h2>
+		<section class="cid-ruiBoanIwc" id="'$SECTION_ID'" '$PAGE_BREAK_BEFORE'>
+		<br>
 
-			<p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
-				Annotations from '$PIPELINES_NUMBER' pipelines:
-				<br>
-				'$(echo $ALIGNERS_CALLERS_ANNOTATORS | sed "s/ /<br>/gi")'
-				<br>
+			<div class="container">
+				<h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">
+					'$SECTION_NAME'
+				</h2>
 
-			</p>
+				<p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
+					Annotations from '$PIPELINES_NUMBER' pipelines:
+					<br>
+					'$(echo $ALIGNERS_CALLERS_ANNOTATORS | sed "s/ /<br>/gi")'
+					<br>
 
-			<section class="mbr-section content8 cid-ruitEAjBmu" id="content8-1z">
-			    <div class="container">
-			        <div class="media-container-row title">
-			            <div class="col-12 col-md-40">
-			                <div class="mbr-section-btn align-center">
-							'$(cat $HTMLFILE_ANNEX_PLAN_LINKS_ANNOTATIONS)'
-			            </div>
-			        </div>
-			    </div>
-			</section>
+				</p>
 
-			'"$(cat $HTMLFILE_ANNEX_GENES_PANEL_ANNOTATIONS)"'
+				<section class="mbr-section content8 cid-ruitEAjBmu" id="content8-1z">
+					<div class="container">
+						<div class="media-container-row title">
+							<div class="col-12 col-md-40">
+								<div class="mbr-section-btn align-center">
+								'$(cat $HTMLFILE_ANNEX_PLAN_LINKS_ANNOTATIONS)'
+							</div>
+						</div>
+					</div>
+				</section>
 
-
-
-	   </div>
-	</section>
-
-' > $HTMLFILE_ANNEX_ANNOTATIONS
+				'"$(cat $HTMLFILE_ANNEX_GENES_PANEL_ANNOTATIONS)"'
 
 
+
+		</div>
+		</section>
+
+	' > $HTMLFILE_ANNEX_ANNOTATIONS
+
+fi;
 
 
 
@@ -4028,6 +4192,7 @@ echo '
         <div class="media-container-row title">
             <div class="col-12 col-md-40">
                 <div class="mbr-section-btn align-center">
+				<a class="btn btn-primary-outline display-4" href="'$(basename $HTMLFILE)'">Report</a>
 				'$(cat $HTMLFILE_ANNEX_PLAN_LINKS)'
             </div>
         </div>
@@ -4056,15 +4221,16 @@ HTMLFILE_BODY=$HTMLFILE".body"
 
 echo '
 
-	'"$(cat $HTMLFILE_TITLE)"'
-	'"$(cat $HTMLFILE_MAIN)"'
-	'"$(cat $HTMLFILE_PLAN)"'
-	'"$(cat $HTMLFILE_SUMMARY)"'
-	'"$(cat $HTMLFILE_SEQUENCING)"'
-	'"$(cat $HTMLFILE_DEPTH)"'
-	'"$(cat $HTMLFILE_COVERAGE)"'
-	'"$(cat $HTMLFILE_VARIANTS_STATS)"'
-	'"$(cat $HTMLFILE_SCRIPTS)"'
+	'"$(cat $HTMLFILE_TITLE 2>/dev/null)"'
+	'"$(cat $HTMLFILE_MAIN 2>/dev/null)"'
+	'"$(cat $HTMLFILE_PLAN 2>/dev/null)"'
+	'"$(cat $HTMLFILE_SUMMARY 2>/dev/null)"'
+	'"$(cat $HTMLFILE_SEQUENCING 2>/dev/null)"'
+	'"$(cat $HTMLFILE_DEPTH 2>/dev/null)"'
+	'"$(cat $HTMLFILE_COVERAGE 2>/dev/null)"'
+	'"$(cat $HTMLFILE_VARIANTS_STATS 2>/dev/null)"'
+	'"$(cat $HTMLFILE_PLAN.annex 2>/dev/null)"'
+	'"$(cat $HTMLFILE_SCRIPTS 2>/dev/null)"'
 ' > $HTMLFILE_BODY
 
 #'"$(cat $HTMLFILE_AMPLICON_CLIPPING)"'
@@ -4078,15 +4244,16 @@ HTMLFILE_ANNEX_BODY=$HTMLFILE_ANNEX".body"
 
 echo '
 
-	'"$(cat $HTMLFILE_TITLE)"'
-	'"$(cat $HTMLFILE_MAIN)"'
-	'"$(cat $HTMLFILE_ANNEX_PLAN)"'
-	'"$(cat $HTMLFILE_ANNEX_COVERAGE)"'
-	'"$(cat $HTMLFILE_ANNEX_DEPTH)"'
-	'"$(cat $HTMLFILE_ANNEX_GENES_COVERAGE)"'
-	'"$(cat $HTMLFILE_ANNEX_VARIANTS)"'
-	'"$(cat $HTMLFILE_ANNEX_ANNOTATIONS)"'
-	'"$(cat $HTMLFILE_SCRIPTS)"'
+	'"$(cat $HTMLFILE_TITLE 2>/dev/null)"'
+	'"$(cat $HTMLFILE_MAIN 2>/dev/null)"'
+	'"$(cat $HTMLFILE_ANNEX_PLAN 2>/dev/null)"'
+	'"$(cat $HTMLFILE_ANNEX_COVERAGE 2>/dev/null)"'
+	'"$(cat $HTMLFILE_ANNEX_DEPTH 2>/dev/null)"'
+	'"$(cat $HTMLFILE_ANNEX_GENES_COVERAGE 2>/dev/null)"'
+	'"$(cat $HTMLFILE_ANNEX_VARIANTS 2>/dev/null)"'
+	'"$(cat $HTMLFILE_ANNEX_ANNOTATIONS 2>/dev/null)"'
+	'"$(cat $HTMLFILE_PLAN.report 2>/dev/null)"'
+	'"$(cat $HTMLFILE_SCRIPTS 2>/dev/null)"'
 ' > $HTMLFILE_ANNEX_BODY
 
 #'"$(cat $HTMLFILE_ANNEX_AMPLICON)"'
@@ -4155,8 +4322,8 @@ echo -ne '
 
 
 
-(($DEBUG)) && cat $HTMLFILE
-(($DEBUG)) && cat $HTMLFILE_ANNEX
+#(($DEBUG)) && cat $HTMLFILE
+#(($DEBUG)) && cat $HTMLFILE_ANNEX
 
 
 # MINIFY

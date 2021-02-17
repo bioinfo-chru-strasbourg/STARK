@@ -1104,9 +1104,9 @@ if [ ! -z "$RUNS" ]; then
 	# Check RUN folders
 	RUNS_TO_LAUNCH=""
 	for RI in $(echo $RUNS | tr "," " "); do
-		#echo "R: "$R
-		#echo "RNUM: "$RUN_INDEX
-		#echo "RNAME: "${RUNS_NAME_ARRAY[$RUN_INDEX]}
+		# echo "R: "$RI
+		# echo "RNUM: "$RUN_INDEX
+		# echo "RNAME: "${RUNS_NAME_ARRAY[$RUN_INDEX]}
 		R=$(echo $RI | awk -F: '{print $1}')
 		RUN_NAME=$(echo $RI | awk -F: '{print $2}')
 		[ "$RUN_NAME" == "" ] && RUN_NAME=$(basename $R)
@@ -1117,13 +1117,30 @@ if [ ! -z "$RUNS" ]; then
 		if [ "$R" != "" ]; then
 			# test if RUN full PATH
 			(($DEBUG)) && echo "#[INFO] Search for RUN '$R' ";
+			# Run as a folder path
 			[ -d $R ] && RUN_PATH=$R;
+			# Run as a TARBALL
+			# tar -czvf /path/to/tarball/MYRUN.tar.gz -C /path/to/MYRUN/ .
+			if [ -f $R ] && [[ $R =~ .tar.gz$ ]]; then
+				R_ID=$RANDOM$RANDOM
+				RUN_NAME=$(echo $RUN_NAME | sed s/.tar.gz//)
+				(($VERBOSE)) && echo "#[INFO] TARBALL '$(basename $R)' RUN '$RUN_NAME' detected ";
+				R_PATH=$TMP_FOLDER_TMP/$R_ID
+				mkdir -p $R_PATH
+				if tar -xvf $R -C $R_PATH 1>/dev/null 2>/dev/null; then
+					(($VERBOSE)) && echo "#[INFO] TARBALL '$(basename $R)' RUN '$RUN_NAME' uncompressed ";
+					RUN_PATH=$R_PATH
+				fi;
+			fi;
+			# Run in Input/Runs folder(s) - Search
 			[ "$RUN_PATH" == "" ] && \
 			for FR in $(echo $FOLDER_RUN | tr "," " "); do
 				(($DEBUG)) && echo "#[INFO] Search for RUN '$R' in RUN folder '$FR' ";
 				[ -d $FR/$R ] && RUN_PATH="$RUN_PATH$FR/$R" && echo "#[INFO] Input RUN '$R' found in RUN folder '$FR'"
 			done;
+			# Test multifolder run path (error if found in multiple input/Runs folder(s))
 			[ $(echo $RUN_PATH | wc -w) -gt 1 ] && echo "#[ERROR] Input Run '$R' found in multiple RUN folders: $RUN_PATH" && echo "" && exit 1;
+			# Add Run to RUNS_TO_LAUNCH
 			[ ! -z "$RUN_PATH" ] && RUNS_TO_LAUNCH="$RUNS_TO_LAUNCH$RUN_PATH:$RUN_NAME "
 		fi;
 		#((RUN_INDEX++))

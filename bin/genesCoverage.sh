@@ -34,6 +34,9 @@ function usage
 		 	This option is optional (default=100).
 			--dp_threshold
 		 	This option is optional (default=1).
+		 	--precision
+			Precision for percentage
+		 	This option is optional (default=2).
 		 	-t, --bedtools Path to bedtools
 		 	This option is required.
 		 	-s, --samtools Path to samtools
@@ -53,7 +56,7 @@ function usage
 ####################################################################################################################################
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-ARGS=$(getopt -o "f:b:c:n:t:u:s:o:vhd" --long "bam-file:,bedfile-genes:,coverage-criteria:,coverage-bases:,nb-bases-arounds:,dp_fail:,dp_warn:,dp_threshold:,bedtools:,samtools:,output:,threads:,verbose,debug,help" -- "$@" 2> /dev/null)
+ARGS=$(getopt -o "f:b:c:n:t:u:s:o:vhd" --long "bam-file:,bedfile-genes:,coverage-criteria:,coverage-bases:,nb-bases-arounds:,dp_fail:,dp_warn:,dp_threshold:,precision:,bedtools:,samtools:,output:,threads:,verbose,debug,help" -- "$@" 2> /dev/null)
 [ $? -ne 0 ] && \
 	echo "Error in the argument list." "Use -h or --help to display the help." >&2 && \
 	exit 1
@@ -91,6 +94,10 @@ do
 			;;
 		--dp_threshold)
 			DP_THRESHOLD="$2"
+			shift 2
+			;;
+		--precision)
+			PRECISION="$2"
 			shift 2
 			;;
 		-t|--bedtools)
@@ -157,6 +164,9 @@ fi;
 if [ -z "$DP_THRESHOLD" ]; then
 	DP_THRESHOLD=1
 fi;
+if [ -z "$PRECISION" ]; then
+	PRECISION=2
+fi;
 if [ -z "$VERBOSE" ]; then
 	VERBOSE=0
 fi;
@@ -169,7 +179,8 @@ fi;
 mkdir -p $TMP_GENESCOVERAGE
 (($DEBUG)) && echo $TMP_GENESCOVERAGE
 
-PRECISION=4
+
+
 
 (($DEBUG)) && echo $BEDFILE_GENES && head $BEDFILE_GENES
 

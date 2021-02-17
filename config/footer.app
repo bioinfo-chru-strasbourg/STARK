@@ -464,6 +464,15 @@ if [ -z $NB_BASES_AROUND ] || ! [[ $NB_BASES_AROUND =~ ^[0-9]+$ ]]; then
 fi;
 export NB_BASES_AROUND
 
+
+# GENESCOVERAGE_PRECISION (default 2)
+# Genes Coverage calculation precision
+if [ -z $GENESCOVERAGE_PRECISION ] || ! [[ $GENESCOVERAGE_PRECISION =~ ^[0-9]+$ ]]; then
+	GENESCOVERAGE_PRECISION=2
+fi;
+export GENESCOVERAGE_PRECISION
+
+
 # BEDFILE_GENES (default "")
 # For gene coverage metrics
 # the bed file containing the 5'UTR, 3'UTR and genomic coding coordinates.
@@ -999,6 +1008,21 @@ export JAVA_FLAGS;
 #	JAVA_FLAGS_BY_SAMPLE=" -Xmx"$JAVA_MEMORY_BY_SAMPLE"g $JAVA_FLAGS_OTHER_PARAM $JAVA_FLAGS_TMP_FOLDER";
 #fi;
 #export JAVA_FLAGS_BY_SAMPLE;
+
+
+
+# REPORT
+# Report variables
+
+# Report Sections
+# List of sections to show in the report (default "ALL")
+# Sections :
+#   Report Sections: results_summary sequencing_mapping depth coverage variant_calling variant_stats
+#   Report Annex Sections: annex_coverage annex_depth annex_genes_coverage annex_variants annex_annotations
+if [ -z "$REPORT_SECTIONS" ]; then
+	REPORT_SECTIONS="ALL"
+fi;
+export REPORT_SECTIONS
 
 
 # CHECK

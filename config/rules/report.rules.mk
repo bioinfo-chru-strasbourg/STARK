@@ -30,6 +30,8 @@ ANNOVAR?=$(NGSscripts)
 HOWARD_CALCULATION?=VAF,NOMEN,VAF_STATS,DP_STATS,VARTYPE
 HOWARD_NOMEN_FIELDS?="hgvs"
 
+REPORT_SECTIONS?=ALL
+
 
 # Analysis Summary
 %.report.summary:
@@ -99,7 +101,7 @@ HOWARD_NOMEN_FIELDS?="hgvs"
 	-cp $*.$(ANALYSIS_DATE).config $*.$(ANALYSIS_DATE).config.txt
 	#
 	# STARK REPORT
-	$(STARK_FOLDER_BIN)/STARK.report -f "`echo $$(basename $$(dirname $$(dirname $(@D))))`" -s "$(*F)" -e "$(ENV)" -i $$(echo $(PIPELINES) | tr " " ",") -k $(ANALYSIS_DATE) -r $(OUTDIR) --verbose
+	$(STARK_FOLDER_BIN)/STARK.report -f "`echo $$(basename $$(dirname $$(dirname $(@D))))`" -s "$(*F)" -e "$(ENV)" -i $$(echo $(PIPELINES) | tr " " ",") --sections="$(REPORT_SECTIONS)" -k $(ANALYSIS_DATE) -r $(OUTDIR) --verbose
 
 
 

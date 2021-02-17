@@ -163,6 +163,10 @@ CLIP_OVERLAPPING_READS=1
 # the number of bases to look around the exons from the given bed file
 NB_BASES_AROUND=0
 
+# GENESCOVERAGE_PRECISION (default 2)
+# Genes Coverage calculation precision
+GENESCOVERAGE_PRECISION=2
+
 # BEDFILE_GENES (default "")
 # For gene coverage metrics
 # the bed file containing the 5'UTR, 3'UTR and genomic coding coordinates.
@@ -399,6 +403,17 @@ HOWARD_FIELDS_REPORT="NOMEN,PZFlag,PZScore,PZComment,CNOMEN,PNOMEN,location,outc
 HOWARD_SORT_REPORT="PZFlag::DESC,PZScore:n:DESC"
 HOWARD_SORT_BY_REPORT="PZFlag,PZScore"
 HOWARD_ORDER_BY_REPORT="DESC,DESC"
+
+
+# REPORT
+# Report variables
+
+# Report Sections
+# List of sections to show in the report (default "ALL")
+# Sections :
+#   Report Sections: results_summary sequencing_mapping depth coverage variant_calling variant_stats
+#   Report Annex Sections: annex_coverage annex_depth annex_genes_coverage annex_variants annex_annotations
+REPORT_SECTIONS="ALL"
 
 
 # REPOSITORY and ARCHIVES

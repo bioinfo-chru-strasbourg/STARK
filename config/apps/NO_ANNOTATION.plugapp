@@ -41,3 +41,7 @@ HOWARD_CALCULATION_REPORT="FindByPipelines,VAF_STATS,DP_STATS,VARTYPE,NOMEN"
 # METRICS SNPEFF (default 0)
 # Generate snpEff variant metrics from VCF
 METRICS_SNPEFF=0
+
+
+# Report Sections
+REPORT_SECTIONS="results_summary sequencing_mapping depth coverage variant_stats annex_coverage annex_depth annex_genes_coverage"

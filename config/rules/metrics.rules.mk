@@ -88,6 +88,8 @@ CAP_METRICS_OPTIONS_HSMETRICS_PARAMETERS?=--hsmetrics_parameters="MINIMUM_MAPPIN
 CAP_METRICS_OPTIONS?=$(CAP_METRICS_OPTIONS_CLIP_OVERLAPPING_READS) $(CAP_METRICS_OPTIONS_HSMETRICS_PARAMETERS)
 
 
+GENESCOVERAGE_PRECISION?=2
+
 
 ################################
 ## BED / INTERVALS for Metrics #
@@ -731,7 +733,7 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 ####################
 # Stats of INFO field
 
-%.vcf.metrics/metrics.genes: %.vcf.gz %.vcf.gz.tbi %.list.genes
+%.vcf.metrics/metrics.genes: %.vcf.gz %.vcf.gz.tbi %.list.genes #%.design.bed
 	mkdir -p $(@D);
 	> $@;
 	+for one_bed in $$(cat $*.list.genes) $*.design.bed; do \
@@ -741,10 +743,8 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 		else \
 			$(BCFTOOLS) view $*.vcf.gz | $(BCFTOOLS) norm --rm-dup exact > $@.$$(basename $$one_bed).vcf; \
 		fi ; \
-		#$(BCFTOOLS) stats $@.$$(basename $$one_bed).vcf > $@.$$(basename $$one_bed).vcf.bcftools.stats; \
-		#grep -v "^#" $@.$$(basename $$one_bed).vcf | cut -f8 | tr ";" "\n" | sort | uniq -c | sed "s/^      / /gi" | tr "=" " " | awk '{print $$2"\t"$$3"\t"$$1} {a[$$2]+=$$1} END { for (key in a) { print "#\t" key "\t" a[key] } }' | sort > $@.$$(basename $$one_bed).vcf.info_field.stats; \
-		$(HOWARD) --config=$(HOWARD_CONFIG) --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --translation=tab  --fields="$(HOWARD_FIELDS)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)"  --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --input=$@.$$(basename $$one_bed).vcf --output=$@.$$(basename $$one_bed).tsv --force; \
-		$(HOWARD) --config=$(HOWARD_CONFIG) --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --translation=tab  --fields="$(HOWARD_FIELDS_REPORT)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)"  --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --input=$@.$$(basename $$one_bed).vcf --output=$@.$$(basename $$one_bed).report.tsv --stats=$@.$$(basename $$one_bed).report.info_field.stats --bcftools_stats=$@.$$(basename $$one_bed).report.bcftools.stats --force; \
+		$(HOWARD) --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --translation=tab  --fields="$(HOWARD_FIELDS)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)"  --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --input=$@.$$(basename $$one_bed).vcf --output=$@.$$(basename $$one_bed).tsv --force; \
+		$(HOWARD) --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --translation=tab  --fields="$(HOWARD_FIELDS_REPORT)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)"  --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --input=$@.$$(basename $$one_bed).vcf --output=$@.$$(basename $$one_bed).report.tsv --stats=$@.$$(basename $$one_bed).report.info_field.stats --bcftools_stats=$@.$$(basename $$one_bed).report.bcftools.stats --force; \
 		(($(METRICS_SNPEFF))) && $(HOWARD) --input=$@.$$(basename $$one_bed).vcf --output=$@.$$(basename $$one_bed).vcf.snpeff.vcf --snpeff_stats=$@.$$(basename $$one_bed).vcf.snpeff.html --annotation=null --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS)  --force ; \
 		echo "#[INFO] VCF filtered by '$$one_bed' done. See '$@.$$(basename $$one_bed).vcf' file, '$@.$$(basename $$one_bed).tsv' file, and stats '$@.$$(basename $$one_bed).vcf.*'" >> $@; \
 	done;
@@ -862,8 +862,8 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 					bedfile_name=$$( basename $$one_bed ); \
 					#$(@D)/$(*F).$$bedfile_name.HsMetrics.per_base_coverage ; \
 					$(UNGZ) -c $(@D)/$(*F).$$bedfile_name.HsMetrics.per_base_coverage.gz | awk 'NR!=1{print $$4"\t"$$3}' > $(@D)/$(*F).$$bedfile_name.HsMetrics.per_base_coverage.2cols ; \
-					$(NGSscripts)/genesCoverage.sh -f $*.bam -b $$one_bed -c "$(COVERAGE_CRITERIA)" --coverage-bases=$(@D)/$(*F).$$bedfile_name.HsMetrics.per_base_coverage.2cols --dp_fail=$(MINIMUM_DEPTH) --dp_warn=$(EXPECTED_DEPTH) --dp_threshold=$(DEPTH_COVERAGE_THRESHOLD) -n $(NB_BASES_AROUND) -t $(BEDTOOLS) -s $(SAMTOOLS) --threads=$(THREADS) -o $(@D)/$(*F).$$bedfile_name; \
-					$(NGSscripts)/genesCoverage.sh -f $*.bam -b $$one_bed -c "$(MINIMUM_DEPTH),$(EXPECTED_DEPTH)" --coverage-bases=$(@D)/$(*F).$$bedfile_name.HsMetrics.per_base_coverage.2cols --dp_fail=$(MINIMUM_DEPTH) --dp_warn=$(EXPECTED_DEPTH) --dp_threshold=$(DEPTH_COVERAGE_THRESHOLD) -n $(NB_BASES_AROUND) -t $(BEDTOOLS) -s $(SAMTOOLS) --threads=$(THREADS) -o $(@D)/$(*F).$$bedfile_name.report; \
+					$(NGSscripts)/genesCoverage.sh -f $*.bam -b $$one_bed -c "$(COVERAGE_CRITERIA)" --coverage-bases=$(@D)/$(*F).$$bedfile_name.HsMetrics.per_base_coverage.2cols --dp_fail=$(MINIMUM_DEPTH) --dp_warn=$(EXPECTED_DEPTH) --dp_threshold=$(DEPTH_COVERAGE_THRESHOLD) --precision=$(GENESCOVERAGE_PRECISION) -n $(NB_BASES_AROUND) -t $(BEDTOOLS) -s $(SAMTOOLS) --threads=$(THREADS) -o $(@D)/$(*F).$$bedfile_name; \
+					$(NGSscripts)/genesCoverage.sh -f $*.bam -b $$one_bed -c "1,$(MINIMUM_DEPTH),$(EXPECTED_DEPTH)" --coverage-bases=$(@D)/$(*F).$$bedfile_name.HsMetrics.per_base_coverage.2cols --dp_fail=$(MINIMUM_DEPTH) --dp_warn=$(EXPECTED_DEPTH) --dp_threshold=$(DEPTH_COVERAGE_THRESHOLD) --precision=$(GENESCOVERAGE_PRECISION) -n $(NB_BASES_AROUND) -t $(BEDTOOLS) -s $(SAMTOOLS) --threads=$(THREADS) -o $(@D)/$(*F).$$bedfile_name.report; \
 					rm $(@D)/$(*F).$$bedfile_name.HsMetrics.per_base_coverage.2cols ; \
 					echo "#[INFO] BAM Metrics on Regions coverage with $$bedfile_name BED file done" >> $@; \
 				else \
