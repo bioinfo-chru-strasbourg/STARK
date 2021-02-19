@@ -962,7 +962,6 @@ fi;
 
 
 
-
 # CONFIG
 ##########
 
@@ -1168,6 +1167,8 @@ if [ ! -z "$RUNS" ]; then
 
 			echo "#[INFO] Start Analysis for RUN '$R_NAME'"
 
+			CMD=""
+
 			# Test if RAW Folder or DEM Folder
 
 			# RUN with analysis JSON
@@ -1287,6 +1288,8 @@ if [ ! -z "$RUNS" ]; then
 
 				if ! (($DEMULTIPLEXING_ONLY)); then
 					CMD="$STARK_FOLDER_BIN/STARK $PARAM --run=$RI " #$APP_ONE_RUN_CONFIG_FILE_JSON " # --repository=$FOLDER_REPOSITORY
+				else
+					CMD=""
 				fi;
 				#CMD=""
 
