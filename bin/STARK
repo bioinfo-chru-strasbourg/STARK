@@ -191,16 +191,15 @@ function usage {
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
 ARGS=$(getopt -o "a:b:e:r:f:q:g:j:m:l:s:w:t:o:u:iygxvdnh" --long "env:,app:,application:,runs:,run:,fastq:,reads:,reads1:,fastq_R1:,by_sample,fastq_R2:,reads2:,index1:,index2:,other_files:,analysis_tag:,sample_tag:,adapters:,analysis:,analysis_name:,analysis_dir:,demultiplexing:,demultiplexing_only,samplesheet:,sample:,sample_filter:,design:,bed:,manifest:,genes:,transcripts:,threads:,output:,results:,repository:,archives:,databases:,input:,output:,tmp:,log:,docker-compose-file:,docker-env-file:,docker-parameters:,docker-stark-image:,docker-stark-container:,no_header,applications_infos,pipelines_infos,release_infos,tools_infos,databases_infos,verbose,debug,release,help" -- "$@" 2> /dev/null)
-#ARGS=$(getopt -o "e:r:f:l:w:t:iygxvdnh" --long "env:,app:,application:,runs:,fastq:,fastq_R1:,json:,ana:,analysis:,samplesheet:,threads:,application_infos,applications_infos,pipelines_infos,release_infos,tools_infos,databases_infos,verbose,debug,release,help" -- "$@" 2> /dev/null)
-#ARGS=$(getopt -o "e:r:f:l:s:w:t:iygxvdnh" --long "env:,app:,application:,runs:,fastq:,fastq_R1:,analysis:,analysis_name:,analysis_dir:,samplesheet:,sample:,sample_list:,threads:,no_header,application_infos,applications_infos,pipelines_infos,release_infos,tools_infos,databases_infos,verbose,debug,release,help" -- "$@" )
-# || [ -z $@ ]
+
+
 if [ $? -ne 0 ]; then
 	:
 	echo "#[ERROR] Error in the argument list:";
 	echo "#[ERROR] $@"
 	echo ""
 	usage;
-	exit;
+	exit 1;
 fi;
 
 
@@ -637,6 +636,7 @@ if (($APPLICATIONS_INFOS)); then
 
 		if ((!$RUN_TEST_FOUND)); then
 			echo "#[ERROR] RUN not found";
+			exit 1;
 		else
 			echo "#[INFO] RAW FOLDER $MISEQ_FOLDER_FOUND";
 		fi;
@@ -1074,6 +1074,7 @@ if [ ! -z "$FASTQ" ]; then # && [ -e "$FASTQ" ]; then
 		EXIT=1
 	else
 		echo "#[ERROR] Input file(s) error"
+		exit 1
 	fi;
 
 fi;
@@ -1257,7 +1258,12 @@ if [ ! -z "$RUNS" ]; then
 				# DEMULTIPLEXING_FOLDER
 				mkdir -p $DEMULTIPLEXING_FOLDER;
 				(($VERBOSE)) && echo "#[INFO] Main Demultiplexing APP: $APP_DEMULTIPLEXING"
-				[ ! -d $DEMULTIPLEXING_FOLDER ] && echo "[ERROR] No demultiplexing folder '$DEMULTIPLEXING_FOLDER'." || echo "#[INFO] Demultiplexing folder for RUN '$R': $DEMULTIPLEXING_FOLDER";
+				if [ ! -d $DEMULTIPLEXING_FOLDER ]; then
+					echo "[ERROR] No demultiplexing folder '$DEMULTIPLEXING_FOLDER'.";
+					exit 1;
+				else
+					echo "#[INFO] Demultiplexing folder for RUN '$R': $DEMULTIPLEXING_FOLDER";
+				fi;
 
 				DEM_SAMPLESHEET=$DEMULTIPLEXING_FOLDER/$R_BASENAME/SampleSheet.csv
 				DEM_STARKCOMPLETE=$DEMULTIPLEXING_FOLDER/$R_BASENAME/STARKComplete.txt
@@ -1277,11 +1283,10 @@ if [ ! -z "$RUNS" ]; then
 
 				#[ -e $R/RTAComplete.txt ] && [ ! -e $DEM_STARKCOMPLETE ] && echo "#[INFO] Start Demultiplexing for RUN '$R'" && echo "" && \
 				(($DEM_TODO)) && echo "#[INFO] Start Demultiplexing for RUN '$R'" && echo "" && \
-				$SCRIPT_DIR/demultiplexing.sh --app="$APP_DEMULTIPLEXING" --run=$R --demultiplex_folder=$DEMULTIPLEXING_FOLDER --samplesheet=$RUN_SAMPLESHEET --threads=$THREADS_INPUT $DEM_PARAM $DEM_PARAM #|| { echo "#[ERROR] Demultiplexing FAILED"; exit 1; }
+				$SCRIPT_DIR/demultiplexing.sh --app="$APP_DEMULTIPLEXING" --run=$R --demultiplex_folder=$DEMULTIPLEXING_FOLDER --samplesheet=$RUN_SAMPLESHEET --threads=$THREADS_INPUT $DEM_PARAM $DEM_PARAM 
 
-				#echo $SCRIPT_DIR/demultiplexing.sh --app="$APP" --run=$R --demultiplex_folder=$DEMULTIPLEXING_FOLDER --samplesheet=$RUN_SAMPLESHEET --threads=$THREADS_INPUT $DEM_PARAM $DEM_PARAM #|| { echo "#[ERROR] Demultiplexing FAILED"; exit 1; }
 
-				[ -e $DEM_STARKCOMPLETE ] && [ -e $DEM_SAMPLESHEET ] && echo "#[INFO] Demultiplexing completed" || exit 1 #echo "#[ERROR] Demultiplexing FAILED"
+				[ -e $DEM_STARKCOMPLETE ] && [ -e $DEM_SAMPLESHEET ] && echo "#[INFO] Demultiplexing completed" || exit 1 
 
 				# Change RUN folder from RAW to DEM
 				RI="$DEMULTIPLEXING_FOLDER/$R_BASENAME:$R_NAME"
@@ -1429,7 +1434,7 @@ if [ ! -z "$RUNS" ]; then
 								MANIFEST_FILE=""
 								#echo "#[WARNING] Manifest file NOT found"
 								echo "#[ERROR] Manifest file NOT found: $MANIFEST_FILENAME"
-								exit 0
+								exit 1
 							fi;
 
 							# Genes File
