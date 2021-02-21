@@ -27,7 +27,8 @@ function printRow(tag,tag_row_plus,tag_col_plus) {
         cell_value=$i;
         cell_title=cell_value;
         cell_show=cell_value;
-        if (length(cell_show)>limit_string) {
+        gsub(/<[^>]+>/,"",cell_title);
+        if (length(cell_show)>limit_string && tag=="td") {
             cell_show=substr(cell_show,1,limit_string)"...";
         };
         if (tag=="th" && header_replace_by_space!="") {

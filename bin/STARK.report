@@ -3020,7 +3020,7 @@ for ALIGNER in $ALIGNERS; do
 		if (( $GENES_PANEL_AMPLICON_NB_LINES > $TABLE_LIMIT )); then
 			GENES_PANEL_AMPLICON_HTML=$TABLE_LIMIT_MSG_HTML
 		else
-			GENES_PANEL_AMPLICON_HTML=$(cat $GENES_PANEL_AMPLICON | tr "," " " | awk -F"\t" '{print $5 "\t" $1":"$2"-"$3 "\t" $4 "\t" $7 "\t" $13 "\t" $6 "\t" $9}' | sed 's/^name/Amplicons/g' | sed 's/chrom.start.end/Location/g' | sed 's/minimum_threshold/Flag Min Depth/g'| sed 's/average_threshold/Flag Mean Depth/g' | sed 's/min_coverage/Min Depth/g' | sed 's/mean_coverage/Mean Depth/g' | sed 's/length/#Bases/g' | $STARK_FOLDER_BIN/csv_to_html.awk -v limit_string=$LIMIT_STRING -v special_value_color="$SPECIAL_VALUE_COLOR" -v limit=$TABLE_LIMIT_CUT -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
+			GENES_PANEL_AMPLICON_HTML=$(cat $GENES_PANEL_AMPLICON | tr "," " " | awk -F"\t" '{print $5 "\t" $1":"$2"-"$3 "\t" $4 "\t" $7 "\t" $13 "\t" $6 "\t" $9}' | sed 's/^name/Amplicons/g' | sed 's/chrom.start.end/<span title=\"Location of Amplicons\">Location<\/span>/g' | sed 's/minimum_threshold/Flag Min Depth/g'| sed 's/average_threshold/Flag Mean Depth/g' | sed 's/min_coverage/Min Depth/g' | sed 's/mean_coverage/Mean Depth/g' | sed 's/length/<span title=\"Number of bases for Amplicons\">#Bases<\/span>/g' | $STARK_FOLDER_BIN/csv_to_html.awk -v limit_string=$LIMIT_STRING -v special_value_color="$SPECIAL_VALUE_COLOR" -v limit=$TABLE_LIMIT_CUT -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
 		fi;
 
 
@@ -3212,23 +3212,25 @@ for ALIGNER in $ALIGNERS; do
 			if (( $GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_NB_LINES > $TABLE_LIMIT )); then
 				GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML=$TABLE_LIMIT_MSG_HTML
 			else
-				GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML=$(cat $GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE | tr "," " " | $STARK_FOLDER_BIN/csv_to_html.awk -v limit_string=$LIMIT_STRING -v special_value_color="$SPECIAL_VALUE_COLOR" -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
+				GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE_HTML=$(cat $GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE | tr "," " " | awk 'NR==1{print $1"\t"$3"\t"$2"\t#Bases Uncovered\t"$4} NR>1{print $1"\t"$3"\t"$2"\t"$3-$2"\t"(($4-0)*100)"%\t"($4-0)}' | awk '{if ($1=="1X") {if ($6<'$SEQUENCING_COVERAGE_THRESHOLD') {color="rgb('$MISS_COLOR_RGB')"} else {color="rgb('$PASS_COLOR_RGB')"}; print "<b title=\"Sequencing\">"$1"</b>\t"$2"\t"$3"\t"$4"\t<b style=\"color:"color"\">"$5"</b>\t"$6} else {print $0}}' | awk '{if ($1=="'$MINIMUM_DEPTH'X") {if ($6<'$DEPTH_COVERAGE_THRESHOLD') {color="rgb('$FAIL_COLOR_RGB')"} else {color="rgb('$PASS_COLOR_RGB')"}; print "<b title=\"Minimum\">"$1"</b>\t"$2"\t"$3"\t"$4"\t<b style=\"color:"color"\">"$5"</b>\t"$6} else {print $0}}' | awk '{if ($1=="'$EXPECTED_DEPTH'X") {if ($6<'$DEPTH_COVERAGE_THRESHOLD') {color="rgb('$WARN_COLOR_RGB')"} else {color="rgb('$PASS_COLOR_RGB')"}; print "<b title=\"Expected\">"$1"</b>\t"$2"\t"$3"\t"$4"\t<b style=\"color:"color"\">"$5"</b>\t"$6} else {print $0}}' | sed 's/#Depth/Depth/g' | sed 's/CoveredBases/#Bases Covered/g' | sed 's/TotalBases/#Bases Total/g' | sed 's/Percent/Coverage/g' | cut -f1-5 | $STARK_FOLDER_BIN/csv_to_html.awk -v limit_string=1000 -v special_value_color="$SPECIAL_VALUE_COLOR" -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
 			fi;
 
+			# DEPTH_COVERAGE_THRESHOLD
+
 			# GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE
-			GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_NB_LINES=$(echo $(cat $GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE | wc -l)" - 1" | bc)
-			if (( $GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_NB_LINES > $TABLE_LIMIT )); then
-				GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML=$TABLE_LIMIT_MSG_HTML
-			else
-				GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML=$(cat $GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE | tr "," " " | sed 's/<//g' | sed 's/%Coverage\([^\t]*\)/<center>\1<br>%<\/center>/g' | sed 's/#Bases\([^\t]*\)/<center>\1<br>#<\/center>/g' | sed 's/Threshold/Flag/g' | sed 's/Nbases/Bases/g' | sed 's/#Gene/'$GENE_PANEL_TYPE_TABLE'/g' | $STARK_FOLDER_BIN/csv_to_html.awk -v limit_string=$LIMIT_STRING -v special_value_color="$SPECIAL_VALUE_COLOR" -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
-			fi;
+			# GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_NB_LINES=$(echo $(cat $GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE | wc -l)" - 1" | bc)
+			# if (( $GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_NB_LINES > $TABLE_LIMIT )); then
+			# 	GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML=$TABLE_LIMIT_MSG_HTML
+			# else
+			# 	GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE_HTML=$(cat $GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE | tr "," " " | sed 's/<//g' | sed 's/%Coverage\([^\t]*\)/<center>\1<br>%<\/center>/g' | sed 's/#Bases\([^\t]*\)/<center>\1<br>#<\/center>/g' | sed 's/Threshold/Flag/g' | sed 's/Nbases/Bases/g' | sed 's/#Gene/'$GENE_PANEL_TYPE_TABLE'/g' | $STARK_FOLDER_BIN/csv_to_html.awk -v limit_string=$LIMIT_STRING -v special_value_color="$SPECIAL_VALUE_COLOR" -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
+			# fi;
 
 			# GENES_PANEL_HSMETRICS_PER_TARGET_GENES_REPORT_COVERAGE
 			GENES_PANEL_HSMETRICS_PER_TARGET_GENES_REPORT_COVERAGE_NB_LINES=$(echo $(cat $GENES_PANEL_HSMETRICS_PER_TARGET_GENES_REPORT_COVERAGE | wc -l)" - 1" | bc)
 			if (( $GENES_PANEL_HSMETRICS_PER_TARGET_GENES_REPORT_COVERAGE_NB_LINES > $TABLE_LIMIT )); then
 				GENES_PANEL_HSMETRICS_PER_TARGET_GENES_REPORT_COVERAGE_HTML=$TABLE_LIMIT_MSG_HTML
 			else
-				GENES_PANEL_HSMETRICS_PER_TARGET_GENES_REPORT_COVERAGE_HTML=$(cat $GENES_PANEL_HSMETRICS_PER_TARGET_GENES_REPORT_COVERAGE | tr "," " " | sed 's/<//g' | sed 's/%Coverage\([^\t]*\)/<center>\1<br>%<\/center>/g' | sed 's/#Bases\([^\t]*\)/<center>\1<br>#<\/center>/g' | sed 's/Threshold/Flag/g' | sed 's/Nbases/#Bases/g' | sed 's/#Gene/'$GENE_PANEL_TYPE_TABLE'/g' | $STARK_FOLDER_BIN/csv_to_html.awk -v limit_string=$LIMIT_STRING -v special_value_color="$SPECIAL_VALUE_COLOR" -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
+				GENES_PANEL_HSMETRICS_PER_TARGET_GENES_REPORT_COVERAGE_HTML=$(cat $GENES_PANEL_HSMETRICS_PER_TARGET_GENES_REPORT_COVERAGE | tr "," " " | sed 's/<//g' | sed "s/%Coverage\([^\t]*\)/<center title=\"Coverage \&#62;\1\">\1<br>%<\/center>/g" | sed 's/#Bases\([^\t]*\)/<span title=\"Number of bases \&#60;\1\" style=\"color:silver\">\&nbsp;\&nbsp;\&nbsp;<br>#<\/span>/g' | sed 's/Threshold/<span title=\"Flag depending on Depth and Coverage thresholds\">Flag<\/span>/g' | sed 's/Nbases/<center title=\"Number of bases for '$GENE_PANEL_TYPE_TABLE'\">#Bases<\/center>/g' | sed 's/#Gene/'$GENE_PANEL_TYPE_TABLE'/g' | $STARK_FOLDER_BIN/csv_to_html.awk -v limit_string=$LIMIT_STRING -v special_value_color="$SPECIAL_VALUE_COLOR" -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
 			fi;
 
 
@@ -3237,7 +3239,7 @@ for ALIGNER in $ALIGNERS; do
 			if (( $GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH_NB_LINES > $TABLE_LIMIT )); then
 				GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH_HTML=$TABLE_LIMIT_MSG_HTML
 			else
-				GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH_HTML=$(cat $GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH | tr "," " " | awk -F"\t" '{print $5 "\t" $1":"$2"-"$3 "\t" $4 "\t" $7 "\t" $13 "\t" $6 "\t" $9}' | sed 's/^name/'$GENE_PANEL_TYPE_TABLE'/g' | sed 's/chrom.start.end/Location/g' | sed 's/minimum_threshold/Flag Min Depth/g'| sed 's/average_threshold/Flag Mean Depth/g' | sed 's/min_coverage/Min Depth/g' | sed 's/mean_coverage/Mean Depth/g' | sed 's/length/#Bases/g' | $STARK_FOLDER_BIN/csv_to_html.awk -v limit_string=$LIMIT_STRING -v special_value_color="$SPECIAL_VALUE_COLOR" -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
+				GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH_HTML=$(cat $GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH | tr "," " " | awk -F"\t" '{print $5 "\t" $1":"$2"-"$3 "\t" $4 "\t" $7 "\t" $13 "\t" $6 "\t" $9}' | sed 's/^name/'$GENE_PANEL_TYPE_TABLE'/g' | sed 's/chrom.start.end/<span title=\"Location of '$GENE_PANEL_TYPE_TABLE'\">Location<\/span>/g' | sed 's/minimum_threshold/Flag Min Depth/g'| sed 's/average_threshold/Flag Mean Depth/g' | sed 's/min_coverage/Min Depth/g' | sed 's/mean_coverage/Mean Depth/g' | sed 's/length/<span title=\"Number of bases for '$GENE_PANEL_TYPE_TABLE'\">#Bases<\/span>/g' | $STARK_FOLDER_BIN/csv_to_html.awk -v limit_string=$LIMIT_STRING -v special_value_color="$SPECIAL_VALUE_COLOR" -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
 			fi;
 
 
@@ -3282,8 +3284,8 @@ for ALIGNER in $ALIGNERS; do
 			GENES_PANEL_GENES_FLAGS_HTML="
 					<thead>
 						<tr class='table-heads'>
-							<th class='head-item mbr-fonts-style display-7'>Flag</th>
-							<th class='head-item mbr-fonts-style display-7'>Genes</th>
+							<th class='head-item mbr-fonts-style display-7' title='Flag depending on Depth and Coverage thresholds'>Flag</th>
+							<th class='head-item mbr-fonts-style display-7'>"$GENE_PANEL_TYPE_TABLE"</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -3639,14 +3641,19 @@ if in_array $SECTION_ID $SECTIONS || in_array ALL $SECTIONS ; then
 				</h2>
 
 				<p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
-					Statistics generated with <strong>Samtools</strong>
+					Statistics and Coverage generated with <strong>Samtools</strong>
 					<br>
-					on Full BAM and BAM for validation ('$BAM_VALIDATION_TEXT_HTML').
+					on Full BAM and BAM for validation
+					<br>
+					('$BAM_VALIDATION_TEXT_HTML')
 					<br>
 					<br>
-					Coverage generated with <strong>Samtools mpileup</strong>
+					Targets & Genes flagged depending on Depth and Coverage thresholds
 					<br>
-					on BAM for validation ('$BAM_VALIDATION_TEXT_HTML').
+					(Minimum depth <strong>'$MINIMUM_DEPTH'X</strong>,
+					Expected depth <strong>'$EXPECTED_DEPTH'X</strong>,
+					Sequencing coverage threshold <strong>'$(awk 'BEGIN{printf("%.1f\n",'$SEQUENCING_COVERAGE_THRESHOLD'*100)}')'%</strong>,
+					Minimum & Expected depth coverage threshold <strong>'$(awk 'BEGIN{printf("%.1f\n",'$DEPTH_COVERAGE_THRESHOLD'*100)}')'%</strong>)
 				</p>
 
 				<section class="mbr-section content8 cid-ruitEAjBmu" id="content8-1z">
@@ -3698,10 +3705,16 @@ if in_array $SECTION_ID $SECTIONS || in_array ALL $SECTIONS ; then
 					<br>
 					on BAM for validation
 					<br>
-					('$BAM_VALIDATION_TEXT_HTML').
+					('$BAM_VALIDATION_TEXT_HTML')
 					<br>
-					Minimum depth <strong>'$MINIMUM_DEPTH'X</strong>,
-					Expected depth <strong>'$EXPECTED_DEPTH'X</strong>
+					<br>
+					Targets & Genes flagged depending on Depth and Coverage thresholds
+					<br>
+					(Minimum depth <strong>'$MINIMUM_DEPTH'X</strong>,
+					Expected depth <strong>'$EXPECTED_DEPTH'X</strong>,
+					Sequencing coverage threshold <strong>'$(awk 'BEGIN{printf("%.1f\n",'$SEQUENCING_COVERAGE_THRESHOLD'*100)}')'%</strong>,
+					Minimum & Expected depth coverage threshold <strong>'$(awk 'BEGIN{printf("%.1f\n",'$DEPTH_COVERAGE_THRESHOLD'*100)}')'%</strong>)
+					<br>
 					<br>
 					[Tables limited to '$TABLE_LIMIT' entries]
 				</p>
@@ -3751,14 +3764,18 @@ if in_array $SECTION_ID $SECTIONS || in_array ALL $SECTIONS ; then
 				<p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
 					Coverage generated with <strong>Samtools mpileup</strong>
 					<br>
-					on BAM for validation ('$BAM_VALIDATION_TEXT_HTML').
+					on BAM for validation
 					<br>
-					Genes flagged depending on Depth and Coverage thresholds:
+					('$BAM_VALIDATION_TEXT_HTML')
 					<br>
-					Minimum depth <strong>'$MINIMUM_DEPTH'X</strong>,
+					<br>
+					Targets & Genes flagged depending on Depth and Coverage thresholds
+					<br>
+					(Minimum depth <strong>'$MINIMUM_DEPTH'X</strong>,
 					Expected depth <strong>'$EXPECTED_DEPTH'X</strong>,
 					Sequencing coverage threshold <strong>'$(awk 'BEGIN{printf("%.1f\n",'$SEQUENCING_COVERAGE_THRESHOLD'*100)}')'%</strong>,
-					Minimum & Expected depth coverage threshold <strong>'$(awk 'BEGIN{printf("%.1f\n",'$DEPTH_COVERAGE_THRESHOLD'*100)}')'%</strong>
+					Minimum & Expected depth coverage threshold <strong>'$(awk 'BEGIN{printf("%.1f\n",'$DEPTH_COVERAGE_THRESHOLD'*100)}')'%</strong>)
+					<br>
 					<br>
 					[Tables limited to '$TABLE_LIMIT' entries]
 				</p>
