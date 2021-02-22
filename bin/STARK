@@ -1173,11 +1173,14 @@ if [ ! -z "$RUNS" ]; then
 			# Test if RAW Folder or DEM Folder
 
 			# RUN with analysis JSON
-			if (($(find -L $R -name '*analysis.json' | wc -l))); then
+			ANALYSIS_JSON_CONFIG=$(find -L $R -maxdepth 2 -name '*analysis.json')
+			#if (($(find -L $R -name '*analysis.json' | wc -l))); then
+			if (($(echo $ANALYSIS_JSON_CONFIG | wc -w))); then
 
 				echo "#[INFO] RUN '$R_NAME' contains configuration files *analysis.json"
+				(($VERBOSE)) && echo "#[INFO] RUN '$R_NAME' contains configuration files: "$(echo $ANALYSIS_JSON_CONFIG)
 
-				CMD="$STARK_FOLDER_BIN/STARK $PARAM --analysis="$(find -L $R -name '*.analysis.json' | tr "\n" "," | sed s/,$//)
+				CMD="$STARK_FOLDER_BIN/STARK $PARAM --analysis="$(echo $ANALYSIS_JSON_CONFIG | tr "\n" "," | tr " " "," | sed s/,$//)
 				#CMD=""
 
 			elif [ -e $R/RTAComplete.txt ]; then
