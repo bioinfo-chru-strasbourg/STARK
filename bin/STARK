@@ -1045,7 +1045,7 @@ fi;
 if [ ! -z "$FASTQ" ]; then # && [ -e "$FASTQ" ]; then
 	# TEST FASTQs if exist
 
-	echo "#[INFO] Test Samples Analysis"
+	echo "#[INFO] Check Samples Analysis"
 
 	FASTQ_EXISTS=1
 	for F in $(echo $FASTQ | tr "," " "); do
@@ -1060,7 +1060,8 @@ if [ ! -z "$FASTQ" ]; then # && [ -e "$FASTQ" ]; then
 	# Launch FASTQs analmysis if all FASTQs exist
 	if (($FASTQ_EXISTS)); then
 		#echo -e "#\n# Launch SAMPLE Analysis '$FASTQ'\n#"; # $PARAM
-		echo "#[INFO] Start SAMPLE Analysis"
+		echo "#[INFO] Start Samples Analysis"
+		echo ""
 		#echo "$PARAM"
 		CMD="$STARK_FOLDER_BIN/launch.sample.sh $PARAM"
 		(($VERBOSE)) && echo "#[INFO] $CMD"
@@ -1447,7 +1448,7 @@ if [ ! -z "$RUNS" ]; then
 								MANIFEST_GENES_FILE=$(ls $FOLDER_MANIFEST/$MANIFEST_FILENAME*.genes 2>/dev/null | tr "\n" "+" | sed "s/+$//" | sed "s/^+//") && (($VERBOSE)) &&  echo "#[INFO] Manifest Genes file found for sample '$SAMPLE_NAME': $MANIFEST_GENES_FILE"
 							else
 								MANIFEST_GENES_FILE=""
-								echo "#[INFO] Manifest Genes file NOT found"
+								(($VERBOSE)) && echo "#[INFO] Manifest Genes file NOT found"
 							fi;
 							MANIFEST_GENES_FILE=$(echo $MANIFEST_GENES_FILE | sed "s/+$//")
 
@@ -1459,7 +1460,7 @@ if [ ! -z "$RUNS" ]; then
 								MANIFEST_TRANSCRIPTS_FILE=$(ls $FOLDER_MANIFEST/$MANIFEST_FILENAME*.transcripts 2>/dev/null | tr "\n" "+" | sed "s/+$//" | sed "s/^+//") && (($VERBOSE)) &&  echo "#[INFO] Manifest Transcripts file found for sample '$SAMPLE_NAME': $MANIFEST_TRANSCRIPTS_FILE"
 							else
 								MANIFEST_TRANSCRIPTS_FILE=""
-								echo "#[INFO] Manifest Transcripts file NOT found"
+								(($VERBOSE)) && echo "#[WARNING] Manifest Transcripts file NOT found"
 							fi;
 							MANIFEST_TRANSCRIPTS_FILE=$(echo $MANIFEST_TRANSCRIPTS_FILE | sed "s/+$//")
 

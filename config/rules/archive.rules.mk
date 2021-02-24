@@ -20,10 +20,10 @@ MEMORY?=1
 
 
 %.archive.cram: %.bams.list %.genome %.R1.fastq.gz %.R2.fastq.gz $(REF_CACHE_FOLDER) #%.R1.fastq.gz.format
-	#Archive aligned BAM only if all original reads present. otherwise, FASTQ compressed into uBAM is archived \
-	#echo "BAMS_LIST: $< $$(cat $<)" \
-	#SEPARATOR (to find aligner name), FILES_TRIED and VALID_CRAM_MSG are used for metrics file \
-	#The first valid cram is kept. \
+	# Archive aligned BAM only if all original reads present. otherwise, FASTQ compressed into uBAM is archived
+	# echo "BAMS_LIST: $< $$(cat $<)"
+	# SEPARATOR (to find aligner name), FILES_TRIED and VALID_CRAM_MSG are used for metrics file
+	# The first valid cram is kept.
 	FILES_TRIED=""; \
 	VALID_CRAM_MSG="NO CRAM could pass the validation"; \
 	if (($$(cat $< | wc -l))); then \
@@ -62,13 +62,13 @@ MEMORY?=1
 		#if [ -s $*.R2.fastq.gz ]; then \
 		if (($$($(UNGZ) -c $*.R2.fastq.gz | head -n 1 | wc -l))); then \
 			echo "PAIRED-END" ; \
-			$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) FastqToSam $(PICARD_UNALIGNED_FLAGS) $(PICARD_UNALIGNED_NAME_FLAGS)  FASTQ=$*.R1.fastq.gz FASTQ2=$*.R2.fastq.gz OUTPUT=$@.tmp SAMPLE_NAME=$(*F); \
+			$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) FastqToSam $(PICARD_UNALIGNED_FLAGS) $(PICARD_UNALIGNED_NAME_FLAGS) -FASTQ $*.R1.fastq.gz -FASTQ2 $*.R2.fastq.gz -OUTPUT $@.tmp -SAMPLE_NAME $(*F); \
 		else \
 			echo "SINGLE-END (NO reads in $*.R2.fastq.gz)" ; \
-			$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) FastqToSam $(PICARD_UNALIGNED_FLAGS) $(PICARD_UNALIGNED_NAME_FLAGS) FASTQ=$*.R1.fastq.gz OUTPUT=$@.tmp  SAMPLE_NAME=$(*F); \
+			$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) FastqToSam $(PICARD_UNALIGNED_FLAGS) $(PICARD_UNALIGNED_NAME_FLAGS) -FASTQ $*.R1.fastq.gz -OUTPUT $@.tmp -SAMPLE_NAME $(*F); \
 		fi; \
 		# Fix Mate Information BAM $@.tmp \
-		$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) FixMateInformation  $(PICARD_UNALIGNED_FLAGS) INPUT=$@.tmp ASSUME_SORTED=true VALIDATION_STRINGENCY=STRICT ; \
+		$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) FixMateInformation  $(PICARD_UNALIGNED_FLAGS) -INPUT $@.tmp -ASSUME_SORTED true -VALIDATION_STRINGENCY STRICT ; \
 		# BAM Sorting and Compression \
 		$(SAMTOOLS) sort $@.tmp -@ $(THREADS_BY_SAMPLE) -T $@.SAMTOOLS_PREFIX | $(SAMTOOLS) view -o $@ -O CRAM -S -T `cat $*.genome` - -@ $(THREADS_BY_SAMPLE) -h; \
 		# Validation BAM $@.tmp \

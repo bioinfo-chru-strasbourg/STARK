@@ -74,7 +74,7 @@ REPORT_SECTIONS?=ALL
 
 
 
-%.launch.json: %.config %.archive.cram %.manifest %.bed %.list.genes %.tag
+%.analysis.json: %.config %.archive.cram %.manifest %.bed %.list.genes %.tag
 	mkdir -p $(@D)
 	> $@
 	echo "{" >> $@;

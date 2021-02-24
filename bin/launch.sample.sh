@@ -306,6 +306,28 @@ COMMAND_COPY_NO_COMPRESS="rsync -aucqAXhi --no-links --no-perms --no-owner --no-
 COMMAND_LINK="ln " # "cp -auv" or "rsync -auv" # auvpAXog
 PERMS="a+rwx"
 
+
+
+# FUNCTIONS
+#############
+
+# function in_array
+# input: $element $array
+in_array () 
+{ 
+    param=$1;
+    shift;
+    for elem in "$@";
+    do
+        [[ "$param" = "$elem" ]] && return 0;
+    done;
+    return 1
+}
+
+VERBOSE=$(echo $VERBOSE | awk '{print $0+0}')
+DEBUG=$(echo $DEBUG | awk '{print $0+0}')
+
+
 # FASTQ
 FASTQ_R1_RELOCATED=""
 for F in $FASTQ; do
@@ -773,7 +795,14 @@ TRANSCRIPTS_ARRAY=($TRANSCRIPTS);
 RUN_UNIQ=$(echo $RUN | tr " " "\n" | sort | uniq | tr "\n" " ");
 
 
-echo "#[INFO] *** INPUT"
+
+(($VERBOSE)) && echo "#[INFO] *** Start Analysis        ["$(date)"]"
+START_ANALYSIS=$(date +%s)
+
+echo "#[INFO] *** Input"
+
+echo "#[INFO] Check Input Files..."
+
 
 RUN_ANALYZED=0
 
@@ -792,6 +821,7 @@ for RUU in $RUN_UNIQ; do
 
 	FASTQ_MK=$RESULTS/$RUU/analysis.V$ANALYSIS_REF.fastq.mk
 	FASTP_MK=$RESULTS/$RUU/analysis.V$ANALYSIS_REF.fastp.mk
+	RES_MK=$RESULTS/$RUU/analysis.V$ANALYSIS_REF.copy.mk
 
 	# MKDIR & TOUCH
 	mkdir -p $RESULTS/$RUU
@@ -810,7 +840,7 @@ for RUU in $RUN_UNIQ; do
 
 
 
-	echo "#[INFO] RUN '$RUU'"
+	(($VERBOSE)) && echo "#[INFO] RUN '$RUU'"
 	echo "## ANALYSIS" > $MAKEFILE_ANALYSIS_RUN
 	echo "## ANALYSIS" > $SHELL_ANALYSIS_RUN
 	RUNS_SAMPLES="";
@@ -861,8 +891,9 @@ for RUU in $RUN_UNIQ; do
 		mkdir -p $RUN_SAMPLE_DIR
 
 		# INFOS
-		echo "#[INFO] SAMPLE '$RU/$S' from file(s):"
-		echo "#[INFO] $F $F_R2 $I1 $I2 $OFCF $B $G $T "
+		(($VERBOSE)) && echo "#[INFO] RUN '$RUU' - SAMPLE '$S'"
+		(($VERBOSE)) && echo "#[INFO] SAMPLE '$RU/$S' from file(s):"
+		(($VERBOSE)) && echo "#[INFO] $F $F_R2 $I1 $I2 $OFCF $B $G $T "
 
 		# Copy FASTQ
 		PICARD_FLAGS="COMPRESSION_LEVEL=1 MAX_RECORDS_IN_RAM=500000"
@@ -873,12 +904,11 @@ for RUU in $RUN_UNIQ; do
 		PICARD_ADDORREPLACEREADGROUPS_FLAGS="  "
 		PICARD_ADDORREPLACEREADGROUPS_NAME_FLAGS=" RGLB=001 RGPL=ILLUMINA RGPU=PU RGSM=$S VALIDATION_STRINGENCY=SILENT "
 
-
 		# DATA entry format is FASTQ/BAM/CRAM/SAM
 		if [ ! -s $RUN_SAMPLE_DIR/$S.R1.fastq.gz ]; then
 			# FASTQ
 			if (($(echo "$F" | grep ".fastq.gz$\|.fq.gz$" -c))); then
-				echo "#[INFO] Create Input data from FASTQ file(s)"
+				(($VERBOSE)) && echo "#[INFO] Create Input data from FASTQ file(s)"
 
 				# Create FASTQ
 				#$COMMAND_COPY $F $RUN_SAMPLE_DIR/$S.R1.fastq.gz;
@@ -898,8 +928,13 @@ for RUU in $RUN_UNIQ; do
 					" >> $FASTQ_MK
 					FASTQ_MK_ALL=$FASTQ_MK_ALL" $RUN_SAMPLE_DIR/$S.R2.fastq.gz"
 				else
-					touch $RUN_SAMPLE_DIR/$S.R2.fastq
-					$GZ $RUN_SAMPLE_DIR/$S.R2.fastq
+					#touch $RUN_SAMPLE_DIR/$S.R2.fastq
+					#$GZ $RUN_SAMPLE_DIR/$S.R2.fastq
+					echo "$RUN_SAMPLE_DIR/$S.R2.fastq.gz: $F
+						touch $RUN_SAMPLE_DIR/$S.R2.fastq
+						$GZ $RUN_SAMPLE_DIR/$S.R2.fastq
+					" >> $FASTQ_MK
+					FASTQ_MK_ALL=$FASTQ_MK_ALL" $RUN_SAMPLE_DIR/$S.R2.fastq.gz"
 				fi;
 
 
@@ -912,8 +947,13 @@ for RUU in $RUN_UNIQ; do
 					" >> $FASTQ_MK
 					FASTQ_MK_ALL=$FASTQ_MK_ALL" $RUN_SAMPLE_DIR/$S.I1.fastq.gz"
 				else
-					touch $RUN_SAMPLE_DIR/$S.I1.fastq
-					$GZ $RUN_SAMPLE_DIR/$S.I1.fastq
+					#touch $RUN_SAMPLE_DIR/$S.I1.fastq
+					#$GZ $RUN_SAMPLE_DIR/$S.I1.fastq
+					echo "$RUN_SAMPLE_DIR/$S.I1.fastq.gz: $I1
+						touch $RUN_SAMPLE_DIR/$S.I1.fastq
+						$GZ $RUN_SAMPLE_DIR/$S.I1.fastq
+					" >> $FASTQ_MK
+					FASTQ_MK_ALL=$FASTQ_MK_ALL" $RUN_SAMPLE_DIR/$S.I1.fastq.gz"
 				fi;
 
 				# INDEX2
@@ -925,8 +965,13 @@ for RUU in $RUN_UNIQ; do
 					" >> $FASTQ_MK
 					FASTQ_MK_ALL=$FASTQ_MK_ALL" $RUN_SAMPLE_DIR/$S.I2.fastq.gz"
 				else
-					touch $RUN_SAMPLE_DIR/$S.I2.fastq
-					$GZ $RUN_SAMPLE_DIR/$S.I2.fastq
+					#touch $RUN_SAMPLE_DIR/$S.I2.fastq
+					#$GZ $RUN_SAMPLE_DIR/$S.I2.fastq
+					echo "$RUN_SAMPLE_DIR/$S.I2.fastq.gz: $I2
+						touch $RUN_SAMPLE_DIR/$S.I2.fastq
+						$GZ $RUN_SAMPLE_DIR/$S.I2.fastq
+					" >> $FASTQ_MK
+					FASTQ_MK_ALL=$FASTQ_MK_ALL" $RUN_SAMPLE_DIR/$S.I2.fastq.gz"
 				fi;
 
 
@@ -934,8 +979,8 @@ for RUU in $RUN_UNIQ; do
 			elif (($(echo $F | grep ".bam$\|.ubam$\|.cram$\|.ucram\|.sam$\|.usam$" -c))); then
 
 				# Generate FASTQ from BAM/SAM/CRAM
-				if ((1)); then
-					echo "#[INFO] Create Input data from BAM/CRAM/SAM file"
+				if ((0)); then
+					(($VERBOSE)) && echo "#[INFO] Create Input data from BAM/CRAM/SAM file"
 					# Sort and FASTQ generation
 					TMP_INPUT_BAM=$TMP_FOLDER_TMP/INPUT_BAM_$RANDOM
 					$SAMTOOLS sort -n --reference $REF -@ $THREADS $F -T $TMP_INPUT_BAM -O SAM 2>/dev/null | $SAMTOOLS bam2fq - -1 $RUN_SAMPLE_DIR/$S.R1.fastq.gz -2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz -O -@ $THREADS -c 1 2>/dev/null | $GZ -c 1> $RUN_SAMPLE_DIR/$S.R0.fastq.gz 2>/dev/null;
@@ -951,10 +996,50 @@ for RUU in $RUN_UNIQ; do
 					rm -f $RUN_SAMPLE_DIR/$S.R0.fastq.gz;
 				fi;
 
+				if ((1)); then
+					(($VERBOSE)) && echo "#[INFO] Create Input data from BAM/CRAM/SAM file"
+
+					# Sort and FASTQ generation
+					TMP_INPUT_BAM=$TMP_FOLDER_TMP/INPUT_BAM_$RANDOM
+
+					echo "$RUN_SAMPLE_DIR/$S.R1.fastq.gz: $F
+						$SAMTOOLS sort -n --reference $REF -@ $THREADS $F -T $TMP_INPUT_BAM -O SAM 2>/dev/null | $SAMTOOLS bam2fq - -1 $RUN_SAMPLE_DIR/$S.R1.fastq.gz -2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz -O -@ $THREADS -c 1 2>/dev/null | $GZ -c 1> $RUN_SAMPLE_DIR/$S.R0.fastq.gz 2>/dev/null;
+						if (( \$\$($UNGZ -c $RUN_SAMPLE_DIR/$S.R0.fastq.gz | head -n 1 | wc -l) )) \
+							|| [ \"\$\$($UNGZ -c $RUN_SAMPLE_DIR/$S.R1.fastq.gz | paste - - - - | cut -f1 | sha1sum | cut -d' ' -f1)\" != \"\$\$($UNGZ -c $RUN_SAMPLE_DIR/$S.R2.fastq.gz | paste - - - - | cut -f1 | sha1sum | cut -d' ' -f1)\" ]; then \
+							echo '#[WARNING] Read names or order differ between R1 and R2 fastq files, or R0 file is not empty. Reads are supposed not to be paired (Single-End). All reads in R1.'; \
+							cat $RUN_SAMPLE_DIR/$S.R2.fastq.gz $RUN_SAMPLE_DIR/$S.R0.fastq.gz >> $RUN_SAMPLE_DIR/$S.R1.fastq.gz; \
+							rm -f $RUN_SAMPLE_DIR/$S.R2.fastq.gz; \
+							touch $RUN_SAMPLE_DIR/$S.R2.fastq; \
+							$GZ $RUN_SAMPLE_DIR/$S.R2.fastq; \
+						fi;
+						rm -f $RUN_SAMPLE_DIR/$S.R0.fastq.gz;
+					" >> $FASTQ_MK
+					FASTQ_MK_ALL=$FASTQ_MK_ALL" $RUN_SAMPLE_DIR/$S.R1.fastq.gz"
+
+					echo "$RUN_SAMPLE_DIR/$S.R2.fastq.gz: $F
+						#touch $RUN_SAMPLE_DIR/$S.I2.fastq
+						#$GZ $RUN_SAMPLE_DIR/$S.I2.fastq
+					" >> $FASTQ_MK
+					FASTQ_MK_ALL=$FASTQ_MK_ALL" $RUN_SAMPLE_DIR/$S.R2.fastq.gz"
+
+					echo "$RUN_SAMPLE_DIR/$S.I1.fastq.gz: $F
+						touch $RUN_SAMPLE_DIR/$S.I1.fastq
+						$GZ $RUN_SAMPLE_DIR/$S.I1.fastq
+					" >> $FASTQ_MK
+					FASTQ_MK_ALL=$FASTQ_MK_ALL" $RUN_SAMPLE_DIR/$S.I1.fastq.gz"
+
+					echo "$RUN_SAMPLE_DIR/$S.I2.fastq.gz: $F
+						touch $RUN_SAMPLE_DIR/$S.I2.fastq
+						$GZ $RUN_SAMPLE_DIR/$S.I2.fastq
+					" >> $FASTQ_MK
+					FASTQ_MK_ALL=$FASTQ_MK_ALL" $RUN_SAMPLE_DIR/$S.I2.fastq.gz"
+
+				fi;
+				# || (( \$\$(diff <($UNGZ -c $RUN_SAMPLE_DIR/$S.R1.fastq.gz | paste - - - - | cut -f1 -d\$\$'\t') <($UNGZ -c $RUN_SAMPLE_DIR/$S.R2.fastq.gz | paste - - - - | cut -f1 -d\$\$'\t') | head -n 1 | wc -l) )); then
 			fi;
 
 		else
-			echo "#[INFO] Input file '$RUN_SAMPLE_DIR/$S.R1.fastq.gz' DOES exist"
+			(($VERBOSE)) && echo "#[INFO] Input file '$RUN_SAMPLE_DIR/$S.R1.fastq.gz' DOES exist"
 		fi;
 
 		# FASTQ PROCESSING
@@ -968,85 +1053,118 @@ for RUU in $RUN_UNIQ; do
 
 			if [ ! -e $FASTP_LOG ]; then
 
-				echo "#[INFO] FASTQ processing (Adaptors, UMIs, quality)"
-
-				# Create sample sequencing folder
-				mkdir -p $RUN_SAMPLE_DIR/$S.sequencing
-
-				# FASTP parameters
-				FASTP_PARAM=" --disable_trim_poly_g --disable_length_filtering "
-				FASTP_THREADS=" --thread $THREADS "
-
-				# OUTPUT
-				FASTP_METRICS_OUTPUT="-h $FASTP_HTML -j $FASTP_JSON"
-
-				# Paired-End or Single-End
-				#if (( $($UNGZ -c $RUN_SAMPLE_DIR/$S.R2.fastq.gz | head -n 1 | wc -l) )); then
-				if (( $($UNGZ -c $F_R2 | head -n 1 | wc -l) )); then
-					echo "#[INFO] Paired-End Processing"
-					FASTP_INPUT="-i $RUN_SAMPLE_DIR/$S.R1.fastq.gz -I $RUN_SAMPLE_DIR/$S.R2.fastq.gz"
-					FASTP_OUTPUT="-o $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.processed.fastq.gz -O $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.processed.fastq.gz"
-					(($DETECT_ADAPTER_FOR_PE)) && FASTP_PARAM=$FASTP_PARAM" --detect_adapter_for_pe"
-				else
-					echo "#[INFO] Single-End Processing"
-					FASTP_INPUT="-i $RUN_SAMPLE_DIR/$S.R1.fastq.gz"
-					FASTP_OUTPUT="-o $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.processed.fastq.gz"
-				fi;
-
-				# Adapter detection
-				echo "#[INFO] Adapter Processing (detection & trimming)"
-
-				# UMI Extraction
-				if [ "$UMI_BARCODE_PATTERN" != "" ] && ! (( $($UNGZ -d -c $RUN_SAMPLE_DIR/$S.R1.fastq.gz | head -n1 | awk -F" " '{n_read_name=split($1,read_name,":"); if (read_name[n_read_name] ~ /[A-Z]/) { print read_name[n_read_name]} }' | wc -l) )); then
-					echo "#[INFO] UMI extraction Processing with pattern '$UMI_BARCODE_PATTERN'"
-					FASTP_UMI_PARAM="--umi --umi_loc per_read --umi_len "${#UMI_BARCODE_PATTERN};
-				else
-					echo "#[INFO] NO UMI extraction Processing"
-					FASTP_UMI_PARAM=""
-				fi;
-
-				# Read quality filtering
-				if [ "$FASTQ_QUALITY_FILTERING" != "" ]; then
-					echo "#[INFO] Read quality filtering with quality '$FASTQ_QUALITY_FILTERING'"
-					FASTP_PARAM=$FASTP_PARAM" --cut_mean_quality=$FASTQ_QUALITY_FILTERING "
-				else
-					echo "#[INFO] NO Read quality filtering"
-					FASTP_PARAM=$FASTP_PARAM" --disable_quality_filtering "
-				fi;
-
+				(($VERBOSE)) && echo "#[INFO] FASTQ processing (Adaptors, UMIs, quality)"
 
 				if ((0)); then
-					# RUN FASTP
-					(($DEBUG)) && echo "#[INFO] FASTP CMD: $FASTP $FASTP_INPUT $FASTP_OUTPUT $FASTP_UMI_PARAM $FASTP_PARAM $FASTP_THREADS $FASTP_METRICS_OUTPUT"
-					$FASTP $FASTP_INPUT $FASTP_OUTPUT $FASTP_UMI_PARAM $FASTP_PARAM $FASTP_METRICS_OUTPUT --report_title="$S Sequencing Quality Report" 1>$FASTP_LOG 2>$FASTP_ERR
-					(($DEBUG)) && cat $FASTP_LOG $FASTP_ERR
-					#cat $FASTP_LOG $FASTP_ERR
 
-					# Copy fastq files
-					[ -e $RUN_SAMPLE_DIR/$S.R1.fastq.gz ] && $COMMAND_COPY_NO_COMPRESS $RUN_SAMPLE_DIR/$S.R1.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.demultiplexing.fastq.gz
-					[ -e $RUN_SAMPLE_DIR/$S.R2.fastq.gz ] && $COMMAND_COPY_NO_COMPRESS $RUN_SAMPLE_DIR/$S.R2.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.demultiplexing.fastq.gz
-					[ -e $RUN_SAMPLE_DIR/$S.I1.fastq.gz ] && $COMMAND_COPY_NO_COMPRESS $RUN_SAMPLE_DIR/$S.I1.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.I1.demultiplexing.fastq.gz
-					[ -e $RUN_SAMPLE_DIR/$S.I2.fastq.gz ] && $COMMAND_COPY_NO_COMPRESS $RUN_SAMPLE_DIR/$S.I2.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.I2.demultiplexing.fastq.gz
-					[ -e $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.processed.fastq.gz ] && mv $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.processed.fastq.gz $RUN_SAMPLE_DIR/$S.R1.fastq.gz
-					[ -e $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.processed.fastq.gz ] && mv $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.processed.fastq.gz $RUN_SAMPLE_DIR/$S.R2.fastq.gz
+					# Create sample sequencing folder
+					mkdir -p $RUN_SAMPLE_DIR/$S.sequencing
+
+					# FASTP parameters
+					FASTP_PARAM=" --disable_trim_poly_g --disable_length_filtering "
+					FASTP_THREADS=" --thread $THREADS "
+
+					# OUTPUT
+					FASTP_METRICS_OUTPUT="-h $FASTP_HTML -j $FASTP_JSON"
+
+					# Paired-End or Single-End
+					#if (( $($UNGZ -c $RUN_SAMPLE_DIR/$S.R2.fastq.gz | head -n 1 | wc -l) )); then
+					if (( $($UNGZ -c $F_R2 | head -n 1 | wc -l) )); then
+						(($VERBOSE)) && echo "#[INFO] Paired-End Processing"
+						FASTP_INPUT="-i $RUN_SAMPLE_DIR/$S.R1.fastq.gz -I $RUN_SAMPLE_DIR/$S.R2.fastq.gz"
+						FASTP_OUTPUT="-o $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.processed.fastq.gz -O $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.processed.fastq.gz"
+						(($DETECT_ADAPTER_FOR_PE)) && FASTP_PARAM=$FASTP_PARAM" --detect_adapter_for_pe"
+					else
+						(($VERBOSE)) && echo "#[INFO] Single-End Processing"
+						FASTP_INPUT="-i $RUN_SAMPLE_DIR/$S.R1.fastq.gz"
+						FASTP_OUTPUT="-o $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.processed.fastq.gz"
+					fi;
+
+					# Adapter detection
+					(($VERBOSE)) && echo "#[INFO] Adapter Processing (detection & trimming)"
+
+					# UMI Extraction
+					if [ "$UMI_BARCODE_PATTERN" != "" ] && ! (( $($UNGZ -c $RUN_SAMPLE_DIR/$S.R1.fastq.gz | head -n1 | awk -F" " '{n_read_name=split($1,read_name,":"); if (read_name[n_read_name] ~ /[A-Z]/) { print read_name[n_read_name]} }' | wc -l) )); then
+						(($VERBOSE)) && echo "#[INFO] UMI extraction Processing with pattern '$UMI_BARCODE_PATTERN'"
+						FASTP_UMI_PARAM="--umi --umi_loc per_read --umi_len "${#UMI_BARCODE_PATTERN};
+					else
+						(($VERBOSE)) && echo "#[INFO] NO UMI extraction Processing"
+						FASTP_UMI_PARAM=""
+					fi;
+
+					# Read quality filtering
+					if [ "$FASTQ_QUALITY_FILTERING" != "" ]; then
+						(($VERBOSE)) && echo "#[INFO] Read quality filtering with quality '$FASTQ_QUALITY_FILTERING'"
+						FASTP_PARAM=$FASTP_PARAM" --cut_mean_quality=$FASTQ_QUALITY_FILTERING "
+					else
+						(($VERBOSE)) && echo "#[INFO] NO Read quality filtering"
+						FASTP_PARAM=$FASTP_PARAM" --disable_quality_filtering "
+					fi;
+
+
+				
+					# # RUN FASTP
+					# (($DEBUG)) && echo "#[INFO] FASTP CMD: $FASTP $FASTP_INPUT $FASTP_OUTPUT $FASTP_UMI_PARAM $FASTP_PARAM $FASTP_THREADS $FASTP_METRICS_OUTPUT"
+					# $FASTP $FASTP_INPUT $FASTP_OUTPUT $FASTP_UMI_PARAM $FASTP_PARAM $FASTP_METRICS_OUTPUT --report_title="$S Sequencing Quality Report" 1>$FASTP_LOG 2>$FASTP_ERR
+					# (($DEBUG)) && cat $FASTP_LOG $FASTP_ERR
+					# #cat $FASTP_LOG $FASTP_ERR
+
+					# # Copy fastq files
+					# [ -e $RUN_SAMPLE_DIR/$S.R1.fastq.gz ] && $COMMAND_COPY_NO_COMPRESS $RUN_SAMPLE_DIR/$S.R1.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.demultiplexing.fastq.gz
+					# [ -e $RUN_SAMPLE_DIR/$S.R2.fastq.gz ] && $COMMAND_COPY_NO_COMPRESS $RUN_SAMPLE_DIR/$S.R2.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.demultiplexing.fastq.gz
+					# [ -e $RUN_SAMPLE_DIR/$S.I1.fastq.gz ] && $COMMAND_COPY_NO_COMPRESS $RUN_SAMPLE_DIR/$S.I1.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.I1.demultiplexing.fastq.gz
+					# [ -e $RUN_SAMPLE_DIR/$S.I2.fastq.gz ] && $COMMAND_COPY_NO_COMPRESS $RUN_SAMPLE_DIR/$S.I2.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.I2.demultiplexing.fastq.gz
+					# [ -e $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.processed.fastq.gz ] && mv $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.processed.fastq.gz $RUN_SAMPLE_DIR/$S.R1.fastq.gz
+					# [ -e $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.processed.fastq.gz ] && mv $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.processed.fastq.gz $RUN_SAMPLE_DIR/$S.R2.fastq.gz
+
 				fi;
 
 
 				# FASTP MK
 				echo "$RUN_SAMPLE_DIR_SEQUENCING/$S: $RUN_SAMPLE_DIR/$S.R1.fastq.gz $RUN_SAMPLE_DIR/$S.R2.fastq.gz $RUN_SAMPLE_DIR/$S.I1.fastq.gz $RUN_SAMPLE_DIR/$S.I2.fastq.gz
-					$FASTP $FASTP_INPUT $FASTP_OUTPUT $FASTP_UMI_PARAM $FASTP_PARAM $FASTP_METRICS_OUTPUT --thread \$(FASTP_THREADS_BY_SAMPLE) --report_title="$S Sequencing Quality Report" 1>$FASTP_LOG 2>$FASTP_ERR
-					[ -e $RUN_SAMPLE_DIR/$S.R1.fastq.gz ] && $COMMAND_COPY_NO_COMPRESS $RUN_SAMPLE_DIR/$S.R1.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.demultiplexing.fastq.gz
-					[ -e $RUN_SAMPLE_DIR/$S.R2.fastq.gz ] && $COMMAND_COPY_NO_COMPRESS $RUN_SAMPLE_DIR/$S.R2.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.demultiplexing.fastq.gz
-					[ -e $RUN_SAMPLE_DIR/$S.I1.fastq.gz ] && $COMMAND_COPY_NO_COMPRESS $RUN_SAMPLE_DIR/$S.I1.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.I1.demultiplexing.fastq.gz
-					[ -e $RUN_SAMPLE_DIR/$S.I2.fastq.gz ] && $COMMAND_COPY_NO_COMPRESS $RUN_SAMPLE_DIR/$S.I2.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.I2.demultiplexing.fastq.gz
-					[ -e $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.processed.fastq.gz ] && mv $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.processed.fastq.gz $RUN_SAMPLE_DIR/$S.R1.fastq.gz
-					[ -e $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.processed.fastq.gz ] && mv $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.processed.fastq.gz $RUN_SAMPLE_DIR/$S.R2.fastq.gz
+					# Create sample sequencing folder
+					mkdir -p $RUN_SAMPLE_DIR/$S.sequencing;
+					# FASTP parameters
+					echo ' --disable_trim_poly_g --disable_length_filtering ' > \$@.fastp.param;
+					echo ' --thread $THREADS ' >> \$@.fastp.param;
+					# OUTPUT
+					echo '-h $FASTP_HTML -j $FASTP_JSON' >> \$@.fastp.param;
+					# Paired-End or Single-End
+					if (( \$\$($UNGZ -c $RUN_SAMPLE_DIR/$S.R2.fastq.gz | head -n 1 | wc -l) )); then \
+						(($VERBOSE)) && echo '#[INFO] Paired-End Processing' ; \
+						echo '-i $RUN_SAMPLE_DIR/$S.R1.fastq.gz -I $RUN_SAMPLE_DIR/$S.R2.fastq.gz' >> \$@.fastp.param ; \
+						echo '-o $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.processed.fastq.gz -O $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.processed.fastq.gz' >> \$@.fastp.param ; \
+						if (($DETECT_ADAPTER_FOR_PE)); then echo $FASTP_PARAM' --detect_adapter_for_pe' >> \$@.fastp.param ; fi ; \
+					else \
+						(($VERBOSE)) && echo '#[INFO] Single-End Processing' ; \
+						echo '-i $RUN_SAMPLE_DIR/$S.R1.fastq.gz' >> \$@.fastp.param ; \
+						echo '-o $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.processed.fastq.gz' >> \$@.fastp.param ; \
+					fi;
+					# UMI Extraction
+					if [ '$UMI_BARCODE_PATTERN' != '' ] && ! (( \$\$($UNGZ -c $RUN_SAMPLE_DIR/$S.R1.fastq.gz | head -n1 | awk -F' ' '{n_read_name=split(\$\$1,read_name,\":\"); if (read_name[n_read_name] ~ /[A-Z]/) { print read_name[n_read_name]} }' | wc -l) )); then \
+						echo '--umi --umi_loc per_read --umi_len '${#UMI_BARCODE_PATTERN} >> \$@.fastp.param; \
+					fi;
+					# Read quality filtering
+					if [ '$FASTQ_QUALITY_FILTERING' != '' ]; then \
+						echo ' --cut_mean_quality=$FASTQ_QUALITY_FILTERING ' >> \$@.fastp.param; \
+					else \
+						echo ' --disable_quality_filtering ' >> \$@.fastp.param; \
+					fi;
+					# Report title
+					echo ' --report_title=$RUU/$S ' >> \$@.fastp.param;
+					# FASTP Process
+					$FASTP \$\$(cat \$@.fastp.param) 1>$FASTP_LOG 2>$FASTP_ERR
+					if [ -e $RUN_SAMPLE_DIR/$S.R1.fastq.gz ] ; then $COMMAND_COPY_NO_COMPRESS $RUN_SAMPLE_DIR/$S.R1.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.demultiplexing.fastq.gz; fi;
+					if [ -e $RUN_SAMPLE_DIR/$S.R2.fastq.gz ] ; then $COMMAND_COPY_NO_COMPRESS $RUN_SAMPLE_DIR/$S.R2.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.demultiplexing.fastq.gz; fi;
+					if [ -e $RUN_SAMPLE_DIR/$S.I1.fastq.gz ] ; then $COMMAND_COPY_NO_COMPRESS $RUN_SAMPLE_DIR/$S.I1.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.I1.demultiplexing.fastq.gz; fi;
+					if [ -e $RUN_SAMPLE_DIR/$S.I2.fastq.gz ] ; then $COMMAND_COPY_NO_COMPRESS $RUN_SAMPLE_DIR/$S.I2.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.I2.demultiplexing.fastq.gz; fi;
+					if [ -e $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.processed.fastq.gz ] ; then mv $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.processed.fastq.gz $RUN_SAMPLE_DIR/$S.R1.fastq.gz; fi;
+					if [ -e $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.processed.fastq.gz ] ; then mv $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.processed.fastq.gz $RUN_SAMPLE_DIR/$S.R2.fastq.gz; fi;
 
 				" >> $FASTP_MK
 				FASTP_MK_ALL=$FASTP_MK_ALL" $RUN_SAMPLE_DIR_SEQUENCING/$S"
 
 				#cat $FASTP_MK
-
 
 			fi;
 
@@ -1056,14 +1174,14 @@ for RUU in $RUN_UNIQ; do
 		# OTHER_FILES
 		if [ "$OFCF" != "" ]; then
 
-			echo "#[INFO] Copy OTHER FILES."
+			(($VERBOSE)) && echo "#[INFO] Copy OTHER FILES."
 			for OFCF_ONE in $(echo $OFCF | tr "+" " "); do
 				# Original other file
 				OF=$(echo $OFCF_ONE | awk -F: '{print $1}')
 				# Copy other file
 				CF=$(echo $OFCF_ONE | awk -F: '{print $2}')
 				[ "$CF" == "" ] && CF=$(basename $OF)
-				echo "#[INFO] Copy OTHER FILES '$OF' to '$CF'."
+				(($DEBUG)) && echo "#[INFO] Copy OTHER FILES '$OF' to '$CF'."
 				#cp $OF_ONE $RUN_SAMPLE_DIR/$(basename $OF_ONE)
 				if [ -d $OF ]; then
 					mkdir -p $RUN_SAMPLE_DIR/$CF
@@ -1086,10 +1204,10 @@ for RUU in $RUN_UNIQ; do
 					if [[ $B =~ .bed$ ]]; then
 						if [ -e $B ] && [ "$B" != "" ] && [ ! -e $RUN_SAMPLE_DIR/$S.bed ]; then
 
-							echo "#[INFO] Copy original BED file."
+							(($VERBOSE)) && echo "#[INFO] Copy original BED file."
 							$COMMAND_COPY -p $B $RUN_SAMPLE_DIR/$S.original.bed;
 
-							echo "#[INFO] Sort/Merge/Normalize BED file."
+							(($VERBOSE)) && echo "#[INFO] Sort/Merge/Normalize BED file."
 							$BEDTOOLS sort -i $B  | $STARK_BED_NORMALIZATION | $BEDTOOLS merge -i - -c 4 -o distinct > $RUN_SAMPLE_DIR/$S.bed;
 							
 							touch $RUN_SAMPLE_DIR/$S.bed -r $B;
@@ -1103,7 +1221,7 @@ for RUU in $RUN_UNIQ; do
 						fi;
 					else
 						if [ -e $B ] && [ "$B" != "" ] && [ ! -e $RUN_SAMPLE_DIR/$S.manifest ]; then
-							echo "#[INFO] Copy Manifest file."
+							(($VERBOSE)) && echo "#[INFO] Copy Manifest file."
 							#cp -p $B $RUN_SAMPLE_DIR/$S.manifest;
 							$COMMAND_COPY -p $B $RUN_SAMPLE_DIR/$S.manifest;
 							touch $RUN_SAMPLE_DIR/$S.manifest -r $B;
@@ -1125,7 +1243,7 @@ for RUU in $RUN_UNIQ; do
 			if [ ! -e $BEDFILE_GENES_LIST_ONE ]; then
 				# Add Genes
 				if [ "$G" != "" ]; then
-					echo "#[INFO] Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' and copy .genes files."
+					(($VERBOSE)) && echo "#[INFO] Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' and copy .genes files."
 					#> $RUN_SAMPLE_DIR/$S.list.genes;
 					for G_ONE in $(echo $G | tr "+" " "); do
 						# add '.genes' extension if not exists
@@ -1139,7 +1257,7 @@ for RUU in $RUN_UNIQ; do
 				elif [ -s $B ] && [ "$B" != "" ]; then
 					# GEnerate BEDFILE_GENES from design
 					#if [ -s $B ]; then
-					echo "#[INFO] Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' from Design file '$B'."
+					(($VERBOSE)) && echo "#[INFO] Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' from Design file '$B'."
 					# Generate intermediate bed from Design (BED or manifest)
 					BEDFILE_GENES_INTERMEDIATE=$RUN_SAMPLE_DIR/$S.genes.tmp
 					BEDFILE_GENES_ONE=$RUN_SAMPLE_DIR/$S.from_design.genes
@@ -1163,7 +1281,7 @@ for RUU in $RUN_UNIQ; do
 						join -1 1 -2 4 $BEDFILE_GENES_INTERMEDIATE.intersect $BEDFILE_GENES_INTERMEDIATE.refseq -o 2.1,2.2,2.3,2.4,2.5,2.6 | sort -u -k1,2 | tr " " "\t" | $BEDTOOLS sort | $BEDTOOLS merge -c 4,5,6 -o distinct,collapse,first | awk -F"\t" '{print $1"\t"$2"\t"$3"\t"$4"\t0\t"$6}' | $STARK_BED_NORMALIZATION > $BEDFILE_GENES_ONE;
 						echo $(basename $BEDFILE_GENES_ONE) > $BEDFILE_GENES_LIST_ONE;
 					else
-						(($VERBOSE)) && echo "#[ERROR] Generating GENES failed";
+						(($VERBOSE)) && echo "#[WARNING] Generating GENES failed";
 					fi;
 
 					rm -f $BEDFILE_GENES_INTERMEDIATE*
@@ -1173,13 +1291,13 @@ for RUU in $RUN_UNIQ; do
 				fi;
 
 			else
-				echo "#[INFO] LIST.GENES already exists."
+				(($VERBOSE)) && echo "#[INFO] LIST.GENES already exists."
 			fi;
 		fi;
 
 
 		# Create genes.bed from genes
-		echo "#[INFO] Generate genes.bed from .genes files within LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes'."
+		(($VERBOSE)) && echo "#[INFO] Generate genes.bed from .genes files within LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes'."
 		if [ -e $BEDFILE_GENES_LIST_ONE ]; then
 			for BEDFILE_GENES_LIST_ONE_GENES_FILE in $(cat $BEDFILE_GENES_LIST_ONE); do
 				cp -p $RUN_SAMPLE_DIR/$BEDFILE_GENES_LIST_ONE_GENES_FILE $RUN_SAMPLE_DIR/$BEDFILE_GENES_LIST_ONE_GENES_FILE.bed
@@ -1189,7 +1307,7 @@ for RUU in $RUN_UNIQ; do
 
 		# Copy TRANSCRIPTS
 		if [ "$T" != "" ] && [ ! -e $RUN_SAMPLE_DIR/$T.list.transcripts ]; then
-			echo "#[INFO] Create LIST.TRANSCRIPTS file '$RUN_SAMPLE_DIR/$S.list.transcripts' and concatenated file .transcripts"
+			(($VERBOSE)) && echo "#[INFO] Create LIST.TRANSCRIPTS file '$RUN_SAMPLE_DIR/$S.list.transcripts' and concatenated file .transcripts"
 			echo $T | tr "+" "\n" > $RUN_SAMPLE_DIR/$S.list.transcripts;
 			cat $(echo $T | tr "+" " ") > $RUN_SAMPLE_DIR/$S.transcripts;
 		fi;
@@ -1197,14 +1315,14 @@ for RUU in $RUN_UNIQ; do
 
 		# SAMPLE TAG
 		if [ ! -e $RUN_SAMPLE_DIR/$S.tag ]; then
-			echo "#[INFO] Create TAG file."
+			(($VERBOSE)) && echo "#[INFO] Create TAG file."
 			echo $TAG > $RUN_SAMPLE_DIR/$S.tag;
 		fi;
 
 
 		# ANALYSIS TAG
 		if [ ! -e $RUN_SAMPLE_DIR/$S.analysis.tag ]; then
-			echo "#[INFO] Create Analysis TAG file."
+			(($VERBOSE)) && echo "#[INFO] Create Analysis TAG file."
 			echo $ANALYSIS_TAG > $RUN_SAMPLE_DIR/$S.analysis.tag;
 		fi;
 
@@ -1212,7 +1330,7 @@ for RUU in $RUN_UNIQ; do
 		# SampleSheet
 		if ((1)); then
 		if [ ! -e $RUN_SAMPLE_DIR/$S.SampleSheet.csv ]; then
-			echo "#[INFO] Copy SampleSheet."
+			(($VERBOSE)) && echo "#[INFO] Copy SampleSheet."
 			#[ -f "$SAMPLESHEET_INPUT" ] && cp $SAMPLESHEET_INPUT $RUN_SAMPLE_DIR/$S.SampleSheet.csv
 			[ -f "$SAMPLESHEET_INPUT" ] && $COMMAND_COPY $SAMPLESHEET_INPUT $RUN_SAMPLE_DIR/$S.SampleSheet.csv
 			touch $RUN_SAMPLE_DIR/$S.SampleSheet.csv;
@@ -1325,39 +1443,27 @@ for RUU in $RUN_UNIQ; do
 	echo "INTERSEC=2" >> $SHELL_ANALYSIS_RUN
 
 
-
-	# FASTQ && FASTP process
-	
-	if [ -s $FASTQ_MK ] && [ -s $FASTP_MK ]; then
-		echo "#[INFO] Process Input data from FASTQ file(s) - multithreading mode"
-		make -j $THREADS -e FASTP_THREADS_BY_SAMPLE=$THREADS_BY_SAMPLE -f $FASTQ_MK -f $FASTP_MK $FASTQ_MK_ALL $FASTP_MK_ALL 1>$FASTP_MK.log 2>$FASTP_MK.err
-		! (($DEBUG)) && rm -f $FASTQ_MK $FASTQ_MK.log $FASTQ_MK.err $FASTP_MK $FASTP_MK.log $FASTP_MK.err
-	fi;
-
-
-
-
 	# RESULTS
 
-	echo "#[INFO] *** CONFIGURATION"
+	echo "#[INFO] *** Configuration"
 
-	echo "#[INFO] * ANALYSIS                "
+	(($VERBOSE)) && echo "#[INFO] * ANALYSIS                "
 	echo "#[INFO] ANALYSIS NAME             $RUU"
-	echo "#[INFO] ANALYSIS TAG              $ANALYSIS_TAG"
-	echo "#[INFO] * SAMPLES                 "
+	(($VERBOSE)) && echo "#[INFO] ANALYSIS TAG              $ANALYSIS_TAG"
+	(($VERBOSE)) && echo "#[INFO] * SAMPLES                 "
 	echo "#[INFO] SAMPLE NAMES              $S_LIST"
-	echo "#[INFO] SAMPLE TAG                $TAG_LIST"
-	echo "#[INFO] FASTQ/BAM/CRAM            $F_LIST"
-	echo "#[INFO] FASTQ R2                  $Q_LIST"
-	echo "#[INFO] INDEX1                    $I1_LIST"
-	echo "#[INFO] INDEX2                    $I2_LIST"
-	echo "#[INFO] OTHER_FILES               $OFCF_LIST"
-	echo "#[INFO] DESIGN                    $B_LIST"
-	echo "#[INFO] GENES                     $G_LIST"
-	echo "#[INFO] TRANSCRIPTS               $T_LIST"
-	echo "#[INFO] * APPLICATION               "
+	(($VERBOSE)) && echo "#[INFO] SAMPLE TAG                $TAG_LIST"
+	(($VERBOSE)) && echo "#[INFO] FASTQ/BAM/CRAM            $F_LIST"
+	(($VERBOSE)) && echo "#[INFO] FASTQ R2                  $Q_LIST"
+	(($VERBOSE)) && echo "#[INFO] INDEX1                    $I1_LIST"
+	(($VERBOSE)) && echo "#[INFO] INDEX2                    $I2_LIST"
+	(($VERBOSE)) && echo "#[INFO] OTHER_FILES               $OFCF_LIST"
+	(($VERBOSE)) && echo "#[INFO] DESIGN                    $B_LIST"
+	(($VERBOSE)) && echo "#[INFO] GENES                     $G_LIST"
+	(($VERBOSE)) && echo "#[INFO] TRANSCRIPTS               $T_LIST"
+	(($VERBOSE)) && echo "#[INFO] * APPLICATION               "
 	echo "#[INFO] APPLICATION NAME          $APP_NAME"
-	echo "#[INFO] APPLICATION FILE          "$(echo $ENV | sed s#$STARK_FOLDER_APPS/##gi)
+	(($VERBOSE)) && echo "#[INFO] APPLICATION FILE          "$(echo $ENV | sed s#$STARK_FOLDER_APPS/##gi)
 	echo "#[INFO] GROUP                     $SAMPLE_GROUP"
 	echo "#[INFO] PROJECT                   $SAMPLE_PROJECT"
 	echo "#[INFO] PIPELINES                 $PIPELINES"
@@ -1368,13 +1474,13 @@ for RUU in $RUN_UNIQ; do
 	echo "#[INFO] RESULTS                   $RESULTS"
 	echo "#[INFO] REPOSITORY                $REPOSITORY"
 	echo "#[INFO] ARCHIVES                  $ARCHIVES"
-	echo "#[INFO] RELEASE INFOS             $RELEASE_RUN"
-	echo "#[INFO] MAKEFILE CONFIGURATION    $MAKEFILE_ANALYSIS_RUN"
-	echo "#[INFO] SHELL CONFIGURATION       $SHELL_ANALYSIS_RUN"
-	echo "#[INFO] LOGFILE                   $LOGFILE_RES_RUN"
-	echo "#[INFO] *** Start Analysis        [`date`]"
-
-	START_ANALYSIS=$(date +%s)
+	(($VERBOSE)) && echo "#[INFO] RELEASE INFOS             $RELEASE_RUN"
+	(($VERBOSE)) && echo "#[INFO] MAKEFILE CONFIGURATION    $MAKEFILE_ANALYSIS_RUN"
+	(($VERBOSE)) && echo "#[INFO] SHELL CONFIGURATION       $SHELL_ANALYSIS_RUN"
+	(($VERBOSE)) && echo "#[INFO] LOGFILE                   $LOGFILE_RES_RUN"
+	(($VERBOSE)) && echo "#[INFO] THREADS                   $THREADS"
+	(($VERBOSE)) && echo "#[INFO] THREADS_BY_SAMPLE         $THREADS_BY_SAMPLE"
+	
 
 	STARK_QUEUED=$(source_app "$APP" "$STARK_FOLDER_APPS"; echo $STARK_QUEUED)
 	STARK_RUNNING=$(source_app "$APP" "$STARK_FOLDER_APPS"; echo $STARK_RUNNING)
@@ -1387,14 +1493,35 @@ for RUU in $RUN_UNIQ; do
 	STARK_COMPLETE_FILE=$RESULTS/$RUU/$STARK_COMPLETE
 
 	# RUNNING
-	echo "#["`date '+%Y%m%d-%H%M%S'`"] RUN $RUN running with STARK ($STARK_VERSION)" > $STARK_RUNNING_FILE
+	echo "#["$(date '+%Y%m%d-%H%M%S')"] RUN $RUN running with STARK ($STARK_VERSION)" > $STARK_RUNNING_FILE
 
 	# TREADS
-	THREADS_BY_SAMPLE=$THREADS; # Allocate all thread to the sample because no other sample analysed in parallele
+	#THREADS_BY_SAMPLE=$THREADS; # Allocate all thread to the sample because no other sample analysed in parallele
 
-	echo "["`date '+%Y%m%d-%H%M%S'`"] Main Analysis Process for Analysis '$RELEASE_RUN' START" >>$LOGFILE_RES_RUN
+	echo "#[INFO] *** Process"
+
+	# FASTQ && FASTP process
+
+	echo "#[INFO] STARK Input Processing..."
+	
+	if [ -s $FASTQ_MK ] && [ -s $FASTP_MK ]; then
+		(($VERBOSE)) && echo "#[INFO] Process Input data from FASTQ file(s) - multithreading mode"
+		if make -j $THREADS -e FASTP_THREADS_BY_SAMPLE=$THREADS_BY_SAMPLE -f $FASTQ_MK -f $FASTP_MK $FASTQ_MK_ALL $FASTP_MK_ALL 1>$FASTP_MK.log 2>$FASTP_MK.err; then
+			(($VERBOSE)) && echo "#[INFO] STARK Input Processing done."
+		else
+			echo "#[ERROR] STARK Input Processing failed"
+			cat $FASTQ_MK $FASTP_MK $FASTP_MK.log $FASTP_MK.err
+			exit 1
+		fi;
+		! (($DEBUG)) && rm -f $FASTQ_MK $FASTQ_MK.log $FASTQ_MK.err $FASTP_MK $FASTP_MK.log $FASTP_MK.err
+	fi;
+
+	echo "#[INFO] STARK Analysis Processing..."
+
+	echo "["$(date '+%Y%m%d-%H%M%S')"] Main Analysis Process for Analysis '$RELEASE_RUN' START" >>$LOGFILE_RES_RUN
+
 	make -k -j $THREADS -e ENV="$ENV" PARAM=$MAKEFILE_ANALYSIS_RUN $PARAMETERS $THREAD_PARAMETERS JAVA_MEMORY=$JAVA_MEMORY SNAPSHOT=0 VALIDATION=1 INPUT=$INPUT OUTDIR=$RESULTS RELEASE=$RELEASE_RUN FINAL_REPORT=$FINAL_REPORT_RUN ANALYSIS_REF=$ANALYSIS_REF -f $NGS_SCRIPTS/NGSWorkflow.mk 1>>$LOGFILE_RES_RUN 2>>$LOGFILE_RES_RUN
-	echo "["`date '+%Y%m%d-%H%M%S'`"] Main Analysis Process for Analysis '$RELEASE_RUN' END" >>$LOGFILE_RES_RUN
+	echo "["$(date '+%Y%m%d-%H%M%S')"] Main Analysis Process for Analysis '$RELEASE_RUN' END" >>$LOGFILE_RES_RUN
 
 	if (($(grep "\*\*\*" $LOGFILE_RES_RUN -c))); then
 		echo "["`date '+%Y%m%d-%H%M%S'`"] Main Analysis Process for Analysis '$RELEASE_RUN' ERROR" >>$LOGFILE_RES_RUN
@@ -1409,54 +1536,229 @@ for RUU in $RUN_UNIQ; do
 		continue;
 	fi;
 
+	# STARK COMPLETE
+	echo "#["`date '+%Y%m%d-%H%M%S'`"] RUN $RUN analyzed by STARK ($STARK_VERSION)" >> $STARK_COMPLETE_FILE
 
-	# STARK REport
-	I=0
-	RESULTS_FOLDER_COPY_FOLDER_RUU_STARKCopyComplete_list=""
-	for S in $SAMPLE; do
-		RU=${RUN_ARRAY[$I]};
+	# STARK RUNNING stop
+	rm -f $STARK_RUNNING_FILE
 
-		if [ "$RU" != "$RUU" ]; then
-			((I++))
-			continue;
-		fi;
-		
-		# REPOSITORY
-		if ((1)); then
-			# COPY of run/sample
-			# List of folders
-			if [ "$REPOSITORY" != "" ] ; then
+
+	# STARK Copy Reports Files
+	if ((1)); then
+
+		echo "#[INFO] STARK Copy Processing...";
+
+		I=0
+		RESULTS_FOLDER_COPY_FOLDER_RUU_STARKCopyComplete_list=""
+
+		> $RES_MK
+		RES_MK_ALL=""
+
+		for S in $SAMPLE; do
+			RU=${RUN_ARRAY[$I]};
+
+			if [ "$RU" != "$RUU" ]; then
+				((I++))
+				continue;
+			fi;
+			
+			# REPOSITORY
+			if ((1)); then
+				# COPY of run/sample
+				# List of folders
 				RESULTS_FOLDER_COPY_ALL=""
-				for RESULTS_FOLDER_COPY_FOLDER in $(echo $REPOSITORY | tr "," " " | tr " " "\n" | sort -u ); do #
-					#mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT;
-					if [ ! -d $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT ]; then
-						mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT;
+				# Repositories
+				if [ "$REPOSITORY" != "" ] ; then
+					for RESULTS_FOLDER_COPY_FOLDER in $(echo $REPOSITORY | tr "," " " | tr " " "\n" | sort -u ); do #
+						if [ -d $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT ] || \
+							mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT; then
+							RESULTS_FOLDER_COPY_ALL=$RESULTS_FOLDER_COPY_ALL" $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT:repository";
+						fi;
+					done;
+				fi;
+				# Archives
+				if ((1)); then
+					if [ "$ARCHIVES" != "" ] ; then
+						for RESULTS_FOLDER_COPY_FOLDER in $(echo $ARCHIVES | tr "," " " | tr " " "\n" | sort -u ); do #
+							if [ -d $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT ] || \
+								mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT; then
+								RESULTS_FOLDER_COPY_ALL=$RESULTS_FOLDER_COPY_ALL" $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT:archives";
+							fi;
+						done;
 					fi;
-					if [ -d $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT ]; then
-						RESULTS_FOLDER_COPY_ALL=$RESULTS_FOLDER_COPY_ALL" $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT";
-					fi;
+				fi;
 
-				done;
+
+				RES_MK_ALL_RUU_S=""
+				#RES_MK_REP_COMPLETE=""
+
+				# Copy
+				if [ "$RESULTS_FOLDER_COPY_ALL" != "$RESULTS" ] && [ "$RESULTS_FOLDER_COPY_ALL" != "" ] ; then
+					for RESULTS_FOLDER_COPY_FOLDER_INFO in $RESULTS_FOLDER_COPY_ALL;
+					do
+
+						RESULTS_FOLDER_COPY_FOLDER=$(echo $RESULTS_FOLDER_COPY_FOLDER_INFO | awk -F: '{print $1}')
+						RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE=$(echo $RESULTS_FOLDER_COPY_FOLDER_INFO | awk -F: '{print $2}')
+
+						### Repository type
+						REPOSITORY_TYPE_FILE_PATTERNS=""
+						if [ "$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE" == "repository" ]; then
+							REPOSITORY_TYPE_FILE_PATTERNS=$REPOSITORY_FILE_PATTERNS
+							ROOT_FILE_SOURCE=$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA
+						elif [ "$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE" == "archives" ]; then
+							REPOSITORY_TYPE_FILE_PATTERNS=$ARCHIVES_FILE_PATTERNS
+							ROOT_FILE_SOURCE=$RESULTS/$RUU/$S
+						else
+							echo "#[ERROR] Repository type '$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE' failed"
+						fi;
+
+
+						#echo "#[INFO] Copying '$RUU/$S' files from '$RESULTS' to '$RESULTS_FOLDER_COPY_FOLDER' [$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE]..."
+						(($VERBOSE)) && echo "#[INFO] STARK Copy '$RUU/$S' Process... from '$RESULTS' to '$RESULTS_FOLDER_COPY_FOLDER' [$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE]"
+						 
+
+						# Copy RUN files
+						if ! in_array $RESULTS_FOLDER_COPY_FOLDER/$RUU $RES_MK_ALL; then
+							echo "$RESULTS_FOLDER_COPY_FOLDER/$RUU:
+								@#[INFO] Copying '$RUU'
+								@mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$RUU
+								@$COMMAND_COPY_NO_COMPRESS \$\$(find -L $RESULTS/$RUU -mindepth 1 -maxdepth 1 -type f) $RESULTS_FOLDER_COPY_FOLDER/$RUU
+								@chmod $PERMS -R $RESULTS_FOLDER_COPY_FOLDER/$RUU $RESULTS_FOLDER_COPY_FOLDER/$RUU/* 
+							" >> $RES_MK
+							RES_MK_ALL=$RES_MK_ALL" $RESULTS_FOLDER_COPY_FOLDER/$RUU"
+							RES_MK_ALL_RUU=$RES_MK_ALL_RUU" $RESULTS_FOLDER_COPY_FOLDER/$RUU"
+						fi;
+
+						# Copy STARK RESULTS files
+						if [ "$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE" == "repository" ]; then
+							echo "$ROOT_FILE_SOURCE:
+								@#[INFO] Copying '$RUU/$S' - STARK Results
+								@#chmod $PERMS -R $RESULTS/$RUU/$S $RESULTS/$RUU/$S/*
+								@mkdir -p $ROOT_FILE_SOURCE
+								@$COMMAND_COPY_NO_COMPRESS $RESULTS/$RUU/$S/* $ROOT_FILE_SOURCE
+								@chmod $PERMS -R $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/* 
+							" >> $RES_MK
+						elif [ "$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE" == "archives" ]; then
+							echo "$ROOT_FILE_SOURCE:
+								@#[INFO] Copying '$RUU/$S' - STARK Results
+								@#[INFO] Copying '$RUU/$S' - NO Copy
+							" >> $RES_MK
+						else
+							echo "#[ERROR] Repository type failed"
+						fi;
+						RES_MK_ALL=$RES_MK_ALL" $ROOT_FILE_SOURCE"
+						RES_MK_ALL_RUU_S=$RES_MK_ALL_RUU_S" $ROOT_FILE_SOURCE"
+
+						
+						# Copy ROOT FILE PATTERNS
+						#echo "#[INFO] Copying REPOSITORY files patterns to $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S..."
+						if [ $RESULTS_SUBFOLDER_DATA != "" ]; then
+
+							
+
+							for ROOT_FILE_PATTERN_INFO in $REPOSITORY_TYPE_FILE_PATTERNS; do
+
+								ROOT_FILE_PATTERN=$(echo $ROOT_FILE_PATTERN_INFO | awk -F: '{print $1}')
+								ROOT_FILE_PATTERN_TYPE=$(echo $ROOT_FILE_PATTERN_INFO | awk -F: '{print $2}')
+
+								FILE_PATTERN_TYPE_LS=" ";
+								[ "$ROOT_FILE_PATTERN_TYPE" == "FOLDER" ] && FILE_PATTERN_TYPE_LS=" -d ";
+
+								if [[ $ROOT_FILE_PATTERN =~ '$SAMPLE' ]]; then
+									eval ROOT_FILE_PATTERN_VAR="/"$(echo $ROOT_FILE_PATTERN | sed s/\$SAMPLE/\$S/gi)
+								else
+									ROOT_FILE_PATTERN_VAR="/$ROOT_FILE_PATTERN"
+								fi;
+								ROOT_FILE_PATTERN_VAR_TARGET=$(echo $ROOT_FILE_PATTERN_VAR | sed -e 's/[][\\^*+.$-]/____/g')
+
+								# echo $ROOT_FILE_PATTERN_VAR
+								# echo "echo $ROOT_FILE_PATTERN_VAR | sed -e 's/[][\\^*+.$-]/____/g'"
+								# echo $ROOT_FILE_PATTERN_VAR | sed -e 's/[][\\^*+.$-]/____/g'
+								# echo "ROOT_FILE_PATTERN_VAR_TARGET=$ROOT_FILE_PATTERN_VAR_TARGET";
+								# exit 0
+
+								#for F_SOURCE in $(ls $FILE_PATTERN_TYPE_LS $RESULTS/$RUU/$S$ROOT_FILE_PATTERN_VAR 2>/dev/null); do
+								# for F_SOURCE in \$\$(ls $FILE_PATTERN_TYPE_LS $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA$ROOT_FILE_PATTERN_VAR 2>/dev/null); do 
+								#F_SOURCE_BASE=\$\$(echo \$\$F_SOURCE | sed \"s#$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA/##\");
+								
+
+								#echo "$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S$ROOT_FILE_PATTERN_VAR_TARGET: $ROOT_FILE_SOURCE
+								#echo "$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S$ROOT_FILE_PATTERN_VAR_TARGET: $ROOT_FILE_SOURCE
+								echo "$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S$ROOT_FILE_PATTERN_VAR: $ROOT_FILE_SOURCE
+									@#[INFO] Making  '$RUU/$S' - STARK Main Results
+									@mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S
+									@#[INFO] Copying '$RUU/$S' - STARK Main Results
+									@for F_SOURCE in \$\$(ls $FILE_PATTERN_TYPE_LS $ROOT_FILE_SOURCE$ROOT_FILE_PATTERN_VAR 2>/dev/null); do \
+										F_TARGET=$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/\$\$(basename \$\$F_SOURCE); \
+										F_SOURCE_BASE=\$\$(echo \$\$F_SOURCE | sed \"s#$ROOT_FILE_SOURCE/##\"); \
+										F_TARGET_BASE=\$\$(echo \$\$F_TARGET | sed \"s#$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/##\"); \
+										[ '$ROOT_FILE_PATTERN_TYPE' == "FOLDER" ] && F_SOURCE=\$\$F_SOURCE/; \
+										if [ ! -e \$\$F_TARGET ] && [ '$ROOT_FILE_PATTERN_TYPE' != "FOLDER" ] ; then \
+											$COMMAND_LINK \$\$F_SOURCE \$\$F_TARGET 1>/dev/null 2>/dev/null; \
+										fi; \
+										if [ ! -e \$\$F_TARGET ]; then \
+											rm -f \$\$F_TARGET; \
+											$COMMAND_COPY_NO_COMPRESS \$\$F_SOURCE \$\$F_TARGET 1>/dev/null 2>/dev/null; \
+										fi; \
+										if [ ! -e \$\$F_TARGET ]; then \
+											(($DEBUG)) && echo '#[ERROR] Copy file $F_SOURCE_BASE to $F_TARGET_BASE FAILED'; \
+										fi; \
+									done;
+								" >> $RES_MK
+
+								#RES_MK_ALL=$RES_MK_ALL" $ROOT_FILE_SOURCE$ROOT_FILE_PATTERN_VAR_TARGET"
+								RES_MK_ALL_RUU_S=$RES_MK_ALL_RUU_S" $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S$ROOT_FILE_PATTERN_VAR"
+								
+							done;
+						fi;
+
+						# CREATE CopyComplete file
+						echo "$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/STARKCopyComplete.txt: $RES_MK_ALL_RUU_S
+							@#(($VERBOSE)) && echo '#[INFO] STARK Copy $RUU/$S Complete'
+							@echo "["\$\$(date '+%Y%m%d-%H%M%S')"] Copy complete" >> $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/STARKCopyComplete.txt
+							@chmod $PERMS $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/STARKCopyComplete.txt
+						" >> $RES_MK
+						#RES_MK_REP_COMPLETE=$RES_MK_REP_COMPLETE" $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/STARKCopyComplete.txt"
+						RES_MK_ALL=$RES_MK_ALL" $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/STARKCopyComplete.txt"
+						# CopyComplete file for RUN
+						RESULTS_FOLDER_COPY_FOLDER_RUU_STARKCopyComplete_list="$RESULTS_FOLDER_COPY_FOLDER_RUU_STARKCopyComplete_list $RESULTS_FOLDER_COPY_FOLDER/$RUU"
+
+					done;
+
+				fi;
 			fi;
 
-			# Copy
-			if [ "$RESULTS_FOLDER_COPY_ALL" != "$RESULTS" ] && [ "$RESULTS_FOLDER_COPY_ALL" != "" ] ; then
-				for RESULTS_FOLDER_COPY_FOLDER in $RESULTS_FOLDER_COPY_ALL;
-				do
-					echo "#[INFO] Copying '$RUU/$S' files from '$RESULTS' to '$RESULTS_FOLDER_COPY_FOLDER'..."
+			# ARCHIVES
+			if ((0)); then
+				# COPY of run/sample
+				# List of folders
+				if [ "$ARCHIVES" != "" ] ; then
+					RESULTS_FOLDER_COPY_ALL=""
+					for RESULTS_FOLDER_COPY_FOLDER in $(echo $ARCHIVES | tr "," " " | tr " " "\n" | sort -u ); do
+						#mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT;
+						if [ ! -d $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT ]; then
+							mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT;
+						fi;
+						if [ -d $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT ]; then
+							RESULTS_FOLDER_COPY_ALL=$RESULTS_FOLDER_COPY_ALL" $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT";
+						fi;
 
-					# Copy SAMPLE files
-					chmod $PERMS -R $RESULTS/$RUU/$S 1>/dev/null 2>/dev/null
-					mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA
-					chmod $PERMS -R $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA 1>/dev/null 2>/dev/null
-					$COMMAND_COPY_NO_COMPRESS $RESULTS/$RUU/$S/* $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA 1>>$LOGFILE_RES_RUN 2>>$LOGFILE_RES_RUN
-					# Copy RUN files
-					$COMMAND_COPY_NO_COMPRESS $(find -L $RESULTS/$RUU -mindepth 1 -maxdepth 1 -type f) $RESULTS_FOLDER_COPY_FOLDER/$RUU 1>>$LOGFILE_RES_RUN 2>>$LOGFILE_RES_RUN
-					chmod $PERMS $RESULTS_FOLDER_COPY_FOLDER/$RUU/* 1>/dev/null 2>/dev/null
-					# Copy ROOT FILE PATTERNS
-					echo "#[INFO] Copying REPOSITORY files patterns to $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S..."
-					if [ $RESULTS_SUBFOLDER_DATA != "" ]; then
-						for ROOT_FILE_PATTERN_INFO in $REPOSITORY_FILE_PATTERNS; do
+					done;
+				fi;
+
+				# Copy
+				if [ "$RESULTS_FOLDER_COPY_ALL" != "$RESULTS" ] && [ "$RESULTS_FOLDER_COPY_ALL" != "" ] ; then
+					for RESULTS_FOLDER_COPY_FOLDER in $RESULTS_FOLDER_COPY_ALL;
+					do
+						#echo "#[INFO] Copying '$RUU/$S' files from '$RESULTS/$RUU/$S' to '$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S'..."
+						echo "#[INFO] Copying ARCHIVES files patterns to $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S..."
+
+						# Copy SAMPLE files
+						chmod $PERMS -R $RESULTS/$RUU/$S 1>/dev/null 2>/dev/null
+						mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S
+						
+						# Copy ROOT FILE PATTERNS
+						for ROOT_FILE_PATTERN_INFO in $ARCHIVES_FILE_PATTERNS; do
 
 							ROOT_FILE_PATTERN=$(echo $ROOT_FILE_PATTERN_INFO | awk -F: '{print $1}')
 							ROOT_FILE_PATTERN_TYPE=$(echo $ROOT_FILE_PATTERN_INFO | awk -F: '{print $2}')
@@ -1470,136 +1772,72 @@ for RUU in $RUN_UNIQ; do
 								ROOT_FILE_PATTERN_VAR="/$ROOT_FILE_PATTERN"
 							fi;
 
-							for F_SOURCE in $(ls $FILE_PATTERN_TYPE_LS $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA$ROOT_FILE_PATTERN_VAR 2>/dev/null); do
+							#for F_SOURCE in $(ls $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA/$ROOT_FILE_PATTERN_VAR); do
+							for F_SOURCE in $(ls $FILE_PATTERN_TYPE_LS $RESULTS/$RUU/$S$ROOT_FILE_PATTERN_VAR 2>/dev/null); do
+								F_SOURCE_BASE=$(echo $F_SOURCE | sed "s#$RESULTS/$RUU/$S/##")
+								#F_TARGET="$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/"$(basename $F_SOURCE)
 								F_TARGET="$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/"$(basename $F_SOURCE)
-								F_SOURCE_BASE=$(echo $F_SOURCE | sed "s#$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA/##")
 								F_TARGET_BASE=$(echo $F_TARGET | sed "s#$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/##")
 
 								# IF FOLDER
 								[ "$ROOT_FILE_PATTERN_TYPE" == "FOLDER" ] && F_SOURCE=$F_SOURCE"/";
+
 								(($VERBOSE)) && [ ! -e $F_SOURCE ] && echo "#[WARNING] file $F_SOURCE_BASE not found"
-								if [ ! -e $F_TARGET ]; then
-									(($VERBOSE)) && [ -e $F_SOURCE ] && echo "#[INFO] Link file $F_SOURCE_BASE to $F_TARGET_BASE"
-									(($DEBUG)) && echo "#[INFO] $COMMAND_LINK $F_SOURCE $F_TARGET"
-									$COMMAND_LINK $F_SOURCE $F_TARGET 1>>$LOGFILE_RES_RUN 2>>$LOGFILE_RES_RUN
-								fi;
-								if [ ! -e $F_TARGET ]; then
-									(($VERBOSE)) && echo "#[WARNING] Link file $F_SOURCE_BASE to $F_TARGET_BASE FAILED"
-									rm -f $F_TARGET
-									(($VERBOSE)) && [ -e $F_SOURCE ] && echo "#[INFO] Copy file $F_SOURCE_BASE to $F_TARGET_BASE"
-									(($DEBUG)) && echo "#[INFO] $COMMAND_COPY_NO_COMPRESS $F_SOURCE $F_TARGET"
-									$COMMAND_COPY_NO_COMPRESS $F_SOURCE $F_TARGET 1>>$LOGFILE_RES_RUN 2>>$LOGFILE_RES_RUN
-								fi;
+								(($VERBOSE)) && [ -e $F_SOURCE ] && echo "#[INFO] Copy file $F_SOURCE_BASE to $F_TARGET_BASE"
+								(($DEBUG)) && echo "#[INFO] $COMMAND_COPY_NO_COMPRESS $F_SOURCE $F_TARGET"
+								$COMMAND_COPY_NO_COMPRESS $F_SOURCE $F_TARGET 1>>$LOGFILE_RES_RUN 2>>$LOGFILE_RES_RUN
 								if [ ! -e $F_TARGET ]; then
 									(($VERBOSE)) && echo "#[ERROR] Copy file $F_SOURCE_BASE to $F_TARGET_BASE FAILED"
 								fi;
 							done;
 
 						done;
-					fi;
 
-					# CREATE CopyComplete file
-					echo "["`date '+%Y%m%d-%H%M%S'`"] Copy complete" >> $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/STARKCopyComplete.txt
-					chmod $PERMS $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/STARKCopyComplete.txt 1>/dev/null 2>/dev/null
-					RESULTS_FOLDER_COPY_FOLDER_RUU_STARKCopyComplete_list="$RESULTS_FOLDER_COPY_FOLDER_RUU_STARKCopyComplete_list $RESULTS_FOLDER_COPY_FOLDER/$RUU"
+						# CREATE CopyComplete file
 
-				done;
-			fi;
-		fi;
+						# TODO
 
-		# ARCHIVES
-		if ((1)); then
-			# COPY of run/sample
-			# List of folders
-			if [ "$ARCHIVES" != "" ] ; then
-				RESULTS_FOLDER_COPY_ALL=""
-				for RESULTS_FOLDER_COPY_FOLDER in $(echo $ARCHIVES | tr "," " " | tr " " "\n" | sort -u ); do
-					#mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT;
-					if [ ! -d $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT ]; then
-						mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT;
-					fi;
-					if [ -d $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT ]; then
-						RESULTS_FOLDER_COPY_ALL=$RESULTS_FOLDER_COPY_ALL" $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT";
-					fi;
-
-				done;
-			fi;
-
-			# Copy
-			if [ "$RESULTS_FOLDER_COPY_ALL" != "$RESULTS" ] && [ "$RESULTS_FOLDER_COPY_ALL" != "" ] ; then
-				for RESULTS_FOLDER_COPY_FOLDER in $RESULTS_FOLDER_COPY_ALL;
-				do
-					#echo "#[INFO] Copying '$RUU/$S' files from '$RESULTS/$RUU/$S' to '$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S'..."
-					echo "#[INFO] Copying ARCHIVES files patterns to $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S..."
-
-					# Copy SAMPLE files
-					chmod $PERMS -R $RESULTS/$RUU/$S 1>/dev/null 2>/dev/null
-					mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S
-					
-					# Copy ROOT FILE PATTERNS
-					for ROOT_FILE_PATTERN_INFO in $ARCHIVES_FILE_PATTERNS; do
-
-						ROOT_FILE_PATTERN=$(echo $ROOT_FILE_PATTERN_INFO | awk -F: '{print $1}')
-						ROOT_FILE_PATTERN_TYPE=$(echo $ROOT_FILE_PATTERN_INFO | awk -F: '{print $2}')
-
-						FILE_PATTERN_TYPE_LS=" ";
-						[ "$ROOT_FILE_PATTERN_TYPE" == "FOLDER" ] && FILE_PATTERN_TYPE_LS=" -d ";
-
-						if [[ $ROOT_FILE_PATTERN =~ '$SAMPLE' ]]; then
-							eval ROOT_FILE_PATTERN_VAR="/"$(echo $ROOT_FILE_PATTERN | sed s/\$SAMPLE/\$S/gi)
-						else
-							ROOT_FILE_PATTERN_VAR="/$ROOT_FILE_PATTERN"
-						fi;
-
-						#for F_SOURCE in $(ls $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA/$ROOT_FILE_PATTERN_VAR); do
-						for F_SOURCE in $(ls $FILE_PATTERN_TYPE_LS $RESULTS/$RUU/$S$ROOT_FILE_PATTERN_VAR 2>/dev/null); do
-							F_SOURCE_BASE=$(echo $F_SOURCE | sed "s#$RESULTS/$RUU/$S/##")
-							#F_TARGET="$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/"$(basename $F_SOURCE)
-							F_TARGET="$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/"$(basename $F_SOURCE)
-							F_TARGET_BASE=$(echo $F_TARGET | sed "s#$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/##")
-
-							# IF FOLDER
-							[ "$ROOT_FILE_PATTERN_TYPE" == "FOLDER" ] && F_SOURCE=$F_SOURCE"/";
-
-							(($VERBOSE)) && [ ! -e $F_SOURCE ] && echo "#[WARNING] file $F_SOURCE_BASE not found"
-							(($VERBOSE)) && [ -e $F_SOURCE ] && echo "#[INFO] Copy file $F_SOURCE_BASE to $F_TARGET_BASE"
-							(($DEBUG)) && echo "#[INFO] $COMMAND_COPY_NO_COMPRESS $F_SOURCE $F_TARGET"
-							$COMMAND_COPY_NO_COMPRESS $F_SOURCE $F_TARGET 1>>$LOGFILE_RES_RUN 2>>$LOGFILE_RES_RUN
-							if [ ! -e $F_TARGET ]; then
-								(($VERBOSE)) && echo "#[ERROR] Copy file $F_SOURCE_BASE to $F_TARGET_BASE FAILED"
-							fi;
-						done;
+						#echo "["`date '+%Y%m%d-%H%M%S'`"] Copy complete" >> $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/STARKCopyComplete.txt
+						#chmod $PERMS $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/STARKCopyComplete.txt 1>/dev/null 2>/dev/null
+						RESULTS_FOLDER_COPY_FOLDER_RUU_STARKCopyComplete_list="$RESULTS_FOLDER_COPY_FOLDER_RUU_STARKCopyComplete_list $RESULTS_FOLDER_COPY_FOLDER/$RUU $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S"
 
 					done;
-
-					# CREATE CopyComplete file
-					echo "["`date '+%Y%m%d-%H%M%S'`"] Copy complete" >> $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/STARKCopyComplete.txt
-					chmod $PERMS $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/STARKCopyComplete.txt 1>/dev/null 2>/dev/null
-					RESULTS_FOLDER_COPY_FOLDER_RUU_STARKCopyComplete_list="$RESULTS_FOLDER_COPY_FOLDER_RUU_STARKCopyComplete_list $RESULTS_FOLDER_COPY_FOLDER/$RUU"
-
-				done;
+				fi;
 			fi;
+
+			((I++))
+		done
+
+
+		echo "all: $RES_MK_ALL
+		" >> $RES_MK
+
+		#(($VERBOSE)) && echo "#[INFO] Copying files to Repository and Archives"; \
+		if (($VERBOSE)); then
+			make -j $THREADS --always-make -f $RES_MK all #2>/dev/null
+			#make -j 1 -f $RES_MK all #2>/dev/null
+		else
+			make -j $THREADS --always-make -f $RES_MK all 1>/dev/null 2>/dev/null
 		fi;
+		(($VERBOSE)) && echo "#[INFO] STARK Copy Complete"
 
-		((I++))
-	done
+	fi;
 
-	STOP_ANALYSIS=$(date +%s)
-	ANALYSIS_TIME=$(convertsecs $((STOP_ANALYSIS - START_ANALYSIS)))
 
-	echo "#[INFO] *** Stop Analysis         [`date`] - $ANALYSIS_TIME"
-
-	# STARK COMPLETE
-	echo "#["`date '+%Y%m%d-%H%M%S'`"] RUN $RUN analyzed by STARK ($STARK_VERSION)" >> $STARK_COMPLETE_FILE
 
 	# CREATE CopyComplete file
 	for RESULTS_FOLDER_COPY_FOLDER_RUU_STARKCopyComplete in $RESULTS_FOLDER_COPY_FOLDER_RUU_STARKCopyComplete_list; do
-		echo "["`date '+%Y%m%d-%H%M%S'`"] Copy complete" >> $RESULTS_FOLDER_COPY_FOLDER_RUU_STARKCopyComplete/STARKCopyComplete.txt
+		echo "["$(date '+%Y%m%d-%H%M%S')"] Copy complete" >> $RESULTS_FOLDER_COPY_FOLDER_RUU_STARKCopyComplete/STARKCopyComplete.txt
 		chmod $PERMS $RESULTS_FOLDER_COPY_FOLDER_RUU_STARKCopyComplete/STARKCopyComplete.txt 1>/dev/null 2>/dev/null
 	done;
 
-	# RUNNING stop
-	rm -f $STARK_RUNNING_FILE
+	# Stop Analysis
+	STOP_ANALYSIS=$(date +%s)
+	ANALYSIS_TIME=$(convertsecs $((STOP_ANALYSIS - START_ANALYSIS)))
+
+	echo "#[INFO] STARK Execution Time: $ANALYSIS_TIME"
+
+	(($VERBOSE)) && echo "#[INFO] *** Stop Analysis         ["$(date)"] - $ANALYSIS_TIME"
 
 
 done;

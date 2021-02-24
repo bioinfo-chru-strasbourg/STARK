@@ -26,7 +26,8 @@ def keyvalue(obj,key=""):
 	elif type(obj) == list:
 	#elif type(obj) is list:
 	#elif isinstance(obj, list):
-		list_concat=None
+		#list_concat=None
+		list_concat=""
 		for v in obj:
 			sep=""
 			if hasattr(v, '__iter__'):
