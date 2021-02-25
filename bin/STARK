@@ -1051,9 +1051,10 @@ if [ ! -z "$FASTQ" ]; then # && [ -e "$FASTQ" ]; then
 	echo "#[INFO] Check Samples Analysis"
 
 	FASTQ_EXISTS=1
-	for F in $(echo $FASTQ | tr "," " "); do
-		if [ -f $F ] || [ -f $ANALYSIS_DIR/$F ]; then
-			(($VERBOSE)) && echo "#[INFO] Input File '$F' exists"
+
+	for F in $(echo "$FASTQ" | tr "," " "); do
+		if (($(ls $F $ANALYSIS_DIR/$F 2>/dev/null | wc -w))); then
+			echo "#[INFO] Input File '$F' exists"
 		else
 			echo "#[WARNING] Input File '$F' does NOT exist"
 			FASTQ_EXISTS=0;
@@ -1177,7 +1178,7 @@ if [ ! -z "$RUNS" ]; then
 			# Test if RAW Folder or DEM Folder
 
 			# RUN with analysis JSON
-			ANALYSIS_JSON_CONFIG=$(find -L $R -maxdepth 2 -name '*analysis.json')
+			ANALYSIS_JSON_CONFIG=$(find -L $R -maxdepth 2 -depth -name '*analysis.json' | tac)
 			#if (($(find -L $R -name '*analysis.json' | wc -l))); then
 			if (($(echo $ANALYSIS_JSON_CONFIG | wc -w))); then
 
@@ -1187,7 +1188,7 @@ if [ ! -z "$RUNS" ]; then
 				CMD="$STARK_FOLDER_BIN/STARK $PARAM --analysis="$(echo $ANALYSIS_JSON_CONFIG | tr "\n" "," | tr " " "," | sed s/,$//)
 				#CMD=""
 
-			elif [ -e $R/RTAComplete.txt ]; then
+			elif [ -s $R/RTAComplete.txt ]; then
 
 				# RUN is a RAW RUN (BCL)
 				echo "#[INFO] RUN '$R_NAME' is a RAW folder (BCL) including a file RTAComplete.txt";
@@ -1308,7 +1309,7 @@ if [ ! -z "$RUNS" ]; then
 				#echo "CMD=$CMD"; exit 0
 
 			#fi;
-			elif [ -f $R/SampleSheet.csv ] || [ -f "$SAMPLESHEET_INPUT_RI" ]; then
+			elif [ -s $R/SampleSheet.csv ] || [ -s "$SAMPLESHEET_INPUT_RI" ]; then
 
 				echo "#[INFO] RUN '$R_NAME' is a demultiplexed folder (Fastq) including configuration file SampleSheet"
 
@@ -1368,15 +1369,25 @@ if [ ! -z "$RUNS" ]; then
 				SAMPLE_LIST_IN_SAMPLESHEET=$(cat $RUN_SAMPLESHEET | awk '/\[Data\]/,/\[[^Data]/' | grep "^\[" -v | sed '/^[[:space:]]*$/d' | tail -n +2 | cut -d, -f1 | tr "\n" " ")
 				(($VERBOSE)) && echo "#[INFO] List of samples: $SAMPLE_LIST_IN_SAMPLESHEET";
 
-				SAMPLE_PROJECT_FIELD=1;
-				MANIFEST_INDEX_FIELD=1;
-				SAMPLE_DESCRIPTION_FIELD=1;
+				SAMPLE_ID_FIELD=1;
+				SAMPLE_NAME_FIELD=1;
+				MANIFEST_INDEX_FIELD=2;
+				SAMPLE_DESCRIPTION_FIELD=3;
+				SAMPLE_PROJECT_FIELD=3;
+				# SAMPLE_ID_FIELD=0;
+				# SAMPLE_NAME_FIELD=0;
+				# MANIFEST_INDEX_FIELD=0;
+				# SAMPLE_DESCRIPTION_FIELD=0;
+				# SAMPLE_PROJECT_FIELD=0;
+
 				C=1
 				#for i in $(awk '/Data/{y=1;next}y' $DEM_SAMPLESHEET | tr -d '\r' | sed 's/,/\t/g' | head -n 1) ; do
 				for i in $(cat $RUN_SAMPLESHEET | awk '/\[Data\]/,/\[[^Data]/' | grep "^\[" -v | sed '/^[[:space:]]*$/d' | tr -d '\r' | sed 's/,/\t/g' | head -n 1) ; do
+					[ $i == "Sample_ID" ] && SAMPLE_ID_FIELD=$C
+					[ $i == "Sample_Name" ] && SAMPLE_NAME_FIELD=$C
+					[ $i == "Manifest" ] && MANIFEST_INDEX_FIELD=$C
 					[ $i == "Description" ] && SAMPLE_DESCRIPTION_FIELD=$C
 					[ $i == "Sample_Project" ] && SAMPLE_PROJECT_FIELD=$C
-					[ $i == "Manifest" ] && MANIFEST_INDEX_FIELD=$C
 					C=$(( $C + 1 )) ;
 				done
 
@@ -1384,20 +1395,36 @@ if [ ! -z "$RUNS" ]; then
 				APP_LIST=""
 				for L in $(cat $RUN_SAMPLESHEET | awk '/\[Data\]/,/\[[^Data]/' | grep "^\[" -v | sed '/^[[:space:]]*$/d' | tail -n +2 | tr -d '\r'); do
 					# SAMPLE ID/NAME
-					SAMPLE_ID=$(echo $L | cut -d, -f1)
-					SAMPLE_NAME=$(echo $L | cut -d, -f2)
+					# SAMPLE_ID=$(echo $L | cut -d, -f1)
+					# SAMPLE_NAME=$(echo $L | cut -d, -f2)
+					SAMPLE_ID=$(echo $L | cut -d, -f$SAMPLE_ID_FIELD)
+					SAMPLE_NAME=$(echo $L | cut -d, -f$SAMPLE_NAME_FIELD)
 					[ -z $SAMPLE_NAME ] && SAMPLE_NAME=$SAMPLE_ID
 
 					if [ "$SAMPLE_LIST" == "" ] || $(list_include_item "$SAMPLE_LIST" "$SAMPLE_NAME"); then #
 						# SAMPLE FASTQ R1/R2
-						# P1431B_S6_I1_001.fastq.gz
+
+						# Patterns for Fastq R1
+						FASTQ_PATTERN_ILLUMINA='_S*_R1_*.fastq.gz';
+						FASTQ_PATTERN_GENERIC='.*R1*.fastq.gz';
+
+						# Check Fastq R1 with pattern Illumina
 						SAMPLE_FASTQ_R1_PATTERN=$SAMPLE_NAME'_S*_R1_*.fastq.gz'
 						SAMPLE_FASTQ_R2_PATTERN=$SAMPLE_NAME'_S*_R2_*.fastq.gz'
 						SAMPLE_FASTQ_I1_PATTERN=$SAMPLE_NAME'_S*_I1_*.fastq.gz'
 						SAMPLE_FASTQ_I2_PATTERN=$SAMPLE_NAME'_S*_I2_*.fastq.gz'
-						#echo $SAMPLE_FASTQ_R1_PATTERN
 						SAMPLE_FASTQ_R1=$(find -L $R -name "$SAMPLE_FASTQ_R1_PATTERN")
+						if [ "$SAMPLE_FASTQ_R1" == "" ]; then
+							(($VERBOSE)) && echo "[WARNING] No Reads for sample '$SAMPLE_NAME' with pattern '$FASTQ_PATTERN_ILLUMINA'. Check with generic parrtern '$FASTQ_PATTERN_GENERIC'";
+							SAMPLE_FASTQ_R1_PATTERN=$SAMPLE_NAME'.*R1*.fastq.gz'
+							SAMPLE_FASTQ_R2_PATTERN=$SAMPLE_NAME'.*R2*.fastq.gz'
+							SAMPLE_FASTQ_I1_PATTERN=$SAMPLE_NAME'.*I1*.fastq.gz'
+							SAMPLE_FASTQ_I2_PATTERN=$SAMPLE_NAME'.*I2*.fastq.gz'
+							SAMPLE_FASTQ_R1=$(find -L $R -name "$SAMPLE_FASTQ_R1_PATTERN")
+						fi;
 						[ "$SAMPLE_FASTQ_R1" == "" ] && echo "[ERROR] No Reads for sample '$SAMPLE_NAME'" && exit 1;
+
+						# Fastq others
 						SAMPLE_FASTQ_R2=$(find -L $R -name "$SAMPLE_FASTQ_R2_PATTERN")
 						SAMPLE_FASTQ_I1=$(find -L $R -name "$SAMPLE_FASTQ_I1_PATTERN")
 						SAMPLE_FASTQ_I2=$(find -L $R -name "$SAMPLE_FASTQ_I2_PATTERN")
@@ -1470,7 +1497,23 @@ if [ ! -z "$RUNS" ]; then
 						fi;
 
 						# OTHER FILES
-						OTHER_FILES="$R/Stats:$SAMPLE_NAME.demultiplexing/Stats+$R/Reports:$SAMPLE_NAME.demultiplexing/Reports"
+						OTHER_FILES="";
+						if [ -d $R/Stats ]; then
+							(($DEBUG)) && echo "#[INFO] $R/Stats added to Others Files"
+							OTHER_FILES="$R/Stats:$SAMPLE_NAME.demultiplexing/Stats+"
+						else
+							(($DEBUG)) && echo "#[WARNING] $R/Stats added to Others Files"
+						fi;
+						if [ -d $R/Reports ]; then
+							(($DEBUG)) && echo "#[INFO] $R/Reports added to Others Files"
+							OTHER_FILES="$R/Reports:$SAMPLE_NAME.demultiplexing/Reports+"
+						else
+							(($DEBUG)) && echo "#[WARNING] $R/Stats added to Others Files"
+						fi;
+						#echo "OTHER_FILES=$OTHER_FILES"
+						#exit 0
+
+						#OTHER_FILES="$R/Stats:$SAMPLE_NAME.demultiplexing/Stats+$R/Reports:$SAMPLE_NAME.demultiplexing/Reports"
 
 						#	echo "SAMPLE_LIST '$SAMPLE_NAME' found in the list '$SAMPLE_LIST'"
 						APP_LIST=$(echo "$APP_LIST $SAMPLE_APP" | tr " " "\n" | sort -u | tr "\n" " ")

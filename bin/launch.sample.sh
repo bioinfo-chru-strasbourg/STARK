@@ -121,63 +121,63 @@ do
 		-f|--reads|--reads1|--fastq|--fastq_R1)
 			FASTQ="$2"
 			# transform RUNS list
-			FASTQ=$(echo $FASTQ | tr "," " ")
+			FASTQ=$(echo $FASTQ | tr "," " " | xargs)
 			shift 2
 			;;
 		-q|--reads2|--fastq_R2)
 			FASTQ_R2="$2"
 			# transform RUNS list
-			FASTQ_R2=$(echo $FASTQ_R2 | tr "," " ")
+			FASTQ_R2=$(echo $FASTQ_R2 | tr "," " " | xargs)
 			shift 2
 			;;
 		--index1)
 			INDEX1=$2 
-			INDEX1=$(echo $INDEX1 | tr "," " ")
+			INDEX1=$(echo $INDEX1 | tr "," " " | xargs)
 			shift 2
 			;;
 		--index2)
 			INDEX2=$2 
-			INDEX2=$(echo $INDEX2 | tr "," " ")
+			INDEX2=$(echo $INDEX2 | tr "," " " | xargs)
 			shift 2
 			;;
 		--other_files)
 			OTHER_FILES=$2 
-			OTHER_FILES=$(echo $OTHER_FILES | tr "," " ")
+			OTHER_FILES=$(echo $OTHER_FILES | tr "," " " | xargs)
 			shift 2
 			;;
 		-b|--design|--bed|--manifest)
 			BED_INPUT="$2"
-			BED_INPUT=$(echo $BED_INPUT | tr "," " ")
+			BED_INPUT=$(echo $BED_INPUT | tr "," " " | xargs)
 			shift 2
 			;;
 		-j|--genes)
 			BEDFILE_GENES_INPUT="$2"
-			BEDFILE_GENES_INPUT=$(echo $BEDFILE_GENES_INPUT | tr "," " ")
+			BEDFILE_GENES_INPUT=$(echo $BEDFILE_GENES_INPUT | tr "," " " | xargs)
 			shift 2
 			;;
 		-m|--transcripts)
 			TRANSCRIPTS_INPUT="$2"
-			TRANSCRIPTS_INPUT=$(echo $TRANSCRIPTS_INPUT | tr "," " ")
+			TRANSCRIPTS_INPUT=$(echo $TRANSCRIPTS_INPUT | tr "," " " | xargs)
 			shift 2
 			;;
 		-s|--sample)
 			SAMPLE="$2"
-			SAMPLE=$(echo $SAMPLE | tr "," " ")
+			SAMPLE=$(echo $SAMPLE | tr "," " " | xargs)
 			shift 2
 			;;
 		--sample_tag)
 			SAMPLE_TAG="$2"
-			SAMPLE_TAG=$(echo $SAMPLE_TAG | tr "," " ")
+			SAMPLE_TAG=$(echo $SAMPLE_TAG | tr "," " " | xargs)
 			shift 2
 			;;
 		--sample_list|--sample_filter)
 			SAMPLE_LIST="$2"
-			SAMPLE_LIST=$(echo $SAMPLE_LIST | tr "," " ")
+			SAMPLE_LIST=$(echo $SAMPLE_LIST | tr "," " " | xargs)
 			shift 2
 			;;
 		--analysis_name)
 			RUN="$2"
-			RUN=$(echo $RUN | tr "," " ")
+			RUN=$(echo $RUN | tr "," " " | xargs)
 			shift 2
 			;;
 		--analysis_tag)
@@ -328,11 +328,12 @@ VERBOSE=$(echo $VERBOSE | awk '{print $0+0}')
 DEBUG=$(echo $DEBUG | awk '{print $0+0}')
 
 
+
 # FASTQ
 FASTQ_R1_RELOCATED=""
-for F in $FASTQ; do
+for F in $(echo $(ls $FASTQ 2>/dev/null | xargs realpath 2>/dev/null) $(cd $ANALYSIS_DIR && ls $FASTQ 2>/dev/null | xargs realpath 2>/dev/null) | tr " " "\n" | sort -u); do
+	#(($DEBUG)) && echo "test1 F=$F"
 	if [ -f "$F" ] || [ -f "$ANALYSIS_DIR/$F" ]; then
-		#F=$F;
 		(($DEBUG)) && echo "F=$F";
 		if ! (($(echo "$F" | grep ".fastq.gz$\|.fq.gz$\|.bam$\|.ubam$\|.cram$\|.ucram$" -c))); then
 			echo "[ERROR]! Format of input file '$F' Unknown! Please check file format (.fastq.gz|.fq.gz|.bam|.ubam|.cram|.ucram)";
@@ -353,9 +354,10 @@ FASTQ=$FASTQ_R1_RELOCATED
 
 
 FASTQ_R2_RELOCATED=""
-for F in $FASTQ_R2; do
+#for F in $FASTQ_R2; do
+if [ "$FASTQ_R2" != "" ]; then
+for F in $(echo $(ls $FASTQ_R2 2>/dev/null | xargs realpath 2>/dev/null) $(cd $ANALYSIS_DIR && ls $FASTQ_R2 2>/dev/null | xargs realpath 2>/dev/null) | tr " " "\n" | sort -u); do
 	if [ -f "$F" ] || [ -f "$ANALYSIS_DIR/$F" ]; then
-		F=$F;
 		(($DEBUG)) && echo "Q=$F";
 		if ! (($(echo "$F" | grep ".fastq.gz$\|.fq.gz$" -c))); then
 			echo "[ERROR]! Format of input file '$F' Unknown! Please check file format (.fastq.gz|.fq.gz)";
@@ -373,10 +375,15 @@ for F in $FASTQ_R2; do
 	fi;
 done;
 FASTQ_R2=$FASTQ_R2_RELOCATED
+fi;
+
 
 # INDEX
 INDEX1_RELOCATED=""
-for I1 in $INDEX1; do
+#for I1 in $INDEX1; do
+#echo $(ls $INDEX1 2>/dev/null | xargs realpath 2>/dev/null) $(cd $ANALYSIS_DIR && ls $INDEX1 2>/dev/null | xargs realpath 2>/dev/null)
+if [ "$INDEX1" != "" ]; then
+for I1 in $(echo $(ls $INDEX1 2>/dev/null | xargs realpath 2>/dev/null) $(cd $ANALYSIS_DIR && ls $INDEX1 2>/dev/null | xargs realpath 2>/dev/null) | tr " " "\n" | sort -u); do
 	if [ -f "$I1" ] || [ -f "$ANALYSIS_DIR/$I1" ]; then
 		(($DEBUG)) && echo "I1=$I1";
 		if ! (($(echo "$I1" | grep ".fastq.gz$\|.fq.gz$" -c))); then
@@ -395,10 +402,16 @@ for I1 in $INDEX1; do
 	fi;
 done;
 INDEX1=$INDEX1_RELOCATED
+fi;
+
+
 
 # INDEX
 INDEX2_RELOCATED=""
-for I2 in $INDEX2; do
+#for I2 in $INDEX2; do
+if [ "$INDEX2" != "" ]; then
+for I2 in $(echo $(ls $INDEX2 2>/dev/null | xargs realpath 2>/dev/null) $(cd $ANALYSIS_DIR && ls $INDEX2 2>/dev/null | xargs realpath 2>/dev/null) | tr " " "\n" | sort -u); do
+
 	if [ -f "$I2" ] || [ -f "$ANALYSIS_DIR/$I2" ]; then
 		(($DEBUG)) && echo "I2=$I2";
 		if ! (($(echo "$I2" | grep ".fastq.gz$\|.fq.gz$" -c))); then
@@ -417,10 +430,16 @@ for I2 in $INDEX2; do
 	fi;
 done;
 INDEX2=$INDEX2_RELOCATED
+fi;
+
+
+
 
 # OTHER_FILES
 OTHER_FILES_RELOCATED=""
-for OFCF in $OTHER_FILES; do
+if [ "$OTHER_FILES" != "" ]; then
+for OFCF in $(echo $(ls $OTHER_FILES 2>/dev/null | xargs realpath 2>/dev/null) $(cd $ANALYSIS_DIR && ls $OTHER_FILES 2>/dev/null | xargs realpath 2>/dev/null) | tr " " "\n" | sort -u); do
+#for OFCF in $OTHER_FILES; do
 	#(($DEBUG)) && echo "OFCF=$OFCF"
 	OTHER_FILES_RELOCATED_ONE=""
 	for OFCF_ONE in $(echo $OFCF | tr "+" " "); do
@@ -447,6 +466,9 @@ for OFCF in $OTHER_FILES; do
 done;
 OTHER_FILES_RELOCATED=$(echo $OTHER_FILES_RELOCATED | sed "s/^,//" )
 OTHER_FILES=$OTHER_FILES_RELOCATED
+fi;
+
+
 
 ENV=$(find_app "$APP" "$STARK_FOLDER_APPS")
 source_app "$APP" "$STARK_FOLDER_APPS" 1
@@ -475,7 +497,7 @@ if [ "$BED_INPUT" != "" ]; then
 			# Relocation
 			if [ -f "$B" ]; then
 				BED_RELOCATED="$BED_RELOCATED $B"
-		 	elif [ -f "$ANALYSIS_DIR/$F" ]; then
+		 	elif [ -f "$ANALYSIS_DIR/$B" ]; then
 				BED_RELOCATED="$BED_RELOCATED $ANALYSIS_DIR/$B"
 			fi;
 		else
@@ -488,6 +510,7 @@ if [ "$BED_INPUT" != "" ]; then
 fi;
 BED_INPUT=$BED_RELOCATED
 BED_DEFAULT=$(echo $BED_INPUT | cut -d" " -f1) #`date '+%Y%m%d-%H%M%S'`
+
 
 # BEDFILE_GENES
 if [ "$BEDFILE_GENES_INPUT" != "" ]; then 
@@ -1449,10 +1472,10 @@ for RUU in $RUN_UNIQ; do
 
 	(($VERBOSE)) && echo "#[INFO] * ANALYSIS                "
 	echo "#[INFO] ANALYSIS NAME             $RUU"
-	(($VERBOSE)) && echo "#[INFO] ANALYSIS TAG              $ANALYSIS_TAG"
+	echo "#[INFO] ANALYSIS TAG              $ANALYSIS_TAG"
 	(($VERBOSE)) && echo "#[INFO] * SAMPLES                 "
 	echo "#[INFO] SAMPLE NAMES              $S_LIST"
-	(($VERBOSE)) && echo "#[INFO] SAMPLE TAG                $TAG_LIST"
+	echo "#[INFO] SAMPLE TAG                $TAG_LIST"
 	(($VERBOSE)) && echo "#[INFO] FASTQ/BAM/CRAM            $F_LIST"
 	(($VERBOSE)) && echo "#[INFO] FASTQ R2                  $Q_LIST"
 	(($VERBOSE)) && echo "#[INFO] INDEX1                    $I1_LIST"
