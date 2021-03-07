@@ -1149,7 +1149,7 @@ for RUU in $RUN_UNIQ; do
 					mkdir -p $RUN_SAMPLE_DIR/$S.sequencing;
 					# FASTP parameters
 					echo ' --disable_trim_poly_g --disable_length_filtering ' > \$@.fastp.param;
-					echo ' --thread $THREADS ' >> \$@.fastp.param;
+					echo ' --thread \$FASTP_THREADS_BY_SAMPLE ' >> \$@.fastp.param;
 					# OUTPUT
 					echo '-h $FASTP_HTML -j $FASTP_JSON' >> \$@.fastp.param;
 					# Paired-End or Single-End
