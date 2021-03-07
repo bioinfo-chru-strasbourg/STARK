@@ -255,8 +255,17 @@ RUN echo "#### SYSTEM INSTALLATION" && \
 	echo "#[INFO] System Python packages update from PIP Repository" && \
 	echo "#[INFO] System Python packages update from PIP Repository - Python2" && \
 	mkdir -p $TOOLS/python/2/bin && \
-	curl https://bootstrap.pypa.io/2.7/get-pip.py --output $TOOLS/python/2/bin/get-pip.py && \
-	chmod u+x $TOOLS/python/2/bin/get-pip.py && \
+	mkdir -p $SOURCES/$SOURCES_FOLDER/python/2 && \
+	if [ ! -e $SOURCES/$SOURCES_FOLDER/python/2/get-pip.py ]; then \
+		curl https://bootstrap.pypa.io/pip/2/get-pip.py --output $SOURCES/$SOURCES_FOLDER/python/2/get-pip.py; \
+	fi && \
+	if [ -e $SOURCES/$SOURCES_FOLDER/python/2/get-pip.py ]; then \
+		cp $SOURCES/$SOURCES_FOLDER/python/2/get-pip.py $TOOLS/python/2/bin/get-pip.py; \
+		chmod u+x $TOOLS/python/2/bin/get-pip.py; \
+	else \
+		echo "#[ERROR] No Python2 get-pip.py"; \
+		exit 1; \
+	fi && \
 	$TOOLS/python/2/bin/get-pip.py && \
 	python2 -m pip --no-cache-dir install --upgrade pip && \
 	echo "#[INFO] System Python packages update from PIP Repository - Python3" && \
