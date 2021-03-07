@@ -1533,7 +1533,7 @@ for RUU in $RUN_UNIQ; do
 			(($VERBOSE)) && echo "#[INFO] STARK Input Processing done."
 		else
 			echo "#[ERROR] STARK Input Processing failed"
-			cat $FASTQ_MK $FASTP_MK $FASTP_MK.log $FASTP_MK.err
+			cat $FASTP_MK $FASTQ_MK $FASTP_MK.log $FASTP_MK.err
 			exit 1
 		fi;
 		! (($DEBUG)) && rm -f $FASTQ_MK $FASTQ_MK.log $FASTQ_MK.err $FASTP_MK $FASTP_MK.log $FASTP_MK.err
