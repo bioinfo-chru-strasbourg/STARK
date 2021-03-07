@@ -1149,7 +1149,7 @@ for RUU in $RUN_UNIQ; do
 					mkdir -p $RUN_SAMPLE_DIR/$S.sequencing;
 					# FASTP parameters
 					echo ' --disable_trim_poly_g --disable_length_filtering ' > \$@.fastp.param;
-					echo ' --thread \$FASTP_THREADS_BY_SAMPLE ' >> \$@.fastp.param;
+					echo ' --thread \$(FASTP_THREADS_BY_SAMPLE) ' >> \$@.fastp.param;
 					# OUTPUT
 					echo '-h $FASTP_HTML -j $FASTP_JSON' >> \$@.fastp.param;
 					# Paired-End or Single-End
@@ -1529,7 +1529,7 @@ for RUU in $RUN_UNIQ; do
 	
 	if [ -s $FASTQ_MK ] && [ -s $FASTP_MK ]; then
 		(($VERBOSE)) && echo "#[INFO] Process Input data from FASTQ file(s) - multithreading mode"
-		if make -j $THREADS -e FASTP_THREADS_BY_SAMPLE=$THREADS_BY_SAMPLE -f $FASTQ_MK -f $FASTP_MK $FASTQ_MK_ALL $FASTP_MK_ALL 1>$FASTP_MK.log 2>$FASTP_MK.err; then
+		if make -j $THREADS -e FASTP_THREADS_BY_SAMPLE=$THREADS_BY_SAMPLE -f $FASTP_MK -f $FASTQ_MK $FASTQ_MK_ALL $FASTP_MK_ALL 1>$FASTP_MK.log 2>$FASTP_MK.err; then
 			(($VERBOSE)) && echo "#[INFO] STARK Input Processing done."
 		else
 			echo "#[ERROR] STARK Input Processing failed"
