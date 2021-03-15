@@ -8,8 +8,8 @@
 #######################################
 
 #######################################
-# Release: 0.9.18                     #
-# Date: 20200802                      #
+# Release: 0.9.18.2                   #
+# Date: 20210315                      #
 #######################################
 
 ## New
@@ -21,7 +21,7 @@
 - New report in html
 - Automatization of Databases download (get_databases.sh)
 - Docker compose deployment
-- Docker services added such as a dashboard, listener, launcher, and tools such as IGV and JARVIS
+- Docker services support added such as a dashboard, listener, launcher, and tools such as IGV and JARVIS
 
 
 ## Improvements

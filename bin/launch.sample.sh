@@ -301,11 +301,10 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 
 #COMMAND_COPY="rsync -aucqpAXoghi --no-links --no-perms --no-owner --no-group" # "cp -auv" or "rsync -auv" # auvpAXog
-COMMAND_COPY="rsync -auczqAXhi --no-links --no-perms --no-owner --no-group"
-COMMAND_COPY_NO_COMPRESS="rsync -aucqAXhi --no-links --no-perms --no-owner --no-group"
+COMMAND_COPY="rsync -auczqAXhi --no-links --no-perms --no-owner --no-group "
+COMMAND_COPY_NO_COMPRESS="rsync -aucqAXhi --no-links --no-perms --no-owner --no-group "
 COMMAND_LINK="ln " # "cp -auv" or "rsync -auv" # auvpAXog
 PERMS="a+rwx"
-
 
 
 # FUNCTIONS
@@ -1528,12 +1527,12 @@ for RUU in $RUN_UNIQ; do
 	echo "#[INFO] STARK Input Processing..."
 	
 	if [ -s $FASTQ_MK ] && [ -s $FASTP_MK ]; then
-		(($VERBOSE)) && echo "#[INFO] Process Input data from FASTQ file(s) - multithreading mode"
+		(($VERBOSE)) && echo "#[INFO] Process Input data from FASTQ file(s) - multithreading mode [$THREADS]"
 		if make -j $THREADS -e FASTP_THREADS_BY_SAMPLE=$THREADS_BY_SAMPLE -f $FASTP_MK -f $FASTQ_MK $FASTQ_MK_ALL $FASTP_MK_ALL 1>$FASTP_MK.log 2>$FASTP_MK.err; then
 			(($VERBOSE)) && echo "#[INFO] STARK Input Processing done."
 		else
 			echo "#[ERROR] STARK Input Processing failed"
-			cat $FASTP_MK $FASTQ_MK $FASTP_MK.log $FASTP_MK.err
+			cat $FASTP_MK.err
 			exit 1
 		fi;
 		! (($DEBUG)) && rm -f $FASTQ_MK $FASTQ_MK.log $FASTQ_MK.err $FASTP_MK $FASTP_MK.log $FASTP_MK.err
@@ -1571,11 +1570,16 @@ for RUU in $RUN_UNIQ; do
 
 		echo "#[INFO] STARK Copy Processing...";
 
+		#THREADS_COPY=$THREADS
+		THREADS_COPY=1
+
 		I=0
 		RESULTS_FOLDER_COPY_FOLDER_RUU_STARKCopyComplete_list=""
 
 		> $RES_MK
 		RES_MK_ALL=""
+
+		#RES_MK_RSYNC_PARAM=" --temp-dir=$TMP_FOLDER_TMP/rsync_$RANDOM "
 
 		for S in $SAMPLE; do
 			RU=${RUN_ARRAY[$I]};
@@ -1634,37 +1638,46 @@ for RUU in $RUN_UNIQ; do
 						else
 							echo "#[ERROR] Repository type '$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE' failed"
 						fi;
-
+ 
 
 						#echo "#[INFO] Copying '$RUU/$S' files from '$RESULTS' to '$RESULTS_FOLDER_COPY_FOLDER' [$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE]..."
 						(($VERBOSE)) && echo "#[INFO] STARK Copy '$RUU/$S' Process... from '$RESULTS' to '$RESULTS_FOLDER_COPY_FOLDER' [$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE]"
 						 
 
 						# Copy RUN files
+						#RES_MK_COPY_ROOT_TMP=$TMP_FOLDER_TMP/rsync_$RANDOM$RANDOM
 						if ! in_array $RESULTS_FOLDER_COPY_FOLDER/$RUU $RES_MK_ALL; then
 							echo "$RESULTS_FOLDER_COPY_FOLDER/$RUU:
-								@#[INFO] Copying '$RUU'
-								@mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$RUU
-								@$COMMAND_COPY_NO_COMPRESS \$\$(find -L $RESULTS/$RUU -mindepth 1 -maxdepth 1 -type f) $RESULTS_FOLDER_COPY_FOLDER/$RUU
-								@chmod $PERMS -R $RESULTS_FOLDER_COPY_FOLDER/$RUU $RESULTS_FOLDER_COPY_FOLDER/$RUU/* 
+								#[INFO] Copying '$RUU'
+								mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$RUU
+								#mkdir -p $RES_MK_COPY_ROOT_TMP
+								#$COMMAND_COPY_NO_COMPRESS --temp-dir=$RES_MK_COPY_ROOT_TMP \$\$(find -L $RESULTS/$RUU -mindepth 1 -maxdepth 1 -type f) $RESULTS_FOLDER_COPY_FOLDER/$RUU
+								#rm -rf $RES_MK_COPY_ROOT_TMP
+								$COMMAND_COPY_NO_COMPRESS \$\$(find -L $RESULTS/$RUU -mindepth 1 -maxdepth 1 -type f) $RESULTS_FOLDER_COPY_FOLDER/$RUU
+								chmod $PERMS -R $RESULTS_FOLDER_COPY_FOLDER/$RUU $RESULTS_FOLDER_COPY_FOLDER/$RUU/* 
 							" >> $RES_MK
 							RES_MK_ALL=$RES_MK_ALL" $RESULTS_FOLDER_COPY_FOLDER/$RUU"
 							RES_MK_ALL_RUU=$RES_MK_ALL_RUU" $RESULTS_FOLDER_COPY_FOLDER/$RUU"
 						fi;
+						
 
 						# Copy STARK RESULTS files
+						#RES_MK_COPY_ROOT_TMP=$TMP_FOLDER_TMP/rsync_$RANDOM$RANDOM
 						if [ "$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE" == "repository" ]; then
 							echo "$ROOT_FILE_SOURCE:
-								@#[INFO] Copying '$RUU/$S' - STARK Results
-								@#chmod $PERMS -R $RESULTS/$RUU/$S $RESULTS/$RUU/$S/*
-								@mkdir -p $ROOT_FILE_SOURCE
-								@$COMMAND_COPY_NO_COMPRESS $RESULTS/$RUU/$S/* $ROOT_FILE_SOURCE
-								@chmod $PERMS -R $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/* 
+								#[INFO] Copying '$RUU/$S' - STARK Results
+								#chmod $PERMS -R $RESULTS/$RUU/$S $RESULTS/$RUU/$S/*
+								mkdir -p $ROOT_FILE_SOURCE
+								#mkdir -p $RES_MK_COPY_ROOT_TMP
+								#$COMMAND_COPY_NO_COMPRESS --temp-dir=$RES_MK_COPY_ROOT_TMP $RESULTS/$RUU/$S/* $ROOT_FILE_SOURCE
+								#rm -rf $RES_MK_COPY_ROOT_TMP
+								$COMMAND_COPY_NO_COMPRESS $RESULTS/$RUU/$S/* $ROOT_FILE_SOURCE
+								chmod $PERMS -R $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/* 
 							" >> $RES_MK
 						elif [ "$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE" == "archives" ]; then
 							echo "$ROOT_FILE_SOURCE:
-								@#[INFO] Copying '$RUU/$S' - STARK Results
-								@#[INFO] Copying '$RUU/$S' - NO Copy
+								#[INFO] Copying '$RUU/$S' - STARK Results
+								#[INFO] Copying '$RUU/$S' - NO Copy
 							" >> $RES_MK
 						else
 							echo "#[ERROR] Repository type failed"
@@ -1678,8 +1691,9 @@ for RUU in $RUN_UNIQ; do
 						if [ $RESULTS_SUBFOLDER_DATA != "" ]; then
 
 							
-
 							for ROOT_FILE_PATTERN_INFO in $REPOSITORY_TYPE_FILE_PATTERNS; do
+
+								#RES_MK_COPY_ROOT_TMP=$TMP_FOLDER_TMP/rsync_$RANDOM$RANDOM
 
 								ROOT_FILE_PATTERN=$(echo $ROOT_FILE_PATTERN_INFO | awk -F: '{print $1}')
 								ROOT_FILE_PATTERN_TYPE=$(echo $ROOT_FILE_PATTERN_INFO | awk -F: '{print $2}')
@@ -1694,24 +1708,11 @@ for RUU in $RUN_UNIQ; do
 								fi;
 								ROOT_FILE_PATTERN_VAR_TARGET=$(echo $ROOT_FILE_PATTERN_VAR | sed -e 's/[][\\^*+.$-]/____/g')
 
-								# echo $ROOT_FILE_PATTERN_VAR
-								# echo "echo $ROOT_FILE_PATTERN_VAR | sed -e 's/[][\\^*+.$-]/____/g'"
-								# echo $ROOT_FILE_PATTERN_VAR | sed -e 's/[][\\^*+.$-]/____/g'
-								# echo "ROOT_FILE_PATTERN_VAR_TARGET=$ROOT_FILE_PATTERN_VAR_TARGET";
-								# exit 0
-
-								#for F_SOURCE in $(ls $FILE_PATTERN_TYPE_LS $RESULTS/$RUU/$S$ROOT_FILE_PATTERN_VAR 2>/dev/null); do
-								# for F_SOURCE in \$\$(ls $FILE_PATTERN_TYPE_LS $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA$ROOT_FILE_PATTERN_VAR 2>/dev/null); do 
-								#F_SOURCE_BASE=\$\$(echo \$\$F_SOURCE | sed \"s#$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA/##\");
-								
-
-								#echo "$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S$ROOT_FILE_PATTERN_VAR_TARGET: $ROOT_FILE_SOURCE
-								#echo "$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S$ROOT_FILE_PATTERN_VAR_TARGET: $ROOT_FILE_SOURCE
 								echo "$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S$ROOT_FILE_PATTERN_VAR: $ROOT_FILE_SOURCE
-									@#[INFO] Making  '$RUU/$S' - STARK Main Results
-									@mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S
-									@#[INFO] Copying '$RUU/$S' - STARK Main Results
-									@for F_SOURCE in \$\$(ls $FILE_PATTERN_TYPE_LS $ROOT_FILE_SOURCE$ROOT_FILE_PATTERN_VAR 2>/dev/null); do \
+									#[INFO] Making  '$RUU/$S' - STARK Main Results
+									mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S
+									#[INFO] Copying '$RUU/$S' - STARK Main Results
+									for F_SOURCE in \$\$(ls $FILE_PATTERN_TYPE_LS $ROOT_FILE_SOURCE$ROOT_FILE_PATTERN_VAR 2>/dev/null); do \
 										F_TARGET=$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/\$\$(basename \$\$F_SOURCE); \
 										F_SOURCE_BASE=\$\$(echo \$\$F_SOURCE | sed \"s#$ROOT_FILE_SOURCE/##\"); \
 										F_TARGET_BASE=\$\$(echo \$\$F_TARGET | sed \"s#$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/##\"); \
@@ -1737,9 +1738,9 @@ for RUU in $RUN_UNIQ; do
 
 						# CREATE CopyComplete file
 						echo "$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/STARKCopyComplete.txt: $RES_MK_ALL_RUU_S
-							@#(($VERBOSE)) && echo '#[INFO] STARK Copy $RUU/$S Complete'
-							@echo "["\$\$(date '+%Y%m%d-%H%M%S')"] Copy complete" >> $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/STARKCopyComplete.txt
-							@chmod $PERMS $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/STARKCopyComplete.txt
+							#(($VERBOSE)) && echo '#[INFO] STARK Copy $RUU/$S Complete'
+							echo "["\$\$(date '+%Y%m%d-%H%M%S')"] Copy complete" >> $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/STARKCopyComplete.txt
+							chmod $PERMS $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/STARKCopyComplete.txt
 						" >> $RES_MK
 						#RES_MK_REP_COMPLETE=$RES_MK_REP_COMPLETE" $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/STARKCopyComplete.txt"
 						RES_MK_ALL=$RES_MK_ALL" $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/STARKCopyComplete.txt"
@@ -1751,98 +1752,24 @@ for RUU in $RUN_UNIQ; do
 				fi;
 			fi;
 
-			# ARCHIVES
-			if ((0)); then
-				# COPY of run/sample
-				# List of folders
-				if [ "$ARCHIVES" != "" ] ; then
-					RESULTS_FOLDER_COPY_ALL=""
-					for RESULTS_FOLDER_COPY_FOLDER in $(echo $ARCHIVES | tr "," " " | tr " " "\n" | sort -u ); do
-						#mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT;
-						if [ ! -d $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT ]; then
-							mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT;
-						fi;
-						if [ -d $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT ]; then
-							RESULTS_FOLDER_COPY_ALL=$RESULTS_FOLDER_COPY_ALL" $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT";
-						fi;
-
-					done;
-				fi;
-
-				# Copy
-				if [ "$RESULTS_FOLDER_COPY_ALL" != "$RESULTS" ] && [ "$RESULTS_FOLDER_COPY_ALL" != "" ] ; then
-					for RESULTS_FOLDER_COPY_FOLDER in $RESULTS_FOLDER_COPY_ALL;
-					do
-						#echo "#[INFO] Copying '$RUU/$S' files from '$RESULTS/$RUU/$S' to '$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S'..."
-						echo "#[INFO] Copying ARCHIVES files patterns to $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S..."
-
-						# Copy SAMPLE files
-						chmod $PERMS -R $RESULTS/$RUU/$S 1>/dev/null 2>/dev/null
-						mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S
-						
-						# Copy ROOT FILE PATTERNS
-						for ROOT_FILE_PATTERN_INFO in $ARCHIVES_FILE_PATTERNS; do
-
-							ROOT_FILE_PATTERN=$(echo $ROOT_FILE_PATTERN_INFO | awk -F: '{print $1}')
-							ROOT_FILE_PATTERN_TYPE=$(echo $ROOT_FILE_PATTERN_INFO | awk -F: '{print $2}')
-
-							FILE_PATTERN_TYPE_LS=" ";
-							[ "$ROOT_FILE_PATTERN_TYPE" == "FOLDER" ] && FILE_PATTERN_TYPE_LS=" -d ";
-
-							if [[ $ROOT_FILE_PATTERN =~ '$SAMPLE' ]]; then
-								eval ROOT_FILE_PATTERN_VAR="/"$(echo $ROOT_FILE_PATTERN | sed s/\$SAMPLE/\$S/gi)
-							else
-								ROOT_FILE_PATTERN_VAR="/$ROOT_FILE_PATTERN"
-							fi;
-
-							#for F_SOURCE in $(ls $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA/$ROOT_FILE_PATTERN_VAR); do
-							for F_SOURCE in $(ls $FILE_PATTERN_TYPE_LS $RESULTS/$RUU/$S$ROOT_FILE_PATTERN_VAR 2>/dev/null); do
-								F_SOURCE_BASE=$(echo $F_SOURCE | sed "s#$RESULTS/$RUU/$S/##")
-								#F_TARGET="$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/"$(basename $F_SOURCE)
-								F_TARGET="$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/"$(basename $F_SOURCE)
-								F_TARGET_BASE=$(echo $F_TARGET | sed "s#$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/##")
-
-								# IF FOLDER
-								[ "$ROOT_FILE_PATTERN_TYPE" == "FOLDER" ] && F_SOURCE=$F_SOURCE"/";
-
-								(($VERBOSE)) && [ ! -e $F_SOURCE ] && echo "#[WARNING] file $F_SOURCE_BASE not found"
-								(($VERBOSE)) && [ -e $F_SOURCE ] && echo "#[INFO] Copy file $F_SOURCE_BASE to $F_TARGET_BASE"
-								(($DEBUG)) && echo "#[INFO] $COMMAND_COPY_NO_COMPRESS $F_SOURCE $F_TARGET"
-								$COMMAND_COPY_NO_COMPRESS $F_SOURCE $F_TARGET 1>>$LOGFILE_RES_RUN 2>>$LOGFILE_RES_RUN
-								if [ ! -e $F_TARGET ]; then
-									(($VERBOSE)) && echo "#[ERROR] Copy file $F_SOURCE_BASE to $F_TARGET_BASE FAILED"
-								fi;
-							done;
-
-						done;
-
-						# CREATE CopyComplete file
-
-						# TODO
-
-						#echo "["`date '+%Y%m%d-%H%M%S'`"] Copy complete" >> $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/STARKCopyComplete.txt
-						#chmod $PERMS $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/STARKCopyComplete.txt 1>/dev/null 2>/dev/null
-						RESULTS_FOLDER_COPY_FOLDER_RUU_STARKCopyComplete_list="$RESULTS_FOLDER_COPY_FOLDER_RUU_STARKCopyComplete_list $RESULTS_FOLDER_COPY_FOLDER/$RUU $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S"
-
-					done;
-				fi;
-			fi;
-
 			((I++))
 		done
-
 
 		echo "all: $RES_MK_ALL
 		" >> $RES_MK
 
-		#(($VERBOSE)) && echo "#[INFO] Copying files to Repository and Archives"; \
-		if (($VERBOSE)); then
-			make -j $THREADS --always-make -f $RES_MK all #2>/dev/null
-			#make -j 1 -f $RES_MK all #2>/dev/null
-		else
-			make -j $THREADS --always-make -f $RES_MK all 1>/dev/null 2>/dev/null
+		#if make -j $THREADS --always-make -f $RES_MK all 1>$RES_MK.log 2>$RES_MK.err; then
+		if [ -s $RES_MK ]; then
+			(($VERBOSE)) && echo "#[INFO] Process Copy - multithreading mode [$THREADS_COPY]"
+			if make -j $THREADS_COPY --always-make -f $RES_MK all 1>$RES_MK.log 2>$RES_MK.err; then
+				(($VERBOSE)) && echo "#[INFO] STARK Copy Complete"
+			else
+				echo "#[ERROR] STARK Copy NOT Complete"
+				cat $RES_MK.err;
+				exit 1
+			fi
+			! (($DEBUG)) && rm -f $RES_MK $RES_MK.log $RES_MK.err
 		fi;
-		(($VERBOSE)) && echo "#[INFO] STARK Copy Complete"
 
 	fi;
 
