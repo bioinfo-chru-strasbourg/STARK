@@ -104,7 +104,7 @@ def get_sample_list_from_samplesheet(samplesheetPath):
 	with open(samplesheetPath, "r") as f:
 			for l in f:
 				if not inDataTable:
-					if l.startswith("Sample_ID,Sample_Name,"):
+					if l.startswith("Sample_ID,"):
 						inDataTable = True
 				else:
 					if "," in l:
@@ -466,7 +466,7 @@ def main_routine(metricsFileList, outputPrefix):
 				"## On-target reads are reads that are aligned within the regions defined in a .genes file and that aren't duplicates, unmapped or with low mapping quality (MAPQ < 10)\n"
 				"## Cov 30X is the % of coverage with at least 30X read depth ; in the regions defined in a .genes file.\n"
 				"##\n"
-				"#Run\tSample\t.genes file\tTotal reads\tMapped reads\t% Mapped reads\tDuplicate reads\t% Duplicate reads\tOn-target reads\t% On-target reads\t"+covHeader+"\n")
+				"#Run\tSample\tPanel.genes\tTotal reads\tMapped reads\t% Mapped reads\tDuplicate reads\t% Duplicate reads\tOn-target reads\t% On-target reads\t"+covHeader+"\n")
 		
 		for geneFile in genesList:
 			geneFile = geneFile.replace("<sample>.", "")

@@ -65,7 +65,7 @@ def get_sample_list_from_samplesheet(samplesheetPath):
 	with open(samplesheetPath, "r") as f:
 			for l in f:
 				if not inDataTable:
-					if l.startswith("Sample_ID,Sample_Name,"):
+					if l.startswith("Sample_ID,"):
 						inDataTable = True
 				else:
 					if "," in l:
@@ -89,7 +89,7 @@ def get_descriptions_from_samplesheet(samplesheetPath):
 	with open(samplesheetPath, "r") as f:
 		for l in f:
 			if not inDataTable:
-				if l.startswith("Sample_ID,Sample_Name,"):
+				if l.startswith("Sample_ID,"):
 					inDataTable = True
 					descriptionIndex = l.strip().split(",").index("Description")
 			else:
