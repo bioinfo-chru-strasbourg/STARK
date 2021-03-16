@@ -90,6 +90,7 @@ GZ?=gzip
 
 # EMPTY VCF
 %.empty.vcf:
+	-mkdir -p $(@D)
 	# Header
 	echo "##fileformat=VCFv4.1" > $@
 	# Head first line
@@ -255,7 +256,7 @@ GATKRR_FLAGS=
 # SampleSheet Copy
 %.SampleSheet.csv:
 	-mkdir -p $(@D)
-	-cp -p $(@D)/`echo $$(basename $(@D))`.SampleSheet.csv $@ || cp -p $(INPUTDIR)/`echo $$(basename $$(dirname $(@D)))`/SampleSheet.csv $@ || touch $@;
+	-cp -p $(@D)/`echo $$(basename $(@D))`.SampleSheet.csv $@ 2>/dev/null || cp -p $(INPUTDIR)/`echo $$(basename $$(dirname $(@D)))`/SampleSheet.csv $@ 2>/dev/null || touch $@;
 
 
 
