@@ -3382,7 +3382,7 @@ for ALIGNER in $ALIGNERS; do
 
 			echo '
 
-			<section class="section-table cid-ruiBoanIwc" id="FLAGS_'$GENES_PANEL'-'$ALIGNER'">
+			<section class="section-table cid-ruiBoanIwc" id="GENES_FLAGS_'$GENES_PANEL'-'$ALIGNER'">
 
 			  <div class="container container-table">
 
@@ -3679,7 +3679,6 @@ if in_array $SECTION_ID $SECTIONS || in_array ALL $SECTIONS ; then
 fi;
 
 
-
 SECTION_NAME="Targets & Genes Depth"
 SECTION_ID="annex_depth"
 
@@ -3785,7 +3784,7 @@ if in_array $SECTION_ID $SECTIONS || in_array ALL $SECTIONS ; then
 						<div class="media-container-row title">
 							<div class="col-12 col-md-40">
 								<div class="mbr-section-btn align-center">
-								'$(cat $HTMLFILE_ANNEX_PLAN_LINKS_GENES_COVERAGE)'
+								'$(cat $HTMLFILE_ANNEX_PLAN_LINKS_GENES_FLAGS)'
 							</div>
 						</div>
 					</div>
@@ -3793,16 +3792,11 @@ if in_array $SECTION_ID $SECTIONS || in_array ALL $SECTIONS ; then
 
 				'"$(cat $HTMLFILE_ANNEX_GENES_PANEL_GENES_COVERAGE)"'
 
-
-
-
-
 		</div>
 		</section>
 
 	' > $HTMLFILE_ANNEX_GENES_COVERAGE
 
-#'"$(cat $HTMLFILE_ANNEX_GENES_PANEL_FLAGS)"'
 fi;
 
 
