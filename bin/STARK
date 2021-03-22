@@ -1211,7 +1211,6 @@ if [ ! -z "$RUNS" ]; then
 					DEMULTIPLEXING_FOLDER=$DEMULTIPLEXING;
 				else
 					# Check if in APP
-
 					# ANALYSIS TAG
 					ANALYSIS_TAG_SAMPLESHEET=$(grep "^Description" $RUN_SAMPLESHEET | cut -d, -f2- | tr "," "!" | tr " " "!"  | tr -d '\r')
 					if [ "$ANALYSIS_TAG" == "" ]; then
@@ -1220,10 +1219,24 @@ if [ ! -z "$RUNS" ]; then
 
 					# MAIN APP extraction
 					MAIN_APP=$(extract_tag "$ANALYSIS_TAG" "APP" | tr " " "+")
-
 					# MAIN PLUGAPP extraction
 					MAIN_PLUGAPP=$(extract_tag "$ANALYSIS_TAG" "PLUGAPP" | tr " " "+")
 					[ "$MAIN_PLUGAPP" != "" ] && MAIN_APP=$MAIN_APP"+"$MAIN_PLUGAPP
+					
+					# If OLD APP folder
+					if [ "$MAIN_APP" == "" ]; then
+						(($VERBOSE)) && echo "#[INFO] Check old format of APP definition";
+						# Main application OLD format
+						MAIN_APP_OLD=$(grep "Investigator Name" $RUN_SAMPLESHEET | awk -F, '{print $2}' | awk -F"-" '{print $1"."$2}')
+						ENV_OLD=$(find_app "$MAIN_APP_OLD" "$STARK_FOLDER_APPS" 2>/dev/null)
+						if [ "$ENV_OLD" == "" ]; then
+							MAIN_APP_OLD=$(grep "Investigator Name" $RUN_SAMPLESHEET | awk -F, '{print $2}' | awk -F"-" '{print $1}')
+							ENV_OLD=$(find_app "$MAIN_APP_OLD" "$STARK_FOLDER_APPS" 2>/dev/null)
+						fi;
+						[ "$ENV_OLD" != "" ] && MAIN_APP=$MAIN_APP_OLD
+					fi;
+					
+					#[ "$MAIN_APP" == "" ] && MAIN_APP="default"
 
 					if [ "$MAIN_APP" != ""  ]; then
 						DEMULTIPLEXING_FOLDER=$(source_app "$MAIN_APP" 2>/dev/null; echo $FOLDER_DEMULTIPLEXING)
@@ -1357,7 +1370,11 @@ if [ ! -z "$RUNS" ]; then
 
 					# Main application OLD format
 					MAIN_APP_OLD=$(grep "Investigator Name" $RUN_SAMPLESHEET | awk -F, '{print $2}' | awk -F"-" '{print $1"."$2}')
-					ENV_OLD=$(find_app "$MAIN_APP_OLD" "$STARK_FOLDER_APPS")
+					ENV_OLD=$(find_app "$MAIN_APP_OLD" "$STARK_FOLDER_APPS" 2>/dev/null)
+					if [ "$ENV_OLD" == "" ]; then
+						MAIN_APP_OLD=$(grep "Investigator Name" $RUN_SAMPLESHEET | awk -F, '{print $2}' | awk -F"-" '{print $1}')
+						ENV_OLD=$(find_app "$MAIN_APP_OLD" "$STARK_FOLDER_APPS" 2>/dev/null)
+					fi;
 					[ "$ENV_OLD" != "" ] && MAIN_APP=$MAIN_APP_OLD
 				fi;
 

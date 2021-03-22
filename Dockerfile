@@ -84,30 +84,6 @@ ENV ZIP_PARAM=" "
 ENV MAKE_PARAM=" "
 
 
-##########
-# HEADER #
-##########
-
-RUN echo "###########################" && \
-	echo "# STARK BASE INSTALLATION #" && \
-	echo "###########################" && \
-	echo "#" && \
-	echo "#### PARAMETERS" && \
-	echo "#[INFO] STARK_FOLDER=$STARK_FOLDER" && \
-	echo "#[INFO] TOOLS=$TOOLS" && \
-	echo "#[INFO] DATA=$DATA" && \
-	echo "#[INFO] TOOL=$TOOL" && \
-	echo "#[INFO] SOURCES_FOLDER=$SOURCES_FOLDER" && \
-	echo "#[INFO] SOURCES=$SOURCES" && \
-	echo "#[INFO] DATABASES=$DATABASES" && \
-	echo "#[INFO] WORKDIR=$WORKDIR" && \
-	echo "#[INFO] REMOVE_SOURCES=$REMOVE_SOURCES" && \
-	echo "#[INFO] THREADS=$THREADS" && \
-	echo "#[INFO] REPO=$REPO" && \
-	echo "#";
-
-
-
 
 ###########
 # SOURCES #
@@ -122,6 +98,28 @@ ADD . $SOURCES
 ###########
 
 WORKDIR $WORKDIR
+
+
+
+##########
+# HEADER #
+##########
+
+RUN echo "#[INFO] STARK installation configuration" && \
+	echo "#[INFO] STARK_FOLDER=$STARK_FOLDER" && \
+	echo "#[INFO] TOOLS=$TOOLS" && \
+	echo "#[INFO] DATA=$DATA" && \
+	echo "#[INFO] TOOL=$TOOL" && \
+	echo "#[INFO] SOURCES_FOLDER=$SOURCES_FOLDER" && \
+	echo "#[INFO] SOURCES=$SOURCES" && \
+	echo "#[INFO] DATABASES=$DATABASES" && \
+	echo "#[INFO] WORKDIR=$WORKDIR" && \
+	echo "#[INFO] REMOVE_SOURCES=$REMOVE_SOURCES" && \
+	echo "#[INFO] THREADS=$THREADS" && \
+	echo "#[INFO] REPO=$REPO" && \
+	echo "#";
+
+
 
 
 
@@ -144,7 +142,7 @@ ENV REPO_PYTHON_GIT="$REPO/sources.python.tar.gz?path=sources/python"
 ENV REPO_PYTHON_HTTP="$REPO/sources/python/"
 
 
-RUN echo "#### SYSTEM INSTALLATION" && \
+RUN echo "#[INFO] System installation" && \
 	# Create system repository \
 	mkdir -p $SOURCES/$SOURCES_FOLDER/system && \
 	# INSTALL WGET \
@@ -302,7 +300,7 @@ ENV GET_TOOL_SOURCE=$SOURCES/$SOURCES_FOLDER/get_tool_source.sh
 ENV TOOL_INIT=$SOURCES/$SOURCES_FOLDER/tool_init.sh
 ENV TOOL_CHECK=$SOURCES/$SOURCES_FOLDER/tool_check.sh
 
-RUN echo "#### SOURCES SCRIPTS" && \
+RUN echo "#[INFO] Sources scripts" && \
 	if [ -e $GET_TOOL_SOURCE ]; then \
 		echo "#[INFO] GET TOOL SOURCE script exists" ; \
 	elif $(wget --no-cache --progress=bar:force -nv --quiet "$REPO/$SOURCES_FOLDER/$(basename $GET_TOOL_SOURCE)" -O $GET_TOOL_SOURCE); then \
@@ -419,7 +417,8 @@ RUN echo "#### SOURCES SCRIPTS" && \
 
 ENV TOOL_NAME="java"
 ENV TOOL_VERSION="1.7.0"
-RUN mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
 	ln -s /usr/lib/jvm/jre-1.7.0/bin/java $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/java ;
 
 
@@ -431,7 +430,8 @@ RUN mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
 ENV TOOL_NAME="java"
 ENV TOOL_VERSION="1.8.0"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-RUN mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
 	ln -s /usr/lib/jvm/jre-1.8.0/bin/java $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/java && \
 	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
 
@@ -444,7 +444,8 @@ RUN mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
 ENV TOOL_NAME="python"
 ENV TOOL_VERSION="2"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-RUN mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
 	ln -s /usr/bin/python2 $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python2 && \
 	ln -s python2 $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python && \
 	ln -s /usr/bin/pip2 $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/pip2 && \
@@ -459,7 +460,8 @@ RUN mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
 ENV TOOL_NAME="python"
 ENV TOOL_VERSION="3"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-RUN mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
 	ln -s /usr/bin/python3 $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python3 && \
 	ln -s python3 $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python && \
 	ln -s /usr/bin/pip3 $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/pip3 && \
@@ -520,9 +522,9 @@ ENV TOOL_PARAM_DATABASE_FOLDER=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/databases/
 
 
 # TOOL INSTALLATION
-RUN source $TOOL_INIT && \
-	echo "#[INFO] TOOL installation" && \
-    tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
+	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
     cp $TOOL_SOURCE_BUILD/*/*.pl $TOOL_DEST/bin/ -R && \
 	echo "#[INFO] TOOL databases configuration" && \
 	mkdir -p $TOOL_PARAM_DATABASE_FOLDER_LINK && \
@@ -545,8 +547,8 @@ ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
 
 # TOOL INSTALLATION
-RUN source $TOOL_INIT && \
-	echo "#[INFO] TOOL installation" && \
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
 	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
 	make install --quiet -j $THREADS -C $(ls -d $TOOL_SOURCE_BUILD/*) prefix=$TOOL_DEST && \
     $TOOL_CHECK ;
@@ -566,8 +568,8 @@ ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
 
 # TOOL INSTALLATION
-RUN source $TOOL_INIT && \
-	echo "#[INFO] TOOL installation" && \
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
 	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
 	make install --quiet -j $THREADS -C $(ls -d $TOOL_SOURCE_BUILD/*) prefix=$TOOL_DEST && \
 	$TOOL_CHECK ;
@@ -587,8 +589,8 @@ ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
 
 # TOOL INSTALLATION
-RUN source $TOOL_INIT && \
-	echo "#[INFO] TOOL installation" && \
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
 	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
     rpm -ih $TOOL_SOURCE_BUILD/*.rpm --excludedocs --prefix=$TOOL_DEST && \
     $TOOL_CHECK ;
@@ -608,8 +610,8 @@ ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
 
 # TOOL INSTALLATION
-RUN source $TOOL_INIT && \
-	echo "#[INFO] TOOL installation" && \
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
 	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
 	make install --quiet -j $THREADS -C $(ls -d $TOOL_SOURCE_BUILD/*) prefix=$TOOL_DEST && \
     $TOOL_CHECK ;
@@ -629,8 +631,8 @@ ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
 
 # TOOL INSTALLATION
-RUN source $TOOL_INIT && \
-	echo "#[INFO] TOOL installation" && \
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
 	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
 	cp $TOOL_SOURCE_BUILD/*/bowtie2* $TOOL_DEST/bin/ && \
 	rm -f $TOOL_DEST/bin/*debug && \
@@ -651,8 +653,8 @@ ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
 
 # TOOL INSTALLATION
-RUN source $TOOL_INIT && \
-	echo "#[INFO] TOOL installation" && \
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
 	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
 	make --quiet -j $THREADS -C $(ls -d $TOOL_SOURCE_BUILD/*) && \
 	cp $TOOL_SOURCE_BUILD/*/bwa $TOOL_DEST/bin/ && \
@@ -673,8 +675,8 @@ ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
 
 # TOOL INSTALLATION
-RUN source $TOOL_INIT && \
-	echo "#[INFO] TOOL installation" && \
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
 	cp $TOOL_SOURCE $TOOL_DEST/bin/ && \
 	chmod a+x $TOOL_DEST/bin/* && \
     $TOOL_CHECK ;
@@ -694,8 +696,8 @@ ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
 
 # TOOL INSTALLATION
-RUN source $TOOL_INIT && \
-	echo "#[INFO] TOOL installation" && \
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
 	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
 	cp -R $TOOL_SOURCE_BUILD/*/* $TOOL_DEST/ && \
 	chmod a+x $TOOL_DEST/bin/* && \
@@ -717,8 +719,8 @@ ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 ENV TOOL_JAR=GenomeAnalysisTK.jar
 
 # TOOL INSTALLATION
-RUN source $TOOL_INIT && \
-	echo "#[INFO] TOOL installation" && \
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
 	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
 	cp -R $TOOL_SOURCE_BUILD/*/$TOOL_JAR $TOOL_DEST/bin/ && \
     $TOOL_CHECK ;
@@ -739,8 +741,8 @@ ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 ENV TOOL_JAR=gatk-package-$TOOL_VERSION-local.jar
 
 # TOOL INSTALLATION
-RUN source $TOOL_INIT && \
-	echo "#[INFO] TOOL installation" && \
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
 	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
 	cp -R $TOOL_SOURCE_BUILD/*/$TOOL_JAR $TOOL_DEST/bin/ && \
     $TOOL_CHECK ;
@@ -764,8 +766,8 @@ ENV TOOL_PARAM_DATABASE_FOLDER=/databases
 
 
 # TOOL INSTALLATION
-RUN source $TOOL_INIT && \
-	echo "#[INFO] TOOL installation" && \
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
 	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
 	cp -R $TOOL_SOURCE_BUILD/*/* $TOOL_DEST/ && \
 	chmod a+x $TOOL_DEST/* -R && \
@@ -790,8 +792,8 @@ ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
 
 # TOOL INSTALLATION
-RUN source $TOOL_INIT && \
-	echo "#[INFO] TOOL installation" && \
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
 	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
 	cp -R $TOOL_SOURCE_BUILD/*/* $TOOL_DEST/bin/ && \
     $TOOL_CHECK ;
@@ -811,8 +813,8 @@ ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
 
 # TOOL INSTALLATION
-RUN source $TOOL_INIT && \
-	echo "#[INFO] TOOL installation" && \
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
 	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
 	cp -R $TOOL_SOURCE_BUILD/*/* $TOOL_DEST/bin/ && \
     $TOOL_CHECK ;
@@ -834,8 +836,8 @@ ENV TARBALL_JAR=mutect-$TOOL_VERSION.jar
 ENV TOOL_JAR=mutect.jar
 
 # TOOL INSTALLATION
-RUN source $TOOL_INIT && \
-	echo "#[INFO] TOOL installation" && \
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
 	unzip -q $TOOL_SOURCE -d $TOOL_DEST/bin/ && \
 	mv $TOOL_DEST/bin/$TARBALL_JAR $TOOL_DEST/bin/$TOOL_JAR && \
     $TOOL_CHECK ;
@@ -871,8 +873,8 @@ ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
 
 # TOOL INSTALLATION
-RUN source $TOOL_INIT && \
-	echo "#[INFO] TOOL installation" && \
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
 	cp $TOOL_SOURCE -d $TOOL_DEST/bin/ && \
 	chmod a+x $TOOL_DEST/bin/*.py && \
     $TOOL_CHECK ;
@@ -920,8 +922,8 @@ ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
 
 # TOOL INSTALLATION
-RUN source $TOOL_INIT && \
-	echo "#[INFO] TOOL installation" && \
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
 	cp $TOOL_SOURCE $TOOL_DEST/bin/ && \
     $TOOL_CHECK ;
 
@@ -940,8 +942,8 @@ ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
 
 # TOOL INSTALLATION
-RUN source $TOOL_INIT && \
-	echo "#[INFO] TOOL installation" && \
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
 	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
 	make install --quiet -j $THREADS -C $(ls -d $TOOL_SOURCE_BUILD/*) prefix=$TOOL_DEST && \
 	$TOOL_CHECK ;
@@ -964,8 +966,8 @@ ENV TOOL_PARAM_DATABASE_FOLDER_LINK=$DATABASES/snpeff/current
 ENV TOOL_PARAM_DATABASE_FOLDER=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/data
 
 # TOOL INSTALLATION
-RUN source $TOOL_INIT && \
-	echo "#[INFO] TOOL installation" && \
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
 	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
 	cp $TOOL_SOURCE_BUILD/*/*jar $TOOL_DEST/bin/ && \
 	cp $TOOL_SOURCE_BUILD/*/*config $TOOL_DEST/bin/ && \
@@ -990,8 +992,8 @@ ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 ENV TOOL_PARAM_JAR_NAME=VarScan.jar
 
 # TOOL INSTALLATION
-RUN source $TOOL_INIT && \
-	echo "#[INFO] TOOL installation" && \
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
 	cp $TOOL_SOURCE $TOOL_DEST/bin/ && \
 	ln -s $(basename $TOOL_SOURCE) $TOOL_DEST/bin/$TOOL_PARAM_JAR_NAME && \
     $TOOL_CHECK ;
@@ -1025,7 +1027,8 @@ COPY docker-compose.yml $TOOLS/$TOOL_NAME/$TOOL_VERSION/
 COPY Dockerfile $TOOLS/$TOOL_NAME/$TOOL_VERSION/
 
 # TOOL INSTALLATION
-RUN mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
 	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current && \
 	ln -s $TOOLS/$TOOL_NAME/$TOOL_VERSION/ $TOOL && \
 	# MYAPPS CONFIG FOLDER \
@@ -1045,7 +1048,8 @@ RUN mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
 # YUM REMOVE & CLEAR #
 ######################
 
-RUN yum erase -y $YUM_REMOVE && \
+RUN echo "#[INFO] Cleaning" && \
+	yum erase -y $YUM_REMOVE && \
 	yum clean all && \
     rm -rf /var/cache/yum && \
 	rm -rf $WORKDIR/* && \

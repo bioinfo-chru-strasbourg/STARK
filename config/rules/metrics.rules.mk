@@ -349,10 +349,14 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 			touch $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_target_coverage.tmp ; \
 			# Flag HsMetrics per_target_coverage \
 			awk -f $(STARK_FOLDER_BIN)/per_target_coverage_flag.awk -F"\t" -v EXPECTED_DEPTH=$(EXPECTED_DEPTH) -v MINIMUM_DEPTH=$(MINIMUM_DEPTH) $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_target_coverage.tmp > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_target_coverage.flags; \
-			echo "" > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.FAIL.bed; \
-			cat $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp | awk -F"\t" -v FAIL=$(MINIMUM_DEPTH) '($$4<FAIL) {print $$1 "\t" $$2-1 "\t" $$2 "\t" $$3 "\t" $$4}' | $(BEDTOOLS) merge -c 4,5,5,5,5 -o distinct,mean,min,max,count > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.FAIL.bed 2>/dev/null; \
-			echo "" > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.WARN.bed; \
-			cat $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp | awk -F"\t" -v FAIL=$(MINIMUM_DEPTH) -v WARN=$(EXPECTED_DEPTH) '($$4<WARN && $$4>=FAIL) {print $$1 "\t" $$2-1 "\t" $$2 "\t" $$3 "\t" $$4}' | $(BEDTOOLS) merge -c 4,5,5,5,5 -o distinct,mean,min,max,count > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.WARN.bed 2>/dev/null; \
+			echo "#chrom	start	stop	target	mean	min	max	count" > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.MISS.bed; \
+			cat $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp | awk -F"\t" -v MISS=$(SEQUENCING_DEPTH) '($$4<MISS) {print $$1 "\t" $$2-1 "\t" $$2 "\t" $$3 "\t" $$4}' | $(BEDTOOLS) merge -c 4,5,5,5,5 -o distinct,mean,min,max,count >> $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.MISS.bed 2>/dev/null; \
+			echo "#chrom	start	stop	target	mean	min	max	count" > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.FAIL.bed; \
+			cat $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp | awk -F"\t" -v MISS=$(SEQUENCING_DEPTH) -v FAIL=$(MINIMUM_DEPTH) '($$4>=MISS && $$4<FAIL) {print $$1 "\t" $$2-1 "\t" $$2 "\t" $$3 "\t" $$4}' | $(BEDTOOLS) merge -c 4,5,5,5,5 -o distinct,mean,min,max,count >> $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.FAIL.bed 2>/dev/null; \
+			echo "#chrom	start	stop	target	mean	min	max	count" > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.WARN.bed; \
+			cat $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp | awk -F"\t" -v FAIL=$(MINIMUM_DEPTH) -v WARN=$(EXPECTED_DEPTH) '($$4>=FAIL && $$4<WARN) {print $$1 "\t" $$2-1 "\t" $$2 "\t" $$3 "\t" $$4}' | $(BEDTOOLS) merge -c 4,5,5,5,5 -o distinct,mean,min,max,count >> $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.WARN.bed 2>/dev/null; \
+			echo "#chrom	start	stop	target	mean	min	max	count" > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.PASS.bed; \
+			cat $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp | awk -F"\t" -v PASS=$(SEQUENCING_DEPTH) '($$4>=PASS) {print $$1 "\t" $$2-1 "\t" $$2 "\t" $$3 "\t" $$4}' | $(BEDTOOLS) merge -c 4,5,5,5,5 -o distinct,mean,min,max,count >> $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.PASS.bed 2>/dev/null; \
 			$(GZ) -c $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.gz; \
 			rm $(@D)/$(*F).$$(basename $$one_bed).4fields* $(@D)/$(*F).$$(basename $$one_bed).interval $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_target_coverage.tmp $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp; \
 		else \
