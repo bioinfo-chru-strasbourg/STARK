@@ -9,7 +9,7 @@
 
 #######################################
 # Release: 0.9.18.2                   #
-# Date: 20210315                      #
+# Date: 20210401                      #
 #######################################
 
 ## New
@@ -17,17 +17,18 @@
 - New folder architecture (bin, config, app, modules...)
 - New Application management
 - New tools releases
-- New rules including new callers (OutLyzer, MuTect)
+- New rules including new callers (OutLyzer, MuTect2)
 - New report in html
+- New CRAM archives
+- New Design, mutli-panels, transcripts list managment
 - Automatization of Databases download (get_databases.sh)
 - Docker compose deployment
-- Docker services support added such as a dashboard, listener, launcher, and tools such as IGV and JARVIS
+- Docker services support added as modules such as a dashboard, listener, launcher, and tools such as IGV and JARVIS
 
 
 ## Improvements
 
 - Databases files/folder structure simplification
-- Gene panels management
 - Simplification of metrics (for samples and run)
 - Error catches
 

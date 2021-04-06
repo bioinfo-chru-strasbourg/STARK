@@ -7,14 +7,15 @@
 
 SCRIPT_NAME="STARKReport"
 SCRIPT_DESCRIPTION="STARK Report"
-SCRIPT_RELEASE="0.9b"
-SCRIPT_DATE="19/06/2019"
+SCRIPT_RELEASE="0.9.1b"
+SCRIPT_DATE="01/04/2021"
 SCRIPT_AUTHOR="Antony Le Bechec"
 SCRIPT_COPYRIGHT="HUS"
 SCRIPT_LICENCE="GNU-AGPL"
 
 # Realse note
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9b-19/06/2019: Script creation\n";
+RELEASE_NOTES=$RELEASE_NOTES"# 0.9.1b-01/04/2021: Create links to downloaded files\n";
 
 # Script folder
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -823,12 +824,21 @@ BED="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.bed"
 MANIFEST="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.manifest"
 # Number of regions
 DESIGN_NUMBER_REGIONS=$(grep -vc "^#" $BED)
+
+# COPY
+DESIGN_FILES_DOWNLOAD_FILENAME=$RANDOM$RANDOM.design.tar.gz
+(cd $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/ && tar -czf $OUTPUT_FILES_HTMLDIR/$DESIGN_FILES_DOWNLOAD_FILENAME $SAMPLE.bed $SAMPLE.manifest)
+DESIGN_DOWNLOAD_FILE=$OUTPUT_FILES_HTMLFOLDER/$DESIGN_FILES_DOWNLOAD_FILENAME
+
 # HTML
 if (($DESIGN_NUMBER_REGIONS)); then
 	DESIGN_NUMBER_BASES=$($BEDTOOLS sort -i $BED | $BEDTOOLS merge -i - > $REPORTDIR/merge_all_genes.bed; $BEDTOOLS coverage -a $REPORTDIR/merge_all_genes.bed  -b $REPORTDIR/merge_all_genes.bed | awk -F '\t' 'BEGIN{sum = 0} {sum += $6} END {print sum}'; rm $REPORTDIR/merge_all_genes.bed; )
 	GENES_BASES_HTML=$(echo $GENES_BASES_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
-	TARGET_DESIGN_HTML="Target Design file:<br><strong>$DESIGN_NAME</strong>"
-	TARGET_DESIGN_HTML=$TARGET_DESIGN_HTML"<br>Target design includes <strong>$DESIGN_NUMBER_REGIONS Target"$([ $DESIGN_NUMBER_REGIONS -gt 1 ] && echo "s")"</strong> ($DESIGN_NUMBER_BASES bases)"
+	TARGET_DESIGN_HTML="
+		<a href='$DESIGN_DOWNLOAD_FILE' download>Target Design</a> includes <strong>$DESIGN_NUMBER_REGIONS Target"$([ $DESIGN_NUMBER_REGIONS -gt 1 ] && echo "s")"</strong> ($DESIGN_NUMBER_BASES bases)
+		<br><strong>$DESIGN_NAME</strong>
+	"
+
 else
 	TARGET_DESIGN_HTML="No Target Design defined"
 fi;
@@ -836,15 +846,20 @@ fi;
 # GENE PANEL
 LIST_GENE_PANEL="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.list.genes"
 GENE_PANEL_FILES_NAME=$(grep -v "^#" $LIST_GENE_PANEL | tr '\n' ' ' | sed 's/ /<br>/gi')
-#echo $GENE_PANEL_FILES_NAME
 # Gene number
-
 GENES_NUMBER=$(cd $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/; cat $(cat $LIST_GENE_PANEL) | $STARK_BED_NORMALIZATION | cut -f4 | sort -u | wc -l)
 GENE_PANEL_NUMBER=$(grep -vc "^#" $LIST_GENE_PANEL)
+
+# COPY
+GENE_PANEL_FILES_DOWNLOAD_FILENAME=$RANDOM$RANDOM.panel.tar.gz
+(cd $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/ && tar -czf $OUTPUT_FILES_HTMLDIR/$GENE_PANEL_FILES_DOWNLOAD_FILENAME $(cat $LIST_GENE_PANEL))
+GENE_PANEL_DOWNLOAD_FILE=$OUTPUT_FILES_HTMLFOLDER/$GENE_PANEL_FILES_DOWNLOAD_FILENAME
 # HTML
 if (($GENE_PANEL_NUMBER)); then
-	GENE_PANEL_HTML="<br>Gene Panel"$([ $GENE_PANEL_NUMBER -gt 1 ] && echo "s")" includes <strong>$GENES_NUMBER gene"$([ $GENES_NUMBER -gt 1 ] && echo "s")"</strong>"
-	#GENE_PANEL_HTML=$GENE_PANEL_HTML"<br><strong>$GENE_PANEL_FILES_NAME</strong>"
+	GENE_PANEL_HTML="
+		<br><a href='$GENE_PANEL_DOWNLOAD_FILE' download>Gene Panel"$([ $GENE_PANEL_NUMBER -gt 1 ] && echo "s")"</a> includes <strong>$GENES_NUMBER gene"$([ $GENES_NUMBER -gt 1 ] && echo "s")"</strong>
+		<br><strong>$(cat $LIST_GENE_PANEL)</strong>
+	"
 else
 	GENE_PANEL_HTML="<br>Gene Panel defined using Design and RefSeq"
 fi;
@@ -860,19 +875,32 @@ if [ -s $TRANSCRIPTS ]; then
 		TRANSCRIPTS_FILES_NAME=$(grep -v "^#" $TRANSCRIPTS_LIST | sed "s/\n/<br>/gi")
 		TRANSCRIPTS_FILES_NUMBER=$(grep -vc "^#" $TRANSCRIPTS_LIST)
 	fi;
+	# COPY FILES
+	TRANSCRIPTS_DOWNLOAD_FILENAME=$RANDOM$RANDOM.config.txt.gz
+	$GZ $TRANSCRIPTS -c > $OUTPUT_FILES_HTMLDIR/$TRANSCRIPTS_DOWNLOAD_FILENAME
+	TRANSCRIPTS_DOWNLOAD_FILE=$OUTPUT_FILES_HTMLFOLDER/$TRANSCRIPTS_DOWNLOAD_FILENAME
 	# HTML
 	if (($TRANSCRIPTS_NUMBER)); then
-		#TRANSCRIPTS_NUMBER_HTML="<br>Transcript list"$([ $TRANSCRIPTS_FILES_NUMBER -gt 1 ] && echo "s")" includes <strong>$TRANSCRIPTS_NUMBER transcript"$([ $TRANSCRIPTS_NUMBER -gt 1 ] && echo "s")"</strong> ($TRANSCRIPTS_GENES_NUMBER gene"$([ $TRANSCRIPTS_GENES_NUMBER -gt 1 ] && echo "s")")"
-		TRANSCRIPTS_NUMBER_HTML="<br>Transcript list includes <strong>$TRANSCRIPTS_NUMBER transcript"$([ $TRANSCRIPTS_NUMBER -gt 1 ] && echo "s")"</strong> ($TRANSCRIPTS_GENES_NUMBER gene"$([ $TRANSCRIPTS_GENES_NUMBER -gt 1 ] && echo "s")")"
-		#if [ "$TRANSCRIPTS_FILES_NAME" != "" ]; then
-		#	TRANSCRIPTS_NUMBER_HTML=$TRANSCRIPTS_NUMBER_HTML"<br><strong>'$GENE_PANEL_FILES_NAME'</strong>"
-		#fi;
+		TRANSCRIPTS_NUMBER_HTML="
+			<br><a href='$TRANSCRIPTS_DOWNLOAD_FILE' download>Transcript list</a> includes <strong>$TRANSCRIPTS_NUMBER transcript"$([ $TRANSCRIPTS_NUMBER -gt 1 ] && echo "s")"</strong> ($TRANSCRIPTS_GENES_NUMBER gene"$([ $TRANSCRIPTS_GENES_NUMBER -gt 1 ] && echo "s")")
+			<br><strong>$(cat $TRANSCRIPTS_LIST)</strong>
+			"
 	else
 		TRANSCRIPTS_NUMBER_HTML="<br>No transcript defined"
 	fi;
 else
 	TRANSCRIPTS_NUMBER_HTML="<br>No transcript defined"
 fi;
+
+
+# CONFIG
+CONFIG_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.reports/$SAMPLE.$DATE.config.txt"
+
+# COPY FILES
+CONFIG_FILE_DOWNLOAD_FILENAME=$RANDOM$RANDOM.config.txt.gz
+$GZ $CONFIG_FILE -c > $OUTPUT_FILES_HTMLDIR/$CONFIG_FILE_DOWNLOAD_FILENAME
+CONFIG_FILE_DOWNLOAD_FILE=$OUTPUT_FILES_HTMLFOLDER/$CONFIG_FILE_DOWNLOAD_FILENAME
+CONFIG_FILE_DOWNLOAD_FILE_HTML="<a href='$CONFIG_FILE_DOWNLOAD_FILE' download>Configuration</a>"
 
 
 echo '
@@ -886,13 +914,14 @@ echo '
                     <div class="card-img align-self-center">
                         <span class="mbr-iconfont mbri-setting3" style="color: rgb(20, 157, 204); fill: rgb(20, 157, 204);"></span>
                     </div>
-                    <h4 class="card-title media-body py-3 mbr-fonts-style display-7">'$APP_NAME'</h4>
+                    <h4 class="card-title media-body py-3 mbr-fonts-style display-7">'$(echo $APP_NAME | sed "s/ /<br>/gi")'</h4>
                 </div>
                 <div class="card-box">
                     <p class="mbr-text mbr-fonts-style display-7">
 						'$APP_DESCRIPTION'<br>
 						Application designed for <strong>'$GROUP'</strong> group and <strong>'$PROJECT'</strong> project, with <strong>'$ASSEMBLY'</strong> assembly.
 						Analysis performed by <strong>'$ENV_NAME':'$ENV_RELEASE'</strong> with databases release <strong>'$DATABASES_RELEASE'</strong>.<br>
+						'$CONFIG_FILE_DOWNLOAD_FILE_HTML'
 					</p>
                 </div>
             </div>
@@ -902,7 +931,7 @@ echo '
                     <div class="card-img align-self-center">
                         <span class="mbr-iconfont mbri-target" style="color: rgb(20, 157, 204); fill: rgb(20, 157, 204);"></span>
                     </div>
-                    <h4 class="card-title media-body py-3 mbr-fonts-style display-7">Target Design &amp; Gene Panel</h4>
+                    <h4 class="card-title media-body py-3 mbr-fonts-style display-7">Target Design <br> Gene Panel <br> Transcripts</h4>
                 </div>
                 <div class="card-box">
                     <p class="mbr-text mbr-fonts-style display-7">
@@ -920,8 +949,6 @@ echo '
 
 ' > $HTMLFILE_MAIN
 
-
-
 # SUMMARY
 ##############
 
@@ -933,12 +960,7 @@ SECTION_NAME="Results Summary"
 SECTION_ID="results_summary"
 
 # FILES
-#FASTQR1="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.R1.fastq.gz"
-#FASTQR2="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.R2.fastq.gz"
-#FASTQCDATA="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.sequencing/metrics.fastqc.txt"
-#SEQUENCING_COUNTS="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.sequencing/metrics.counts.txt"
 SEQUENCING_INFOS="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.sequencing/metrics.infos.txt"
-#SEQUENCING_Q30="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.sequencing/metrics.Q30.txt"
 SEQUENCING_FASTP_JSON="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.sequencing/$SAMPLE.fastp.json"
 SEQUENCING_FASTP_HTML="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.sequencing/$SAMPLE.fastp.html"
 
@@ -950,11 +972,9 @@ SEQUENCING_FASTP_HTML_HTML=$HTMLFOLDER/$(basename $SEQUENCING_FASTP_HTML)
 
 
 # filtering step
-#SEQUENCING_FILTERING_STEP="after_filtering"
 SEQUENCING_FILTERING_STEP="before_filtering"
 
 # Reads Length
-#SEQUENCE_LENGTH=$(grep "^Sequence length" $FASTQCDATA | head -n1 | awk -F" " '{print $3}')
 BEFORE_SEQUENCE_LENGTH=$(cat $SEQUENCING_FASTP_JSON | $PYTHON2 -c "import sys, json; print json.load(sys.stdin)['summary']['before_filtering']['read1_mean_length']")
 AFTER_SEQUENCE_LENGTH=$(cat $SEQUENCING_FASTP_JSON | $PYTHON2 -c "import sys, json; print json.load(sys.stdin)['summary']['after_filtering']['read1_mean_length']")
 
@@ -997,31 +1017,19 @@ SEQUENCING_MODE_HTML=$(grep "^mode" $SEQUENCING_INFOS | cut -f2)
 SEQUENCING_TECHNOLOGY_HTML=$(grep "^technology" $SEQUENCING_INFOS | cut -f2)
 
 
-
 # BASES count
-#cat $LIST_GENE_PANEL | sed -z 's/\n/ -i /g' | sed 's/-i $//gi'
-#cd $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/;
-#cat $(cat $LIST_GENE_PANEL) | $BEDTOOLS sort -i - | $BEDTOOLS merge -i - | head
-#exit 0
-
-
-#GENES_BASES_NUMBER=$(cd $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/; $BEDTOOLS merge -i $(cat $LIST_GENE_PANEL | sed -z 's/\n/ -i /g' | sed 's/-i $//gi') > $REPORTDIR/merge_all_genes.bed; $BEDTOOLS coverage -a $REPORTDIR/merge_all_genes.bed  -b $REPORTDIR/merge_all_genes.bed | awk -F '\t' 'BEGIN{sum = 0} {sum += $6} END {print sum}'; rm $REPORTDIR/merge_all_genes.bed; )
 GENES_BASES_NUMBER=$(cd $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/; cat $(cat $LIST_GENE_PANEL) | $BEDTOOLS sort -i - | $BEDTOOLS merge -i - > $REPORTDIR/merge_all_genes.bed; $BEDTOOLS coverage -a $REPORTDIR/merge_all_genes.bed  -b $REPORTDIR/merge_all_genes.bed | awk -F '\t' 'BEGIN{sum = 0} {sum += $6} END {print sum}'; rm $REPORTDIR/merge_all_genes.bed; )
 GENES_BASES_HTML=$(echo $GENES_BASES_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
-#echo $GENES_BASES_NUMBER
 
 
 # VARIANTS count
 FINAL_VCF="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.reports/$SAMPLE.final.vcf"
 VARIANT_NUMBER=$(grep -cv "^#" $FINAL_VCF)
 
+
 # PIPELINES count
-#PIPELINES_NUMBER=$(echo $PIPELINES | wc -w)
-#ALIGNERS_NUMBER=$(echo $ALIGNERS | wc -w)
 ALIGNERS_HTML="$ALIGNERS_NUMBER aligner"$([ $ALIGNERS_NUMBER -gt 1 ] && echo "s")
-#CALLERS_NUMBER=$(echo $CALLERS | wc -w)
 CALLERS_HTML="$CALLERS_NUMBER caller"$([ $CALLERS_NUMBER -gt 1 ] && echo "s")
-#ANNOTATORS_NUMBER=$(echo $ANNOTATORS | wc -w)
 ANNOTATORS_HTML="$ANNOTATORS_NUMBER annotator"$([ $ANNOTATORS_NUMBER -gt 1 ] && echo "s")
 PIPELINES_HTML="<strong>$PIPELINES_NUMBER pipeline"$([ $PIPELINES_NUMBER -gt 1 ] && echo "s")"</strong>"
 ALIGNERS_CALLERS_ANNOTATORS_HTML="($ALIGNERS_HTML, $CALLERS_HTML, $ANNOTATORS_HTML)"
@@ -1151,7 +1159,7 @@ echo '
 	<div class="title-wrap">
 		<div class="progressbar-title mbr-fonts-style display-7">
 			<p>
-				FastQ - Total number of sequenced reads | '$BEFORE_TOTAL_SEQUENCES_HTML'
+				FASTQ - Total number of sequenced reads | '$BEFORE_TOTAL_SEQUENCES_HTML'
 			</p>
 		</div>
 		<div class="progress_value mbr-fonts-style display-7" style="color:silver">
@@ -1168,7 +1176,7 @@ echo '
 		<div class="title-wrap">
 			<div class="progressbar-title mbr-fonts-style display-7">
 				<p>
-					FastQ - Total number of sequenced reads filtered | '$AFTER_TOTAL_SEQUENCES_HTML'
+					FASTQ - Total number of sequenced reads filtered | '$AFTER_TOTAL_SEQUENCES_HTML'
 				</p>
 			</div>
 			<div class="progress_value mbr-fonts-style display-7">
@@ -1439,9 +1447,10 @@ if in_array $SECTION_ID $SECTIONS || in_array ALL $SECTIONS ; then
 				</h2>
 
 				<p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
-					Sequenced reads were mapped to <strong>'$ASSEMBLY'</strong> assembly using aligner'$( [ $(echo $ALIGNERS | wc -w) -gt 1 ] && echo "s")': <strong>'$ALIGNERS'</strong>.
+					Sequenced reads were mapped to <strong>'$ASSEMBLY'</strong> assembly using aligner'$( [ $(echo $ALIGNERS | wc -w) -gt 1 ] && echo "s")' <strong>'$ALIGNERS'</strong>
+					'$([ "$POST_ALIGNMENT_STEPS" != "" ] && echo "<br>with post alignment steps <strong>"$POST_ALIGNMENT_STEPS"</strong>")'
 					<br>
-					Reads statistics were determined with fastp (FastQ) and Samtools flagstat (BAM) on each aligners.
+					Reads statistics were determined with fastp (FASTQ) and Samtools flagstat (BAM) on each aligners
 					<br>
 					<strong>Validated Aligned reads</strong> calculated on <a href="#BAMforvalidation" id="BAMforvalidation">BAM for validation</a>
 					<br>
@@ -2546,9 +2555,11 @@ if ((1)); then
 					</h2>
 
 					<p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
-						Variant statistics generated with BCFTOOLS stats from '$PIPELINES_NUMBER' pipelines:
+						Variant statistics generated with BCFTOOLS stats from '$PIPELINES_NUMBER' pipelines
 						<br>
 						'$(echo $ALIGNERS_CALLERS_ANNOTATORS | sed "s/ /<br>/gi")'
+						'$([ "$POST_CALLING_STEPS" != "" ] && echo "<br>with post calling steps <strong>"$POST_CALLING_STEPS"</strong>")'
+						'$([ "$POST_ANNOTATION_STEPS" != "" ] && echo "<br>with post annotation steps <strong>"$POST_ANNOTATION_STEPS"</strong>")'
 					</p>
 
 					'"$(cat $HTMLFILE_VARIANTS_STATS_GENES_PANEL)"'
@@ -3469,6 +3480,7 @@ if in_array $SECTION_ID $SECTIONS || in_array ALL $SECTIONS ; then
 					<br>
 					on <a href="#BAMforvalidation">BAM for validation</a>
 					<br>
+					<br>
 					Targets & Genes flagged depending on Depth thresholds
 					<br>
 					MISS flag if depth <strong><'$SEQUENCING_DEPTH'X</strong> (Sequencing depth)
@@ -3880,9 +3892,11 @@ if in_array $SECTION_ID $SECTIONS || in_array ALL $SECTIONS ; then
 				</h2>
 
 				<p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
-					Variant calling from '$PIPELINES_NUMBER' pipelines:
+					Variant calling from '$PIPELINES_NUMBER' pipelines
 					<br>
 					'$(echo $ALIGNERS_CALLERS_ANNOTATORS | sed "s/ /<br>/gi")'
+					'$([ "$POST_CALLING_STEPS" != "" ] && echo "<br>with post calling steps <strong>"$POST_CALLING_STEPS"</strong>")'
+					'$([ "$POST_ANNOTATION_STEPS" != "" ] && echo "<br>with post annotation steps <strong>"$POST_ANNOTATION_STEPS"</strong>")'
 					<br>
 
 				</p>
@@ -3931,9 +3945,11 @@ if in_array $SECTION_ID $SECTIONS || in_array ALL $SECTIONS ; then
 				</h2>
 
 				<p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
-					Annotations from '$PIPELINES_NUMBER' pipelines:
+					Annotations from '$PIPELINES_NUMBER' pipelines
 					<br>
 					'$(echo $ALIGNERS_CALLERS_ANNOTATORS | sed "s/ /<br>/gi")'
+					'$([ "$POST_CALLING_STEPS" != "" ] && echo "<br>with post calling steps <strong>"$POST_CALLING_STEPS"</strong>")'
+					'$([ "$POST_ANNOTATION_STEPS" != "" ] && echo "<br>with post annotation steps <strong>"$POST_ANNOTATION_STEPS"</strong>")'
 					<br>
 
 				</p>

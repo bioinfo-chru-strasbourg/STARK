@@ -166,8 +166,8 @@ export NGS_SCRIPTS=$STARK_FOLDER_BIN			#"$( cd "$( dirname "${BASH_SOURCE[0]}" )
 # REPOSITORY FOLDER
 export RESULTS_FOLDER_BY_GROUP_PROJECT_COPY=$FOLDER_REPOSITORY	# Copy data into group and project (if defined)
 export RESULTS_SUBFOLDER_DATA="STARK";				# Copy sample results in a SUBFOLDER
-export REPOSITORY_FILE_PATTERNS_CORE='$SAMPLE.reports/$SAMPLE.final.vcf.gz $SAMPLE.reports/$SAMPLE.full.vcf.gz $SAMPLE.reports/$SAMPLE.final.tsv $SAMPLE.reports/*.report*.html $SAMPLE.reports/*.report.html.folder:FOLDER $SAMPLE.bed $SAMPLE.manifest $SAMPLE*.genes $SAMPLE*.genes.bed $SAMPLE*.transcripts $SAMPLE*.tag $SAMPLE.archive.cram $SAMPLE.archive.cram.crai $SAMPLE.analysis.json';
-export ARCHIVES_FILE_PATTERNS_CORE='$SAMPLE.reports/$SAMPLE.final.vcf.gz $SAMPLE.reports/$SAMPLE.final.tsv $SAMPLE.reports/*.report*.html $SAMPLE.reports/*.report.html.folder:FOLDER $SAMPLE.bed $SAMPLE.manifest $SAMPLE*.genes $SAMPLE*.transcripts $SAMPLE*.tag $SAMPLE.archive.cram $SAMPLE.archive.cram.crai $SAMPLE.analysis.json';
+export REPOSITORY_FILE_PATTERNS_CORE='$SAMPLE.reports/$SAMPLE.final.vcf.gz $SAMPLE.reports/$SAMPLE.full.vcf.gz $SAMPLE.reports/$SAMPLE.final.tsv $SAMPLE.reports/*.*.config.txt $SAMPLE.reports/*.report*.html $SAMPLE.reports/*.report.html.folder:FOLDER $SAMPLE.bed $SAMPLE.manifest $SAMPLE*.genes $SAMPLE*.genes.bed $SAMPLE*.transcripts $SAMPLE*.tag $SAMPLE.*.validation.bam $SAMPLE.*validation.bam.bai $SAMPLE.analysis.json';
+export ARCHIVES_FILE_PATTERNS_CORE='$SAMPLE.reports/$SAMPLE.final.vcf.gz $SAMPLE.reports/$SAMPLE.full.vcf.gz $SAMPLE.reports/$SAMPLE.final.tsv $SAMPLE.reports/*.*.config.txt $SAMPLE.reports/*.report*.html $SAMPLE.reports/*.report.html.folder:FOLDER $SAMPLE.bed $SAMPLE.manifest $SAMPLE*.genes $SAMPLE*.genes.bed $SAMPLE*.transcripts $SAMPLE*.tag $SAMPLE.archive.cram $SAMPLE.archive.cram.crai $SAMPLE.analysis.json';
 # Copy some sample results files in the root sample folder, if any SUBFOLDER defined
 #export RESULTS_SUBFOLDER_ROOT_FILE_PATTERNS=$RESULTS_SUBFOLDER_ROOT_FILE_PATTERNS' $SAMPLE.reports/$SAMPLE.final.vcf $SAMPLE.reports/$SAMPLE.full.vcf $SAMPLE.reports/$SAMPLE.final.txt $SAMPLE.reports/$SAMPLE.full.txt *.reports/*.report.pdf *.reports/latex*/*pdf';
 #export RESULTS_SUBFOLDER_ROOT_FILE_PATTERNS=$RESULTS_SUBFOLDER_ROOT_FILE_PATTERNS' $SAMPLE.reports/$SAMPLE.final.vcf $SAMPLE.reports/$SAMPLE.final.vcf.idx $SAMPLE.reports/$SAMPLE.final.vcf.gz $SAMPLE.reports/$SAMPLE.final.vcf.gz.tbi $SAMPLE.reports/$SAMPLE.full.vcf $SAMPLE.reports/$SAMPLE.full.vcf.idx $SAMPLE.reports/$SAMPLE.full.vcf.gz $SAMPLE.reports/$SAMPLE.full.vcf.gz.tbi $SAMPLE.reports/$SAMPLE.final.tsv $SAMPLE.reports/$SAMPLE.full.tsv *.reports/*.report.pdf $SAMPLE.bed';
@@ -388,15 +388,15 @@ export SAMTOOLS_METRICS_FLAG_PARAM
 # VARIANT RECALIBRATION (default 0/FALSE/NO/N)
 # Performs Variant recalibration after Calling (1/TRUE/YES/Y or 0/FALSE/NO/N).
 # If the recalibration fail (usually due to lack of data for statistic calculation), nothing will be done
-if [ -z "$VARIANT_RECALIBRATION" ] || [ "${VARIANT_RECALIBRATION^^}" == "FALSE" ] || [ "${VARIANT_RECALIBRATION^^}" == "NO" ] || [ "${VARIANT_RECALIBRATION^^}" == "N" ]  || [ "$VARIANT_RECALIBRATION" == "0" ]; then
-	VARIANT_RECALIBRATION=0
-elif [ "${VARIANT_RECALIBRATION^^}" == "TRUE" ] || [ "${VARIANT_RECALIBRATION^^}" == "YES" ] || [ "${VARIANT_RECALIBRATION^^}" == "Y" ]  || [ "$VARIANT_RECALIBRATION" == "1" ]; then
-	VARIANT_RECALIBRATION=1
+# if [ -z "$VARIANT_RECALIBRATION" ] || [ "${VARIANT_RECALIBRATION^^}" == "FALSE" ] || [ "${VARIANT_RECALIBRATION^^}" == "NO" ] || [ "${VARIANT_RECALIBRATION^^}" == "N" ]  || [ "$VARIANT_RECALIBRATION" == "0" ]; then
+# 	VARIANT_RECALIBRATION=0
+# elif [ "${VARIANT_RECALIBRATION^^}" == "TRUE" ] || [ "${VARIANT_RECALIBRATION^^}" == "YES" ] || [ "${VARIANT_RECALIBRATION^^}" == "Y" ]  || [ "$VARIANT_RECALIBRATION" == "1" ]; then
+# 	VARIANT_RECALIBRATION=1
 
-else
-	VARIANT_RECALIBRATION=0
-fi;
-export VARIANT_RECALIBRATION
+# else
+# 	VARIANT_RECALIBRATION=0
+# fi;
+# export VARIANT_RECALIBRATION
 
 # INTERVAL_PADDING (default 0)
 # Add some “padding” to the intervals used (manifest) in order to include the flanking regions (typically ~100 bp)
@@ -529,6 +529,29 @@ export METRICS_SNPEFF
 export PRIORITIZE_PIPELINES_LIST
 
 
+### FASTQ
+
+# Demultiplexing adaptated stringency
+# For BCL2FASTQ demultiplexing (see doc)
+[ "$ADAPTER_STRINGENCY" == "" ] && ADAPTER_STRINGENCY=0.9
+export ADAPTER_STRINGENCY
+
+
+# FASTQ compression level
+# zlib compression level (1-9) used for FASTQ files
+# Used by BCL2FASTQ and FASTP
+[ "$FASTQ_COMPRESSION_LEVEL" == "" ] && FASTQ_COMPRESSION_LEVEL=4
+export FASTQ_COMPRESSION_LEVEL
+
+
+# DETECT ADAPTER FOR PE
+# Autodetect adapter for paired end
+# Either 0 or 1
+# Default: 0 (i.e. no detection)
+[ "$DETECT_ADAPTER_FOR_PE" == "" ] && DETECT_ADAPTER_FOR_PE=0
+export DETECT_ADAPTER_FOR_PE
+
+
 # FASTQ Read quality filtering
 # Read Quality threshold. Read quality below will be removed
 # Default: null
@@ -541,7 +564,6 @@ export FASTQ_QUALITY_FILTERING
 # e.g.: UMI_BARCODE_PATTERN="NNNNNNNN"
 # See UMI TOOLS documentatin for more information
 export UMI_BARCODE_PATTERN
-
 
 
 # Barcode tag
@@ -669,6 +691,10 @@ fi;
 export BAM_COMPRESSION
 
 
+# CRAM OPTIONS
+# Final CRAM options for compression (archive.cram))
+# example: CRAM_OPTIONS="version=3.0,level=9,no_ref,use_lzma,seqs_per_slice=100000"
+export CRAM_OPTIONS
 
 
 # ANNOTATION

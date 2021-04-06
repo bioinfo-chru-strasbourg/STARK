@@ -36,18 +36,18 @@ REPORT_SECTIONS?=ALL
 # Analysis Summary
 %.report.summary:
 	mkdir -p $(@D)
-	@echo "# SUMMARY " >> $@
-	@echo "########### " >> $@
-	@echo "# $(NB_PIPELINES) PIPELINES: $(PIPELINES)" >> $@
-	@echo "# POST ALIGNMENT: $(POST_ALIGNMENT) " >> $@
-	@echo "# OTHER OPTIONS: " >> $@
-	@echo "#    VARIANT_RECALIBRATION: $(VARIANT_RECALIBRATION) " >> $@
-	@echo "#    INTERVAL_PADDING: $(INTERVAL_PADDING) " >> $@
-	@echo "#    PRIORITIZE_PIPELINES_LIST: $(PRIORITIZE_PIPELINES_LIST) " >> $@
-	@echo "# REFERENCE GENOME: $(REF) " >> $@
-	@echo "# INTERSECTION THRESHOLD: $(INTERSEC) " >> $@
-	@echo "# " >> $@
-	@echo " " >> $@
+	#@echo "# SUMMARY " >> $@
+	#@echo "########### " >> $@
+	#@echo "# $(NB_PIPELINES) PIPELINES: $(PIPELINES)" >> $@
+	#@echo "# POST ALIGNMENT: $(POST_ALIGNMENT) " >> $@
+	#@echo "# OTHER OPTIONS: " >> $@
+	#@echo "#    VARIANT_RECALIBRATION: $(VARIANT_RECALIBRATION) " >> $@
+	#@echo "#    INTERVAL_PADDING: $(INTERVAL_PADDING) " >> $@
+	#@echo "#    PRIORITIZE_PIPELINES_LIST: $(PRIORITIZE_PIPELINES_LIST) " >> $@
+	#@echo "# REFERENCE GENOME: $(REF) " >> $@
+	#@echo "# INTERSECTION THRESHOLD: $(INTERSEC) " >> $@
+	#@echo "# " >> $@
+	@echo "" >> $@
 
 
 # Analysis Header
@@ -58,20 +58,32 @@ REPORT_SECTIONS?=ALL
 	@echo "### Analysis Report '$(ANALYSIS_REF)' ###" >> $@
 	@echo "###                                   ###" >> $@
 	@echo "######################################### " >> $@
-	@echo " " >> $@
+	#@echo " " >> $@
 	@cat $*.report.summary >> $@
-	@echo "# " >> $@
-	@echo "# $(NB_RUN) RUNS: $(RUNS) " >> $@
-	@echo "# $(NB_SAMPLE) SAMPLES: $(RUNS_SAMPLES) " >> $@
-	@echo " " >> $@
+	#@echo "# " >> $@
+	#@echo "# $(NB_RUN) RUNS: $(RUNS) " >> $@
+	#@echo "# $(NB_SAMPLE) SAMPLES: $(RUNS_SAMPLES) " >> $@
+	@echo "" >> $@
 
+
+
+# %.config: %.report.header $(RELEASE)
+# 	mkdir -p $(@D)
+# 	cat $^ > $@
+# 	echo "" >> $@
 
 
 %.config: %.report.header $(RELEASE)
 	mkdir -p $(@D)
-	cat $^ > $@
+	cat $*.report.header > $@
 	echo "" >> $@
-
+	$(STARK_FOLDER_BIN)/STARK --applications_infos_all --app="$(ENV)" >> $@
+	$(STARK_FOLDER_BIN)/STARK --tools_infos --app="$(ENV)" >> $@
+	$(STARK_FOLDER_BIN)/STARK --databases_infos --app="$(ENV)" >> $@
+	#$(STARK_FOLDER_BIN)/STARK --applications_infos_all --app="$(ENV)" >> $@
+	echo "" >> $@
+	cat $(RELEASE) >> $@
+	echo "" >> $@
 
 
 %.analysis.json: %.config %.archive.cram %.manifest %.bed %.list.genes %.tag

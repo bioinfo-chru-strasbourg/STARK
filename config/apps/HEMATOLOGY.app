@@ -3,7 +3,8 @@
 
 # DEFAULT ENV
 ######################
-source_app $CONFIG_DEFAULT_APP,SOMATIC_PARAMETERS
+#source_app $CONFIG_DEFAULT_APP,SOMATIC_PARAMETERS
+source_app SOMATIC
 
 # APPLICATION INFOS
 #####################
@@ -17,4 +18,5 @@ APP_PROJECT="HEMATOLOGY"
 #######################
 
 # PIPELINES
-PIPELINES="bwamem.gatkUG_HEMATOLOGY.howard bwamem.outLyzer.howard bwamem.MuTect2.howard bwamem.itdseek.howard" #
+#PIPELINES="bwamem.gatkUG_HEMATOLOGY.howard bwamem.outLyzer.howard bwamem.MuTect2.howard bwamem.itdseek.howard" #
+PIPELINES=$PIPELINES" bwamem.itdseek.howard"

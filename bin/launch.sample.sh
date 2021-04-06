@@ -833,7 +833,7 @@ for RUU in $RUN_UNIQ; do
 	((RUN_ANALYZED++))
 
 	MAKEFILE_ANALYSIS_RUN=$RESULTS/$RUU/analysis.V$ANALYSIS_REF.param.mk
-	SHELL_ANALYSIS_RUN=$RESULTS/$RUU/analysis.V$ANALYSIS_REF.param.sh
+	#SHELL_ANALYSIS_RUN=$RESULTS/$RUU/analysis.V$ANALYSIS_REF.param.sh
 	LOGFILE_RES_RUN=$RESULTS/$RUU/analysis.V$ANALYSIS_REF.log
 	#LOGFILE_RES_RUN_REPORT=$RESULTS/$RUU/analysis.V$ANALYSIS_REF.report.log
 	RELEASE_RUN=$RESULTS/$RUU/analysis.V$ANALYSIS_REF.release
@@ -848,7 +848,7 @@ for RUU in $RUN_UNIQ; do
 	# MKDIR & TOUCH
 	mkdir -p $RESULTS/$RUU
 	touch $MAKEFILE_ANALYSIS_RUN
-	touch $SHELL_ANALYSIS_RUN
+	#touch $SHELL_ANALYSIS_RUN
 	touch $LOGFILE_RES_RUN
 	#touch $LOGFILE_RES_RUN_REPORT
 
@@ -864,7 +864,7 @@ for RUU in $RUN_UNIQ; do
 
 	(($VERBOSE)) && echo "#[INFO] RUN '$RUU'"
 	echo "## ANALYSIS" > $MAKEFILE_ANALYSIS_RUN
-	echo "## ANALYSIS" > $SHELL_ANALYSIS_RUN
+	#echo "## ANALYSIS" > $SHELL_ANALYSIS_RUN
 	RUNS_SAMPLES="";
 
 	F_LIST=""
@@ -1077,70 +1077,6 @@ for RUU in $RUN_UNIQ; do
 
 				(($VERBOSE)) && echo "#[INFO] FASTQ processing (Adaptors, UMIs, quality)"
 
-				if ((0)); then
-
-					# Create sample sequencing folder
-					mkdir -p $RUN_SAMPLE_DIR/$S.sequencing
-
-					# FASTP parameters
-					FASTP_PARAM=" --disable_trim_poly_g --disable_length_filtering "
-					FASTP_THREADS=" --thread $THREADS "
-
-					# OUTPUT
-					FASTP_METRICS_OUTPUT="-h $FASTP_HTML -j $FASTP_JSON"
-
-					# Paired-End or Single-End
-					#if (( $($UNGZ -c $RUN_SAMPLE_DIR/$S.R2.fastq.gz | head -n 1 | wc -l) )); then
-					if (( $($UNGZ -c $F_R2 | head -n 1 | wc -l) )); then
-						(($VERBOSE)) && echo "#[INFO] Paired-End Processing"
-						FASTP_INPUT="-i $RUN_SAMPLE_DIR/$S.R1.fastq.gz -I $RUN_SAMPLE_DIR/$S.R2.fastq.gz"
-						FASTP_OUTPUT="-o $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.processed.fastq.gz -O $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.processed.fastq.gz"
-						(($DETECT_ADAPTER_FOR_PE)) && FASTP_PARAM=$FASTP_PARAM" --detect_adapter_for_pe"
-					else
-						(($VERBOSE)) && echo "#[INFO] Single-End Processing"
-						FASTP_INPUT="-i $RUN_SAMPLE_DIR/$S.R1.fastq.gz"
-						FASTP_OUTPUT="-o $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.processed.fastq.gz"
-					fi;
-
-					# Adapter detection
-					(($VERBOSE)) && echo "#[INFO] Adapter Processing (detection & trimming)"
-
-					# UMI Extraction
-					if [ "$UMI_BARCODE_PATTERN" != "" ] && ! (( $($UNGZ -c $RUN_SAMPLE_DIR/$S.R1.fastq.gz | head -n1 | awk -F" " '{n_read_name=split($1,read_name,":"); if (read_name[n_read_name] ~ /[A-Z]/) { print read_name[n_read_name]} }' | wc -l) )); then
-						(($VERBOSE)) && echo "#[INFO] UMI extraction Processing with pattern '$UMI_BARCODE_PATTERN'"
-						FASTP_UMI_PARAM="--umi --umi_loc per_read --umi_len "${#UMI_BARCODE_PATTERN};
-					else
-						(($VERBOSE)) && echo "#[INFO] NO UMI extraction Processing"
-						FASTP_UMI_PARAM=""
-					fi;
-
-					# Read quality filtering
-					if [ "$FASTQ_QUALITY_FILTERING" != "" ]; then
-						(($VERBOSE)) && echo "#[INFO] Read quality filtering with quality '$FASTQ_QUALITY_FILTERING'"
-						FASTP_PARAM=$FASTP_PARAM" --cut_mean_quality=$FASTQ_QUALITY_FILTERING "
-					else
-						(($VERBOSE)) && echo "#[INFO] NO Read quality filtering"
-						FASTP_PARAM=$FASTP_PARAM" --disable_quality_filtering "
-					fi;
-
-
-				
-					# # RUN FASTP
-					# (($DEBUG)) && echo "#[INFO] FASTP CMD: $FASTP $FASTP_INPUT $FASTP_OUTPUT $FASTP_UMI_PARAM $FASTP_PARAM $FASTP_THREADS $FASTP_METRICS_OUTPUT"
-					# $FASTP $FASTP_INPUT $FASTP_OUTPUT $FASTP_UMI_PARAM $FASTP_PARAM $FASTP_METRICS_OUTPUT --report_title="$S Sequencing Quality Report" 1>$FASTP_LOG 2>$FASTP_ERR
-					# (($DEBUG)) && cat $FASTP_LOG $FASTP_ERR
-					# #cat $FASTP_LOG $FASTP_ERR
-
-					# # Copy fastq files
-					# [ -e $RUN_SAMPLE_DIR/$S.R1.fastq.gz ] && $COMMAND_COPY_NO_COMPRESS $RUN_SAMPLE_DIR/$S.R1.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.demultiplexing.fastq.gz
-					# [ -e $RUN_SAMPLE_DIR/$S.R2.fastq.gz ] && $COMMAND_COPY_NO_COMPRESS $RUN_SAMPLE_DIR/$S.R2.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.demultiplexing.fastq.gz
-					# [ -e $RUN_SAMPLE_DIR/$S.I1.fastq.gz ] && $COMMAND_COPY_NO_COMPRESS $RUN_SAMPLE_DIR/$S.I1.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.I1.demultiplexing.fastq.gz
-					# [ -e $RUN_SAMPLE_DIR/$S.I2.fastq.gz ] && $COMMAND_COPY_NO_COMPRESS $RUN_SAMPLE_DIR/$S.I2.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.I2.demultiplexing.fastq.gz
-					# [ -e $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.processed.fastq.gz ] && mv $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.processed.fastq.gz $RUN_SAMPLE_DIR/$S.R1.fastq.gz
-					# [ -e $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.processed.fastq.gz ] && mv $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.processed.fastq.gz $RUN_SAMPLE_DIR/$S.R2.fastq.gz
-
-				fi;
-
 
 				# FASTP MK
 				echo "$RUN_SAMPLE_DIR_SEQUENCING/$S: $RUN_SAMPLE_DIR/$S.R1.fastq.gz $RUN_SAMPLE_DIR/$S.R2.fastq.gz $RUN_SAMPLE_DIR/$S.I1.fastq.gz $RUN_SAMPLE_DIR/$S.I2.fastq.gz
@@ -1149,6 +1085,7 @@ for RUU in $RUN_UNIQ; do
 					# FASTP parameters
 					echo ' --disable_trim_poly_g --disable_length_filtering ' > \$@.fastp.param;
 					echo ' --thread \$(FASTP_THREADS_BY_SAMPLE) ' >> \$@.fastp.param;
+					echo ' --compression \$(FASTQ_COMPRESSION_LEVEL) ' >> \$@.fastp.param;
 					# OUTPUT
 					echo '-h $FASTP_HTML -j $FASTP_JSON' >> \$@.fastp.param;
 					# Paired-End or Single-End
@@ -1458,11 +1395,11 @@ for RUU in $RUN_UNIQ; do
 
 	echo "RUNS_SAMPLES=$RUNS_SAMPLES" >> $MAKEFILE_ANALYSIS_RUN
 	echo "PIPELINES=$PIPELINES" >> $MAKEFILE_ANALYSIS_RUN
-	echo "INTERSEC=2" >> $MAKEFILE_ANALYSIS_RUN
+	#echo "INTERSEC=2" >> $MAKEFILE_ANALYSIS_RUN
 
-	echo "RUNS_SAMPLES=\"$RUNS_SAMPLES\"" >> $SHELL_ANALYSIS_RUN
-	echo "PIPELINES=\"$PIPELINES\"" >> $SHELL_ANALYSIS_RUN
-	echo "INTERSEC=2" >> $SHELL_ANALYSIS_RUN
+	#echo "RUNS_SAMPLES=\"$RUNS_SAMPLES\"" >> $SHELL_ANALYSIS_RUN
+	#echo "PIPELINES=\"$PIPELINES\"" >> $SHELL_ANALYSIS_RUN
+	#echo "INTERSEC=2" >> $SHELL_ANALYSIS_RUN
 
 
 	# RESULTS
@@ -1498,7 +1435,7 @@ for RUU in $RUN_UNIQ; do
 	echo "#[INFO] ARCHIVES                  $ARCHIVES"
 	(($VERBOSE)) && echo "#[INFO] RELEASE INFOS             $RELEASE_RUN"
 	(($VERBOSE)) && echo "#[INFO] MAKEFILE CONFIGURATION    $MAKEFILE_ANALYSIS_RUN"
-	(($VERBOSE)) && echo "#[INFO] SHELL CONFIGURATION       $SHELL_ANALYSIS_RUN"
+	#(($VERBOSE)) && echo "#[INFO] SHELL CONFIGURATION       $SHELL_ANALYSIS_RUN"
 	(($VERBOSE)) && echo "#[INFO] LOGFILE                   $LOGFILE_RES_RUN"
 	(($VERBOSE)) && echo "#[INFO] THREADS                   $THREADS"
 	(($VERBOSE)) && echo "#[INFO] THREADS_BY_SAMPLE         $THREADS_BY_SAMPLE"
@@ -1543,6 +1480,7 @@ for RUU in $RUN_UNIQ; do
 	echo "["$(date '+%Y%m%d-%H%M%S')"] Main Analysis Process for Analysis '$RELEASE_RUN' START" >>$LOGFILE_RES_RUN
 
 	make -k -j $THREADS -e ENV="$ENV" PARAM=$MAKEFILE_ANALYSIS_RUN $PARAMETERS $THREAD_PARAMETERS JAVA_MEMORY=$JAVA_MEMORY SNAPSHOT=0 VALIDATION=1 INPUT=$INPUT OUTDIR=$RESULTS RELEASE=$RELEASE_RUN FINAL_REPORT=$FINAL_REPORT_RUN ANALYSIS_REF=$ANALYSIS_REF -f $NGS_SCRIPTS/NGSWorkflow.mk 1>>$LOGFILE_RES_RUN 2>>$LOGFILE_RES_RUN
+	rm -f $MAKEFILE_ANALYSIS_RUN
 	echo "["$(date '+%Y%m%d-%H%M%S')"] Main Analysis Process for Analysis '$RELEASE_RUN' END" >>$LOGFILE_RES_RUN
 
 	if (($(grep "\*\*\*" $LOGFILE_RES_RUN -c))); then

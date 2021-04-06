@@ -3,7 +3,8 @@
 
 # DEFAULT ENV
 ######################
-source_app $CONFIG_DEFAULT_APP,SOMATIC_PARAMETERS
+#source_app $CONFIG_DEFAULT_APP,SOMATIC_PARAMETERS
+source_app SOMATIC
 
 # APPLICATION INFOS
 #####################
@@ -17,4 +18,5 @@ APP_PROJECT="SOLIDTUMOR"
 #######################
 
 # PIPELINES
-PIPELINES="bwamem.gatkUG_SOLIDTUMOR.howard bwamem.gatkHC_SOLIDTUMOR.howard bwamem.outLyzer.howard bwamem.MuTect2.howard"
+#PIPELINES="bwamem.gatkUG_SOLIDTUMOR.howard bwamem.gatkHC_SOLIDTUMOR.howard bwamem.outLyzer.howard bwamem.MuTect2.howard"
+

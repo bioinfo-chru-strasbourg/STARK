@@ -36,5 +36,5 @@ RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 PIPELINES_COMMENT := "POST_CALLING:filtration:VariantFiltration of VCF."
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
 
-PIPELINES_COMMENT := "POST_ANNOTATION:filtration:VariantFiltration of VCF."
-PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
+#PIPELINES_COMMENT := "POST_ANNOTATION:filtration:VariantFiltration of VCF."
+#PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )

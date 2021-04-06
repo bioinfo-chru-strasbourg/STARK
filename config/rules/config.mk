@@ -115,43 +115,43 @@ RELEASE_CMD := $(shell echo "\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#" >> $(RELEAS
 # RELEASE
 RELEASE_CMD := $(shell echo "\#\# STARK_RELEASE: $(ENV_RELEASE)" >> $(RELEASE_INFOS) )
 RELEASE_CMD := $(shell echo "\#\# APP_NAME: $(APP_NAME)" >> $(RELEASE_INFOS) )
-RELEASE_CMD := $(shell echo "\#\# APP_RELEASE: $(APP_RELEASE)" >> $(RELEASE_INFOS) )
+#RELEASE_CMD := $(shell echo "\#\# APP_RELEASE: $(APP_RELEASE)" >> $(RELEASE_INFOS) )
 
 # GROUP/PROJECT
-RELEASE_CMD := $(shell echo "\#\# GROUP: $(GROUP)" >> $(RELEASE_INFOS) )
-RELEASE_CMD := $(shell echo "\#\# PROJECT: $(PROJECT)" >> $(RELEASE_INFOS) )
+#RELEASE_CMD := $(shell echo "\#\# GROUP: $(GROUP)" >> $(RELEASE_INFOS) )
+#RELEASE_CMD := $(shell echo "\#\# PROJECT: $(PROJECT)" >> $(RELEASE_INFOS) )
 
 # INFRASTRUCTURE
-RELEASE_CMD := $(shell echo "\#\# INFRASTRUCTURE: THREADS=$(THREADS), THREADS_BY_SAMPLE=$(THREADS_BY_SAMPLE), MEMORY=$(MEMORY)" >> $(RELEASE_INFOS) )
-
-RELEASE_CMD := $(shell echo "" >> $(RELEASE_INFOS) )
-
-# TOOLS
-#RELEASE_CMD := $(shell echo "\#\# TOOLS INFOS" >> $(RELEASE_INFOS) )
-RELEASE_CMD := $(shell $(STARK_FOLDER_BIN)/STARK --tools_infos --app=$(ENV) >> $(RELEASE_INFOS) )
-
-# DATABASES
-#RELEASE_CMD := $(shell echo "\#\# DATABASES INFOS" >> $(RELEASE_INFOS) )
-RELEASE_CMD := $(shell $(STARK_FOLDER_BIN)/STARK --databases_infos --app=$(ENV) >> $(RELEASE_INFOS) )
-
-# OTHER INFORMATIONS
-RELEASE_CMD := $(shell echo "" >> $(RELEASE_INFOS) )
-RELEASE_CMD := $(shell echo "\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#" >> $(RELEASE_INFOS) )
-RELEASE_CMD := $(shell echo "\#\#\#\# OTHER INFORMATIONS \#\#\#\#" >> $(RELEASE_INFOS) )
-RELEASE_CMD := $(shell echo "\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "\#\# INFRASTRUCTURE:" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "\#\#    THREADS=$(THREADS)" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "\#\#    THREADS_BY_SAMPLE=$(THREADS_BY_SAMPLE)" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "\#\#    THREADS_BY_PIPELINE=$(THREADS_BY_PIPELINE)" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "\#\#    THREADS_BY_ALIGNER=$(THREADS_BY_ALIGNER)" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "\#\#    THREADS_BY_CALLER=$(THREADS_BY_CALLER)" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "\#\#    MEMORY=$(MEMORY)" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "\#\# CONFIG FILES:" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "\#\#    CONFIG=$(CONFIG)" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "\#\#    FUNCTIONS=$(FUNCTIONS)" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "\#\#    PARAM=$(PARAM)" >> $(RELEASE_INFOS) )
 
 
-# DATABASES
-#RELEASE_COMMENT := "\#\# DATABASES: VCFDBSNP='$(VCFDBSNP)', VCFDBSNP137VCF='$(VCFDBSNP137VCF)', VCF1000G='$(VCF1000G)', VCFMILLS1000G='$(VCFMILLS1000G)', KNOWN_ALLELES='$(KNOWN_ALLELES)', COSMIC='$(COSMIC)'"
-#RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
+# RELEASE_CMD := $(shell echo "" >> $(RELEASE_INFOS) )
 
-# TOOLS
-#RELEASE_COMMENT := "\#\# TOOLS: JAVA=$(JAVA_VERSION)\&$(JAVA6_VERSION), BWA=$(BWA_VERSION), GATK=$(GATK_VERSION), SAMTOOLS=$(SAMTOOLS_VERSION), IGV=$(IGV_VERSION), IGVTOOLS=$(IGVTOOLS_VERSION), PICARD=$(PICARD_VERSION), TABIX=$(TABIX_VERSION), BCFTOOLS=$(BCFTOOLS_VERSION), FASTQC=$(FASTQC_VERSION), CAP=$(CAP_VERSION), CAP_ManifestToBED=$(CAP_ManifestToBED_VERSION), CAP_BEDToOPTION=$(CAP_BEDToOPTION_VERSION)"
-#RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
+# # APPLICATION
+# RELEASE_CMD := $(shell $(STARK_FOLDER_BIN)/STARK --applications_infos --app="$(ENV)" >> $(RELEASE_INFOS) )
 
-# CONFIG/RELEASE
-RELEASE_COMMENT := "\#\# CONFIG FILES: CONFIG=$(CONFIG), FUNCTIONS=$(FUNCTIONS), PARAM=$(PARAM)"
-RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
+# # TOOLS
+# #RELEASE_CMD := $(shell echo "\#\# TOOLS INFOS" >> $(RELEASE_INFOS) )
+# RELEASE_CMD := $(shell $(STARK_FOLDER_BIN)/STARK --tools_infos --app="$(ENV)" >> $(RELEASE_INFOS) )
+
+# # DATABASES
+# #RELEASE_CMD := $(shell echo "\#\# DATABASES INFOS" >> $(RELEASE_INFOS) )
+# RELEASE_CMD := $(shell $(STARK_FOLDER_BIN)/STARK --databases_infos --app="$(ENV)" >> $(RELEASE_INFOS) )
+# RELEASE_CMD := $(shell echo "" >> $(RELEASE_INFOS) )
+
+# # APPLICATION ALL
+# RELEASE_CMD := $(shell $(STARK_FOLDER_BIN)/STARK --applications_infos_all --app="$(ENV)" >> $(RELEASE_INFOS) )
+
 
 # OTHER INFORMATIONS
 RELEASE_CMD := $(shell echo "" >> $(RELEASE_INFOS) )

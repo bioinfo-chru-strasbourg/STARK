@@ -180,9 +180,14 @@ GZ?=gzip
 ## BAM/FASTQ Files
 ####################
 
-# BAM Indexing
+# BAM Indexing - BAI-format
 %.bam.bai: %.bam
-	$(SAMTOOLS) index $<
+	$(SAMTOOLS) index $< -@ $(THREADS_SAMTOOLS)
+
+
+# BAM Indexing - CSI-format
+#%.bam.csi: %.bam
+#	$(SAMTOOLS) index $< -c -@ $(THREADS_SAMTOOLS)
 
 
 # BAM from SAM
@@ -631,11 +636,11 @@ PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
 PIPELINES_COMMENT := "POST_CALLING:normalization:VCF Normalization."
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
 
-PIPELINES_COMMENT := "POST_ANNOTATION:normalization:VCF Normalization."
-PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
+#PIPELINES_COMMENT := "POST_ANNOTATION:normalization:VCF Normalization."
+#PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
 
-PIPELINES_COMMENT := "POST_CALLING:sorting:VCF Sorting."
-PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
+#PIPELINES_COMMENT := "POST_CALLING:sorting:VCF Sorting."
+#PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
 
 PIPELINES_COMMENT := "POST_ANNOTATION:sorting:VCF Sorting."
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )

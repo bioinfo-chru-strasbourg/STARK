@@ -129,11 +129,6 @@ METRICS_FLAGS="UNMAP,SECONDARY,QCFAIL,DUP"
 #SAMTOOLS_METRICS_FLAG_PARAM=" -F 0x4 -F 0x100 -F 0x200 -F 0x400"
 
 
-# VARIANT RECALIBRATION (default 0/FALSE/NO/N)
-# Performs Variant recalibration after Calling (1/TRUE/YES/Y or 0/FALSE/NO/N).
-# If the recalibration fail (usually due to lack of data for statistic calculation), nothing will be done
-VARIANT_RECALIBRATION=0
-
 # INTERVAL_PADDING (default 0)
 # Add some “padding” to the intervals used (manifest) in order to include the flanking regions (typically ~100 bp)
 INTERVAL_PADDING=0
@@ -196,6 +191,15 @@ PRIORITIZE_PIPELINES_LIST=""
 
 # FASTQ Processing
 
+# Demultiplexing adaptated stringency
+# For BCL2FASTQ demultiplexing (see doc)
+ADAPTER_STRINGENCY=0.9
+
+# FASTQ compression level
+# zlib compression level (1-9) used for FASTQ files
+# Used by BCL2FASTQ and FASTP
+FASTQ_COMPRESSION_LEVEL=4
+
 # DETECT ADAPTER FOR PE
 # Autodetect adapter for paired end
 # Either 0 or 1
@@ -220,6 +224,7 @@ UMI_BARCODE_PATTERN=""
 # e.g.: BARCODE_TAG="BC" for 10X Genomics, BARCODE_TAG="BX" for UMI
 # See PICARD documentation for more information
 BARCODE_TAG=""
+
 
 
 
@@ -278,11 +283,12 @@ POST_ALIGNMENT_STEPS="sorting markduplicates realignment recalibration compress"
 # The steps are defined as makefiles rules
 # Check available steps by using the command: STARK --pipelines_infos
 # Available steps (not up-to-date):
-#    recalibration: VCF recalibration
+#    normalization: VCF normalization
+#    recalibration: VCF recalibration (not yet available)
 #    filtration: VCF filtration
 # Usually:
-#    "recalibration filtration"
-POST_CALLING_STEPS="normalization recalibration filtration"
+#    "normalization filtration"
+POST_CALLING_STEPS="normalization filtration"
 
 
 
@@ -297,16 +303,20 @@ POST_CALLING_STEPS="normalization recalibration filtration"
 # Check available steps by using the command: STARK --pipelines_infos
 # Available steps (not up-to-date):
 #    sorting: VCF sorting
-#    normalization: VCF normalization
 # Usually:
-#    "sorting normalization"
-POST_ANNOTATION_STEPS="sorting normalization"
+#    "sorting"
+POST_ANNOTATION_STEPS="sorting"
 
 
 
 # BAM COMPRESSION
-# Final BAM copression level (unaligned.bam, ALIGNER.bam)
+# Final BAM compression level (ALIGNER.bam)
 BAM_COMPRESSION=5
+
+
+# CRAM OPTIONS
+# Final CRAM options for compression (archive.cram))
+CRAM_OPTIONS="version=3.0,level=9,no_ref,use_lzma,seqs_per_slice=100000"
 
 
 # THREADS (default AUTO)
@@ -359,9 +369,9 @@ HOWARD_ANNOTATION_ANALYSIS="null" # no more annotation
 
 # CALCULATION
 # Default calculation with HOWARD for all VCF/pipelines
-HOWARD_CALCULATION="VAF_STATS,DP_STATS,VARTYPE,NOMEN"
+HOWARD_CALCULATION="VAF_STATS,DP_STATS,VARTYPE,NOMEN,BARCODE"
 # Default minimal calculation with HOWARD for final VCF report
-HOWARD_CALCULATION_MINIMAL="VAF_STATS,DP_STATS,VARTYPE,NOMEN"
+HOWARD_CALCULATION_MINIMAL="VAF_STATS,DP_STATS,VARTYPE,NOMEN,BARCODE"
 # Default calculation with HOWARD for final VCF report
 HOWARD_CALCULATION_REPORT="FindByPipelines,GenotypeConcordance,VAF,VAF_STATS,DP_STATS,VARTYPE,NOMEN,BARCODE"
 # Default calculation with HOWARD for whole analysis (calculation forced)

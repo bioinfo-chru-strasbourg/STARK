@@ -161,6 +161,9 @@ function usage {
 
 	echo "### Information options";
 	echo "# --applications_infos                     Applications informations.";
+	echo "#                                          Use --runs=<MyRun> to detect RAW FOLDER and APPLICATION of <MyRun>.";
+	echo "#                                          Use --application=<MyApp> to show only <MyApp> informations.";
+	echo "# --applications_infos_all                 Applications informations with all variables (--runs and --application option available).";
 	echo "# --pipelines_infos                        Pipelines informations.";
 	echo "# --release_infos                          Pipelines with tools and databases information.";
 	echo "# --tools_infos                            Tools release information.";
@@ -190,7 +193,7 @@ function usage {
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
-ARGS=$(getopt -o "a:b:e:r:f:q:g:j:m:l:s:w:t:o:u:iygxvdnh" --long "env:,app:,application:,runs:,run:,fastq:,reads:,reads1:,fastq_R1:,by_sample,fastq_R2:,reads2:,index1:,index2:,other_files:,analysis_tag:,sample_tag:,adapters:,analysis:,analysis_name:,analysis_dir:,demultiplexing:,demultiplexing_only,samplesheet:,sample:,sample_filter:,design:,bed:,manifest:,genes:,transcripts:,threads:,output:,results:,repository:,archives:,databases:,input:,output:,tmp:,log:,docker-compose-file:,docker-env-file:,docker-parameters:,docker-stark-image:,docker-stark-container:,no_header,applications_infos,pipelines_infos,release_infos,tools_infos,databases_infos,verbose,debug,release,help" -- "$@" 2> /dev/null)
+ARGS=$(getopt -o "a:b:e:r:f:q:g:j:m:l:s:w:t:o:u:iygxvdnh" --long "env:,app:,application:,runs:,run:,fastq:,reads:,reads1:,fastq_R1:,by_sample,fastq_R2:,reads2:,index1:,index2:,other_files:,analysis_tag:,sample_tag:,adapters:,analysis:,analysis_name:,analysis_dir:,demultiplexing:,demultiplexing_only,samplesheet:,sample:,sample_filter:,design:,bed:,manifest:,genes:,transcripts:,threads:,output:,results:,repository:,archives:,databases:,input:,output:,tmp:,log:,docker-compose-file:,docker-env-file:,docker-parameters:,docker-stark-image:,docker-stark-container:,no_header,applications_infos,applications_infos_all,pipelines_infos,release_infos,tools_infos,databases_infos,verbose,debug,release,help" -- "$@" 2> /dev/null)
 
 
 if [ $? -ne 0 ]; then
@@ -357,6 +360,11 @@ do
 			APPLICATIONS_INFOS=1
 			shift 1
 			;;
+		--applications_infos_all)
+			APPLICATIONS_INFOS=1
+			APPLICATIONS_INFOS_ALL=1
+			shift 1
+			;;
 		-y|--pipelines_infos)
 			PIPELINES_INFOS=1
 			shift 1
@@ -431,6 +439,7 @@ if [ -z "$FASTQ" ] && \
 	[ -z "$RUNS" ] && \
 	[ -z "$ANALYSIS" ] && \
 	[ -z "$APPLICATIONS_INFOS" ] && \
+	[ -z "$APPLICATIONS_INFOS_ALL" ] && \
 	[ -z "$PIPELINES_INFOS" ] && \
 	[ -z "$RELEASE_INFOS" ] && \
 	[ -z "$TOOLS_INFOS" ] && \
@@ -440,7 +449,7 @@ if [ -z "$FASTQ" ] && \
 	[ -z "$DOCKER_STARK_IMAGE_INPUT" ] && \
 	[ -z "$DOCKER_STARK_CONTAINER" ] && \
 	((!$DEBUG)); then
-	echo "#[ERROR] Required parameter: --analysis, --run, or --reads. For informations --applications_infos, --pipelines_infos, --release_infos, --tools_infos. Use --help to display the help." && echo "" && usage && exit 1;
+	echo "#[ERROR] Required parameter: --analysis, --run, or --reads. For informations --applications_infos, --applications_infos_all, --pipelines_infos, --release_infos, --tools_infos. Use --help to display the help." && echo "" && usage && exit 1;
 fi
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -460,6 +469,21 @@ fi;
 #exit 0;
 
 
+# FUNCTIONS
+#############
+
+# function in_array
+# input: $element $array
+in_array () 
+{ 
+    local param=$1;
+    shift;
+    for elem in "$@";
+    do
+        [[ "$param" = "$elem" ]] && return 0;
+    done;
+    return 1
+}
 
 
 # ENV
@@ -534,83 +558,110 @@ if (($APPLICATIONS_INFOS)); then
 	#	echo "#[ERROR] SampleSheet '$SAMPLESHEET_INPUT' does NOT exists."
 	#	#exit 0;
 	#fi;
-
+	#  (env -i bash -c "export APP=default && source /tool/config/config.app && source_app $APP && env | grep "APP"")
 
 	#SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 	RUNS_TEST=$RUNS
+
+	APP_TEST=$APP
+	#APP_TEST_NAME=$(source_app "$APP" "$STARK_FOLDER_APPS" 2>/dev/null; echo $APP_NAME)
+	APP_TEST_NAME=$(name_app "$APP" "$STARK_FOLDER_APPS" 2>/dev/null)
+	APP_TEST_ENV=$ENV
+
 
 	echo ""
 	echo "#[INFO] ######################"
 	echo "#[INFO] #### APPLICATIONS ####"
 	echo "#[INFO] ######################"
 	echo ""
+
 	RAW_LIST="";
 	FOLDER_RUN_ORIGINAL=$FOLDER_RUN
-	#echo "TRUC "$(echo $( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/env.*sh)
-	#for ENV_DEF in $( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )/env.*sh; do
 
-	#for ENV_DEF in $STARK_FOLDER_APPS/*app; do
-	#for ENV_DEF in $(find $STARK_FOLDER_APPS -name '*app' | sort -t'/' -k2.2r -k2.1); do
-	for ENV_DEF in $(find -L $STARK_FOLDER_APPS -name '*.app' -type f | sed s#$STARK_FOLDER_APPS/## | sort -f -t'/' -k2.3 -k2.2 -k2.1) $(find -L $STARK_FOLDER_APPS -name '*.plugapp' -type f | sed s#$STARK_FOLDER_APPS/## | sort -f -t'/' -k2.3 -k2.2 -k2.1); do
+
+	if [ "$APP_TEST" == "" ]; then
+		FIND_APP_LIST=$(find -L $STARK_FOLDER_APPS -name '*.app' -type f | sed "s#$STARK_FOLDER_APPS/##" | sort -f -t'/' -k2.3 -k2.2 -k2.1)" "$(find -L $STARK_FOLDER_APPS -name '*.plugapp' -type f | sed "s#$STARK_FOLDER_APPS/##" | sort -f -t'/' -k2.3 -k2.2 -k2.1)
+	else
+		FIND_APP_LIST=$(echo $APP_TEST_ENV | sed "s#$STARK_FOLDER_APPS/##gi")
+	fi;
+
+	#for ENV_DEF in $(find -L $STARK_FOLDER_APPS -name '*.app' -type f | sed "s#$STARK_FOLDER_APPS/##" | sort -f -t'/' -k2.3 -k2.2 -k2.1) $(find -L $STARK_FOLDER_APPS -name '*.plugapp' -type f | sed "s#$STARK_FOLDER_APPS/##" | sort -f -t'/' -k2.3 -k2.2 -k2.1); do
+	for ENV_DEF in $FIND_APP_LIST; do
 
 		# FIND APP
-		#APP=$($STARK_FOLDER_BIN/extract_variable_from_env.sh $ENV_DEF "APP_NAME");
 		APP=$(source_app "$STARK_FOLDER_APPS/$ENV_DEF"  2>/dev/null; echo $APP_NAME)
-		#APP=$(echo $(basename $ENV_DEF) | sed "s/^env.//gi" | sed "s/.sh$//gi" | sed "s/sh$//gi")
+		APP_NAME=$(name_app "$STARK_FOLDER_APPS/$ENV_DEF"  2>/dev/null)
 		if [ "$APP" == "" ]; then
 			APP="default";
 			ENV=$APP;
 		fi
 
-		#FIELD_SEP="\t"
-		APP_INFOS=$(source_app "$STARK_FOLDER_APPS/$ENV_DEF"; echo -e "$APP_RELEASE\t$APP_DESCRIPTION\t$APP_GROUP\t$APP_PROJECT\t$FOLDER_RUN\t$FOLDER_RESULTS\t$FOLDER_REPOSITORY\t$FOLDER_ARCHIVES\t$PIPELINES\t$POST_ALIGNMENT_STEPS\t$HOWARD_ANNOTATION_REPORT")
-		APP_RELEASE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $1}')
-		APP_DESCRIPTION=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $2}')
-		APP_GROUP=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $3}')
-		APP_PROJECT=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $4}')
-		FOLDER_RUN=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $5}')
-		FOLDER_RESULTS=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $6}')
-		FOLDER_REPOSITORY=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $7}')
-		FOLDER_ARCHIVES=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $8}')
-		PIPELINES=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $9}')
-		POST_ALIGNMENT_STEPS=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $10}')
-		HOWARD_ANNOTATION_REPORT=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $11}')
 
-		[ -z "$APP_DESCRIPTION" ] && APP_DESCRIPTION="-";
-		[ -z "$APP_GROUP" ] && APP_GROUP="UNKNOWN";
-		[ -z "$APP_PROJECT" ] && APP_PROJECT="UNKNOWN";
+		#if [ "$APP_TEST" == "" ] || [ "${APP_TEST_NAME^^}" == "${APP^^}" ]; then
+		if [ "$APP_TEST" == "" ] || in_array ${APP_NAME^^} ${APP_TEST_NAME^^}; then
 
-		# Application TYPE
-		APP_TYPE="APP"
-		[ "${ENV_DEF##*.}" == "plugapp" ] && APP_TYPE="plugAPP"
+			#FIELD_SEP="\t"
+			APP_INFOS=$(source_app "$STARK_FOLDER_APPS/$ENV_DEF"; echo -e "$APP_RELEASE\t$APP_DESCRIPTION\t$APP_GROUP\t$APP_PROJECT\t$FOLDER_RUN\t$FOLDER_RESULTS\t$FOLDER_REPOSITORY\t$FOLDER_ARCHIVES\t$PIPELINES\t$POST_SEQUENCING_STEPS\t$POST_ALIGNMENT_STEPS\t$POST_CALLING_STEPS\t$POST_ANNOTATION_STEPS\t$HOWARD_ANNOTATION_REPORT")
+			APP_RELEASE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $1}')
+			APP_DESCRIPTION=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $2}')
+			APP_GROUP=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $3}')
+			APP_PROJECT=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $4}')
+			FOLDER_RUN=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $5}')
+			FOLDER_RESULTS=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $6}')
+			FOLDER_REPOSITORY=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $7}')
+			FOLDER_ARCHIVES=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $8}')
+			PIPELINES=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $9}')
+			POST_SEQUENCING_STEPS=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $10}')
+			POST_ALIGNMENT_STEPS=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $11}')
+			POST_CALLING_STEPS=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $12}')
+			POST_ANNOTATION_STEPS=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $13}')
+			HOWARD_ANNOTATION_REPORT=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $14}')
 
-		# OUTPUT
-		#if [ "$RUNS_TEST" == "" ]; then
-		#echo "#[INFO] ## $APP ["$(echo $ENV_DEF | sed s#$STARK_FOLDER_APPS#APPS#)"]";
-		#echo "#[INFO] ## $APP ["$(echo $ENV_DEF | sed s#$STARK_FOLDER_APPS/##)" | $APP_GROUP/$APP_PROJECT ]";
-		echo "";
-		echo "#[INFO] $APP:$APP_RELEASE ["$(echo $ENV_DEF | sed s#$STARK_FOLDER_APPS/##)"] [$APP_TYPE] ";
-		#echo "#[INFO]    INFOS        $APP_INFOS";
-		echo "#[INFO]    DESCRIPTION            $APP_DESCRIPTION";
-		echo "#[INFO]    GROUP                  $APP_GROUP";
-		echo "#[INFO]    PROJECT                $APP_PROJECT";
-		echo "#[INFO]    RUN                    $FOLDER_RUN";
-		echo "#[INFO]    RESULTS                $FOLDER_RESULTS";
-		echo "#[INFO]    REPOSITORY             $FOLDER_REPOSITORY";
-		echo "#[INFO]    ARCHIVES               $FOLDER_ARCHIVES";
-		echo "#[INFO]    PIPELINES              $PIPELINES "
-		#echo -e "#[INFO]       $(echo $PIPELINES | sed "s/ /\n#[INFO]       /gi")";
-		#echo "#[INFO]    POST_ALIGNMENT $POST_ALIGNMENT "
-		echo "#[INFO]    POST ALIGNMENT STEPS   $POST_ALIGNMENT_STEPS "
-		echo "#[INFO]    ANNOTATIONS            $HOWARD_ANNOTATION_REPORT "
-		#fi;
-		RAW_LIST=$RAW_LIST" $FOLDER_RUN"
+			[ -z "$APP_DESCRIPTION" ] && APP_DESCRIPTION="-";
+			[ -z "$APP_GROUP" ] && APP_GROUP="UNKNOWN";
+			[ -z "$APP_PROJECT" ] && APP_PROJECT="UNKNOWN";
+
+			# Application TYPE
+			APP_TYPE="APP"
+			[ "${ENV_DEF##*.}" == "plugapp" ] && APP_TYPE="plugAPP"
+
+			# OUTPUT
+			echo "";
+			echo "#[INFO] $APP:$APP_RELEASE ["$(echo $ENV_DEF | sed s#$STARK_FOLDER_APPS/##)"] [$APP_TYPE] ";
+			echo "#[INFO]    DESCRIPTION            $APP_DESCRIPTION";
+
+			if [ "$APP_TYPE" == "APP" ]; then
+				echo "#[INFO]    GROUP                  $APP_GROUP";
+				echo "#[INFO]    PROJECT                $APP_PROJECT";
+				# echo "#[INFO]    RUN                    $FOLDER_RUN";
+				# echo "#[INFO]    RESULTS                $FOLDER_RESULTS";
+				# echo "#[INFO]    REPOSITORY             $FOLDER_REPOSITORY";
+				# echo "#[INFO]    ARCHIVES               $FOLDER_ARCHIVES";
+				echo "#[INFO]    PIPELINES              $PIPELINES "
+				echo "#[INFO]    ANNOTATIONS            $HOWARD_ANNOTATION_REPORT "
+				echo "#[INFO]    POST SEQUENCING STEPS  $POST_SEQUENCING_STEPS "
+				echo "#[INFO]    POST ALIGNMENT STEPS   $POST_ALIGNMENT_STEPS "
+				echo "#[INFO]    POST CALLING STEPS     $POST_CALLING_STEPS "
+				echo "#[INFO]    POST ANNOTATION STEPS  $POST_ANNOTATION_STEPS "
+			fi;
+			if (($APPLICATIONS_INFOS_ALL)); then
+				echo "#[INFO]    ALL VARIABLES"
+				if [ "$APP_TYPE" == "APP" ]; then
+					(env -i bash -c "export APP=$APP && source /tool/config/config.app && source_app $APP && env | awk '{print \"#[INFO]        \"\$0}'")
+				elif [ "$APP_TYPE" == "plugAPP" ]; then
+					#echo "INFOS ALL plugAPP"
+					#echo "$STARK_FOLDER_APPS/$ENV_DEF"
+					cat "$STARK_FOLDER_APPS/$ENV_DEF" | grep "^#" -v | grep "^ *$" -v | awk '{print "#[INFO]        "$0}'
+				fi;
+			fi;
+			#fi;
+			RAW_LIST=$RAW_LIST" $FOLDER_RUN"
+
+		fi;
 
 	done;
 	RAW_LIST=$(echo $RAW_LIST | sed "s/ /\n/gi" | sort | uniq | sed "s/\n/ /gi" );
-
-	#echo "RAW_LIST=$RAW_LIST"
 
 	if [ "$RUNS_TEST" != "" ]; then
 
@@ -657,18 +708,8 @@ if (($APPLICATIONS_INFOS)); then
 			RUN_ENV=$ENV;
 
 			# SOURCE ENV if exists
-			#if [ ! -z $ENV ] && [ -s $ENV ]; then
-			#	echo "#[INFO] APPLICATION file '"$(echo $ENV | sed s#$STARK_FOLDER_APPS#APPS#)"' found."
-			#source_app $ENV;
-			#ENV=$(find_app "$APP" "$STARK_FOLDER_APPS")
-			#source_app "$APP" "$STARK_FOLDER_APPS"
-			#else
-			#	echo "#[WARNING] NO APPLICATION file '$ENV' found."
-			#fi;
-
 			RUN_ENV=$(find_app "$RUN_APP_NAME" "$STARK_FOLDER_APPS")
 			source_app "$RUN_APP_NAME" "$STARK_FOLDER_APPS"
-			#[ "$RUN_ENV" == "" ] && RUN_ENV=$ENV;
 
 			RUN_APP=$(source $RUN_ENV; echo $APP_NAME)
 			if [ "$RUN_APP" == "" ]; then RUN_APP="default"; fi
@@ -688,14 +729,14 @@ if (($APPLICATIONS_INFOS)); then
 
 		done;
 
-	else
-		echo "";
-		echo "#[INFO] USE $(basename $0) --applications_infos --runs=<RUN> to detect RAW FOLDER and APPLICATION of RUN";
+	# else
+	# 	echo "";
+	# 	echo "#[INFO] USE $(basename $0) --applications_infos --runs=<RUN> to detect RAW FOLDER and APPLICATION of RUN";
 	fi;
-		echo "";
+	echo "";
 
 	EXIT=1
-	#exit 0;
+
 fi;
 
 # PIPELINES

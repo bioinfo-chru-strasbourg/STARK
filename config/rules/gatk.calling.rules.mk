@@ -60,7 +60,8 @@ GATKHC_FLAGS_SHARED=--baq OFF --read_filter BadCigar --allow_potentially_misenco
 ##########
 
 # GATKUG Flags
-THREADS_GATK?=$(THREADS_BY_SAMPLE)
+#THREADS_GATK?=$(THREADS_BY_SAMPLE)
+THREADS_GATK?=$(THREADS_BY_CALLER)
 THREADS_GATKUG?=$(THREADS_GATK)
 INTERVAL_PADDING?=0
 #GATKUG_THREADS=4
@@ -642,8 +643,8 @@ GATKHC_SOMATIC_FLAGS= -nct $(THREADS_GATKHC_SOMATIC) -stand_call_conf 10 -dfrac 
 MBQ_HC_ONCOGENET=17
 MINPRUNING_ONCOGENET?=20
 THREADS_GATKHC_ONCOGENET?=$(THREADS_GATK)
-maxReadsInRegionPerSample=8000
-GATKHC_ONCOGENET_FLAGS= -nct $(THREADS_GATKHC_ONCOGENET) -stand_call_conf 10 -dfrac $(DFRAC_ONCOGENET) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC_ONCOGENET) -minPruning $(MINPRUNING_ONCOGENET)  $(GATKHC_FLAGS_SHARED)
+maxReadsInRegionPerSample_ONCOGENET=8000
+GATKHC_ONCOGENET_FLAGS= -nct $(THREADS_GATKHC_ONCOGENET) -stand_call_conf 10 -dfrac $(DFRAC_ONCOGENET) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample_ONCOGENET) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC_ONCOGENET) -minPruning $(MINPRUNING_ONCOGENET)  $(GATKHC_FLAGS_SHARED)
 
 %.gatkHC_ONCOGENET$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.genome %.design.bed.interval_list #%.from_manifest.interval_list
 	#
@@ -666,10 +667,12 @@ GATKHC_ONCOGENET_FLAGS= -nct $(THREADS_GATKHC_ONCOGENET) -stand_call_conf 10 -df
 # gatk4HC #
 ##########
 
-MINPRUNING?=4
+MINPRUNING_GATK4HC?=4
 THREADS_GATK4HC?=$(THREADS_GATK)
-maxReadsInRegionPerSample=250
-GATK4HC_FLAGS= --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC) --min-pruning $(MINPRUNING) --native-pair-hmm-threads $(THREADS_GATKHC_ONCOGENET) $(GATK4HC_FLAGS_SHARED)
+STAND_CALL_CONF_GATK4HC=30
+maxreadsperalignmentstart_GATK4HC=1000
+#maxReadsInRegionPerSample_GATK4HC=250
+GATK4HC_FLAGS= --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC) --min-pruning $(MINPRUNING_GATK4HC) --native-pair-hmm-threads $(THREADS_GATKHC_ONCOGENET) $(GATK4HC_FLAGS_SHARED) --max-reads-per-alignment-start $(maxreadsperalignmentstart_GATK4HC) --standard-min-confidence-threshold-for-calling $(STAND_CALL_CONF_GATK4HC)
 
 %.gatk4HC$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.genome %.design.bed.interval_list #%.from_manifest.interval_list
 	#

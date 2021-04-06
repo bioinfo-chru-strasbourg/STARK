@@ -43,8 +43,12 @@ MUTECT_INTERVAL_PADDING?=0
 # MUTECT2 GATK4 #
 #################
 
+#THREADS_GATK4?=$(THREADS_BY_CALLER)
+THREADS_GATK4_MUTECT2?=$(THREADS_BY_CALLER)
+MINPRUNING_GATK4_MUTECT2?=20
+MAXREADS_GATK4_MUTECT2?=1000
 
-GATK4_MUTECT2_FLAGS_SHARED?=--disable-read-filter MateOnSameContigOrNoMappedMateReadFilter --max-reads-per-alignment-start 1000 --dont-use-soft-clipped-bases true --min-pruning 20 --verbosity ERROR
+GATK4_MUTECT2_FLAGS_SHARED?=--disable-read-filter MateOnSameContigOrNoMappedMateReadFilter --max-reads-per-alignment-start $(MAXREADS_GATK4_MUTECT2) --dont-use-soft-clipped-bases true --min-pruning $(MINPRUNING_GATK4_MUTECT2) --verbosity ERROR --native-pair-hmm-threads $(THREADS_GATK4_MUTECT2)
 
 #--max-reads-per-alignment-start
 #--dont-use-soft-clipped-bases
@@ -81,7 +85,7 @@ MBQ_GATK3_MUTECT2?=17
 VCFDBSNP_GATK3_MUTECT2?=$(VCFDBSNP)
 GATK3_MUTECT2_FLAGS_SHARED?=--baq OFF --read_filter BadCigar --allow_potentially_misencoded_quality_scores --dontUseSoftClippedBases
 MINPRUNING_GATK3_MUTECT2?=2
-THREADS_GATK3_MUTECT2?=$(THREADS_GATK)
+THREADS_GATK3_MUTECT2?=$(THREADS_BY_SAMPLE) #$(THREADS_GATK)
 maxReadsInRegionPerSample_GATK3_MUTECT2?=1000
 GATK3_MUTECT2_FLAGS= -nct $(THREADS_GATK3_MUTECT2) -stand_call_conf 10 -dfrac $(DFRAC_GATK3_MUTECT2) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample_GATK3_MUTECT2) --dbsnp $(VCFDBSNP_GATK3_MUTECT2) -mbq $(MBQ_GATK3_MUTECT2) -minPruning $(MINPRUNING_GATK3_MUTECT2)  $(GATK3_MUTECT2_FLAGS_SHARED)
 
@@ -115,7 +119,7 @@ PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
 
 
 # CONFIG/RELEASE
-RELEASE_COMMENT := "\#\# CALLING: MUTECT2 with GATK4 to identify variants and generate *.MuTect2.vcf files. "
+RELEASE_COMMENT := "\#\# CALLING: MUTECT2 with GATK4 to identify variants and generate *.MuTect2.vcf files. Parameters GATK4_MUTECT2_FLAGS_SHARED='$(GATK4_MUTECT2_FLAGS_SHARED)' "
 RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
 PIPELINES_COMMENT := "CALLER:MuTect2:MuTect2 with GATK4 - by default. "
@@ -123,7 +127,7 @@ PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
 
 
 # CONFIG/RELEASE
-RELEASE_COMMENT := "\#\# CALLING: MUTECT2 with GATK3 to identify variants and generate *.GATK3_MuTect2.vcf files. Parameters GATK3_MUTECT2_FLAGS=$(GATK3_MUTECT2_FLAGS) "
+RELEASE_COMMENT := "\#\# CALLING: MUTECT2 with GATK3 to identify variants and generate *.GATK3_MuTect2.vcf files. Parameters GATK3_MUTECT2_FLAGS='$(GATK3_MUTECT2_FLAGS)' "
 RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
 PIPELINES_COMMENT := "CALLER:GATK3_MuTect2:MuTect2 with GATK3 - by default. "

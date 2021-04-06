@@ -10,12 +10,14 @@
 # OUTLYZER  #
 #############
 
-%.outLyzer2$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.genome %.dict %.design.bed #%.from_manifest.bed
+THREADS_OUTLYZER2?=$(THREADS_BY_CALLER)
+
+%.outLyzer_python2$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.genome %.dict %.design.bed #%.from_manifest.bed
 	# create tmp Directory
 	mkdir -p $@.outlyser_tmp
 	# Generate VCF with OutLyser
 	if [ -s $*.design.bed ]; then \
-		$(PYTHON2) $(OUTLYZER) calling -pythonPath=$(PYTHON2) -samtools=$(SAMTOOLS) -bed $*.design.bed -bam $< -ref $$(cat $*.genome) -output $@.outlyser_tmp/ -verbose 1 ; \
+		$(PYTHON2) $(OUTLYZER) calling -pythonPath=$(PYTHON2) -samtools=$(SAMTOOLS) -bed $*.design.bed -bam $< -ref $$(cat $*.genome) -output $@.outlyser_tmp/ -core $(THREADS_OUTLYZER2) -verbose 1 ; \
 		# Normalize OutLyzer output VCF ; \
 		cat $@.outlyser_tmp/*.vcf | awk -f $(STARK_FOLDER_BIN)/outlyzer_norm.awk > $@.tmp ; \
 		# sort and contig ; \
@@ -28,12 +30,14 @@
 	rm -rf $@.outlyser_tmp $@.tmp $@.idx
 
 
+THREADS_OUTLYZER?=$(THREADS_BY_CALLER)
+
 %.outLyzer$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.genome %.dict %.design.bed #%.from_manifest.bed
 	# create tmp Directory
 	mkdir -p $@.outlyser_tmp
 	# Generate VCF with OutLyser
 	if [ -s $*.design.bed ]; then \
-		$(PYTHON) $(OUTLYZER) calling -pythonPath=$(PYTHON) -samtools=$(SAMTOOLS) -bed $*.design.bed -bam $< -ref $$(cat $*.genome) -output $@.outlyser_tmp/ -verbose 1; \
+		$(PYTHON) $(OUTLYZER) calling -pythonPath=$(PYTHON) -samtools=$(SAMTOOLS) -bed $*.design.bed -bam $< -ref $$(cat $*.genome) -output $@.outlyser_tmp/ -core $(THREADS_OUTLYZER) -verbose 1; \
 		# Normalize OutLyzer output VCF ; \
 		cat $@.outlyser_tmp/*.vcf | awk -f $(STARK_FOLDER_BIN)/outlyzer_norm.awk > $@.tmp ; \
 		# sort and contig ; \
