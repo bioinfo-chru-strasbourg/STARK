@@ -8,13 +8,13 @@
 SCRIPT_NAME="STARK_DATABASES_UPDATE_ANNOVAR"
 SCRIPT_DESCRIPTION="STARK DATABASES UPDATE ANNOVAR databases"
 SCRIPT_RELEASE="0.9.0.0"
-SCRIPT_DATE="06/04/2021"
+SCRIPT_DATE="07/04/2021"
 SCRIPT_AUTHOR="Antony Le Bechec"
 SCRIPT_COPYRIGHT="HUS"
 SCRIPT_LICENCE="GNU-AGPL"
 
 # Realse note
-RELEASE_NOTES=$RELEASE_NOTES"# 0.9.0.0-06/06/2021: Script creation\n";
+RELEASE_NOTES=$RELEASE_NOTES"# 0.9.0.0-07/06/2021: Script creation\n";
 
 # Script folder
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -172,13 +172,13 @@ echo "#[INFO] STARK main folder '$STARK_MAIN_FOLDER'"
 if [ "$ANNOVAR_NEW_RELEASE" == "" ]; then
 	ANNOVAR_NEW_RELEASE=$(date '+%Y%m%d-%H%M%S')
 fi;
+[ "$ANNOVAR_NEW_RELEASE" == ""  ] && ANNOVAR_NEW_RELEASE=$(date '+%Y%m%d-%H%M%S') 
 echo "#[INFO] Release '$ANNOVAR_NEW_RELEASE'"
 
-[ "$ANNOVAR_NEW_RELEASE" == ""  ] && ANNOVAR_NEW_RELEASE=$(date '+%Y%m%d-%H%M%S') || ANNOVAR_NEW_RELEASE=$RELEASE # ou reporter la version
 
 # RELEASE LATEST
 if [ -e $STARK_MAIN_FOLDER/databases/annovar/latest/ ]; then
-	ANNOVAR_LATEST_RELEASE=$(basename $(realpath $STARK_MAIN_FOLDER/databases/annovar/latest/)) # ou reporter la version
+	ANNOVAR_LATEST_RELEASE=$(basename $(realpath $STARK_MAIN_FOLDER/databases/annovar/latest/)) 
 else
 	echo "#[INFO] No latest release "
 fi;
