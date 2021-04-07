@@ -80,7 +80,7 @@ REPORT_SECTIONS?=ALL
 	$(STARK_FOLDER_BIN)/STARK --applications_infos_all --app="$(ENV)" >> $@
 	$(STARK_FOLDER_BIN)/STARK --tools_infos --app="$(ENV)" >> $@
 	$(STARK_FOLDER_BIN)/STARK --databases_infos --app="$(ENV)" >> $@
-	$(HOWARD_FOLDER_BIN)/VCFannotation.pl --show_annotations_full --snpeff_jar=$(SNPEFF) --input=$*.empty.vcf >> $@
+	$(HOWARD_FOLDER_BIN)/VCFannotation.pl --show_annotations_full --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --input=$*.empty.vcf >> $@
 	#$(STARK_FOLDER_BIN)/STARK --applications_infos_all --app="$(ENV)" >> $@
 	echo "" >> $@
 	cat $(RELEASE) >> $@
