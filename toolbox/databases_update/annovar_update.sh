@@ -253,8 +253,9 @@ if ((1)); then
 	docker exec -ti stark-module-stark-submodule-stark-service-cli bash -c 'cd /STARK && source /tool/config/config.app && $HOWARD --input=$HOWARD_FOLDER/docs/example.vcf --output='$HOWARD_UPDATE_RELEASE_FOLDER_DATABASES_INNER'/HOWARD.download.vcf --env=/tool/config/tools.app --annotation='$ANNOTATION' --annovar_folder=$ANNOVAR --annovar_databases='$HOWARD_UPDATE_RELEASE_FOLDER_DATABASES_INNER' --config_annotation='$HOWARD_UPDATE_RELEASE_FOLDER_DATABASES_INNER'/config.annotation.ini --snpeff_jar=$SNPEFF --snpeff_threads=1 --tmp='$HOWARD_UPDATE_RELEASE_FOLDER_TMP_INNER' --assembly=hg19 --java=$JAVA --threads=1 --verbose' 1>$HOWARD_UPDATE_RELEASE_FOLDER_DATABASES/update.log 2>$HOWARD_UPDATE_RELEASE_FOLDER_DATABASES/update.err
 
 	# Telechargement de la liste des bases de données 'hg19_avdblist.txt'
-	docker exec -ti stark-module-stark-submodule-stark-service-cli bash -c 'cd /STARK && source /tool/config/config.app && perl $ANNOVAR/annotate_variation.pl -webfrom annovar -downdb avdblist -buildver hg19 '$HOWARD_UPDATE_RELEASE_FOLDER_DATABASES_INNER' '
-	# #
+	#docker exec -ti stark-module-stark-submodule-stark-service-cli bash -c 'cd /STARK && source /tool/config/config.app && perl $ANNOVAR/annotate_variation.pl -webfrom annovar -downdb avdblist -buildver hg19 '$HOWARD_UPDATE_RELEASE_FOLDER_DATABASES_INNER' '
+	docker exec -ti stark-module-stark-submodule-stark-service-cli bash -c 'source /tool/config/config.app && perl $ANNOVAR/annotate_variation.pl -webfrom annovar -downdb avdblist -buildver hg19 /tmp && grep "^NOTICE" -v /tmp/hg19_avdblist.txt ' > $HOWARD_UPDATE_RELEASE_FOLDER_DATABASES/hg19_avdblist.txt
+	
 
 	# Update (sur le serveur)
 	cd $STARK_MAIN_FOLDER
