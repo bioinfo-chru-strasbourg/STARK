@@ -30,7 +30,7 @@ ENV_CONFIG=$(find -L $SCRIPT_DIR/.. -name config.app)
 
 source $ENV_CONFIG 1>/dev/null 2>/dev/null
 
-ENV_TOOLS=$(find -L $SCRIPT_DIR/.. -name toold.app)
+ENV_TOOLS=$(find -L $SCRIPT_DIR/.. -name tools.app)
 
 source $ENV_TOOLS 1>/dev/null 2>/dev/null
 

@@ -571,9 +571,9 @@ if [ "$STATS" != "" ]; then
 	fi;
 
 	# FASTQ
-	if [ "$CRAM_fastq_source" != "" ] && [ -e "$CRAM_fastq_source" ]; then
+	if [ "$CRAM_fastq_source" != "" ]; then
 
-		CRAM_fastq_source=$(basename $CRAM_bam_source)
+		CRAM_fastq_source_name=$(basename $CRAM_bam_source)
 
 		# CRAM source type
 		CRAM_source_type="FASTQ"

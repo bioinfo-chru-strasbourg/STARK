@@ -903,6 +903,15 @@ CONFIG_FILE_DOWNLOAD_FILE=$OUTPUT_FILES_HTMLFOLDER/$CONFIG_FILE_DOWNLOAD_FILENAM
 CONFIG_FILE_DOWNLOAD_FILE_HTML="<a href='$CONFIG_FILE_DOWNLOAD_FILE' download>Configuration</a>"
 
 
+# DATABASES RELEASE
+DATABASES_RELEASE_HTML=""
+if [ "$DATABASES_RELEASE" != "" ] && [ "$DATABASES_RELEASE" != "UNKNOWN" ]; then
+	DATABASES_RELEASE_HTML=" with databases release <strong>'$DATABASES_RELEASE'</strong>"
+fi
+# Swhitch off DATABASES RELEASE HTML
+DATABASES_RELEASE_HTML=""
+
+
 echo '
 
 <section class="features10 cid-ru7OEDbxhA" id="features10-1l">
@@ -920,7 +929,7 @@ echo '
                     <p class="mbr-text mbr-fonts-style display-7">
 						'$APP_DESCRIPTION'<br>
 						Application designed for <strong>'$GROUP'</strong> group and <strong>'$PROJECT'</strong> project, with <strong>'$ASSEMBLY'</strong> assembly.
-						Analysis performed by <strong>'$ENV_NAME':'$ENV_RELEASE'</strong> with databases release <strong>'$DATABASES_RELEASE'</strong>.<br>
+						Analysis performed by <strong>'$ENV_NAME':'$ENV_RELEASE'</strong>'$DATABASES_RELEASE_HTML'.<br>
 						'$CONFIG_FILE_DOWNLOAD_FILE_HTML'
 					</p>
                 </div>
