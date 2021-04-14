@@ -4,24 +4,15 @@
 ############################
 # Release
 MK_RELEASE="0.9.1b"
-MK_DATE="04/04/2017"
+MK_DATE="12/04/2021"
 
 # Release note
-# 12/10/2016: Creation
+# 0.9.1b-12/10/2016: Creation
+# 0.9.2.0-12/04/2021: Archive from script STARK.archive
 
-# TOOLS
-SAMTOOLS?=$(NGSbin)/samtools
-
-# OPTIONS
-THREADS_BY_SAMPLE?=1
-MEMORY?=1
-
-
-CRAM_OPTIONS?=
 
 
 ## FASTQ from ILLUMINA ##
-
 
 %.archive.cram: %.bams.list %.genome %.R1.fastq.gz %.R2.fastq.gz $(REF_CACHE_FOLDER)
 	# Archive aligned BAM only if all original reads present. otherwise, FASTQ compressed 

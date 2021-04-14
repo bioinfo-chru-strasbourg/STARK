@@ -15,22 +15,11 @@ MK_DATE="27/09/2019"
 
 
 
-# TOOLS
-SAMTOOLS?=$(NGSbin)/samtools
-JAVA?=java
-PICARDLIB?=$(NGSbin)/picard-tools
-FASTQC?=$(NGSbin)/fastqc
-NGSscripts?=$(NGS_SCRIPTS)
-GZ?=gzip
 
 # OPTIONS
-BED?=
-PRIMER_BED?=
 BAM_METRICS?=1
 FULL_COVERAGE?=0
-
 CAP_TMP_FOLDER?=$(TMP_FOLDER_TMP)
-
 METRICS_SNPEFF?=0
 
 
@@ -191,12 +180,14 @@ GENESCOVERAGE_PRECISION?=2
 # BAM Validation
 ##################
 
+BAM_VALIDATION_COMPRESSION?=4
+
 %.validation.bam: %.bam %.bam.bai #%.list.genes %.design.bed
 	# Create directory ;
 	mkdir -p $(@D);
 	# BAM Validation
 	# samtools view -F 1284 F10.bwamem.bam
-	$(SAMTOOLS) view $(SAMTOOLS_METRICS_VIEW_PARAM) -h $< -1 -@ $(THREADS) > $@ ;
+	$(SAMTOOLS) view $(SAMTOOLS_METRICS_VIEW_PARAM) -h $< -O BAM,level=$(BAM_VALIDATION_COMPRESSION) -@ $(THREADS) > $@ ;
 
 
 
@@ -335,9 +326,9 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 	# Picard Metrics needs BED with Header and 3+3 fields!!!
 	for one_bed in $$(cat $*.list.genes) $*.design.bed; do \
 		if [ -s $$one_bed ]; then \
-			#awk -F"\t" '{print $$1"\t"$$2-1"\t"$$3"\t"$$5}' $$one_bed > $(@D)/$(*F).$$(basename $$one_bed).4fields ; \
-			#awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$5}' $$one_bed > $(@D)/$(*F).$$(basename $$one_bed).4fields ; \
-			#awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$4}' $$one_bed > $(@D)/$(*F).$$(basename $$one_bed).4fields ; \
+			bed_subname="Design"; \
+			[ "$$one_bed" != "$*.design.bed" ] && bed_subname="Panel."$$(basename $$one_bed); \
+			# 4fields file \
 			awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$4}' $$one_bed > $(@D)/$(*F).$$(basename $$one_bed).4fields.tmp ; \
 			# Clean bed with dict contig\
 			grep -Po 'SN:([^\t]*)' $$(cat $*.dict) | cut -d: -f2 | sed "s/^/^/gi" | sed "s/$$/\t/gi" > $(@D)/$(*F).$$(basename $$one_bed).4fields.contig_from_dict ; \
@@ -349,16 +340,26 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 			touch $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_target_coverage.tmp ; \
 			# Flag HsMetrics per_target_coverage \
 			awk -f $(STARK_FOLDER_BIN)/per_target_coverage_flag.awk -F"\t" -v EXPECTED_DEPTH=$(EXPECTED_DEPTH) -v MINIMUM_DEPTH=$(MINIMUM_DEPTH) $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_target_coverage.tmp > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_target_coverage.flags; \
-			echo "#chrom	start	stop	target	mean	min	max	count" > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.MISS.bed; \
-			cat $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp | awk -F"\t" -v MISS=$(SEQUENCING_DEPTH) '($$4<MISS) {print $$1 "\t" $$2-1 "\t" $$2 "\t" $$3 "\t" $$4}' | $(BEDTOOLS) merge -c 4,5,5,5,5 -o distinct,mean,min,max,count >> $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.MISS.bed 2>/dev/null; \
-			echo "#chrom	start	stop	target	mean	min	max	count" > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.FAIL.bed; \
-			cat $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp | awk -F"\t" -v MISS=$(SEQUENCING_DEPTH) -v FAIL=$(MINIMUM_DEPTH) '($$4>=MISS && $$4<FAIL) {print $$1 "\t" $$2-1 "\t" $$2 "\t" $$3 "\t" $$4}' | $(BEDTOOLS) merge -c 4,5,5,5,5 -o distinct,mean,min,max,count >> $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.FAIL.bed 2>/dev/null; \
-			echo "#chrom	start	stop	target	mean	min	max	count" > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.WARN.bed; \
-			cat $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp | awk -F"\t" -v FAIL=$(MINIMUM_DEPTH) -v WARN=$(EXPECTED_DEPTH) '($$4>=FAIL && $$4<WARN) {print $$1 "\t" $$2-1 "\t" $$2 "\t" $$3 "\t" $$4}' | $(BEDTOOLS) merge -c 4,5,5,5,5 -o distinct,mean,min,max,count >> $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.WARN.bed 2>/dev/null; \
-			echo "#chrom	start	stop	target	mean	min	max	count" > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.PASS.bed; \
-			cat $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp | awk -F"\t" -v PASS=$(SEQUENCING_DEPTH) '($$4>=PASS) {print $$1 "\t" $$2-1 "\t" $$2 "\t" $$3 "\t" $$4}' | $(BEDTOOLS) merge -c 4,5,5,5,5 -o distinct,mean,min,max,count >> $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.PASS.bed 2>/dev/null; \
+			# Flag HsMetrics per_target_coverage by FLAG \
+			echo "#chrom	start	stop	target	mean	min	max	count" > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.MISS.tsv; \
+			cat $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp | awk -F"\t" -v MISS=$(SEQUENCING_DEPTH) '($$4<MISS) {print $$1 "\t" $$2-1 "\t" $$2 "\t" $$3 "\t" $$4}' | $(BEDTOOLS) merge -c 4,5,5,5,5 -o distinct,mean,min,max,count >> $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.MISS.tsv 2>/dev/null; \
+			echo "#chrom	start	stop	target	mean	min	max	count" > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.FAIL.tsv; \
+			cat $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp | awk -F"\t" -v MISS=$(SEQUENCING_DEPTH) -v FAIL=$(MINIMUM_DEPTH) '($$4>=MISS && $$4<FAIL) {print $$1 "\t" $$2-1 "\t" $$2 "\t" $$3 "\t" $$4}' | $(BEDTOOLS) merge -c 4,5,5,5,5 -o distinct,mean,min,max,count >> $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.FAIL.tsv 2>/dev/null; \
+			echo "#chrom	start	stop	target	mean	min	max	count" > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.WARN.tsv; \
+			cat $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp | awk -F"\t" -v FAIL=$(MINIMUM_DEPTH) -v WARN=$(EXPECTED_DEPTH) '($$4>=FAIL && $$4<WARN) {print $$1 "\t" $$2-1 "\t" $$2 "\t" $$3 "\t" $$4}' | $(BEDTOOLS) merge -c 4,5,5,5,5 -o distinct,mean,min,max,count >> $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.WARN.tsv 2>/dev/null; \
+			echo "#chrom	start	stop	target	mean	min	max	count" > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.PASS.tsv; \
+			cat $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp | awk -F"\t" -v PASS=$(EXPECTED_DEPTH) '($$4>=PASS) {print $$1 "\t" $$2-1 "\t" $$2 "\t" $$3 "\t" $$4}' | $(BEDTOOLS) merge -c 4,5,5,5,5 -o distinct,mean,min,max,count >> $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.PASS.tsv 2>/dev/null; \
+			# Flag HsMetrics per_target_coverage in one BED file \
+			cat $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp | awk -F"\t" -v MISS=$(SEQUENCING_DEPTH) -v FAIL=$(MINIMUM_DEPTH) -v WARN=$(EXPECTED_DEPTH) '($$4<MISS) {print $$1 "\t" $$2-1 "\t" $$2 "\t" $$3 "\t" $$4 "\t'$(MISS_COLOR_RGB)'\t+" }' | $(BEDTOOLS) merge -c 4,5,7,2,3,6 -o distinct,mean,first,first,last,distinct >> $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.bed.tmp 2>/dev/null; \
+			cat $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp | awk -F"\t" -v MISS=$(SEQUENCING_DEPTH) -v FAIL=$(MINIMUM_DEPTH) -v WARN=$(EXPECTED_DEPTH) '($$4>=MISS && $$4<FAIL) {print $$1 "\t" $$2-1 "\t" $$2 "\t" $$3 "\t" $$4 "\t'$(FAIL_COLOR_RGB)'\t+" }' | $(BEDTOOLS) merge -c 4,5,7,2,3,6 -o distinct,mean,first,first,last,distinct >> $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.bed.tmp 2>/dev/null; \
+			cat $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp | awk -F"\t" -v MISS=$(SEQUENCING_DEPTH) -v FAIL=$(MINIMUM_DEPTH) -v WARN=$(EXPECTED_DEPTH) '($$4>=FAIL && $$4<WARN) {print $$1 "\t" $$2-1 "\t" $$2 "\t" $$3 "\t" $$4 "\t'$(WARN_COLOR_RGB)'\t+" }' | $(BEDTOOLS) merge -c 4,5,7,2,3,6 -o distinct,mean,first,first,last,distinct >> $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.bed.tmp 2>/dev/null; \
+			cat $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp | awk -F"\t" -v MISS=$(SEQUENCING_DEPTH) -v FAIL=$(MINIMUM_DEPTH) -v WARN=$(EXPECTED_DEPTH) '($$4>=WARN) {print $$1 "\t" $$2-1 "\t" $$2 "\t" $$3 "\t" $$4 "\t'$(PASS_COLOR_RGB)'\t+" }' | $(BEDTOOLS) merge -c 4,5,7,2,3,6 -o distinct,mean,first,first,last,distinct >> $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.bed.tmp 2>/dev/null; \
+			$(BEDTOOLS) sort -i $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.bed.tmp | cut -f1-9 > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.bed; \
+			# Copy Design bed \
+			cp -p $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.bed $(@D)/$(*F).validation.flags.$$bed_subname.bed; \
+			# HsMetrics per_target_coverage compression file file \
 			$(GZ) -c $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.gz; \
-			rm $(@D)/$(*F).$$(basename $$one_bed).4fields* $(@D)/$(*F).$$(basename $$one_bed).interval $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_target_coverage.tmp $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp; \
+			rm $(@D)/$(*F).$$(basename $$one_bed).4fields* $(@D)/$(*F).$$(basename $$one_bed).interval $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_target_coverage.tmp $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp rm -f $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.bed.tmp; \
 		else \
 			# BED empty \
 			cp $*.empty.HsMetrics $(@D)/$(*F).$$(basename $$one_bed).HsMetrics; \
@@ -375,8 +376,15 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 	done;
 	echo "#[INFO] BAM PICARD Metrics done" >> $@
 
-#$(JAVA) $(JAVA_FLAGS_BY_SAMPLE) -jar $(PICARD) BedToIntervalList I=$(@D)/$(*F).$$(basename $$one_bed).4fields O=$(@D)/$(*F).$$(basename $$one_bed).interval SD=$$(cat $*.dict);
-			#$(JAVA) $(JAVA_FLAGS_BY_SAMPLE) -jar $(PICARD) CollectHsMetrics INPUT=$*.validation.bam OUTPUT=$(@D)/$(*F).$$(basename $$one_bed).HsMetrics R=$$(cat $*.genome) BAIT_INTERVALS=$(@D)/$(*F).$$(basename $$one_bed).interval TARGET_INTERVALS=$(@D)/$(*F).$$(basename $$one_bed).interval PER_TARGET_COVERAGE=$(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_target_coverage.tmp PER_BASE_COVERAGE=$(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp $(PICARD_CollectHsMetrics_PARAM) VALIDATION_STRINGENCY=SILENT 2>$(@D)/$(*F).$$(basename $$one_bed).HsMetrics.err ; \
+
+#echo "#chrom	start	stop	target	mean	min	max	count" > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.MISS.bed; \
+			cat $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp | awk -F"\t" -v MISS=$(SEQUENCING_DEPTH) '($$4<MISS) {print $$1 "\t" $$2-1 "\t" $$2 "\t" $$3 "\t" $$4}' | $(BEDTOOLS) merge -c 4,5,5,5,5 -o distinct,mean,min,max,count >> $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.MISS.bed 2>/dev/null; \
+			echo "#chrom	start	stop	target	mean	min	max	count" > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.FAIL.bed; \
+			cat $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp | awk -F"\t" -v MISS=$(SEQUENCING_DEPTH) -v FAIL=$(MINIMUM_DEPTH) '($$4>=MISS && $$4<FAIL) {print $$1 "\t" $$2-1 "\t" $$2 "\t" $$3 "\t" $$4}' | $(BEDTOOLS) merge -c 4,5,5,5,5 -o distinct,mean,min,max,count >> $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.FAIL.bed 2>/dev/null; \
+			echo "#chrom	start	stop	target	mean	min	max	count" > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.WARN.bed; \
+			cat $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp | awk -F"\t" -v FAIL=$(MINIMUM_DEPTH) -v WARN=$(EXPECTED_DEPTH) '($$4>=FAIL && $$4<WARN) {print $$1 "\t" $$2-1 "\t" $$2 "\t" $$3 "\t" $$4}' | $(BEDTOOLS) merge -c 4,5,5,5,5 -o distinct,mean,min,max,count >> $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.WARN.bed 2>/dev/null; \
+			echo "#chrom	start	stop	target	mean	min	max	count" > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.PASS.bed; \
+			cat $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp | awk -F"\t" -v PASS=$(EXPECTED_DEPTH) '($$4>=PASS) {print $$1 "\t" $$2-1 "\t" $$2 "\t" $$3 "\t" $$4}' | $(BEDTOOLS) merge -c 4,5,5,5,5 -o distinct,mean,min,max,count >> $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.PASS.bed 2>/dev/null; \
 
 
 # SAMTOOLS metrics
@@ -568,7 +576,7 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 #################
 # FatsQC metrics and counts metrics
 
-%.sequencing/metrics: %.sequencing/metrics.infos # %.sequencing/metrics.Q30 %.sequencing/metrics.fastqc %.sequencing/metrics.counts %.sequencing/metrics.Q30  %.sequencing/metrics.infos
+%.sequencing/metrics: %.sequencing/metrics.infos # %.sequencing/metrics.Q30 %.sequencing/metrics.fastqc %.sequencing/metrics.counts
 	# create directory
 	mkdir -p $(@D)
 	cat $^ > $@
@@ -579,25 +587,24 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 # FastQC metrics
 ##################
 
-#%.fastqc/metrics.fastqc: %.fastq.gz
-%.sequencing/metrics.fastqc: %.fastq.gz
-	# create directory
-	mkdir -p $(@D)
-	# create link
-	ln -s $< $(@D)/$(*F).fastq.gz
-	# touch target
-	touch $@;
-	# FASTQC
-	-if (($$(zcat $< | head -n 1 | wc -l))); then \
-		#$(FASTQC) $< --outdir=$(@D) --casava --extract; \
-		$(FASTQC) $(@D)/$(*F).fastq.gz --outdir=$(@D) --casava --extract --threads $(THREADS_BY_SAMPLE) ; \
-		cp $(@D)/$(*F)_fastqc/fastqc_data.txt $(@D)/metrics.fastqc.txt; \
-		echo "#[INFO] FASTQC done. See 'metrics.fastqc.txt' file." >> $@; \
-	else \
-		echo "#[ERROR] FASTQC can't be launched. No Reads in FASTQ file '$<'" >> $@; \
-	fi;
-	# create link
-	-rm -f $(@D)/$(*F).fastq.gz
+# %.sequencing/metrics.fastqc: %.fastq.gz
+# 	# create directory
+# 	mkdir -p $(@D)
+# 	# create link
+# 	ln -s $< $(@D)/$(*F).fastq.gz
+# 	# touch target
+# 	touch $@;
+# 	# FASTQC
+# 	-if (($$(zcat $< | head -n 1 | wc -l))); then \
+# 		#$(FASTQC) $< --outdir=$(@D) --casava --extract; \
+# 		$(FASTQC) $(@D)/$(*F).fastq.gz --outdir=$(@D) --casava --extract --threads $(THREADS_BY_SAMPLE) ; \
+# 		cp $(@D)/$(*F)_fastqc/fastqc_data.txt $(@D)/metrics.fastqc.txt; \
+# 		echo "#[INFO] FASTQC done. See 'metrics.fastqc.txt' file." >> $@; \
+# 	else \
+# 		echo "#[ERROR] FASTQC can't be launched. No Reads in FASTQ file '$<'" >> $@; \
+# 	fi;
+# 	# create link
+# 	-rm -f $(@D)/$(*F).fastq.gz
 
 
 
@@ -605,50 +612,40 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 ########
 
 
-%.sequencing/metrics.Q30: %.sequencing
-	cat $(@D)/*.fastp.json | python -c "import sys, json; print json.load(sys.stdin)['summary']['after_filtering']['q30_rate']" > $@.txt
-	echo "#[INFO] Q30 calculation done. See 'metrics.Q30.txt' file." > $@;
+# %.sequencing/metrics.Q30: %.sequencing
+# 	cat $(@D)/*.fastp.json | python -c "import sys, json; print json.load(sys.stdin)['summary']['after_filtering']['q30_rate']" > $@.txt
+# 	echo "#[INFO] Q30 calculation done. See 'metrics.Q30.txt' file." > $@;
 
-
-
-%.sequencing/metrics.Q30.old: %.sequencing/metrics.fastqc
-	# create directory
-	mkdir -p $(@D)
-	cat $(@D)/metrics.fastqc.txt | awk '/>>Per sequence quality scores/,/>>END_MODULE/' | head -n -1 | tail -n+3 | awk '{s+=$$2}END{print s}' > $@.Q30_ALL;
-	cat $(@D)/metrics.fastqc.txt | awk '/>>Per sequence quality scores/,/>>END_MODULE/' | awk '/>>Per sequence quality scores/,/30\t/' | head -n -1 | tail -n+3 | awk '{s+=$$2}END{print s}' > $@.Q30_UNTIL;
-	echo -e "Q30\t"$$(echo "scale = 4; (($$(cat $@.Q30_ALL) - $$(cat $@.Q30_UNTIL)) / $$(cat $@.Q30_ALL) * 100)" | bc | sed s/[0]*$$//) > $@.txt;
-	echo "#[INFO] Q30 calculation done. See 'metrics.Q30.txt' file." > $@;
-	-rm -f $@.Q30_ALL $@.Q30_UNTIL
 
 
 
 # Reads Count
 ###############
 
-#%.fastqc/metrics.counts: %.fastq.gz #%.fastqc/metrics.fastqc
-%.sequencing/metrics.counts: %.fastq.gz #%.fastqc/metrics.fastqc
-	# create directory
-	mkdir -p $(@D)
-	-if (($$(zcat $< | head -n 1 | wc -l))); then \
-		# header \
-		echo "total unique %unique maxRead count_maxRead %count_maxRead" > $@.tmp; \
-		# Counts \
-		if [ $$(zcat $< | head -n 1 | wc -l) ]; then \
-			zcat $< | awk '{unique=0} ((NR-2)%4==0){read=$$1;total++;count[read]++}END{for(read in count){if(!max||count[read]>max) {max=count[read];maxRead=read};if(count[read]==1){unique++}};print total,unique,unique*100/total,maxRead,count[maxRead],count[maxRead]*100/total}' >> $@.tmp; \
-		else \
-			echo "0 0 - - - -" >> $@.tmp; \
-		fi; \
-		# transposition \
-		awk '{ for (i=1; i<=NF; i++)  {a[NR,i] = $$i} } NF>p { p = NF } END { for(j=1; j<=p; j++) { str=a[1,j]; for(i=2; i<=NR; i++){ str=str" "a[i,j]; } print str } }' $@.tmp | tr " " "\t" > $@.txt; \
-		# nb bases \
-		echo -e "count_bases\t"$$(zcat $< | paste - - - - | cut -f4 | wc -c) >> $@.txt; \
-		# script \
-		# echo "" > $*.fastqc/metrics.counts.txt; \
-		echo "#[INFO] FASTQ Counts done. See 'metrics.counts.txt' file." > $@; \
-	else \
-		echo "#[ERROR] FASTQ Counts ERROR. No reads in '$<'..." > $@; \
-	fi;
-	-rm -f $@.tmp
+# #%.fastqc/metrics.counts: %.fastq.gz #%.fastqc/metrics.fastqc
+# %.sequencing/metrics.counts: %.fastq.gz #%.fastqc/metrics.fastqc
+# 	# create directory
+# 	mkdir -p $(@D)
+# 	-if (($$(zcat $< | head -n 1 | wc -l))); then \
+# 		# header \
+# 		echo "total unique %unique maxRead count_maxRead %count_maxRead" > $@.tmp; \
+# 		# Counts \
+# 		if [ $$(zcat $< | head -n 1 | wc -l) ]; then \
+# 			zcat $< | awk '{unique=0} ((NR-2)%4==0){read=$$1;total++;count[read]++}END{for(read in count){if(!max||count[read]>max) {max=count[read];maxRead=read};if(count[read]==1){unique++}};print total,unique,unique*100/total,maxRead,count[maxRead],count[maxRead]*100/total}' >> $@.tmp; \
+# 		else \
+# 			echo "0 0 - - - -" >> $@.tmp; \
+# 		fi; \
+# 		# transposition \
+# 		awk '{ for (i=1; i<=NF; i++)  {a[NR,i] = $$i} } NF>p { p = NF } END { for(j=1; j<=p; j++) { str=a[1,j]; for(i=2; i<=NR; i++){ str=str" "a[i,j]; } print str } }' $@.tmp | tr " " "\t" > $@.txt; \
+# 		# nb bases \
+# 		echo -e "count_bases\t"$$(zcat $< | paste - - - - | cut -f4 | wc -c) >> $@.txt; \
+# 		# script \
+# 		# echo "" > $*.fastqc/metrics.counts.txt; \
+# 		echo "#[INFO] FASTQ Counts done. See 'metrics.counts.txt' file." > $@; \
+# 	else \
+# 		echo "#[ERROR] FASTQ Counts ERROR. No reads in '$<'..." > $@; \
+# 	fi;
+# 	-rm -f $@.tmp
 
 
 
@@ -668,28 +665,12 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 
 
 
-# UnAligned BAM metrics (deprecated)
-######################################
-
-%.from_unaligned_bam.fastqc/metrics: %.unaligned.bam
-	mkdir -p $(@D)
-	touch $@;
-	-if [ "$$($(SAMTOOLS) view $< | grep ^ -c)" == "0" ]; then \
-		echo "#FASTQGC can't be launched. No Reads in the unaligned BAM file '$<'" >> $@; \
-	else \
-		#$(FASTQC) $< --outdir=$(@D) --casava --extract; \
-		$(FASTQC) $< --outdir=$(@D) --casava --extract --threads $(THREADS) ; \
-		echo "#FASTQGC done" >> $@; \
-	fi;
-
-
-
 # VCF METRICS
 ###############
 # SNPEFF and BCFTOOLS metrics
 
-%.vcf.metrics/metrics: %.vcf.metrics/metrics.snpeff %.vcf.metrics/metrics.bcftools %.vcf.metrics/metrics.info_field %.vcf.metrics/metrics.genes
-	cat $^ > $@
+# %.vcf.metrics/metrics: %.vcf.metrics/metrics.snpeff %.vcf.metrics/metrics.bcftools %.vcf.metrics/metrics.genes #%.vcf.metrics/metrics.info_field 
+# 	cat $^ > $@
 
 
 
@@ -697,15 +678,15 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 ##################
 # SNPEFF metrics through HOWARD
 
-%.vcf.metrics/metrics.snpeff: %.vcf
-	mkdir -p $(@D);
-	touch $@;
-	if (($(METRICS_SNPEFF))); then \
-		+$(HOWARD) --input=$< --output=$@.vcf --snpeff_stats=$@.html --annotation=null --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS)  --force; \
-		echo "#[INFO] snpEff metrics done. See '$@.html' file." > $@; \
-	else \
-		echo "#[INFO] snpEff metrics NOT done." > $@; \
-	fi;
+# %.vcf.metrics/metrics.snpeff: %.vcf
+# 	mkdir -p $(@D);
+# 	touch $@;
+# 	if (($(METRICS_SNPEFF))); then \
+# 		+$(HOWARD) --input=$< --output=$@.vcf --snpeff_stats=$@.html --annotation=null --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS)  --force; \
+# 		echo "#[INFO] snpEff metrics done. See '$@.html' file." > $@; \
+# 	else \
+# 		echo "#[INFO] snpEff metrics NOT done." > $@; \
+# 	fi;
 
 
 
@@ -713,11 +694,11 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 ####################
 # Stats from BCFTOOLS
 
-%.vcf.metrics/metrics.bcftools: %.vcf
-	mkdir -p $(@D);
-	touch $@;
-	-$(BCFTOOLS) stats $< > $@.stats
-	echo "#[INFO] BCFTOOLS metrics done. See '$@.stats' file." > $@;
+# %.vcf.metrics/metrics.bcftools: %.vcf
+# 	mkdir -p $(@D);
+# 	touch $@;
+# 	-$(BCFTOOLS) stats $< > $@.stats
+# 	echo "#[INFO] BCFTOOLS metrics done. See '$@.stats' file." > $@;
 
 
 
@@ -725,11 +706,11 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 ####################
 # Stats of INFO field
 
-%.vcf.metrics/metrics.info_field: %.vcf
-	mkdir -p $(@D);
-	touch $@;
-	grep -v "^#" $< | cut -f8 | tr ";" "\n" | sort | uniq -c | sed "s/^      / /gi" | tr "=" " " | awk '{print $$2"\t"$$3"\t"$$1} {a[$$2]+=$$1} END { for (key in a) { print "#\t" key "\t" a[key] } }' | sort > $@.stats
-	echo "#[INFO] INFO field stats done. See '$@.stats' file." > $@;
+# %.vcf.metrics/metrics.info_field: %.vcf
+# 	mkdir -p $(@D);
+# 	touch $@;
+# 	grep -v "^#" $< | cut -f8 | tr ";" "\n" | sort | uniq -c | sed "s/^      / /gi" | tr "=" " " | awk '{print $$2"\t"$$3"\t"$$1} {a[$$2]+=$$1} END { for (key in a) { print "#\t" key "\t" a[key] } }' | sort > $@.stats
+# 	echo "#[INFO] INFO field stats done. See '$@.stats' file." > $@;
 
 
 
@@ -737,22 +718,48 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 ####################
 # Stats of INFO field
 
-%.vcf.metrics/metrics.genes: %.vcf.gz %.vcf.gz.tbi %.list.genes #%.design.bed
+# %.vcf.metrics/metrics.genesOLD: %.vcf.gz %.vcf.gz.tbi %.list.genes #%.design.bed
+# 	mkdir -p $(@D);
+# 	> $@;
+# 	+for one_bed in $$(cat $*.list.genes) $*.design.bed; do \
+# 		#cat "ONE_BED: "$$one_bed; \
+# 		if [ -s $$one_bed ]; then \
+# 			$(BCFTOOLS) view $*.vcf.gz -R $$one_bed | $(BCFTOOLS) norm --rm-dup exact > $@.$$(basename $$one_bed).vcf; \
+# 		else \
+# 			$(BCFTOOLS) view $*.vcf.gz | $(BCFTOOLS) norm --rm-dup exact > $@.$$(basename $$one_bed).vcf; \
+# 		fi ; \
+# 		$(HOWARD) --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --translation=tab --fields="$(HOWARD_FIELDS)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)" --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --input=$@.$$(basename $$one_bed).vcf --output=$@.$$(basename $$one_bed).tsv --force; \
+# 		$(HOWARD) --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --translation=tab --fields="$(HOWARD_FIELDS_REPORT)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)" --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --input=$@.$$(basename $$one_bed).vcf --output=$@.$$(basename $$one_bed).report.tsv --stats=$@.$$(basename $$one_bed).report.info_field.stats --bcftools_stats=$@.$$(basename $$one_bed).report.bcftools.stats --force; \
+# 		(($(METRICS_SNPEFF))) && $(HOWARD) --input=$@.$$(basename $$one_bed).vcf --output=$@.$$(basename $$one_bed).vcf.snpeff.vcf --snpeff_stats=$@.$$(basename $$one_bed).vcf.snpeff.html --annotation=null --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS)  --force ; \
+# 		echo "#[INFO] VCF filtered by '$$one_bed' done. See '$@.$$(basename $$one_bed).vcf' file, '$@.$$(basename $$one_bed).tsv' file, and stats '$@.$$(basename $$one_bed).vcf.*'" >> $@; \
+# 	done;
+
+
+%.vcf.metrics/metrics: %.vcf.gz %.vcf.gz.tbi %.list.genes #%.design.bed
 	mkdir -p $(@D);
 	> $@;
 	+for one_bed in $$(cat $*.list.genes) $*.design.bed; do \
-		#cat "ONE_BED: "$$one_bed; \
-		if [ -s $$one_bed ]; then \
-			$(BCFTOOLS) view $*.vcf.gz -R $$one_bed | $(BCFTOOLS) norm --rm-dup exact > $@.$$(basename $$one_bed).vcf; \
+		# "ONE_BED: "$$one_bed; \
+		bed_subname="Design"; \
+		[ "$$one_bed" != "$*.design.bed" ] && bed_subname="Panel."$$(basename $$one_bed); \
+		if [ -s $$one_bed ] && [ "$$one_bed" != "$*.design.bed" ]; then \
+			$(BCFTOOLS) view $*.vcf.gz -R $$one_bed | $(BCFTOOLS) norm --rm-dup exact > $@.$$bed_subname.vcf; \
 		else \
-			$(BCFTOOLS) view $*.vcf.gz | $(BCFTOOLS) norm --rm-dup exact > $@.$$(basename $$one_bed).vcf; \
+			$(BCFTOOLS) view $*.vcf.gz | $(BCFTOOLS) norm --rm-dup exact > $@.$$bed_subname.vcf; \
 		fi ; \
-		$(HOWARD) --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --translation=tab  --fields="$(HOWARD_FIELDS)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)"  --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --input=$@.$$(basename $$one_bed).vcf --output=$@.$$(basename $$one_bed).tsv --force; \
-		$(HOWARD) --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --translation=tab  --fields="$(HOWARD_FIELDS_REPORT)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)"  --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --input=$@.$$(basename $$one_bed).vcf --output=$@.$$(basename $$one_bed).report.tsv --stats=$@.$$(basename $$one_bed).report.info_field.stats --bcftools_stats=$@.$$(basename $$one_bed).report.bcftools.stats --force; \
-		(($(METRICS_SNPEFF))) && $(HOWARD) --input=$@.$$(basename $$one_bed).vcf --output=$@.$$(basename $$one_bed).vcf.snpeff.vcf --snpeff_stats=$@.$$(basename $$one_bed).vcf.snpeff.html --annotation=null --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS)  --force ; \
-		echo "#[INFO] VCF filtered by '$$one_bed' done. See '$@.$$(basename $$one_bed).vcf' file, '$@.$$(basename $$one_bed).tsv' file, and stats '$@.$$(basename $$one_bed).vcf.*'" >> $@; \
+		# TSV \
+		$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.$$bed_subname.vcf --output=$@.$$bed_subname.tsv --pzfields="PZScore,PZFlag,PZComment,PZInfos" --translation=TSV --fields="$(HOWARD_FIELDS)" --sort="$(HOWARD_SORT)" --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)" --stats=$@.$$bed_subname.info_field.stats.tsv --bcftools_stats=$@.$$bed_subname.bcftools.stats.tsv --force; \
+		# TSV REPORT \
+		$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.$$bed_subname.vcf --output=$@.$$bed_subname.report.tsv --pzfields="PZScore,PZFlag,PZComment,PZInfos" --translation=TSV --fields="$(HOWARD_FIELDS_REPORT)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)" --stats=$@.$$bed_subname.report.info_field.stats.tsv --bcftools_stats=$@.$$bed_subname.report.bcftools.stats.tsv --force; \
+		# SNPEFF STATS \
+		(($(METRICS_SNPEFF))) && $(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.$$bed_subname.vcf --output=$@.$$bed_subname.snpeff.vcf --snpeff_stats=$@.$$bed_subname.snpeff.html --annotation=null --force ; \
+		if [ "$$(echo $* | rev | cut -d'.' -f 1 | rev)" == "final" ] || [ "$$(echo $* | rev | cut -d'.' -f 1 | rev)" == "full" ]; then \
+			cp $@.$$bed_subname.tsv $*.$$bed_subname.tsv; \
+			$(BGZIP) -c $@.$$bed_subname.vcf > $*.$$bed_subname.vcf.gz; \
+		fi ; \
+		echo "#[INFO] VCF filtered by '$$one_bed' done. See files '$@.$$bed_subname.vcf', '$@.$$bed_subname.tsv' and stats" >> $@; \
 	done;
-
+	
 
 
 
@@ -886,7 +893,7 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 
 # Global run metrics (Sam)
 #############################
-%.reads.metrics: $(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(foreach PIPELINE,$(PIPELINES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).$(call aligner,$(PIPELINE)).bam.metrics/metrics )) #$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).list.genes )
+%.metrics: $(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(foreach PIPELINE,$(PIPELINES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).$(call aligner,$(PIPELINE)).bam.metrics/metrics )) #$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).list.genes )
 	# creates different files in the run directory:
 	# <run>.reads.metrics
 	# <run>.genes.metrics
@@ -896,8 +903,9 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 	#echo "reads.metrics test: ";
 	#ls -l $$(dirname $@)/*/*.list.genes;
 	#cat $$(dirname $@)/*/*.list.genes;
-	$(PYTHON3) $(STARK_RUN_METRICS) --metricsFileList $$(echo $^ | tr " " ",") --outputPrefix $*. ;
-	touch $@;
+	$(PYTHON3) $(STARK_RUN_METRICS) --metricsFileList $$(echo $^ | tr " " ",") --outputPrefix $@. ;
+	echo "#[INFO] All metrics files on Design and Panel(s), by targets and by genes, for global coverage, depth and coverage, are named $$(basename $@).*" > $@;
+	#touch $@;
 
 
 

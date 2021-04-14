@@ -14,21 +14,9 @@ MK_DATE="27/09/2019"
 # 02/10/2018-0.9.4b: Change Howard annotation, replace VCFTOOLS with BCFTOOLS, merge with multiallele not allowed
 # 27/09/2019-0.9.4.1b: Add HOWARD NOMEN field option
 
-FONT?=Courier5 #Times-Roman8
-NGSscripts?=$(NGS_SCRIPTS)
 INTERSEC?=2
 NB_VARIANTS_TO_SHOW?=20
 NB_VARIANTS_TO_SHOW_FULL?=10
-HOWARD?=$(NGSscripts)
-#HOWARD_CONFIG?=$(HOWARD)/config.ini
-HOWARD_CONFIG?="config.ini"
-HOWARD_CONFIG_PRIORITIZATION?="config.prioritization.ini"
-HOWARD_CONFIG_ANNOTATION?="config.annotation.ini"
-HOWARD_ANNOTATION?=$(HOWARD)/VCFannotation.pl
-ANNOTATION_TYPE_MINIMAL?="Symbol,location,outcome,hgvs"
-ANNOVAR?=$(NGSscripts)
-HOWARD_CALCULATION?=VAF,NOMEN,VAF_STATS,DP_STATS,VARTYPE
-HOWARD_NOMEN_FIELDS?="hgvs"
 
 REPORT_SECTIONS?=ALL
 
@@ -87,6 +75,10 @@ REPORT_SECTIONS?=ALL
 	echo "" >> $@
 
 
+%.config.txt: %.config
+	cp -p $< $@
+
+
 %.analysis.json: %.config %.archive.cram %.manifest %.bed %.list.genes %.tag
 	mkdir -p $(@D)
 	> $@
@@ -103,16 +95,12 @@ REPORT_SECTIONS?=ALL
 
 
 ## Report for a SAMPLE
-%.$(ANALYSIS_DATE).report: $(FINAL) $(REPORT_FILES) %.$(ANALYSIS_DATE).config #$(REPORT_FILES) $(BAM) %.$(ANALYSIS_DATE).config
+%.$(ANALYSIS_DATE).report: $(FINAL) $(REPORT_FILES) %.$(ANALYSIS_DATE).config 
 	@echo "######################################### " > $@
 	@echo "### Sample Report '`echo $$(basename $$(dirname $(@D)))`/$(*F)' " >> $@
 	@echo "### from Analysis '$(ANALYSIS_REF)' " >> $@
 	@echo "######################################### " >> $@
 	@echo " " >> $@
-	#
-	# Report release
-	-cp $*.$(ANALYSIS_DATE).config $*.$(ANALYSIS_DATE).config.txt
-	#
 	# STARK REPORT
 	$(STARK_FOLDER_BIN)/STARK.report -f "`echo $$(basename $$(dirname $$(dirname $(@D))))`" -s "$(*F)" -e "$(ENV)" -i $$(echo $(PIPELINES) | tr " " ",") --sections="$(REPORT_SECTIONS)" -k $(ANALYSIS_DATE) -r $(OUTDIR) --verbose
 
@@ -161,9 +149,9 @@ REPORT_SECTIONS?=ALL
 ## FULL VCF: ANNOTATION OF A MERGE FILE
 %.full.filtration.sorting.vcf: %.merge.vcf %.transcripts %.genome
 	# HOWARD annotation
-	+$(HOWARD) --input=$< --output=$@.tmp --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --annotation=$(HOWARD_ANNOTATION_REPORT) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --norm=$$(cat $*.genome);
+	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$< --output=$@.tmp --annotation=$(HOWARD_ANNOTATION_REPORT) --norm=$$(cat $*.genome);
 	# HOWARD calculation and prioritization
-	+$(HOWARD) --input=$@.tmp --output=$@  --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --calculation=$(HOWARD_CALCULATION_REPORT) --nomen_fields=$(HOWARD_NOMEN_FIELDS) --prioritization=$(HOWARD_PRIORITIZATION_REPORT) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --tmp=$(TMP_FOLDER_TMP)  --transcripts=$*.transcripts --force --multithreading --threads=$(THREADS) --env=$(CONFIG_TOOLS) --norm=$$(cat $*.genome);
+	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp --output=$@ --calculation=$(HOWARD_CALCULATION_REPORT) --nomen_fields=$(HOWARD_NOMEN_FIELDS) --prioritization=$(HOWARD_PRIORITIZATION_REPORT) --transcripts=$*.transcripts --force --norm=$$(cat $*.genome);
 	# cleaning
 	rm -rf $@.tmp
 
@@ -188,49 +176,38 @@ REPORT_SECTIONS?=ALL
 
 
 ## ALL samples VCF RULE
-%.samples.vcf: $(REPORT_FILES)
-	echo $(REPORT_FILES)
-	echo $(REPORT_FILES) | tr " " "\n" | tr "\t" "\n" | grep "final.vcf.gz$$" > $@.tmp.vcf_list
+
+%.variants: $(VCF_REPORT_FILES) #$(REPORT_FILES)
+	# List of final VCF files
+	echo $^ | tr " " "\n" | tr "\t" "\n" | grep "final.vcf.gz$$" > $@.tmp.vcf_list
 	$(BCFTOOLS) merge -l $@.tmp.vcf_list --info-rules - > $@.tmp.merged;
-	+if [ "$(HOWARD_ANNOTATION_ANALYSIS)" != "" ]; then \
-		$(HOWARD) --input=$@.tmp.merged --output=$@.tmp.annotated --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --annotation=$(HOWARD_ANNOTATION_ANALYSIS) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS); \
-	else \
-		cp $@.tmp.merged $@.tmp.annotated; \
-	fi;
-	+if [ "$(HOWARD_CALCULATION_ANALYSIS)" != "" ]; then \
-		$(HOWARD) --input=$@.tmp.annotated --output=$@.tmp.calculated --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --calculation=$(HOWARD_CALCULATION_ANALYSIS) --nomen_fields=$(HOWARD_NOMEN_FIELDS) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --force; \
-	else \
-		cp $@.tmp.annotated $@.tmp.calculated; \
-	fi;
-	+if [ "$(HOWARD_PRIORITIZATION_ANALYSIS)" != "" ]; then \
-		$(HOWARD) --input=$@.tmp.calculated --output=$@.tmp.prioritized --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --prioritization=$(HOWARD_PRIORITIZATION_ANALYSIS) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --force; \
-	else \
-		cp $@.tmp.calculated $@.tmp.prioritized; \
-	fi;
-	cp $@.tmp.prioritized $@
-	-if ((1)); then \
-		echo "#DEV samples.vcf GENES filter:" ; \
-		$(BGZIP) $@.tmp.prioritized -c > $@.tmp.prioritized.vcf.gz; \
-		$(TABIX) $@.tmp.prioritized.vcf.gz; \
-		for genes_file in $$(cat $$(cat $@.tmp.vcf_list | xargs dirname | sed s/reports$$/list.genes/) | cut -d. -f2- | sort -u); do \
-			List_of_samples=$$(ls $(@D)/[^.]*/[^.]*.$$genes_file | xargs -l basename | cut -d. -f1 | tr "\n" "," | sed s/,$$//) ; \
-			echo "samples: "$$List_of_samples; \
-			echo "genes_file: "$$genes_file; \
-			#echo "VCF files: "; \
-			List_of_genes_files=$$(ls $$(for L in $$(echo $$List_of_samples | tr "," "\n"); do echo $(@D)/$$L/$$L.$$genes_file; done;)) ; \
-			#echo $$(ls $(@D)/{$$(echo $$List_of_samples),}/{$$(echo $$List_of_samples),}*.$$genes_file) ; \
-			echo "BED "; \
-			#cat $$(ls $(@D)/{$$(ls $(@D)/[^.]*/[^.]*.$$genes_file | xargs -l basename | cut -d. -f1 | tr "\n" "," | sed s/,$$//)}/{$$(ls $(@D)/[^.]*/[^.]*.$$genes_file | xargs -l basename | cut -d. -f1 | tr "\n" "," | sed s/,$$//)}.$$genes_file) | $(BEDTOOLS) sort | $(BEDTOOLS) merge > $@.tmp.GENES.$$genes_file; \
-			#cat $$(ls $(@D)/[^.]*/[^.]*.$$genes_file) | $(BEDTOOLS) sort | $(BEDTOOLS) merge > $@.tmp.GENES.$$genes_file; \
-			cat $$(echo $$List_of_genes_files) | $(BEDTOOLS) sort | $(BEDTOOLS) merge > $@.tmp.GENES.$$genes_file; \
-			echo "VCF "; \
-			$(BCFTOOLS) view --samples $$List_of_samples --force-samples $@.tmp.prioritized.vcf.gz -R $@.tmp.GENES.$$genes_file > $$(echo $@ | sed s/.vcf$$//).$$genes_file.vcf; \
-			$(BGZIP) $$(echo $@ | sed s/.vcf$$//).$$genes_file.vcf ; \
-			#$(TABIX) $$(echo $@ | sed s/.vcf$$//).$$genes_file.vcf.gz ; \
-			$(HOWARD) --config=$(HOWARD_CONFIG) --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --format=tab  --fields="$(HOWARD_FIELDS)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)"  --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --input=$$(echo $@ | sed s/.vcf$$//).$$genes_file.vcf.gz --output=$$(echo $@ | sed s/.vcf$$//).$$genes_file.tsv --force; \
-		done; \
-	fi;
+	# Annotation
+	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp.merged --output=$@.tmp.annotated --annotation=$(HOWARD_ANNOTATION_ANALYSIS);
+	# Calculation and prioritization (forced)
+	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp.annotated --output=$@.tmp.calculated.prioritized --calculation=$(HOWARD_CALCULATION_ANALYSIS) --prioritization=$(HOWARD_PRIORITIZATION_ANALYSIS) --nomen_fields=$(HOWARD_NOMEN_FIELDS) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --force;
+	# Generate Design VCF
+	$(BGZIP) -c $@.tmp.calculated.prioritized > $@.tmp.calculated.prioritized.vcf.gz;
+	$(TABIX) $@.tmp.calculated.prioritized.vcf.gz;
+	cp $@.tmp.calculated.prioritized.vcf.gz $@.Design.vcf.gz;
+	# Generate Design TSV
+	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.Design.vcf.gz --output=$@.Design.tsv --translation=TSV --fields="$(HOWARD_FIELDS)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)" --force;
+	# Generate Panel(s) VCF and TSV from Design VCF ($@.Design.vcf.gz)
+	+for genes_file in $$(cat $$(cat $@.tmp.vcf_list | xargs dirname | sed s/reports$$/list.genes/) | cut -d. -f2- | sort -u); do \
+		# List of Samples with $$genes_file panel \
+		List_of_samples=$$(ls $(@D)/[^.]*/[^.]*.$$genes_file | xargs -l basename | cut -d. -f1 | tr "\n" "," | sed s/,$$//) ; \
+		# List of $$genes_file within Samples folders \
+		List_of_genes_files=$$(ls $$(for L in $$(echo $$List_of_samples | tr "," "\n"); do echo $(@D)/$$L/$$L.$$genes_file; done;)) ; \
+		# Merge all $$genes_file found into uniq BED file (but supposed to be the same) \
+		cat $$(echo $$List_of_genes_files) | $(BEDTOOLS) sort | $(BEDTOOLS) merge > $@.tmp.GENES.$$genes_file; \
+		# Generate VCF Panel from VCF Design (especially $@.tmp.calculated.prioritized.vcf.gz because tabix) with $$genes_file for List of Samples \
+		$(BCFTOOLS) view --samples $$List_of_samples --force-samples $@.tmp.calculated.prioritized.vcf.gz -R $@.tmp.GENES.$$genes_file > $@.Panel.$$genes_file.vcf; \
+		# Compress VCF \
+		$(BGZIP) $@.Panel.$$genes_file.vcf; \
+		# Generate TSV Panel from VCF Panel compressed  \
+		$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.Panel.$$genes_file.vcf.gz --output=$@.Panel.$$genes_file.tsv --translation=TSV --fields="$(HOWARD_FIELDS)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)" --force; \
+	done;
 	-rm -f $@.tmp.*
+	echo "#[INFO] All variants files on Design and Panel(s) are named $$(basename $@).*" > $@;
 
 
 

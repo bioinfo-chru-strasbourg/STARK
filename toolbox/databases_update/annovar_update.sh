@@ -250,7 +250,7 @@ if ((1)); then
 
 	# Téléchargement (par HOWARD dans STARK CLI)
 	# Dans STARK CLI (pour l'acces a HOWARD et aux paramétrages de STARK-tools)
-	docker exec -ti stark-module-stark-submodule-stark-service-cli bash -c 'cd /STARK && source /tool/config/config.app && $HOWARD --input=$HOWARD_FOLDER/docs/example.vcf --output='$HOWARD_UPDATE_RELEASE_FOLDER_DATABASES_INNER'/HOWARD.download.vcf --env=/tool/config/tools.app --annotation='$ANNOTATION' --annovar_folder=$ANNOVAR --annovar_databases='$HOWARD_UPDATE_RELEASE_FOLDER_DATABASES_INNER' --config_annotation='$HOWARD_UPDATE_RELEASE_FOLDER_DATABASES_INNER'/config.annotation.ini --snpeff_jar=$SNPEFF --snpeff_threads=1 --tmp='$HOWARD_UPDATE_RELEASE_FOLDER_TMP_INNER' --assembly=hg19 --java=$JAVA --threads=1 --verbose' 1>$HOWARD_UPDATE_RELEASE_FOLDER_DATABASES/update.log 2>$HOWARD_UPDATE_RELEASE_FOLDER_DATABASES/update.err
+	docker exec -ti stark-module-stark-submodule-stark-service-cli bash -c 'cd /STARK && source /tool/config/config.app && $HOWARD --input=$HOWARD_FOLDER/docs/example.vcf --output='$HOWARD_UPDATE_RELEASE_FOLDER_DATABASES_INNER'/HOWARD.download.vcf --env=/tool/config/tools.app --annotation='$ANNOTATION' --annovar_folder=$ANNOVAR --annovar_databases='$HOWARD_UPDATE_RELEASE_FOLDER_DATABASES_INNER' --config_annotation='$HOWARD_UPDATE_RELEASE_FOLDER_DATABASES_INNER'/config.annotation.ini --snpeff_jar=$SNPEFF --snpeff_threads=1 --tmp='$HOWARD_UPDATE_RELEASE_FOLDER_TMP_INNER' --assembly=hg19 --java=$JAVA --threads=1 --verbose' 1>$HOWARD_UPDATE_RELEASE_FOLDER_DATABASES/HOWARD.download.log 2>$HOWARD_UPDATE_RELEASE_FOLDER_DATABASES/HOWARD.download.err
 
 	# Telechargement de la liste des bases de données 'hg19_avdblist.txt'
 	#docker exec -ti stark-module-stark-submodule-stark-service-cli bash -c 'cd /STARK && source /tool/config/config.app && perl $ANNOVAR/annotate_variation.pl -webfrom annovar -downdb avdblist -buildver hg19 '$HOWARD_UPDATE_RELEASE_FOLDER_DATABASES_INNER' '
@@ -262,10 +262,10 @@ if ((1)); then
 	# créer la version d'annovar
 	mkdir -p $STARK_MAIN_FOLDER/databases/annovar/$ANNOVAR_NEW_RELEASE
 	# Copier la nouvelle version d'ANNOVAR dans database
-	rsync -raz $HOWARD_UPDATE_RELEASE_FOLDER_DATABASES/* $STARK_MAIN_FOLDER/databases/annovar/$ANNOVAR_NEW_RELEASE/
+	rsync -rauz $HOWARD_UPDATE_RELEASE_FOLDER_DATABASES/* $STARK_MAIN_FOLDER/databases/annovar/$ANNOVAR_NEW_RELEASE/
 	# Ajouter les fichiers manquants de la précédente version d'ANNOVAR dans database
 	if [ "$ANNOVAR_LATEST_RELEASE" != "" ]; then
-		rsync -ruz $STARK_MAIN_FOLDER/databases/annovar/$ANNOVAR_LATEST_RELEASE/* $STARK_MAIN_FOLDER/databases/annovar/$ANNOVAR_NEW_RELEASE/
+		rsync -rauz $STARK_MAIN_FOLDER/databases/annovar/$ANNOVAR_LATEST_RELEASE/* $STARK_MAIN_FOLDER/databases/annovar/$ANNOVAR_NEW_RELEASE/
 	fi;
 	# modifier le fichier STARK.database.release au besoin ("download")
 	#mv $STARK_MAIN_FOLDER/databases/annovar/$ANNOVAR_NEW_RELEASE/STARK.database.release $STARK_MAIN_FOLDER/databases/annovar/$ANNOVAR_NEW_RELEASE/STARK.database.release.previous

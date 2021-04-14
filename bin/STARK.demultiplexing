@@ -195,7 +195,6 @@ CORES=$(nproc)
 
 # THREADS
 re='^[0-9]+$'
-#CORES=$(ls -d /sys/devices/system/cpu/cpu[[:digit:]]* | wc -w)
 
 if ! [[ $THREADS =~ $re ]] || [ -z "$THREADS" ] || [ "$THREADS" == "" ] || [ $THREADS -gt $CORES ] ; then
 	CORES_FREE=1
@@ -361,14 +360,14 @@ echo "#[`date`] COMMAND: $COMMAND" >> $LOGFILE && $COMMAND >> $LOGFILE
 NB_SAMPLE=$(tail -n $(($SAMPLE_SECTION_FIRST_LINE-$(grep ^ -c $RUN_SAMPLESHEET))) $RUN_SAMPLESHEET | sed '/^[[:space:]]*$/d' | sort -u | wc -l)
 THREADS_WRITING=$(($NB_SAMPLE>$THREADS_WRITING?$THREADS_WRITING:$NB_SAMPLE));
 [ "$ADAPTER_STRINGENCY" == "" ] && ADAPTER_STRINGENCY=0.9
-[ "$FASTQ_COMPRESSION_LEVEL" == "" ] && FASTQ_COMPRESSION_LEVEL=4
+[ "$FASTQ_DEMULTIPLEXING_COMPRESSION_LEVEL" == "" ] && FASTQ_DEMULTIPLEXING_COMPRESSION_LEVEL=4
 
 (($VERBOSE)) && echo "#[INFO] NB_SAMPLE="$NB_SAMPLE
 (($VERBOSE)) && echo "#[INFO] THREADS_LOADING="$THREADS_LOADING
 (($VERBOSE)) && echo "#[INFO] THREADS_WRITING="$THREADS_WRITING
 #(($VERBOSE)) && echo "#[INFO] WRITING_THREADS="$WRITING_THREADS
 (($VERBOSE)) && echo "#[INFO] ADAPTER_STRINGENCY="$ADAPTER_STRINGENCY
-(($VERBOSE)) && echo "#[INFO] FASTQ_COMPRESSION_LEVEL="$FASTQ_COMPRESSION_LEVEL
+(($VERBOSE)) && echo "#[INFO] FASTQ_DEMULTIPLEXING_COMPRESSION_LEVEL="$FASTQ_DEMULTIPLEXING_COMPRESSION_LEVEL
 
 
 #(($DEBUG)) && ls -l $DEM_SAMPLESHEET
@@ -380,7 +379,7 @@ THREADS_WRITING=$(($NB_SAMPLE>$THREADS_WRITING?$THREADS_WRITING:$NB_SAMPLE));
 #(($DEBUG)) && cat $MANIFESTS
 
 # Demultiplexing configuration
-COMMAND="$BCL2FASTQ --runfolder-dir $RUN  --output-dir $OUTPUT_DIR --sample-sheet $DEM_SAMPLESHEET --barcode-mismatches $BARCODE_MISMATCHES --fastq-compression-level $FASTQ_COMPRESSION_LEVEL -r $THREADS_LOADING -p $THREADS -w $THREADS_WRITING --no-lane-splitting --create-fastq-for-index-reads"
+COMMAND="$BCL2FASTQ --runfolder-dir $RUN  --output-dir $OUTPUT_DIR --sample-sheet $DEM_SAMPLESHEET --barcode-mismatches $BARCODE_MISMATCHES --fastq-compression-level $FASTQ_DEMULTIPLEXING_COMPRESSION_LEVEL -r $THREADS_LOADING -p $THREADS -w $THREADS_WRITING --no-lane-splitting --create-fastq-for-index-reads"
 echo "#[`date`] COMMAND: " $COMMAND >> $LOGFILE
 (($DEBUG)) && echo "#[INFO] Command: "$COMMAND
 

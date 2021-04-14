@@ -10,16 +10,10 @@ MK_DATE="23/09/2016"
 # 10/03/2015: New file. Generates a file containing reference genome location
 # 23/09/2016: Cleaning
 
-# TOOLS
-BWA?=$(NGSbin)/bwa
-SAMTOOLS?=$(NGSbin)/samtools
-JAVA?=java
-PICARDLIB?=$(NGSbin)/picard-tools
 
 
 ## Genome REF
 ###############
-
 
 
 

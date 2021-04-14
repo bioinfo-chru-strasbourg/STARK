@@ -131,9 +131,10 @@ function usage {
 	echo "#                                          OR force design for RUN analysis (use only one design).";
 	echo "#                                          If not *.bed file (BED format), considered as Illumina manifest.";
 	echo "#                                          Default: first BED or empty";
-	echo "# --genes=<FILE1,FILE2...>                 List of corresponding GENES files.";
+	echo "# --panels=<FILE1+FILE2,FILE3+FILE4...>    List of corresponding GENES files (Panels).";
 	echo "#                                          OR force GENES file for RUN analysis (use only one GENES file).";
-	echo "#                                          Format: BED (chr<TAB>start<TAB>stop<TAB>strand<TAB>gene_name).";
+	echo "#                                          Format: <FILE1+FILE2,FILE3+FILE4...>, multiple panels for each sample with '+' separator.";
+	echo "#                                          File format: BED (chr<TAB>start<TAB>stop<TAB>strand<TAB>gene_name).";
 	echo "#                                          Default first GENES file or empty";
 	echo "# --transcripts=<FILE1,FILE2...>           List of corresponding TRANSCRIPTS files.";
 	echo "#                                          OR force TRANSCRIPTS file for RUN analysis (use only one TRANSCRIPTS file).";
@@ -193,7 +194,7 @@ function usage {
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
-ARGS=$(getopt -o "a:b:e:r:f:q:g:j:m:l:s:w:t:o:u:iygxvdnh" --long "env:,app:,application:,runs:,run:,fastq:,reads:,reads1:,fastq_R1:,by_sample,fastq_R2:,reads2:,index1:,index2:,other_files:,analysis_tag:,sample_tag:,adapters:,analysis:,analysis_name:,analysis_dir:,demultiplexing:,demultiplexing_only,samplesheet:,sample:,sample_filter:,design:,bed:,manifest:,genes:,transcripts:,threads:,output:,results:,repository:,archives:,databases:,input:,output:,tmp:,log:,docker-compose-file:,docker-env-file:,docker-parameters:,docker-stark-image:,docker-stark-container:,no_header,applications_infos,applications_infos_all,pipelines_infos,release_infos,tools_infos,databases_infos,verbose,debug,release,help" -- "$@" 2> /dev/null)
+ARGS=$(getopt -o "a:b:e:r:f:q:g:j:m:l:s:w:t:o:u:iygxvdnh" --long "env:,app:,application:,runs:,run:,fastq:,reads:,reads1:,fastq_R1:,by_sample,fastq_R2:,reads2:,index1:,index2:,other_files:,analysis_tag:,sample_tag:,adapters:,analysis:,analysis_name:,analysis_dir:,demultiplexing:,demultiplexing_only,samplesheet:,sample:,sample_filter:,design:,bed:,manifest:,genes:,panels:,transcripts:,threads:,output:,results:,repository:,archives:,databases:,input:,output:,tmp:,log:,docker-compose-file:,docker-env-file:,docker-parameters:,docker-stark-image:,docker-stark-container:,no_header,applications_infos,applications_infos_all,pipelines_infos,release_infos,tools_infos,databases_infos,verbose,debug,release,help" -- "$@" 2> /dev/null)
 
 
 if [ $? -ne 0 ]; then
@@ -290,7 +291,7 @@ do
 			BED_INPUT=$(echo $BED_INPUT | tr "," " ")
 			shift 2
 			;;
-		-j|--genes)
+		-j|--genes|--panels)
 			BEDFILE_GENES_INPUT="$2"
 			BEDFILE_GENES_INPUT=$(echo $BEDFILE_GENES_INPUT | tr "," " ")
 			shift 2
@@ -502,6 +503,24 @@ export APP
 (($VERBOSE)) && [ ! -z "$APP" ] && [ -z "$ENV" ] && echo "#[INFO] Application '$APP' NOT found"
 
 
+
+# CORES
+CORES=$(nproc)
+
+# THREADS
+re='^[0-9]+$'
+
+if ! [[ $THREADS =~ $re ]] || [ -z "$THREADS" ] || [ "$THREADS" == "" ] || [ $THREADS -gt $CORES ] ; then
+	CORES_FREE=1
+	THREADS=$(($CORES-$CORES_FREE))
+fi;
+if [[ $THREADS_INPUT =~ $re ]] && [ "$THREADS_INPUT" != "" ]; then
+	THREADS=$THREADS_INPUT;
+fi;
+#echo "#[INFO] Threads processing: $THREADS";
+
+
+
 # DEBUG
 #########
 EXEC=1
@@ -532,6 +551,7 @@ if ((0)) && (($DEBUG)); then
 	echo "ANNOTATORS=$ANNOTATORS"
 	echo "ASSEMBLY=$ASSEMBLY"
 	echo "RULES=$RULES"
+	echo "THREADS=$THREADS"
 	exit 0;
 fi;
 
@@ -1345,7 +1365,7 @@ if [ ! -z "$RUNS" ]; then
 
 				#[ -e $R/RTAComplete.txt ] && [ ! -e $DEM_STARKCOMPLETE ] && echo "#[INFO] Start Demultiplexing for RUN '$R'" && echo "" && \
 				(($DEM_TODO)) && echo "#[INFO] Start Demultiplexing for RUN '$R'" && echo "" && \
-				$SCRIPT_DIR/demultiplexing.sh --app="$APP_DEMULTIPLEXING" --run=$R --demultiplex_folder=$DEMULTIPLEXING_FOLDER --samplesheet=$RUN_SAMPLESHEET --threads=$THREADS_INPUT $DEM_PARAM $DEM_PARAM 
+				$SCRIPT_DIR/STARK.demultiplexing --app="$APP_DEMULTIPLEXING" --run=$R --demultiplex_folder=$DEMULTIPLEXING_FOLDER --samplesheet=$RUN_SAMPLESHEET --threads=$THREADS $DEM_PARAM $DEM_PARAM 
 
 
 				[ -e $DEM_STARKCOMPLETE ] && [ -e $DEM_SAMPLESHEET ] && echo "#[INFO] Demultiplexing completed" || exit 1 

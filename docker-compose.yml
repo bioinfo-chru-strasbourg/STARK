@@ -69,7 +69,7 @@ services:
         image: ${DOCKER_STARK_IMAGE}
         container_name: STARK-databases
         entrypoint: /bin/bash
-        command: -c "/tool/bin/get_databases.sh --build --databases=${DOCKER_STARK_INNER_FOLDER_DATABASES} --threads=${DOCKER_STARK_GET_DATABASES_THREADS} --additional_annotations=${DOCKER_STARK_GET_DATABASES_ADDITIONAL_ANNOTATIONS} --verbose 1>>${DOCKER_STARK_INNER_FOLDER_DATABASES}/STARK.databases.build.log 2>>${DOCKER_STARK_INNER_FOLDER_DATABASES}/STARK.databases.build.err"
+        command: -c "/tool/bin/get_databases.sh --build --current --databases=${DOCKER_STARK_INNER_FOLDER_DATABASES} --threads=${DOCKER_STARK_GET_DATABASES_THREADS} --databases_list=ALL --additional_annotations=${DOCKER_STARK_GET_DATABASES_ADDITIONAL_ANNOTATIONS} --verbose 1>>${DOCKER_STARK_INNER_FOLDER_DATABASES}/STARK.databases.build.log 2>>${DOCKER_STARK_INNER_FOLDER_DATABASES}/STARK.databases.build.err"
         volumes:
             # Databases folder
             - ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_DATABASES}:${DOCKER_STARK_INNER_FOLDER_DATABASES}:rw

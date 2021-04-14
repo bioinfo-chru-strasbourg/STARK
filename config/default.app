@@ -181,7 +181,7 @@ BAM_CHECK_STEPS=0
 
 # METRICS SNPEFF (default 0)
 # Generate snpEff variant metrics from VCF
-METRICS_SNPEFF=0
+METRICS_SNPEFF=1
 
 # PIPELINES PRIORITIZATION
 # List of pipelines to prioritize for the report (final.vcf)
@@ -195,10 +195,16 @@ PRIORITIZE_PIPELINES_LIST=""
 # For BCL2FASTQ demultiplexing (see doc)
 ADAPTER_STRINGENCY=0.9
 
-# FASTQ compression level
+# FASTQ compression level for demultiplexing FASTQ files
+# zlib compression level (1-9) used for FASTQ files during demultiplexing
+# Used by BCL2FASTQ
+# If FASTQ_DEMULTIPLEXING_KEEP=1, we suggest a high level of compression (at least 5)
+FASTQ_DEMULTIPLEXING_COMPRESSION_LEVEL=1
+
+# FASTQ compression level for main FASTQ files
 # zlib compression level (1-9) used for FASTQ files
-# Used by BCL2FASTQ and FASTP
-FASTQ_COMPRESSION_LEVEL=4
+# Used by FASTP
+FASTQ_COMPRESSION_LEVEL=9
 
 # DETECT ADAPTER FOR PE
 # Autodetect adapter for paired end
@@ -225,6 +231,9 @@ UMI_BARCODE_PATTERN=""
 # See PICARD documentation for more information
 BARCODE_TAG=""
 
+# Keep demultiplexing FASTQ
+# Keep fastq demultiplexed or from input reads/reads2
+FASTQ_DEMULTIPLEXING_KEEP=0
 
 
 
@@ -311,7 +320,12 @@ POST_ANNOTATION_STEPS="sorting"
 
 # BAM COMPRESSION
 # Final BAM compression level (ALIGNER.bam)
-BAM_COMPRESSION=5
+BAM_COMPRESSION=9
+
+
+# BAM VALIDATION COMPRESSION
+# Validation BAM compression level (ALIGNER.validation.bam)
+BAM_VALIDATION_COMPRESSION=5
 
 
 # CRAM OPTIONS

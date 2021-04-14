@@ -7,8 +7,8 @@
 
 SCRIPT_NAME="STARKDatabases"
 SCRIPT_DESCRIPTION="STARK download and build databases"
-SCRIPT_RELEASE="0.9.4b"
-SCRIPT_DATE="17/06/2020"
+SCRIPT_RELEASE="0.9.5.0"
+SCRIPT_DATE="11/04/2021"
 SCRIPT_AUTHOR="Antony Le Bechec"
 SCRIPT_COPYRIGHT="IRC"
 SCRIPT_LICENCE="GNU-GPL"
@@ -19,6 +19,7 @@ RELEASE_NOTES=$RELEASE_NOTES"# 0.9.1b-12/12/2018: Change to Makefile\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.2b-21/12/2018: Add update, build, rebuild and threads options. Change dbsnp source\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.3b-31/05/2019: Add APP configuration\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.4b-17/06/2020: Clarify code, organisation DB/RELEASE, add STARK.description\n";
+RELEASE_NOTES=$RELEASE_NOTES"# 0.9.5.0-11/04/2021: Change snpEff download, some bugs fixed, option --current, remove option --rebuild\n";
 
 # Script folder
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -49,11 +50,16 @@ function usage {
 	echo "#                                          Default: Default STARK parameters.";
 	echo "# --databases=<FOLDER>                     Databases folder (replace APP parameter)";
 	echo "#                                          Will generate STARK databases folder structure";
+	echo "# --databases_list=<STRING>                List of Databases to consider";
+	echo "#                                          Format: 'database1,database2,...'";
+	echo "#                                          Default: 'ALL' for all available databases";
+	echo "#                                          Available databases: 'genomes,refGene,dbsnp,annovar,snpeff'";
 	echo "# --additional_annotations=<STRING>        Additional HOWARD annotations";
 	echo "#                                          Will download ANNOVAR and SNPEFF additional databases (beyond originally defined application)";
 	echo "#                                          Format: 'annotation1,annotation2,...'";
+	echo "# --current                                Make new databases as current.";
 	echo "# --build                                  Build all databases.";
-	echo "# --rebuild                                Force Rebuild all databases.";
+	#echo "# --rebuild                                Force Rebuild all databases.";
 	echo "# --update                                 Update databases (latest dbSNP and HOWARD-ANNOVAR-snpEff databases) and build if needed.";
 	echo "# --threads                                Number of threads (depend on system/proxy...).";
 
@@ -72,7 +78,7 @@ header;
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
-ARGS=$(getopt -o "e:bfut:vdnh" --long "env:,app:,application:,databases:,additional_annotations:,build,rebuild,update,threads:,verbose,debug,release,help" -- "$@" 2> /dev/null)
+ARGS=$(getopt -o "e:bcfut:vdnh" --long "env:,app:,application:,databases:,databases_list:,additional_annotations:,current,build,rebuild,update,threads:,verbose,debug,release,help" -- "$@" 2> /dev/null)
 # || [ -z $@ ]
 
 PARAM=$@
@@ -95,12 +101,20 @@ do
 			DATABASES="$2"
 			shift 2
 			;;
+		--databases_list)
+			DATABASES_LIST=$(echo "$2" | tr "," " ")
+			shift 2
+			;;
 		--additional_annotations)
 			ADDITIONAL_ANNOTATIONS="$2"
 			shift 2
 			;;
 		-v|--verbose)
 			VERBOSE=1
+			shift 1
+			;;
+		-c|--current)
+			CURRENT=1
 			shift 1
 			;;
 		-b|--build)
@@ -142,6 +156,26 @@ do
 done
 
 
+
+# FUNCTIONS
+#############
+
+# function in_array
+# input: $element $array
+in_array () 
+{ 
+    param=$1;
+    shift;
+    for elem in "$@";
+    do
+        [[ "$param" = "$elem" ]] && return 0;
+    done;
+    return 1
+}
+
+
+
+
 # ACTION
 ##########
 
@@ -150,11 +184,19 @@ ACTION=0
 
 
 
-
 # DATABASES FOLDER
 ####################
 
 [ ! -z $DATABASES ] && [ ! -d $DATABASES ] && mkdir -p $DATABASES && echo "#[INFO] Create databases folder '$DATABASES' "
+
+
+
+# DATABASES LIST
+####################
+
+[ "$DATABASES_LIST" == "" ] && DATABASES_LIST="ALL"
+echo "#[INFO] Databases list: '$DATABASES_LIST' "
+
 
 
 # ENV
@@ -175,7 +217,10 @@ export APP
 (($VERBOSE)) && [ ! -z "$APP" ] && [ -z "$ENV" ] && echo "#[INFO] Application '$APP' NOT found"
 
 
+
 # CORES
+##########
+
 re='^[0-9]+$'
 #CORES=$(ls -d /sys/devices/system/cpu/cpu[[:digit:]]* | wc -w)
 CORES=$(nproc)
@@ -189,7 +234,10 @@ if [[ $THREADS_INPUT =~ $re ]] && [ "$THREADS_INPUT" != "" ]; then
 fi;
 
 
+
 # TMP FOLDER_RUN
+##################
+
 TMP_DATABASES_DOWNLOAD_FOLDER=$TMP_FOLDER_TMP/$RANDOM$RANDOM
 mkdir -p $TMP_DATABASES_DOWNLOAD_FOLDER
 TMP_DATABASES_DOWNLOAD_RAM="$(mktemp -d -p /dev/shm/)"
@@ -197,15 +245,25 @@ if [ "$TMP_DATABASES_DOWNLOAD_RAM" == "" ]; then
 	TMP_DATABASES_DOWNLOAD_RAM=$TMP_DATABASES_DOWNLOAD_FOLDER;
 fi;
 
+
+
 # DATE
+########
+
 DATE=$(date '+%Y%m%d-%H%M%S')
 
+
+
 # COPY MODE
+############
 #COPY_MODE_DEFAULT="rsync -rtvu"
 COPY_MODE_DEFAULT="rsync -ar"
 
 
 # PROXY
+#########
+
+
 #Automaticly import system proxy settings
 if [ -n "$http_proxy" ] ; then
     #secho $http_proxy | grep "@"
@@ -220,7 +278,11 @@ if [ -n "$http_proxy" ] ; then
     fi
 fi
 
+
+
 # JAVA FLAGS
+###############
+
 mkdir -p $TMP_DATABASES_DOWNLOAD_FOLDER/JAVA_FLAGS
 JAVA_FLAGS=" -Djava.io.tmpdir=$TMP_DATABASES_DOWNLOAD_FOLDER/JAVA_FLAGS "
 if [ -n "$PROXY_HOST"   -a  -n "$PROXY_PORT" ] ; then
@@ -298,14 +360,18 @@ DOWNLOAD_METHOD="STARK Databases download script [$SCRIPT_RELEASE-$SCRIPT_DATE]"
 # GENOME #
 ##########
 
-if ((1)); then
+#if ((1)); then
 
-	# DB
-	DATABASE="genomes"
-	DATABASE_NAME="Genomes"
-	DATABASE_FULLNAME="Reference Genome Sequences Assembly"
-	DATABASE_WEBSITE="https://genome.ucsc.edu/"
-	DATABASE_DESCRIPTION="Reference sequence was produced by the Genome Reference Consortium, and is composed of genomic sequence, primarily finished clones that were sequenced as part of the Human Genome Project"
+# DB
+DATABASE="genomes"
+DATABASE_NAME="Genomes"
+DATABASE_FULLNAME="Reference Genome Sequences Assembly"
+DATABASE_WEBSITE="https://genome.ucsc.edu/"
+DATABASE_DESCRIPTION="Reference sequence was produced by the Genome Reference Consortium, and is composed of genomic sequence, primarily finished clones that were sequenced as part of the Human Genome Project"
+
+
+if in_array $DATABASE $DATABASES_LIST || in_array ALL $DATABASES_LIST; then
+
 
 	# DB TARGET
 	DB_TARGET=$REF;												# /STARK/databases/genomes/current/hg19.fa
@@ -420,14 +486,14 @@ if ((1)); then
 			# date 
 			touch $DB_RELEASE_FILE_PATH -r $DB_RELEASE_FOLDER/md5sum.txt
 			# database release info
-			[ ! -s $DB_TARGET_DB_FOLDER/STARK.database ] && cp $DB_TMP/STARK.database $DB_TARGET_DB_FOLDER/STARK.database
+			-[ ! -s $DB_TARGET_DB_FOLDER/STARK.database ] && cp $DB_TMP/STARK.database $DB_TARGET_DB_FOLDER/STARK.database
 			cp $DB_TMP/STARK.database.release $DB_RELEASE_FOLDER
 			chmod o+r $DB_TARGET_DB_FOLDER/STARK.database $DB_RELEASE_FOLDER/STARK.database.release
 			# links
-			[ $DB_TARGET_RELEASE != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_FOLDER
-			[ latest != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_DB_FOLDER/latest
-			[ -e $DB_TARGET_DB_FOLDER/current ] && mv $DB_TARGET_DB_FOLDER/current $DB_TARGET_DB_FOLDER/current.$DATE
-			[ current != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_DB_FOLDER/current
+			-[ $DB_TARGET_RELEASE != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_FOLDER
+			-[ latest != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_DB_FOLDER/latest
+			-(($CURRENT)) && [ -e $DB_TARGET_DB_FOLDER/current ] && mv $DB_TARGET_DB_FOLDER/current $DB_TARGET_DB_FOLDER/current.$DATE
+			-(($CURRENT)) && [ current != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_DB_FOLDER/current
 			# Clear
 			rm -rf $DB_TMP;
 		" >> $MK
@@ -549,15 +615,18 @@ fi;
 # REFSEQ GENES #
 ################
 
-if ((1)); then
+#if ((1)); then
 
-	# DB
-	DATABASE="refGene"
-	DATABASE_NAME="RefGene"
-	DATABASE_FULLNAME="Reference Genes"
-	DATABASE_WEBSITE="https://genome.ucsc.edu/"
-	#DATABASE_FULLNAME="Human Variation Sets in VCF Format" # dbsnp
-	DATABASE_DESCRIPTION="Known human protein-coding and non-protein-coding genes taken from the NCBI RNA reference sequences collection (RefSeq)"
+# DB
+DATABASE="refGene"
+DATABASE_NAME="RefGene"
+DATABASE_FULLNAME="Reference Genes"
+DATABASE_WEBSITE="https://genome.ucsc.edu/"
+#DATABASE_FULLNAME="Human Variation Sets in VCF Format" # dbsnp
+DATABASE_DESCRIPTION="Known human protein-coding and non-protein-coding genes taken from the NCBI RNA reference sequences collection (RefSeq)"
+
+
+if in_array $DATABASE $DATABASES_LIST || in_array ALL $DATABASES_LIST; then
 
 
 	# DB TARGET
@@ -727,13 +796,13 @@ if ((1)); then
 			mkdir -p $DB_RELEASE_FOLDER
 			chmod 0775 $DB_RELEASE_FOLDER
 			# database release info
-			[ ! -s $DB_TARGET_DB_FOLDER/STARK.database ] && cp $DB_TMP/STARK.database $DB_TARGET_DB_FOLDER/STARK.database
+			-[ ! -s $DB_TARGET_DB_FOLDER/STARK.database ] && cp $DB_TMP/STARK.database $DB_TARGET_DB_FOLDER/STARK.database
 			cp $DB_TMP/STARK.database.release $DB_RELEASE_FOLDER/
 			chmod o+r $DB_TARGET_DB_FOLDER/STARK.database $DB_RELEASE_FOLDER/STARK.database.release
 			# links
-			[ $DB_TARGET_RELEASE != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_FOLDER
-			[ latest != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_DB_FOLDER/latest
-			[ current != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_DB_FOLDER/current
+			-[ $DB_TARGET_RELEASE != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_FOLDER
+			-[ latest != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_DB_FOLDER/latest
+			-(($CURRENT)) && [ current != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_DB_FOLDER/current
 			# Clear
 			rm -rf $DB_TMP;
 		" >> $MK
@@ -749,14 +818,18 @@ fi;
 # DBSNP #
 #########
 
-if ((1)); then
+#if ((1)); then
 
-	# DB
-	DATABASE="dbsnp"
-	DATABASE_NAME="dbSNP"
-	DATABASE_FULLNAME="Single-nucleotide polymorphism Database"
-	DATABASE_WEBSITE="https://www.ncbi.nlm.nih.gov/snp/"
-	DATABASE_DESCRIPTION="Human single nucleotide variations, microsatellites, and small-scale insertions and deletions along with publication, population frequency, molecular consequence, and genomic and RefSeq mapping information for both common variations and clinical mutations"
+# DB
+DATABASE="dbsnp"
+DATABASE_NAME="dbSNP"
+DATABASE_FULLNAME="Single-nucleotide polymorphism Database"
+DATABASE_WEBSITE="https://www.ncbi.nlm.nih.gov/snp/"
+DATABASE_DESCRIPTION="Human single nucleotide variations, microsatellites, and small-scale insertions and deletions along with publication, population frequency, molecular consequence, and genomic and RefSeq mapping information for both common variations and clinical mutations"
+
+
+if in_array $DATABASE $DATABASES_LIST || in_array ALL $DATABASES_LIST; then
+
 
 	# DB TARGET
 	DB_TARGET=$VCFDBSNP;										# /STARK/databases/dbsnp/current/dbsnp.hg19.vcf.gz
@@ -924,13 +997,13 @@ if ((1)); then
 			$COPY_MODE_VCFDBSNP $DB_TMP/$DB_RELEASE_FILE.tbi $DB_RELEASE_FILE_PATH.tbi;
 			$COPY_MODE_VCFDBSNP $DB_TMP/$DB_RELEASE_FILE $DB_RELEASE_FILE_PATH;
 			# database release info
-			[ ! -s $DB_TARGET_DB_FOLDER/STARK.database ] && cp $DB_TMP/STARK.database $DB_TARGET_DB_FOLDER/STARK.database
+			-[ ! -s $DB_TARGET_DB_FOLDER/STARK.database ] && cp $DB_TMP/STARK.database $DB_TARGET_DB_FOLDER/STARK.database
 			cp $DB_TMP/STARK.database.release $DB_RELEASE_FOLDER
 			chmod o+r $DB_TARGET_DB_FOLDER/STARK.database $DB_RELEASE_FOLDER/STARK.database.release
 			# Links
-			[ $DB_TARGET_RELEASE != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_FOLDER
-			[ latest != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_DB_FOLDER/latest
-			[ current != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_DB_FOLDER/current
+			-[ $DB_TARGET_RELEASE != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_FOLDER
+			-[ latest != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_DB_FOLDER/latest
+			-(($CURRENT)) && [ current != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_DB_FOLDER/current
 			# Clear
 			rm -rf $DB_TMP;
 		" >> $MK
@@ -947,14 +1020,21 @@ fi;
 # SNPEFF  #
 ###########
 
-if ((1)); then
+#if ((1)); then
 
-	# DB
-	DATABASE="snpeff"
-	DATABASE_NAME="SnpEff"
-	DATABASE_FULLNAME="SnpEff Annotations"
-	DATABASE_WEBSITE="http://snpeff.sourceforge.net/"
-	DATABASE_DESCRIPTION="Genetic variant annotation and functional effect prediction toolbox"
+# DB
+DATABASE="snpeff"
+DATABASE_NAME="SnpEff"
+DATABASE_FULLNAME="SnpEff Annotations"
+DATABASE_WEBSITE="http://snpeff.sourceforge.net/"
+DATABASE_DESCRIPTION="Genetic variant annotation and functional effect prediction toolbox"
+
+
+if in_array $DATABASE $DATABASES_LIST || in_array ALL $DATABASES_LIST; then
+
+
+	SNPEFF_TOOL_VERSION=$($JAVA -jar $SNPEFF -version | cut -f2)
+	[ ! -d "$DBFOLDER/snpeff/$SNPEFF_TOOL_VERSION" ] && UPDATE_SNPEFF=1 || UPDATE_SNPEFF=0
 
 	# DB TARGET
 	DB_TARGET=$SNPEFF_DATABASES;								# /STARK/databases/snpeff/4.3t
@@ -979,20 +1059,26 @@ if ((1)); then
 
 	
 	#if [ ! -d $DB_TARGET ] || [ -z "$(ls -A $DB_TARGET)" ] || (($UPDATE)); then
-	if [ ! -e $DB_TARGET ] || [ -z "$(ls -A $DB_TARGET)" ] || (($UPDATE)); then
-
-		# DB folder exists
-		if [ -d $DB_TARGET ] && [ -z "$(ls -A $DB_TARGET)" ]; then
-			rm -rf $DB_TARGET 
-			(($DEBUG)) && echo "#[INFO] folder $DB_TARGET removed because empty"
-		elif [ -d $DB_TARGET ] && ! [ -z "$(ls -A $DB_TARGET)" ]; then
-			mv $DB_TARGET $DB_TARGET.$DB_RELEASE
-			(($DEBUG)) && echo "#[INFO] folder $DB_TARGET moved to $DB_TARGET.$DB_RELEASE because not empty"
-		fi;
+	#if [ ! -e $DB_TARGET ] || [ -z "$(ls -A $DB_TARGET)" ] || (($UPDATE)); then # || (($UPDATE_SNPEFF))
+	if [ ! -e $DB_TARGET ] || [ -z "$(ls -A $DB_TARGET)" ] || (($UPDATE)) || (($UPDATE_SNPEFF)); then # 
 
 		# VERBOSE
 		(($VERBOSE)) && echo ""
 		(($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME' release '$DB_RELEASE' for '$DB_TARGET_RELEASE' [$DB_ASSEMBLY]"
+		(($VERBOSE)) && (($UPDATE_SNPEFF)) && echo "#[INFO] DATABASE '$DATABASE_NAME' release '$SNPEFF_TOOL_VERSION' will be downloaded because of tool release decrependy"
+
+
+		# DB folder exists
+		if (($BUILD)) || (($REBUILD)) || (($UPDATE)) || (($UPDATE_SNPEFF)); then
+			if [ -d $DB_TARGET ] && [ -z "$(ls -A $DB_TARGET)" ]; then
+				rm -rf $DB_TARGET 
+				(($DEBUG)) && echo "#[INFO] folder $DB_TARGET removed because empty"
+			elif [ -d $DB_TARGET ] && ! [ -z "$(ls -A $DB_TARGET)" ]; then
+				mv $DB_TARGET $DB_TARGET.$DB_RELEASE
+				(($DEBUG)) && echo "#[INFO] folder $DB_TARGET moved to $DB_TARGET.$DB_RELEASE because not empty"
+			fi;
+		fi;
+
 
 		# COPY mode
 		COPY_MODE_SNPEFF=$COPY_MODE_DEFAULT #"cp -rf"
@@ -1001,15 +1087,24 @@ if ((1)); then
 
 			SNPEFF_DATABASES_FOLDER=$DB_TMP/databases
 
+			
 
-			SNPEFF_CMD="$JAVA $JAVA_FLAGS -jar $SNPEFF download $DB_ASSEMBLY -dataDir $SNPEFF_DATABASES_FOLDER 1>$SNPEFF_DATABASES_FOLDER/STARK.SNPEFF.download.log 2>$SNPEFF_DATABASES_FOLDER/STARK.SNPEFF.download.err";
-			SNPEFF_CMD_ALT="if ((\$\$(grep 'ERROR while connecting to' $SNPEFF_DATABASES_FOLDER/STARK.SNPEFF.download.err -c))); then wget --no-verbose -O $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip \$\$(grep 'ERROR while connecting to' $SNPEFF_DATABASES_FOLDER/STARK.SNPEFF.download.err | cut -f2 | cut -d' ' -f5); unzip $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip -d $SNPEFF_DATABASES_FOLDER/; mv $SNPEFF_DATABASES_FOLDER/data/* $SNPEFF_DATABASES_FOLDER/; fi"
+			#SNPEFF_CMD="$JAVA $JAVA_FLAGS -jar $SNPEFF download $DB_ASSEMBLY -dataDir $SNPEFF_DATABASES_FOLDER 1>$SNPEFF_DATABASES_FOLDER/STARK.SNPEFF.download.log 2>$SNPEFF_DATABASES_FOLDER/STARK.SNPEFF.download.err";
+			#SNPEFF_CMD_ALT="if ((\$\$(grep 'ERROR while connecting to' $SNPEFF_DATABASES_FOLDER/STARK.SNPEFF.download.err -c))); then wget --no-verbose -O $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip \$\$(grep 'ERROR while connecting to' $SNPEFF_DATABASES_FOLDER/STARK.SNPEFF.download.err | cut -f2 | cut -d' ' -f5); unzip $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip -d $SNPEFF_DATABASES_FOLDER/; mv $SNPEFF_DATABASES_FOLDER/data/* $SNPEFF_DATABASES_FOLDER/; fi"
+
+			#SNPEFF_CMD="echo 'ERROR while connecting to' > $SNPEFF_DATABASES_FOLDER/STARK.SNPEFF.download.err"
+			#SNPEFF_CMD="echo ''"
+			SNPEFF_CMD="wget --no-verbose -O $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip \$\$($JAVA -jar $SNPEFF databases | grep '^$ASSEMBY ' | awk -F' ' 'NF>1{print \$\$NF}'); unzip $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip -d $SNPEFF_DATABASES_FOLDER/; mv $SNPEFF_DATABASES_FOLDER/data/* $SNPEFF_DATABASES_FOLDER/;"
+			#SNPEFF_CMD_ALT="if ((\$\$(grep 'ERROR while connecting to' $SNPEFF_DATABASES_FOLDER/STARK.SNPEFF.download.err -c))); then wget --no-verbose -O $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip \$\$($JAVA -jar $SNPEFF databases | grep '^hg19 ' | awk -F' ' 'NF>1{print $NF}'); unzip $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip -d $SNPEFF_DATABASES_FOLDER/; mv $SNPEFF_DATABASES_FOLDER/data/* $SNPEFF_DATABASES_FOLDER/; fi"
+
 			(($DEBUG)) && echo "#[INFO] SNPEFF CMD = $SNPEFF_CMD"
 			(($DEBUG)) && echo "#[INFO] SNPEFF CMD ALT = $SNPEFF_CMD_ALT"
 			#(($VERBOSE)) && echo "#["
+			echo "$DB_TARGET_RELEASE != $DB_RELEASE"
+			#echo "test"; exit 0
 
 			# RELEASE
-			SNPEFF_TOOL_VERSION=$(java -jar $SNPEFF -version | cut -f2)
+			#SNPEFF_TOOL_VERSION=$(java -jar $SNPEFF -version | cut -f2)
 			DB_RELEASE_FROM_DOWNLOAD=$DB_TARGET_RELEASE
 			if [ ! -z SNPEFF_VERSION ]; then
 				DB_RELEASE_FROM_DOWNLOAD=$SNPEFF_VERSION;
@@ -1017,7 +1112,6 @@ if ((1)); then
 				DB_RELEASE_FROM_DOWNLOAD=$SNPEFF_TOOL_VERSION;
 			fi;
 			
-
 			# DATABASE Infos
 			DB_INFOS_JSON='
 			{
@@ -1049,19 +1143,21 @@ if ((1)); then
 			echo "$DB_TARGET/STARK.SNPEFF.download.complete: $DBFOLDER
 				mkdir -p $SNPEFF_DATABASES_FOLDER;
 				chmod 0775 $SNPEFF_DATABASES_FOLDER;
-				-$SNPEFF_CMD
-				$SNPEFF_CMD_ALT
+				#-$SNPEFF_CMD
+				#$SNPEFF_CMD_ALT
+				$SNPEFF_CMD
 				mkdir -p $DB_RELEASE_FOLDER
 				$COPY_MODE_SNPEFF $SNPEFF_DATABASES_FOLDER/* $DB_RELEASE_FOLDER/;
 				echo '#[INFO] STARK DATABASE '$DATABASE_NAME' release '$DB_RELEASE' for '$DB_TARGET_RELEASE' [$DB_ASSEMBLY] download complete'  > $DB_RELEASE_FOLDER/STARK.SNPEFF.download.complete
 				# database release info
-				[ ! -s $DB_TARGET_DB_FOLDER/STARK.database ] && cp $DB_TMP/STARK.database $DB_TARGET_DB_FOLDER/STARK.database
+				-[ ! -s $DB_TARGET_DB_FOLDER/STARK.database ] && cp $DB_TMP/STARK.database $DB_TARGET_DB_FOLDER/STARK.database
 				cp $DB_TMP/STARK.database.release $DB_RELEASE_FOLDER
 				chmod o+r $DB_TARGET_DB_FOLDER/STARK.database $DB_RELEASE_FOLDER/STARK.database.release
 				# Links
-				[ $DB_TARGET_RELEASE != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_FOLDER
-				[ latest != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_DB_FOLDER/latest
-				[ current != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_DB_FOLDER/current
+				-[ '$SNPEFF_TOOL_VERSION' != '$DB_RELEASE' ] && ln -snf $DB_RELEASE/ $DB_TARGET_DB_FOLDER/$SNPEFF_TOOL_VERSION
+				-[ $DB_TARGET_RELEASE != $SNPEFF_TOOL_VERSION ] && ln -snf $SNPEFF_TOOL_VERSION/ $DB_TARGET_FOLDER
+				-[ latest != $SNPEFF_TOOL_VERSION ] && ln -snf $SNPEFF_TOOL_VERSION/ $DB_TARGET_DB_FOLDER/latest
+				-(($CURRENT)) && [ current != $SNPEFF_TOOL_VERSION ] && ln -snf $SNPEFF_TOOL_VERSION/ $DB_TARGET_DB_FOLDER/current
 				# Clear
 				rm -rf $DB_TMP;
 			" >> $MK
@@ -1082,14 +1178,18 @@ fi;
 ###########
 
 
-if ((1)); then
+#if ((1)); then
 
-	# DB
-	DATABASE="annovar"
-	DATABASE_NAME="ANNOVAR"
-	DATABASE_FULLNAME="ANNOVAR Annotations"
-	DATABASE_WEBSITE="https://doc-openbio.readthedocs.io/projects/annovar/"
-	DATABASE_DESCRIPTION="ANNOVAR is an efficient software tool to utilize update-to-date information to functionally annotate genetic variants detected from diverse genomes"
+# DB
+DATABASE="annovar"
+DATABASE_NAME="ANNOVAR"
+DATABASE_FULLNAME="ANNOVAR Annotations"
+DATABASE_WEBSITE="https://doc-openbio.readthedocs.io/projects/annovar/"
+DATABASE_DESCRIPTION="ANNOVAR is an efficient software tool to utilize update-to-date information to functionally annotate genetic variants detected from diverse genomes"
+
+
+if in_array $DATABASE $DATABASES_LIST || in_array ALL $DATABASES_LIST; then
+
 
 	# DB TARGET
 	DB_TARGET=$ANNOVAR_DATABASES;								# /STARK/databases/annovar/current
@@ -1114,6 +1214,10 @@ if ((1)); then
 	#if [ ! -d $DB_TARGET ] || [ -z "$(ls -A $DB_TARGET)" ] || (($UPDATE)); then
 	if [ ! -e $DB_TARGET ] || [ -z "$(ls -A $DB_TARGET)" ] || (($UPDATE)); then
 	
+		# VERBOSE
+		(($VERBOSE)) && echo ""
+		(($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME' release '$DB_RELEASE' for '$DB_TARGET_RELEASE' [$DB_ASSEMBLY]"
+
 		# DB folder exists
 		if [ -d $DB_TARGET ] && [ -z "$(ls -A $DB_TARGET)" ]; then
 			rm -rf $DB_TARGET 
@@ -1123,9 +1227,6 @@ if ((1)); then
 			(($DEBUG)) && echo "#[INFO] folder $DB_TARGET moved to $DB_TARGET.$DB_RELEASE because not empty"
 		fi;
 
-		# VERBOSE
-		(($VERBOSE)) && echo ""
-		(($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME' release '$DB_RELEASE' for '$DB_TARGET_RELEASE' [$DB_ASSEMBLY]"
 
 		# COPY mode
 		COPY_MODE_ANNOVAR=$COPY_MODE_DEFAULT #"cp -rf"
@@ -1212,13 +1313,13 @@ if ((1)); then
 				# Download Complete file
 				echo '#[INFO] STARK DATABASE '$DATABASE_NAME' release '$DB_RELEASE' for '$DB_TARGET_RELEASE' [$DB_ASSEMBLY] download complete'  > $DB_RELEASE_FOLDER/STARK.ANNOVAR.download.complete
 				# Database release info
-				[ ! -s $DB_TARGET_DB_FOLDER/STARK.database ] && cp $DB_TMP/STARK.database $DB_TARGET_DB_FOLDER/STARK.database
+				-[ ! -s $DB_TARGET_DB_FOLDER/STARK.database ] && cp $DB_TMP/STARK.database $DB_TARGET_DB_FOLDER/STARK.database
 				cp $DB_TMP/STARK.database.release $DB_RELEASE_FOLDER
 				chmod o+r $DB_TARGET_DB_FOLDER/STARK.database $DB_RELEASE_FOLDER/STARK.database.release
 				# Links
-				[ $DB_TARGET_RELEASE != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_FOLDER
-				[ latest != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_DB_FOLDER/latest
-				[ current != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_DB_FOLDER/current
+				-[ $DB_TARGET_RELEASE != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_FOLDER
+				-[ latest != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_DB_FOLDER/latest
+				-(($CURRENT)) && [ current != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_DB_FOLDER/current
 				# Clear
 				rm -rf $DB_TMP;
 			" >> $MK
@@ -1253,9 +1354,9 @@ if ((1)); then
 		echo "#[INFO] DATABASES DOWNLOADING..."
 		if (($VERBOSE)) || (($DEBUG)); then
 			if (($DEBUG)); then
-				make -k -j $THREADS $MK_OPTION -s -f $MK all;
+				make -k -j $THREADS $MK_OPTION -f $MK all;
 			elif (($VERBOSE)); then
-				make -k -j $THREADS $MK_OPTION -s -f $MK all;
+				make -k -j $THREADS $MK_OPTION -f $MK all;
 			fi;
 		else
 			make -k -j $THREADS $MK_OPTION -f $MK all 1>$MK_LOG 2>$MK_ERR;
@@ -1276,8 +1377,8 @@ if (($DEBUG)); then
 	echo "# LOG=$MK_LOG"
 	echo ""
 	cat -n $MK;
-	#cat -n $MK_LOG;
-	#cat -n $MK_ERR;
+	#(($DEBUG)) && cat -n $MK_LOG;
+	#(($DEBUG)) && cat -n $MK_ERR;
 fi;
 
 

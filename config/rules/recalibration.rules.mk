@@ -5,12 +5,7 @@
 # Author: Antony Le Bechec
 ############################
 
-# TOOLS
-JAVA?=java
 
-# OPTIONS
-GATK?=$(NGSbin)/GenomeAnalysisTK.jar
-#GATK_BQSR= -dcov 10000 -nt 2
 
 
 # BAM RECALIBRATION

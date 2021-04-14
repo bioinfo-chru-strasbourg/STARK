@@ -20,12 +20,8 @@ MK_DATE="22/03/2019"
 # 0.9.3.7b-22/03/2019: Add --dontUseSoftClippedBases for GATKHC
 
 
-# TOOLS
-GATK?=$(NGSbin)/GenomeAnalysisTK.jar
-GATKIG?=$(NGSbin)/IndelGenotyper.jar
 
 # OPTIONS
-JAVA_FLAGS?= -Xmx8g
 DCOV=1000
 DFRAC=1
 MBQ_HC=17
@@ -686,29 +682,6 @@ GATK4HC_FLAGS= --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC) --min-pruning $(MINPRUNING_GAT
 	-if [ ! -e $@ ]; then cp $*.empty.vcf $@; fi;
 	-if [ ! -e $@ ]; then touch $@; fi;
 	-rm -f $@.idx
-
-
-
-
-####################
-# IndelGenotyperV2 #
-####################
-
-GATKIG_FLAGS= -minFraction 0.01 -minCnt 1 -B:dbsnp,vcf $(VCFDBSNP) -rf BadCigar
-#-mnr 10000000
-
-%.gatkIG.vcf: %.bam %.bam.bai %.genome %.design.bed.interval_list #%.from_manifest.interval_list
-	if [ ! "$(GATKIG)" == ""] && [ -e $(GATKIG) ]; \
-	then \
-		$(JAVA) $(JAVA_FLAGS) -jar $(GATKIG) $(GATKIG_FLAGS) \
-			-T IndelGenotyperV2 \
-			-R `cat $*.genome` \
-			$$(if [ "`grep ^ -c $*.design.bed.interval_list`" == "0" ]; then echo ""; else echo "-L $*.design.bed.interval_list"; fi;) \
-			-I $< \
-			-o $@ ; \
-	fi;
-	if [ ! -e $@ ]; then touch $@; fi;
-	-rm $@.idx
 
 
 

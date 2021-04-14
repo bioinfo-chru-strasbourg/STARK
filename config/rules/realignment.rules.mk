@@ -9,10 +9,6 @@ MK_DATE="10/03/2015"
 # Release note
 # 10/03/2015: change genome reference location, in the file %.genome
 
-# TOOLS
-JAVA?=java
-GATK?=$(NGSbin)/GenomeAnalysisTK.jar
-SAMTOOLS?=$(NGSbin)/samtools
 
 ## INTERVALS
 ##############

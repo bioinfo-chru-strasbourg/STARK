@@ -89,7 +89,8 @@ ENV MAKE_PARAM=" "
 # SOURCES #
 ###########
 
-ADD . $SOURCES
+# Copy sources packages, scripts and tools
+ADD ./sources $SOURCES/sources
 
 
 
@@ -121,11 +122,11 @@ RUN echo "#[INFO] STARK installation configuration" && \
 
 
 
+##################
+# SYSTEM INSTALL #
+##################
+# This will install system packages, python packages and scripts to install tools
 
-
-###############
-# YUM INSTALL #
-###############
 
 ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git lzma lzma-devel make ncurses-devel perl perl-Data-Dumper perl-Digest-MD5 perl-Switch perl-devel perl-Tk tbb-devel unzip rsync wget which xz xz-devel zlib zlib-devel zlib2 zlib2-devel docker java-1.7.0 java-1.8.0 python2 python2-pip python3 python3-pip curl-devel"
 #ENV YUM_INSTALL=" wget rsync python2 python2-pip python3 python3-pip"
@@ -140,6 +141,10 @@ ENV REPO_SYSTEM_GIT="$REPO/sources.system.tar.gz?path=sources/system"
 ENV REPO_SYSTEM_HTTP="$REPO/sources/system/"
 ENV REPO_PYTHON_GIT="$REPO/sources.python.tar.gz?path=sources/python"
 ENV REPO_PYTHON_HTTP="$REPO/sources/python/"
+
+ENV GET_TOOL_SOURCE=$SOURCES/$SOURCES_FOLDER/get_tool_source.sh
+ENV TOOL_INIT=$SOURCES/$SOURCES_FOLDER/tool_init.sh
+ENV TOOL_CHECK=$SOURCES/$SOURCES_FOLDER/tool_check.sh
 
 
 RUN echo "#[INFO] System installation" && \
@@ -282,7 +287,7 @@ RUN echo "#[INFO] System installation" && \
 	# CLEAN
 	echo "#[INFO] System Cleaning" && \
 	if (($REMOVE_SOURCES)); then \
-		rm -rf $SOURCES/$SOURCES_FOLDER/* ; \
+		rm -rf $SOURCES/$SOURCES_FOLDER/system $SOURCES/$SOURCES_FOLDER/python  ; \
 		echo "#[INFO] System Remove Sources" ; \
 	fi && \
 	yum clean all && \
@@ -290,15 +295,6 @@ RUN echo "#[INFO] System installation" && \
 	echo "#[INFO] System Clean" && \
 	echo "#";
 
-
-
-##################
-# SOURCE SCRIPTS #
-##################
-
-ENV GET_TOOL_SOURCE=$SOURCES/$SOURCES_FOLDER/get_tool_source.sh
-ENV TOOL_INIT=$SOURCES/$SOURCES_FOLDER/tool_init.sh
-ENV TOOL_CHECK=$SOURCES/$SOURCES_FOLDER/tool_check.sh
 
 RUN echo "#[INFO] Sources scripts" && \
 	if [ -e $GET_TOOL_SOURCE ]; then \
@@ -331,9 +327,9 @@ RUN echo "#[INFO] Sources scripts" && \
 	fi && \
 	chmod u+x $GET_TOOL_SOURCE && \
 	if [ -e $TOOL_INIT ]; then \
-		echo "#[INFO] INIT TOOL script exists" ; \
+		echo "#[INFO] TOOL INIT script exists" ; \
 	elif $(wget --no-cache --progress=bar:force -nv --quiet "$REPO/$SOURCES_FOLDER/$(basename $TOOL_INIT)" -O $TOOL_INIT); then \
-		echo "#[INFO] INIT TOOL script downloaded from REPO '$REPO/$SOURCES_FOLDER/$(basename $TOOL_INIT)'" ; \
+		echo "#[INFO] TOOLS INIT script downloaded from REPO '$REPO/$SOURCES_FOLDER/$(basename $TOOL_INIT)'" ; \
 	else \
 		mkdir -p $(dirname $TOOL_INIT) ; \
 		echo 'echo "#[INFO] TOOL $TOOL_NAME/$TOOL_VERSION" && \
@@ -348,21 +344,25 @@ RUN echo "#[INFO] Sources scripts" && \
 		echo "#[INFO] TOOL preparation" && \
 		mkdir -p $TOOL_SOURCE_BUILD && \
 		mkdir -p $TOOL_DEST/bin && \
-		ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current' > $TOOL_INIT ; \
-		echo "#[INFO] INIT TOOL script written" ; \
+		echo "#[INFO] TOOL release as current (forced)" && \
+		ln -snf $TOOL_VERSION/ $TOOLS/$TOOL_NAME/previous && \
+		if [ -e $TOOLS/$TOOL_NAME/current ]; then ln -snf $(basename $(realpath $TOOLS/$TOOL_NAME/current))/ $TOOLS/$TOOL_NAME/previous; fi && \
+		ln -snf $TOOL_VERSION/ $TOOLS/$TOOL_NAME/current && \
+		ln -snf $TOOL_VERSION/ $TOOLS/$TOOL_NAME/latest' > $TOOL_INIT ; \
+		echo "#[INFO] TOOLS INIT script written" ; \
 	fi && \
 	chmod u+x $TOOL_INIT && \
 	if [ -e $TOOL_CHECK ]; then \
-		echo "#[INFO] INIT TOOL script exists" ; \
+		echo "#[INFO] TOOLS CHECK script exists" ; \
 	elif $(wget --no-cache --progress=bar:force -nv --quiet "$REPO/$SOURCES_FOLDER/$(basename $TOOL_CHECK)" -O $TOOL_CHECK); then \
-		echo "#[INFO] INIT TOOL script downloaded from REPO '$REPO/$SOURCES_FOLDER/$(basename $TOOL_CHECK)'" ; \
+		echo "#[INFO] TOOLS CHECK script downloaded from REPO '$REPO/$SOURCES_FOLDER/$(basename $TOOL_CHECK)'" ; \
 	else \
 		mkdir -p $(dirname $TOOL_CHECK) ; \
 		echo 'echo "#[INFO] TOOL cleaning" && \
 		rm -rf $TOOL_SOURCE_BUILD && \
 		if (($REMOVE_SOURCES)); then rm -rf $SOURCES/$SOURCES_FOLDER/tools/$TOOL_NAME; fi && \
 		echo "#[INFO] TOOL $TOOL_NAME/$TOOL_VERSION installed" ;' > $TOOL_CHECK ; \
-		echo "#[INFO] INIT TOOL script written" ; \
+		echo "#[INFO] TOOLS CHECK script written" ; \
 	fi && \
 	chmod u+x $TOOL_CHECK && \
 	echo "#";
@@ -372,6 +372,7 @@ RUN echo "#[INFO] Sources scripts" && \
 ################
 # DEPENDENCIES #
 ################
+
 
 
 ### TOOL INSTALLATION CODE FORMAT
@@ -540,7 +541,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 # TOOL INFO
 ENV TOOL_NAME="htslib"
-ENV TOOL_VERSION="1.11"
+ENV TOOL_VERSION="1.12"
 ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.tar.bz2"
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/samtools/$TOOL_NAME/releases/download/$TOOL_VERSION/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
@@ -561,7 +562,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 # TOOL INFO
 ENV TOOL_NAME="bcftools"
-ENV TOOL_VERSION="1.11"
+ENV TOOL_VERSION="1.12"
 ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.tar.bz2"
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/samtools/$TOOL_NAME/releases/download/$TOOL_VERSION/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
@@ -603,7 +604,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 # TOOL INFO
 ENV TOOL_NAME="bedtools"
-ENV TOOL_VERSION="2.29.2"
+ENV TOOL_VERSION="2.30.0"
 ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.tar.gz"
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/arq5x/bedtools2/releases/download/v$TOOL_VERSION/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
@@ -733,7 +734,8 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 # TOOL INFO
 ENV TOOL_NAME="gatk"
-ENV TOOL_VERSION="4.1.9.0"
+#ENV TOOL_VERSION="4.1.9.0"
+ENV TOOL_VERSION="4.2.0.0"
 ENV TOOL_TARBALL="gatk-$TOOL_VERSION.zip"
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/broadinstitute/gatk/releases/download/$TOOL_VERSION/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
@@ -755,7 +757,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 # TOOL INFO
 ENV TOOL_NAME="howard"
-ENV TOOL_VERSION="0.9.15.3"
+ENV TOOL_VERSION="0.9.15.4"
 ENV TOOL_TARBALL="archive.tar.gz"
 ENV TOOL_SOURCE_EXTERNAL="https://gitlab.bioinfo-diag.fr/Strasbourg/HOWARD/repository/$TOOL_VERSION/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
@@ -935,7 +937,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 # TOOL INFO
 ENV TOOL_NAME="samtools"
-ENV TOOL_VERSION="1.11"
+ENV TOOL_VERSION="1.12"
 ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.tar.bz2"
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/samtools/$TOOL_NAME/releases/download/$TOOL_VERSION/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
@@ -962,7 +964,7 @@ ENV TOOL_SOURCE_EXTERNAL="https://sourceforge.net/projects/snpeff/files/$TOOL_TA
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
 #ENV TOOL_PARAM_DATABASE_FOLDER_LINK=$DATABASES/snpeff/4.3t
-ENV TOOL_PARAM_DATABASE_FOLDER_LINK=$DATABASES/snpeff/current
+ENV TOOL_PARAM_DATABASE_FOLDER_LINK=$DATABASES/snpeff/$TOOL_VERSION
 ENV TOOL_PARAM_DATABASE_FOLDER=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/data
 
 # TOOL INSTALLATION
@@ -972,10 +974,39 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	cp $TOOL_SOURCE_BUILD/*/*jar $TOOL_DEST/bin/ && \
 	cp $TOOL_SOURCE_BUILD/*/*config $TOOL_DEST/bin/ && \
 	mkdir -p $TOOL_PARAM_DATABASE_FOLDER_LINK && \
-	mkdir -p $TOOL_PARAM_DATABASE_FOLDER && \
-	ln -s $TOOL_PARAM_DATABASE_FOLDER_LINK $TOOL_PARAM_DATABASE_FOLDER && \
+	ln -snf $TOOL_PARAM_DATABASE_FOLDER_LINK/ $TOOL_PARAM_DATABASE_FOLDER && \
     $TOOL_CHECK ;
 
+#mkdir -p $TOOL_PARAM_DATABASE_FOLDER && \
+	
+
+
+##########
+# SNPEFF #
+##########
+
+# TOOL INFO
+ENV TOOL_NAME="snpeff"
+ENV TOOL_VERSION="5.0e"
+ENV TOOL_TARBALL="snpEff_latest_core.zip"
+ENV TOOL_SOURCE_EXTERNAL="https://snpeff.blob.core.windows.net/versions/$TOOL_TARBALL"
+ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+# TOOL PARAMETERS
+ENV TOOL_PARAM_DATABASE_FOLDER_LINK=$DATABASES/snpeff/$TOOL_VERSION
+ENV TOOL_PARAM_DATABASE_FOLDER=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/data
+
+# TOOL INSTALLATION
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
+	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
+	cp $TOOL_SOURCE_BUILD/*/*jar $TOOL_DEST/bin/ && \
+	cp $TOOL_SOURCE_BUILD/*/*config $TOOL_DEST/bin/ && \
+	mkdir -p $TOOL_PARAM_DATABASE_FOLDER_LINK && \
+	ln -snf $TOOL_PARAM_DATABASE_FOLDER_LINK/ $TOOL_PARAM_DATABASE_FOLDER && \
+    $TOOL_CHECK ;
+
+#mkdir -p $TOOL_PARAM_DATABASE_FOLDER && \
+	
 
 
 ###########

@@ -107,11 +107,6 @@ BAM_VALIDATION=	$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(foreach ALIGNER,$(ALIGNER
 	$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(foreach PIPELINE,$(PIPELINES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).$(call aligner,$(PIPELINE)).validation.bam.bai ))
 
 
-UBAM=	$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).unaligned.bam ) \
-	$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).unaligned.bam.bai ) 
-
-
-
 FASTQC_METRICS=$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).fastqc/metrics )
 
 SEQUENCING_METRICS=$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).sequencing/metrics )
@@ -128,37 +123,48 @@ FINAL=$(SAMPLE) $(BAM) $(VCF) $(SEQUENCING_METRICS) $(BAM_VALIDATION) $(CRAM)
 
 REPORTS=$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).reports/$(call sample,$(RUN_SAMPLE)).$(ANALYSIS_DATE).report )
 
+# REPORT_FILES=	$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).reports/$(call sample,$(RUN_SAMPLE)).full.vcf ) \
+# 		$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).reports/$(call sample,$(RUN_SAMPLE)).full.vcf.idx ) \
+# 		$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).reports/$(call sample,$(RUN_SAMPLE)).full.vcf.gz ) \
+# 		$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).reports/$(call sample,$(RUN_SAMPLE)).full.vcf.gz.tbi ) \
+# 		$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).reports/$(call sample,$(RUN_SAMPLE)).full.tsv ) \
+# 		$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).reports/$(call sample,$(RUN_SAMPLE)).final.vcf ) \
+# 		$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).reports/$(call sample,$(RUN_SAMPLE)).final.vcf.idx ) \
+# 		$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).reports/$(call sample,$(RUN_SAMPLE)).final.vcf.gz ) \
+# 		$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).reports/$(call sample,$(RUN_SAMPLE)).final.vcf.gz.tbi ) \
+# 		$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).reports/$(call sample,$(RUN_SAMPLE)).final.tsv ) \
+# 		$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).reports/$(call sample,$(RUN_SAMPLE)).final.vcf.metrics/metrics ) \
+# 		$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).reports/$(call sample,$(RUN_SAMPLE)).full.vcf.metrics/metrics ) \
+# 		$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).reports/$(call sample,$(RUN_SAMPLE)).config ) \
 
-REPORT_FILES=	$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).reports/$(call sample,$(RUN_SAMPLE)).full.vcf ) \
+
+VCF_REPORT_FILES=	$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).reports/$(call sample,$(RUN_SAMPLE)).full.vcf ) \
 		$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).reports/$(call sample,$(RUN_SAMPLE)).full.vcf.idx ) \
 		$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).reports/$(call sample,$(RUN_SAMPLE)).full.vcf.gz ) \
 		$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).reports/$(call sample,$(RUN_SAMPLE)).full.vcf.gz.tbi ) \
-		$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).reports/$(call sample,$(RUN_SAMPLE)).full.tsv ) \
 		$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).reports/$(call sample,$(RUN_SAMPLE)).final.vcf ) \
 		$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).reports/$(call sample,$(RUN_SAMPLE)).final.vcf.idx ) \
 		$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).reports/$(call sample,$(RUN_SAMPLE)).final.vcf.gz ) \
-		$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).reports/$(call sample,$(RUN_SAMPLE)).final.vcf.gz.tbi ) \
-		$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).reports/$(call sample,$(RUN_SAMPLE)).final.tsv ) \
-		$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).reports/$(call sample,$(RUN_SAMPLE)).final.vcf.metrics/metrics ) \
-		$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).reports/$(call sample,$(RUN_SAMPLE)).full.vcf.metrics/metrics ) \
+		$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).reports/$(call sample,$(RUN_SAMPLE)).final.vcf.gz.tbi )
 
 
-REPORT_FILES_EXT= final.vcf final.vcf.idx final.vcf.gz final.vcf.gz.tbi full.vcf full.vcf.idx full.vcf.gz full.vcf.gz.tbi final.tsv full.tsv $(ANALYSIS_DATE).final.vcf $(ANALYSIS_DATE).final.vcf.idx $(ANALYSIS_DATE).final.vcf.gz $(ANALYSIS_DATE).final.vcf.gz.tbi $(ANALYSIS_DATE).full.vcf $(ANALYSIS_DATE).full.vcf.idx $(ANALYSIS_DATE).full.vcf.gz $(ANALYSIS_DATE).full.vcf.gz.tbi $(ANALYSIS_DATE).final.tsv $(ANALYSIS_DATE).full.tsv
+
+REPORT_FILES_EXT= final.vcf final.vcf.idx final.vcf.gz final.vcf.gz.tbi full.vcf full.vcf.idx full.vcf.gz full.vcf.gz.tbi final.tsv full.tsv final.vcf.metrics/metrics full.vcf.metrics/metrics config  $(ANALYSIS_DATE).final.vcf $(ANALYSIS_DATE).final.vcf.idx $(ANALYSIS_DATE).final.vcf.gz $(ANALYSIS_DATE).final.vcf.gz.tbi $(ANALYSIS_DATE).full.vcf $(ANALYSIS_DATE).full.vcf.idx $(ANALYSIS_DATE).full.vcf.gz $(ANALYSIS_DATE).full.vcf.gz.tbi $(ANALYSIS_DATE).final.tsv $(ANALYSIS_DATE).full.tsv $(ANALYSIS_DATE).config
 
 
-REPORT_FILES2=$(foreach EXT,$(REPORT_FILES_EXT), $(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).reports/$(call sample,$(RUN_SAMPLE)).$(EXT) ) )
+REPORT_FILES=$(foreach EXT,$(REPORT_FILES_EXT), $(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).reports/$(call sample,$(RUN_SAMPLE)).$(EXT) ) )
 
 
 
 ifdef FINAL_REPORT
-	FINAL_REPORT_FILES=$(FINAL_REPORT) $(REPORT_FILES2)
+	FINAL_REPORT_FILES=$(FINAL_REPORT) $(REPORT_FILES)
 endif
 
 
 # Load rules
 include $(RULES)
 
-all: $(FINAL) $(FINAL_REPORT) $(FINAL_REPORT_FILES) $(FINAL_REPORT).samples.vcf.gz $(FINAL_REPORT).samples.tsv $(FINAL_REPORT).reads.metrics $(JSON) #$(FINAL_REPORT_FULL) $(FINAL_REPORT_FULL_VCF)
+all: $(FINAL) $(FINAL_REPORT) $(FINAL_REPORT_FILES) $(FINAL_REPORT).variants $(FINAL_REPORT).variants $(FINAL_REPORT).metrics $(FINAL_REPORT).config $(JSON) #$(FINAL_REPORT_FULL) $(FINAL_REPORT_FULL_VCF)
 	# List of files to generate
 	echo $^
 	# CLEANING

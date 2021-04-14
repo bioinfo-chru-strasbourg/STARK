@@ -10,10 +10,6 @@ MK_DATE="21/04/2016"
 # 21/04/2016-V0.9b: Create SNPEFF
 
 
-#HOWARD
-SNPEFF?=$(NGSscripts)
-SNPEFF_CONFIG?=$(SNPEFF)/snpEff.config
-
 
 %.snpeff$(POST_ANNOTATION).vcf: %.vcf
 	mkdir -p $@.stats

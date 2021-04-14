@@ -166,8 +166,11 @@ export NGS_SCRIPTS=$STARK_FOLDER_BIN			#"$( cd "$( dirname "${BASH_SOURCE[0]}" )
 # REPOSITORY FOLDER
 export RESULTS_FOLDER_BY_GROUP_PROJECT_COPY=$FOLDER_REPOSITORY	# Copy data into group and project (if defined)
 export RESULTS_SUBFOLDER_DATA="STARK";				# Copy sample results in a SUBFOLDER
-export REPOSITORY_FILE_PATTERNS_CORE='$SAMPLE.reports/$SAMPLE.final.vcf.gz $SAMPLE.reports/$SAMPLE.full.vcf.gz $SAMPLE.reports/$SAMPLE.final.tsv $SAMPLE.reports/*.*.config.txt $SAMPLE.reports/*.report*.html $SAMPLE.reports/*.report.html.folder:FOLDER $SAMPLE.bed $SAMPLE.manifest $SAMPLE*.genes $SAMPLE*.genes.bed $SAMPLE*.transcripts $SAMPLE*.tag $SAMPLE.*.validation.bam $SAMPLE.*validation.bam.bai $SAMPLE.analysis.json';
-export ARCHIVES_FILE_PATTERNS_CORE='$SAMPLE.reports/$SAMPLE.final.vcf.gz $SAMPLE.reports/$SAMPLE.full.vcf.gz $SAMPLE.reports/$SAMPLE.final.tsv $SAMPLE.reports/*.*.config.txt $SAMPLE.reports/*.report*.html $SAMPLE.reports/*.report.html.folder:FOLDER $SAMPLE.bed $SAMPLE.manifest $SAMPLE*.genes $SAMPLE*.genes.bed $SAMPLE*.transcripts $SAMPLE*.tag $SAMPLE.archive.cram $SAMPLE.archive.cram.crai $SAMPLE.analysis.json';
+#export REPOSITORY_FILE_PATTERNS_CORE='$SAMPLE.reports/$SAMPLE.final.vcf.gz $SAMPLE.reports/$SAMPLE.final.Panel*.vcf.gz $SAMPLE.reports/$SAMPLE.final.tsv $SAMPLE.reports/$SAMPLE.final.Panel*.tsv $SAMPLE.reports/$SAMPLE.full.vcf.gz $SAMPLE.reports/*.*.config $SAMPLE.reports/*.report*.html $SAMPLE.reports/*.report.html.folder:FOLDER $SAMPLE.bed $SAMPLE.manifest $SAMPLE*.genes $SAMPLE*.genes.bed $SAMPLE*.transcripts $SAMPLE*.tag $SAMPLE.*.validation.bam $SAMPLE.*validation.bam.bai $SAMPLE.analysis.json';
+#export REPOSITORY_FILE_PATTERNS_CORE='$SAMPLE.reports/$SAMPLE.final.vcf.gz $SAMPLE.reports/$SAMPLE.final.Panel*.vcf.gz $SAMPLE.reports/$SAMPLE.final.tsv $SAMPLE.reports/$SAMPLE.final.Panel*.tsv $SAMPLE.reports/$SAMPLE.full.vcf.gz $SAMPLE.reports/$SAMPLE.full.tsv $SAMPLE.reports/*.*.config $SAMPLE.reports/*.report*.html $SAMPLE.reports/*.report.html.folder:FOLDER $SAMPLE.bed $SAMPLE.manifest $SAMPLE*.genes $SAMPLE*.genes.bed $SAMPLE*.transcripts $SAMPLE*.tag $SAMPLE.*.validation.bam $SAMPLE.*validation.bam.bai $SAMPLE.analysis.json';
+#export REPOSITORY_FILE_PATTERNS_CORE='$SAMPLE.reports/$SAMPLE.final.vcf.gz $SAMPLE.reports/$SAMPLE.final.Design.tsv $SAMPLE.reports/$SAMPLE.final.Panel*.tsv $SAMPLE.reports/*.*.config $SAMPLE.reports/*.report*.html $SAMPLE.reports/*.report.html.folder:FOLDER $SAMPLE.bed $SAMPLE.manifest $SAMPLE*.genes.bed $SAMPLE*.transcripts $SAMPLE*.tag $SAMPLE.*.validation.bam $SAMPLE.*validation.bam.bai';
+export REPOSITORY_FILE_PATTERNS_CORE='$SAMPLE.reports/$SAMPLE.final.vcf.gz $SAMPLE.reports/$SAMPLE.final.Design.vcf.gz $SAMPLE.reports/$SAMPLE.final.Panel*.vcf.gz $SAMPLE.reports/$SAMPLE.final.Design.tsv $SAMPLE.reports/$SAMPLE.final.Panel*.tsv $SAMPLE.reports/*.*.config $SAMPLE.reports/*.report*.html $SAMPLE.reports/*.report.html.folder:FOLDER $SAMPLE.*.validation.bam $SAMPLE.*.validation.bam.bai $SAMPLE.*.bam.metrics/$SAMPLE.*.validation.flags.*.bed';
+export ARCHIVES_FILE_PATTERNS_CORE='$SAMPLE.reports/$SAMPLE.final.vcf.gz $SAMPLE.reports/$SAMPLE.full.vcf.gz $SAMPLE.reports/$SAMPLE.final.tsv $SAMPLE.reports/*.*.config $SAMPLE.reports/*.report*.html $SAMPLE.reports/*.report.html.folder:FOLDER $SAMPLE.bed $SAMPLE.manifest $SAMPLE*.genes $SAMPLE*.genes.bed $SAMPLE*.transcripts $SAMPLE*.tag $SAMPLE.archive.cram $SAMPLE.archive.cram.crai $SAMPLE.analysis.json';
 # Copy some sample results files in the root sample folder, if any SUBFOLDER defined
 #export RESULTS_SUBFOLDER_ROOT_FILE_PATTERNS=$RESULTS_SUBFOLDER_ROOT_FILE_PATTERNS' $SAMPLE.reports/$SAMPLE.final.vcf $SAMPLE.reports/$SAMPLE.full.vcf $SAMPLE.reports/$SAMPLE.final.txt $SAMPLE.reports/$SAMPLE.full.txt *.reports/*.report.pdf *.reports/latex*/*pdf';
 #export RESULTS_SUBFOLDER_ROOT_FILE_PATTERNS=$RESULTS_SUBFOLDER_ROOT_FILE_PATTERNS' $SAMPLE.reports/$SAMPLE.final.vcf $SAMPLE.reports/$SAMPLE.final.vcf.idx $SAMPLE.reports/$SAMPLE.final.vcf.gz $SAMPLE.reports/$SAMPLE.final.vcf.gz.tbi $SAMPLE.reports/$SAMPLE.full.vcf $SAMPLE.reports/$SAMPLE.full.vcf.idx $SAMPLE.reports/$SAMPLE.full.vcf.gz $SAMPLE.reports/$SAMPLE.full.vcf.gz.tbi $SAMPLE.reports/$SAMPLE.final.tsv $SAMPLE.reports/$SAMPLE.full.tsv *.reports/*.report.pdf $SAMPLE.bed';
@@ -529,6 +532,7 @@ export METRICS_SNPEFF
 export PRIORITIZE_PIPELINES_LIST
 
 
+
 ### FASTQ
 
 # Demultiplexing adaptated stringency
@@ -536,13 +540,18 @@ export PRIORITIZE_PIPELINES_LIST
 [ "$ADAPTER_STRINGENCY" == "" ] && ADAPTER_STRINGENCY=0.9
 export ADAPTER_STRINGENCY
 
+# FASTQ compression level for demultiplexing FASTQ files
+# zlib compression level (1-9) used for FASTQ files during demultiplexing
+# Used by BCL2FASTQ
+# If FASTQ_DEMULTIPLEXING_KEEP=1, we suggest a high level of compression (at least 5)
+[ "$FASTQ_DEMULTIPLEXING_COMPRESSION_LEVEL" == "" ] && FASTQ_DEMULTIPLEXING_COMPRESSION_LEVEL=1
+export FASTQ_DEMULTIPLEXING_COMPRESSION_LEVEL
 
-# FASTQ compression level
+# FASTQ compression level for main FASTQ files
 # zlib compression level (1-9) used for FASTQ files
-# Used by BCL2FASTQ and FASTP
-[ "$FASTQ_COMPRESSION_LEVEL" == "" ] && FASTQ_COMPRESSION_LEVEL=4
+# Used by FASTP
+[ "$FASTQ_COMPRESSION_LEVEL" == "" ] && FASTQ_COMPRESSION_LEVEL=9
 export FASTQ_COMPRESSION_LEVEL
-
 
 # DETECT ADAPTER FOR PE
 # Autodetect adapter for paired end
@@ -551,12 +560,10 @@ export FASTQ_COMPRESSION_LEVEL
 [ "$DETECT_ADAPTER_FOR_PE" == "" ] && DETECT_ADAPTER_FOR_PE=0
 export DETECT_ADAPTER_FOR_PE
 
-
 # FASTQ Read quality filtering
 # Read Quality threshold. Read quality below will be removed
 # Default: null
 export FASTQ_QUALITY_FILTERING
-
 
 # UMI extract tag
 # Set the UMI Barcode pattern
@@ -565,13 +572,16 @@ export FASTQ_QUALITY_FILTERING
 # See UMI TOOLS documentatin for more information
 export UMI_BARCODE_PATTERN
 
-
 # Barcode tag
 # Barcode to use for Mark Duplicates
 # If not null, Mark Duplicates will consider this tag (default null)
 # e.g.: BARCODE_TAG="BC" for 10X Genomics, BARCODE_TAG="BX" for UMI
 # See PICARD documentation for more information
 export BARCODE_TAG
+
+# Keep demultiplexing FASTQ
+# Keep fastq demultiplexed or from input reads/reads2
+FASTQ_DEMULTIPLEXING_KEEP=0
 
 
 
@@ -684,11 +694,21 @@ export POST_ANNOTATION
 
 
 # BAM COMPRESSION
-# Final BAM copression level (unaligned.bam, ALIGNER.bam)
+# Final BAM compression level (ALIGNER.bam)
 if [ -z $BAM_COMPRESSION ] || ! [[ $BAM_COMPRESSION =~ ^[0-9]$ ]]; then
 	BAM_COMPRESSION=9
 fi;
 export BAM_COMPRESSION
+
+
+# BAM VALIDATION COMPRESSION
+# Validation BAM compression level (ALIGNER.validation.bam)
+if [ -z $BAM_VALIDATION_COMPRESSION ] || ! [[ $BAM_VALIDATION_COMPRESSION =~ ^[0-9]$ ]]; then
+	BAM_VALIDATION_COMPRESSION=5
+fi;
+export BAM_VALIDATION_COMPRESSION
+
+
 
 
 # CRAM OPTIONS

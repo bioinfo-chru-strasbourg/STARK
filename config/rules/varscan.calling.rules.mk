@@ -21,12 +21,6 @@ MK_DATE="27/09/2019"
 
 
 
-# Parameters
-# VARSCAN
-VARSCAN?=$(NGSbin)/varscan.jar
-CAP?=/STARK/tools/cap/current/bin/CAP
-CAP_SOFTCLIPTOQ0?=$(CAP)/CAP.SoftClipToQ0.pl
-
 
 ####################
 # SAMTOOLS mpileup

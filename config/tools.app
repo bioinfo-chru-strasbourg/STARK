@@ -70,7 +70,7 @@ TOOLS_LIST=$TOOLS_LIST" BCL2FASTQ"
 
 # SAMTOOLS
 export SAMTOOLS=$NGS_TOOLS/samtools/current/bin/samtools		# BIN
-export SAMTOOLS_VERSION=1.11									# VER
+export SAMTOOLS_VERSION=1.12									# VER
 export SAMTOOLS_DESCRIPTION="Reading/writing/editing/indexing/viewing SAM/BAM/CRAM format"
 export SAMTOOLS_REF="Li H.*, Handsaker B.*, Wysoker A., Fennell T., Ruan J., Homer N., Marth G., Abecasis G., Durbin R. and 1000 Genome Project Data Processing Subgroup (2009) The Sequence alignment/map (SAM) format and SAMtools. Bioinformatics, 25, 2078-9. [PMID: 19505943]. Li H A statistical framework for SNP calling, mutation discovery, association mapping and population genetical parameter estimation from sequencing data. Bioinformatics. 2011 Nov 1;27(21):2987-93. Epub 2011 Sep 8. [PMID: 21903627]"
 TOOLS_LIST=$TOOLS_LIST" SAMTOOLS"
@@ -78,7 +78,7 @@ TOOLS_LIST=$TOOLS_LIST" SAMTOOLS"
 
 # VCFUTILS
 export VCFUTILS=$NGS_TOOLS/bcftools/current/bin/vcfutils.pl		# BIN-SCRIPT
-export VCFUTILS_VERSION=1.11									# VER
+export VCFUTILS_VERSION=1.12									# VER
 export VCFUTILS_DESCRIPTION="fix a compatibility issue with the new bcftools"
 export VCFUTILS_REF="unknown"
 TOOLS_LIST=$TOOLS_LIST" VCFUTILS"
@@ -92,7 +92,7 @@ export HTSLIB_REF="http://www.htslib.org/"
 # TABIX
 export TABIX=$NGS_TOOLS/htslib/current/bin/tabix			# BIN
 export TABIX_PATH=$(dirname $TABIX)							# BIN
-export TABIX_VERSION=1.11									# VER
+export TABIX_VERSION=1.12									# VER
 export TABIX_DESCRIPTION="Indexing VCF files"
 export TABIX_REF=$HTSLIB_REF
 TOOLS_LIST=$TOOLS_LIST" TABIX"
@@ -100,7 +100,7 @@ TOOLS_LIST=$TOOLS_LIST" TABIX"
 
 # BGZIP
 export BGZIP=$NGS_TOOLS/htslib/current/bin/bgzip			# BIN
-export BGZIP_VERSION=1.11									# VER
+export BGZIP_VERSION=1.12									# VER
 export BGZIP_DESCRIPTION="Compressing VCF files"
 export BGZIP_REF=$HTSLIB_REF
 TOOLS_LIST=$TOOLS_LIST" BGZIP"
@@ -108,7 +108,7 @@ TOOLS_LIST=$TOOLS_LIST" BGZIP"
 
 # BCFTOOLS
 export BCFTOOLS=$NGS_TOOLS/bcftools/current/bin/bcftools		# BIN
-export BCFTOOLS_VERSION=1.11									# VER
+export BCFTOOLS_VERSION=1.12									# VER
 export BCFTOOLS_DESCRIPTION="Reading/writing BCF2/VCF/gVCF files and calling/filtering/summarising SNP and short indel sequence variants"
 export BCFTOOLS_REF=$HTSLIB_REF
 TOOLS_LIST=$TOOLS_LIST" BCFTOOLS"
@@ -149,7 +149,7 @@ TOOLS_LIST=$TOOLS_LIST" GATK"
 
 # GATK4
 export GATK4=$NGS_TOOLS/gatk/4.1.9.0/bin/gatk-package-4.1.9.0-local.jar	# BIN-JAR
-export GATK4_VERSION=4.1.9.0											# VER
+export GATK4_VERSION=4.2.0.0											# VER
 export GATK4_DESCRIPTION="The toolkit offers a wide variety of tools, with a primary focus on variant discovery and genotyping as well as strong emphasis on data quality assurance."
 export GATK4_REF="The Genome Analysis Toolkit: a MapReduce framework for analyzing next-generation DNA sequencing data. McKenna A, Hanna M, Banks E, Sivachenko A, Cibulskis K, Kernytsky A, Garimella K, Altshuler D, Gabriel S, Daly M, DePristo MA, 2010 GENOME RESEARCH 20:1297-303 [Article] [Pubmed]"
 TOOLS_LIST=$TOOLS_LIST" GATK4"
@@ -222,7 +222,7 @@ TOOLS_LIST=$TOOLS_LIST" BOWTIE"
 # BEDTOOLS
 export BEDTOOLS=$NGS_TOOLS/bedtools/current/bin/bedtools	# BIN
 export BEDTOOLS_DIR=$NGS_TOOLS/bedtools/current/bin			# DIR
-export BEDTOOLS_VERSION=2.29.2								# VER
+export BEDTOOLS_VERSION=2.30.0								# VER
 export BEDTOOLS_DESCRIPTION="a powerful toolset for genome arithmetic"
 export BEDTOOLS_REF="http://bedtools.readthedocs.org/"
 TOOLS_LIST=$TOOLS_LIST" BEDTOOLS"
@@ -263,7 +263,7 @@ TOOLS_LIST=$TOOLS_LIST" TRIMMOMATIC"
 # SNPEFF
 export SNPEFF_FOLDER=$NGS_TOOLS/snpeff/current/bin		# FOLDER
 export SNPEFF=$SNPEFF_FOLDER/snpEff.jar					# BIN-JAR
-export SNPEFF_VERSION=4.3t								# VER
+export SNPEFF_VERSION=5.0e								# VER
 export SNPEFF_DESCRIPTION="Genetic variant annotation and effect prediction toolbox. It annotates and predicts the effects of variants on genes (such as amino acid changes)"
 export SNPEFF_REF="A program for annotating and predicting the effects of single nucleotide polymorphisms, SnpEff: SNPs in the genome of Drosophila melanogaster strain w1118; iso-2; iso-3., Cingolani P, Platts A, Wang le L, Coon M, Nguyen T, Wang L, Land SJ, Lu X, Ruden DM. Fly (Austin). 2012 Apr-Jun;6(2):80-92 "
 TOOLS_LIST=$TOOLS_LIST" SNPEFF"

@@ -18,16 +18,7 @@ MK_DATE="27/09/2019"
 # 02/10/2018-0.9.5b: Change HOWARD translation, prioritization and hard filtering. Change Manifest/bed link generation
 # 27/09/2019-0.9.5.1b: Change FATBAM to CAP tool
 
-# TOOLS
-IGVTOOLS?=$(NGSbin)/igvtools.jar
-SAMTOOLS?=$(NGSbin)/samtools
-JAVA?=java
-TABIX?=$(NGSbin)/tabix
-BWA?=$(NGSbin)/bwa
-PICARDLIB?=$(NGSbin)/picard-tools
-FASTQC?=$(NGSbin)/fastqc
-BGZIP?=bgzip
-GZ?=gzip
+
 
 # HOWARD Prioritization
 HOWARD_FILTER?="default"
@@ -46,12 +37,7 @@ HOWARD_ORDER_BY?="DESC,DESC"
 
 # OPTIONS
 REMOVE_INTERMEDIATE_SAM?=1
-BED?=
-PRIMER_BED?=
-THREADS_SAMTOOLS?=$(THREADS_BY_SAMPLE)
 
-BAM_COMPRESSION?=5
-GZ?=gzip
 
 ## VCF files
 ##############
@@ -140,40 +126,42 @@ GZ?=gzip
 # VCF to tab delimiter
 %.tsv: %.vcf
 	# translation step
-	$(HOWARD) --config=$(HOWARD_CONFIG) --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --format=tab  --fields="$(HOWARD_FIELDS)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)"  --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --input=$< --output=$@ --force;
+	$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$< --output=$@ --translation=TSV --fields="$(HOWARD_FIELDS)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)" --force;
 	# Touch
 	if [ ! -e $@ ]; then touch $@; fi;
 	# Cleaning
 
+
 # Hard filtering
-%.hard.tsv: %.vcf
-	# translation step and hard filtering
-	$(HOWARD) --config=$(HOWARD_CONFIG) --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --prioritization=$(HOWARD_PRIORITIZATION) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --format=tab  --fields=$(HOWARD_FIELDS) --sort=$(HOWARD_SORT) --sort_by=$(HOWARD_SORT_BY) --order_by=$(HOWARD_ORDER_BY)  --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --input=$< --output=$@ --hard --force;
-	# Touch
-	if [ ! -e $@ ]; then touch $@; fi;
-	# Cleaning
+# %.hard.tsv: %.vcf
+# 	# translation step and hard filtering
+# 	$(HOWARD) --config=$(HOWARD_CONFIG) --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --prioritization=$(HOWARD_PRIORITIZATION) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --format=tab  --fields=$(HOWARD_FIELDS) --sort=$(HOWARD_SORT) --sort_by=$(HOWARD_SORT_BY) --order_by=$(HOWARD_ORDER_BY)  --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --input=$< --output=$@ --hard --force;
+# 	# Touch
+# 	if [ ! -e $@ ]; then touch $@; fi;
+# 	# Cleaning
+
 
 # VCF to tab delimiter
-%.txt: %.vcf
-	# Translation step
-	$(HOWARD) --config=$(HOWARD_CONFIG) --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --prioritization=$(HOWARD_PRIORITIZATION) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --format=tab  --fields=$(HOWARD_FIELDS) --sort=$(HOWARD_SORT) --sort_by=$(HOWARD_SORT_BY) --order_by=$(HOWARD_ORDER_BY)  --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --input=$< --output=$@ --force;
-	# Touch
-	if [ ! -e $@ ]; then touch $@; fi;
-	# Cleaning
+# %.txt: %.vcf
+# 	# Translation step
+# 	$(HOWARD) --config=$(HOWARD_CONFIG) --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --prioritization=$(HOWARD_PRIORITIZATION) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --format=tab  --fields=$(HOWARD_FIELDS) --sort=$(HOWARD_SORT) --sort_by=$(HOWARD_SORT_BY) --order_by=$(HOWARD_ORDER_BY)  --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --input=$< --output=$@ --force;
+# 	# Touch
+# 	if [ ! -e $@ ]; then touch $@; fi;
+# 	# Cleaning
 
 
 # Hard filtering
-%.hard.txt: %.vcf
-	# Translation and hard filtering
-	$(HOWARD) --config=$(HOWARD_CONFIG) --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --prioritization=$(HOWARD_PRIORITIZATION) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --format=tab  --fields=$(HOWARD_FIELDS) --sort=$(HOWARD_SORT) --sort_by=$(HOWARD_SORT_BY) --order_by=$(HOWARD_ORDER_BY)  --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --input=$< --output=$@ --hard --force;
-	# Touch
-	if [ ! -e $@ ]; then touch $@; fi;
-	# Cleaning
+# %.hard.txt: %.vcf
+# 	# Translation and hard filtering
+# 	$(HOWARD) --config=$(HOWARD_CONFIG) --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --prioritization=$(HOWARD_PRIORITIZATION) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --format=tab  --fields=$(HOWARD_FIELDS) --sort=$(HOWARD_SORT) --sort_by=$(HOWARD_SORT_BY) --order_by=$(HOWARD_ORDER_BY)  --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --input=$< --output=$@ --hard --force;
+# 	# Touch
+# 	if [ ! -e $@ ]; then touch $@; fi;
+# 	# Cleaning
 
 
-%.prioritized.vcf: %.vcf
-	# Prioritization step
-	$(HOWARD) --input=$< --output=$@ --config=$(HOWARD_CONFIG) --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --filter=$(HOWARD_PRIORITIZATION)  --format=tab --annotation=$(HOWARD_ANNOTATION) --sort=$(HOWARD_SORT) --sort_by=$(HOWARD_SORT_BY) --env=$(CONFIG_TOOLS) --order_by=$(HOWARD_ORDER_BY)
+# %.prioritized.vcf: %.vcf
+# 	# Prioritization step
+# 	$(HOWARD) --input=$< --output=$@ --config=$(HOWARD_CONFIG) --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --filter=$(HOWARD_PRIORITIZATION)  --format=tab --annotation=$(HOWARD_ANNOTATION) --sort=$(HOWARD_SORT) --sort_by=$(HOWARD_SORT_BY) --env=$(CONFIG_TOOLS) --order_by=$(HOWARD_ORDER_BY)
 
 
 
@@ -237,17 +225,13 @@ GZ?=gzip
 	rm -f $<
 
 
-# SAM from FASTQ
-%.sai : %.fastq.gz %.genome
-	$(BWA) aln -f $@ `cat $*.genome` $<
-
 # FASTQ Compression with GZIP
 %.fastq.gz: %.fastq
 	$(GZ) --fast $< -c > $@
 
+
 # FASTQ(s) from BAM
 %.R1.fastq %.R2.fastq: %.bam
-	#$(JAVA) -jar $(PICARDLIB)/SamToFastq.jar INPUT=$< FASTQ=$*.R1.fastq SECOND_END_FASTQ=$*.R2.fastq
 	$(JAVA) -jar $(PICARD) SamToFastq -INPUT $< -FASTQ $*.R1.fastq -SECOND_END_FASTQ $*.R2.fastq
 
 

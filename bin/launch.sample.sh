@@ -328,160 +328,145 @@ DEBUG=$(echo $DEBUG | awk '{print $0+0}')
 
 
 
-# FASTQ
-FASTQ_R1_RELOCATED=""
-for F in $(echo $(ls $FASTQ 2>/dev/null | xargs realpath 2>/dev/null) $(cd $ANALYSIS_DIR && ls $FASTQ 2>/dev/null | xargs realpath 2>/dev/null) | tr " " "\n" | sort -u); do
-	#(($DEBUG)) && echo "test1 F=$F"
-	if [ -f "$F" ] || [ -f "$ANALYSIS_DIR/$F" ]; then
-		(($DEBUG)) && echo "F=$F";
-		if ! (($(echo "$F" | grep ".fastq.gz$\|.fq.gz$\|.bam$\|.ubam$\|.cram$\|.ucram$" -c))); then
-			echo "[ERROR]! Format of input file '$F' Unknown! Please check file format (.fastq.gz|.fq.gz|.bam|.ubam|.cram|.ucram)";
-			exit 0;
-		fi
-		# Relocation
-		if [ -f "$F" ]; then
-			FASTQ_R1_RELOCATED="$FASTQ_R1_RELOCATED $F"
-	 	elif [ -f "$ANALYSIS_DIR/$F" ]; then
-			FASTQ_R1_RELOCATED="$FASTQ_R1_RELOCATED $ANALYSIS_DIR/$F"
-		fi;
-	else
-		echo "[ERROR] No input FASTQ/BAM/CRAM/SAM '$F' file!";
-		exit 0;
-	fi;
-done;
-FASTQ=$FASTQ_R1_RELOCATED
-
-
-FASTQ_R2_RELOCATED=""
-#for F in $FASTQ_R2; do
-if [ "$FASTQ_R2" != "" ]; then
-for F in $(echo $(ls $FASTQ_R2 2>/dev/null | xargs realpath 2>/dev/null) $(cd $ANALYSIS_DIR && ls $FASTQ_R2 2>/dev/null | xargs realpath 2>/dev/null) | tr " " "\n" | sort -u); do
-	if [ -f "$F" ] || [ -f "$ANALYSIS_DIR/$F" ]; then
-		(($DEBUG)) && echo "Q=$F";
-		if ! (($(echo "$F" | grep ".fastq.gz$\|.fq.gz$" -c))); then
-			echo "[ERROR]! Format of input file '$F' Unknown! Please check file format (.fastq.gz|.fq.gz)";
-			exit 0;
-		fi
-		# Relocation
-		if [ -f "$F" ]; then
-			FASTQ_R2_RELOCATED="$FASTQ_R2_RELOCATED $F"
-	 	elif [ -f "$ANALYSIS_DIR/$F" ]; then
-			FASTQ_R2_RELOCATED="$FASTQ_R2_RELOCATED $ANALYSIS_DIR/$F"
-		fi;
-	else
-		echo "[ERROR] No input FASTQ R2 '$F' file!";
-		exit 0;
-	fi;
-done;
-FASTQ_R2=$FASTQ_R2_RELOCATED
-fi;
-
-
-# INDEX
-INDEX1_RELOCATED=""
-#for I1 in $INDEX1; do
-#echo $(ls $INDEX1 2>/dev/null | xargs realpath 2>/dev/null) $(cd $ANALYSIS_DIR && ls $INDEX1 2>/dev/null | xargs realpath 2>/dev/null)
-if [ "$INDEX1" != "" ]; then
-for I1 in $(echo $(ls $INDEX1 2>/dev/null | xargs realpath 2>/dev/null) $(cd $ANALYSIS_DIR && ls $INDEX1 2>/dev/null | xargs realpath 2>/dev/null) | tr " " "\n" | sort -u); do
-	if [ -f "$I1" ] || [ -f "$ANALYSIS_DIR/$I1" ]; then
-		(($DEBUG)) && echo "I1=$I1";
-		if ! (($(echo "$I1" | grep ".fastq.gz$\|.fq.gz$" -c))); then
-			echo "[ERROR]! Format of input file '$I1' Unknown! Please check file format (.fastq.gz|.fq.gz)";
-			exit 0;
-		fi
-		# Relocation
-		if [ -f "$I1" ]; then
-			INDEX1_RELOCATED="$INDEX1_RELOCATED $I1"
-	 	elif [ -f "$ANALYSIS_DIR/$I1" ]; then
-			INDEX1_RELOCATED="$INDEX1_RELOCATED $ANALYSIS_DIR/$I1"
-		fi;
-	else
-		echo "[ERROR] No input INDEX1 '$I1' file!";
-		exit 0;
-	fi;
-done;
-INDEX1=$INDEX1_RELOCATED
-fi;
-
-
-
-# INDEX
-INDEX2_RELOCATED=""
-#for I2 in $INDEX2; do
-if [ "$INDEX2" != "" ]; then
-for I2 in $(echo $(ls $INDEX2 2>/dev/null | xargs realpath 2>/dev/null) $(cd $ANALYSIS_DIR && ls $INDEX2 2>/dev/null | xargs realpath 2>/dev/null) | tr " " "\n" | sort -u); do
-
-	if [ -f "$I2" ] || [ -f "$ANALYSIS_DIR/$I2" ]; then
-		(($DEBUG)) && echo "I2=$I2";
-		if ! (($(echo "$I2" | grep ".fastq.gz$\|.fq.gz$" -c))); then
-			echo "[ERROR]! Format of input file '$I2' Unknown! Please check file format (.fastq.gz|.fq.gz)";
-			exit 0;
-		fi
-		# Relocation
-		if [ -f "$I2" ]; then
-			INDEX2_RELOCATED="$INDEX2_RELOCATED $I2"
-	 	elif [ -f "$ANALYSIS_DIR/$I2" ]; then
-			INDEX2_RELOCATED="$INDEX2_RELOCATED $ANALYSIS_DIR/$I2"
-		fi;
-	else
-		echo "[ERROR] No input INDEX2 '$I2' file!";
-		exit 0;
-	fi;
-done;
-INDEX2=$INDEX2_RELOCATED
-fi;
-
-
-
-
-# OTHER_FILES
-OTHER_FILES_RELOCATED=""
-if [ "$OTHER_FILES" != "" ]; then
-for OFCF in $(echo $(ls $OTHER_FILES 2>/dev/null | xargs realpath 2>/dev/null) $(cd $ANALYSIS_DIR && ls $OTHER_FILES 2>/dev/null | xargs realpath 2>/dev/null) | tr " " "\n" | sort -u); do
-#for OFCF in $OTHER_FILES; do
-	#(($DEBUG)) && echo "OFCF=$OFCF"
-	OTHER_FILES_RELOCATED_ONE=""
-	for OFCF_ONE in $(echo $OFCF | tr "+" " "); do
-
-		# Original other file
-		OF_ONE=$(echo $OFCF_ONE | awk -F: '{print $1}')
-		# Copy other file
-		CF_ONE=$(echo $OFCF_ONE | awk -F: '{print $2}')
-		if [ -s "$OF_ONE" ] || [ -s "$ANALYSIS_DIR/$OF_ONE" ]; then
-			# Relocation
-			if [ -e "$OF_ONE" ]; then
-				OTHER_FILES_RELOCATED_ONE="$OTHER_FILES_RELOCATED_ONE+$OF_ONE"
-		 	elif [ -e "$ANALYSIS_DIR/$OF_ONE" ]; then
-				OTHER_FILES_RELOCATED_ONE="$OTHER_FILES_RELOCATED_ONE+$ANALYSIS_DIR/$OF_ONE"
-			fi;
-			[ "$CF_ONE" != "" ] && OTHER_FILES_RELOCATED_ONE="$OTHER_FILES_RELOCATED_ONE:$CF_ONE"
-		else
-			echo "[ERROR] No input OTHER_FILES '$OF_ONE' file!";
-			exit 0;
-		fi;
-	done;
-	OTHER_FILES_RELOCATED_ONE=$(echo $OTHER_FILES_RELOCATED_ONE | sed "s/^+//" )
-	OTHER_FILES_RELOCATED="$OTHER_FILES_RELOCATED $OTHER_FILES_RELOCATED_ONE"
-done;
-OTHER_FILES_RELOCATED=$(echo $OTHER_FILES_RELOCATED | sed "s/^,//" )
-OTHER_FILES=$OTHER_FILES_RELOCATED
-fi;
-
-
+### APPLICATION
 
 ENV=$(find_app "$APP" "$STARK_FOLDER_APPS")
 source_app "$APP" "$STARK_FOLDER_APPS" 1
 
 if (($DEBUG)); then
-	echo "APP=$APP"
-	echo "ASSEMBLY=$ASSEMBLY"
-	echo "PIPELINES=$PIPELINES"
-	echo "ALIGNERS=$ALIGNERS"
-	echo "CALLERS=$CALLERS"
-	echo "ANNOTATORS=$ANNOTATORS"
-	echo "ASSEMBLY=$ASSEMBLY"
+	echo "#[INFO] APP=$APP"
+	echo "#[INFO] ASSEMBLY=$ASSEMBLY"
+	echo "#[INFO] PIPELINES=$PIPELINES"
+	echo "#[INFO] ALIGNERS=$ALIGNERS"
+	echo "#[INFO] CALLERS=$CALLERS"
+	echo "#[INFO] ANNOTATORS=$ANNOTATORS"
+	echo "#[INFO] ASSEMBLY=$ASSEMBLY"
 	#exit 0
 fi;
+
+
+(($DEBUG)) && echo "#[INFO] SAMPLE=$SAMPLE"
+
+
+
+# FASTQ_R1
+FASTQ_R1_RELOCATED=""
+if [ "$FASTQ" != "" ]; then
+	for F_INPUT in $FASTQ; do
+		# Find file
+		F=$(echo $(ls $F_INPUT 2>/dev/null | xargs realpath 2>/dev/null) $(cd $ANALYSIS_DIR && ls $F_INPUT 2>/dev/null | xargs realpath 2>/dev/null) | tr " " "\n" | sort -u)
+		if [ "$F" == "" ] || [ $(echo $F | wc -w) -gt 1 ] || [ ! -f "$F" ]; then
+			echo "[ERROR] No input FASTQ/BAM/CRAM/SAM '$F' file!";
+			exit 0;
+		fi
+		(($DEBUG)) && echo "F=$F";
+		# Relocate
+		if ! (($(echo "$F" | grep ".fastq.gz$\|.fq.gz$\|.bam$\|.ubam$\|.cram$\|.ucram$" -c))); then
+			echo "[ERROR]! Format of input file '$F' Unknown! Please check file format (.fastq.gz|.fq.gz|.bam|.ubam|.cram|.ucram)";
+			exit 0;
+		fi
+		# Relocation
+		FASTQ_R1_RELOCATED="$FASTQ_R1_RELOCATED $F"
+	done;
+	FASTQ=$FASTQ_R1_RELOCATED
+fi;
+
+
+# FASTQ_R2
+FASTQ_R2_RELOCATED=""
+if [ "$FASTQ_R2" != "" ]; then
+	for F_INPUT in $FASTQ_R2; do
+		# Find file
+		F=$(echo $(ls $F_INPUT 2>/dev/null | xargs realpath 2>/dev/null) $(cd $ANALYSIS_DIR && ls $F_INPUT 2>/dev/null | xargs realpath 2>/dev/null) | tr " " "\n" | sort -u)
+		if [ "$F" == "" ] || [ $(echo $F | wc -w) -gt 1 ] || [ ! -f "$F" ]; then
+			echo "[ERROR] No input FASTQ '$F' file!";
+			exit 0;
+		fi
+		(($DEBUG)) && echo "Q=$F";
+		# Relocated
+		if ! (($(echo "$F" | grep ".fastq.gz$\|.fq.gz$" -c))); then
+			echo "[ERROR]! Format of input file '$F' Unknown! Please check file format (.fastq.gz|.fq.gz)";
+			exit 0;
+		fi
+		# Relocation
+		FASTQ_R2_RELOCATED="$FASTQ_R2_RELOCATED $F"
+	done;
+	FASTQ_R2=$FASTQ_R2_RELOCATED
+fi;
+
+
+# INDEX1
+INDEX1_RELOCATED=""
+if [ "$INDEX1" != "" ]; then
+	for F_INPUT in $INDEX1; do
+		# Find file
+		F=$(echo $(ls $F_INPUT 2>/dev/null | xargs realpath 2>/dev/null) $(cd $ANALYSIS_DIR && ls $F_INPUT 2>/dev/null | xargs realpath 2>/dev/null) | tr " " "\n" | sort -u)
+		if [ "$F" == "" ] || [ $(echo $F | wc -w) -gt 1 ] || [ ! -f "$F" ]; then
+			echo "[ERROR] No input FASTQ '$F' file!";
+			exit 0;
+		fi
+		(($DEBUG)) && echo "I1=$F";
+		if ! (($(echo "$F" | grep ".fastq.gz$\|.fq.gz$" -c))); then
+			echo "[ERROR]! Format of input file '$F' Unknown! Please check file format (.fastq.gz|.fq.gz)";
+			exit 0;
+		fi
+		# Relocation
+		INDEX1_RELOCATED="$INDEX1_RELOCATED $F"
+	done;
+	INDEX1=$INDEX1_RELOCATED
+fi;
+
+
+# INDEX2
+INDEX2_RELOCATED=""
+if [ "$INDEX2" != "" ]; then
+	for F_INPUT in $INDEX2; do
+		# Find file
+		F=$(echo $(ls $F_INPUT 2>/dev/null | xargs realpath 2>/dev/null) $(cd $ANALYSIS_DIR && ls $F_INPUT 2>/dev/null | xargs realpath 2>/dev/null) | tr " " "\n" | sort -u)
+		if [ "$F" == "" ] || [ $(echo $F | wc -w) -gt 1 ] || [ ! -f "$F" ]; then
+			echo "[ERROR] No input FASTQ '$F' file!";
+			exit 0;
+		fi
+		(($DEBUG)) && echo "I2=$F";
+		if ! (($(echo "$F" | grep ".fastq.gz$\|.fq.gz$" -c))); then
+			echo "[ERROR]! Format of input file '$F' Unknown! Please check file format (.fastq.gz|.fq.gz)";
+			exit 0;
+		fi
+		# Relocation
+		INDEX2_RELOCATED="$INDEX2_RELOCATED $F"
+	done;
+	INDEX2=$INDEX2_RELOCATED
+fi;
+
+
+# OTHER_FILES
+OTHER_FILES_RELOCATED=""
+if [ "$OTHER_FILES" != "" ]; then
+	#for OFCF in $(echo $(ls $OTHER_FILES 2>/dev/null | xargs realpath 2>/dev/null) $(cd $ANALYSIS_DIR && ls $OTHER_FILES 2>/dev/null | xargs realpath 2>/dev/null) | tr " " "\n" | sort -u); do
+	for OFCF in $OTHER_FILES; do
+		(($DEBUG)) && echo "OFCF=$OFCF"
+		OTHER_FILES_RELOCATED_ONE=""
+		for OFCF_ONE in $(echo $OFCF | tr "+" " "); do
+			# Original other file
+			OF_ONE=$(echo $OFCF_ONE | awk -F: '{print $1}')
+			# Copy other file
+			CF_ONE=$(echo $OFCF_ONE | awk -F: '{print $2}')
+			(($DEBUG)) && echo "OFCF_ONE=$OFCF_ONE"
+			if [ "$OF_ONE" == "" ] || [ ! -e "$OF_ONE" ]; then
+				echo "[ERROR] No input '$OF_ONE' file/folder!";
+				exit 0;
+			fi
+			# Relocation
+			OTHER_FILES_RELOCATED_ONE="$OTHER_FILES_RELOCATED_ONE+$OF_ONE"
+			[ "$CF_ONE" != "" ] && OTHER_FILES_RELOCATED_ONE="$OTHER_FILES_RELOCATED_ONE:$CF_ONE"
+		done;
+		OTHER_FILES_RELOCATED_ONE=$(echo $OTHER_FILES_RELOCATED_ONE | sed "s/^+//" )
+		OTHER_FILES_RELOCATED="$OTHER_FILES_RELOCATED $OTHER_FILES_RELOCATED_ONE"
+	done;
+	OTHER_FILES_RELOCATED=$(echo $OTHER_FILES_RELOCATED | sed "s/^,//" )
+	OTHER_FILES=$OTHER_FILES_RELOCATED
+fi;
+
 
 # DETECT_ADAPTER_FOR_PE
 
@@ -832,18 +817,21 @@ for RUU in $RUN_UNIQ; do
 
 	((RUN_ANALYZED++))
 
-	MAKEFILE_ANALYSIS_RUN=$RESULTS/$RUU/analysis.V$ANALYSIS_REF.param.mk
-	#SHELL_ANALYSIS_RUN=$RESULTS/$RUU/analysis.V$ANALYSIS_REF.param.sh
-	LOGFILE_RES_RUN=$RESULTS/$RUU/analysis.V$ANALYSIS_REF.log
-	#LOGFILE_RES_RUN_REPORT=$RESULTS/$RUU/analysis.V$ANALYSIS_REF.report.log
-	RELEASE_RUN=$RESULTS/$RUU/analysis.V$ANALYSIS_REF.release
-	FINAL_REPORT_RUN=$RESULTS/$RUU/analysis.V$ANALYSIS_REF.report
-	FINAL_REPORT_FULL_RUN=$RESULTS/$RUU/analysis.V$ANALYSIS_REF.full.report
-	FINAL_REPORT_FULL_VCF=$RESULTS/$RUU/$SAMPLE.V$ANALYSIS_REF.full.vcf
+	ANALYSIS_PREFIX="STARK.$ANALYSIS_REF"
 
-	FASTQ_MK=$RESULTS/$RUU/analysis.V$ANALYSIS_REF.fastq.mk
-	FASTP_MK=$RESULTS/$RUU/analysis.V$ANALYSIS_REF.fastp.mk
-	RES_MK=$RESULTS/$RUU/analysis.V$ANALYSIS_REF.copy.mk
+	MAKEFILE_ANALYSIS_RUN=$RESULTS/$RUU/$ANALYSIS_PREFIX.param.mk
+	#SHELL_ANALYSIS_RUN=$RESULTS/$RUU/$ANALYSIS_PREFIX.param.sh
+	LOGFILE_RES_RUN=$RESULTS/$RUU/$ANALYSIS_PREFIX.log
+	#LOGFILE_RES_RUN_REPORT=$RESULTS/$RUU/$ANALYSIS_PREFIX.report.log
+	RELEASE_RUN=$RESULTS/$RUU/$ANALYSIS_PREFIX.release
+	#FINAL_REPORT_RUN=$RESULTS/$RUU/$ANALYSIS_PREFIX.report
+	FINAL_REPORT_RUN=$RESULTS/$RUU/$ANALYSIS_PREFIX
+	#FINAL_REPORT_FULL_RUN=$RESULTS/$RUU/$ANALYSIS_PREFIX.full.report
+	#FINAL_REPORT_FULL_VCF=$RESULTS/$RUU/$SAMPLE.$ANALYSIS_REF.full.vcf
+
+	FASTQ_MK=$RESULTS/$RUU/$ANALYSIS_PREFIX.fastq.mk
+	FASTP_MK=$RESULTS/$RUU/$ANALYSIS_PREFIX.fastp.mk
+	RES_MK=$RESULTS/$RUU/$ANALYSIS_PREFIX.copy.mk
 
 	# MKDIR & TOUCH
 	mkdir -p $RESULTS/$RUU
@@ -1113,10 +1101,12 @@ for RUU in $RUN_UNIQ; do
 					echo ' --report_title=$RUU/$S ' >> \$@.fastp.param;
 					# FASTP Process
 					$FASTP \$\$(cat \$@.fastp.param) 1>$FASTP_LOG 2>$FASTP_ERR
-					if [ -e $RUN_SAMPLE_DIR/$S.R1.fastq.gz ] ; then $COMMAND_COPY_NO_COMPRESS $RUN_SAMPLE_DIR/$S.R1.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.demultiplexing.fastq.gz; fi;
-					if [ -e $RUN_SAMPLE_DIR/$S.R2.fastq.gz ] ; then $COMMAND_COPY_NO_COMPRESS $RUN_SAMPLE_DIR/$S.R2.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.demultiplexing.fastq.gz; fi;
-					if [ -e $RUN_SAMPLE_DIR/$S.I1.fastq.gz ] ; then $COMMAND_COPY_NO_COMPRESS $RUN_SAMPLE_DIR/$S.I1.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.I1.demultiplexing.fastq.gz; fi;
-					if [ -e $RUN_SAMPLE_DIR/$S.I2.fastq.gz ] ; then $COMMAND_COPY_NO_COMPRESS $RUN_SAMPLE_DIR/$S.I2.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.I2.demultiplexing.fastq.gz; fi;
+					if (($FASTQ_DEMULTIPLEXING_KEEP)); then \
+						if [ -e $RUN_SAMPLE_DIR/$S.R1.fastq.gz ] ; then $COMMAND_COPY_NO_COMPRESS $RUN_SAMPLE_DIR/$S.R1.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.demultiplexing.fastq.gz; fi; \
+						if [ -e $RUN_SAMPLE_DIR/$S.R2.fastq.gz ] ; then $COMMAND_COPY_NO_COMPRESS $RUN_SAMPLE_DIR/$S.R2.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.demultiplexing.fastq.gz; fi; \
+						if [ -e $RUN_SAMPLE_DIR/$S.I1.fastq.gz ] ; then $COMMAND_COPY_NO_COMPRESS $RUN_SAMPLE_DIR/$S.I1.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.I1.demultiplexing.fastq.gz; fi; \
+						if [ -e $RUN_SAMPLE_DIR/$S.I2.fastq.gz ] ; then $COMMAND_COPY_NO_COMPRESS $RUN_SAMPLE_DIR/$S.I2.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.I2.demultiplexing.fastq.gz; fi; \
+					fi;
 					if [ -e $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.processed.fastq.gz ] ; then mv $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.processed.fastq.gz $RUN_SAMPLE_DIR/$S.R1.fastq.gz; fi;
 					if [ -e $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.processed.fastq.gz ] ; then mv $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.processed.fastq.gz $RUN_SAMPLE_DIR/$S.R2.fastq.gz; fi;
 
@@ -1472,15 +1462,16 @@ for RUU in $RUN_UNIQ; do
 			cat $FASTP_MK.err
 			exit 1
 		fi;
-		! (($DEBUG)) && rm -f $FASTQ_MK $FASTQ_MK.log $FASTQ_MK.err $FASTP_MK $FASTP_MK.log $FASTP_MK.err
 	fi;
+	! (($DEBUG)) && rm -f $FASTQ_MK $FASTQ_MK.log $FASTQ_MK.err $FASTP_MK $FASTP_MK.log $FASTP_MK.err
+
 
 	echo "#[INFO] STARK Analysis Processing..."
 
 	echo "["$(date '+%Y%m%d-%H%M%S')"] Main Analysis Process for Analysis '$RELEASE_RUN' START" >>$LOGFILE_RES_RUN
 
 	make -k -j $THREADS -e ENV="$ENV" PARAM=$MAKEFILE_ANALYSIS_RUN $PARAMETERS $THREAD_PARAMETERS JAVA_MEMORY=$JAVA_MEMORY SNAPSHOT=0 VALIDATION=1 INPUT=$INPUT OUTDIR=$RESULTS RELEASE=$RELEASE_RUN FINAL_REPORT=$FINAL_REPORT_RUN ANALYSIS_REF=$ANALYSIS_REF -f $NGS_SCRIPTS/NGSWorkflow.mk 1>>$LOGFILE_RES_RUN 2>>$LOGFILE_RES_RUN
-	rm -f $MAKEFILE_ANALYSIS_RUN
+	rm -f $MAKEFILE_ANALYSIS_RUN $FINAL_REPORT_RUN $RELEASE_RUN
 	echo "["$(date '+%Y%m%d-%H%M%S')"] Main Analysis Process for Analysis '$RELEASE_RUN' END" >>$LOGFILE_RES_RUN
 
 	if (($(grep "\*\*\*" $LOGFILE_RES_RUN -c))); then
@@ -1588,10 +1579,8 @@ for RUU in $RUN_UNIQ; do
 							echo "$RESULTS_FOLDER_COPY_FOLDER/$RUU:
 								#[INFO] Copying '$RUU'
 								mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$RUU
-								#mkdir -p $RES_MK_COPY_ROOT_TMP
-								#$COMMAND_COPY_NO_COMPRESS --temp-dir=$RES_MK_COPY_ROOT_TMP \$\$(find -L $RESULTS/$RUU -mindepth 1 -maxdepth 1 -type f) $RESULTS_FOLDER_COPY_FOLDER/$RUU
-								#rm -rf $RES_MK_COPY_ROOT_TMP
 								$COMMAND_COPY_NO_COMPRESS \$\$(find -L $RESULTS/$RUU -mindepth 1 -maxdepth 1 -type f) $RESULTS_FOLDER_COPY_FOLDER/$RUU
+								rm $RESULTS_FOLDER_COPY_FOLDER/$RUU/*copy.mk* $RESULTS_FOLDER_COPY_FOLDER/$RUU/$(basename $FINAL_REPORT_RUN).metrics $RESULTS_FOLDER_COPY_FOLDER/$RUU/$(basename $FINAL_REPORT_RUN).variants
 								chmod $PERMS -R $RESULTS_FOLDER_COPY_FOLDER/$RUU $RESULTS_FOLDER_COPY_FOLDER/$RUU/* 
 							" >> $RES_MK
 							RES_MK_ALL=$RES_MK_ALL" $RESULTS_FOLDER_COPY_FOLDER/$RUU"
@@ -1604,11 +1593,7 @@ for RUU in $RUN_UNIQ; do
 						if [ "$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE" == "repository" ]; then
 							echo "$ROOT_FILE_SOURCE:
 								#[INFO] Copying '$RUU/$S' - STARK Results
-								#chmod $PERMS -R $RESULTS/$RUU/$S $RESULTS/$RUU/$S/*
 								mkdir -p $ROOT_FILE_SOURCE
-								#mkdir -p $RES_MK_COPY_ROOT_TMP
-								#$COMMAND_COPY_NO_COMPRESS --temp-dir=$RES_MK_COPY_ROOT_TMP $RESULTS/$RUU/$S/* $ROOT_FILE_SOURCE
-								#rm -rf $RES_MK_COPY_ROOT_TMP
 								$COMMAND_COPY_NO_COMPRESS $RESULTS/$RUU/$S/* $ROOT_FILE_SOURCE
 								chmod $PERMS -R $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/* 
 							" >> $RES_MK
@@ -1706,8 +1691,8 @@ for RUU in $RUN_UNIQ; do
 				cat $RES_MK.err;
 				exit 1
 			fi
-			! (($DEBUG)) && rm -f $RES_MK $RES_MK.log $RES_MK.err
 		fi;
+		! (($DEBUG)) && rm -f $RES_MK $RES_MK.log $RES_MK.err
 
 	fi;
 
