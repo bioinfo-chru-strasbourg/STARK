@@ -148,7 +148,7 @@ TOOLS_LIST=$TOOLS_LIST" GATK"
 
 
 # GATK4
-export GATK4=$NGS_TOOLS/gatk/4.1.9.0/bin/gatk-package-4.1.9.0-local.jar	# BIN-JAR
+export GATK4=$NGS_TOOLS/gatk/4.2.0.0/bin/gatk-package-4.2.0.0-local.jar	# BIN-JAR
 export GATK4_VERSION=4.2.0.0											# VER
 export GATK4_DESCRIPTION="The toolkit offers a wide variety of tools, with a primary focus on variant discovery and genotyping as well as strong emphasis on data quality assurance."
 export GATK4_REF="The Genome Analysis Toolkit: a MapReduce framework for analyzing next-generation DNA sequencing data. McKenna A, Hanna M, Banks E, Sivachenko A, Cibulskis K, Kernytsky A, Garimella K, Altshuler D, Gabriel S, Daly M, DePristo MA, 2010 GENOME RESEARCH 20:1297-303 [Article] [Pubmed]"
