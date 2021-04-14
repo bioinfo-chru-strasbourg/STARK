@@ -443,6 +443,6 @@ REPORT_SECTIONS="ALL"
 # REPOSITORY and ARCHIVES
 # Copy files into folders for repository and archives
 # Repository files patterns to add
-REPOSITORY_FILE_PATTERNS=""
+REPOSITORY_FILE_PATTERNS=' $SAMPLE.*.validation.bam $SAMPLE.*.validation.bam.bai $SAMPLE.*.bam.metrics/$SAMPLE.*.validation.flags.Design.bed $SAMPLE.reports/$SAMPLE.full.Design.vcf.gz $SAMPLE.reports/$SAMPLE.full.Design.tsv '
 # Archives files patterns to add
-ARCHIVES_FILE_PATTERNS=""
+ARCHIVES_FILE_PATTERNS=' $SAMPLE.reports/$SAMPLE.full.vcf.gz $SAMPLE.reports/$SAMPLE.final.tsv $SAMPLE.*.bam.metrics/$SAMPLE.*.validation.flags.*.bed '
