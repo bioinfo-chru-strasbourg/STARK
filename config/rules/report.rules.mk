@@ -185,10 +185,14 @@ REPORT_SECTIONS?=ALL
 	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp.merged --output=$@.tmp.annotated --annotation=$(HOWARD_ANNOTATION_ANALYSIS);
 	# Calculation and prioritization (forced)
 	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp.annotated --output=$@.tmp.calculated.prioritized --calculation=$(HOWARD_CALCULATION_ANALYSIS) --prioritization=$(HOWARD_PRIORITIZATION_ANALYSIS) --nomen_fields=$(HOWARD_NOMEN_FIELDS) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --force;
+	# Sort VCF
+	mkdir -p $@.tmp.calculated.prioritized.SAMTOOLS_PREFIX
+	$(BCFTOOLS) sort -T $@.tmp.calculated.prioritized.SAMTOOLS_PREFIX $@.tmp.calculated.prioritized > $@.tmp.calculated.prioritized.sorted
+	rm -rf $@.tmp.calculated.prioritized.SAMTOOLS_PREFIX
 	# Generate Design VCF
-	$(BGZIP) -c $@.tmp.calculated.prioritized > $@.tmp.calculated.prioritized.vcf.gz;
-	$(TABIX) $@.tmp.calculated.prioritized.vcf.gz;
-	cp $@.tmp.calculated.prioritized.vcf.gz $@.Design.vcf.gz;
+	$(BGZIP) -c $@.tmp.calculated.prioritized.sorted > $@.tmp.calculated.prioritized.sorted.vcf.gz;
+	$(TABIX) $@.tmp.calculated.prioritized.sorted.vcf.gz;
+	cp $@.tmp.calculated.prioritized.sorted.vcf.gz $@.Design.vcf.gz;
 	# Generate Design TSV
 	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.Design.vcf.gz --output=$@.Design.tsv --translation=TSV --fields="$(HOWARD_FIELDS)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)" --force;
 	# Generate Panel(s) VCF and TSV from Design VCF ($@.Design.vcf.gz)
@@ -199,8 +203,8 @@ REPORT_SECTIONS?=ALL
 		List_of_genes_files=$$(ls $$(for L in $$(echo $$List_of_samples | tr "," "\n"); do echo $(@D)/$$L/$$L.$$genes_file; done;)) ; \
 		# Merge all $$genes_file found into uniq BED file (but supposed to be the same) \
 		cat $$(echo $$List_of_genes_files) | $(BEDTOOLS) sort | $(BEDTOOLS) merge > $@.tmp.GENES.$$genes_file; \
-		# Generate VCF Panel from VCF Design (especially $@.tmp.calculated.prioritized.vcf.gz because tabix) with $$genes_file for List of Samples \
-		$(BCFTOOLS) view --samples $$List_of_samples --force-samples $@.tmp.calculated.prioritized.vcf.gz -R $@.tmp.GENES.$$genes_file > $@.Panel.$$genes_file.vcf; \
+		# Generate VCF Panel from VCF Design (especially $@.tmp.calculated.prioritized.sorted.vcf.gz because tabix) with $$genes_file for List of Samples \
+		$(BCFTOOLS) view --samples $$List_of_samples --force-samples $@.tmp.calculated.prioritized.sorted.vcf.gz -R $@.tmp.GENES.$$genes_file > $@.Panel.$$genes_file.vcf; \
 		# Compress VCF \
 		$(BGZIP) $@.Panel.$$genes_file.vcf; \
 		# Generate TSV Panel from VCF Panel compressed  \

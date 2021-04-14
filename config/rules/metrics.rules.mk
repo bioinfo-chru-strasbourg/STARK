@@ -751,12 +751,16 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 		$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.$$bed_subname.vcf --output=$@.$$bed_subname.tsv --pzfields="PZScore,PZFlag,PZComment,PZInfos" --translation=TSV --fields="$(HOWARD_FIELDS)" --sort="$(HOWARD_SORT)" --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)" --stats=$@.$$bed_subname.info_field.stats.tsv --bcftools_stats=$@.$$bed_subname.bcftools.stats.tsv --force; \
 		# TSV REPORT \
 		$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.$$bed_subname.vcf --output=$@.$$bed_subname.report.tsv --pzfields="PZScore,PZFlag,PZComment,PZInfos" --translation=TSV --fields="$(HOWARD_FIELDS_REPORT)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)" --stats=$@.$$bed_subname.report.info_field.stats.tsv --bcftools_stats=$@.$$bed_subname.report.bcftools.stats.tsv --force; \
-		# SNPEFF STATS \
-		(($(METRICS_SNPEFF))) && $(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.$$bed_subname.vcf --output=$@.$$bed_subname.snpeff.vcf --snpeff_stats=$@.$$bed_subname.snpeff.html --annotation=null --force ; \
 		if [ "$$(echo $* | rev | cut -d'.' -f 1 | rev)" == "final" ] || [ "$$(echo $* | rev | cut -d'.' -f 1 | rev)" == "full" ]; then \
+			# SNPEFF STATS \
+			if [ "$$(echo $* | rev | cut -d'.' -f 1 | rev)" == "final" ]; then \
+				(($(METRICS_SNPEFF))) && $(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.$$bed_subname.vcf --output=$@.$$bed_subname.snpeff.vcf --snpeff_stats=$@.$$bed_subname.snpeff.html --annotation=null --force ; \
+			fi; \
+			# Copy VCF and TSV for rename \
 			cp $@.$$bed_subname.tsv $*.$$bed_subname.tsv; \
 			$(BGZIP) -c $@.$$bed_subname.vcf > $*.$$bed_subname.vcf.gz; \
 		fi ; \
+		rm -f  ; \
 		echo "#[INFO] VCF filtered by '$$one_bed' done. See files '$@.$$bed_subname.vcf', '$@.$$bed_subname.tsv' and stats" >> $@; \
 	done;
 	

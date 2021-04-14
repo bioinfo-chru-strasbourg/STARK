@@ -181,6 +181,7 @@ BAM_CHECK_STEPS=0
 
 # METRICS SNPEFF (default 0)
 # Generate snpEff variant metrics from VCF
+# Only for Report final VCF
 METRICS_SNPEFF=1
 
 # PIPELINES PRIORITIZATION

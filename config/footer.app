@@ -517,6 +517,7 @@ export BAM_CHECK_STEPS
 
 # METRICS SNPEFF (default 0)
 # Generate snpEff variant metrics from VCF
+# Only for Report final VCF
 if [ -z $METRICS_SNPEFF ] || [ "${METRICS_SNPEFF^^}" == "FALSE" ] || [ "${METRICS_SNPEFF^^}" == "NO" ] || [ "${METRICS_SNPEFF^^}" == "N" ]  || [ "$METRICS_SNPEFF" == "0" ]; then
 	METRICS_SNPEFF=0
 elif [ "${METRICS_SNPEFF^^}" == "TRUE" ] || [ "${METRICS_SNPEFF^^}" == "YES" ] || [ "${METRICS_SNPEFF^^}" == "Y" ]  || [ "$METRICS_SNPEFF" == "1" ]; then
