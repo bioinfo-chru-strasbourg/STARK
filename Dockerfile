@@ -706,28 +706,6 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 
 
-########
-# GATK #
-########
-
-# TOOL INFO
-ENV TOOL_NAME="gatk"
-ENV TOOL_VERSION="3.8-1-0"
-ENV TOOL_TARBALL="GenomeAnalysisTK-$TOOL_VERSION.tar.bz2"
-ENV TOOL_SOURCE_EXTERNAL="https://software.broadinstitute.org/gatk/download/auth?package=GATK-archive&version=$TOOL_VERSION-gf15c1c3ef"
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-# TOOL PARAMETERS
-ENV TOOL_JAR=GenomeAnalysisTK.jar
-
-# TOOL INSTALLATION
-RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-	source $TOOL_INIT && \
-	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
-	cp -R $TOOL_SOURCE_BUILD/*/$TOOL_JAR $TOOL_DEST/bin/ && \
-    $TOOL_CHECK ;
-
-
-
 #########
 # GATK4 #
 #########
@@ -748,6 +726,30 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
 	cp -R $TOOL_SOURCE_BUILD/*/$TOOL_JAR $TOOL_DEST/bin/ && \
     $TOOL_CHECK ;
+
+
+
+
+########
+# GATK #
+########
+
+# TOOL INFO
+ENV TOOL_NAME="gatk"
+ENV TOOL_VERSION="3.8-1-0"
+ENV TOOL_TARBALL="GenomeAnalysisTK-$TOOL_VERSION.tar.bz2"
+ENV TOOL_SOURCE_EXTERNAL="https://software.broadinstitute.org/gatk/download/auth?package=GATK-archive&version=$TOOL_VERSION-gf15c1c3ef"
+ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+# TOOL PARAMETERS
+ENV TOOL_JAR=GenomeAnalysisTK.jar
+
+# TOOL INSTALLATION
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
+	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
+	cp -R $TOOL_SOURCE_BUILD/*/$TOOL_JAR $TOOL_DEST/bin/ && \
+    $TOOL_CHECK ;
+
 
 
 
