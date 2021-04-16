@@ -196,11 +196,11 @@ TOOLS_LIST=$TOOLS_LIST" FASTP"
 
 
 # UMI TOOLS
-export UMITOOLS=$NGS_TOOLS/umi_tools/current/bin/umi_tools		# BIN
-export FASTQC_VERSION=1.0.0										# VER
-export FASTQC_DESCRIPTION="UMI-tools contains tools for dealing with Unique Molecular Identifiers (UMIs)/Random Molecular Tags (RMTs) and single cell RNA-Seq cell barcodes."
-export FASTQC_REF="https://github.com/CGATOxford/UMI-tools"
-TOOLS_LIST=$TOOLS_LIST" UMITOOLS"
+# export UMITOOLS=$NGS_TOOLS/umi_tools/current/bin/umi_tools		# BIN
+# export FASTQC_VERSION=1.0.0										# VER
+# export FASTQC_DESCRIPTION="UMI-tools contains tools for dealing with Unique Molecular Identifiers (UMIs)/Random Molecular Tags (RMTs) and single cell RNA-Seq cell barcodes."
+# export FASTQC_REF="https://github.com/CGATOxford/UMI-tools"
+# TOOLS_LIST=$TOOLS_LIST" UMITOOLS"
 
 
 # BWA

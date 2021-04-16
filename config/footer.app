@@ -34,6 +34,7 @@ fi;
 export APP_PROJECT
 
 
+
 # SCRIPT DIR
 ##############
 
@@ -818,43 +819,38 @@ export HOWARD_NOMEN_FIELDS
 if [ -z "$HOWARD_PRIORITIZATION" ]; then
 	HOWARD_PRIORITIZATION=$HOWARD_PRIORITIZATION_DEFAULT
 fi;
-if [ ! -z "$APP_NAME" ]; then
-	HOWARD_PRIORITIZATION="$HOWARD_PRIORITIZATION $APP_NAME"
+if [ ! -z "$APP_NAME" ] && [ ${APP_NAME^^} != "DEFAULT" ]; then
+	HOWARD_PRIORITIZATION="$APP_NAME,$HOWARD_PRIORITIZATION"
 fi;
-HOWARD_PRIORITIZATION=$(echo $HOWARD_PRIORITIZATION | tr "," " " | tr " " "\n" | sort -u | tr "\n" "," | sed s/,$//)
+# Keep fist as first and sort the rest
+HOWARD_PRIORITIZATION=$(echo $(echo $HOWARD_PRIORITIZATION | tr "," " " | cut -d" " -f1 | tr " " "," && echo $HOWARD_PRIORITIZATION | tr "," " " | tr " " "\n" | sort -u | grep -v "^$(echo $HOWARD_PRIORITIZATION | tr "," " " | cut -d" " -f1)$" | tr "\n" "," | sed s/,$//) | tr " " "," )
 export HOWARD_PRIORITIZATION
+
 
 # MINIMAL
 # Minimal filter to prioritize/rank variant.
 if [ -z "$HOWARD_PRIORITIZATION_MINIMAL" ]; then
 	HOWARD_PRIORITIZATION_MINIMAL=$HOWARD_PRIORITIZATION
 fi;
-if [ ! -z "$APP_NAME" ]; then
-	HOWARD_PRIORITIZATION_MINIMAL="$HOWARD_PRIORITIZATION_MINIMAL $APP_NAME"
+if [ ! -z "$APP_NAME" ] && [ ${APP_NAME^^} != "DEFAULT" ]; then
+	HOWARD_PRIORITIZATION_MINIMAL="$APP_NAME,$HOWARD_PRIORITIZATION_MINIMAL"
 fi;
-HOWARD_PRIORITIZATION_MINIMAL=$(echo $HOWARD_PRIORITIZATION_MINIMAL | tr "," " " | tr " " "\n" | sort -u | tr "\n" "," | sed s/,$//)
+# Keep fist as first and sort the rest
+HOWARD_PRIORITIZATION_MINIMAL=$(echo $(echo $HOWARD_PRIORITIZATION_MINIMAL | tr "," " " | cut -d" " -f1 | tr " " "," && echo $HOWARD_PRIORITIZATION_MINIMAL | tr "," " " | tr " " "\n" | sort -u | grep -v "^$(echo $HOWARD_PRIORITIZATION_MINIMAL | tr "," " " | cut -d" " -f1)$" | tr "\n" "," | sed s/,$//) | tr " " "," )
 export HOWARD_PRIORITIZATION_MINIMAL
 
-#if [ -z "$HOWARD_PRIORITIZATION_MINIMAL" ]; then
-#	HOWARD_PRIORITIZATION_MINIMAL=$HOWARD_PRIORITIZATION
-#fi;
-#export HOWARD_PRIORITIZATION_MINIMAL
 
 # Report
 # Default filter to prioritize/rank variant for Report
 if [ -z "$HOWARD_PRIORITIZATION_REPORT" ]; then
 	HOWARD_PRIORITIZATION_REPORT=$HOWARD_PRIORITIZATION
 fi;
-if [ ! -z "$APP_NAME" ]; then
-	HOWARD_PRIORITIZATION_REPORT="$HOWARD_PRIORITIZATION_REPORT $APP_NAME"
+if [ ! -z "$APP_NAME" ] && [ ${APP_NAME^^} != "DEFAULT" ]; then
+	HOWARD_PRIORITIZATION_REPORT="$APP_NAME,$HOWARD_PRIORITIZATION_REPORT"
 fi;
-HOWARD_PRIORITIZATION_REPORT=$(echo $HOWARD_PRIORITIZATION_REPORT | tr "," " " | tr " " "\n" | sort -u | tr "\n" "," | sed s/,$//)
+# Keep fist as first and sort the rest
+HOWARD_PRIORITIZATION_REPORT=$(echo $(echo $HOWARD_PRIORITIZATION_REPORT | tr "," " " | cut -d" " -f1 | tr " " "," && echo $HOWARD_PRIORITIZATION_REPORT | tr "," " " | tr " " "\n" | sort -u | grep -v "^$(echo $HOWARD_PRIORITIZATION_REPORT | tr "," " " | cut -d" " -f1)$" | tr "\n" "," | sed s/,$//) | tr " " "," )
 export HOWARD_PRIORITIZATION_REPORT
-
-#if [ -z "$HOWARD_PRIORITIZATION_REPORT" ]; then
-#	HOWARD_PRIORITIZATION_REPORT=$HOWARD_PRIORITIZATION
-#fi;
-#export HOWARD_PRIORITIZATION_REPORT
 
 
 # ANALYSIS
@@ -862,10 +858,11 @@ export HOWARD_PRIORITIZATION_REPORT
 if [ -z "$HOWARD_PRIORITIZATION_ANALYSIS" ]; then
 	HOWARD_PRIORITIZATION_ANALYSIS=$HOWARD_PRIORITIZATION
 fi;
-if [ ! -z "$APP_NAME" ]; then
-	HOWARD_PRIORITIZATION_ANALYSIS="$HOWARD_PRIORITIZATION_ANALYSIS $APP_NAME"
+if [ ! -z "$APP_NAME" ] && [ ${APP_NAME^^} != "DEFAULT" ]; then
+	HOWARD_PRIORITIZATION_ANALYSIS="$APP_NAME,$HOWARD_PRIORITIZATION_ANALYSIS"
 fi;
-HOWARD_PRIORITIZATION_ANALYSIS=$(echo $HOWARD_PRIORITIZATION_ANALYSIS | tr "," " " | tr " " "\n" | sort -u | tr "\n" "," | sed s/,$//)
+# Keep fist as first and sort the rest
+HOWARD_PRIORITIZATION_ANALYSIS=$(echo $(echo $HOWARD_PRIORITIZATION_ANALYSIS | tr "," " " | cut -d" " -f1 | tr " " "," && echo $HOWARD_PRIORITIZATION_ANALYSIS | tr "," " " | tr " " "\n" | sort -u | grep -v "^$(echo $HOWARD_PRIORITIZATION_ANALYSIS | tr "," " " | cut -d" " -f1)$" | tr "\n" "," | sed s/,$//) | tr " " "," )
 export HOWARD_PRIORITIZATION_ANALYSIS
 
 

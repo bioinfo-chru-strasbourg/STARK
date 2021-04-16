@@ -1257,8 +1257,16 @@ for RUU in $RUN_UNIQ; do
 		# Copy TRANSCRIPTS
 		if [ "$T" != "" ] && [ ! -e $RUN_SAMPLE_DIR/$T.list.transcripts ]; then
 			(($VERBOSE)) && echo "#[INFO] Create LIST.TRANSCRIPTS file '$RUN_SAMPLE_DIR/$S.list.transcripts' and concatenated file .transcripts"
-			echo $T | tr "+" "\n" > $RUN_SAMPLE_DIR/$S.list.transcripts;
-			cat $(echo $T | tr "+" " ") > $RUN_SAMPLE_DIR/$S.transcripts;
+			#echo $T | tr "+" "\n" > $RUN_SAMPLE_DIR/$S.list.transcripts;
+			echo $T | tr "+" "\n" | xargs -l basename | sed "s/^/$S./gi" > $RUN_SAMPLE_DIR/$S.list.transcripts;
+			#cat $(echo $T | tr "+" " ") > $RUN_SAMPLE_DIR/$S.transcripts;
+			> $RUN_SAMPLE_DIR/$S.transcripts.tmp;
+			for T_ONE in $(echo $T | tr "+" "\n"); do
+				cat $T_ONE >> $RUN_SAMPLE_DIR/$S.transcripts.tmp;
+				echo "" >> $RUN_SAMPLE_DIR/$S.transcripts.tmp;
+			done
+			cat $RUN_SAMPLE_DIR/$S.transcripts.tmp | grep -v "^$" > $RUN_SAMPLE_DIR/$S.transcripts
+			rm -f $RUN_SAMPLE_DIR/$S.transcripts.tmp
 		fi;
 
 

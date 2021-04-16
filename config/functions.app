@@ -78,33 +78,30 @@ source_app () {
 	if [ "$FOLDER_APPS" == "" ]; then FOLDER_APPS="$STARK_FOLDER_APPS"; fi
 	if [ "$FOLDER_APPS" == "" ]; then FOLDER_APPS=".."; fi
 
-	#echo "opt $APP_LIST F $FOLDER_APPS"
-
 	[ "$CONFIG_HEADER" != "" ] && [ -e "$CONFIG_HEADER" ] && source $CONFIG_HEADER 1>>$TMP_VERBOSE 2>>$TMP_VERBOSE;
 
-	#source $(find_app "$APP_LIST" "$FOLDER_APPS")
 	local ENV=$(find_app "$APP_LIST" "$FOLDER_APPS")
-	#echo "ENV=$ENV"
-	for ENV_ONE in $ENV; do
-		#echo "ENV_ONE=$ENV_ONE"
-		local APP_FOLDER=$(dirname $ENV_ONE)
-		#echo "APP_FOLDER=$APP_FOLDER"
-		#echo "STARK_FOLDER_APPS $STARK_FOLDER_APPS"
-		source $ENV_ONE #1>/dev/null 2>/dev/null;
-		#echo "E=$E OK"
-	done
-	#source $ENV
-	#echo "ENV=$ENV loaded"
 
-	#for APP in $APP_LIST; do
-	#	local ENV=$(find_app "$APP" "$FOLDER_APPS")
-	#	[ "$ENV" != "" ] && [ -e "$ENV" ] && source $ENV;
-	#	#source $ENV
-	#
-	#done;
+	if [ "$ENV" == "" ]; then
 
-	# SOURCE
-	[ "$CONFIG_FOOTER" != "" ] && [ -e "$CONFIG_FOOTER" ] && source $CONFIG_FOOTER 1>>$TMP_VERBOSE 2>>$TMP_VERBOSE;
+		# SOURCE
+		[ "$CONFIG_FOOTER" != "" ] && [ -e "$CONFIG_FOOTER" ] && source $CONFIG_FOOTER 1>>$TMP_VERBOSE 2>>$TMP_VERBOSE;
+
+	else
+
+		for ENV_ONE in $ENV; do
+			
+			local APP_FOLDER=$(dirname $ENV_ONE)
+
+			source $ENV_ONE #1>/dev/null 2>/dev/null;
+			local APP_TYPE=${ENV_ONE##*.}
+
+			# SOURCE
+			[ "$CONFIG_FOOTER" != "" ] && [ -e "$CONFIG_FOOTER" ] && source $CONFIG_FOOTER 1>>$TMP_VERBOSE 2>>$TMP_VERBOSE;
+
+		done
+
+	fi;
 
 	# VERBOSE
 	(($VERBOSE)) && [ -f $TMP_VERBOSE ] && cat $TMP_VERBOSE;

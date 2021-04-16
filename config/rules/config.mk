@@ -206,6 +206,6 @@ RELEASE_CMD := $(shell echo "\#\#    PARAM=$(PARAM)" >> $(RELEASE_INFOS) )
 
 # OTHER INFORMATIONS
 RELEASE_CMD := $(shell echo "" >> $(RELEASE_INFOS) )
-RELEASE_CMD := $(shell echo "\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#" >> $(RELEASE_INFOS) )
 RELEASE_CMD := $(shell echo "\#\#\#\# INFORMATIONS ON RULES \#\#\#\#" >> $(RELEASE_INFOS) )
-RELEASE_CMD := $(shell echo "\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#" >> $(RELEASE_INFOS) )

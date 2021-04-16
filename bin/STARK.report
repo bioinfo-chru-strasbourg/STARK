@@ -501,6 +501,8 @@ for GENES_PANEL in $(cat $LIST_GENES_PANEL); do
 	echo $(basename $GENES_PANEL) >> $LIST_GENES_PANEL_BASENAME
 done;
 
+
+
 #cat $LIST_GENES_PANEL_BASENAME
 
 #exit 0
@@ -845,7 +847,10 @@ fi;
 
 # GENE PANEL
 LIST_GENE_PANEL="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.list.genes"
-GENE_PANEL_FILES_NAME=$(grep -v "^#" $LIST_GENE_PANEL | tr '\n' ' ' | sed 's/ /<br>/gi')
+GENE_PANEL_FILES_NAME=$(grep -v "^#" $LIST_GENE_PANEL | sed "s/^$SAMPLE\.//gi")
+GENE_PANEL_FILES_NAME_HTML=$(echo $GENE_PANEL_FILES_NAME | sed "s/ /<br>/gi")
+
+
 # Gene number
 if [ "$(cat $LIST_GENE_PANEL)" != "" ]; then
 	GENES_NUMBER=$(cd $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/; cat $(cat $LIST_GENE_PANEL) | $STARK_BED_NORMALIZATION | cut -f4 | sort -u | wc -l)
@@ -863,7 +868,7 @@ GENE_PANEL_DOWNLOAD_FILE=$OUTPUT_FILES_HTMLFOLDER/$GENE_PANEL_FILES_DOWNLOAD_FIL
 if (($GENE_PANEL_NUMBER)); then
 	GENE_PANEL_HTML="
 		<br><a href='$GENE_PANEL_DOWNLOAD_FILE' download>Gene Panel"$([ $GENE_PANEL_NUMBER -gt 1 ] && echo "s")"</a> includes <strong>$GENES_NUMBER gene"$([ $GENES_NUMBER -gt 1 ] && echo "s")"</strong>
-		<br><strong>$(cat $LIST_GENE_PANEL)</strong>
+		<br><strong>$GENE_PANEL_FILES_NAME_HTML</strong>
 	"
 else
 	GENE_PANEL_HTML="<br>Gene Panel defined using Design and RefSeq"
@@ -876,10 +881,13 @@ TRANSCRIPTS="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.transcripts"
 if [ -s $TRANSCRIPTS ]; then
 	TRANSCRIPTS_NUMBER=$(grep -v "^#" $TRANSCRIPTS | cut -f1 | sort -u | wc -l )
 	TRANSCRIPTS_GENES_NUMBER=$(grep -v "^#" $TRANSCRIPTS | cut -f2 | sort -u | wc -l )
+	#TRANSCRIPTS_FILES_NAME=$(basename $TRANSCRIPTS)
+	#TRANSCRIPTS_FILES_NUMBER=1
 	if [ -s $TRANSCRIPTS_LIST ]; then
-		TRANSCRIPTS_FILES_NAME=$(grep -v "^#" $TRANSCRIPTS_LIST | sed "s/\n/<br>/gi")
+		TRANSCRIPTS_FILES_NAME=$(grep -v "^#" $TRANSCRIPTS_LIST | sed "s/^$SAMPLE\.//gi")
 		TRANSCRIPTS_FILES_NUMBER=$(grep -vc "^#" $TRANSCRIPTS_LIST)
 	fi;
+	TRANSCRIPTS_FILES_NAME_HTML=$(echo $TRANSCRIPTS_FILES_NAME | sed "s/ /<br>/gi" )
 	# COPY FILES
 	TRANSCRIPTS_DOWNLOAD_FILENAME=$RANDOM$RANDOM.transcripts.txt.gz
 	$GZ $TRANSCRIPTS -c > $OUTPUT_FILES_HTMLDIR/$TRANSCRIPTS_DOWNLOAD_FILENAME
@@ -888,7 +896,7 @@ if [ -s $TRANSCRIPTS ]; then
 	if (($TRANSCRIPTS_NUMBER)); then
 		TRANSCRIPTS_NUMBER_HTML="
 			<br><a href='$TRANSCRIPTS_DOWNLOAD_FILE' download>Transcript list</a> includes <strong>$TRANSCRIPTS_NUMBER transcript"$([ $TRANSCRIPTS_NUMBER -gt 1 ] && echo "s")"</strong> ($TRANSCRIPTS_GENES_NUMBER gene"$([ $TRANSCRIPTS_GENES_NUMBER -gt 1 ] && echo "s")")
-			<br><strong>$(cat $TRANSCRIPTS_LIST)</strong>
+			<br><strong>$TRANSCRIPTS_FILES_NAME_HTML</strong>
 			"
 	else
 		TRANSCRIPTS_NUMBER_HTML="<br>No transcript defined"
@@ -945,7 +953,7 @@ echo '
                     <div class="card-img align-self-center">
                         <span class="mbr-iconfont mbri-target" style="color: rgb(20, 157, 204); fill: rgb(20, 157, 204);"></span>
                     </div>
-                    <h4 class="card-title media-body py-3 mbr-fonts-style display-7">Target Design <br> Gene Panel <br> Transcripts</h4>
+                    <h4 class="card-title media-body py-3 mbr-fonts-style display-7">Target Design <br> Gene Panel <br> Transcripts list</h4>
                 </div>
                 <div class="card-box">
                     <p class="mbr-text mbr-fonts-style display-7">
@@ -1038,6 +1046,7 @@ GENES_BASES_HTML=$(echo $GENES_BASES_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
 
 # VARIANTS count
 FINAL_VCF="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.reports/$SAMPLE.final.vcf"
+FINAL_TSV="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.reports/$SAMPLE.final.tsv"
 VARIANT_NUMBER=$(grep -cv "^#" $FINAL_VCF)
 
 
@@ -1047,6 +1056,15 @@ CALLERS_HTML="$CALLERS_NUMBER caller"$([ $CALLERS_NUMBER -gt 1 ] && echo "s")
 ANNOTATORS_HTML="$ANNOTATORS_NUMBER annotator"$([ $ANNOTATORS_NUMBER -gt 1 ] && echo "s")
 PIPELINES_HTML="<strong>$PIPELINES_NUMBER pipeline"$([ $PIPELINES_NUMBER -gt 1 ] && echo "s")"</strong>"
 ALIGNERS_CALLERS_ANNOTATORS_HTML="($ALIGNERS_HTML, $CALLERS_HTML, $ANNOTATORS_HTML)"
+
+# HOWARD PRIORITIZATION
+HOWARD_PRIORITIZATION_PARAM=$(FIRST=$(echo $HOWARD_PRIORITIZATION_REPORT,$HOWARD_PRIORITIZATION | tr "," " " | cut -d" " -f1) && echo $FIRST","$(echo $HOWARD_PRIORITIZATION_REPORT,$HOWARD_PRIORITIZATION | tr "," " " | tr " " "\n" | sort -u | grep -v "^$FIRST" | tr "\n" "," | sed s/,$//) | tr "," " ")
+HOWARD_PRIORITIZATION_LIST=""
+for HOWARD_P in $(echo "$HOWARD_PRIORITIZATION_PARAM" | tr " " "\n"); do
+	if (($(head -n1 $FINAL_TSV | tr "\t" "\n" | grep "^PZFlag-$HOWARD_P$" | wc -l))); then
+		HOWARD_PRIORITIZATION_LIST=$HOWARD_PRIORITIZATION_LIST" "$HOWARD_P
+	fi;
+done;
 
 
 
@@ -2586,6 +2604,7 @@ if ((1)); then
 						'$(echo $ALIGNERS_CALLERS_ANNOTATORS | sed "s/ /<br>/gi")'
 						'$([ "$POST_CALLING_STEPS" != "" ] && echo "<br>with post calling steps <strong>"$POST_CALLING_STEPS"</strong>")'
 						'$([ "$POST_ANNOTATION_STEPS" != "" ] && echo "<br>with post annotation steps <strong>"$POST_ANNOTATION_STEPS"</strong>")'
+						'$([ "$HOWARD_PRIORITIZATION_LIST" != "" ] && echo "<br>with post prioritization <strong>"$HOWARD_PRIORITIZATION_LIST"</strong>")'
 					</p>
 
 					'"$(cat $HTMLFILE_VARIANTS_STATS_GENES_PANEL)"'
@@ -3052,12 +3071,6 @@ for ALIGNER in $ALIGNERS; do
 		else
 			GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE_BED_DOWNLOAD_FILE_HTML=""
 		fi;
-
-		echo "MISS_COLOR_RGB=$MISS_COLOR_RGB"
-
-		echo "$GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE_BED"
-		cat $GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE_BED
-
 
 
 		# PER_TARGET_COVERAGE
@@ -4012,6 +4025,7 @@ if in_array $SECTION_ID $SECTIONS || in_array ALL $SECTIONS ; then
 					'$(echo $ALIGNERS_CALLERS_ANNOTATORS | sed "s/ /<br>/gi")'
 					'$([ "$POST_CALLING_STEPS" != "" ] && echo "<br>with post calling steps <strong>"$POST_CALLING_STEPS"</strong>")'
 					'$([ "$POST_ANNOTATION_STEPS" != "" ] && echo "<br>with post annotation steps <strong>"$POST_ANNOTATION_STEPS"</strong>")'
+					'$([ "$HOWARD_PRIORITIZATION_LIST" != "" ] && echo "<br>with post prioritization steps <strong>"$HOWARD_PRIORITIZATION_LIST"</strong>")'
 					<br>
 
 				</p>
@@ -4065,6 +4079,7 @@ if in_array $SECTION_ID $SECTIONS || in_array ALL $SECTIONS ; then
 					'$(echo $ALIGNERS_CALLERS_ANNOTATORS | sed "s/ /<br>/gi")'
 					'$([ "$POST_CALLING_STEPS" != "" ] && echo "<br>with post calling steps <strong>"$POST_CALLING_STEPS"</strong>")'
 					'$([ "$POST_ANNOTATION_STEPS" != "" ] && echo "<br>with post annotation steps <strong>"$POST_ANNOTATION_STEPS"</strong>")'
+					'$([ "$HOWARD_PRIORITIZATION_LIST" != "" ] && echo "<br>with post prioritization steps <strong>"$HOWARD_PRIORITIZATION_LIST"</strong>")'
 					<br>
 
 				</p>
