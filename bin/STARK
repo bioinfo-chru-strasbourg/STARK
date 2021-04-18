@@ -600,26 +600,27 @@ if (($APPLICATIONS_INFOS)); then
 	FOLDER_RUN_ORIGINAL=$FOLDER_RUN
 
 
+	# Find APP list
 	if [ "$APP_TEST" == "" ]; then
 		FIND_APP_LIST=$(find -L $STARK_FOLDER_APPS -name '*.app' -type f | sed "s#$STARK_FOLDER_APPS/##" | sort -f -t'/' -k2.3 -k2.2 -k2.1)" "$(find -L $STARK_FOLDER_APPS -name '*.plugapp' -type f | sed "s#$STARK_FOLDER_APPS/##" | sort -f -t'/' -k2.3 -k2.2 -k2.1)
 	else
 		FIND_APP_LIST=$(echo $APP_TEST_ENV | sed "s#$STARK_FOLDER_APPS/##gi")
 	fi;
 
-	#for ENV_DEF in $(find -L $STARK_FOLDER_APPS -name '*.app' -type f | sed "s#$STARK_FOLDER_APPS/##" | sort -f -t'/' -k2.3 -k2.2 -k2.1) $(find -L $STARK_FOLDER_APPS -name '*.plugapp' -type f | sed "s#$STARK_FOLDER_APPS/##" | sort -f -t'/' -k2.3 -k2.2 -k2.1); do
+	# For each APP found
 	for ENV_DEF in $FIND_APP_LIST; do
 
 		# FIND APP
-		APP=$(source_app "$STARK_FOLDER_APPS/$ENV_DEF"  2>/dev/null; echo $APP_NAME)
 		APP_NAME=$(name_app "$STARK_FOLDER_APPS/$ENV_DEF"  2>/dev/null)
-		if [ "$APP" == "" ]; then
-			APP="default";
-			ENV=$APP;
-		fi
-
-
-		#if [ "$APP_TEST" == "" ] || [ "${APP_TEST_NAME^^}" == "${APP^^}" ]; then
+		
 		if [ "$APP_TEST" == "" ] || in_array ${APP_NAME^^} ${APP_TEST_NAME^^}; then
+
+			# Find APP
+			APP=$(source_app "$STARK_FOLDER_APPS/$ENV_DEF"  2>/dev/null; echo $APP_NAME)
+			if [ "$APP" == "" ]; then
+				APP="default";
+				ENV=$APP;
+			fi
 
 			#FIELD_SEP="\t"
 			APP_INFOS=$(source_app "$STARK_FOLDER_APPS/$ENV_DEF"; echo -e "$APP_RELEASE\t$APP_DESCRIPTION\t$APP_GROUP\t$APP_PROJECT\t$FOLDER_RUN\t$FOLDER_RESULTS\t$FOLDER_REPOSITORY\t$FOLDER_ARCHIVES\t$PIPELINES\t$POST_SEQUENCING_STEPS\t$POST_ALIGNMENT_STEPS\t$POST_CALLING_STEPS\t$POST_ANNOTATION_STEPS\t$HOWARD_ANNOTATION_REPORT")
@@ -1351,28 +1352,35 @@ if [ ! -z "$RUNS" ]; then
 				DEM_STARKCOMPLETE=$DEMULTIPLEXING_FOLDER/$R_BASENAME/STARKComplete.txt
 				#DEM_MANIFEST_LIST=$DEMULTIPLEXING_FOLDER/$R_BASENAME/STARKComplete.txt
 
-				DEM_PARAM=""
-				(($VERBOSE)) && DEM_PARAM="$DEM_PARAM --verbose "
-				(($DEBUG)) && DEM_PARAM="$DEM_PARAM --debug "
 
-				# Test if dem to do
+				# Test DEM_TODO
 				DEM_TODO=0
-				# If no STARKComplete, no dem at all
+				# DEM_TODO=1 true If no STARKComplete, no dem at all
 				[ -e $R/RTAComplete.txt ] && [ ! -e $DEM_STARKCOMPLETE ] && DEM_TODO=1
-				# If SampleSheet diff
+				# DEM_TODO=1 true If SampleSheet diff
 				[ ! -e $DEM_SAMPLESHEET ] || (( $(diff $RUN_SAMPLESHEET $DEM_SAMPLESHEET | head -n1 | wc -l ) )) && DEM_TODO=1
 
+				# DEM PARAM
+				DEM_PARAM=""
+				DEM_PARAM="$DEM_PARAM --app='$APP_DEMULTIPLEXING' "						# APP
+				DEM_PARAM="$DEM_PARAM --run=$R " 										# Run
+				DEM_PARAM="$DEM_PARAM --demultiplex_folder=$DEMULTIPLEXING_FOLDER "		# Demultiplexing folder
+				DEM_PARAM="$DEM_PARAM --samplesheet=$RUN_SAMPLESHEET "					# SampleSheet
+				DEM_PARAM="$DEM_PARAM --threads=$THREADS_INPUT "						# Input threads
+				(($VERBOSE)) && DEM_PARAM="$DEM_PARAM --verbose "						# Verbose
+				(($DEBUG)) && DEM_PARAM="$DEM_PARAM --debug "							# Debug
+				
 
-				#[ -e $R/RTAComplete.txt ] && [ ! -e $DEM_STARKCOMPLETE ] && echo "#[INFO] Start Demultiplexing for RUN '$R'" && echo "" && \
+				# Launch demultiplexing
 				(($DEM_TODO)) && echo "#[INFO] Start Demultiplexing for RUN '$R'" && echo "" && \
-				$SCRIPT_DIR/STARK.demultiplexing --app="$APP_DEMULTIPLEXING" --run=$R --demultiplex_folder=$DEMULTIPLEXING_FOLDER --samplesheet=$RUN_SAMPLESHEET --threads=$THREADS $DEM_PARAM $DEM_PARAM 
-
+				$SCRIPT_DIR/STARK.demultiplexing $DEM_PARAM
 
 				[ -e $DEM_STARKCOMPLETE ] && [ -e $DEM_SAMPLESHEET ] && echo "#[INFO] Demultiplexing completed" || exit 1 
 
 				# Change RUN folder from RAW to DEM
 				RI="$DEMULTIPLEXING_FOLDER/$R_BASENAME:$R_NAME"
 
+				# Demultiplexin ONLY stop
 				if ! (($DEMULTIPLEXING_ONLY)); then
 					CMD="$STARK_FOLDER_BIN/STARK $PARAM --run=$RI " #$APP_ONE_RUN_CONFIG_FILE_JSON " # --repository=$FOLDER_REPOSITORY
 				else

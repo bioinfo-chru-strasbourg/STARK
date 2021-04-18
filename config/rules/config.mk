@@ -180,10 +180,10 @@ RELEASE_CMD := $(shell echo "\#\#    THREADS_BY_PIPELINE=$(THREADS_BY_PIPELINE)"
 RELEASE_CMD := $(shell echo "\#\#    THREADS_BY_ALIGNER=$(THREADS_BY_ALIGNER)" >> $(RELEASE_INFOS) )
 RELEASE_CMD := $(shell echo "\#\#    THREADS_BY_CALLER=$(THREADS_BY_CALLER)" >> $(RELEASE_INFOS) )
 RELEASE_CMD := $(shell echo "\#\#    MEMORY=$(MEMORY)" >> $(RELEASE_INFOS) )
-RELEASE_CMD := $(shell echo "\#\# CONFIG FILES:" >> $(RELEASE_INFOS) )
-RELEASE_CMD := $(shell echo "\#\#    CONFIG=$(CONFIG)" >> $(RELEASE_INFOS) )
-RELEASE_CMD := $(shell echo "\#\#    FUNCTIONS=$(FUNCTIONS)" >> $(RELEASE_INFOS) )
-RELEASE_CMD := $(shell echo "\#\#    PARAM=$(PARAM)" >> $(RELEASE_INFOS) )
+#RELEASE_CMD := $(shell echo "\#\# CONFIG FILES:" >> $(RELEASE_INFOS) )
+#RELEASE_CMD := $(shell echo "\#\#    CONFIG=$(CONFIG)" >> $(RELEASE_INFOS) )
+#RELEASE_CMD := $(shell echo "\#\#    FUNCTIONS=$(FUNCTIONS)" >> $(RELEASE_INFOS) )
+#RELEASE_CMD := $(shell echo "\#\#    PARAM=$(PARAM)" >> $(RELEASE_INFOS) )
 
 
 # RELEASE_CMD := $(shell echo "" >> $(RELEASE_INFOS) )

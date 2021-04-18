@@ -1045,10 +1045,11 @@ GENES_BASES_HTML=$(echo $GENES_BASES_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
 
 
 # VARIANTS count
-FINAL_VCF="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.reports/$SAMPLE.final.vcf"
-FINAL_TSV="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.reports/$SAMPLE.final.tsv"
-VARIANT_NUMBER=$(grep -cv "^#" $FINAL_VCF)
-
+FINAL_VCF="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.reports/$SAMPLE.final.vcf.gz"
+#FINAL_TSV="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.reports/$SAMPLE.final.tsv"
+#VARIANT_NUMBER=$(grep -cv "^#" $FINAL_VCF)
+VARIANT_NUMBER=$(zcat $FINAL_VCF | grep -cv "^#" )
+FINAL_VCF_PZFLAG_HEADER=$(zcat $FINAL_VCF | grep  "^##INFO=<ID=PZFlag")
 
 # PIPELINES count
 ALIGNERS_HTML="$ALIGNERS_NUMBER aligner"$([ $ALIGNERS_NUMBER -gt 1 ] && echo "s")
@@ -1061,7 +1062,8 @@ ALIGNERS_CALLERS_ANNOTATORS_HTML="($ALIGNERS_HTML, $CALLERS_HTML, $ANNOTATORS_HT
 HOWARD_PRIORITIZATION_PARAM=$(FIRST=$(echo $HOWARD_PRIORITIZATION_REPORT,$HOWARD_PRIORITIZATION | tr "," " " | cut -d" " -f1) && echo $FIRST","$(echo $HOWARD_PRIORITIZATION_REPORT,$HOWARD_PRIORITIZATION | tr "," " " | tr " " "\n" | sort -u | grep -v "^$FIRST" | tr "\n" "," | sed s/,$//) | tr "," " ")
 HOWARD_PRIORITIZATION_LIST=""
 for HOWARD_P in $(echo "$HOWARD_PRIORITIZATION_PARAM" | tr " " "\n"); do
-	if (($(head -n1 $FINAL_TSV | tr "\t" "\n" | grep "^PZFlag-$HOWARD_P$" | wc -l))); then
+	#if (($(head -n1 $FINAL_TSV | tr "\t" "\n" | grep "^PZFlag-$HOWARD_P$" | wc -l))); then
+	if (($(echo "$FINAL_VCF_PZFLAG_HEADER" | grep "^##INFO=<ID=PZFlag-$HOWARD_P," | wc -l))); then
 		HOWARD_PRIORITIZATION_LIST=$HOWARD_PRIORITIZATION_LIST" "$HOWARD_P
 	fi;
 done;

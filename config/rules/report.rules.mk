@@ -47,11 +47,11 @@ REPORT_SECTIONS?=ALL
 	@echo "###                                   ###" >> $@
 	@echo "######################################### " >> $@
 	#@echo " " >> $@
-	@cat $*.report.summary >> $@
+	#@cat $*.report.summary >> $@
 	#@echo "# " >> $@
 	#@echo "# $(NB_RUN) RUNS: $(RUNS) " >> $@
 	#@echo "# $(NB_SAMPLE) SAMPLES: $(RUNS_SAMPLES) " >> $@
-	@echo "" >> $@
+	#@echo "" >> $@
 
 
 
@@ -61,21 +61,21 @@ REPORT_SECTIONS?=ALL
 # 	echo "" >> $@
 
 
-%.config: %.report.header $(RELEASE) %.empty.vcf
+%.config: %.report.header $(RELEASE) #%.empty.vcf
 	mkdir -p $(@D)
 	cat $*.report.header > $@
-	echo "" >> $@
-	$(STARK_FOLDER_BIN)/STARK --applications_infos_all --app="$(ENV)" >> $@
-	$(STARK_FOLDER_BIN)/STARK --tools_infos --app="$(ENV)" >> $@
-	$(STARK_FOLDER_BIN)/STARK --databases_infos --app="$(ENV)" >> $@
-	$(HOWARD_FOLDER_BIN)/VCFannotation.pl --show_annotations_full --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --input=$*.empty.vcf >> $@
-	echo "" >> $@;
-	echo "################################" >> $@;
-	echo "# PRIORITIZATION CONFIGURATION #" >> $@;
-	echo "################################" >> $@;
-	$(STARK_FOLDER_BIN)/parse_config_prioritization_ini.pl --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --applications=$(HOWARD_PRIORITIZATION)  --no_header | sort -u -f | sort -k1,2 -f | column -s$$'\t' -t >> $@;
-	#$(STARK_FOLDER_BIN)/STARK --applications_infos_all --app="$(ENV)" >> $@
-	echo "" >> $@
+	# echo "" >> $@
+	# $(STARK_FOLDER_BIN)/STARK --applications_infos_all --app="$(ENV)" >> $@
+	# $(STARK_FOLDER_BIN)/STARK --tools_infos --app="$(ENV)" >> $@
+	# $(STARK_FOLDER_BIN)/STARK --databases_infos --app="$(ENV)" >> $@
+	# $(HOWARD_FOLDER_BIN)/VCFannotation.pl --show_annotations_full --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --input=$*.empty.vcf >> $@
+	# echo "" >> $@;
+	# echo "################################" >> $@;
+	# echo "# PRIORITIZATION CONFIGURATION #" >> $@;
+	# echo "################################" >> $@;
+	# $(STARK_FOLDER_BIN)/parse_config_prioritization_ini.pl --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --applications=$(HOWARD_PRIORITIZATION)  --no_header | sort -u -f | sort -k1,2 -f | column -s$$'\t' -t >> $@;
+	# #$(STARK_FOLDER_BIN)/STARK --applications_infos_all --app="$(ENV)" >> $@
+	# echo "" >> $@
 	cat $(RELEASE) >> $@
 	echo "" >> $@
 
@@ -84,7 +84,7 @@ REPORT_SECTIONS?=ALL
 	cp -p $< $@
 
 
-%.analysis.json: %.config %.archive.cram %.manifest %.bed %.list.genes %.tag
+%.analysis.json: %.archive.cram %.manifest %.bed %.list.genes %.tag #%.config 
 	mkdir -p $(@D)
 	> $@
 	echo "{" >> $@;
@@ -100,7 +100,7 @@ REPORT_SECTIONS?=ALL
 
 
 ## Report for a SAMPLE
-%.$(ANALYSIS_DATE).report: $(FINAL) $(REPORT_FILES) %.$(ANALYSIS_DATE).config 
+%.$(ANALYSIS_DATE).report: $(FINAL) $(REPORT_FILES) $(VCF_REPORT_FILES) %.$(ANALYSIS_DATE).config 
 	@echo "######################################### " > $@
 	@echo "### Sample Report '`echo $$(basename $$(dirname $(@D)))`/$(*F)' " >> $@
 	@echo "### from Analysis '$(ANALYSIS_REF)' " >> $@
@@ -112,7 +112,7 @@ REPORT_SECTIONS?=ALL
 
 
 ## list of vcf
-%.$(ANALYSIS_DATE).final_variants_files_vcf_gz: %.$(ANALYSIS_DATE).vcfgzs.list $(VCF) %.$(ANALYSIS_DATE).config
+%.$(ANALYSIS_DATE).final_variants_files_vcf_gz: %.$(ANALYSIS_DATE).vcfgzs.list $(VCF) #%.$(ANALYSIS_DATE).config
 	mkdir -p $(@D)
 	# Include all vcf.gz of the sample in the list of all vcf.gz of the analysis
 	cat $< | tr " " "\n" | grep "^$$(dirname $(@D))/" > $@;
