@@ -724,7 +724,7 @@ ENV TOOL_JAR=gatk-package-$TOOL_VERSION-local.jar
 RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	source $TOOL_INIT && \
 	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
-	cp -R $TOOL_SOURCE_BUILD/*/$TOOL_JAR $TOOL_DEST/bin/ && \
+	cp -R $TOOL_SOURCE_BUILD/gatk-$TOOL_VERSION/* $TOOL_DEST/bin/ && \
     $TOOL_CHECK ;
 
 

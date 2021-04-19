@@ -668,7 +668,7 @@ THREADS_GATK4HC?=$(THREADS_GATK)
 STAND_CALL_CONF_GATK4HC=30
 maxreadsperalignmentstart_GATK4HC=1000
 #maxReadsInRegionPerSample_GATK4HC=250
-GATK4HC_FLAGS= --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC) --min-pruning $(MINPRUNING_GATK4HC) --native-pair-hmm-threads $(THREADS_GATKHC_ONCOGENET) $(GATK4HC_FLAGS_SHARED) --max-reads-per-alignment-start $(maxreadsperalignmentstart_GATK4HC) --standard-min-confidence-threshold-for-calling $(STAND_CALL_CONF_GATK4HC)
+GATK4HC_FLAGS= --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC) --min-pruning $(MINPRUNING_GATK4HC) --native-pair-hmm-threads $(THREADS_GATK4HC) $(GATK4HC_FLAGS_SHARED) --max-reads-per-alignment-start $(maxreadsperalignmentstart_GATK4HC) --standard-min-confidence-threshold-for-calling $(STAND_CALL_CONF_GATK4HC)
 
 %.gatk4HC$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.genome %.design.bed.interval_list #%.from_manifest.interval_list
 	#
