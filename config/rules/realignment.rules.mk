@@ -77,7 +77,8 @@ GATKIndelRealignerOptions= -known $(VCFDBSNP) --LODThresholdForCleaning 2.0 -com
 		cp $< $@; \
 	fi;
 	# clean
-	-rm -f $*.realignment.bam $*.realignment.bam.bai $*.realignment.* $*.realignment*.mk
+	#-rm -f $*.realignment.bam $*.realignment.bam.bai $*.realignment.* $*.realignment*.mk
+	-rm -f $*.realignment.bam $*.realignment.bam.bai $*.realignment*.mk
 
 
 
