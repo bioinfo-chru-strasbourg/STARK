@@ -115,7 +115,7 @@ VARSCAN_SOMATIC_INDEL_FILTERS=$(VARSCAN_SOMATIC_FILTERS)
 VARSCAN_SOMATIC_TIMEOUT=3600 # 1 = 1sec, 60=1min, 3600=1h
 
 
-%.VarScan_SOMATIC.SNP$(POST_CALLING).vcf: %.bam.mpileup %.empty.vcf %.genome #
+%.VarScan_SOMATIC$(POST_CALLING).SNP.vcf: %.bam.mpileup %.empty.vcf %.genome #
 	-if [ -s $< ]; then \
 		echo "# GENERATION of '$@' start: "`date`; \
 		sample=`basename $* | cut -d"." -f1`; \
@@ -139,7 +139,7 @@ VARSCAN_SOMATIC_TIMEOUT=3600 # 1 = 1sec, 60=1min, 3600=1h
 	-rm $@.idx
 
 
-%.VarScan_SOMATIC.InDel$(POST_CALLING).vcf: %.bam.mpileup %.empty.vcf %.genome
+%.VarScan_SOMATIC$(POST_CALLING).InDel.vcf: %.bam.mpileup %.empty.vcf %.genome
 	-if [ -s $< ]; then \
 		echo "# GENERATION of '$@' start: "`date`; \
 		sample=`basename $* | cut -d"." -f1`; \
