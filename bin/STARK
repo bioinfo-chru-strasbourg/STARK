@@ -1362,7 +1362,7 @@ if [ ! -z "$RUNS" ]; then
 
 				# DEM PARAM
 				DEM_PARAM=""
-				DEM_PARAM="$DEM_PARAM --app='$APP_DEMULTIPLEXING' "						# APP
+				DEM_PARAM="$DEM_PARAM --app=$APP_DEMULTIPLEXING "						# APP
 				DEM_PARAM="$DEM_PARAM --run=$R " 										# Run
 				DEM_PARAM="$DEM_PARAM --demultiplex_folder=$DEMULTIPLEXING_FOLDER "		# Demultiplexing folder
 				DEM_PARAM="$DEM_PARAM --samplesheet=$RUN_SAMPLESHEET "					# SampleSheet
