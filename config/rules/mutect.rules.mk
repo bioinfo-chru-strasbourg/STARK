@@ -48,6 +48,9 @@ THREADS_GATK4_MUTECT2?=$(THREADS_BY_CALLER)
 MINPRUNING_GATK4_MUTECT2?=20
 MAXREADS_GATK4_MUTECT2?=1000
 
+DPMIN_MUTECT2?=30
+
+
 GATK4_MUTECT2_FLAGS_SHARED?=--disable-read-filter MateOnSameContigOrNoMappedMateReadFilter --max-reads-per-alignment-start $(MAXREADS_GATK4_MUTECT2) --dont-use-soft-clipped-bases true --min-pruning $(MINPRUNING_GATK4_MUTECT2) --verbosity ERROR --native-pair-hmm-threads $(THREADS_GATK4_MUTECT2)
 
 #--max-reads-per-alignment-start
@@ -63,10 +66,12 @@ GATK4_MUTECT2_FLAGS_SHARED?=--disable-read-filter MateOnSameContigOrNoMappedMate
 	# Normalize
 	grep "^##" $@.tmp1 | sed s/ID=TLOD,Number=A/ID=TLOD,Number=./gi > $@.tmp
 	grep "^##" -v $@.tmp1 | cut -f1-10 >> $@.tmp
+	# DPMIN_MUTECT2
+	$(VCFUTILS) varFilter -d $(DPMIN_MUTECT2) $@.tmp > $@.tmp2;
 	# Empty
-	if [ ! -e $@.tmp ]; then cp $*.empty.vcf $@.tmp; fi;
+	if [ ! -e $@.tmp2 ]; then cp $*.empty.vcf $@.tmp2; fi;
 	# Copy
-	if [ ! -e $@ ]; then cp $@.tmp $@; fi;
+	if [ ! -e $@ ]; then cp $@.tmp2 $@; fi;
 	# Clean
 	rm -f $@.tmp* $@.idx
 
@@ -99,10 +104,12 @@ GATK3_MUTECT2_FLAGS= -nct $(THREADS_GATK3_MUTECT2) -stand_call_conf 10 -dfrac $(
 		-o $@.tmp1;
 	# Clean header
 	cat $@.tmp1 | sed s/ID=QSS,Number=A/ID=QSS,Number=./gi > $@.tmp
+	# DPMIN_MUTECT2
+	$(VCFUTILS) varFilter -d $(DPMIN_MUTECT2) $@.tmp > $@.tmp2;
 	# Empty
-	if [ ! -e $@.tmp ]; then cp $*.empty.vcf $@.tmp; fi;
+	if [ ! -e $@.tmp2 ]; then cp $*.empty.vcf $@.tmp2; fi;
 	# Copy
-	if [ ! -e $@ ]; then cp $@.tmp $@; fi;
+	if [ ! -e $@ ]; then cp $@.tmp2 $@; fi;
 	# Clean
 	rm -f $@.tmp* $@.idx
 
