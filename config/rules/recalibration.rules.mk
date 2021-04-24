@@ -19,7 +19,8 @@
 	#$(JAVA) $(JAVA_FLAGS) -jar $(GATK) -T PrintReads -R $$(cat $*.genome) -I $< -BQSR $*.recalibration.bam.grp -o $@ -L $*.recalibration.from_manifest.intervals -nct $(THREADS_BY_SAMPLE) -U
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) -T PrintReads -R $$(cat $*.genome) -I $< -BQSR $*.recalibration.bam.grp -o $@ -nct $(THREADS_BY_SAMPLE) -U -EOQ
 	# clean
-	-rm -f $<;
+	#-rm -f $<;
+	-rm -f $*.recalibration.*;
 
 
 
