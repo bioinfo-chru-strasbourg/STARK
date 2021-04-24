@@ -22,10 +22,10 @@ THREADS_OUTLYZER2?=$(THREADS_BY_CALLER)
 	if [ -s $*.design.bed ]; then \
 		$(PYTHON2) $(OUTLYZER) calling -pythonPath=$(PYTHON2) -samtools=$(SAMTOOLS) -bed $*.design.bed -bam $< -ref $$(cat $*.genome) -output $@.outlyser_tmp/ -core $(THREADS_OUTLYZER2) -verbose 1 ; \
 		# Normalize OutLyzer output VCF ; \
-		cat $@.outlyser_tmp/*.vcf | awk -f $(STARK_FOLDER_BIN)/outlyzer_norm.awk > $@.tmp ; \
+		cat $@.outlyser_tmp/*.vcf | awk -f $(STARK_FOLDER_BIN)/outlyzer_norm.awk > $@.tmp.vcf ; \
 		# sort and contig ; \
-		$(JAVA) -jar $(PICARD) SortVcf -I $@.tmp -O $@.tmp2 -SD $$(cat $*.dict) ; \
-		$(VCFUTILS) varFilter -d $(DPMIN_OUTLYZER) $@.tmp2 > $@; \
+		$(JAVA) -jar $(PICARD) SortVcf -I $@.tmp.vcf -O $@.tmp2.vcf -SD $$(cat $*.dict) ; \
+		$(VCFUTILS) varFilter -d $(DPMIN_OUTLYZER) $@.tmp2.vcf > $@; \
 	else \
 		cp $*.empty.vcf $@ ; \
 		echo "[ERROR] Empty BED. Empty OutLyzer VCF" ; \
@@ -43,10 +43,10 @@ THREADS_OUTLYZER?=$(THREADS_BY_CALLER)
 	if [ -s $*.design.bed ]; then \
 		$(PYTHON) $(OUTLYZER) calling -pythonPath=$(PYTHON) -samtools=$(SAMTOOLS) -bed $*.design.bed -bam $< -ref $$(cat $*.genome) -output $@.outlyser_tmp/ -core $(THREADS_OUTLYZER) -verbose 1; \
 		# Normalize OutLyzer output VCF ; \
-		cat $@.outlyser_tmp/*.vcf | awk -f $(STARK_FOLDER_BIN)/outlyzer_norm.awk > $@.tmp ; \
+		cat $@.outlyser_tmp/*.vcf | awk -f $(STARK_FOLDER_BIN)/outlyzer_norm.awk > $@.tmp.vcf ; \
 		# sort and contig ; \
-		$(JAVA) -jar $(PICARD) SortVcf -I $@.tmp -O $@.tmp2 -SD $$(cat $*.dict) ; \
-		$(VCFUTILS) varFilter -d $(DPMIN_OUTLYZER) $@.tmp2 > $@; \
+		$(JAVA) -jar $(PICARD) SortVcf -I $@.tmp.vcf -O $@.tmp2.vcf -SD $$(cat $*.dict) ; \
+		$(VCFUTILS) varFilter -d $(DPMIN_OUTLYZER) $@.tmp2.vcf > $@; \
 	else \
 		cp $*.empty.vcf $@ ; \
 		echo "[ERROR] Empty BED. Empty OutLyzer VCF" ; \

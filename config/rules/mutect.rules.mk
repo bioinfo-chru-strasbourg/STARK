@@ -64,14 +64,16 @@ GATK4_MUTECT2_FLAGS_SHARED?=--disable-read-filter MateOnSameContigOrNoMappedMate
 		$$(if [ "`grep ^ -c $*.design.bed.interval_list`" == "0" ]; then echo ""; else echo "-L $*.design.bed.interval_list"; fi;) \
 		-O $@.tmp1;
 	# Normalize
-	grep "^##" $@.tmp1 | sed s/ID=TLOD,Number=A/ID=TLOD,Number=./gi > $@.tmp
-	grep "^##" -v $@.tmp1 | cut -f1-10 >> $@.tmp
+	grep "^##" $@.tmp1 | sed s/ID=TLOD,Number=A/ID=TLOD,Number=./gi > $@.tmp.vcf
+	grep "^##" -v $@.tmp1 | cut -f1-10 >> $@.tmp.vcf
+	# sort
+	$(JAVA) -jar $(PICARD) SortVcf -I $@.tmp.vcf -O $@.tmp2.vcf -SD $$(cat $*.dict);
 	# DPMIN_MUTECT2
-	$(VCFUTILS) varFilter -d $(DPMIN_MUTECT2) $@.tmp > $@.tmp2;
+	$(VCFUTILS) varFilter -d $(DPMIN_MUTECT2) $@.tmp2.vcf > $@.tmp3.vcf;
 	# Empty
-	if [ ! -e $@.tmp2 ]; then cp $*.empty.vcf $@.tmp2; fi;
+	if [ ! -e $@.tmp2 ]; then cp $*.empty.vcf $@.tmp3.vcf; fi;
 	# Copy
-	if [ ! -e $@ ]; then cp $@.tmp2 $@; fi;
+	if [ ! -e $@ ]; then cp $@.tmp3.vcf $@; fi;
 	# Clean
 	rm -f $@.tmp* $@.idx
 
@@ -103,13 +105,15 @@ GATK3_MUTECT2_FLAGS= -nct $(THREADS_GATK3_MUTECT2) -stand_call_conf 10 -dfrac $(
 		$$(if [ "`grep ^ -c $*.design.bed.interval_list`" == "0" ]; then echo ""; else echo "-L $*.design.bed.interval_list"; fi;) \
 		-o $@.tmp1;
 	# Clean header
-	cat $@.tmp1 | sed s/ID=QSS,Number=A/ID=QSS,Number=./gi > $@.tmp
+	cat $@.tmp1 | sed s/ID=QSS,Number=A/ID=QSS,Number=./gi > $@.tmp.vcf
+	# sort
+	$(JAVA) -jar $(PICARD) SortVcf -I $@.tmp.vcf -O $@.tmp2.vcf -SD $$(cat $*.dict);
 	# DPMIN_MUTECT2
-	$(VCFUTILS) varFilter -d $(DPMIN_MUTECT2) $@.tmp > $@.tmp2;
+	$(VCFUTILS) varFilter -d $(DPMIN_MUTECT2) $@.tmp2.vcf > $@.tmp3.vcf;
 	# Empty
-	if [ ! -e $@.tmp2 ]; then cp $*.empty.vcf $@.tmp2; fi;
+	if [ ! -e $@.tmp2 ]; then cp $*.empty.vcf $@.tmp3.vcf; fi;
 	# Copy
-	if [ ! -e $@ ]; then cp $@.tmp2 $@; fi;
+	if [ ! -e $@ ]; then cp $@.tmp3.vcf $@; fi;
 	# Clean
 	rm -f $@.tmp* $@.idx
 
