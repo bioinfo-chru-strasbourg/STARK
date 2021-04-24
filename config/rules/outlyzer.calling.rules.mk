@@ -25,13 +25,17 @@ THREADS_OUTLYZER2?=$(THREADS_BY_CALLER)
 		cat $@.outlyser_tmp/*.vcf | awk -f $(STARK_FOLDER_BIN)/outlyzer_norm.awk > $@.tmp.vcf ; \
 		# sort and contig ; \
 		$(JAVA) -jar $(PICARD) SortVcf -I $@.tmp.vcf -O $@.tmp2.vcf -SD $$(cat $*.dict) ; \
-		$(VCFUTILS) varFilter -d $(DPMIN_OUTLYZER) $@.tmp2.vcf > $@; \
+		$(BCFTOOLS) view  -i 'FORMAT/DP>=$(DPMIN_MUTECT2)' $@.tmp2.vcf > $@; \
 	else \
 		cp $*.empty.vcf $@ ; \
 		echo "[ERROR] Empty BED. Empty OutLyzer VCF" ; \
 	fi;
 	# Cleaning
 	rm -rf $@.outlyser_tmp $@.tmp* $@.idx
+
+
+# $(VCFUTILS) varFilter -d $(DPMIN_OUTLYZER) $@.tmp2.vcf > $@;
+		
 
 
 THREADS_OUTLYZER?=$(THREADS_BY_CALLER)
@@ -46,7 +50,7 @@ THREADS_OUTLYZER?=$(THREADS_BY_CALLER)
 		cat $@.outlyser_tmp/*.vcf | awk -f $(STARK_FOLDER_BIN)/outlyzer_norm.awk > $@.tmp.vcf ; \
 		# sort and contig ; \
 		$(JAVA) -jar $(PICARD) SortVcf -I $@.tmp.vcf -O $@.tmp2.vcf -SD $$(cat $*.dict) ; \
-		$(VCFUTILS) varFilter -d $(DPMIN_OUTLYZER) $@.tmp2.vcf > $@; \
+		$(BCFTOOLS) view  -i 'FORMAT/DP>=$(DPMIN_MUTECT2)' $@.tmp2.vcf > $@; \
 	else \
 		cp $*.empty.vcf $@ ; \
 		echo "[ERROR] Empty BED. Empty OutLyzer VCF" ; \
@@ -54,6 +58,8 @@ THREADS_OUTLYZER?=$(THREADS_BY_CALLER)
 	# Cleaning
 	rm -rf $@.outlyser_tmp $@.tmp* $@.idx
 
+
+#$(VCFUTILS) varFilter -d $(DPMIN_OUTLYZER) $@.tmp2.vcf > $@;
 
 #$(JAVA) -jar $(PICARD) SortVcf I=$@.tmp O=$@ SEQUENCE_DICTIONARY=$$(cat $*.dict)
 

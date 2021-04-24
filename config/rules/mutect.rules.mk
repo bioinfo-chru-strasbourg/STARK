@@ -15,6 +15,8 @@
 #MUTECT_INPUT_TYPE=tumor
 MUTECT_INTERVAL_PADDING?=0
 
+DPMIN_MUTECT?=30
+
 
 %.MuTect$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.genome %.design.bed.interval_list #%.from_manifest.interval_list
 	# Calling
@@ -28,10 +30,11 @@ MUTECT_INTERVAL_PADDING?=0
 	# Normalize
 	grep "^##" $@.tmp1 > $@.tmp
 	grep "^##" -v $@.tmp1 | grep "REJECT" -v | cut -f1-10 >> $@.tmp
+	$(BCFTOOLS) view  -i 'FORMAT/DP>=$(DPMIN_MUTECT)' $@.tmp > $@.tmp2;
 	# Empty
-	if [ ! -e $@.tmp ]; then cp $*.empty.vcf $@.tmp; fi;
+	if [ ! -e $@.tmp ]; then cp $*.empty.vcf $@.tmp2; fi;
 	# Copy
-	if [ ! -e $@ ]; then cp $@.tmp $@; fi;
+	if [ ! -e $@ ]; then cp $@.tmp2 $@; fi;
 	# Clean
 	rm -f $@.tmp* $@.idx
 
@@ -69,7 +72,8 @@ GATK4_MUTECT2_FLAGS_SHARED?=--disable-read-filter MateOnSameContigOrNoMappedMate
 	# sort
 	$(JAVA) -jar $(PICARD) SortVcf -I $@.tmp.vcf -O $@.tmp2.vcf -SD $$(cat $*.dict);
 	# DPMIN_MUTECT2
-	$(VCFUTILS) varFilter -d $(DPMIN_MUTECT2) $@.tmp2.vcf > $@.tmp3.vcf;
+	#$(VCFUTILS) varFilter -d $(DPMIN_MUTECT2) $@.tmp2.vcf > $@.tmp3.vcf;
+	$(BCFTOOLS) view  -i 'FORMAT/DP>=$(DPMIN_MUTECT2)' $@.tmp2.vcf > $@.tmp3.vcf;
 	# Empty
 	if [ ! -e $@.tmp2 ]; then cp $*.empty.vcf $@.tmp3.vcf; fi;
 	# Copy
@@ -109,7 +113,8 @@ GATK3_MUTECT2_FLAGS= -nct $(THREADS_GATK3_MUTECT2) -stand_call_conf 10 -dfrac $(
 	# sort
 	$(JAVA) -jar $(PICARD) SortVcf -I $@.tmp.vcf -O $@.tmp2.vcf -SD $$(cat $*.dict);
 	# DPMIN_MUTECT2
-	$(VCFUTILS) varFilter -d $(DPMIN_MUTECT2) $@.tmp2.vcf > $@.tmp3.vcf;
+	#$(VCFUTILS) varFilter -d $(DPMIN_MUTECT2) $@.tmp2.vcf > $@.tmp3.vcf;
+	$(BCFTOOLS) view  -i 'FORMAT/DP>=$(DPMIN_MUTECT2)' $@.tmp2.vcf > $@.tmp3.vcf;
 	# Empty
 	if [ ! -e $@.tmp2 ]; then cp $*.empty.vcf $@.tmp3.vcf; fi;
 	# Copy
