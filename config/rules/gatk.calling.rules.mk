@@ -86,9 +86,9 @@ DPMIN=1
 	-if [ ! -e $@ ]; then cp $@.tmp $@; fi; 		# in case of error in previous line
 	-rm -f $@.tmp $@.tmp.idx $@.idx
 
-####################
+###################
 # gatkUG_GERMLINE #
-####################
+###################
 
 # GATKUG Flags
 GATKUG_THREADS_GERMLINE?=1 #$(THREADS_GATK)
@@ -125,9 +125,9 @@ GATKUG_GERMLINE_FLAGS= -nct $(GATKUG_THREADS_GERMLINE) -glm BOTH \
 
 
 
-####################
+################
 # gatkUG_EXOME #
-####################
+################
 
 # GATKUG Flags
 GATKUG_THREADS_EXOME?=1 #$(THREADS_GATK)
@@ -164,9 +164,9 @@ GATKUG_EXOME_FLAGS= -nct $(GATKUG_THREADS_EXOME) -glm BOTH \
 
 
 
-####################
+########################
 # gatkUG_EXOME_SOMATIC #
-####################
+########################
 
 # GATKUG Flags
 GATKUG_THREADS_EXOME_SOMATIC?=1 #$(THREADS_GATK)
@@ -202,9 +202,9 @@ GATKUG_EXOME_SOMATIC_FLAGS= -nct $(GATKUG_THREADS_EXOME_SOMATIC) -glm BOTH \
 	-rm -f $@.tmp $@.tmp.idx $@.idx
 
 
-####################
+#################
 # gatkUG_GENOME #
-####################
+#################
 
 # GATKUG Flags
 GATKUG_THREADS_GENOME?=1 #$(THREADS_GATK)
@@ -274,9 +274,9 @@ DPMIN_HEMATOLOGY=1
 	-rm -f $@.tmp $@.tmp.idx $@.idx
 
 
-##########
+#####################
 # GATKUG_SOLIDTUMOR #
-##########
+#####################
 
 # GATKUG_SOLIDTUMOR Flags
 THREADS_GATK?=$(THREADS_BY_SAMPLE)
