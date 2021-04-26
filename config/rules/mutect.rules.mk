@@ -54,12 +54,12 @@ MAXREADS_GATK4_MUTECT2?=1000
 DPMIN_MUTECT2?=30
 
 
-GATK4_MUTECT2_FLAGS_SHARED?=--disable-read-filter MateOnSameContigOrNoMappedMateReadFilter --max-reads-per-alignment-start $(MAXREADS_GATK4_MUTECT2) --dont-use-soft-clipped-bases true --min-pruning $(MINPRUNING_GATK4_MUTECT2) --verbosity ERROR --native-pair-hmm-threads $(THREADS_GATK4_MUTECT2)
+GATK4_MUTECT2_FLAGS_SHARED?=--disable-read-filter MateOnSameContigOrNoMappedMateReadFilter --max-reads-per-alignment-start $(MAXREADS_GATK4_MUTECT2) --dont-use-soft-clipped-bases true --min-pruning $(MINPRUNING_GATK4_MUTECT2) --callable-depth $(DPMIN_MUTECT2) --verbosity ERROR --native-pair-hmm-threads $(THREADS_GATK4_MUTECT2)
 
 #--max-reads-per-alignment-start
 #--dont-use-soft-clipped-bases
 
-%.MuTect2$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.genome %.design.bed.interval_list #%.from_manifest.interval_list
+%.MuTect2$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.genome %.dict %.design.bed.interval_list #%.from_manifest.interval_list
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK4) Mutect2 $(GATK4_MUTECT2_FLAGS_SHARED) \
 		-R $$(cat $*.genome) \
 		-I $< \
@@ -75,7 +75,7 @@ GATK4_MUTECT2_FLAGS_SHARED?=--disable-read-filter MateOnSameContigOrNoMappedMate
 	#$(VCFUTILS) varFilter -d $(DPMIN_MUTECT2) $@.tmp2.vcf > $@.tmp3.vcf;
 	$(BCFTOOLS) view  -i 'FORMAT/DP>=$(DPMIN_MUTECT2)' $@.tmp2.vcf > $@.tmp3.vcf;
 	# Empty
-	if [ ! -e $@.tmp2 ]; then cp $*.empty.vcf $@.tmp3.vcf; fi;
+	if [ ! -e $@.tmp3.vcf ]; then cp $*.empty.vcf $@.tmp3.vcf; fi;
 	# Copy
 	if [ ! -e $@ ]; then cp $@.tmp3.vcf $@; fi;
 	# Clean
@@ -101,7 +101,7 @@ maxReadsInRegionPerSample_GATK3_MUTECT2?=1000
 GATK3_MUTECT2_FLAGS= -nct $(THREADS_GATK3_MUTECT2) -stand_call_conf 10 -dfrac $(DFRAC_GATK3_MUTECT2) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample_GATK3_MUTECT2) --dbsnp $(VCFDBSNP_GATK3_MUTECT2) -mbq $(MBQ_GATK3_MUTECT2) -minPruning $(MINPRUNING_GATK3_MUTECT2)  $(GATK3_MUTECT2_FLAGS_SHARED)
 
 
-%.GATK3_MuTect2$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.genome %.design.bed.interval_list #%.from_manifest.interval_list
+%.GATK3_MuTect2$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.genome %.dict %.design.bed.interval_list #%.from_manifest.interval_list
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATK3_MUTECT2_FLAGS) \
 	 	-T MuTect2 \
 		-R $$(cat $*.genome) \
@@ -116,7 +116,7 @@ GATK3_MUTECT2_FLAGS= -nct $(THREADS_GATK3_MUTECT2) -stand_call_conf 10 -dfrac $(
 	#$(VCFUTILS) varFilter -d $(DPMIN_MUTECT2) $@.tmp2.vcf > $@.tmp3.vcf;
 	$(BCFTOOLS) view  -i 'FORMAT/DP>=$(DPMIN_MUTECT2)' $@.tmp2.vcf > $@.tmp3.vcf;
 	# Empty
-	if [ ! -e $@.tmp2 ]; then cp $*.empty.vcf $@.tmp3.vcf; fi;
+	if [ ! -e $@.tmp3.vcf ]; then cp $*.empty.vcf $@.tmp3.vcf; fi;
 	# Copy
 	if [ ! -e $@ ]; then cp $@.tmp3.vcf $@; fi;
 	# Clean
