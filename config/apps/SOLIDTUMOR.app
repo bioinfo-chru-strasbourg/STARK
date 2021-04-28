@@ -18,5 +18,5 @@ APP_PROJECT="SOLIDTUMOR"
 #######################
 
 # PIPELINES
-#PIPELINES="bwamem.gatkUG_SOLIDTUMOR.howard bwamem.gatkHC_SOLIDTUMOR.howard bwamem.outLyzer.howard bwamem.MuTect2.howard"
+#PIPELINES="bwamem.gatkUG_SOMATIC.howard bwamem.gatkHC_SOMATIC.howard bwamem.MuTect2.howard bwamem.VarScan.howard bwamem.outLyzer.howard "
 

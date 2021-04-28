@@ -17,7 +17,7 @@ APP_PROJECT="EXOME"
 #######################
 
 # PIPELINES
-PIPELINES="bwamem.gatkHC_EXOME_SOMATIC.howard bwamem.gatkUG_EXOME_SOMATIC.howard bwamem.outLyzer.howard bwamem.MuTect2.howard"
+PIPELINES="bwamem.gatkHC_EXOME_SOMATIC.howard bwamem.gatkUG_EXOME_SOMATIC.howard bwamem.outLyzer.howard bwamem.VarScan.howard bwamem.MuTect2.howard"
 
 # INTERVAL_PADDING / add some padding to the intervals used (manifest) in order to include the flanking regions (typically ~100 bp)
 INTERVAL_PADDING=100

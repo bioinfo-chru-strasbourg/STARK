@@ -29,10 +29,15 @@ MK_DATE="27/09/2019"
 MPILEUP_VARSCAN_OPTIONS= -E -d 10000000 -L 10000000 -C 50 -Q 10 -q 1 --output-tags SP,DP,DP4,DV,ADF,ADR,AD # -B  -d 100000 -L 100000 -C200
 
 
-%.bam.mpileup: %.bam %.bam.bai %.genome
+%.bam.mpileup: %.bam %.bam.bai %.genome %.design.bed
 	#-$(SAMTOOLS) mpileup -f `cat $*.genome` $< $(MPILEUP_OPTIONS) -l $*.for_metrics.bed > $@
 	#-$(SAMTOOLS) mpileup -f `cat $*.genome` $< $(MPILEUP_VARSCAN_OPTIONS) > $@
-	$(SAMTOOLS) view $< -h | perl $(CAP_SOFTCLIPTOQ0) -v1 | $(SAMTOOLS) mpileup - -f `cat $*.genome` $(MPILEUP_VARSCAN_OPTIONS) > $@
+	#$(SAMTOOLS) view $< -h | perl $(CAP_SOFTCLIPTOQ0) -v1 | $(SAMTOOLS) mpileup - -f $$(cat $*.genome) $(MPILEUP_VARSCAN_OPTIONS) > $@
+	if (( $$(grep -v "^#" -c $*.design.bed) )); then \
+		$(SAMTOOLS) view $< -L $*.design.bed -h | perl $(CAP_SOFTCLIPTOQ0) -v1 | $(SAMTOOLS) mpileup - -f $$(cat $*.genome) -l $*.design.bed $(MPILEUP_VARSCAN_OPTIONS) > $@; \
+	else \
+		$(SAMTOOLS) view $< -h | perl $(CAP_SOFTCLIPTOQ0) -v1 | $(SAMTOOLS) mpileup - -f $$(cat $*.genome) $(MPILEUP_VARSCAN_OPTIONS) > $@; \
+	fi;
 
 
 
@@ -251,7 +256,7 @@ VARSCAN_HEMATOLOGY_INDEL_FILTERS=$(VARSCAN_HEMATOLOGY_FILTERS)
 VARSCAN_HEMATOLOGY_TIMEOUT=3600 # 1 = 1sec, 60=1min, 3600=1h
 
 
-%.VarScan_HEMATOLOGY.SNP$(POST_CALLING).vcf: %.bam.mpileup %.empty.vcf %.genome #
+%.VarScan_HEMATOLOGY.SNP$(POST_CALLING).vcf: %.bam.mpileup %.empty.vcf %.genome
 	-if [ -s $< ]; then \
 		echo "# GENERATION of '$@' start: "`date`; \
 		sample=`basename $* | cut -d"." -f1`; \
@@ -317,7 +322,7 @@ VARSCAN_SOLIDTUMOR_INDEL_FILTERS=$(VARSCAN_SOLIDTUMOR_FILTERS)
 VARSCAN_SOLIDTUMOR_TIMEOUT=3600 # 1 = 1sec, 60=1min, 3600=1h
 
 
-%.VarScan_SOLIDTUMOR.SNP$(POST_CALLING).vcf: %.bam.mpileup %.empty.vcf %.genome #
+%.VarScan_SOLIDTUMOR.SNP$(POST_CALLING).vcf: %.bam.mpileup %.empty.vcf %.genome
 	-if [ -s $< ]; then \
 		echo "# GENERATION of '$@' start: "`date`; \
 		sample=`basename $* | cut -d"." -f1`; \
