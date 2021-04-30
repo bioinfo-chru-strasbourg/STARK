@@ -1383,7 +1383,7 @@ if [ ! -z "$RUNS" ]; then
 
 				# Demultiplexin ONLY stop
 				if ! (($DEMULTIPLEXING_ONLY)); then
-					CMD="$STARK_FOLDER_BIN/STARK $PARAM --run=$RI " #$APP_ONE_RUN_CONFIG_FILE_JSON " # --repository=$FOLDER_REPOSITORY
+					CMD="$STARK_FOLDER_BIN/STARK $PARAM --run=$RI --demultiplexing=$DEMULTIPLEXING_FOLDER " #$APP_ONE_RUN_CONFIG_FILE_JSON " # --repository=$FOLDER_REPOSITORY
 				else
 					CMD=""
 				fi;

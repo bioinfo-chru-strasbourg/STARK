@@ -761,6 +761,17 @@ if [ -z "$RESULTS" ]; then
 	RESULTS=$INPUT
 fi;
 
+# DEFAULT RESULTS
+# RESULTS is 1/ the RESULTS folder in option, OR 2/ FOLDER_RESULT in ENV, OR 3/ folder of the first FASTQ by default
+if [ -z "$DEMULTIPLEXING" ]; then
+	#RESULTS=$FOLDER_RESULTS
+	DEMULTIPLEXING=$FOLDER_DEMULTIPLEXING
+fi;
+# if [ -z "$RESULTS" ]; then
+# 	RESULTS=$INPUT
+# fi;
+
+
 
 # CREATE RESULTS if necessary
 if [ ! -d "$RESULTS" ]; then
@@ -819,26 +830,36 @@ for RUU in $RUN_UNIQ; do
 
 	ANALYSIS_PREFIX="STARK.$ANALYSIS_REF"
 
-	MAKEFILE_ANALYSIS_RUN=$RESULTS/$RUU/$ANALYSIS_PREFIX.param.mk
-	#SHELL_ANALYSIS_RUN=$RESULTS/$RUU/$ANALYSIS_PREFIX.param.sh
-	LOGFILE_RES_RUN=$RESULTS/$RUU/$ANALYSIS_PREFIX.log
-	#LOGFILE_RES_RUN_REPORT=$RESULTS/$RUU/$ANALYSIS_PREFIX.report.log
-	RELEASE_RUN=$RESULTS/$RUU/$ANALYSIS_PREFIX.release
-	#FINAL_REPORT_RUN=$RESULTS/$RUU/$ANALYSIS_PREFIX.report
-	FINAL_REPORT_RUN=$RESULTS/$RUU/$ANALYSIS_PREFIX
-	#FINAL_REPORT_FULL_RUN=$RESULTS/$RUU/$ANALYSIS_PREFIX.full.report
-	#FINAL_REPORT_FULL_VCF=$RESULTS/$RUU/$SAMPLE.$ANALYSIS_REF.full.vcf
+	# Analysis log files
+	ANALYSIS_PREFIX_PATH=$RESULTS/$RUU/$ANALYSIS_PREFIX
+	LOGFILE_DEM_RUN=$ANALYSIS_PREFIX_PATH.demultiplexing.log
+	MAKEFILE_ANALYSIS_RUN=$ANALYSIS_PREFIX_PATH.analysis.param.mk
+	LOGFILE_RES_RUN=$ANALYSIS_PREFIX_PATH.analysis.log
+	CONFIG_RES_RUN=$ANALYSIS_PREFIX_PATH.config
+	RELEASE_RUN=$ANALYSIS_PREFIX_PATH.analysis.release
+	FASTQ_MK=$ANALYSIS_PREFIX_PATH.analysis.fastq.mk
+	FASTP_MK=$ANALYSIS_PREFIX_PATH.analysis.fastp.mk
+	RES_MK=$ANALYSIS_PREFIX_PATH.analysis.copy.mk
 
-	FASTQ_MK=$RESULTS/$RUU/$ANALYSIS_PREFIX.fastq.mk
-	FASTP_MK=$RESULTS/$RUU/$ANALYSIS_PREFIX.fastp.mk
-	RES_MK=$RESULTS/$RUU/$ANALYSIS_PREFIX.copy.mk
+	# Analysis report file
+	FINAL_REPORT_RUN=$RESULTS/$RUU/$ANALYSIS_PREFIX
 
 	# MKDIR & TOUCH
 	mkdir -p $RESULTS/$RUU
 	touch $MAKEFILE_ANALYSIS_RUN
 	#touch $SHELL_ANALYSIS_RUN
+
+	### Results log
 	touch $LOGFILE_RES_RUN
-	#touch $LOGFILE_RES_RUN_REPORT
+
+	### Demultiplexing log
+	touch $LOGFILE_DEM_RUN
+
+	### Find demultiplexing log
+	if [ -e $DEMULTIPLEXING/$RUU/demultiplexing.configuration.log ]; then
+		cp -pf $DEMULTIPLEXING/$RUU/demultiplexing.configuration.log $LOGFILE_DEM_RUN
+	fi;
+	
 
 	# FASTQ
 	> $FASTQ_MK
@@ -1478,32 +1499,89 @@ for RUU in $RUN_UNIQ; do
 
 	echo "["$(date '+%Y%m%d-%H%M%S')"] Main Analysis Process for Analysis '$RELEASE_RUN' START" >>$LOGFILE_RES_RUN
 
-	make -k -j $THREADS -e ENV="$ENV" PARAM=$MAKEFILE_ANALYSIS_RUN $PARAMETERS $THREAD_PARAMETERS JAVA_MEMORY=$JAVA_MEMORY SNAPSHOT=0 VALIDATION=1 INPUT=$INPUT OUTDIR=$RESULTS RELEASE=$RELEASE_RUN FINAL_REPORT=$FINAL_REPORT_RUN ANALYSIS_REF=$ANALYSIS_REF -f $NGS_SCRIPTS/NGSWorkflow.mk 1>>$LOGFILE_RES_RUN 2>>$LOGFILE_RES_RUN
+
+	MAKE_ERROR=0
+
+	if ! make -k -j $THREADS -e ENV="$ENV" PARAM=$MAKEFILE_ANALYSIS_RUN $PARAMETERS $THREAD_PARAMETERS JAVA_MEMORY=$JAVA_MEMORY SNAPSHOT=0 VALIDATION=1 INPUT=$INPUT OUTDIR=$RESULTS RELEASE=$RELEASE_RUN FINAL_REPORT=$FINAL_REPORT_RUN ANALYSIS_REF=$ANALYSIS_REF -f $NGS_SCRIPTS/NGSWorkflow.mk 1>>$LOGFILE_RES_RUN 2>>$LOGFILE_RES_RUN; then
+		MAKE_ERROR=1
+	fi;
 	rm -f $MAKEFILE_ANALYSIS_RUN $FINAL_REPORT_RUN $RELEASE_RUN
 	echo "["$(date '+%Y%m%d-%H%M%S')"] Main Analysis Process for Analysis '$RELEASE_RUN' END" >>$LOGFILE_RES_RUN
 
-	if (($(grep "\*\*\*" $LOGFILE_RES_RUN -c))); then
+	# LOG and END files
+
+	rm -f $STARK_RUNNING_FILE
+
+	I=0
+	for S in $SAMPLE; do
+		RU=${RUN_ARRAY[$I]};
+
+		if [ "$RU" != "$RUU" ]; then
+			((I++))
+			continue;
+		fi;
+		
+		# REPOSITORY
+		# COPY of run/sample
+		# List of folders
+		# Repositories
+		if [ "$REPOSITORY" != "" ] ; then
+			for RESULTS_FOLDER_COPY_FOLDER in $(echo $REPOSITORY | tr "," " " | tr " " "\n" | sort -u ); do #
+				if [ -d $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT/$RU ] || \
+					mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT/$RU; then
+					#echo "Copy $LOGFILE_RES_RUN $LOGFILE_DEM_RUN in $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT/$RU/ "
+					cp -pf $LOGFILE_RES_RUN $LOGFILE_DEM_RUN $CONFIG_RES_RUN $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT/$RU/;
+				fi;
+			done;
+		fi;
+		# Archives
+		if [ "$ARCHIVES" != "" ] ; then
+			for RESULTS_FOLDER_COPY_FOLDER in $(echo $ARCHIVES | tr "," " " | tr " " "\n" | sort -u ); do #
+				if [ -d $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT/$RU ] || \
+					mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT/$RU; then
+					#echo "Copy $LOGFILE_RES_RUN $LOGFILE_DEM_RUN in $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT/$RU/ "
+					cp -pf $LOGFILE_RES_RUN $LOGFILE_DEM_RUN $CONFIG_RES_RUN $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT/$RU/;
+				fi;
+			done;
+		fi;
+
+	done
+
+
+
+	### TEST ERROR
+
+	if (( $(grep "\*\*\*" $LOGFILE_RES_RUN -c) || $MAKE_ERROR )); then
+
 		echo "["`date '+%Y%m%d-%H%M%S'`"] Main Analysis Process for Analysis '$RELEASE_RUN' ERROR" >>$LOGFILE_RES_RUN
 		STOP_ANALYSIS=$(date +%s)
 		ANALYSIS_TIME=$(convertsecs $((STOP_ANALYSIS - START_ANALYSIS)))
 		echo "#[INFO] Main Analysis Process for Analysis '$RELEASE_RUN' finished with ERRORS [`date`] - $ANALYSIS_TIME"
-		if (($VERBOSE)); then grep "\*\*\*" $LOGFILE_RES_RUN; fi;
+		#if (($VERBOSE)); then grep "\*\*\*" $LOGFILE_RES_RUN; fi;
+		(($VERBOSE)) && grep "\*\*\*" $LOGFILE_RES_RUN -B10 | awk '{print "#[ERROR] LOG: "$0}';
 		# RUNNING stop
-		rm -f $STARK_RUNNING_FILE
+		
+		
+		
 		# EXIT
 		exit 1;
-		continue;
-	fi;
+		
 
-	# STARK COMPLETE
-	echo "#["`date '+%Y%m%d-%H%M%S'`"] RUN $RUN analyzed by STARK ($STARK_VERSION)" >> $STARK_COMPLETE_FILE
+		
+		#continue;
+	#fi;
 
-	# STARK RUNNING stop
-	rm -f $STARK_RUNNING_FILE
+	else
+
+		# STARK COMPLETE
+		echo "#["`date '+%Y%m%d-%H%M%S'`"] RUN $RUN analyzed by STARK ($STARK_VERSION)" >> $STARK_COMPLETE_FILE
+
+		# STARK RUNNING stop
+		#rm -f $STARK_RUNNING_FILE
 
 
-	# STARK Copy Reports Files
-	if ((1)); then
+		# STARK Copy Reports Files
+		#if ((1)); then
 
 		echo "#[INFO] STARK Copy Processing...";
 
@@ -1702,15 +1780,15 @@ for RUU in $RUN_UNIQ; do
 		fi;
 		! (($DEBUG)) && rm -f $RES_MK $RES_MK.log $RES_MK.err
 
+	
+		# CREATE CopyComplete file
+		for RESULTS_FOLDER_COPY_FOLDER_RUU_STARKCopyComplete in $RESULTS_FOLDER_COPY_FOLDER_RUU_STARKCopyComplete_list; do
+			echo "["$(date '+%Y%m%d-%H%M%S')"] Copy complete" >> $RESULTS_FOLDER_COPY_FOLDER_RUU_STARKCopyComplete/STARKCopyComplete.txt
+			chmod $PERMS $RESULTS_FOLDER_COPY_FOLDER_RUU_STARKCopyComplete/STARKCopyComplete.txt 1>/dev/null 2>/dev/null
+		done;
+
+
 	fi;
-
-
-
-	# CREATE CopyComplete file
-	for RESULTS_FOLDER_COPY_FOLDER_RUU_STARKCopyComplete in $RESULTS_FOLDER_COPY_FOLDER_RUU_STARKCopyComplete_list; do
-		echo "["$(date '+%Y%m%d-%H%M%S')"] Copy complete" >> $RESULTS_FOLDER_COPY_FOLDER_RUU_STARKCopyComplete/STARKCopyComplete.txt
-		chmod $PERMS $RESULTS_FOLDER_COPY_FOLDER_RUU_STARKCopyComplete/STARKCopyComplete.txt 1>/dev/null 2>/dev/null
-	done;
 
 	# Stop Analysis
 	STOP_ANALYSIS=$(date +%s)
@@ -1720,6 +1798,7 @@ for RUU in $RUN_UNIQ; do
 
 	(($VERBOSE)) && echo "#[INFO] *** Stop Analysis         ["$(date)"] - $ANALYSIS_TIME"
 
+	
 
 done;
 

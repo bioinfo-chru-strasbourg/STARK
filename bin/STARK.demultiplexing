@@ -384,9 +384,17 @@ echo "#[`date`] COMMAND: " $COMMAND >> $LOGFILE
 (($DEBUG)) && echo "#[INFO] Command: "$COMMAND
 
 #$COMMAND 1>>$LOGFILE 2>>$LOGFILE || echo "message" && echo "exit"
-$COMMAND 1>>$LOGFILE 2>>$LOGFILE || { echo "#[ERROR] Demultiplexing FAILED"; exit 1; }
+if ! $COMMAND 1>>$LOGFILE 2>>$LOGFILE; then
+	# List of fastq files with size
+	ls -hs1 $OUTPUT_DIR/*fastq.gz 2>/dev/null | awk '{print "#[INFO] FASTQ: "$2"\t"$1}'
+	echo "#[ERROR] Demultiplexing FAILED";
+	tail -n 10 $LOGFILE | awk '{print "#[ERROR] LOG: "$0}'
+	exit 1;
+fi;
 
-#touch $OUTPUT_DIR/Makefile
+# List of fastq files with size
+ls -hs1 $OUTPUT_DIR/*fastq.gz 2>/dev/null | awk '{print "#[INFO] FASTQ: "$2"\t"$1}' 1>>$LOGFILE 2>>$LOGFILE
+
 
 # End file
 tail -n 1 $LOGFILE > $OUTPUT_DIR/STARKComplete.txt
