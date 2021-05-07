@@ -3,6 +3,16 @@
 Goal of this script is to create a run metrics tsv for one run. It will be launched by STARK every run.
 It will also create secondary files with gene/design/amplicon specific metrics.
 
+######## STARK 0.9.18 documentation
+Generates up to 4 tsv files, for each design and panel.
+Mainly used to regroup content from <sample>.bwamem.metrics files
+- global_coverage.tsv : summarized stats with one line for each sample in the run
+- coverage.tsv : compiled content of all HsMetrics.per_target_coverage.flags files
+- depth.tsv : compiled content of all genes.genes.txt files
+- amplicon_coverage.tsv : compiled content from all .per_amplicon_coverage.flags files
+
+
+########## STARK 0.9.17 documentation (no longer relevant for STARK 0.9.18, useful to understand the structure of this script)
 @INPUTS AND OUTPUTS
 Metrics to fetch according to julien/nadege/jean/samuel meeting (27/05/2019):
 for each sample, both total and %:
@@ -37,11 +47,11 @@ TODO: stats globales pour une maladie/appli [beyond the scope of this script]
 DONE: variables environnement pour legende (MAPQ...) si applicable
 DONE: gestion tags (CTUM...)
 DONE: nom des fichiers (avec date, et changer run_metrics en reads.metrics)
-TODO: la couverture moyenne a 30X du read.metrics
 DONE: how do I deal with so many .genes???
 - reads.metrics: add columns for every .gene (or use only the design values <-- I did that)
 - one more design/amplicon type file for every .gene file
 --> adds only one more file per .gene, and should be doable without rewriting everything. Find the .genes list common to all samples by looking up each <sample>/DATA/<sample>.list.gene ; and do one metrics file with each common .genes file
+############################
 
 @Author: Samuel Nicaise (29/05/2019)
 """
@@ -56,29 +66,7 @@ import subprocess
 from os.path import join as osj
 
 from functions import assert_file_exists_and_is_readable, tags_and_types_to_lists, \
-					get_descriptions_from_samplesheet
-
-def find_any_samplesheet(runDir, fromResDir):
-	"""
-	1) look up recursively all files named SampleSheet.csv in the runDir
-	2) check if file path follows an expected samplesheet name and location
-		(the latter depends on if we're in a STARK result or repository dir,
-		defined by the bool fromResDir)
-	3) first correct file path is returned
-	"""
-	p = subprocess.Popen("find -L "+runDir+" -name *SampleSheet.csv", stdout=subprocess.PIPE, shell=True)
-	out = p.stdout.readlines()
-	for ss in out:
-		ss = ss.decode("utf-8").strip()
-		if fromResDir:
-			r = re.match(runDir.rstrip("/")+"/(.*)/(.*).SampleSheet.csv", ss)
-		else:
-			r = re.match(runDir.rstrip("/")+"/(.*)/DATA/(.*).SampleSheet.csv", ss)
-		if r is None:
-			continue
-		elif r.group(1) == r.group(2): #checks if (.*) == (.*)
-			return ss
-	return "NO_SAMPLESHEET_FOUND"
+					get_descriptions_from_samplesheet, find_any_samplesheet
 
 def get_run_path_from_metrics_file(metricsFile, fromResDir):
 	"""
@@ -88,7 +76,7 @@ def get_run_path_from_metrics_file(metricsFile, fromResDir):
 	if fromResDir:
 		r = re.match("(.*)/(.*)/(.*)/metrics", metricsFile)
 	else:
-		r = re.match("(.*)/(.*)/DATA/(.*)/metrics", metricsFile)
+		r = re.match("(.*)/(.*)/STARK/(.*)/metrics", metricsFile)
 	assert r.group(3).startswith(r.group(2)) #way to check if the pattern fits a patient name
 	return r.group(1)
 
@@ -102,13 +90,13 @@ def get_sample_list_from_samplesheet(samplesheetPath):
 	inDataTable = False
 	sampleList = []
 	with open(samplesheetPath, "r") as f:
-			for l in f:
-				if not inDataTable:
-					if l.startswith("Sample_ID,"):
-						inDataTable = True
-				else:
-					if "," in l:
-						sampleList.append(l.strip().split(",")[0])
+		for l in f:
+			if not inDataTable:
+				if l.startswith("Sample_ID,"):
+					inDataTable = True
+			else:
+				if "," in l:
+					sampleList.append(l.strip().split(",")[0])
 	#if there are spaces in samplesheet names, change them to "_" because that's what demultiplexing.sh will do
 	#otherwise the fastq won't be found when looking in the DEM dir
 	for i in range(len(sampleList)):
@@ -148,7 +136,7 @@ def get_on_target_reads(sampleDir, sample, aligner, bed):
 	else: #bed is a .genes file
 		onReadsFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+"."+sample+"."+bed+".on.target")
 		offReadsFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+"."+sample+"."+bed+".off.target")
-		
+
 	with open(onReadsFile, "r") as fon:
 		on = int(fon.readline().rstrip())
 	with open(offReadsFile, "r") as foff:
@@ -229,7 +217,7 @@ def get_sample_metrics(runPath, sample, fromResDir, aligner, bed):
 	if fromResDir:
 		sampleDir = osj(runPath, sample)
 	else:
-		sampleDir = osj(runPath, sample, "DATA")
+		sampleDir = osj(runPath, sample, "STARK")
 	metricsList = get_total_mapped_duplicate_reads(sampleDir, sample, aligner)
 	metricsList += get_on_target_reads(sampleDir, sample, aligner, bed)
 	metricsList += get_depth_metrics(sampleDir, sample, aligner, bed)
@@ -256,7 +244,7 @@ def get_tags_list(sampleList, sampleDirList, samplesheet=""):
 					else:
 						tags = l.strip()
 			tagsList.append(tags)
-		print(tagsList)
+		# print(tagsList)
 		return tagsList
 		# return ["APP#SWAG!#TUMCELL" for v in sampleList]
 	except IOError as e:
@@ -278,24 +266,27 @@ def build_cov_metrics_header(dataFileList, tagsList):
 	"""Builds the header for write_cov_metrics_file()"""
 	#Base
 	header = "#Run\tSample"
+	
+	# #DEPRECATED - used to allow to have a column per tag
+	# #appending tag types
+	# allTagTypes = []
+	# for tags in tagsList:
+		# values, types = tags_and_types_to_lists(tags)
+		# allTagTypes += types
+	# seen = set()
+	# #remove duplicate types for the header, while still keeping them ordered
+	# allTagTypes = [t for t in allTagTypes if not(t in seen or seen.add(t))]
 
-	#appending tag types
-	allTagTypes = []
-	for tags in tagsList:
-		values, types = tags_and_types_to_lists(tags)
-		allTagTypes += types
-	seen = set()
-	#remove duplicate types for the header, while still keeping them ordered
-	allTagTypes = [t for t in allTagTypes if not(t in seen or seen.add(t))]
-
-	untypedValuesExist = False
-	for t in allTagTypes:
-		if t == '':
-			untypedValuesExist = True
-		else:
-			header += "\t" + t
-	if untypedValuesExist:
-		header += "\t" + "Other tags"
+	# untypedValuesExist = False
+	# for t in allTagTypes:
+		# if t == '':
+			# untypedValuesExist = True
+		# else:
+			# header += "\t" + t
+	# if untypedValuesExist:
+		# header += "\t" + "Other tags"
+	if any([len(t) > 0 for t in tagsList]):
+		header += "\t" + "Tags"
 
 	#appending data file header
 	with open(dataFileList[0], "r") as fin:
@@ -305,7 +296,8 @@ def build_cov_metrics_header(dataFileList, tagsList):
 	header += "\t" + headerTmp
 	header += "\n"
 
-	return header, allTagTypes
+	# return header, allTagTypes
+	return header
 
 def write_cov_metrics_file(name, run, sampleList, dataFileList, legend, tagList):
 	"""
@@ -320,17 +312,20 @@ def write_cov_metrics_file(name, run, sampleList, dataFileList, legend, tagList)
 		fout.write(legend)
 
 		#Create header with the first file
-		header, headerTags = build_cov_metrics_header(dataFileList, tagList)
+		# header, headerTags = build_cov_metrics_header(dataFileList, tagList)
+		header = build_cov_metrics_header(dataFileList, tagList)
 		fout.write(header)
 
 		for tags, sample, dataFile in zip(tagList, sampleList, dataFileList):
 			tagString = ""
-			values, types = tags_and_types_to_lists(tags)
-			for h in headerTags:
-				if h in types:
-					tagString += "\t" + values[types.index(h)]
-				else:
-					tagString += "\t" + ""
+			# values, types = tags_and_types_to_lists(tags)
+			# for h in headerTags:
+				# if h in types:
+					# tagString += "\t" + values[types.index(h)]
+				# else:
+					# tagString += "\t" + ""
+			if len(tags) > 0:
+				tagString = "\t" + tags
 			with open(dataFile, "r") as fin:
 				next(fin) #skips the header
 				for l in fin:
@@ -347,16 +342,188 @@ def str_to_bool(v):
 	else:
 		raise argparse.ArgumentTypeError('One arg is expected to be a String convertible to a boolean value.')
 
-def main_routine(metricsFileList, outputPrefix):
-	#1) extract parameters
+def reverse_dict_of_lists(dic):
+	"""
+	>>> reverse_dict_of_lists({'s1': ['g1'] ; 's2' : ['g1', 'g2'})
+	{'s1': ['g1', 'g2'] ; 's2': ['g1']}
+	"""
+	r = {}
+	for k in dic.keys():
+		for v in dic[k]:
+			if v in r.keys():
+				r[v].append(k)
+			else:
+				r[v] = [k]
+	return r
+
+def make_global_coverage_file(run, regionsType, regionsFileList, metricsFileList, sampleList ,alignerList, genesSampleDic, outputPrefix, fromResDir):
+	"""
+	Generates the files containing samtools flagstat data and mean Cov 1X/5X/...X over all samples in a run
+
+	design.<nomdesign>.global_coverage.metrics
+	or
+	panel.<nompanel>.global_coverage.metrics
+	depending on input files
+
+	where regionsFileList is either [design_name] or [name1.genes, name2.genes, ...]
+	and regionsType indicates if it's a design or a panel
+
+	sampleGenesDic indicates if a given regionFile is associated to a given sample.
+	"""
+	assert regionsType in ("Design", "Panel")
+	assert len(regionsFileList) > 0
+
+	#create matrix
+	print("Getting " + regionsType+ " global_coverage data...")
+	runMetrics = {}
+	for regionsFile in regionsFileList:
+		for metricsFile, sample, aligner in zip(metricsFileList, sampleList ,alignerList):
+			# runMetrics[sample]=[] #faster execution to debug everything else
+			#distinction needed here because design metrics files are named "design" in STARK, while .genes metrics used the full .genes name
+			if regionsType == "Design":
+				runMetrics[sample] = get_sample_metrics(run, sample, fromResDir, aligner, "design")
+				runMetrics[sample].insert(0, regionsFile)
+			elif regionsType == "Panel":
+				if sample in genesSampleDic[regionsFile]:
+					runMetrics[sample] = get_sample_metrics(run, sample, fromResDir, aligner, regionsFile)
+					runMetrics[sample].insert(0, regionsFile)
+
+		#write matrix
+		if regionsType == "Design":
+			finalTsv = osj(outputPrefix + regionsType + ".global_coverage.tsv")
+		elif regionsType == "Panel":
+			finalTsv = osj(outputPrefix + regionsType + "." + regionsFile + ".global_coverage.tsv")
+		print("Writing " + finalTsv)
+		with open(finalTsv, "w") as f:
+			covHeader = "\t".join(["Cov "+v+"X" for v in get_cov_criteria()[0].split(",")])
+			f.write("## Run Metrics\n"
+				"##\n"
+				"## On-target reads are reads that are aligned within the regions defined in " + regionsType + " and that aren't duplicates, unmapped or with low mapping quality (MAPQ < 10)\n"
+				"## Cov 30X is the % of coverage with at least 30X read depth ; in the regions defined in " + regionsType +".\n"
+				"##\n"
+				"#Run\tSample\t" + regionsType + "\tTotal reads\tMapped reads\t% Mapped reads\tDuplicate reads\t% Duplicate reads\tOn-target reads\t% On-target reads\t"+covHeader+"\n")
+			#Could be converted to "," for French Excel visualization with str(v).replace(".", ",") ; triggered by a variable from a STARK app
+
+			if regionsType == "Design":
+				for sample in sampleList:
+					f.write(os.path.basename(run)+"\t"+sample+"\t"+"\t".join([str(v) for v in runMetrics[sample]])+"\n")
+			else:
+				for sample in genesSampleDic[regionsFile]:
+					f.write(os.path.basename(run)+"\t"+sample+"\t"+"\t".join([str(v) for v in runMetrics[sample]])+"\n")
+
+def make_coverage_file(run, regionsType, regionsFileList, metricsFileList, sampleList, sampleDirList, alignerList, tagsList, outputPrefix):
+	"""
+	Previously named "metrics.design.metrics"
+	Made to generate:
+	- design.<nomdesign>.coverage.metrics
+	- panel.<nompanel>.coverage.metrics
+	"""
+	assert regionsType in ("Design", "Panel")
+	assert len(regionsFileList) > 0
+
+	for regionsFile in regionsFileList:
+		finalSampleList = []
+		finalTagsList = []
+		dataFileList = []
+
+		#create matrix
+		for metricsFile, sample, sampleDir, aligner, tags in zip(metricsFileList, sampleList, sampleDirList, alignerList, tagsList):
+			#before latest 0.9.18 version
+			# dataFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+".HsMetrics.per_target_coverage")
+			if regionsType == "Design":
+				dataFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+"."+sample+"."+aligner+".design.bed.HsMetrics.per_target_coverage.flags")
+				dataFileList.append(dataFile)
+				finalSampleList.append(sample)
+				finalTagsList.append(tags)
+			elif regionsType == "Panel":
+				dataFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+"."+sample+"."+regionsFile+".HsMetrics.per_target_coverage.flags")
+				if os.path.exists(dataFile):
+					print("iamhere")
+					dataFileList.append(dataFile)
+					finalSampleList.append(sample)
+					finalTagsList.append(tags)
+
+		#write matrix
+		if regionsType == "Design":
+			finalTsv = osj(outputPrefix + regionsType + ".coverage.tsv")
+		elif regionsType == "Panel":
+			finalTsv = osj(outputPrefix + regionsType + "." + regionsFile + ".coverage.tsv")
+		print("Writing " + finalTsv)
+		legend=("## Coverage metrics - per region in " + regionsType + "\n"
+				"##\n"
+				"## Compilation of sample statistics computed by STARK.\n"
+				"##\n")
+		write_cov_metrics_file(finalTsv, run, finalSampleList, dataFileList, legend, finalTagsList)
+
+def make_depth_file(run, regionsType, regionsFileList, metricsFileList, sampleList, sampleDirList, alignerList, tagsList, outputPrefix):
+	"""
+	fichier metrics.sample.<nompanel>.metrics
+	- ajouter design.<nomdesign>.depth.metrics
+	- renommer existant en panel.<nompanel>.depth.metrics
+	"""
+	assert regionsType in ("Design", "Panel")
+	assert len(regionsFileList) > 0
+
+	for regionsFile in regionsFileList:
+		finalSampleList = []
+		finalTagsList = []
+		dataFileList = []
+		legend=("## Depth of coverage metrics - - per region in " + regionsType + " " + regionsFile +"\n"
+		"##\n"
+		"## Compilation of sample statistics computed by STARK.\n"
+		"##\n")
+
+		for metricsFile, sample, sampleDir, aligner, tags in zip(metricsFileList, sampleList, sampleDirList, alignerList, tagsList):
+			if regionsType == "Design":
+				dataFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+"."+sample+"."+aligner+".design.bed.genes.txt")
+				dataFileList.append(dataFile)
+				finalSampleList.append(sample)
+				finalTagsList.append(tags)
+			else:
+				dataFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+"."+sample+"."+regionsFile+".genes.txt")
+				if os.path.exists(dataFile):
+					dataFileList.append(dataFile)
+					finalSampleList.append(sample)
+					finalTagsList.append(tags)
+
+		if regionsType == "Design":
+			finalTsv = osj(outputPrefix + regionsType + ".depth.tsv")
+		elif regionsType == "Panel":
+			finalTsv = osj(outputPrefix + regionsType + "." + regionsFile + ".depth.tsv")
+		print("Writing " + finalTsv)
+		write_cov_metrics_file(finalTsv, run, sampleList, dataFileList, legend, tagsList)
+
+def make_amplicon_file(run, metricsFileList, sampleList, sampleDirList, alignerList, tagsList, outputPrefix):
+	"""
+	relevant files only exist with design
+	"""
+	dataFileList = []
+	for metricsFile, sample, sampleDir, aligner in zip(metricsFileList, sampleList, sampleDirList, alignerList):
+		dataFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+".HsMetrics.per_amplicon_coverage.flags")
+		assert_file_exists_and_is_readable(dataFile)
+		dataFileList.append(dataFile)
+	finalTsv = osj(outputPrefix+"Design.amplicon_coverage.tsv")
+	legend=("## Coverage metrics - per amplicon\n"
+		"##\n"
+		"## The regions listed here correspond to the amplicons listed in the manifest.\n"
+		"##\n")
+	print("Writing " + finalTsv)
+	write_cov_metrics_file(finalTsv, run, sampleList, dataFileList, legend, tagsList)
+
+def main_routine(metricsFileList, outputPrefix, fromResDir):
+	"""
+	metricsFileList is a list of <run>/.../<sample>.<aligner>.bam.metrics/metrics files ; it defines the sample list and input directories
+	outputPrefix is the output prefix of all files that will be written
+	fromResDir is a boolean defining if input files are from a STARK result dir (True) or from a STARK repository (False)
+	"""
+	#extract parameters
 	#####
-	fromResDir = True #here for legacy reasons; and potentially future compatibility
+	print("fromResDir:", fromResDir)
 	if "," in metricsFileList:
 		#applying os.path.normpath now so I don't have to bother with // in paths later
 		metricsFileList = [os.path.normpath(v) for v in metricsFileList.split(',')]
 	else:
 		metricsFileList = [os.path.normpath(metricsFileList)]
-	# run = os.path.commonprefix(metricsFileList)
 	run = get_run_path_from_metrics_file(metricsFileList[0], fromResDir)
 	sampleList = [v.replace(run+"/", "").split("/")[0] for v in metricsFileList]
 	#to get the aligner: need to get e.g. "bwamem" from a path like
@@ -365,50 +532,12 @@ def main_routine(metricsFileList, outputPrefix):
 	if fromResDir:
 		sampleDirList = [osj(run, s) for s in sampleList]
 	else:
-		sampleDirList = [osj(run, s, "DATA") for s in sampleList]
+		sampleDirList = [osj(run, s, "STARK") for s in sampleList]
 	tagsList = get_tags_list(sampleList, sampleDirList, samplesheet=find_any_samplesheet(run, fromResDir))
 
-	#2) reads.metrics (global run metrics)
+	#find .genes (Panel) files
 	#####
-	runMetrics = {}
-	print("Getting run metrics based on design...")
-	for metricsFile, sample, aligner in zip(metricsFileList, sampleList ,alignerList):
-		#runMetrics[sample]=[] #faster execution to debug everything else
-		runMetrics[sample] = get_sample_metrics(run, sample, fromResDir, aligner, "design")
-	finalTsv = osj(outputPrefix+"reads.metrics")
-	with open(finalTsv, "w") as f:
-		covHeader = "\t".join(["Cov "+v+"X" for v in get_cov_criteria()[0].split(",")])
-		f.write("## Run Metrics\n"
-				"##\n"
-				"## On-target reads are reads that are aligned within the regions defined in the design and that aren't duplicates, unmapped or with low mapping quality (MAPQ < 10)\n"
-				"## Cov 30X is the % of coverage with at least 30X read depth ; in the regions defined in the design manifest/bed.\n"
-				"##\n"
-				"#Run\tSample\tTotal reads\tMapped reads\t% Mapped reads\tDuplicate reads\t% Duplicate reads\tOn-target reads\t% On-target reads\t"+covHeader+"\n")
-		#"." could be converted to "," for French Excel visualization with str(v).replace(".", ",")
-		for sample in sampleList:
-			f.write(os.path.basename(run)+"\t"+sample+"\t"+"\t".join([str(v) for v in runMetrics[sample]])+"\n")
-
-	#3) design.cov.metrics
-	#####
-	#selecting data files (no generic function for this because data file names have different structures)
-	dataFileList = []
-	for metricsFile, sample, sampleDir, aligner in zip(metricsFileList, sampleList, sampleDirList, alignerList):
-		#before latest 0.9.18 version
-		# dataFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+".HsMetrics.per_target_coverage")
-		dataFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+"."+sample+"."+aligner+".design.bed.HsMetrics.per_target_coverage.flags")
-		assert_file_exists_and_is_readable(dataFile)
-		dataFileList.append(dataFile)
-	#creating output
-	finalTsv = osj(outputPrefix+"design.metrics")
-	legend=("## Coverage metrics - per design target\n"
-			"##\n"
-			"## The regions correspond to the design bed/manifest.\n"
-			"##\n")
-	write_cov_metrics_file(finalTsv, run, sampleList, dataFileList, legend, tagsList)
-
-	#4) .gene coverage metrics
-	#####
-	#find .genes file that are used in all samples
+	sampleGenesDic = {}
 	genesSetList = []
 	for metricsFile in metricsFileList:
 		genesSet = set()
@@ -416,92 +545,44 @@ def main_routine(metricsFileList, outputPrefix):
 		genesListFile = osj(os.path.dirname(os.path.dirname(metricsFile)), sample+".list.genes")
 		with open(genesListFile, "r") as f:
 			for l in f:
-				#removing sample name if present in .genes name, so a comparison between all .genes is possible
-				genesSet.add(l.strip().replace(sample, "<sample>"))
+				#removing sample name if present in .genes name
+				genesSet.add(l.strip().replace(sample+".", ""))
 		genesSetList.append(genesSet)
-	#intersect all sets to find the .genes files that are common to all samples
-	genesList = list(set.intersection(*genesSetList))
-	print(".genes files common to all samples:", genesList)
-	if len(genesList) > 0:
-		for gl in genesList:
-			#legend defined first to still have "<sample>" in the .genes name
-			legend=("## Coverage metrics - using a custom .genes file\n"
-			"##\n"
-			"## The regions listed here correspond to %s.\n"
-			"##\n") % (gl)
-			#selecting data files
-			dataFileList = []
-			for metricsFile, sample, sampleDir, aligner in zip(metricsFileList, sampleList, sampleDirList, alignerList):
-				if "<sample>" in gl:
-					gl = gl.replace("<sample>", sample)
-					dataFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+"."+gl+".genes.txt")
-					gl = gl.replace(sample, "<sample>")
-				else:
-					dataFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+"."+gl+".genes.txt")
-				assert_file_exists_and_is_readable(dataFile)
-				dataFileList.append(dataFile)
-			#creating output
-			#remove the sample name from the final filename
-			#/!\ This uses the last values of the previous loop for 'sample' and 'gl'
-			if "<sample>" in gl:
-				gl = gl.replace("<sample>", "sample")
-			if sample in gl:
-				gl = gl.replace(sample, "")
-			if ".." in gl:
-				gl = gl.replace("..", ".")
-			if gl.startswith("."):
-				gl = gl[1:]
-			finalTsv = osj(outputPrefix+gl+".metrics")
-			write_cov_metrics_file(finalTsv, run, sampleList, dataFileList, legend, tagsList)
+		sampleGenesDic[sample] = list(genesSet)
+	###Deprecated: intersect all sets to find the .genes files that are common to all samples
+	#genesList = list(set.intersection(*genesSetList))
+	#print(".genes files common to all samples:", genesList)
+	genesList = list(set.union(*genesSetList))
+	#reverse dict
+	genesSampleDic = reverse_dict_of_lists(sampleGenesDic)
 
-	#2b) reads.metrics based on every .gene available
-	#####
-	runMetrics = {}
-	print("Getting run metrics based on .genes...")
-	finalTsv = osj(outputPrefix+"reads.genes.metrics")
-	with open(finalTsv, "w") as f:
-		covHeader = "\t".join(["Cov "+v+"X" for v in get_cov_criteria()[0].split(",")])
-		f.write("## Run Metrics\n"
-				"##\n"
-				"## On-target reads are reads that are aligned within the regions defined in a .genes file and that aren't duplicates, unmapped or with low mapping quality (MAPQ < 10)\n"
-				"## Cov 30X is the % of coverage with at least 30X read depth ; in the regions defined in a .genes file.\n"
-				"##\n"
-				"#Run\tSample\tPanel.genes\tTotal reads\tMapped reads\t% Mapped reads\tDuplicate reads\t% Duplicate reads\tOn-target reads\t% On-target reads\t"+covHeader+"\n")
-		
-		for geneFile in genesList:
-			geneFile = geneFile.replace("<sample>.", "")
-			for metricsFile, sample, aligner in zip(metricsFileList, sampleList ,alignerList):
-				runMetrics[sample] = get_sample_metrics(run, sample, fromResDir, aligner, geneFile)
-				runMetrics[sample].insert(0, geneFile)
-				
-			#"." could be converted to "," for French Excel visualization with str(v).replace(".", ",")
-			for sample in sampleList:
-				f.write(os.path.basename(run)+"\t"+sample+"\t"+"\t".join([str(v) for v in runMetrics[sample]])+"\n")
 
-	#5) amplicon coverage metrics
+	#design files
+	#TODO: deal with design names in the case there are multiples
+	make_global_coverage_file(run, "Design", ["Design"], metricsFileList, sampleList, alignerList, genesSampleDic, outputPrefix, fromResDir)
+	make_coverage_file(run, "Design", ["Design"], metricsFileList, sampleList, sampleDirList, alignerList, tagsList, outputPrefix)
+	make_depth_file(run, "Design", ["Design"], metricsFileList, sampleList, sampleDirList, alignerList, tagsList, outputPrefix)
+	#panels files
+	make_global_coverage_file(run, "Panel", genesList, metricsFileList, sampleList, alignerList, genesSampleDic, outputPrefix, fromResDir)
+	make_coverage_file(run, "Panel", genesList, metricsFileList, sampleList, sampleDirList, alignerList, tagsList, outputPrefix)
+	make_depth_file(run, "Panel", genesList, metricsFileList, sampleList, sampleDirList, alignerList, tagsList, outputPrefix)
+
+
+	#amplicon coverage metrics
 	#####
 	# Check if the first amplicon metrics file is not empty...
+	testAligner = alignerList[0]
 	skipAmpliconMetrics = False
 	if fromResDir:
-		testFile = osj(run, sampleList[0], sampleList[0]+"."+aligner+".bam.metrics", sampleList[0]+"."+aligner+".HsMetrics.per_amplicon_coverage.flags")
+		testFile = osj(run, sampleList[0], sampleList[0]+"."+testAligner+".bam.metrics", sampleList[0]+"."+testAligner+".HsMetrics.per_amplicon_coverage.flags")
 	else:
-		testFile = osj(run, sampleList[0], "DATA", sampleList[0]+"."+aligner+".bam.metrics", sampleList[0]+"."+aligner+".HsMetrics.per_amplicon_coverage.flags")
+		testFile = osj(run, sampleList[0], "STARK", sampleList[0]+"."+testAligner+".bam.metrics", sampleList[0]+"."+testAligner+".HsMetrics.per_amplicon_coverage.flags")
 	with open(testFile, "r") as f:
 		if f.readline().rstrip() == "":
 			skipAmpliconMetrics = True
 	# ... If it isn't, go on to create the metrics file
 	if not skipAmpliconMetrics:
-		dataFileList = []
-		for metricsFile, sample, sampleDir, aligner in zip(metricsFileList, sampleList, sampleDirList, alignerList):
-			dataFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+".HsMetrics.per_amplicon_coverage.flags")
-			assert_file_exists_and_is_readable(dataFile)
-			dataFileList.append(dataFile)
-		finalTsv = osj(outputPrefix+"amplicon.metrics")
-		legend=("## Coverage metrics - per amplicon\n"
-			"##\n"
-			"## The regions listed here correspond to the amplicons listed in the manifest.\n"
-			"##\n")
-		write_cov_metrics_file(finalTsv, run, sampleList, dataFileList, legend, tagsList)
+		make_amplicon_file(run, metricsFileList, sampleList, sampleDirList, alignerList, tagsList, outputPrefix)
 
 	print("runmetrics.py done")
 
@@ -509,9 +590,8 @@ if __name__=="__main__":
 	parser = argparse.ArgumentParser(prog='python runmetrics.py')
 	group = parser.add_mutually_exclusive_group(required=True)
 	group.add_argument("-m", "--metricsFileList", type=str, help="path/to/metrics,path/to/metrics")
-	# group.add_argument("-r", "--run", type=str, help="path/to/run/directory")
 	parser.add_argument("-f", "--fromResultDir", type=str_to_bool, default=True, help="specifies if the directories in the folder are organised like in STARK results (default) or like in STARK repository (then enter False/No/N/0)")
 	parser.add_argument("-o", "--outputPrefix", type=str, default="", help="output prefix (including dir). Files go into run dir by default if not specified.")
 	args = parser.parse_args()
 
-	main_routine(args.metricsFileList, args.outputPrefix)
+	main_routine(args.metricsFileList, args.outputPrefix, args.fromResultDir)

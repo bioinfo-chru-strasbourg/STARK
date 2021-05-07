@@ -15,20 +15,12 @@ def assert_file_exists_and_is_readable(filePath):
 	assert os.path.isfile(filePath) and os.access(filePath, os.R_OK), \
 			"[ERROR] File "+filePath+" doesn't exist or isn't readable"
 
-def get_stdout_and_stderr(cmd):
-	p = subprocess.Popen("find -L "+runDir+" -name *SampleSheet.csv", stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-	out = p.stdout.readlines()
-	outList = [l.decode("utf-8").strip() for l in out]
-	err = p.stderr.readlines()
-	errList = [l.decode("utf-8").strip() for l in err]
-	return (outList, errList)
-
 def find_any_samplesheet(runDir, fromResDir):
 	"""
 	Input:
 		runDir: String ; path/to/run where you want to find a samplesheet
 		fromResDir: boolean ; if True the run dir is organized as a STARK result dir,
-							else as a STARK repository dir (i.e. patient dirs contains a DATA dir)
+							else as a STARK repository dir (i.e. patient dirs contains a STARK dir)
 	Output:
 		String with samplesheet path or "NO_SAMPLESHEET_FOUND"
 
@@ -39,14 +31,14 @@ def find_any_samplesheet(runDir, fromResDir):
 		defined by the bool fromResDir)
 	3) first correct file path is returned
 	"""
-	p = subprocess.Popen("find -L "+runDir+" -name *SampleSheet.csv", stdout=subprocess.PIPE, shell=True)
+	p = subprocess.Popen("find -L "+runDir+" -maxdepth 3 -name *SampleSheet.csv", stdout=subprocess.PIPE, shell=True)
 	out = p.stdout.readlines()
 	for ss in out:
 		ss = ss.decode("utf-8").strip()
 		if fromResDir:
 			r = re.match(runDir.rstrip("/")+"/(.*)/(.*).SampleSheet.csv", ss)
 		else:
-			r = re.match(runDir.rstrip("/")+"/(.*)/DATA/(.*).SampleSheet.csv", ss)
+			r = re.match(runDir.rstrip("/")+"/(.*)/STARK/(.*).SampleSheet.csv", ss)
 		if r is None:
 			continue
 		elif r.group(1) == r.group(2): #checks if (.*) == (.*)
