@@ -54,9 +54,11 @@ function usage {
 	echo "#                                                Must be in the STARK APPS folder if relative path";
 	echo "# --threads=<INTEGER>                            Number of threads.";
 	echo "# --sample=<STRING>                              Sample name (default: found in BAM or 'unknown').";
+	echo "# --reference=<FILE>                             Genome reference (default: found in APP).";
 	echo "# --bam_read_integrity_checksum                  Check integrity of BAM reads compared to FASTQ.";
 	echo "# --cram_read_integrity_checksum                 Check integrity of CRAM reads compared to FASTQ.";
 	echo "# --stats=<FILE>                                 Statistics file (on FASTQ, BAM and/or validated/last output CRAM).";
+	echo "# --reheader                                     Reheader CRAM archive with genome reference tag (M5 and UR), if no tag.";
 	#echo "#                                                --bam_read_integrity_checksum and --cram_read_integrity_checksum forced";
 	echo "# -v|--verbose                                   Verbose mode";
 	echo "# -d|--debug                                     Debug mode";
@@ -72,7 +74,7 @@ function usage {
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
-ARGS=$(getopt -o "f:b:c:o:e:t:s:vdnh" --long "fastq:,bam:,cram:,cram_options:,app:,application:,threads:,sample:,bam_read_integrity_checksum,cram_read_integrity_checksum,stats:,statistics:,verbose,debug,release,help" -- "$@" 2> /dev/null)
+ARGS=$(getopt -o "f:b:c:o:e:t:s:vdnh" --long "fastq:,bam:,cram:,cram_options:,app:,application:,threads:,sample:,reference:,bam_read_integrity_checksum,cram_read_integrity_checksum,stats:,reheader,statistics:,verbose,debug,release,help" -- "$@" 2> /dev/null)
 if [ $? -ne 0 ]; then
 	:
 	echo "#[ERROR] Error in the argument list:";
@@ -122,6 +124,10 @@ do
 			SAMPLE_INPUT="$2"
 			shift 2
 			;;
+		--reference)
+			REF_INPUT="$2"
+			shift 2
+			;;
 		--bam_read_integrity_checksum)
 			BAM_READ_integrity_checksum=1
 			shift 1
@@ -133,6 +139,10 @@ do
 		--stats|--statistics)
 			STATS_INPUT="$2"
 			shift 2
+			;;
+		--reheader)
+			REHEADER=1
+			shift 1
 			;;
 		-h|--help)
 			usage
@@ -277,6 +287,14 @@ else
 fi;
 
 
+# Reference
+if [ "$REF_INPUT" != "" ] && [ -e $REF_INPUT ]; then
+	REF="$REF_INPUT"
+fi;
+(($VERBOSE)) && echo "#[INFO] REF '$REF'"
+
+
+
 # Checksum
 if (($BAM_READ_integrity_checksum)); then
 	(($VERBOSE)) && echo "#[INFO] BAM READ integrity checksum enabled"
@@ -318,6 +336,29 @@ if [ -z $THREADS ] || ! [[ $THREADS =~ ^[0-9]+$ ]]; then
 	THREADS=1
 fi
 (($VERBOSE)) && echo "#[INFO] $THREADS threads"
+
+
+# samtools
+if [ "$SAMTOOLS" == "" ]; then
+	SAMTOOLS="samtools"
+fi;
+
+
+# gz et gunzip
+if [ "$GZ" == "" ]; then
+	GZ="gzip"
+fi;
+if [ "$UNGZ" == "" ]; then
+	UNGZ="gzip -d"
+fi;
+
+
+# picard
+if [ "$PICARD" == "" ]; then
+	PICARD=$(whereis picard.jar | cut -d" " -f2)
+fi;
+
+
 
 
 # Init
@@ -405,7 +446,10 @@ if [ ! -z "$BAM" ]; then
 				(($VERBOSE)) && (($BAM_READ_integrity_checksum)) && echo "#[INFO] BAM '$bam_name' BAM READS integrity checked!"
 				(($VERBOSE)) && echo "#[INFO] BAM '$bam_name' CRAM generation..."
 				time_start=$(date +%s%3N)
-				$SAMTOOLS sort -O CRAM,$CRAM_OPTIONS -@ $THREADS -T $bam.SAMTOOLS_PREFIX$RANDOM $bam --reference $REF -o $CRAM.cram 2>/dev/null
+				if ! $SAMTOOLS sort -O CRAM,$CRAM_OPTIONS -@ $THREADS -T $bam.SAMTOOLS_PREFIX$RANDOM $bam --reference $REF -o $CRAM.cram 2>/dev/null; then
+					(($VERBOSE)) && echo "#[WARNING] BAM '$bam_name' CRAM generation failed!"
+					rm -f $CRAM.cram
+				fi;
 				time_end=$(date +%s%3N)
 				CRAM_encode_time=$(echo "scale=3; "$((time_end-time_start))" / 1000" | bc )
 				(($VERBOSE)) && echo "#[INFO] BAM '$bam_name' STATS TIME Encode '$CRAM_encode_time'"
@@ -416,9 +460,11 @@ if [ ! -z "$BAM" ]; then
 				fi;
 				if [ "$CRAM_checksum" == "$FASTQ_checksum" ] || ! (($CRAM_READ_integrity_checksum)); then
 					(($VERBOSE)) && (($CRAM_READ_integrity_checksum)) && echo "#[INFO] BAM '$bam_name' CRAM READS integrity checked!"
-					CRAM_validate=1
-					CRAM_bam_source="$bam"
-					CRAM_cram_source="$CRAM.cram"
+					if [ -e "$CRAM.cram" ]; then
+						CRAM_validate=1
+						CRAM_bam_source="$bam"
+						CRAM_cram_source="$CRAM.cram"
+					fi;
 				else
 					(($VERBOSE)) && echo "#[INFO] BAM '$bam_name' CRAM READS integrity failed!"
 				fi;
@@ -503,6 +549,47 @@ CRAM_validation=0
 [ "$CRAM_checksum" == "$FASTQ_checksum" ] && CRAM_validation=1
 
 
+
+### REHEADER
+
+if (($REHEADER)); then
+
+	# CRAM
+	if [ "$CRAM_cram_source" != "" ] && [ -e "$CRAM_cram_source" ]; then
+
+		CRAM_cram_source_name=$(basename $CRAM_cram_source)
+		REF_name=$(basename $REF)
+
+		(($VERBOSE)) && echo "" && echo "#[INFO] ### CRAM rehead"
+
+		# Test header
+		if ! (( $($SAMTOOLS view -H $CRAM_cram_source | grep "^@SQ.*SN:.*M5:.*UR:.*$" -c) )); then
+
+			(($VERBOSE)) && echo "#[INFO] CRAM rehead with genome reference '$REF_name'..."
+
+			# reheader
+			#$SAMTOOLS reheader -Pi -c "$SAMTOOLS view -H $CRAM_cram_source | $SAMTOOLS view -O CRAM -@ $THREADS --reference=$REF | samtools view -H " $CRAM_cram_source > $CRAM_cram_source.reheaded.cram
+			#mv -f $CRAM_cram_source.reheaded.cram $CRAM_cram_source
+
+			if $SAMTOOLS reheader -P -c "$SAMTOOLS view -H $CRAM_cram_source | $SAMTOOLS view -O CRAM -@ $THREADS --reference=$REF | samtools view -H " $CRAM_cram_source > $CRAM_cram_source.reheaded.cram; then
+				mv -f $CRAM_cram_source.reheaded.cram $CRAM_cram_source
+				(($VERBOSE)) && echo "#[INFO] CRAM rehead with genome reference '$REF_name' done."
+			else
+				rm -f $CRAM_cram_source.reheaded.cram;
+				(($VERBOSE)) && echo "#[WARNING] CRAM rehead with genome reference '$REF_name' FAILED (output CRAM is not reheaded, but valid)."
+			fi;
+
+		else
+
+			(($VERBOSE)) && echo "#[INFO] CRAM already headed"			
+
+		fi;
+
+	fi;
+
+fi;
+
+
 ### STATS
 
 (($VERBOSE)) && echo ""
@@ -526,27 +613,29 @@ if [ "$STATS" != "" ]; then
 		CRAM_cram_source_name=$(basename $CRAM_cram_source)
 
 		# validation
-		(($VERBOSE)) && echo "#[INFO] CRAM '$CRAM_cram_source_name' STATS FILES Size..."
+		(($VERBOSE)) && echo "#[INFO] CRAM STATS FILES Size..."
 		CRAM_size=$(ls -l $CRAM_cram_source | cut -d" " -f5)
-		(($VERBOSE)) && echo "#[INFO] CRAM '$CRAM_cram_source_name' STATS FILES Size '$CRAM_size'"
+		(($VERBOSE)) && echo "#[INFO] CRAM STATS FILES Size '$CRAM_size'"
 
 		# nbreads
-		(($VERBOSE)) && echo "#[INFO] CRAM '$CRAM_cram_source_name' STATS FILES Size..."
+		(($VERBOSE)) && echo "#[INFO] CRAM STATS FILES Size..."
 		CRAM_size=$(ls -l $CRAM_cram_source | cut -d" " -f5)
-		(($VERBOSE)) && echo "#[INFO] CRAM '$CRAM_cram_source_name' STATS FILES Size '$CRAM_size'"
+		(($VERBOSE)) && echo "#[INFO] CRAM STATS FILES Size '$CRAM_size'"
 
 		# Size
-		(($VERBOSE)) && echo "#[INFO] CRAM '$CRAM_cram_source_name' STATS READS Number..."
-		CRAM_nbreads=$($SAMTOOLS view -@ $THREADS $CRAM_cram_source -c)
-		(($VERBOSE)) && echo "#[INFO] CRAM '$CRAM_cram_source_name' STATS READS Number '$CRAM_nbreads'"
+		(($VERBOSE)) && echo "#[INFO] CRAM STATS READS Number..."
+		time_start=$(date +%s%3N)
+		CRAM_nbreads=$($SAMTOOLS view -@ $THREADS --reference $REF $CRAM_cram_source -c)
+		time_end=$(date +%s%3N)
+		(($VERBOSE)) && echo "#[INFO] CRAM STATS READS Number '$CRAM_nbreads'"
 
 		# Decode time
-		(($VERBOSE)) && echo "#[INFO] CRAM '$CRAM_cram_source_name' STATS TIME Decode..."
-		time_start=$(date +%s%3N)
-        $SAMTOOLS stats -@ $THREADS $CRAM_cram_source 1>/dev/null
-        time_end=$(date +%s%3N)
+		(($VERBOSE)) && echo "#[INFO] CRAM STATS TIME Decode..."
+		#time_start=$(date +%s%3N)
+        #$SAMTOOLS stats -@ $THREADS $CRAM_cram_source 1>/dev/null
+        #time_end=$(date +%s%3N)
         CRAM_decode_time=$(echo "scale=3; "$((time_end-time_start))" / 1000" | bc )
-		(($VERBOSE)) && echo "#[INFO] CRAM '$CRAM_cram_source_name' STATS TIME Decode '$CRAM_decode_time'"
+		(($VERBOSE)) && echo "#[INFO] CRAM STATS TIME Decode '$CRAM_decode_time'"
 
 	fi;
 
@@ -559,21 +648,21 @@ if [ "$STATS" != "" ]; then
 		CRAM_source_type="BAM"
 
 		# Size
-		(($VERBOSE)) && echo "#[INFO] BAM '$CRAM_bam_source_name' STATS FILES Size..."
+		(($VERBOSE)) && echo "#[INFO] BAM  STATS FILES Size..."
 		BAM_size=$(ls -l $CRAM_bam_source | cut -d" " -f5)
-		(($VERBOSE)) && echo "#[INFO] BAM '$CRAM_bam_source_name' STATS FILES Size '$BAM_size'"
+		(($VERBOSE)) && echo "#[INFO] BAM  STATS FILES Size '$BAM_size'"
 
 		# nbreads
-		(($VERBOSE)) && echo "#[INFO] BAM '$CRAM_bam_source_name' STATS READS Number..."
+		(($VERBOSE)) && echo "#[INFO] BAM  STATS READS Number..."
 		BAM_nbreads=$($SAMTOOLS view -@ $THREADS $CRAM_bam_source -c)
-		(($VERBOSE)) && echo "#[INFO] BAM '$CRAM_bam_source_name' STATS READS Number '$BAM_nbreads'"
+		(($VERBOSE)) && echo "#[INFO] BAM  STATS READS Number '$BAM_nbreads'"
 
 	fi;
 
 	# FASTQ
 	if [ "$CRAM_fastq_source" != "" ]; then
 
-		CRAM_fastq_source_name=$(basename $CRAM_bam_source)
+		CRAM_fastq_source_name=$(basename $CRAM_fastq_source)
 
 		# CRAM source type
 		CRAM_source_type="FASTQ"
@@ -619,7 +708,7 @@ if [ "$STATS" != "" ]; then
 	#echo "CRAM_encode_time=$CRAM_encode_time"
 
 
-	(($DEBUG)) && echo "#[INFO] STATS '$STATS':" && cat $STATS | column -t
+	(($VERBOSE)) && echo "#[INFO] STATS:" && cat $STATS | sed "s/^/#[INFO]   /" | column -t
 
 else
 

@@ -330,8 +330,9 @@ BAM_VALIDATION_COMPRESSION=5
 
 
 # CRAM OPTIONS
-# Final CRAM options for compression (archive.cram))
-CRAM_OPTIONS="version=3.0,level=9,no_ref,use_lzma,seqs_per_slice=100000"
+# Final CRAM options for compression (archive.cram)
+#CRAM_OPTIONS="version=3.0,level=9,no_ref,use_lzma,use_bzip2,use_fqz,seqs_per_slice=100000"
+CRAM_OPTIONS="version=3.0,level=9,no_ref"
 
 
 # THREADS (default AUTO)
