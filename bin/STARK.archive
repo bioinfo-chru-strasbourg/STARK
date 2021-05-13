@@ -8,14 +8,14 @@
 SCRIPT_NAME="STARKArchive"
 SCRIPT_DESCRIPTION="STARK Archive"
 SCRIPT_RELEASE="0.9.1"
-SCRIPT_DATE="11/05/2021"
+SCRIPT_DATE="13/05/2021"
 SCRIPT_AUTHOR="Antony Le Bechec"
 SCRIPT_COPYRIGHT="HUS"
 SCRIPT_LICENCE="GNU-AGPL"
 
 # Realse note
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9b-04/04/2021: Script creation\n";
-RELEASE_NOTES=$RELEASE_NOTES"# 0.9.1-11/05/2021: Add --reheader option\n";
+RELEASE_NOTES=$RELEASE_NOTES"# 0.9.1-13/05/2021: Add --sort, --index and --reheader option\n";
 
 # Script folder
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -59,6 +59,8 @@ function usage {
 	echo "# --bam_read_integrity_checksum                  Check integrity of BAM reads compared to FASTQ.";
 	echo "# --cram_read_integrity_checksum                 Check integrity of CRAM reads compared to FASTQ.";
 	echo "# --stats=<FILE>                                 Statistics file (on FASTQ, BAM and/or validated/last output CRAM).";
+	echo "# --sort                                         Sort CRAM archive.";
+	echo "# --index                                        Index CRAM archive.";
 	echo "# --reheader                                     Reheader CRAM archive with genome reference tag (M5 and UR), if no tag.";
 	#echo "#                                                --bam_read_integrity_checksum and --cram_read_integrity_checksum forced";
 	echo "# -v|--verbose                                   Verbose mode";
@@ -75,7 +77,7 @@ function usage {
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
-ARGS=$(getopt -o "f:b:c:o:e:t:s:vdnh" --long "fastq:,bam:,cram:,cram_options:,app:,application:,threads:,sample:,reference:,bam_read_integrity_checksum,cram_read_integrity_checksum,stats:,reheader,statistics:,verbose,debug,release,help" -- "$@" 2> /dev/null)
+ARGS=$(getopt -o "f:b:c:o:e:t:s:vdnh" --long "fastq:,bam:,cram:,cram_options:,app:,application:,threads:,sample:,reference:,bam_read_integrity_checksum,cram_read_integrity_checksum,stats:,sort,index,reheader,statistics:,verbose,debug,release,help" -- "$@" 2> /dev/null)
 if [ $? -ne 0 ]; then
 	:
 	echo "#[ERROR] Error in the argument list:";
@@ -140,6 +142,14 @@ do
 		--stats|--statistics)
 			STATS_INPUT="$2"
 			shift 2
+			;;
+		--sort)
+			SAMTOOLS_CRAM_COMMAND="sort"
+			shift 1
+			;;
+		--index)
+			SAMTOOLS_CRAM_INDEX=" --write-index "
+			shift 1
 			;;
 		--reheader)
 			REHEADER=1
@@ -311,6 +321,26 @@ else
 fi;
 
 
+# samtools cram command
+if [ "$SAMTOOLS_CRAM_COMMAND" == "" ]; then
+	SAMTOOLS_CRAM_COMMAND="view"
+fi;
+
+
+# samtools index
+if [ "$SAMTOOLS_CRAM_INDEX" == "" ]; then
+	SAMTOOLS_CRAM_INDEX_OPTION=0
+else
+	SAMTOOLS_CRAM_INDEX_OPTION=1
+fi;
+
+# samtools index
+if [ "$REHEADER" == "" ]; then
+	REHEADER=0
+fi;
+
+
+
 # stats
 STATS=""
 if [ "$STATS_INPUT" != "" ]; then
@@ -446,8 +476,14 @@ if [ ! -z "$BAM" ]; then
 			if [ "$BAM_checksum" == "$FASTQ_checksum" ] || ! (($BAM_READ_integrity_checksum)); then
 				(($VERBOSE)) && (($BAM_READ_integrity_checksum)) && echo "#[INFO] BAM '$bam_name' BAM READS integrity checked!"
 				(($VERBOSE)) && echo "#[INFO] BAM '$bam_name' CRAM generation..."
+				# Options
+				SAMTOOLS_CRAM_COMMAND_OPTIONS=" -O CRAM,$CRAM_OPTIONS -@ $THREADS $bam --reference $REF $SAMTOOLS_CRAM_INDEX -o $CRAM.cram "
+				[ "$SAMTOOLS_CRAM_COMMAND" == "sort" ] && SAMTOOLS_CRAM_COMMAND_OPTIONS=$SAMTOOLS_CRAM_COMMAND_OPTIONS" -T $bam.SAMTOOLS_PREFIX$RANDOM "
+				[ "$SAMTOOLS_CRAM_COMMAND" == "view" ] && SAMTOOLS_CRAM_COMMAND_OPTIONS=$SAMTOOLS_CRAM_COMMAND_OPTIONS" -h "
+				(($DEBUG)) && echo "#[INFO] COMMAND: $SAMTOOLS $SAMTOOLS_CRAM_COMMAND $SAMTOOLS_CRAM_COMMAND_OPTIONS "
 				time_start=$(date +%s%3N)
-				if ! $SAMTOOLS sort -O CRAM,$CRAM_OPTIONS -@ $THREADS -T $bam.SAMTOOLS_PREFIX$RANDOM $bam --reference $REF -o $CRAM.cram 2>/dev/null; then
+				#if ! $SAMTOOLS $SAMTOOLS_CRAM_COMMAND -h -O CRAM,$CRAM_OPTIONS -@ $THREADS -T $bam.SAMTOOLS_PREFIX$RANDOM $bam --reference $REF $SAMTOOLS_CRAM_INDEX -o $CRAM.cram 2>/dev/null; then
+				if ! $SAMTOOLS $SAMTOOLS_CRAM_COMMAND $SAMTOOLS_CRAM_COMMAND_OPTIONS 2>/dev/null ; then
 					(($VERBOSE)) && echo "#[WARNING] BAM '$bam_name' CRAM generation failed!"
 					rm -f $CRAM.cram
 				fi;
@@ -509,8 +545,13 @@ if [ ! -z "$FASTQ" ]; then
 			done;
 			(($VERBOSE)) && echo "#[INFO] FASTQ '$FASTQ_names' CRAM generation..."
 			[ "$SAMPLE" == "" ] && SAMPLE="unknown"
+			# Options
+			SAMTOOLS_CRAM_COMMAND_OPTIONS=" -O CRAM,$CRAM_OPTIONS -@ $THREADS $CRAM.sam --reference $REF $SAMTOOLS_CRAM_INDEX -o $CRAM.cram "
+			[ "$SAMTOOLS_CRAM_COMMAND" == "sort" ] && SAMTOOLS_CRAM_COMMAND_OPTIONS=$SAMTOOLS_CRAM_COMMAND_OPTIONS" -T $CRAM.SAMTOOLS_PREFIX$RANDOM "
+			[ "$SAMTOOLS_CRAM_COMMAND" == "view" ] && SAMTOOLS_CRAM_COMMAND_OPTIONS=$SAMTOOLS_CRAM_COMMAND_OPTIONS" -h "
+			(($DEBUG)) && echo "#[INFO] COMMAND: $SAMTOOLS $SAMTOOLS_CRAM_COMMAND $SAMTOOLS_CRAM_COMMAND_OPTIONS "
 			time_start=$(date +%s%3N)
-			$JAVA $JAVA_FLAGS -jar $PICARD FastqToSam $PICARD_FASTQ_options -COMPRESSION_LEVEL 0 -OUTPUT $CRAM.sam -SAMPLE_NAME $SAMPLE 2>/dev/null && $SAMTOOLS sort -O CRAM,$CRAM_OPTIONS -@ $THREADS -T $CRAM.SAMTOOLS_PREFIX$RANDOM $CRAM.sam --reference $REF -o $CRAM.cram 2>/dev/null && rm -f $CRAM.sam
+			$JAVA $JAVA_FLAGS -jar $PICARD FastqToSam $PICARD_FASTQ_options -COMPRESSION_LEVEL 0 -OUTPUT $CRAM.sam -SAMPLE_NAME $SAMPLE 2>/dev/null && $SAMTOOLS $SAMTOOLS_CRAM_COMMAND $SAMTOOLS_CRAM_COMMAND_OPTIONS 2>/dev/null && rm -f $CRAM.sam
 			time_end=$(date +%s%3N)
 			CRAM_encode_time=$(echo "scale=3; "$((time_end-time_start))" / 1000" | bc )
 			(($VERBOSE)) && echo "#[INFO] FASTQ '$FASTQ_names' STATS TIME Encode '$CRAM_encode_time'"
@@ -683,6 +724,11 @@ if [ "$STATS" != "" ]; then
 	echo "INPUT_FASTQ	"$(echo $FASTQ | tr " " ",") >> $STATS
 	echo "INPUT_BAM	"$(echo $BAM | tr " " ",") >> $STATS
 	echo "INPUT_THREADS	$THREADS" >> $STATS
+	echo "SAMTOOLS_CRAM_COMMAND	$SAMTOOLS_CRAM_COMMAND" >> $STATS
+	echo "INDEX	$SAMTOOLS_CRAM_INDEX_OPTION" >> $STATS
+	echo "REHEADER	$REHEADER" >> $STATS
+	
+	REHEADER
 	echo "CRAM_options	$CRAM_OPTIONS" >> $STATS
 
 	echo "CRAM_validation	$CRAM_validation" >> $STATS
@@ -705,6 +751,7 @@ if [ "$STATS" != "" ]; then
 	echo "BAM_checksum	$BAM_checksum" >> $STATS
 	echo "BAM_size	$BAM_size" >> $STATS
 	echo "BAM_nbreads	$BAM_nbreads" >> $STATS
+
 
 	#echo "CRAM_encode_time=$CRAM_encode_time"
 
