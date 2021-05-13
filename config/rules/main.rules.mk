@@ -490,7 +490,8 @@ GATKRR_FLAGS=
 #$(JAVA) -jar $(PICARD) BedToIntervalList INPUT=$@.4fields OUTPUT=$@ SEQUENCE_DICTIONARY=$$(cat $*.dict) ;
 
 %.intervals: %.interval_list
-	grep -v ^@ $< > $@
+	touch $@
+	-grep -v ^@ $< > $@
 
 
 # BED primer file from a Manifest
