@@ -48,42 +48,42 @@ function release () {
 # Usage
 function usage {
 	echo "# USAGE: $(basename $0) --fastq=<FILE1,FILE2,...> [options...]";
-	echo "# -e|--application|--app|--env=<APP|FILE>     APP name or APP file configuration of the APPLICATION.";
-	echo "#                                             Must be in the STARK folder if relative path";
-	echo "#                                             Default: default.app if not defined";
-	echo "# -f|--reads|--fastq_R1=<FILE1,FILE2,...>     List of FASTQ|BAM|SAM|CRAM (mandatory)";
-	echo "#                                             Formats: *fastq.gz|*fq.gz|*bam|*ubam|*cram|*ucram|*sam|*usam";
-	echo "# -q|--reads2|--fastq_R2=<FILE1,FILE2,...>    List of corresponding FASTQ Read2 file (beware of correspondance).";
-	echo "#                                             Format:  (*fastq.gz|fq.gz)";
-	echo "# -b|--bed|--manifest=<FILE1,FILE2,...>       List of corresponding BED files in BED format.";
-	echo "#                                             If not *.bed file, considered as Illumina manifest.";
-	echo "#                                             Default first BED or empty";
-	echo "# -j|--genes=<FILE1,FILE2,...>                List of corresponding GENES files in BED format.";
-	echo "#                                             Default first GENES file or empty";
-	echo "# -m|--transcripts=<FILE1,FILE2,...>          List of corresponding TRANSCRIPTS files in TSV format (transcript geneID).";
-	echo "#                                             Default first GENES file or empty";
-	echo "# -s|--sample=<STRING1,STRING2,...>           List of corresponding SAMPLE Name";
-	echo "#                                             Automatically detected from input files.";
-	echo "# -r|--run=<STRING1,STRING2,...>              List of corresponding RUN Name";
-	echo "#                                             Default: date of first RUN of the list).";
-	echo "# -o|--results=<FOLDER>                       RESULTS directory to generate RESULTS|RUN|SAMPLE|* files";
-	echo "#                                             Default: Defined in APP, or first --reads file folder";
-	echo "# -u|--repository=<FOLDER>                    Repository directory to generate GROUP|PROJECT|RUN|SAMPLE|* specific files";
-	echo "#                                             Default: no copy in a repository";
-	echo "# --archives=<FOLDER>                         Archives directory to generate GROUP|PROJECT|RUN|SAMPLE|* specific files";
-	echo "#                                             Default: no copy in a archives";
-	echo "# --databases=<FOLDER>                        Databases folder (requires STARK databases folder structure)";
-	echo "# -p|--pipelines=<STRING1,STRING2,...>        PIPELINES to launch, in the format ALIGNER.CALLER.ANNOTATOR, separated by a comma";
-	echo "#                                             Default: 'bwamem.gatkHC.howard'";
-	echo "# -t|--threads=<INTEGER>                      Number of thread to use";
-	echo "#                                             Default: all cores in your system minus one";
-	echo "# -g|--by_sample                              Split analysis by SAMPLE, all threads on each sample, one by one";
-	echo "# -a|--adapters=<STRING>                      Adapters to trim..";
+	echo "# -e|--application|--app|--env=<APP|FILE>         APP name or APP file configuration of the APPLICATION.";
+	echo "#                                                 Must be in the STARK folder if relative path";
+	echo "#                                                 Default: default.app if not defined";
+	echo "# -f|--reads|--fastq_R1=<FILE1,FILE2,...>         List of FASTQ|BAM|SAM|CRAM (mandatory)";
+	echo "#                                                 Formats: *fastq.gz|*fq.gz|*bam|*ubam|*cram|*ucram|*sam|*usam";
+	echo "# -q|--reads2|--fastq_R2=<FILE1,FILE2,...>        List of corresponding FASTQ Read2 file (beware of correspondance).";
+	echo "#                                                 Format:  (*fastq.gz|fq.gz)";
+	echo "# -b|--design|--bed|--manifest=<FILE1,FILE2,...>  List of corresponding BED files in BED format.";
+	echo "#                                                 If not *.bed file, considered as Illumina manifest.";
+	echo "#                                                 Default first BED or empty";
+	echo "# -j|--panels|--genes=<FILE1,FILE2,...>           List of corresponding GENES files in BED format.";
+	echo "#                                                 Default first GENES file or empty";
+	echo "# -m|--transcripts=<FILE1,FILE2,...>              List of corresponding TRANSCRIPTS files in TSV format (transcript geneID).";
+	echo "#                                                 Default first GENES file or empty";
+	echo "# -s|--sample=<STRING1,STRING2,...>               List of corresponding SAMPLE Name";
+	echo "#                                                 Automatically detected from input files.";
+	echo "# -r|--run=<STRING1,STRING2,...>                  List of corresponding RUN Name";
+	echo "#                                                 Default: date of first RUN of the list).";
+	echo "# -o|--results=<FOLDER>                           RESULTS directory to generate RESULTS|RUN|SAMPLE|* files";
+	echo "#                                                 Default: Defined in APP, or first --reads file folder";
+	echo "# -u|--repository=<FOLDER>                        Repository directory to generate GROUP|PROJECT|RUN|SAMPLE|* specific files";
+	echo "#                                                 Default: no copy in a repository";
+	echo "# --archives=<FOLDER>                             Archives directory to generate GROUP|PROJECT|RUN|SAMPLE|* specific files";
+	echo "#                                                 Default: no copy in a archives";
+	echo "# --databases=<FOLDER>                            Databases folder (requires STARK databases folder structure)";
+	echo "# -p|--pipelines=<STRING1,STRING2,...>            PIPELINES to launch, in the format ALIGNER.CALLER.ANNOTATOR, separated by a comma";
+	echo "#                                                 Default: 'bwamem.gatkHC.howard'";
+	echo "# -t|--threads=<INTEGER>                          Number of thread to use";
+	echo "#                                                 Default: all cores in your system minus one";
+	echo "# -g|--by_sample                                  Split analysis by SAMPLE, all threads on each sample, one by one";
+	echo "# -a|--adapters=<STRING>                          Adapters to trim..";
 
-	echo "# -v|--verbose                                VERBOSE option";
-	echo "# -d|--debug                                  DEBUG option";
-	echo "# -n|--release                                RELEASE option";
-	echo "# -h|--help                                   HELP option";
+	echo "# -v|--verbose                                    VERBOSE option";
+	echo "# -d|--debug                                      DEBUG option";
+	echo "# -n|--release                                    RELEASE option";
+	echo "# -h|--help                                       HELP option";
 	echo "#";
 }
 
@@ -100,7 +100,7 @@ header;
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
-ARGS=$(getopt -o "e:f:q:b:j:m:s:r:o:u:p:t:ga:vdnh" --long "env:,app:,application:,reads:,fastq:,reads1:,reads:,fastq_R1:,fastq_R2:,reads2:,index1:,index2:,analysis_tag:,sample_tag:,other_files:,design:,bed:,manifest:,genes:,transcripts:,sample:,sample_list:,sample_filter:,runs:,demultiplexing:,demultiplexing_only,samplesheet:,analysis:,analysis_name:,output:,analysis_dir:,results:,repository:,archives:,databases:,input:,output:,tmp:,log:,pipelines:,threads:,no_header,by_sample,adapters:,verbose,debug,release,help" -- "$@" 2> /dev/null)
+ARGS=$(getopt -o "e:f:q:b:j:m:s:r:o:u:p:t:ga:vdnh" --long "env:,app:,application:,reads:,fastq:,reads1:,reads:,fastq_R1:,fastq_R2:,reads2:,index1:,index2:,analysis_tag:,sample_tag:,other_files:,design:,bed:,manifest:,genes:,panels:,transcripts:,sample:,sample_list:,sample_filter:,runs:,demultiplexing:,demultiplexing_only,samplesheet:,analysis:,analysis_name:,output:,analysis_dir:,results:,repository:,archives:,databases:,input:,output:,tmp:,log:,pipelines:,threads:,no_header,by_sample,adapters:,verbose,debug,release,help" -- "$@" 2> /dev/null)
 [ $? -ne 0 ] && \
 	echo "#[ERROR] Error in the argument list." "Use -h or --help to display the help." >&2 && usage && \
 	exit 1
@@ -150,7 +150,7 @@ do
 			BED_INPUT=$(echo $BED_INPUT | tr "," " " | xargs)
 			shift 2
 			;;
-		-j|--genes)
+		-j|--panels|--genes)
 			BEDFILE_GENES_INPUT="$2"
 			BEDFILE_GENES_INPUT=$(echo $BEDFILE_GENES_INPUT | tr "," " " | xargs)
 			shift 2
