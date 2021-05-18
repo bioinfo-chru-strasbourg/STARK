@@ -411,7 +411,7 @@ def make_global_coverage_file(run, regionsType, regionsFileList, metricsFileList
 				for sample in genesSampleDic[regionsFile]:
 					f.write(os.path.basename(run)+"\t"+sample+"\t"+"\t".join([str(v) for v in runMetrics[sample]])+"\n")
 
-def make_coverage_file(run, regionsType, regionsFileList, metricsFileList, sampleList, sampleDirList, alignerList, tagsList, outputPrefix):
+def make_depth_file(run, regionsType, regionsFileList, metricsFileList, sampleList, sampleDirList, alignerList, tagsList, outputPrefix):
 	"""
 	Previously named "metrics.design.metrics"
 	Made to generate:
@@ -445,17 +445,17 @@ def make_coverage_file(run, regionsType, regionsFileList, metricsFileList, sampl
 
 		#write matrix
 		if regionsType == "Design":
-			finalTsv = osj(outputPrefix + regionsType + ".coverage.tsv")
+			finalTsv = osj(outputPrefix + regionsType + ".depth.tsv")
 		elif regionsType == "Panel":
-			finalTsv = osj(outputPrefix + regionsType + "." + regionsFile + ".coverage.tsv")
+			finalTsv = osj(outputPrefix + regionsType + "." + regionsFile + ".depth.tsv")
 		print("Writing " + finalTsv)
-		legend=("## Coverage metrics - per region in " + regionsType + "\n"
+		legend=("## Depth metrics - per region in " + regionsType + "\n"
 				"##\n"
 				"## Compilation of sample statistics computed by STARK.\n"
 				"##\n")
 		write_cov_metrics_file(finalTsv, run, finalSampleList, dataFileList, legend, finalTagsList)
 
-def make_depth_file(run, regionsType, regionsFileList, metricsFileList, sampleList, sampleDirList, alignerList, tagsList, outputPrefix):
+def make_coverage_file(run, regionsType, regionsFileList, metricsFileList, sampleList, sampleDirList, alignerList, tagsList, outputPrefix):
 	"""
 	fichier metrics.sample.<nompanel>.metrics
 	- ajouter design.<nomdesign>.depth.metrics
@@ -468,7 +468,7 @@ def make_depth_file(run, regionsType, regionsFileList, metricsFileList, sampleLi
 		finalSampleList = []
 		finalTagsList = []
 		dataFileList = []
-		legend=("## Depth of coverage metrics - - per region in " + regionsType + " " + regionsFile +"\n"
+		legend=("## Coverage metrics - - per region in " + regionsType + " " + regionsFile +"\n"
 		"##\n"
 		"## Compilation of sample statistics computed by STARK.\n"
 		"##\n")
@@ -487,9 +487,9 @@ def make_depth_file(run, regionsType, regionsFileList, metricsFileList, sampleLi
 					finalTagsList.append(tags)
 
 		if regionsType == "Design":
-			finalTsv = osj(outputPrefix + regionsType + ".depth.tsv")
+			finalTsv = osj(outputPrefix + regionsType + ".coverage.tsv")
 		elif regionsType == "Panel":
-			finalTsv = osj(outputPrefix + regionsType + "." + regionsFile + ".depth.tsv")
+			finalTsv = osj(outputPrefix + regionsType + "." + regionsFile + ".coverage.tsv")
 		print("Writing " + finalTsv)
 		write_cov_metrics_file(finalTsv, run, sampleList, dataFileList, legend, tagsList)
 
@@ -560,12 +560,12 @@ def main_routine(metricsFileList, outputPrefix, fromResDir):
 	#design files
 	#TODO: deal with design names in the case there are multiples
 	make_global_coverage_file(run, "Design", ["Design"], metricsFileList, sampleList, alignerList, genesSampleDic, outputPrefix, fromResDir)
-	make_coverage_file(run, "Design", ["Design"], metricsFileList, sampleList, sampleDirList, alignerList, tagsList, outputPrefix)
 	make_depth_file(run, "Design", ["Design"], metricsFileList, sampleList, sampleDirList, alignerList, tagsList, outputPrefix)
+	make_coverage_file(run, "Design", ["Design"], metricsFileList, sampleList, sampleDirList, alignerList, tagsList, outputPrefix)
 	#panels files
 	make_global_coverage_file(run, "Panel", genesList, metricsFileList, sampleList, alignerList, genesSampleDic, outputPrefix, fromResDir)
-	make_coverage_file(run, "Panel", genesList, metricsFileList, sampleList, sampleDirList, alignerList, tagsList, outputPrefix)
 	make_depth_file(run, "Panel", genesList, metricsFileList, sampleList, sampleDirList, alignerList, tagsList, outputPrefix)
+	make_coverage_file(run, "Panel", genesList, metricsFileList, sampleList, sampleDirList, alignerList, tagsList, outputPrefix)
 
 
 	#amplicon coverage metrics
