@@ -393,7 +393,7 @@ if ! $COMMAND 1>>$LOGFILE 2>>$LOGFILE; then
 fi;
 
 # List of fastq files with size
-ls -hs1 $OUTPUT_DIR/*fastq.gz 2>/dev/null | awk '{print "#[INFO] FASTQ: "$2"\t"$1}' 1>>$LOGFILE 2>>$LOGFILE
+ls -hs1 $OUTPUT_DIR/*fastq.gz $OUTPUT_DIR/*/*fastq.gz 2>/dev/null | awk '{print "#[INFO] FASTQ: "$2"\t"$1}' 1>>$LOGFILE 2>>$LOGFILE
 
 
 # End file
