@@ -727,10 +727,7 @@ if [ "$STATS" != "" ]; then
 	echo "SAMTOOLS_CRAM_COMMAND	$SAMTOOLS_CRAM_COMMAND" >> $STATS
 	echo "INDEX	$SAMTOOLS_CRAM_INDEX_OPTION" >> $STATS
 	echo "REHEADER	$REHEADER" >> $STATS
-	
-	REHEADER
 	echo "CRAM_options	$CRAM_OPTIONS" >> $STATS
-
 	echo "CRAM_validation	$CRAM_validation" >> $STATS
 	echo "CRAM_size	$CRAM_size" >> $STATS
 	echo "CRAM_encode_time	$CRAM_encode_time" >> $STATS
@@ -779,6 +776,7 @@ if (($CRAM_validate)); then
 	[ "$STATS" != "" ] && echo "#[INFO] STATS generated '$STATS'"
 else
 	echo "#[ERROR] CRAM not generated and validated neither from BAM nor FASTQ"
+	[ "$CRAM_cram_source" != "" ] && rm -f $CRAM_cram_source
 	exit 1
 fi
 
