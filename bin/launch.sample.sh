@@ -1213,7 +1213,7 @@ for RUU in $RUN_UNIQ; do
 			if [ ! -e $BEDFILE_GENES_LIST_ONE ]; then
 				# Add Genes
 				if [ "$G" != "" ]; then
-					(($VERBOSE)) && echo "#[INFO] Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' and copy .genes files."
+					(($VERBOSE)) && echo "#[INFO] Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' and copy Panel .genes files."
 					#> $RUN_SAMPLE_DIR/$S.list.genes;
 					for G_ONE in $(echo $G | tr "+" " "); do
 						# add '.genes' extension if not exists
@@ -1221,7 +1221,14 @@ for RUU in $RUN_UNIQ; do
 						# remove Sample name (mainly in case of relauch)
 						G_ONE_TARGET=$(echo $G_ONE_TARGET | sed "s/$S\.//gi")
 						#$COMMAND_COPY $G_ONE $RUN_SAMPLE_DIR/$S.$G_ONE_TARGET;
-						$BEDTOOLS sort -i $G_ONE | $STARK_BED_NORMALIZATION > $RUN_SAMPLE_DIR/$S.$G_ONE_TARGET;
+						if $BEDTOOLS sort -i $G_ONE | $STARK_BED_NORMALIZATION > $RUN_SAMPLE_DIR/$S.$G_ONE_TARGET; then
+							(($VERBOSE)) && echo "#[INFO] Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' and copy Panel .genes files - Panel '$G_ONE' found "
+						elif $BEDTOOLS sort -i $G_ONE | $STARK_BED_NORMALIZATION > $RUN_SAMPLE_DIR/$S.$G_ONE_TARGET; then
+							(($VERBOSE)) && echo "#[INFO] Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' and copy Panel .genes files - Panel '$G_ONE' found (but cutted)"
+						else
+							echo "#[ERROR] Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' and copy Panel .genes files - Panel '$G_ONE' failed!!!"
+							exit 0
+						fi;
 						echo $S.$G_ONE_TARGET >> $BEDFILE_GENES_LIST_ONE
 					done;
 				elif [ -s $B ] && [ "$B" != "" ]; then

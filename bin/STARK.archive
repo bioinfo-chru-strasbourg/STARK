@@ -215,7 +215,9 @@ in_array ()
 # input: $command
 checksum () 
 { 
-    echo $(eval $1 | cut -f1 -d " " | paste - - - - | LC_COLLATE=C sort -S 100% -T SORT_PREFIX$RANDOM -n -k1,1 -t " " | tr "\t" "\n" | sha512sum | cut -d" " -f1)
+    #echo $(eval $1 | cut -f1 -d " " | paste - - - - | LC_COLLATE=C sort -S 100% -T SORT_PREFIX$RANDOM -n -k1,1 -t " " | tr "\t" "\n" | sha512sum | cut -d" " -f1)
+	#echo $(eval $1 | cut -f1 -d " " | paste - - - - | LC_COLLATE=C sort -S 7G -T SORT_PREFIX$RANDOM -n -k1,1 -t " " | tr "\t" "\n" | sha512sum | cut -d" " -f1)
+	echo $(eval $1 | cut -f1 -d " " | paste - - - - | LC_COLLATE=C sort -T SORT_PREFIX$RANDOM -n -k1,1 -t " " | tr "\t" "\n" | sha512sum | cut -d" " -f1)
 	return 0
 }
 
