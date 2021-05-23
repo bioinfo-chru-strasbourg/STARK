@@ -715,11 +715,16 @@ export BAM_VALIDATION_COMPRESSION
 
 
 
-
 # CRAM OPTIONS
-# Final CRAM options for compression (archive.cram))
+# Final CRAM options for compression (archive.cram)
 # example: CRAM_OPTIONS="version=3.0,level=9,no_ref,use_lzma,seqs_per_slice=100000"
 export CRAM_OPTIONS
+
+
+# CRAM REMOVE TAGS
+# Final CRAM options for tags (archive.cram)
+# example: CRAM_REMOVE_TAGS="BD,BI,OQ"
+export CRAM_REMOVE_TAGS
 
 
 # ANNOTATION

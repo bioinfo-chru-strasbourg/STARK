@@ -62,7 +62,8 @@ function usage {
 	echo "# --sort                                         Sort CRAM archive.";
 	echo "# --index                                        Index CRAM archive.";
 	echo "# --reheader                                     Reheader CRAM archive with genome reference tag (M5 and UR), if no tag.";
-	#echo "#                                                --bam_read_integrity_checksum and --cram_read_integrity_checksum forced";
+	echo "# --remove_tags=<STRING>[,<STRING>]              Remove tags from BAM before CRAM compression.";
+	echo "#                                                Example: 'BD,BI,OQ' with remove tags 'BD:Z', 'BI:Z' and 'OQ:Z'";
 	echo "# -v|--verbose                                   Verbose mode";
 	echo "# -d|--debug                                     Debug mode";
 	echo "# -n|--release                                   Script Release";
@@ -77,7 +78,7 @@ function usage {
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
-ARGS=$(getopt -o "f:b:c:o:e:t:s:vdnh" --long "fastq:,bam:,cram:,cram_options:,app:,application:,threads:,sample:,reference:,bam_read_integrity_checksum,cram_read_integrity_checksum,stats:,sort,index,reheader,statistics:,verbose,debug,release,help" -- "$@" 2> /dev/null)
+ARGS=$(getopt -o "f:b:c:o:e:t:s:vdnh" --long "fastq:,bam:,cram:,cram_options:,app:,application:,threads:,sample:,reference:,bam_read_integrity_checksum,cram_read_integrity_checksum,stats:,sort,index,reheader,remove_tags:,statistics:,verbose,debug,release,help" -- "$@" 2> /dev/null)
 if [ $? -ne 0 ]; then
 	:
 	echo "#[ERROR] Error in the argument list:";
@@ -155,6 +156,10 @@ do
 			REHEADER=1
 			shift 1
 			;;
+		--remove_tags)
+			REMOVE_TAGS=$(echo "$2" | tr "," " ")
+			shift 2
+			;;
 		-h|--help)
 			usage
 			exit 0
@@ -217,7 +222,11 @@ checksum ()
 { 
     #echo $(eval $1 | cut -f1 -d " " | paste - - - - | LC_COLLATE=C sort -S 100% -T SORT_PREFIX$RANDOM -n -k1,1 -t " " | tr "\t" "\n" | sha512sum | cut -d" " -f1)
 	#echo $(eval $1 | cut -f1 -d " " | paste - - - - | LC_COLLATE=C sort -S 7G -T SORT_PREFIX$RANDOM -n -k1,1 -t " " | tr "\t" "\n" | sha512sum | cut -d" " -f1)
-	echo $(eval $1 | cut -f1 -d " " | paste - - - - | LC_COLLATE=C sort -T SORT_PREFIX$RANDOM -n -k1,1 -t " " | tr "\t" "\n" | sha512sum | cut -d" " -f1)
+	#echo $(eval $1 | cut -f1 -d " " | paste - - - - | LC_COLLATE=C sort -T $TMP_FOLDER_TMP/SORT_PREFIX$RANDOM -n -k1,1 -t " " | tr "\t" "\n" | sha512sum | cut -d" " -f1)
+	local SORT_TMP=$TMP_FOLDER_TMP/SORT_PREFIX$RANDOM
+	mkdir -p $SORT_TMP
+	echo $(eval $1 | cut -f1 -d " " | paste - - - - | LC_COLLATE=C sort -T $SORT_TMP -n -k1,1 -t " " | tr "\t" "\n" | sha512sum | cut -d" " -f1)
+	rm -rf $SORT_TMP
 	return 0
 }
 
@@ -244,6 +253,10 @@ APP_DESCRIPTION=$(description_app "$APP" "$STARK_FOLDER_APPS");
 
 (($VERBOSE)) && [ ! -z "$APP" ] && [ ! -z "$ENV" ] && echo "#[INFO] Application '$APP' found ('$ENV')"
 (($VERBOSE)) && [ ! -z "$APP" ] && [ -z "$ENV" ] && echo "#[INFO] Application '$APP' NOT found"
+
+# Check TMP folder
+[ "$TMP_SYS_FOLDER" == "" ] && TMP_SYS_FOLDER=/tmp
+[ "$TMP_FOLDER_TMP" == "" ] && TMP_FOLDER_TMP=$TMP_SYS_FOLDER
 
 
 # Parameters
@@ -336,11 +349,16 @@ else
 	SAMTOOLS_CRAM_INDEX_OPTION=1
 fi;
 
-# samtools index
+# reheader
 if [ "$REHEADER" == "" ]; then
 	REHEADER=0
 fi;
 
+
+# samtools index
+if [ "$REMOVE_TAGS" != "" ]; then
+	(($VERBOSE)) && echo "#[INFO] Remove tags: $REMOVE_TAGS"
+fi;
 
 
 # stats
@@ -479,13 +497,26 @@ if [ ! -z "$BAM" ]; then
 				(($VERBOSE)) && (($BAM_READ_integrity_checksum)) && echo "#[INFO] BAM '$bam_name' BAM READS integrity checked!"
 				(($VERBOSE)) && echo "#[INFO] BAM '$bam_name' CRAM generation..."
 				# Options
-				SAMTOOLS_CRAM_COMMAND_OPTIONS=" -O CRAM,$CRAM_OPTIONS -@ $THREADS $bam --reference $REF $SAMTOOLS_CRAM_INDEX -o $CRAM.cram "
+				BAM_FOR_SAMTOOLS=$bam;
+				PRE_SAMTOOLS="";
+				if [ "$REMOVE_TAGS" != "" ]; then
+					PRE_SAMTOOLS=" $SAMTOOLS view -h -@ $THREADS --reference $REF $bam | ";
+					BAM_FOR_SAMTOOLS=" ";
+					#sed 's/\tOQ\:Z\:[^\t]*//'
+					for TAG in $REMOVE_TAGS; do
+						PRE_SAMTOOLS="$PRE_SAMTOOLS sed 's/\t$TAG\:Z\:[^\t]*//' | ";
+					done;
+				fi;
+				SAMTOOLS_CRAM_COMMAND_OPTIONS=" -O CRAM,$CRAM_OPTIONS -@ $THREADS $BAM_FOR_SAMTOOLS --reference $REF $SAMTOOLS_CRAM_INDEX -o $CRAM.cram "
 				[ "$SAMTOOLS_CRAM_COMMAND" == "sort" ] && SAMTOOLS_CRAM_COMMAND_OPTIONS=$SAMTOOLS_CRAM_COMMAND_OPTIONS" -T $bam.SAMTOOLS_PREFIX$RANDOM "
 				[ "$SAMTOOLS_CRAM_COMMAND" == "view" ] && SAMTOOLS_CRAM_COMMAND_OPTIONS=$SAMTOOLS_CRAM_COMMAND_OPTIONS" -h "
-				(($DEBUG)) && echo "#[INFO] COMMAND: $SAMTOOLS $SAMTOOLS_CRAM_COMMAND $SAMTOOLS_CRAM_COMMAND_OPTIONS "
+				
+				COMMAND="$PRE_SAMTOOLS $SAMTOOLS $SAMTOOLS_CRAM_COMMAND $SAMTOOLS_CRAM_COMMAND_OPTIONS"
+				(($DEBUG)) && echo "#[INFO] COMMAND: $COMMAND "
 				time_start=$(date +%s%3N)
 				#if ! $SAMTOOLS $SAMTOOLS_CRAM_COMMAND -h -O CRAM,$CRAM_OPTIONS -@ $THREADS -T $bam.SAMTOOLS_PREFIX$RANDOM $bam --reference $REF $SAMTOOLS_CRAM_INDEX -o $CRAM.cram 2>/dev/null; then
-				if ! $SAMTOOLS $SAMTOOLS_CRAM_COMMAND $SAMTOOLS_CRAM_COMMAND_OPTIONS 2>/dev/null ; then
+				#if ! $SAMTOOLS $SAMTOOLS_CRAM_COMMAND $SAMTOOLS_CRAM_COMMAND_OPTIONS 2>/dev/null ; then
+				if ! eval $COMMAND 2>/dev/null ; then
 					(($VERBOSE)) && echo "#[WARNING] BAM '$bam_name' CRAM generation failed!"
 					rm -f $CRAM.cram
 				fi;
@@ -775,10 +806,11 @@ if (($CRAM_validate)); then
 	(($VERBOSE)) && (($CRAM_validation)) && echo "#[INFO] CRAM validated with FASTQ READ integrity checksum"
 	! (($CRAM_validation)) && echo "#[WARNING] CRAM NOT validated with FASTQ READ integrity checksum"
 	mv $CRAM_cram_source $CRAM
+	[ -e $CRAM_cram_source.crai ] && mv $CRAM_cram_source.crai $CRAM.crai
 	[ "$STATS" != "" ] && echo "#[INFO] STATS generated '$STATS'"
 else
 	echo "#[ERROR] CRAM not generated and validated neither from BAM nor FASTQ"
-	[ "$CRAM_cram_source" != "" ] && rm -f $CRAM_cram_source
+	[ "$CRAM_cram_source" != "" ] && rm -f $CRAM_cram_source $CRAM_cram_source.crai
 	exit 1
 fi
 

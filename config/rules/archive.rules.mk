@@ -10,7 +10,8 @@ MK_DATE="12/04/2021"
 # 0.9.1b-12/10/2016: Creation
 # 0.9.2.0-12/04/2021: Archive from script STARK.archive
 
-
+#CRAM_REMOVE_TAGS?=
+#BD,BI
 
 ## FASTQ from ILLUMINA ##
 
@@ -18,7 +19,8 @@ MK_DATE="12/04/2021"
 	# Archive aligned BAM only if all original reads present. otherwise, FASTQ compressed 
 	mkdir -p $@.metrics;
 	#$(STARK_FOLDER_BIN)/STARK.archive --fastq="$*.R1.fastq.gz $*.R2.fastq.gz" --bam="$$(cat $< | grep "$*")" --cram=$@ --cram_read_integrity_checksum --cram_options=$(CRAM_OPTIONS) --threads=$(THREADS_BY_ALIGNER) --sort --stats=$@.metrics/stats.tsv --reheader --verbose
-	$(STARK_FOLDER_BIN)/STARK.archive --fastq="$*.R1.fastq.gz $*.R2.fastq.gz" --bam="$$(cat $< | grep "$*")" --cram=$@ --cram_read_integrity_checksum --cram_options=$(CRAM_OPTIONS) --threads=$(THREADS_BY_ALIGNER) --stats=$@.metrics/stats.tsv --reheader --verbose
+	#$(STARK_FOLDER_BIN)/STARK.archive --fastq="$*.R1.fastq.gz $*.R2.fastq.gz" --bam="$$(cat $< | grep "$*")" --cram=$@ --cram_read_integrity_checksum --cram_options=$(CRAM_OPTIONS) --threads=$(THREADS_BY_ALIGNER) --stats=$@.metrics/stats.tsv --reheader --verbose
+	$(STARK_FOLDER_BIN)/STARK.archive --fastq="$*.R1.fastq.gz $*.R2.fastq.gz" --bam="$$(cat $< | grep "$*")" --cram=$@ --cram_read_integrity_checksum --cram_options=$(CRAM_OPTIONS) --threads=$(THREADS_BY_ALIGNER) --stats=$@.metrics/stats.tsv --reheader --remove_tags=$(CRAM_REMOVE_TAGS) --verbose
 
 	
 

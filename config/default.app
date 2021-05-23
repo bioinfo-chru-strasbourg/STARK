@@ -331,8 +331,15 @@ BAM_VALIDATION_COMPRESSION=5
 
 # CRAM OPTIONS
 # Final CRAM options for compression (archive.cram)
-#CRAM_OPTIONS="version=3.0,level=9,no_ref,use_lzma,use_bzip2,use_fqz,seqs_per_slice=100000"
+# example: CRAM_OPTIONS="version=3.0,level=9,no_ref,use_lzma,use_bzip2,use_fqz,seqs_per_slice=100000"
 CRAM_OPTIONS="version=3.0,level=9,no_ref"
+
+
+# CRAM REMOVE TAGS
+# Final CRAM options for tags (archive.cram)
+# example: CRAM_REMOVE_TAGS="BD,BI,OQ"
+CRAM_REMOVE_TAGS="BD,BI"
+
 
 
 # THREADS (default AUTO)
