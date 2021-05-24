@@ -1,14 +1,15 @@
 ############################
 # Variants Filtration Rules
-# Release: 0.9
-# Date: 14/10/2019
+# Release: 0.9.0.1
+# Date: 25/05/2021
 # Author: Antony Le Bechec
 ############################
-MK_RELEASE="0.9"
-MK_DATE="14/10/2019"
+MK_RELEASE="0.9.0.1"
+MK_DATE="25/05/2021"
 
 # Release notes:
-# 0.9-14/10/2019: Creation
+# 0.9.0.0-14/10/2019: Creation
+# 0.9.0.1-25/05/2021: Recheck Expressions
 
 
 #####################

@@ -1,11 +1,11 @@
 ############################
 # VarScan Calling Rules
-# Release: 0.9.4.2
-# Date: 04/05/2016
+# Release: 0.9.4.6
+# Date: 25/05/2021
 # Author: Antony Le Bechec
 ############################
-MK_RELEASE="0.9.4.5"
-MK_DATE="27/09/2019"
+MK_RELEASE="0.9.4.6"
+MK_DATE="25/05/2021"
 
 # Release notes:
 # 0.9.1-24/04/2015: Add 'varscanlowfreqlowcovsnp' calling
@@ -18,6 +18,7 @@ MK_DATE="27/09/2019"
 # 0.9.4.3-17/05/2016: Bug correction
 # 0.9.4.4-21/03/2019: Change parameters for mpileup by adding FATBAM Soft Clip to Q0
 # 0.9.4.5-27/09/2019: Change FATBAM to CAP tool
+# 0.9.4.6-25/05/2021: Change VARSCAN_FILTERS
 
 
 
@@ -48,7 +49,8 @@ MPILEUP_VARSCAN_OPTIONS= -E -d 10000000 -L 10000000 -C 50 -Q 10 -q 1 --output-ta
 VARSCAN_BOTH_OPTIONS= --min-var-freq 0.01 --min-reads2 2 --min-coverage 30 --p-value 1e-1
 VARSCAN_SNP_OPTIONS= $(VARSCAN_BOTH_OPTIONS) --min-avg-qual 30
 VARSCAN_INDEL_OPTIONS= $(VARSCAN_BOTH_OPTIONS) --min-avg-qual 10
-VARSCAN_FILTERS=--genotypeFilterExpression 'GQ < 200.0 && GQ >= 150' --genotypeFilterName 'LowGQ' --genotypeFilterExpression 'GQ < 150.0 && GQ >= 100' --genotypeFilterName 'VeryLowGQ'  --genotypeFilterExpression 'GQ < 100.0' --genotypeFilterName 'VeryVeryLowGQ'
+VARSCAN_FILTERS=--genotypeFilterExpression 'GQ < 20.0' --genotypeFilterName 'LowGQ'
+#VARSCAN_FILTERS=--genotypeFilterExpression 'GQ < 200.0 && GQ >= 150' --genotypeFilterName 'LowGQ' --genotypeFilterExpression 'GQ < 150.0 && GQ >= 100' --genotypeFilterName 'VeryLowGQ'  --genotypeFilterExpression 'GQ < 100.0' --genotypeFilterName 'VeryVeryLowGQ'
 VARSCAN_SNP_FILTERS=$(VARSCAN_FILTERS)
 VARSCAN_INDEL_FILTERS=$(VARSCAN_FILTERS)
 VARSCAN_TIMEOUT=3600 # 1 = 1sec, 60=1min, 3600=1h
@@ -316,7 +318,8 @@ VARSCAN_SOLIDTUMOR_PVAL=1e-1
 VARSCAN_SOLIDTUMOR_BOTH_OPTIONS= --min-var-freq $(VARSCAN_SOLIDTUMOR_VAF) --min-reads2 $(VARSCAN_SOLIDTUMOR_ALT) --min-coverage $(VARSCAN_SOLIDTUMOR_DP) --p-value $(VARSCAN_SOLIDTUMOR_PVAL)
 VARSCAN_SOLIDTUMOR_SNP_OPTIONS= $(VARSCAN_SOLIDTUMOR_BOTH_OPTIONS) --min-avg-qual 30
 VARSCAN_SOLIDTUMOR_INDEL_OPTIONS= $(VARSCAN_SOLIDTUMOR_BOTH_OPTIONS) --min-avg-qual 10
-VARSCAN_SOLIDTUMOR_FILTERS=--genotypeFilterExpression 'GQ < 200.0 && GQ >= 150' --genotypeFilterName 'LowGQ' --genotypeFilterExpression 'GQ < 150.0 && GQ >= 100' --genotypeFilterName 'VeryLowGQ'  --genotypeFilterExpression 'GQ < 100.0' --genotypeFilterName 'VeryVeryLowGQ'
+VARSCAN_SOLIDTUMOR_FILTERS=--genotypeFilterExpression 'GQ < 20.0' --genotypeFilterName 'LowGQ'
+#VARSCAN_SOLIDTUMOR_FILTERS=--genotypeFilterExpression 'GQ < 200.0 && GQ >= 150' --genotypeFilterName 'LowGQ' --genotypeFilterExpression 'GQ < 150.0 && GQ >= 100' --genotypeFilterName 'VeryLowGQ'  --genotypeFilterExpression 'GQ < 100.0' --genotypeFilterName 'VeryVeryLowGQ'
 VARSCAN_SOLIDTUMOR_SNP_FILTERS=$(VARSCAN_SOLIDTUMOR_FILTERS)
 VARSCAN_SOLIDTUMOR_INDEL_FILTERS=$(VARSCAN_SOLIDTUMOR_FILTERS)
 VARSCAN_SOLIDTUMOR_TIMEOUT=3600 # 1 = 1sec, 60=1min, 3600=1h
