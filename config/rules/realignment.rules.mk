@@ -100,14 +100,14 @@ GATKIndelRealignerOptions= -known $(VCFDBSNP) --LODThresholdForCleaning 2.0 -com
 	# IF READS
 	rm -f $*.realignment*.mk;
 	+if (($$($(SAMTOOLS) idxstats $< | awk '{SUM+=$$3+$$4} END {print SUM}'))); then \
-		echo "$*.unmapped.bam: $*.realignment.bam" >> $*.realignment1.mk; \
-		echo "	$(SAMTOOLS) view -b -f 12 $*.realignment.bam > $*.unmapped.bam;" >> $*.realignment1.mk; \
-		echo -n " $*.unmapped.bam " > $*.realignment2.mk; \
+		echo "$*.for_realignment.unmapped.bam: $*.realignment.bam" >> $*.realignment1.mk; \
+		echo "	$(SAMTOOLS) view -b -f 12 $*.realignment.bam > $*.for_realignment.unmapped.bam;" >> $*.realignment1.mk; \
+		echo -n " $*.for_realignment.unmapped.bam " > $*.realignment2.mk; \
 		for chr in $$($(SAMTOOLS) idxstats $< | grep -v "\*" | awk '{ if ($$3+$$4>0) print $$1 }'); do \
 			#echo $$chr  >> $*.realignment.mk; \
-			echo "$*.$$chr.bam: $*.realignment.bam" >> $*.realignment1.mk; \
-			echo "	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKIndelRealignerFLAGS) -T IndelRealigner -R $$(cat $*.genome) -I $*.realignment.bam -o $*.$$chr.bam -targetIntervals $*.realignment.bam.RealignerTargetCreator.intervals $(GATKIndelRealignerOptions) -L $$chr" >> $*.realignment1.mk; \
-			echo -n " $*.$$chr.bam " >> $*.realignment2.mk; \
+			echo "$*.for_realignment.$$chr.bam: $*.realignment.bam" >> $*.realignment1.mk; \
+			echo "	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKIndelRealignerFLAGS) -T IndelRealigner -R $$(cat $*.genome) -I $*.realignment.bam -o $*.for_realignment.$$chr.bam -targetIntervals $*.realignment.bam.RealignerTargetCreator.intervals $(GATKIndelRealignerOptions) -L $$chr" >> $*.realignment1.mk; \
+			echo -n " $*.for_realignment.$$chr.bam " >> $*.realignment2.mk; \
 		done; \
 		echo -n "$@: " | cat - $*.realignment2.mk > $*.realignment3.mk; \
 		echo ""  >> $*.realignment3.mk; \
@@ -115,6 +115,7 @@ GATKIndelRealignerOptions= -known $(VCFDBSNP) --LODThresholdForCleaning 2.0 -com
 		cat $*.realignment1.mk $*.realignment3.mk >> $*.realignment.mk; \
 		cat $*.realignment.mk; \
 		make -f $*.realignment.mk $@; \
+		rm -rf $*.for_realignment.*bam $*.for_realignment.*bam.bai; \
 	else \
 		cp $< $@; \
 	fi;
