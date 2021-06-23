@@ -3,7 +3,7 @@
 
 # DEFAULT ENV
 ######################
-source_app $CONFIG_DEFAULT_APP,CAPTURE,SOMATIC_PARAMETERS
+source_app SOMATIC,CAPTURE
 
 # APPLICATION INFOS
 #####################
@@ -17,7 +17,7 @@ APP_PROJECT="EXOME"
 #######################
 
 # PIPELINES
-PIPELINES="bwamem.gatkHC_EXOME_SOMATIC.howard bwamem.gatkUG_EXOME_SOMATIC.howard bwamem.outLyzer.howard bwamem.VarScan.howard bwamem.MuTect2.howard"
+PIPELINES="bwamem.gatkHC_EXOME_SOMATIC.howard bwamem.gatkUG_EXOME_SOMATIC.howard bwamem.outLyzer_filtered.howard bwamem.VarScan_EXOME_SOMATIC.howard bwamem.MuTect2_stringent.howard"
 
 # INTERVAL_PADDING / add some padding to the intervals used (manifest) in order to include the flanking regions (typically ~100 bp)
 INTERVAL_PADDING=100

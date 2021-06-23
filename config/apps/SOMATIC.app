@@ -17,4 +17,4 @@ APP_PROJECT="UNKNOWN"
 #######################
 
 # PIPELINES
-PIPELINES="bwamem.gatkUG_SOMATIC.howard bwamem.gatkHC_SOMATIC.howard bwamem.MuTect2.howard bwamem.VarScan.howard bwamem.outLyzer.howard "
+PIPELINES="bwamem.gatkUG_SOMATIC.howard bwamem.gatkHC_SOMATIC.howard bwamem.MuTect2_stringent.howard bwamem.VarScan_SOMATIC.howard bwamem.outLyzer_filtered.howard "
