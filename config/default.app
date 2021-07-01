@@ -361,6 +361,19 @@ THREADS=AUTO
 #THREADS_WRITING=
 
 
+
+# MEMORY (default AUTO)
+
+# Total memory to use by thread
+# default: MemTotal from /proc/meminfo divided by number of threads
+#MEMORY=
+
+# Maximum memory to use for Java
+# default: MEMORY
+#JAVA_MEMORY=
+
+
+
 # HOWARD ANNOTATION/PRIOTITIZATION/TRANSLATION CONFIGURATION
 
 

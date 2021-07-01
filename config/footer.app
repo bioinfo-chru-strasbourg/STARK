@@ -1009,13 +1009,14 @@ export THREADS_WRITING
 # MEMORY
 MEMTOTAL=$(cat /proc/meminfo 2>/dev/null | grep MemTotal | awk '{print $2}')	# MEMORY in octet
 #export MEMORY=$(($MEMTOTAL/$THREADS/1024/1024))			# MEMORY in Go
-MEMORY=$(($MEMTOTAL/$CORES_TO_USE/1024/1024))			# MEMORY in Go
-if [ "$MEMORY" == "" ] || [ $MEMORY -lt 1 ]; then
-	MEMORY=1;
-fi;
+
+if [ "$MEMORY" == "" ] || [ $MEMORY -lt 1 ]; then MEMORY=$(($MEMTOTAL/$CORES_TO_USE/1024/1024)); fi;
+if [ "$MEMORY" == "" ] || [ $MEMORY -lt 1 ]; then MEMORY=1; fi;
 export MEMORY				# MEMORY in Go
-export MEMORY_JAVA=$MEMORY		# 4Go
-export JAVA_MEMORY=$MEMORY_JAVA		# for naming...
+
+# for naming...
+if [ "$JAVA_MEMORY" == "" ] || [ $JAVA_MEMORY -lt 1 ]; then JAVA_MEMORY=$MEMORY; fi;
+export JAVA_MEMORY		
 
 
 # JAVA_MEMORY by sample and by caller
