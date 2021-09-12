@@ -32,11 +32,13 @@ BWAMEM_FLAGS?= mem -C -M -t $(THREADS_BWA)
 	if (($$(zcat $*.R2.fastq.gz | head -n 1 | wc -l))); then \
 		echo "BWA MEM Paired-End"; \
 		#$(BWA) $(BWAMEM_FLAGS) $$(cat $@.RG) $$(cat $*.genome) $*.R1$(POST_SEQUENCING).fastq.gz $*.R2$(POST_SEQUENCING).fastq.gz | sed 's/[1-2]\:N\:0\:\([A-Z]*\)/BC\:Z\:\1/' | $(SAMTOOLS) view -b -1 -S -T $$(cat $*.genome) - -@ $(THREADS_SAMTOOLS) | $(SAMTOOLS) sort - -l 1 -O BAM -o $@.tmp -T $@.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS); \
-		$(BWA) $(BWAMEM_FLAGS) $$(cat $@.RG) $$(cat $*.genome) $*.R1$(POST_SEQUENCING).fastq.gz $*.R2$(POST_SEQUENCING).fastq.gz | sed 's/[1-2]\:N\:0\:\([A-Z]*\)/BC\:Z\:\1/' | $(SAMTOOLS) sort - -l 1 -O BAM -o $@.tmp -T $@.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS); \
+		#$(BWA) $(BWAMEM_FLAGS) $$(cat $@.RG) $$(cat $*.genome) $*.R1$(POST_SEQUENCING).fastq.gz $*.R2$(POST_SEQUENCING).fastq.gz | sed 's/[1-9]*\:N\:0\:\([A-Z]*\)/BC\:Z\:\1/' | $(SAMTOOLS) sort - -l 1 -O BAM -o $@.tmp -T $@.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS); \
+		$(BWA) $(BWAMEM_FLAGS) $$(cat $@.RG) $$(cat $*.genome) $*.R1$(POST_SEQUENCING).fastq.gz $*.R2$(POST_SEQUENCING).fastq.gz | $(SAMTOOLS) sort - -l 1 -O BAM -o $@.tmp -T $@.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS); \
 	else \
 		echo "BWA MEM Single-End"; \
 		#$(BWA) $(BWAMEM_FLAGS) $$(cat $@.RG) $$(cat $*.genome) $*.R1$(POST_SEQUENCING).fastq.gz | sed 's/[1-2]\:N\:0\:\([A-Z]*\)/BC\:Z\:\1/' | $(SAMTOOLS) view -b -1 -S -T $$(cat $*.genome) - -@ $(THREADS_SAMTOOLS) | $(SAMTOOLS) sort - -l 1 -O BAM -o $@.tmp -T $@.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS); \
-		$(BWA) $(BWAMEM_FLAGS) $$(cat $@.RG) $$(cat $*.genome) $*.R1$(POST_SEQUENCING).fastq.gz | sed 's/[1-2]\:N\:0\:\([A-Z]*\)/BC\:Z\:\1/' | $(SAMTOOLS) sort - -l 1 -O BAM -o $@.tmp -T $@.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS); \
+		#$(BWA) $(BWAMEM_FLAGS) $$(cat $@.RG) $$(cat $*.genome) $*.R1$(POST_SEQUENCING).fastq.gz | sed 's/[1-9]*\:N\:0\:\([A-Z]*\)/BC\:Z\:\1/' | $(SAMTOOLS) sort - -l 1 -O BAM -o $@.tmp -T $@.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS); \
+		$(BWA) $(BWAMEM_FLAGS) $$(cat $@.RG) $$(cat $*.genome) $*.R1$(POST_SEQUENCING).fastq.gz | $(SAMTOOLS) sort - -l 1 -O BAM -o $@.tmp -T $@.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS); \
 	fi;
 	# AddOrReplaceReadGroups
 	if (($$($(SAMTOOLS) view $@.tmp -H | grep "^@RG" -c))); then \

@@ -17,23 +17,135 @@ APP_DESCRIPTION="PlugAPP for specific parameters to extract and mark UMI tags"
 #######################
 
 
+
+# Demultiplexing Mask
+
+# Set mask for demultiplexing for Agilent XTHS
+#STARK_DEMULTIPLEXING_BASES_MASK="Y150,I8,Y10,Y150"
+
+# Set short read size for demultiplexing
+# If demultiplexing UMI within a read must be set to 0 for Agilent XTHS kits
+#STARK_DEMULTIPLEXING_MASK_SHORT_ADAPTATER_READ="0"
+
+
+# Set read mapping
+#
+#STARK_DEMULTIPLEXING_READS_MAPPING="R1 I1 R2 R3"
+
+
+# UMI extract location
+# Set the UMI location
+# If not null, NO UMI extraction and analysis
+# Available locations: 
+#    index1: the first index is used as UMI. If the data is PE, this UMI will be used for both read1/read2.
+#    index2 the second index is used as UMI. PE data only, this UMI will be used for both read1/read2.
+#    read1 the head of read1 is used as UMI. If the data is PE, this UMI will be used for both read1/read2.
+#    read2 the head of read2 is used as UMI. PE data only, this UMI will be used for both read1/read2.
+#    per_index read1 will use UMI extracted from index1, read2 will use UMI extracted from index2.
+#    per_read read1 will use UMI extracted from the head of read1, read2 will use UMI extracted from the head of read2.
+# e.g.: UMI_LOC="index2"
+# See FASTP/UMI TOOLS documentation for more information
+UMI_LOC="per_read"
+
 # UMI extract tag
+# Set the UMI Barcode pattern
+# If not null, STARK will prepare fastq containg UMIs +/- cell barcodes for alignment
+# e.g.: UMI_BARCODE_PATTERN="NNNNNNNN"
+# See FASTP/UMI TOOLS documentation for more information
 UMI_BARCODE_PATTERN="NNNNNNNN"
-BARCODE_TAG="BX"
-
-
-# POST ALIGNEMENT STEPS TODO
-#POST_ALIGNMENT_STEPS="sorting UMImarkduplicates realignment recalibration compress "
-#POST_ALIGNMENT_STEPS="sorting UMIgroup UMImarkduplicates realignment recalibration compress"
-POST_ALIGNMENT_STEPS="sorting UMIgroup markduplicates realignment recalibration compress"
 
 
 
-# COVERAGE DP THRESHOLD (default "30" "100" "1")
-# For gene coverage metrics
-# the criteria test if genes failed (or just warning) the coverage threshold
-SEQUENCING_DEPTH="1" # Sequencing depth threshold
-SEQUENCING_COVERAGE_THRESHOLD="1" # Sequencing coverage threshold
-MINIMUM_DEPTH="10" # fail DP threshold (default 30X)
-EXPECTED_DEPTH="30" # warn DP threshold (default 100X)
-DEPTH_COVERAGE_THRESHOLD="0.95" # threshold percentage of bases over the DP threshold
+# DEV
+#POST_ALIGNMENT_STEPS="sorting markduplicates realignment recalibration compress"
+POST_ALIGNMENT_STEPS="sorting gencore realignment recalibration compress"
+
+
+##########################
+# MarkDuplicates options #
+##########################
+
+# set variable to "READ_NAME_REGEX=null" to disable optical deduplication
+# PICARD_MARKDUP_OPTICAL_DEDUP="-READ_NAME_REGEX null"
+PICARD_MARKDUP_OPTICAL_DEDUP=""
+
+# RX is the SAM standard for UMI tag
+# Can be changed if tagging is already done with another tag ; 
+BARCODE_TAG="RX"
+
+
+
+
+###################
+# GENCORE options #
+###################
+
+# supporting_reads ; set to 2 to keep the clusters with 2 or more supporting reads / ultrasensible filter
+# set to 1 to replace Picard Markduplicates dedup
+GENCORE_SUP_READS="--supporting_reads 1"
+
+# --score_threshold
+# set to 8 recommanded for dup-rate < 50% if you want to keep all the DNA fragments, and for each output read you want to discard all the low quality unoverlapped mutations to obtain a relative clean data
+GENCORE_SCORE_THREESHOLD="--score_threshold 6"
+
+# --ratio_threshold
+# if the ratio of the major base in a cluster is less than <ratio_threshold>, it will be further compared to the reference.
+# The valud should be 0.5~1.0, and the default value is 0.8
+# GENCORE_RATIO_THREESHOLD="--ratio_threshold 0.9"
+
+# --umi_diff_threshold
+# if two reads with identical mapping position have UMI difference <= <umi_diff_threshold>, then they will be merged to generate a consensus read
+# Default value is 2
+# GENCORE_DIFF_THREESHOLD="--umi_diff_threshold 3"
+
+# Quality Threeshold
+# --high_qual (Q30) ; --moderate_qual (Q20) ; --low_qual (Q15)
+# --high_qual : the threshold for a quality score to be considered as high quality. Default 30 means Q30. (int [=30])
+# --moderate_qual : the threshold for a quality score to be considered as moderate quality. Default 20 means Q20. (int [=20])
+# --low_qual : the threshold for a quality score to be considered as low quality. Default 15 means Q15. (int [=15])
+# GENCORE_QUAL_THREESHOLD="--moderate_qual 20"
+
+# --coverage_sampling
+# the sampling rate for genome scale coverage statistics. Default 10000 means 1/10000
+# for statistics purpose, can be reduce to gain performance
+# not included in the mk file
+
+
+
+
+# Demultiplexing Mask
+
+# Set mask for demultiplexing for Agilent XTHS
+#STARK_DEMULTIPLEXING_BASES_MASK="Y150,I8,Y10,Y150"
+
+# Set short read size for demultiplexing
+# If demultiplexing UMI within a read must be set to 0 for Agilent XTHS kits
+#STARK_DEMULTIPLEXING_MASK_SHORT_ADAPTATER_READ="0"
+
+
+# Set read mapping
+#
+#STARK_DEMULTIPLEXING_READS_MAPPING="R1 I1 R2 R3"
+
+
+# UMI extract location
+# Set the UMI location
+# If not null, NO UMI extraction and analysis
+# Available locations: 
+#    index1: the first index is used as UMI. If the data is PE, this UMI will be used for both read1/read2.
+#    index2 the second index is used as UMI. PE data only, this UMI will be used for both read1/read2.
+#    read1 the head of read1 is used as UMI. If the data is PE, this UMI will be used for both read1/read2.
+#    read2 the head of read2 is used as UMI. PE data only, this UMI will be used for both read1/read2.
+#    per_index read1 will use UMI extracted from index1, read2 will use UMI extracted from index2.
+#    per_read read1 will use UMI extracted from the head of read1, read2 will use UMI extracted from the head of read2.
+# e.g.: UMI_LOC="index2"
+# See FASTP/UMI TOOLS documentation for more information
+UMI_LOC="per_read"
+
+# UMI extract tag
+# Set the UMI Barcode pattern
+# If not null, STARK will prepare fastq containg UMIs +/- cell barcodes for alignment
+# e.g.: UMI_BARCODE_PATTERN="NNNNNNNN"
+# See FASTP/UMI TOOLS documentation for more information
+UMI_BARCODE_PATTERN="NNNNNNNN"
+

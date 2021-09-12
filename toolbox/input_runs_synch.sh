@@ -57,10 +57,7 @@ function usage {
 	echo "# -n|--release                               Script Release";
 	echo "# -h|--help                                  Help message";
 	echo "#";
-	#echo -e "#\n# RUN Analysis\n################";
-	#$STARK_FOLDER_BIN/launch.sh -h | grep "# [ |-]";
-	#echo -e "#\n# SAMPLE Analysis\n###################";
-	#$STARK_FOLDER_BIN/launch.sample.sh -h | grep "# [ |-]";
+
 }
 
 

@@ -7,8 +7,8 @@
 
 SCRIPT_NAME="STARKDockerSetup"
 SCRIPT_DESCRIPTION="STARK Docker Setup"
-SCRIPT_RELEASE="0.9b"
-SCRIPT_DATE="12/04/2020"
+SCRIPT_RELEASE="0.9.1.0b"
+SCRIPT_DATE="18/08/2021"
 SCRIPT_AUTHOR="Antony Le Bechec"
 SCRIPT_COPYRIGHT="HUS/CPS"
 SCRIPT_LICENCE="GNU GPLA V3"
@@ -18,6 +18,9 @@ RELEASE_NOTES=$RELEASE_NOTES"# 0.9b-12/04/2020: Script creation\n";
 
 # Script folder
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# DOCKER_STARK_MAIN_FOLDER_DEFAULT
+DOCKER_STARK_MAIN_FOLDER_DEFAULT=${HOME}/STARK
 
 # GIT_CLONE_DEFAULT
 GIT_CLONE_DEFAULT="https://gitlab.bioinfo-diag.fr/Strasbourg/STARK.git"
@@ -61,10 +64,7 @@ function usage {
 	echo "# -n|--release                     Script Release";
 	echo "# -h|--help                        Help message";
 	echo "#";
-	#echo -e "#\n# RUN Analysis\n################";
-	#$STARK_FOLDER_BIN/launch.sh -h | grep "# [ |-]";
-	#echo -e "#\n# SAMPLE Analysis\n###################";
-	#$STARK_FOLDER_BIN/launch.sample.sh -h | grep "# [ |-]";
+
 }
 
 
@@ -158,12 +158,16 @@ fi;
 if [ -s $ENV ]; then
 	source $ENV;
 else
-	echo "#[ERROR] STARK Docker environment configuration file '$ENV' failed"
-	exit 1;
+	echo "#[WARNING] STARK Docker environment configuration file '$ENV' does not exist"
+	#exit 1;
 fi;
 
 
 # DOCKER_STARK_MAIN_FOLDER
+if [ ! -s $DOCKER_STARK_MAIN_FOLDER ]; then
+	DOCKER_STARK_MAIN_FOLDER=$DOCKER_STARK_MAIN_FOLDER_DEFAULT;
+	echo "#[INFO] STARK Main folder '$DOCKER_STARK_MAIN_FOLDER' by default"
+fi
 if mkdir -p $DOCKER_STARK_MAIN_FOLDER; then
 	(($VERBOSE)) && echo "#[INFO] STARK Main folder '$DOCKER_STARK_MAIN_FOLDER' created"
 else

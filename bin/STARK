@@ -176,20 +176,10 @@ function usage {
 	echo "# --release                                RELEASE";
 	echo "# --help                                   HELP";
 	echo "";
-	#echo -e "#\n# RUN Analysis\n################";
-	#$STARK_FOLDER_BIN/launch.sh -h | grep "# [ |-]";
-	#echo -e "#\n# SAMPLE Analysis\n###################";
-	#$STARK_FOLDER_BIN/launch.sample.sh -h | grep "# [ |-]";
+
 }
 
 
-
-# launch.sh
-# env:,runs:,aligners:,callers:,annotators:,filter_samples:,samplesheet:,parallelization:,remove:,application,help
-# e:r:a:c:n:f:s:p:v:wh
-# launch.sample.sh
-# e:f:q:b:s:r:p:t:a:h
-# env:,fastq_R1:,fastq_R2:,bed:,sample:,run:,pipelines:,threads:,adapters:,help
 
 ####################################################################################################################################
 # Getting parameters from the input
@@ -495,7 +485,10 @@ in_array ()
 (($VERBOSE)) && [ ! -z "$APP" ] && echo "#[INFO] Search Application '$APP'"
 
 ENV=$(find_app "$APP" "$STARK_FOLDER_APPS")
-source_app "$APP" "$STARK_FOLDER_APPS" 1
+if ! source_app "$APP" "$STARK_FOLDER_APPS" 1; then
+	echo "#[ERROR] Application '$APP' error ('$ENV')";
+	exit 1
+fi
 
 export ENV
 export APP
@@ -612,19 +605,29 @@ if (($APPLICATIONS_INFOS)); then
 	for ENV_DEF in $FIND_APP_LIST; do
 
 		# FIND APP
-		APP_NAME=$(name_app "$STARK_FOLDER_APPS/$ENV_DEF"  2>/dev/null)
+		APP_NAME=$(name_app "$STARK_FOLDER_APPS/$ENV_DEF" 2>/dev/null)
 		
 		if [ "$APP_TEST" == "" ] || in_array ${APP_NAME^^} ${APP_TEST_NAME^^}; then
 
 			# Find APP
-			APP=$(source_app "$STARK_FOLDER_APPS/$ENV_DEF"  2>/dev/null; echo $APP_NAME)
+			#APP=$(source_app "$STARK_FOLDER_APPS/$ENV_DEF"  2>/dev/null; echo $APP_NAME)
+			if ! APP=$(source_app "$STARK_FOLDER_APPS/$ENV_DEF" 2>/dev/null; echo $APP_NAME); then
+				echo "#[ERROR] Application '$STARK_FOLDER_APPS/$ENV_DEF' error";
+				exit 1
+			fi
+
 			if [ "$APP" == "" ]; then
 				APP="default";
 				ENV=$APP;
 			fi
 
 			#FIELD_SEP="\t"
-			APP_INFOS=$(source_app "$STARK_FOLDER_APPS/$ENV_DEF"; echo -e "$APP_RELEASE\t$APP_DESCRIPTION\t$APP_GROUP\t$APP_PROJECT\t$FOLDER_RUN\t$FOLDER_RESULTS\t$FOLDER_REPOSITORY\t$FOLDER_ARCHIVES\t$PIPELINES\t$POST_SEQUENCING_STEPS\t$POST_ALIGNMENT_STEPS\t$POST_CALLING_STEPS\t$POST_ANNOTATION_STEPS\t$HOWARD_ANNOTATION_REPORT")
+			#APP_INFOS=$(source_app "$STARK_FOLDER_APPS/$ENV_DEF"
+			if ! APP_INFOS=$(source_app "$STARK_FOLDER_APPS/$ENV_DEF"; 
+			echo -e "$APP_RELEASE\t$APP_DESCRIPTION\t$APP_GROUP\t$APP_PROJECT\t$FOLDER_RUN\t$FOLDER_RESULTS\t$FOLDER_REPOSITORY\t$FOLDER_ARCHIVES\t$PIPELINES\t$POST_SEQUENCING_STEPS\t$POST_ALIGNMENT_STEPS\t$POST_CALLING_STEPS\t$POST_ANNOTATION_STEPS\t$HOWARD_ANNOTATION_REPORT"); then
+			 	echo "#[ERROR] Application '$ENV_DEF' error";
+			 	exit 1
+			fi
 			APP_RELEASE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $1}')
 			APP_DESCRIPTION=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $2}')
 			APP_GROUP=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $3}')
@@ -731,7 +734,10 @@ if (($APPLICATIONS_INFOS)); then
 
 			# SOURCE ENV if exists
 			RUN_ENV=$(find_app "$RUN_APP_NAME" "$STARK_FOLDER_APPS")
-			source_app "$RUN_APP_NAME" "$STARK_FOLDER_APPS"
+			if ! source_app "$RUN_APP_NAME" "$STARK_FOLDER_APPS"; then
+				echo "#[ERROR] Application '$RUN_APP_NAME' error";
+				exit 1
+			fi
 
 			RUN_APP=$(source $RUN_ENV; echo $APP_NAME)
 			if [ "$RUN_APP" == "" ]; then RUN_APP="default"; fi
@@ -776,7 +782,8 @@ if (($PIPELINES_INFOS)); then
 	MAKEFILE_PARAM=$TMP_FOLDER_TMP/$RANDOM$RANDOM.param
 	touch $PIPELINES_INFOS $MAKEFILE_PARAM
 	#source $ENV;
-	make -e -f $STARK_FOLDER_BIN/NGSWorkflow.mk PARAM=$MAKEFILE_PARAM PIPELINES_INFOS=$PIPELINES_INFOS $PIPELINES_INFOS 1>/dev/null 2>/dev/null;
+	#make -e -f $STARK_FOLDER_BIN/NGSWorkflow.mk PARAM=$MAKEFILE_PARAM PIPELINES_INFOS=$PIPELINES_INFOS $PIPELINES_INFOS 1>/dev/null 2>/dev/null;
+	make -e -f $STARK_FOLDER_BIN/STARK.launch.analysis.mk PARAM=$MAKEFILE_PARAM PIPELINES_INFOS=$PIPELINES_INFOS $PIPELINES_INFOS 1>/dev/null 2>/dev/null;
 	sort -k1,2 $PIPELINES_INFOS | cut -d: -f1-3 | column -t -s ':'
 	#make -e -f $STARK_FOLDER_BIN/NGSWorkflow.mk PARAM=$MAKEFILE_PARAM RELEASE_INFOS=$PIPELINES_INFOS $PIPELINES_INFOS 1>/dev/null 2>/dev/null;
 	#cat $PIPELINES_INFOS
@@ -862,7 +869,9 @@ if (($RELEASE_INFOS)); then
 	touch $RELEASE_INFOS $MAKEFILE_PARAM
 
 	#source $ENV;
-	make -e -f $STARK_FOLDER_BIN/NGSWorkflow.mk PARAM=$MAKEFILE_PARAM RELEASE_INFOS=$RELEASE_INFOS $RELEASE_INFOS 1>/dev/null 2>/dev/null;
+	#make -e -f $STARK_FOLDER_BIN/NGSWorkflow.mk PARAM=$MAKEFILE_PARAM RELEASE_INFOS=$RELEASE_INFOS $RELEASE_INFOS 1>/dev/null 2>/dev/null;
+	make -e -f $STARK_FOLDER_BIN/STARK.launch.analysis.mk PARAM=$MAKEFILE_PARAM RELEASE_INFOS=$RELEASE_INFOS $RELEASE_INFOS 1>/dev/null 2>/dev/null;
+	
 	cat $RELEASE_INFOS | sed "s/^## /\n## /"
 
 	rm $RELEASE_INFOS $MAKEFILE_PARAM;
@@ -1130,7 +1139,8 @@ if [ ! -z "$FASTQ" ]; then # && [ -e "$FASTQ" ]; then
 		echo "#[INFO] Start Samples Analysis"
 		echo ""
 		#echo "$PARAM"
-		CMD="$STARK_FOLDER_BIN/launch.sample.sh $PARAM"
+		#CMD="$STARK_FOLDER_BIN/launch.sample.sh $PARAM"
+		CMD="$STARK_FOLDER_BIN/STARK.launch $PARAM"
 		(($VERBOSE)) && echo "#[INFO] $CMD"
 		eval $CMD || exit 1
 		# if $CMD; then
@@ -1302,7 +1312,10 @@ if [ ! -z "$RUNS" ]; then
 					#[ "$MAIN_APP" == "" ] && MAIN_APP="default"
 
 					if [ "$MAIN_APP" != ""  ]; then
-						DEMULTIPLEXING_FOLDER=$(source_app "$MAIN_APP" 2>/dev/null; echo $FOLDER_DEMULTIPLEXING)
+						if ! DEMULTIPLEXING_FOLDER=$(source_app "$MAIN_APP" 2>/dev/null; echo $FOLDER_DEMULTIPLEXING); then
+							echo "#[ERROR] Application '$MAIN_APP' error";
+							exit 1
+						fi
 						APP_DEMULTIPLEXING=$MAIN_APP
 					else
 						# Found APP in samples
@@ -1321,7 +1334,10 @@ if [ ! -z "$RUNS" ]; then
 							[ "$SAMPLE_PLUGAPP" != "" ] && SAMPLE_APP=$SAMPLE_APP"+"$SAMPLE_PLUGAPP
 
 							if [ "$SAMPLE_APP" != "" ]; then
-								SAMPLE_APP_FOLDER_DEMULTIPLEXING=$(source_app "$SAMPLE_APP" 2>/dev/null; echo $FOLDER_DEMULTIPLEXING)
+								if ! SAMPLE_APP_FOLDER_DEMULTIPLEXING=$(source_app "$SAMPLE_APP" 2>/dev/null; echo $FOLDER_DEMULTIPLEXING); then
+									echo "#[ERROR] Application '$SAMPLE_APP' error";
+									exit 1
+								fi
 								if [ "$SAMPLE_APP_FOLDER_DEMULTIPLEXING" != "" ]; then
 									DEMULTIPLEXING_FOLDER=$SAMPLE_APP_FOLDER_DEMULTIPLEXING
 									APP_DEMULTIPLEXING=$SAMPLE_APP
@@ -1491,22 +1507,32 @@ if [ ! -z "$RUNS" ]; then
 					if [ "$SAMPLE_LIST" == "" ] || $(list_include_item "$SAMPLE_LIST" "$SAMPLE_NAME"); then #
 						# SAMPLE FASTQ R1/R2
 
+						# Reads mapping
+						if [ "$STARK_DEMULTIPLEXING_READS_MAPPING" == "" ]; then
+							STARK_DEMULTIPLEXING_READS_MAPPING="R1 I1 I2 R2";
+						fi;
+						# $(echo $READS_MAPPING | tr "," " " | cut -d' ' -f1)
+
 						# Patterns for Fastq R1
-						FASTQ_PATTERN_ILLUMINA='_S*_R1_*.fastq.gz';
-						FASTQ_PATTERN_GENERIC='.*R1*.fastq.gz';
+						FASTQ_PATTERN_ILLUMINA='_S*_'$(echo $STARK_DEMULTIPLEXING_READS_MAPPING | tr "," " " | cut -d' ' -f1)'_*.fastq.gz';
+						FASTQ_PATTERN_GENERIC='.*'$(echo $STARK_DEMULTIPLEXING_READS_MAPPING | tr "," " " | cut -d' ' -f1)'*.fastq.gz';
 
 						# Check Fastq R1 with pattern Illumina
-						SAMPLE_FASTQ_R1_PATTERN=$SAMPLE_NAME'_S*_R1_*.fastq.gz'
-						SAMPLE_FASTQ_R2_PATTERN=$SAMPLE_NAME'_S*_R2_*.fastq.gz'
-						SAMPLE_FASTQ_I1_PATTERN=$SAMPLE_NAME'_S*_I1_*.fastq.gz'
-						SAMPLE_FASTQ_I2_PATTERN=$SAMPLE_NAME'_S*_I2_*.fastq.gz'
+						# SAMPLE_FASTQ_R1_PATTERN=$SAMPLE_NAME'_S*_R1_*.fastq.gz'
+						# SAMPLE_FASTQ_R2_PATTERN=$SAMPLE_NAME'_S*_R2_*.fastq.gz'
+						# SAMPLE_FASTQ_I1_PATTERN=$SAMPLE_NAME'_S*_I1_*.fastq.gz'
+						# SAMPLE_FASTQ_I2_PATTERN=$SAMPLE_NAME'_S*_I2_*.fastq.gz'
+						SAMPLE_FASTQ_R1_PATTERN=$SAMPLE_NAME'_S*_'$(echo $STARK_DEMULTIPLEXING_READS_MAPPING | tr "," " " | cut -d' ' -f1)'_*.fastq.gz'
+						SAMPLE_FASTQ_R2_PATTERN=$SAMPLE_NAME'_S*_'$(echo $STARK_DEMULTIPLEXING_READS_MAPPING | tr "," " " | cut -d' ' -f4)'_*.fastq.gz'
+						SAMPLE_FASTQ_I1_PATTERN=$SAMPLE_NAME'_S*_'$(echo $STARK_DEMULTIPLEXING_READS_MAPPING | tr "," " " | cut -d' ' -f2)'_*.fastq.gz'
+						SAMPLE_FASTQ_I2_PATTERN=$SAMPLE_NAME'_S*_'$(echo $STARK_DEMULTIPLEXING_READS_MAPPING | tr "," " " | cut -d' ' -f3)'_*.fastq.gz'
 						SAMPLE_FASTQ_R1=$(find -L $R -name "$SAMPLE_FASTQ_R1_PATTERN")
 						if [ "$SAMPLE_FASTQ_R1" == "" ]; then
 							(($VERBOSE)) && echo "[WARNING] No Reads for sample '$SAMPLE_NAME' with pattern '$FASTQ_PATTERN_ILLUMINA'. Check with generic parrtern '$FASTQ_PATTERN_GENERIC'";
-							SAMPLE_FASTQ_R1_PATTERN=$SAMPLE_NAME'.*R1*.fastq.gz'
-							SAMPLE_FASTQ_R2_PATTERN=$SAMPLE_NAME'.*R2*.fastq.gz'
-							SAMPLE_FASTQ_I1_PATTERN=$SAMPLE_NAME'.*I1*.fastq.gz'
-							SAMPLE_FASTQ_I2_PATTERN=$SAMPLE_NAME'.*I2*.fastq.gz'
+							SAMPLE_FASTQ_R1_PATTERN=$SAMPLE_NAME'.*'$(echo $STARK_DEMULTIPLEXING_READS_MAPPING | tr "," " " | cut -d' ' -f1)'*.fastq.gz'
+							SAMPLE_FASTQ_R2_PATTERN=$SAMPLE_NAME'.*'$(echo $STARK_DEMULTIPLEXING_READS_MAPPING | tr "," " " | cut -d' ' -f4)'*.fastq.gz'
+							SAMPLE_FASTQ_I1_PATTERN=$SAMPLE_NAME'.*'$(echo $STARK_DEMULTIPLEXING_READS_MAPPING | tr "," " " | cut -d' ' -f2)'*.fastq.gz'
+							SAMPLE_FASTQ_I2_PATTERN=$SAMPLE_NAME'.*'$(echo $STARK_DEMULTIPLEXING_READS_MAPPING | tr "," " " | cut -d' ' -f3)'*.fastq.gz'
 							SAMPLE_FASTQ_R1=$(find -L $R -name "$SAMPLE_FASTQ_R1_PATTERN")
 						fi;
 						[ "$SAMPLE_FASTQ_R1" == "" ] && echo "[ERROR] No Reads for sample '$SAMPLE_NAME'" && exit 1;
@@ -1631,7 +1657,10 @@ if [ ! -z "$RUNS" ]; then
 
 					SAMPLE_TEST=$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u | awk -F"," -v APP=$APP_ONE '$1==APP{print $3}' | tr '\n' ',' | sed s/,$//)
 
-					APP_INFOS=$(source_app "$APP_ONE" "$STARK_FOLDER_APPS/"; echo -e "$APP_RELEASE\t$APP_DESCRIPTION\t$APP_GROUP\t$APP_PROJECT\t$FOLDER_RUN\t$FOLDER_RESULTS\t$FOLDER_REPOSITORY\t$FOLDER_ARCHIVES\t$PIPELINES\t$POST_ALIGNMENT_STEPS\t$HOWARD_ANNOTATION_REPORT")
+					if ! APP_INFOS=$(source_app "$APP_ONE" "$STARK_FOLDER_APPS/"; echo -e "$APP_RELEASE\t$APP_DESCRIPTION\t$APP_GROUP\t$APP_PROJECT\t$FOLDER_RUN\t$FOLDER_RESULTS\t$FOLDER_REPOSITORY\t$FOLDER_ARCHIVES\t$PIPELINES\t$POST_ALIGNMENT_STEPS\t$HOWARD_ANNOTATION_REPORT"); then
+						echo "#[ERROR] Application '$APP_ONE' error";
+						exit 1
+					fi
 					#APP_RELEASE_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $1}')
 					#APP_DESCRIPTION_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $2}')
 					#APP_GROUP_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $3}')

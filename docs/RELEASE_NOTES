@@ -8,6 +8,38 @@
 #######################################
 
 #######################################
+# Release: 0.9.18.3                   #
+# Date: 20210912                      #
+#######################################
+
+## New
+
+- UMI support (using FASTP for UMI barcode, and Picard MarkDuplicates and Gencore for duplicates)
+- New HOWARD release (fields format, prioritization mode...)
+
+
+## Improvements
+
+- Setup improved
+- Error catches
+
+
+## Fixes
+
+- somes fixes
+
+
+
+#######################################
+# STARK                               #
+# Stellar Tools for variants          #
+#    Analysis and RanKing             #
+# Author: Antony Le Bechec            #
+# Copyright: HUS                      #
+# License: GNU GPLA V3                #
+#######################################
+
+#######################################
 # Release: 0.9.18.2                   #
 # Date: 20210423                      #
 #######################################

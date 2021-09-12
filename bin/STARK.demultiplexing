@@ -63,6 +63,10 @@ function usage {
 	echo "#                                             Default: Default: Defined in APP, or thread used for processing demultiplexed data --threads";
 	echo "# -b|--barcode_mismatches=<INTEGER>           Number of barcode mismatches to use";
 	echo "#                                             Default: Defined in APP, or 1";
+	echo "# -m|--use_bases_mask=<STRING>                Demultiplexing mask to use";
+	echo "#                                             Default: '' (auto-detection from Run.xml)";
+	echo "# -s|--mask_short_adapter_reads=<STRING>      Demultiplexing mask short adapter reads";
+	echo "#                                             Default: '' (auto-detection from Run.xml)";
 
 	echo "# -v|--verbose                                VERBOSE option";
 	echo "# -d|--debug                                  DEBUG option";
@@ -75,16 +79,12 @@ function usage {
 header;
 
 
-# USAGE exemple
-# ./launch.sample.sh -f "$DATA/SAMPLE/HORIZON/HORIZON.R1.fastq.gz,$DATA/SAMPLE/HORIZON/HORIZON.bam,$DATA/SAMPLE/TEST/TEST.cram" -q "$DATA/SAMPLE/HORIZON/HORIZON.R2.fastq.gz" -s "H1,H2" -r "test" -b "/home1/TOOLS/data/SAMPLE/HORIZON/HORIZON.manifest,/home1/TOOLS/data/SAMPLE/HORIZON/HORIZON.bed,/home1/TOOLS/data/SAMPLE/TEST/TEST.bed" --output="$DATA/RESULTS"
-# /home1/IRC/TOOLS/tools/stark/dev/STARK -f "$DATA/SAMPLE/HORIZON/HORIZON.R1.fastq.gz,$DATA/SAMPLE/HORIZON/HORIZON.bam,$DATA/SAMPLE/TEST/TEST.cram" -q "$DATA/SAMPLE/HORIZON/HORIZON.R2.fastq.gz" -s "H1,H2" -r "testH,testH,testT" -b "/home1/TOOLS/data/SAMPLE/HORIZON/HORIZON.manifest,/home1/TOOLS/data/SAMPLE/HORIZON/HORIZON.bed,/home1/TOOLS/data/SAMPLE/TEST/TEST.bed" -e env.HUSTUMSOL.sh --output="$DATA/RESULTS" --repository="$DATA/REPOSITORY"
-# /home1/IRC/TOOLS/tools/stark/dev/STARK -f $DATA/SAMPLE/TEST/TEST.cram -b /home1/TOOLS/data/SAMPLE/TEST/TEST.bed --output="$DATA/RESULTS" -r testT
 
 ####################################################################################################################################
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
-ARGS=$(getopt -o "e:r:o:l:t:b:vdnh" --long "env:,app:,application:,run:,output:,demultiplex_folder:,samplesheet:,threads:,threads_loading:,threads_writing:,barcode_mismatches:,verbose,debug,release,help" -- "$@" 2> /dev/null)
+ARGS=$(getopt -o "e:r:o:l:t:b:vdnh" --long "env:,app:,application:,run:,output:,demultiplex_folder:,samplesheet:,threads:,threads_loading:,threads_writing:,barcode_mismatches:,use_bases_mask:,mask_short_adapter_reads:,verbose,debug,release,help" -- "$@" 2> /dev/null)
 [ $? -ne 0 ] && \
 	echo "Error in the argument list." "Use -h or --help to display the help." >&2 && usage && \
 	exit 1
@@ -126,6 +126,14 @@ do
 			;;
 		-b|--barcode_mismatches)
 			BARCODE_MISMATCHES_INPUT="$2"
+			shift 2
+			;;
+		-m|--use_bases_mask)
+			USE_BASES_MASK_INPUT="$2"
+			shift 2
+			;;
+		-s|--mask_short_adapter_reads)
+			MASK_SHORT_ADAPTATER_READS_INPUT="$2"
 			shift 2
 			;;
 		-v|--verbose)
@@ -362,6 +370,81 @@ THREADS_WRITING=$(($NB_SAMPLE>$THREADS_WRITING?$THREADS_WRITING:$NB_SAMPLE));
 [ "$ADAPTER_STRINGENCY" == "" ] && ADAPTER_STRINGENCY=0.9
 [ "$FASTQ_DEMULTIPLEXING_COMPRESSION_LEVEL" == "" ] && FASTQ_DEMULTIPLEXING_COMPRESSION_LEVEL=4
 
+
+
+# MASK short read option in input paramter 'MASK_SHORT_ADAPTATER_READS_INPUT'
+if ! [ -z "$MASK_SHORT_ADAPTATER_READS_INPUT" ] && [ "$MASK_SHORT_ADAPTATER_READS_INPUT" != "" ] ; then
+	STARK_DEMULTIPLEXING_MASK_SHORT_READ=$MASK_SHORT_ADAPTATER_READS_INPUT
+fi;
+
+# MASK short read option to be set in app 'STARK_MASK_SHORT_READ'
+if ! [ -z "$STARK_DEMULTIPLEXING_MASK_SHORT_ADAPTATER_READ" ] && [ "$STARK_DEMULTIPLEXING_MASK_SHORT_ADAPTATER_READ" != "" ] ; then
+	DEMUX_MASK_SHORT_OPTION="--mask-short-adapter-reads="
+	MASK_SHORT_READ=$STARK_DEMULTIPLEXING_MASK_SHORT_ADAPTATER_READ
+	# To avoid space between option and parameter
+	DEMUX_MASK_SHORT_READ=${DEMUX_MASK_SHORT_OPTION}${MASK_SHORT_READ}
+	echo "#[INFO] Mask short read adaptaters : $MASK_SHORT_READ";
+else
+	DEMUX_MASK_SHORT_READ=""
+	echo "#[INFO] Using default mask short adapter reads";
+fi;
+
+
+# MASK option in input paramter 'USE_BASES_MASK_INPUT'
+if ! [ -z $USE_BASES_MASK_INPUT ] && [ "$USE_BASES_MASK_INPUT" != "" ] ; then
+	STARK_DEMULTIPLEXING_BASES_MASK=$USE_BASES_MASK_INPUT
+fi;
+
+# MASK option to be set in app 'STARK_DEMULTIPLEXING_BASES_MASK'
+DEMUX_MASK=""
+FINAL_MASK=""
+if ! [ -z "$STARK_DEMULTIPLEXING_BASES_MASK" ] && [ "$STARK_DEMULTIPLEXING_BASES_MASK" != "" ] ; then
+	DEMUX_MASK_OPTION="--use-bases-mask="
+	MASK_INPUT=$STARK_DEMULTIPLEXING_BASES_MASK
+	# To avoid space between option and parameter
+	DEMUX_MASK=${DEMUX_MASK_OPTION}${MASK_INPUT}
+	FINAL_MASK=$STARK_DEMULTIPLEXING_BASES_MASK
+	echo "#[INFO] Mask : $STARK_DEMULTIPLEXING_BASES_MASK";
+else
+	FINAL_MASK=$(cat $MASK)
+	echo "#[INFO] Using default mask";
+fi;
+
+
+
+# READ_STRUCTURE
+
+
+FINAL_MASK="Y150,I8,Y10,Y150"
+READ_STRUCTURE=""
+if [ "$FINAL_MASK" != "" ]; then
+	READ_STRUCTURE=$(for read in $(echo $FINAL_MASK | tr "," " "); do 
+		first=${read:0:1}
+		nb_bases=$(echo $read | tr -dc '0-9')
+		#echo "read=$read first=$first nb_bases=$nb_bases"
+		type="T"
+		nb=$nb_bases
+		if [ "$first" == "Y" ]; then
+			#echo "R"
+			type="T"
+		elif [ "$first" == "I" ]; then
+			#echo "I"
+			type="B"
+		fi;
+		echo "$nb$type"
+	done | tr -d "\n")
+	echo "#[INFO] Read structure '$READ_STRUCTURE'";
+else
+	echo "#[ERROR] Read structure not valid because Mask empty";
+	exit 1
+fi;
+
+# echo $READ_STRUCTURE
+
+
+
+
+
 (($VERBOSE)) && echo "#[INFO] NB_SAMPLE="$NB_SAMPLE
 (($VERBOSE)) && echo "#[INFO] THREADS_LOADING="$THREADS_LOADING
 (($VERBOSE)) && echo "#[INFO] THREADS_WRITING="$THREADS_WRITING
@@ -379,7 +462,7 @@ THREADS_WRITING=$(($NB_SAMPLE>$THREADS_WRITING?$THREADS_WRITING:$NB_SAMPLE));
 #(($DEBUG)) && cat $MANIFESTS
 
 # Demultiplexing configuration
-COMMAND="$BCL2FASTQ --runfolder-dir $RUN  --output-dir $OUTPUT_DIR --sample-sheet $DEM_SAMPLESHEET --barcode-mismatches $BARCODE_MISMATCHES --fastq-compression-level $FASTQ_DEMULTIPLEXING_COMPRESSION_LEVEL -r $THREADS_LOADING -p $THREADS -w $THREADS_WRITING --no-lane-splitting --create-fastq-for-index-reads"
+COMMAND="$BCL2FASTQ --runfolder-dir $RUN  --output-dir $OUTPUT_DIR --sample-sheet $DEM_SAMPLESHEET --barcode-mismatches $BARCODE_MISMATCHES --fastq-compression-level $FASTQ_DEMULTIPLEXING_COMPRESSION_LEVEL $DEMUX_MASK $DEMUX_MASK_SHORT_READ -r $THREADS_LOADING -p $THREADS -w $THREADS_WRITING --no-lane-splitting --create-fastq-for-index-reads"
 echo "#[`date`] COMMAND: " $COMMAND >> $LOGFILE
 (($DEBUG)) && echo "#[INFO] Command: "$COMMAND
 

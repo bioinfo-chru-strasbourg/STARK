@@ -192,6 +192,23 @@ PRIORITIZE_PIPELINES_LIST=""
 
 # FASTQ Processing
 
+# Set mask for demultiplexing
+# e.g. "" (auto from SampleSheet), "Y150,I10,Y10,Y150", "Y150,I8,Y10,Y150" (UMI index2)
+# default ""
+STARK_DEMULTIPLEXING_BASES_MASK=""
+
+# Set short read size for demultiplexing
+# If demultiplexing UMI within a read must be set to 0 for Agilent XTHS kits
+# default "" (auto)
+STARK_DEMULTIPLEXING_MASK_SHORT_ADAPTATER_READ=""
+
+# Set read mapping
+# Redefine FASTQ files in order to identify R1, R2, I1 and I2
+# Order: R1 I1 I2 R2
+# e.g. "" (default, corresponding to "R1 I1 I2 R2"), "R1 I1 R2 R3" (UMI index2)
+# default "R1 I1 I2 R2"
+STARK_DEMULTIPLEXING_READS_MAPPING=""
+
 # Demultiplexing adaptated stringency
 # For BCL2FASTQ demultiplexing (see doc)
 ADAPTER_STRINGENCY=0.9
@@ -207,22 +224,50 @@ FASTQ_DEMULTIPLEXING_COMPRESSION_LEVEL=1
 # Used by FASTP
 FASTQ_COMPRESSION_LEVEL=9
 
-# DETECT ADAPTER FOR PE
-# Autodetect adapter for paired end
+# DISABLE_ADAPTER_TRIMMING
+# Trim adapter and autodetect adapter for paired end
 # Either 0 or 1
-# Default: 0 (i.e. no detection)
-DETECT_ADAPTER_FOR_PE=0
+# Default: 0 (i.e. adapter trimming is enabled)
+DISABLE_ADAPTER_TRIMMING=0
 
 # FASTQ Read quality filtering
 # Read Quality threshold. Read quality below will be removed
-# Default: null (e.g. "")
-FASTQ_QUALITY_FILTERING=""
+# Default: 0 (i.e. disable)
+FASTQ_QUALITY_FILTERING=0
+
+# polyG tail trimming
+# force polyG tail trimming, by default trimming is automatically enabled for Illumina NextSeq/NovaSeq data
+# the minimum length to detect polyG in the read tail.
+# Default: 0 (i.e. disable)
+POLY_G_MIN_LEN=0
+
+# Read length filtering
+# reads shorter than length_required will be discarded
+# Default: 0 (i.e. disable)
+READ_LENGTH_REQUIRED=0
+
+# UMI extract location
+# Set the UMI location
+# If not null, NO UMI extraction and analysis
+# Available locations: 
+#    index1: the first index is used as UMI. If the data is PE, this UMI will be used for both read1/read2.
+#    index2 the second index is used as UMI. PE data only, this UMI will be used for both read1/read2.
+#    read1 the head of read1 is used as UMI. If the data is PE, this UMI will be used for both read1/read2.
+#    read2 the head of read2 is used as UMI. PE data only, this UMI will be used for both read1/read2.
+#    per_index read1 will use UMI extracted from index1, read2 will use UMI extracted from index2.
+#    per_read read1 will use UMI extracted from the head of read1, read2 will use UMI extracted from the head of read2.
+# e.g.: UMI_LOC="index2"
+# See FASTP/UMI TOOLS documentation for more information
+UMI_LOC=""
 
 # UMI extract tag
 # Set the UMI Barcode pattern
 # If not null, STARK will prepare fastq containg UMIs +/- cell barcodes for alignment
-# e.g.: UMI_BARCODE_PATTERN="NNNNNNNN"
-# See UMI TOOLS documentation for more information
+# e.g.: UMI_BARCODE_PATTERN="NNNNNNNNNN" for simplex
+# e.g.: UMI_BARCODE_PATTERN="NNNNN-NNNNN" for duplex
+# if UMI_LOC is "per_index" or "per_read", and UMI_BARCODE_PATTERN is defined as "NNNNN", it with be redefined as "NNNNN-NNNNN"
+# Only length of the first part of the duplex barcode will be used with FASTP
+# See FASTP/UMI TOOLS documentation for more information
 UMI_BARCODE_PATTERN=""
 
 # Barcode tag
@@ -231,6 +276,10 @@ UMI_BARCODE_PATTERN=""
 # e.g.: BARCODE_TAG="BC" for 10X Genomics, BARCODE_TAG="BX" for UMI
 # See PICARD documentation for more information
 BARCODE_TAG=""
+
+# set variable to "READ_NAME_REGEX=null" to disable optical deduplication
+# PICARD_MARKDUP_OPTICAL_DEDUP="-READ_NAME_REGEX null"
+PICARD_MARKDUP_OPTICAL_DEDUP=""
 
 # Keep demultiplexing FASTQ
 # Keep fastq demultiplexed or from input reads/reads2
@@ -271,13 +320,13 @@ POST_SEQUENCING_STEPS=""
 #    compress: BAM compression (see $BAM_COMPRESSION variable)
 #    realignment: local realignment
 #    recalibration: reads recalibration
-#    UMIgroup: UMI group in tag BX with UMI tools. Needed before UMI Mark Duplicates with BX BARCODE tag
+#    gencore: gencore is a tool for fast and powerful deduplication for paired-end next-generation sequencing
 #    markduplicates: Mark duplicated reads in BAM with PICARD MarkDuplicates. Use BARCODE_TAG to specify tag
 #    clipping: BAM Clipping according to primer definition in manifest file, if any
 # Usually:
 #    "sorting realignment clipping compress" for Amplicon technology
 #    "sorting markduplicates realignment compress" for Capture technology
-#    "sorting UMIgroup markduplicates realignment compress" for UMI technology
+#    "sorting gencore markduplicates realignment compress" for UMI technology
 #POST_ALIGNMENT_STEPS="sorting realignment recalibration clipping compress"
 POST_ALIGNMENT_STEPS="sorting markduplicates realignment recalibration compress"
 
@@ -328,6 +377,48 @@ BAM_COMPRESSION=9
 # Validation BAM compression level (ALIGNER.validation.bam)
 BAM_VALIDATION_COMPRESSION=5
 
+
+### GENCORE
+
+# supporting_reads ; set to 2 to keep the clusters with 2 or more supporting reads / ultrasensible filter
+# set to 1 to replace Picard Markduplicates dedup
+# default "" (corresponding to "--supporting_reads 1", see gencore doc)
+GENCORE_SUP_READS=""
+
+# --score_threshold
+# set to 8 recommanded for dup-rate < 50% if you want to keep all the DNA fragments, and for each output read you want to discard all the low quality unoverlapped mutations to obtain a relative clean data
+# default "" (corresponfing to "--score_threshold 6", see gencore doc)
+GENCORE_SCORE_THREESHOLD=""
+
+# --ratio_threshold
+# if the ratio of the major base in a cluster is less than <ratio_threshold>, it will be further compared to the reference.
+# The valud should be 0.5~1.0, and the default value is 0.8
+# default "" (corresponding to "--ratio_threshold 0.8", see gencore doc)
+GENCORE_RATIO_THREESHOLD=""
+
+# --umi_diff_threshold
+# if two reads with identical mapping position have UMI difference <= <umi_diff_threshold>, then they will be merged to generate a consensus read
+# Default "" (corresponding to "--umi_diff_threshold 2", see gencore doc)
+GENCORE_DIFF_THREESHOLD=""
+
+# Quality Threeshold
+# --high_qual (Q30) ; --moderate_qual (Q20) ; --low_qual (Q15)
+# --high_qual : the threshold for a quality score to be considered as high quality. Default 30 means Q30. (int [=30])
+# --moderate_qual : the threshold for a quality score to be considered as moderate quality. Default 20 means Q20. (int [=20])
+# --low_qual : the threshold for a quality score to be considered as low quality. Default 15 means Q15. (int [=15])
+# e.g. "--moderate_qual 20", "--high_qual 20 --moderate_qual 15 --low_qual 10"
+# default "" (corresponding to default quality, see gencore doc)
+GENCORE_QUAL_THREESHOLD=""
+
+# --coverage_sampling
+# the sampling rate for genome scale coverage statistics. Default 10000 means 1/10000
+# for statistics purpose, can be reduce to gain performance
+# not included in the mk file
+# default "" (corresponding to "--coverage_sampling=10000", see gencore doc)
+GENCORE_COVERAGE_SAMPLING=""
+
+
+### CRAM
 
 # CRAM OPTIONS
 # Final CRAM options for compression (archive.cram)
@@ -410,8 +501,8 @@ HOWARD_CALCULATION="VAF_STATS,DP_STATS,VARTYPE,NOMEN,BARCODE"
 HOWARD_CALCULATION_MINIMAL="VAF_STATS,DP_STATS,VARTYPE,NOMEN,BARCODE"
 # Default calculation with HOWARD for final VCF report
 HOWARD_CALCULATION_REPORT="FindByPipelines,GenotypeConcordance,VAF,VAF_STATS,DP_STATS,VARTYPE,NOMEN,BARCODE"
-# Default calculation with HOWARD for whole analysis (calculation forced)
-HOWARD_CALCULATION_ANALYSIS="VAF_STATS,DP_STATS,VARTYPE,NOMEN,BARCODE"
+# Default calculation with HOWARD for whole analysis (calculation forced, no transcripts list available)
+HOWARD_CALCULATION_ANALYSIS="VAF_STATS,DP_STATS,BARCODE"
 # List of annotation fields to extract NOMEN annotation (default 'hgvs', see HOWARD docs)
 HOWARD_NOMEN_FIELDS="hgvs"
 

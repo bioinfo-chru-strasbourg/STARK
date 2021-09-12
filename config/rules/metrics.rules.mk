@@ -229,24 +229,6 @@ BAM_VALIDATION_COMPRESSION?=4
 
 
 
-# MarkDuplicates metrics
-##########################
-
-#%.bam.metrics/metrics.markDuplicates: %.bam %.bam.bai
-#	-cp -f $**.markduplicates.bam.metrics/* $(@D)/;
-#	rm -rf $**.markduplicates.bam.metrics;
-#	echo "#[INFO] MarkDuplicates metrics done. " > $@;
-
-
-# UMIgroup metrics
-##########################
-
-#%.bam.metrics/metrics.UMIgroup: %.bam %.bam.bai
-#	-cp -f $**.UMIgroup.bam.metrics/* $(@D)/;
-#	rm -rf $**.UMIgroup.bam.metrics;
-#	echo "#[INFO] UMIgroup metrics done. " > $@;
-
-
 # Post align metrics
 ##########################
 

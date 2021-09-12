@@ -7,8 +7,8 @@
 
 SCRIPT_NAME="LaunchSample"
 SCRIPT_DESCRIPTION="Launch a Sample Analysis"
-SCRIPT_RELEASE="0.9.6.1b"
-SCRIPT_DATE="19/03/2019"
+SCRIPT_RELEASE="0.9.7.0"
+SCRIPT_DATE="06/09/2021"
 SCRIPT_AUTHOR="Antony Le Bechec"
 SCRIPT_COPYRIGHT="IRC"
 SCRIPT_LICENCE="GNU-AGPL"
@@ -21,6 +21,7 @@ RELEASE_NOTES=$RELEASE_NOTES"# 0.9.5.1b-11/04/2016: Optimize Threads and modifiy
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.5.2b-13/04/2016: Adding reports process\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.6b-27/10/2016: Multi input FASTQ/BAM/CRAM/SAM and associated parameters\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.6.1b-19/03/2019: Minor change on FASTQ/BAM/CRAM/SAM input\n";
+RELEASE_NOTES=$RELEASE_NOTES"# 0.9.7.0-06/09/2021: Include UMI treatment, rebuild FASTQ input treatment\n";
 
 # Script folder
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -92,7 +93,7 @@ header;
 
 
 # USAGE exemple
-# ./launch.sample.sh -f "$DATA/SAMPLE/HORIZON/HORIZON.R1.fastq.gz,$DATA/SAMPLE/HORIZON/HORIZON.bam,$DATA/SAMPLE/TEST/TEST.cram" -q "$DATA/SAMPLE/HORIZON/HORIZON.R2.fastq.gz" -s "H1,H2" -r "test" -b "/home1/TOOLS/data/SAMPLE/HORIZON/HORIZON.manifest,/home1/TOOLS/data/SAMPLE/HORIZON/HORIZON.bed,/home1/TOOLS/data/SAMPLE/TEST/TEST.bed" --output="$DATA/RESULTS"
+# ./STARK.launch -f "$DATA/SAMPLE/HORIZON/HORIZON.R1.fastq.gz,$DATA/SAMPLE/HORIZON/HORIZON.bam,$DATA/SAMPLE/TEST/TEST.cram" -q "$DATA/SAMPLE/HORIZON/HORIZON.R2.fastq.gz" -s "H1,H2" -r "test" -b "/home1/TOOLS/data/SAMPLE/HORIZON/HORIZON.manifest,/home1/TOOLS/data/SAMPLE/HORIZON/HORIZON.bed,/home1/TOOLS/data/SAMPLE/TEST/TEST.bed" --output="$DATA/RESULTS"
 # /home1/IRC/TOOLS/tools/stark/dev/STARK -f "$DATA/SAMPLE/HORIZON/HORIZON.R1.fastq.gz,$DATA/SAMPLE/HORIZON/HORIZON.bam,$DATA/SAMPLE/TEST/TEST.cram" -q "$DATA/SAMPLE/HORIZON/HORIZON.R2.fastq.gz" -s "H1,H2" -r "testH,testH,testT" -b "/home1/TOOLS/data/SAMPLE/HORIZON/HORIZON.manifest,/home1/TOOLS/data/SAMPLE/HORIZON/HORIZON.bed,/home1/TOOLS/data/SAMPLE/TEST/TEST.bed" -e env.HUSTUMSOL.sh --output="$DATA/RESULTS" --repository="$DATA/REPOSITORY"
 # /home1/IRC/TOOLS/tools/stark/dev/STARK -f $DATA/SAMPLE/TEST/TEST.cram -b /home1/TOOLS/data/SAMPLE/TEST/TEST.bed --output="$DATA/RESULTS" -r testT
 
@@ -839,6 +840,7 @@ for RUU in $RUN_UNIQ; do
 	RELEASE_RUN=$ANALYSIS_PREFIX_PATH.analysis.release
 	FASTQ_MK=$ANALYSIS_PREFIX_PATH.analysis.fastq.mk
 	FASTP_MK=$ANALYSIS_PREFIX_PATH.analysis.fastp.mk
+	INPUT_MK=$ANALYSIS_PREFIX_PATH.analysis.input.mk
 	RES_MK=$ANALYSIS_PREFIX_PATH.analysis.copy.mk
 
 	# Analysis report file
@@ -861,13 +863,92 @@ for RUU in $RUN_UNIQ; do
 	fi;
 	
 
-	# FASTQ
-	> $FASTQ_MK
-	FASTQ_MK_ALL=""
+	# # FASTQ
+	# > $FASTQ_MK
+	# FASTQ_MK_ALL=""
 
-	# FASTP
-	> $FASTP_MK
-	FASTP_MK_ALL=""
+	# # FASTP
+	# > $FASTP_MK
+	# FASTP_MK_ALL=""
+
+	# INPUT
+	> $INPUT_MK
+	INPUT_MK_ALL=""
+
+
+	NB_SAMPLE=$(echo $FASTQ | wc -w)
+
+
+	# THREADS
+	############
+
+	#NB_SAMPLE=1;
+
+	PIPELINES=$(echo $PIPELINES | tr "," "\n" | tr " " "\n" | awk '!x[$0]++' | tr "\n" " ")
+	NB_PIPELINES=$(echo $PIPELINES | wc -w)
+	NB_ALIGNERS=$(echo -e $(for P in $PIPELINES; do echo $P | cut -d. -f1; done) | tr " " "\n" | awk '!x[$0]++' | tr "\n" " " | wc -w)
+	NB_CALLERS=$(echo -e $(for P in $PIPELINES; do echo $P | cut -d. -f2; done) | tr " " "\n" | awk '!x[$0]++' | tr "\n" " " | wc -w)
+
+	# ADJUSTING threads parameters
+	#ROUND="FLOOR" # CEIL or FLOOR;
+	ROUND="CEIL" # CEIL or FLOOR;
+	if [ "$ROUND" == "CEIL" ]; then
+		THREADS_BY_SAMPLE=$( printf "%.0f" $(echo "scale=2;$THREADS/$NB_SAMPLE" | bc))			# Number of threads by sample
+		THREADS_BY_PIPELINE=$( printf "%.0f" $(echo "scale=2;$THREADS_BY_SAMPLE/$NB_PIPELINES" | bc))	# Number of threads for a pipeline's command
+		THREADS_BY_ALIGNER=$( printf "%.0f" $(echo "scale=2;$THREADS_BY_SAMPLE/$NB_ALIGNERS" | bc))	# Number of threads for a aligner's command
+		THREADS_BY_CALLER=$( printf "%.0f" $(echo "scale=2;$THREADS_BY_SAMPLE/$NB_CALLERS" | bc))	# Number of threads for a caller's command
+		THREADS_BWA=$THREADS_BY_ALIGNER									# NB of threads for BWA command
+		THREADS_RTC=$THREADS_BY_ALIGNER									# NB of threads for GATK RealignerTargetCreator
+	elif  [ "$ROUND" == "FLOOR" ]; then
+		THREADS_BY_SAMPLE=$(($THREADS/$NB_SAMPLE))			# Number of threads by sample
+		THREADS_BY_PIPELINE=$(($THREADS_BY_SAMPLE/$NB_PIPELINES))	# Number of threads for a pipeline's command
+		THREADS_BY_ALIGNER=$(($THREADS_BY_SAMPLE/$NB_ALIGNERS))		# Number of threads for a aligner's command
+		THREADS_BY_CALLER=$(($THREADS_BY_SAMPLE/$NB_CALLERS))		# Number of threads for a caller's command
+		THREADS_BWA=$THREADS_BY_ALIGNER					# NB of threads for BWA command
+		THREADS_RTC=$THREADS_BY_ALIGNER					# NB of threads for GATK RealignerTargetCreator
+	else
+		THREADS_BY_SAMPLE=1			# Number of threads by sample
+		THREADS_BY_PIPELINE=1			# Number of threads for a pipeline's command
+		THREADS_BY_ALIGNER=1			# Number of threads for a aligner's command
+		THREADS_BY_CALLER=1			# Number of threads for a caller's command
+		THREADS_BWA=$THREADS_BY_ALIGNER		# NB of threads for BWA command
+		THREADS_RTC=$THREADS_BY_ALIGNER		# NB of threads for GATK RealignerTargetCreator
+	fi;
+	if [ "$THREADS_BY_SAMPLE" == "0" ]; then THREADS_BY_SAMPLE=1; fi;
+	if [ "$THREADS_BY_ALIGNER" == "0" ]; then THREADS_BY_ALIGNER=1; fi;
+	if [ "$THREADS_BY_CALLER" == "0" ]; then THREADS_BY_CALLER=1; fi;
+	if [ "$THREADS_BY_PIPELINE" == "0" ]; then THREADS_BY_PIPELINE=1; fi;
+	if [ "$THREADS_BWA" == "0" ]; then THREADS_BWA=1; fi;
+	if [ "$THREADS_RTC" == "0" ]; then THREADS_RTC=1; fi;
+
+	# THREAD_PARAMETERS
+	THREAD_PARAMETERS=$THREAD_PARAMETERS" THREADS_BY_SAMPLE=$THREADS_BY_SAMPLE "
+	THREAD_PARAMETERS=$THREAD_PARAMETERS" THREADS_BY_PIPELINE=$THREADS_BY_PIPELINE "
+	THREAD_PARAMETERS=$THREAD_PARAMETERS" THREADS_BY_ALIGNER=$THREADS_BY_ALIGNER "
+	THREAD_PARAMETERS=$THREAD_PARAMETERS" THREADS_BY_CALLER=$THREADS_BY_CALLER "
+	THREAD_PARAMETERS=$THREAD_PARAMETERS" THREADS_BWA=$THREADS_BWA "
+	THREAD_PARAMETERS=$THREAD_PARAMETERS" THREADS_RTC=$THREADS_RTC "
+
+
+	# JAVA_MEMORY by sample and by caller
+	###############
+
+	# Default
+	JAVA_MEMORY_BY_SAMPLE=$JAVA_MEMORY
+	JAVA_MEMORY_BY_CALLER=$JAVA_MEMORY
+
+	# Calcul
+	JAVA_MEMORY_BY_SAMPLE=$(($MEMTOTAL/$NB_SAMPLE/1024/1024))				# Number of threads by sample
+	JAVA_MEMORY_BY_PIPELINE=$(($JAVA_MEMORY_BY_SAMPLE/$NB_PIPELINES/1024/1024))	# Number of threads for a pipeline's command
+	JAVA_MEMORY_BY_ALIGNER=$(($JAVA_MEMORY_BY_SAMPLE/$NB_ALIGNERS/1024/1024))	# Number of threads for a aligner's command
+	JAVA_MEMORY_BY_CALLER=$(($JAVA_MEMORY_BY_SAMPLE/$NB_CALLERS/1024/1024))		# Number of threads for a caller's command
+
+	# Test
+	if [ "$JAVA_MEMORY_BY_SAMPLE" == "" ] || [ $JAVA_MEMORY_BY_SAMPLE -lt 1 ]; then JAVA_MEMORY_BY_SAMPLE=1; fi;
+	if [ "$JAVA_MEMORY_BY_PIPELINE" == "" ] || [ $JAVA_MEMORY_BY_PIPELINE -lt 1 ]; then JAVA_MEMORY_BY_PIPELINE=1; fi;
+	if [ "$JAVA_MEMORY_BY_ALIGNER" == "" ] || [ $JAVA_MEMORY_BY_ALIGNER -lt 1 ]; then JAVA_MEMORY_BY_ALIGNER=1; fi;
+	if [ "$JAVA_MEMORY_BY_CALLER" == "" ] || [ $JAVA_MEMORY_BY_CALLER -lt 1 ]; then JAVA_MEMORY_BY_CALLER=1; fi;
+
 
 
 
@@ -892,6 +973,7 @@ for RUU in $RUN_UNIQ; do
 	I=0;
 	NB_SAMPLE=0;
 
+	
 
 	for F in $FASTQ; do
 
@@ -942,67 +1024,55 @@ for RUU in $RUN_UNIQ; do
 				(($VERBOSE)) && echo "#[INFO] Create Input data from FASTQ file(s)"
 
 				# Create FASTQ
-				#$COMMAND_COPY $F $RUN_SAMPLE_DIR/$S.R1.fastq.gz;
-				#$COMMAND_COPY_NO_COMPRESS $F $RUN_SAMPLE_DIR/$S.R1.fastq.gz;
-				# FASTQ MK
-				echo "$RUN_SAMPLE_DIR/$S.R1.fastq.gz: $F
-					$COMMAND_COPY_NO_COMPRESS $F $RUN_SAMPLE_DIR/$S.R1.fastq.gz;
-				" >> $FASTQ_MK
-				FASTQ_MK_ALL=$FASTQ_MK_ALL" $RUN_SAMPLE_DIR/$S.R1.fastq.gz"
 
+				# READ 1
+				echo "$RUN_SAMPLE_DIR/$S.R1.fastq.gz: $F
+					#$COMMAND_COPY_NO_COMPRESS $F $RUN_SAMPLE_DIR/$S.R1.fastq.gz;
+					ln -s $F $RUN_SAMPLE_DIR/$S.R1.fastq.gz;
+				" >> $INPUT_MK
+				INPUT_MK_ALL=$INPUT_MK_ALL" $RUN_SAMPLE_DIR/$S.R1.fastq.gz"
+
+				# READ 2
 				if [ -s "$F_R2" ]; then
-					#$COMMAND_COPY $F_R2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz
-					#$COMMAND_COPY_NO_COMPRESS $F_R2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz
-					# FASTQ MK
 					echo "$RUN_SAMPLE_DIR/$S.R2.fastq.gz: $F_R2
-						$COMMAND_COPY_NO_COMPRESS $F_R2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz
-					" >> $FASTQ_MK
-					FASTQ_MK_ALL=$FASTQ_MK_ALL" $RUN_SAMPLE_DIR/$S.R2.fastq.gz"
+						ln -s $F_R2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz
+					" >> $INPUT_MK
+					INPUT_MK_ALL=$INPUT_MK_ALL" $RUN_SAMPLE_DIR/$S.R2.fastq.gz"
 				else
-					#touch $RUN_SAMPLE_DIR/$S.R2.fastq
-					#$GZ $RUN_SAMPLE_DIR/$S.R2.fastq
-					echo "$RUN_SAMPLE_DIR/$S.R2.fastq.gz: $F
+					echo "$RUN_SAMPLE_DIR/$S.R2.fastq.gz:
 						touch $RUN_SAMPLE_DIR/$S.R2.fastq
 						$GZ $RUN_SAMPLE_DIR/$S.R2.fastq
-					" >> $FASTQ_MK
-					FASTQ_MK_ALL=$FASTQ_MK_ALL" $RUN_SAMPLE_DIR/$S.R2.fastq.gz"
+					" >> $INPUT_MK
+					INPUT_MK_ALL=$INPUT_MK_ALL" $RUN_SAMPLE_DIR/$S.R2.fastq.gz"
 				fi;
 
 
 				# INDEX1
 				if [ -s "$I1" ]; then
-					#$COMMAND_COPY_NO_COMPRESS $I1 $RUN_SAMPLE_DIR/$S.I1.fastq.gz
-					# FASTQ MK
 					echo "$RUN_SAMPLE_DIR/$S.I1.fastq.gz: $I1
-						$COMMAND_COPY_NO_COMPRESS $I1 $RUN_SAMPLE_DIR/$S.I1.fastq.gz
-					" >> $FASTQ_MK
-					FASTQ_MK_ALL=$FASTQ_MK_ALL" $RUN_SAMPLE_DIR/$S.I1.fastq.gz"
+						ln -s $I1 $RUN_SAMPLE_DIR/$S.I1.fastq.gz
+					" >> $INPUT_MK
+					INPUT_MK_ALL=$INPUT_MK_ALL" $RUN_SAMPLE_DIR/$S.I1.fastq.gz"
 				else
-					#touch $RUN_SAMPLE_DIR/$S.I1.fastq
-					#$GZ $RUN_SAMPLE_DIR/$S.I1.fastq
-					echo "$RUN_SAMPLE_DIR/$S.I1.fastq.gz: $I1
+					echo "$RUN_SAMPLE_DIR/$S.I1.fastq.gz:
 						touch $RUN_SAMPLE_DIR/$S.I1.fastq
 						$GZ $RUN_SAMPLE_DIR/$S.I1.fastq
-					" >> $FASTQ_MK
-					FASTQ_MK_ALL=$FASTQ_MK_ALL" $RUN_SAMPLE_DIR/$S.I1.fastq.gz"
+					" >> $INPUT_MK
+					INPUT_MK_ALL=$INPUT_MK_ALL" $RUN_SAMPLE_DIR/$S.I1.fastq.gz"
 				fi;
 
 				# INDEX2
 				if [ -s "$I2" ]; then
-					#$COMMAND_COPY_NO_COMPRESS $I2 $RUN_SAMPLE_DIR/$S.I2.fastq.gz
-					# FASTQ MK
 					echo "$RUN_SAMPLE_DIR/$S.I2.fastq.gz: $I2
-						$COMMAND_COPY_NO_COMPRESS $I2 $RUN_SAMPLE_DIR/$S.I2.fastq.gz
-					" >> $FASTQ_MK
-					FASTQ_MK_ALL=$FASTQ_MK_ALL" $RUN_SAMPLE_DIR/$S.I2.fastq.gz"
+						ln -s $I2 $RUN_SAMPLE_DIR/$S.I2.fastq.gz
+					" >> $INPUT_MK
+					INPUT_MK_ALL=$INPUT_MK_ALL" $RUN_SAMPLE_DIR/$S.I2.fastq.gz"
 				else
-					#touch $RUN_SAMPLE_DIR/$S.I2.fastq
-					#$GZ $RUN_SAMPLE_DIR/$S.I2.fastq
-					echo "$RUN_SAMPLE_DIR/$S.I2.fastq.gz: $I2
+					echo "$RUN_SAMPLE_DIR/$S.I2.fastq.gz:
 						touch $RUN_SAMPLE_DIR/$S.I2.fastq
 						$GZ $RUN_SAMPLE_DIR/$S.I2.fastq
-					" >> $FASTQ_MK
-					FASTQ_MK_ALL=$FASTQ_MK_ALL" $RUN_SAMPLE_DIR/$S.I2.fastq.gz"
+					" >> $INPUT_MK
+					INPUT_MK_ALL=$INPUT_MK_ALL" $RUN_SAMPLE_DIR/$S.I2.fastq.gz"
 				fi;
 
 
@@ -1020,7 +1090,6 @@ for RUU in $RUN_UNIQ; do
 					if (( $($UNGZ -c $RUN_SAMPLE_DIR/$S.R0.fastq.gz | head -n 1 | wc -l) )) \
 						|| (( $(diff <($UNGZ -c $RUN_SAMPLE_DIR/$S.R1.fastq.gz | paste - - - - | cut -f1 -d$'\t') <($UNGZ -c $RUN_SAMPLE_DIR/$S.R2.fastq.gz | paste - - - - | cut -f1 -d$'\t') | head -n 1 | wc -l) )); then
 						echo "#[WARNING] Read names or order differ between R1 and R2 fastq files, or R0 file is not empty. Reads are supposed not to be paired (Single-End). All reads in R1.";
-						#$UNGZ -c $RUN_SAMPLE_DIR/$S.R2.fastq.gz $RUN_SAMPLE_DIR/$S.R0.fastq.gz >> $RUN_SAMPLE_DIR/$S.R1.fastq.gz;
 						cat $RUN_SAMPLE_DIR/$S.R2.fastq.gz $RUN_SAMPLE_DIR/$S.R0.fastq.gz >> $RUN_SAMPLE_DIR/$S.R1.fastq.gz;
 						$GZ < /dev/null > $RUN_SAMPLE_DIR/$S.R2.fastq.gz;
 					fi;
@@ -1044,29 +1113,28 @@ for RUU in $RUN_UNIQ; do
 							$GZ $RUN_SAMPLE_DIR/$S.R2.fastq; \
 						fi;
 						rm -f $RUN_SAMPLE_DIR/$S.R0.fastq.gz;
-					" >> $FASTQ_MK
-					FASTQ_MK_ALL=$FASTQ_MK_ALL" $RUN_SAMPLE_DIR/$S.R1.fastq.gz"
+					" >> $INPUT_MK
+					INPUT_MK_ALL=$INPUT_MK_ALL" $RUN_SAMPLE_DIR/$S.R1.fastq.gz"
 
 					echo "$RUN_SAMPLE_DIR/$S.R2.fastq.gz: $F
 						#touch $RUN_SAMPLE_DIR/$S.I2.fastq
 						#$GZ $RUN_SAMPLE_DIR/$S.I2.fastq
-					" >> $FASTQ_MK
-					FASTQ_MK_ALL=$FASTQ_MK_ALL" $RUN_SAMPLE_DIR/$S.R2.fastq.gz"
+					" >> $INPUT_MK
+					INPUT_MK_ALL=$INPUT_MK_ALL" $RUN_SAMPLE_DIR/$S.R2.fastq.gz"
 
 					echo "$RUN_SAMPLE_DIR/$S.I1.fastq.gz: $F
 						touch $RUN_SAMPLE_DIR/$S.I1.fastq
 						$GZ $RUN_SAMPLE_DIR/$S.I1.fastq
-					" >> $FASTQ_MK
-					FASTQ_MK_ALL=$FASTQ_MK_ALL" $RUN_SAMPLE_DIR/$S.I1.fastq.gz"
+					" >> $INPUT_MK
+					INPUT_MK_ALL=$INPUT_MK_ALL" $RUN_SAMPLE_DIR/$S.I1.fastq.gz"
 
 					echo "$RUN_SAMPLE_DIR/$S.I2.fastq.gz: $F
 						touch $RUN_SAMPLE_DIR/$S.I2.fastq
 						$GZ $RUN_SAMPLE_DIR/$S.I2.fastq
-					" >> $FASTQ_MK
-					FASTQ_MK_ALL=$FASTQ_MK_ALL" $RUN_SAMPLE_DIR/$S.I2.fastq.gz"
+					" >> $INPUT_MK
+					INPUT_MK_ALL=$INPUT_MK_ALL" $RUN_SAMPLE_DIR/$S.I2.fastq.gz"
 
 				fi;
-				# || (( \$\$(diff <($UNGZ -c $RUN_SAMPLE_DIR/$S.R1.fastq.gz | paste - - - - | cut -f1 -d\$\$'\t') <($UNGZ -c $RUN_SAMPLE_DIR/$S.R2.fastq.gz | paste - - - - | cut -f1 -d\$\$'\t') | head -n 1 | wc -l) )); then
 			fi;
 
 		else
@@ -1087,54 +1155,223 @@ for RUU in $RUN_UNIQ; do
 				(($VERBOSE)) && echo "#[INFO] FASTQ processing (Adaptors, UMIs, quality)"
 
 
-				# FASTP MK
-				echo "$RUN_SAMPLE_DIR_SEQUENCING/$S: $RUN_SAMPLE_DIR/$S.R1.fastq.gz $RUN_SAMPLE_DIR/$S.R2.fastq.gz $RUN_SAMPLE_DIR/$S.I1.fastq.gz $RUN_SAMPLE_DIR/$S.I2.fastq.gz
+				# DEV
+
+				#UMI_LOC="" # index1/index2/read1/read2/per_index/per_read"
+				#UMI_BARCODE_PATTERN=""
+				#UMI_LOC="read2" # index1/index2/read1/read2/per_index/per_read"
+				#UMI_BARCODE_PATTERN="NNNNNNNNNN"
+				#UMI_LOC="per_read" # index1/index2/read1/read2/per_index/per_read"
+				#UMI_BARCODE_PATTERN="NNNNN-NNNNN"
+
+				#FASTQ_COMPRESSION_LEVEL=1
+
+
+				### INIT
+
+				# UMI_LOC
+
+				UMI_RELOC=$UMI_LOC
+				if ((0)); then
+					R1_RELOC=""
+					R2_RELOC=""
+					case $UMI_LOC in
+						"index1")
+							R1_RELOC="I1"
+							R2_RELOC=""
+							UMI_RELOC="read1"
+							;;
+						"index2")
+							R1_RELOC=""
+							R2_RELOC="I2"
+							UMI_RELOC="read2"
+							;;
+						"per_index")
+							R1_RELOC="I1"
+							R2_RELOC="I2"
+							UMI_RELOC="per_read"
+							;;
+					esac
+				fi;
+
+				# UMI_BARCODE_PATTERN
+				UMI_BARCODE_PATTERN_1=$(echo $UMI_BARCODE_PATTERN | awk -F'-' '{print $1}')
+				UMI_BARCODE_PATTERN_2=$(echo $UMI_BARCODE_PATTERN | awk -F'-' '{print $2}')
+				if [ "$UMI_RELOC" == "per_read" ] && [ "$UMI_BARCODE_PATTERN_2" == "" ]; then
+					UMI_BARCODE_PATTERN_2=$UMI_BARCODE_PATTERN_1
+				fi; 
+				UMI_BARCODE_PATTERN_1_LENGTH=${#UMI_BARCODE_PATTERN_1}
+				UMI_BARCODE_PATTERN_2_LENGTH=${#UMI_BARCODE_PATTERN_2}
+				UMI_BARCODE_PATTERN_LENGTH=$(echo $UMI_BARCODE_PATTERN_1_LENGTH + $UMI_BARCODE_PATTERN_2_LENGTH  | bc)
+				#UMI_BARCODE_PATTERN_LENGTH=${#UMI_BARCODE_PATTERN}
+				
+
+				FASTQ_PROCESSED_STEPS_DEFAULT=".fastq_reheader.fastp.fastq_clean_header.compress"
+				FASTQ_PROCESSED_STEPS=$FASTQ_PROCESSED_STEPS_DEFAULT
+				#[ "$UMI_RELOC" != "" ] && FASTQ_PROCESSED_STEPS=".relocate_umi.fastp.fastq_clean_header.compress"
+
+
+				# echo "UMI_LOC=$UMI_LOC"
+				# echo "UMI_RELOC=$UMI_RELOC"
+				# echo "R1_RELOC=$R1_RELOC"
+				# echo "R2_RELOC=$R2_RELOC"
+				# echo "UMI_BARCODE_PATTERN=$UMI_BARCODE_PATTERN"
+				# echo "UMI_BARCODE_PATTERN_1=$UMI_BARCODE_PATTERN_1"
+				# echo "UMI_BARCODE_PATTERN_2=$UMI_BARCODE_PATTERN_2"
+				# echo "UMI_BARCODE_PATTERN_LENGTH=$UMI_BARCODE_PATTERN_LENGTH"
+				# echo "UMI_BARCODE_PATTERN_1_LENGTH=$UMI_BARCODE_PATTERN_1_LENGTH"
+				# echo "UMI_BARCODE_PATTERN_2_LENGTH=$UMI_BARCODE_PATTERN_2_LENGTH"
+				# echo "FASTQ_PROCESSED_STEPS=$FASTQ_PROCESSED_STEPS"
+				#exit 0
+
+
+				# FOLDERS & FILES
+				##################
+
+				mkdir -p $RUN_SAMPLE_DIR_SEQUENCING;
+				#echo "init log" > $RUN_SAMPLE_DIR_SEQUENCING/$S.log;
+
+
+				# VARIABLES
+				############
+
+				
+
+				echo "FASTQ_DEMULTIPLEXING_KEEP?=$FASTQ_DEMULTIPLEXING_KEEP " >> $INPUT_MK
+				echo "REMOVE_FASTQ_COMMENT?=0 " >> $INPUT_MK
+				echo "FASTQ_COMPRESSION_LEVEL?=5 " >> $INPUT_MK
+				echo "FASTP_PARAM:=" >> $INPUT_MK
+				echo "FASTP_THREADS_BY_SAMPLE:=$THREADS_BY_SAMPLE" >> $INPUT_MK
+				echo "FASTP_COMPRESSION_LEVEL:=1" >> $INPUT_MK
+				echo "DISABLE_ADAPTER_TRIMMING:=$DISABLE_ADAPTER_TRIMMING" >> $INPUT_MK
+				echo "FASTQ_QUALITY_FILTERING:=$FASTQ_QUALITY_FILTERING" >> $INPUT_MK
+				echo "POLY_G_MIN_LEN:=$POLY_G_MIN_LEN" >> $INPUT_MK
+				echo "READ_LENGTH_REQUIRED:=$READ_LENGTH_REQUIRED" >> $INPUT_MK
+				echo "UMI_LOC:=$UMI_LOC" >> $INPUT_MK
+				echo "UMI_RELOC:=$UMI_RELOC" >> $INPUT_MK
+				echo "R1_RELOC:=$R1_RELOC" >> $INPUT_MK
+				echo "R2_RELOC:=$R2_RELOC" >> $INPUT_MK
+				echo "UMI_BARCODE_PATTERN:=$UMI_BARCODE_PATTERN" >> $INPUT_MK
+				echo "UMI_BARCODE_PATTERN_1:=$UMI_BARCODE_PATTERN_1" >> $INPUT_MK
+				echo "UMI_BARCODE_PATTERN_2:=$UMI_BARCODE_PATTERN_2" >> $INPUT_MK
+				echo "UMI_BARCODE_PATTERN_LENGTH:=$UMI_BARCODE_PATTERN_LENGTH" >> $INPUT_MK
+				echo "UMI_BARCODE_PATTERN_1_LENGTH:=$UMI_BARCODE_PATTERN_1_LENGTH" >> $INPUT_MK
+				echo "UMI_BARCODE_PATTERN_2_LENGTH:=$UMI_BARCODE_PATTERN_2_LENGTH" >> $INPUT_MK
+				echo "FASTP?=$FASTP" >> $INPUT_MK
+				echo "UNGZ?=$UNGZ" >> $INPUT_MK
+				echo "FASTQ_CLEAN_HEADER?=$FASTQ_CLEAN_HEADER" >> $INPUT_MK
+				echo "RELOCATE_UMI?=$RELOCATE_UMI" >> $INPUT_MK
+				echo "FASTQ_PROCESSED_STEPS:=$FASTQ_PROCESSED_STEPS" >> $INPUT_MK
+				
+
+				# DEV
+				#cat $INPUT_MK
+
+				
+
+				# STEP START
+				############
+
+				echo "$RUN_SAMPLE_DIR_SEQUENCING/$S.log: $RUN_SAMPLE_DIR_SEQUENCING $RUN_SAMPLE_DIR/$S.R1.fastq.gz $RUN_SAMPLE_DIR/$S.R2.fastq.gz $RUN_SAMPLE_DIR/$S.I1.fastq.gz $RUN_SAMPLE_DIR/$S.I2.fastq.gz
+					echo 'input log' >> \$@;
+
+				" >> $INPUT_MK
+				
+				echo "$RUN_SAMPLE_DIR_SEQUENCING:
 					# Create sample sequencing folder
-					mkdir -p $RUN_SAMPLE_DIR/$S.sequencing;
-					# FASTP parameters
-					echo ' --disable_trim_poly_g --disable_length_filtering ' > \$@.fastp.param;
-					echo ' --thread \$(FASTP_THREADS_BY_SAMPLE) ' >> \$@.fastp.param;
-					echo ' --compression \$(FASTQ_COMPRESSION_LEVEL) ' >> \$@.fastp.param;
-					# OUTPUT
-					echo '-h $FASTP_HTML -j $FASTP_JSON' >> \$@.fastp.param;
-					# Paired-End or Single-End
-					if (( \$\$($UNGZ -c $RUN_SAMPLE_DIR/$S.R2.fastq.gz | head -n 1 | wc -l) )); then \
-						(($VERBOSE)) && echo '#[INFO] Paired-End Processing' ; \
-						echo '-i $RUN_SAMPLE_DIR/$S.R1.fastq.gz -I $RUN_SAMPLE_DIR/$S.R2.fastq.gz' >> \$@.fastp.param ; \
-						echo '-o $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.processed.fastq.gz -O $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.processed.fastq.gz' >> \$@.fastp.param ; \
-						if (($DETECT_ADAPTER_FOR_PE)); then echo $FASTP_PARAM' --detect_adapter_for_pe' >> \$@.fastp.param ; fi ; \
-					else \
-						(($VERBOSE)) && echo '#[INFO] Single-End Processing' ; \
-						echo '-i $RUN_SAMPLE_DIR/$S.R1.fastq.gz' >> \$@.fastp.param ; \
-						echo '-o $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.processed.fastq.gz' >> \$@.fastp.param ; \
-					fi;
-					# UMI Extraction
-					if [ '$UMI_BARCODE_PATTERN' != '' ] && ! (( \$\$($UNGZ -c $RUN_SAMPLE_DIR/$S.R1.fastq.gz | head -n1 | awk -F' ' '{n_read_name=split(\$\$1,read_name,\":\"); if (read_name[n_read_name] ~ /[A-Z]/) { print read_name[n_read_name]} }' | wc -l) )); then \
-						echo '--umi --umi_loc per_read --umi_len '${#UMI_BARCODE_PATTERN} >> \$@.fastp.param; \
-					fi;
-					# Read quality filtering
-					if [ '$FASTQ_QUALITY_FILTERING' != '' ]; then \
-						echo ' --cut_mean_quality=$FASTQ_QUALITY_FILTERING ' >> \$@.fastp.param; \
-					else \
-						echo ' --disable_quality_filtering ' >> \$@.fastp.param; \
-					fi;
-					# Report title
-					echo ' --report_title=$RUU/$S ' >> \$@.fastp.param;
-					# FASTP Process
-					$FASTP \$\$(cat \$@.fastp.param) 1>$FASTP_LOG 2>$FASTP_ERR
-					if (($FASTQ_DEMULTIPLEXING_KEEP)); then \
-						if [ -e $RUN_SAMPLE_DIR/$S.R1.fastq.gz ] ; then $COMMAND_COPY_NO_COMPRESS $RUN_SAMPLE_DIR/$S.R1.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.demultiplexing.fastq.gz; fi; \
-						if [ -e $RUN_SAMPLE_DIR/$S.R2.fastq.gz ] ; then $COMMAND_COPY_NO_COMPRESS $RUN_SAMPLE_DIR/$S.R2.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.demultiplexing.fastq.gz; fi; \
-						if [ -e $RUN_SAMPLE_DIR/$S.I1.fastq.gz ] ; then $COMMAND_COPY_NO_COMPRESS $RUN_SAMPLE_DIR/$S.I1.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.I1.demultiplexing.fastq.gz; fi; \
-						if [ -e $RUN_SAMPLE_DIR/$S.I2.fastq.gz ] ; then $COMMAND_COPY_NO_COMPRESS $RUN_SAMPLE_DIR/$S.I2.fastq.gz $RUN_SAMPLE_DIR/$S.sequencing/$S.I2.demultiplexing.fastq.gz; fi; \
-					fi;
-					if [ -e $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.processed.fastq.gz ] ; then mv $RUN_SAMPLE_DIR/$S.sequencing/$S.R1.processed.fastq.gz $RUN_SAMPLE_DIR/$S.R1.fastq.gz; fi;
-					if [ -e $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.processed.fastq.gz ] ; then mv $RUN_SAMPLE_DIR/$S.sequencing/$S.R2.processed.fastq.gz $RUN_SAMPLE_DIR/$S.R2.fastq.gz; fi;
+					mkdir -p $RUN_SAMPLE_DIR_SEQUENCING;
+					echo 'sequencing folder log' > \$@;
 
-				" >> $FASTP_MK
-				FASTP_MK_ALL=$FASTP_MK_ALL" $RUN_SAMPLE_DIR_SEQUENCING/$S"
+				" >> $INPUT_MK
 
-				#cat $FASTP_MK
+				INPUT_MK_ALL=$INPUT_MK_ALL" $RUN_SAMPLE_DIR_SEQUENCING/$S.sequencing.log " 
+
+
+				# STEP UMI
+				##########
+
+				# Processing UMI extraction from Index with UMI TOOLS if no UMI in header
+
+				# UMI_COMMAND_R1="echo 'NO UMI Command'"
+				# UMI_COMMAND_COPY="cp -pP \$< \$@"
+				# UMI_BARCODE_PATTERN_LENGTH=$(echo $UMI_BARCODE_PATTERN | tr -d "\n" | wc -c)
+				# echo "#[INFO] UMI source '$UMI_LOC'";
+				# ### NO UMI
+				# if [ -z $UMI_LOC ]; then
+				# 	UMI_COMMAND_R1=$UMI_COMMAND_COPY
+				# 	UMI_COMMAND_R2=$UMI_COMMAND_COPY
+				# ### INDEX1
+				# elif [ "$UMI_LOC" == "index1" ]; then
+				# 	UMI_COMMAND_R1="umi_tools extract --bc-pattern=$UMI_BARCODE_PATTERN_1 --stdin=\$*.input.I1.fastq.gz --read2-in=\$*.input.R1.fastq.gz --read2-stdout --compresslevel=1 --log=\$@.log --error=\$@.err | sed '/^@/ s/_\([A-Z]*\)/:\1/' | $GZ -1 -c > \$@"
+				# 	UMI_COMMAND_R2="umi_tools extract --bc-pattern=$UMI_BARCODE_PATTERN_1 --stdin=\$*.input.I1.fastq.gz --read2-in=\$*.input.R2.fastq.gz --read2-stdout --compresslevel=1 --log=\$@.log --error=\$@.err | sed '/^@/ s/_\([A-Z]*\)/:\1/' | $GZ -1 -c > \$@"
+				# ### INDEX2
+				# elif [ "$UMI_LOC" == "index2" ]; then
+				# 	UMI_COMMAND_R1="umi_tools extract --bc-pattern=$UMI_BARCODE_PATTERN_1 --stdin=\$*.input.I2.fastq.gz --read2-in=\$*.input.R1.fastq.gz --read2-stdout --compresslevel=1 --log=\$@.log --error=\$@.err | sed '/^@/ s/_\([A-Z]*\)/:\1/' | $GZ -1 -c > \$@"
+				# 	UMI_COMMAND_R2="umi_tools extract --bc-pattern=$UMI_BARCODE_PATTERN_1 --stdin=\$*.input.I2.fastq.gz --read2-in=\$*.input.R2.fastq.gz --read2-stdout --compresslevel=1 --log=\$@.log --error=\$@.err | sed '/^@/ s/_\([A-Z]*\)/:\1/' | $GZ -1 -c > \$@"
+				# ### PER_INDEX
+				# elif [ "$UMI_LOC" == "per_index" ]; then
+				# 	UMI_COMMAND_R1="umi_tools extract --bc-pattern=$UMI_BARCODE_PATTERN_1 --stdin=\$*.input.I1.fastq.gz --read2-in=\$*.input.R1.fastq.gz --read2-stdout --compresslevel=1 --log=\$@.log --error=\$@.err | sed '/^@/ s/_\([A-Z]*\)_\([A-Z]*\)/:\1-\2/' | $GZ -1 -c > \$@"
+				# 	UMI_COMMAND_R2="umi_tools extract --bc-pattern=$UMI_BARCODE_PATTERN_2 --stdin=\$*.input.I2.fastq.gz --read2-in=\$*.input.R2.fastq.gz --read2-stdout --compresslevel=1 --log=\$@.log --error=\$@.err | sed '/^@/ s/_\([A-Z]*\)_\([A-Z]*\)/:\1-\2/' | $GZ -1 -c > \$@"
+				# ### READ1
+				# elif [ "$UMI_LOC" == "read1" ]; then
+				# 	UMI_COMMAND_R1="umi_tools extract --bc-pattern=$UMI_BARCODE_PATTERN_1 --stdin=\$*.input.R1.fastq.gz --read2-in=\$*.input.R1.fastq.gz --read2-stdout --compresslevel=1 --log=\$@.log --error=\$@.err | sed '/^@/ s/_\([A-Z]*\)/:\1/' | $GZ -1 -c > \$@"
+				# 	UMI_COMMAND_R2="umi_tools extract --bc-pattern=$UMI_BARCODE_PATTERN_1 --stdin=\$*.input.R1.fastq.gz --read2-in=\$*.input.R2.fastq.gz --read2-stdout --compresslevel=1 --log=\$@.log --error=\$@.err | sed '/^@/ s/_\([A-Z]*\)/:\1/' | $GZ -1 -c > \$@"
+				# ### READ2
+				# elif [ "$UMI_LOC" == "read2" ]; then
+				# 	UMI_COMMAND_R1="umi_tools extract --bc-pattern=$UMI_BARCODE_PATTERN_1 --stdin=\$*.input.R2.fastq.gz --read2-in=\$*.input.R1.fastq.gz --read2-stdout --compresslevel=1 --log=\$@.log --error=\$@.err | sed '/^@/ s/_\([A-Z]*\)/:\1/' | $GZ -1 -c > \$@"
+				# 	UMI_COMMAND_R2="umi_tools extract --bc-pattern=$UMI_BARCODE_PATTERN_1 --stdin=\$*.input.R2.fastq.gz --read2-in=\$*.input.R2.fastq.gz --read2-stdout --compresslevel=1 --log=\$@.log --error=\$@.err | sed '/^@/ s/_\([A-Z]*\)/:\1/' | $GZ -1 -c > \$@"
+				# ### PER_READ
+				# elif [ "$UMI_LOC" == "per_read" ]; then
+				# 	#UMI_COMMAND_R1="umi_tools extract --bc-pattern=$UMI_BARCODE_PATTERN_1 --stdin=\$*.input.R1.fastq.gz --read2-in=\$*.input.R1.fastq.gz --read2-stdout --compresslevel=1 --log=\$@.log --error=\$@.err | sed '/^@/ s/_\([A-Z]*\)_\([A-Z]*\)/:\1-\2/' | $GZ -1 -c > \$@"
+				# 	#UMI_COMMAND_R2="umi_tools extract --bc-pattern=$UMI_BARCODE_PATTERN_2 --stdin=\$*.input.R2.fastq.gz --read2-in=\$*.input.R2.fastq.gz --read2-stdout --compresslevel=1 --log=\$@.log --error=\$@.err | sed '/^@/ s/_\([A-Z]*\)_\([A-Z]*\)/:\1-\2/' | $GZ -1 -c > \$@"
+				# 	UMI_COMMAND_R1="umi_tools extract --extract-method=string --bc-pattern=$UMI_BARCODE_PATTERN --bc-pattern2=$UMI_BARCODE_PATTERN --stdin=\$*.input.R1.fastq.gz --read2-in=\$*.input.R2.fastq.gz --stdout=\$*.umi_raw.R1.fastq.gz --read2-out=\$*.umi_raw.R2.fastq.gz --compresslevel=1 --log=\$@.log --error=\$@.err && \
+				# 	$UNGZ -c \$*.umi_raw.R1.fastq.gz | sed '/^@/ s/_\([A-Z]\{$UMI_BARCODE_PATTERN_LENGTH\}\)\([A-Z]\{$UMI_BARCODE_PATTERN_LENGTH\}\)/:\1-\2/' | $GZ -1 -c > \$*.umi_tools.R1.fastq.gz && \
+				# 	rm \$*.umi_raw.R1.fastq.gz && \
+				# 	$UNGZ -c \$*.umi_raw.R2.fastq.gz | sed '/^@/ s/_\([A-Z]\{$UMI_BARCODE_PATTERN_LENGTH\}\)\([A-Z]\{$UMI_BARCODE_PATTERN_LENGTH\}\)/:\1-\2/' | $GZ -1 -c > \$*.umi_tools.R2.fastq.gz && \
+				# 	rm \$*.umi_raw.R2.fastq.gz \
+				# 	"
+				# 	UMI_COMMAND_R2="touch \$@"
+				# else
+				# 	echo '#[ERROR] UMI source unknown';
+				# 	UMI_COMMAND_R1=$UMI_COMMAND_COPY
+				# 	UMI_COMMAND_R2=$UMI_COMMAND_COPY
+				# fi;
+
+
+				# # R1
+				# echo "%.umi_tools.R1.fastq.gz: %.log #%.R1.fastq.gz
+				# 	if ! ((\$\$($UNGZ -c \$< | head -n1 | cut -d' ' -f1 | cut -d: -f8 | grep '\S' | wc -l))); then \
+				# 		$UMI_COMMAND_R1; \
+				# 	else \
+				# 		$UMI_COMMAND_COPY; \
+				# 	fi;
+
+				# " #>> $INPUT_MK
+
+				# # R2
+				# echo "%.umi_tools.R2.fastq.gz: %.log #%.input.R2.fastq.gz %.input.log 
+				# 	if ! ((\$\$($UNGZ -c \$< | head -n1 | cut -d' ' -f1 | cut -d: -f8 | grep '\S' | wc -l))); then \
+				# 		$UMI_COMMAND_R2; \
+				# 	else \
+				# 		$UMI_COMMAND_COPY; \
+				# 	fi;
+
+				# " #>> $INPUT_MK
+
+				# # I1
+				# echo "%.umi_tools.I1.fastq.gz: %.log #%.input.log 
+				# 	cp -pP \$*.input.I1.fastq.gz \$@;
+
+				# " #>> $INPUT_MK
+
+				# # I2
+				# echo "%.umi_tools.I2.fastq.gz: %.log #%.input.log 
+				# 	cp -pP \$*.input.I2.fastq.gz \$@;
+
+				# " #>> $INPUT_MK
+
+
+				
 
 			fi;
 
@@ -1347,78 +1584,6 @@ for RUU in $RUN_UNIQ; do
 
 	done;
 
-
-	# THREADS
-	############
-
-	#NB_SAMPLE=1;
-
-	PIPELINES=$(echo $PIPELINES | tr "," "\n" | tr " " "\n" | awk '!x[$0]++' | tr "\n" " ")
-	NB_PIPELINES=$(echo $PIPELINES | wc -w)
-	NB_ALIGNERS=$(echo -e $(for P in $PIPELINES; do echo $P | cut -d. -f1; done) | tr " " "\n" | awk '!x[$0]++' | tr "\n" " " | wc -w)
-	NB_CALLERS=$(echo -e $(for P in $PIPELINES; do echo $P | cut -d. -f2; done) | tr " " "\n" | awk '!x[$0]++' | tr "\n" " " | wc -w)
-
-	# ADJUSTING threads parameters
-	#ROUND="FLOOR" # CEIL or FLOOR;
-	ROUND="CEIL" # CEIL or FLOOR;
-	if [ "$ROUND" == "CEIL" ]; then
-		THREADS_BY_SAMPLE=$( printf "%.0f" $(echo "scale=2;$THREADS/$NB_SAMPLE" | bc))			# Number of threads by sample
-		THREADS_BY_PIPELINE=$( printf "%.0f" $(echo "scale=2;$THREADS_BY_SAMPLE/$NB_PIPELINES" | bc))	# Number of threads for a pipeline's command
-		THREADS_BY_ALIGNER=$( printf "%.0f" $(echo "scale=2;$THREADS_BY_SAMPLE/$NB_ALIGNERS" | bc))	# Number of threads for a aligner's command
-		THREADS_BY_CALLER=$( printf "%.0f" $(echo "scale=2;$THREADS_BY_SAMPLE/$NB_CALLERS" | bc))	# Number of threads for a caller's command
-		THREADS_BWA=$THREADS_BY_ALIGNER									# NB of threads for BWA command
-		THREADS_RTC=$THREADS_BY_ALIGNER									# NB of threads for GATK RealignerTargetCreator
-	elif  [ "$ROUND" == "FLOOR" ]; then
-		THREADS_BY_SAMPLE=$(($THREADS/$NB_SAMPLE))			# Number of threads by sample
-		THREADS_BY_PIPELINE=$(($THREADS_BY_SAMPLE/$NB_PIPELINES))	# Number of threads for a pipeline's command
-		THREADS_BY_ALIGNER=$(($THREADS_BY_SAMPLE/$NB_ALIGNERS))		# Number of threads for a aligner's command
-		THREADS_BY_CALLER=$(($THREADS_BY_SAMPLE/$NB_CALLERS))		# Number of threads for a caller's command
-		THREADS_BWA=$THREADS_BY_ALIGNER					# NB of threads for BWA command
-		THREADS_RTC=$THREADS_BY_ALIGNER					# NB of threads for GATK RealignerTargetCreator
-	else
-		THREADS_BY_SAMPLE=1			# Number of threads by sample
-		THREADS_BY_PIPELINE=1			# Number of threads for a pipeline's command
-		THREADS_BY_ALIGNER=1			# Number of threads for a aligner's command
-		THREADS_BY_CALLER=1			# Number of threads for a caller's command
-		THREADS_BWA=$THREADS_BY_ALIGNER		# NB of threads for BWA command
-		THREADS_RTC=$THREADS_BY_ALIGNER		# NB of threads for GATK RealignerTargetCreator
-	fi;
-	if [ "$THREADS_BY_SAMPLE" == "0" ]; then THREADS_BY_SAMPLE=1; fi;
-	if [ "$THREADS_BY_ALIGNER" == "0" ]; then THREADS_BY_ALIGNER=1; fi;
-	if [ "$THREADS_BY_CALLER" == "0" ]; then THREADS_BY_CALLER=1; fi;
-	if [ "$THREADS_BY_PIPELINE" == "0" ]; then THREADS_BY_PIPELINE=1; fi;
-	if [ "$THREADS_BWA" == "0" ]; then THREADS_BWA=1; fi;
-	if [ "$THREADS_RTC" == "0" ]; then THREADS_RTC=1; fi;
-
-	# THREAD_PARAMETERS
-	THREAD_PARAMETERS=$THREAD_PARAMETERS" THREADS_BY_SAMPLE=$THREADS_BY_SAMPLE "
-	THREAD_PARAMETERS=$THREAD_PARAMETERS" THREADS_BY_PIPELINE=$THREADS_BY_PIPELINE "
-	THREAD_PARAMETERS=$THREAD_PARAMETERS" THREADS_BY_ALIGNER=$THREADS_BY_ALIGNER "
-	THREAD_PARAMETERS=$THREAD_PARAMETERS" THREADS_BY_CALLER=$THREADS_BY_CALLER "
-	THREAD_PARAMETERS=$THREAD_PARAMETERS" THREADS_BWA=$THREADS_BWA "
-	THREAD_PARAMETERS=$THREAD_PARAMETERS" THREADS_RTC=$THREADS_RTC "
-
-
-	# JAVA_MEMORY by sample and by caller
-	###############
-
-	# Default
-	JAVA_MEMORY_BY_SAMPLE=$JAVA_MEMORY
-	JAVA_MEMORY_BY_CALLER=$JAVA_MEMORY
-
-	# Calcul
-	JAVA_MEMORY_BY_SAMPLE=$(($MEMTOTAL/$NB_SAMPLE/1024/1024))				# Number of threads by sample
-	JAVA_MEMORY_BY_PIPELINE=$(($JAVA_MEMORY_BY_SAMPLE/$NB_PIPELINES/1024/1024))	# Number of threads for a pipeline's command
-	JAVA_MEMORY_BY_ALIGNER=$(($JAVA_MEMORY_BY_SAMPLE/$NB_ALIGNERS/1024/1024))	# Number of threads for a aligner's command
-	JAVA_MEMORY_BY_CALLER=$(($JAVA_MEMORY_BY_SAMPLE/$NB_CALLERS/1024/1024))		# Number of threads for a caller's command
-
-	# Test
-	if [ "$JAVA_MEMORY_BY_SAMPLE" == "" ] || [ $JAVA_MEMORY_BY_SAMPLE -lt 1 ]; then JAVA_MEMORY_BY_SAMPLE=1; fi;
-	if [ "$JAVA_MEMORY_BY_PIPELINE" == "" ] || [ $JAVA_MEMORY_BY_PIPELINE -lt 1 ]; then JAVA_MEMORY_BY_PIPELINE=1; fi;
-	if [ "$JAVA_MEMORY_BY_ALIGNER" == "" ] || [ $JAVA_MEMORY_BY_ALIGNER -lt 1 ]; then JAVA_MEMORY_BY_ALIGNER=1; fi;
-	if [ "$JAVA_MEMORY_BY_CALLER" == "" ] || [ $JAVA_MEMORY_BY_CALLER -lt 1 ]; then JAVA_MEMORY_BY_CALLER=1; fi;
-
-
 	echo "RUNS_SAMPLES=$RUNS_SAMPLES" >> $MAKEFILE_ANALYSIS_RUN
 	echo "PIPELINES=$PIPELINES" >> $MAKEFILE_ANALYSIS_RUN
 	#echo "INTERSEC=2" >> $MAKEFILE_ANALYSIS_RUN
@@ -1488,18 +1653,21 @@ for RUU in $RUN_UNIQ; do
 	# FASTQ && FASTP process
 
 	echo "#[INFO] STARK Input Processing..."
-	
-	if [ -s $FASTQ_MK ] && [ -s $FASTP_MK ]; then
+
+	if [ -s $INPUT_MK ]; then
 		(($VERBOSE)) && echo "#[INFO] Process Input data from FASTQ file(s) - multithreading mode [$THREADS]"
-		if make -j $THREADS -e FASTP_THREADS_BY_SAMPLE=$THREADS_BY_SAMPLE -f $FASTP_MK -f $FASTQ_MK $FASTQ_MK_ALL $FASTP_MK_ALL 1>$FASTP_MK.log 2>$FASTP_MK.err; then
+		#if make -j $THREADS -e FASTP_THREADS_BY_SAMPLE=$THREADS_BY_SAMPLE -f $INPUT_MK -f $INPUT_MK -f $SCRIPT_DIR/STARK.launch.input.mk $INPUT_MK_ALL $INPUT_MK_ALL 1>$INPUT_MK.log 2>$INPUT_MK.err; then
+		if make -j $THREADS -f $INPUT_MK -f $SCRIPT_DIR/STARK.launch.input.mk $INPUT_MK_ALL $INPUT_MK_ALL 1>$INPUT_MK.log 2>$INPUT_MK.err; then
+		#if make -j $THREADS -f $INPUT_MK -f $INPUT_MK $INPUT_MK_ALL $INPUT_MK_ALL 1>$INPUT_MK.log 2>$INPUT_MK.err; then
 			(($VERBOSE)) && echo "#[INFO] STARK Input Processing done."
 		else
 			echo "#[ERROR] STARK Input Processing failed"
-			cat $FASTP_MK.err
+			cat $INPUT_MK.err
 			exit 1
 		fi;
 	fi;
-	! (($DEBUG)) && rm -f $FASTQ_MK $FASTQ_MK.log $FASTQ_MK.err $FASTP_MK $FASTP_MK.log $FASTP_MK.err
+	#exit 0; # DEV
+	! (($DEBUG)) && rm -f $INPUT_MK $INPUT_MK.log $INPUT_MK.err
 
 
 	echo "#[INFO] STARK Analysis Processing..."
@@ -1509,7 +1677,8 @@ for RUU in $RUN_UNIQ; do
 
 	MAKE_ERROR=0
 
-	if ! make -k -j $THREADS -e ENV="$ENV" PARAM=$MAKEFILE_ANALYSIS_RUN $PARAMETERS $THREAD_PARAMETERS JAVA_MEMORY=$JAVA_MEMORY SNAPSHOT=0 VALIDATION=1 INPUT=$INPUT OUTDIR=$RESULTS RELEASE=$RELEASE_RUN FINAL_REPORT=$FINAL_REPORT_RUN ANALYSIS_REF=$ANALYSIS_REF -f $NGS_SCRIPTS/NGSWorkflow.mk 1>>$LOGFILE_RES_RUN 2>>$LOGFILE_RES_RUN; then
+	#if ! make -k -j $THREADS -e ENV="$ENV" PARAM=$MAKEFILE_ANALYSIS_RUN $PARAMETERS $THREAD_PARAMETERS JAVA_MEMORY=$JAVA_MEMORY SNAPSHOT=0 VALIDATION=1 INPUT=$INPUT OUTDIR=$RESULTS RELEASE=$RELEASE_RUN FINAL_REPORT=$FINAL_REPORT_RUN ANALYSIS_REF=$ANALYSIS_REF -f $NGS_SCRIPTS/NGSWorkflow.mk 1>>$LOGFILE_RES_RUN 2>>$LOGFILE_RES_RUN; then
+	if ! make -k -j $THREADS -e ENV="$ENV" PARAM=$MAKEFILE_ANALYSIS_RUN $PARAMETERS $THREAD_PARAMETERS JAVA_MEMORY=$JAVA_MEMORY SNAPSHOT=0 VALIDATION=1 INPUT=$INPUT OUTDIR=$RESULTS RELEASE=$RELEASE_RUN FINAL_REPORT=$FINAL_REPORT_RUN ANALYSIS_REF=$ANALYSIS_REF -f $NGS_SCRIPTS/STARK.launch.analysis.mk 1>>$LOGFILE_RES_RUN 2>>$LOGFILE_RES_RUN; then
 		MAKE_ERROR=1
 	fi;
 	rm -f $MAKEFILE_ANALYSIS_RUN $FINAL_REPORT_RUN $RELEASE_RUN

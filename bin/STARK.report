@@ -65,10 +65,7 @@ function usage {
 	echo "# -n|--release                                   Script Release";
 	echo "# -h|--help                                      Help message";
 	echo "#";
-	#echo -e "#\n# RUN Analysis\n################";
-	#$STARK_FOLDER_BIN/launch.sh -h | grep "# [ |-]";
-	#echo -e "#\n# SAMPLE Analysis\n###################";
-	#$STARK_FOLDER_BIN/launch.sample.sh -h | grep "# [ |-]";
+
 }
 
 
@@ -1242,41 +1239,46 @@ for ALIGNER in $ALIGNERS; do
 	#(($DEBUG)) && cat $DESIGN_FLAGSTAT;
 
 	# Total  reads
-	ALIGNER_TOTAL_READS=$(grep " in total (" $DESIGN_FLAGSTAT | awk '{print $1+$3}')
+	ALIGNER_TOTAL_READS=$(grep "[0-9]* + [0-9]* in total (" $DESIGN_FLAGSTAT | awk 'BEGIN {total=0} {total=total+$1+$3} END {print total}')
 	ALIGNER_TOTAL_READS_HTML=$(echo $ALIGNER_TOTAL_READS | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
 	ALIGNER_TOTAL_READS_PERCENT="100.00"
 
 
 	# Duplicates and Uniq reads
-	DUPLICATES_READS=$(grep " duplicates" $DESIGN_FLAGSTAT | awk '{print $1+$3}')
+	DUPLICATES_READS=$(grep "[0-9]* + [0-9]* duplicates" $DESIGN_FLAGSTAT | awk 'BEGIN {total=0} {total=total+$1+$3} END {print total}')
 	DUPLICATES_READS_HTML=$(echo $DUPLICATES_READS | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
 	DUPLICATES_READS_PERCENT=$(awk 'BEGIN{printf("%.2f\n",('$DUPLICATES_READS'/'$ALIGNER_TOTAL_READS')*100)}')
 
-	UNIQ_READS=$(echo "$TOTAL_SEQUENCES - $DUPLICATES_READS" | bc)
+	# Primary Duplicates and Uniq reads
+	#PRIMARY_DUPLICATES_READS=$(grep "[0-9]* + [0-9]* primary duplicates" $DESIGN_FLAGSTAT | awk '{print $1+$3+0}')
+	#PRIMARY_DUPLICATES_READS_HTML=$(echo $PRIMARY_DUPLICATES_READS | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
+	#PRIMARY_DUPLICATES_READS_PERCENT=$(awk 'BEGIN{printf("%.2f\n",('$PRIMARY_DUPLICATES_READS'/'$ALIGNER_TOTAL_READS')*100)}')
+
+	UNIQ_READS=$(echo "$TOTAL_SEQUENCES - $DUPLICATES_READS " | bc)
 	UNIQ_READS_HTML=$(echo $UNIQ_READS | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
 	UNIQ_READS_PERCENT=$(awk 'BEGIN{printf("%.2f\n",('$UNIQ_READS'/'$ALIGNER_TOTAL_READS')*100)}')
 
 
 	# paired in sequencing reads
-	PAIRED_IN_SEQUENCING_READS=$(grep " properly paired (" $DESIGN_FLAGSTAT | awk '{print $1+$3}')
+	PAIRED_IN_SEQUENCING_READS=$(grep "[0-9]* + [0-9]* properly paired (" $DESIGN_FLAGSTAT | awk 'BEGIN {total=0} {total=total+$1+$3} END {print total}')
 	PAIRED_IN_SEQUENCING_READS_HTML=$(echo $PAIRED_IN_SEQUENCING_READS | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
 	PAIRED_IN_SEQUENCING_READS_PERCENT=$(awk 'BEGIN{printf("%.2f\n",('$PAIRED_IN_SEQUENCING_READS'/'$ALIGNER_TOTAL_READS')*100)}')
 
 
 	# Aligned reads
-	ALIGNED_READS=$(grep " mapped (" $DESIGN_FLAGSTAT | awk '{print $1+$3}')
+	ALIGNED_READS=$(grep "[0-9]* + [0-9]* mapped (" $DESIGN_FLAGSTAT | awk 'BEGIN {total=0} {total=total+$1+$3} END {print total}')
 	ALIGNED_READS_HTML=$(echo $ALIGNED_READS | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
 	ALIGNED_READS_PERCENT=$(awk 'BEGIN{printf("%.2f\n",('$ALIGNED_READS'/'$ALIGNER_TOTAL_READS')*100)}')
 
 
 	# Properly paired reads
-	PROPERLY_PAIRED_READS=$(grep " properly paired (" $DESIGN_FLAGSTAT | awk '{print $1+$3}')
+	PROPERLY_PAIRED_READS=$(grep "[0-9]* + [0-9]* properly paired (" $DESIGN_FLAGSTAT | awk 'BEGIN {total=0} {total=total+$1+$3} END {print total}')
 	PROPERLY_PAIRED_READS_HTML=$(echo $PROPERLY_PAIRED_READS | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
 	PROPERLY_PAIRED_READS_PERCENT=$(awk 'BEGIN{printf("%.2f\n",('$PROPERLY_PAIRED_READS'/'$ALIGNER_TOTAL_READS')*100)}')
 
 
 	# Validation reads
-	VALIDATION_ALIGNED_READS=$(grep " mapped (" $DESIGN_VALIDATION_FLAGSTAT | awk '{print $1+$3}')
+	VALIDATION_ALIGNED_READS=$(grep "[0-9]* + [0-9]* mapped (" $DESIGN_VALIDATION_FLAGSTAT | awk 'BEGIN {total=0} {total=total+$1+$3} END {print total}')
 	VALIDATION_ALIGNED_READS_HTML=$(echo $VALIDATION_ALIGNED_READS | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
 	VALIDATION_ALIGNED_READS_PERCENT=$(awk 'BEGIN{printf("%.2f\n",('$VALIDATION_ALIGNED_READS'/'$ALIGNER_TOTAL_READS')*100)}')
 

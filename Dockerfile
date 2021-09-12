@@ -2,7 +2,7 @@
 ##############################################################
 # Dockerfile Version:   1.2
 # Software:             STARK
-# Software Version:     0.9.18.2
+# Software Version:     3
 # Software Website:     https://gitlab.bioinfo-diag.fr/Strasbourg/STARK
 # Licence:              GNU Affero General Public License (AGPL)
 # Description:          STARK
@@ -39,7 +39,7 @@
 
 FROM centos:7
 LABEL Software="STARK" \
-	Version="0.9.18.2" \
+	Version="0.9.18.3" \
 	Website="https://gitlab.bioinfo-diag.fr/Strasbourg/STARK" \
 	maintainer="Antony Le Bechec <antony.lebechec@gmail.com>" \
 	Description="STARK" \
@@ -128,14 +128,19 @@ RUN echo "#[INFO] STARK installation configuration" && \
 # This will install system packages, python packages and scripts to install tools
 
 
-ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git lzma lzma-devel make ncurses-devel perl perl-Data-Dumper perl-Digest-MD5 perl-Switch perl-devel perl-Tk tbb-devel unzip rsync wget which xz xz-devel zlib zlib-devel zlib2 zlib2-devel docker java-1.7.0 java-1.8.0 python2 python2-pip python3 python3-pip curl-devel"
+ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git lzma lzma-devel make ncurses-devel perl perl-Data-Dumper perl-Digest-MD5 perl-Switch perl-devel perl-Tk tbb-devel unzip rsync wget which xz xz-devel zlib zlib-devel zlib2 zlib2-devel docker java-1.7.0 java-1.8.0 python2 python2-pip python3 python3-pip python3-devel curl-devel openssl-devel"
 #ENV YUM_INSTALL=" wget rsync python2 python2-pip python3 python3-pip"
-ENV YUM_REMOVE="autoconf automake bzip2-devel lzma-devel ncurses-devel perl-devel tbb-devel xz-devel zlib-devel zlib2-devel python3-devel curl-devel"
+ENV YUM_REMOVE="autoconf automake bzip2-devel lzma-devel ncurses-devel perl-devel tbb-devel xz-devel zlib-devel zlib2-devel python3-devel curl-devel openssl-devel"
 ENV PYTHON_MODULE=""
 ENV PYTHON2_MODULE=$PYTHON_MODULE" pathos numpy scipy argparse multiprocess" 
 ENV PYTHON3_MODULE=$PYTHON_MODULE" pathos numpy scipy argparse"
 
-#pathos
+
+
+
+
+
+
 
 ENV REPO_SYSTEM_GIT="$REPO/sources.system.tar.gz?path=sources/system"
 ENV REPO_SYSTEM_HTTP="$REPO/sources/system/"
@@ -147,6 +152,84 @@ ENV TOOL_INIT=$SOURCES/$SOURCES_FOLDER/tool_init.sh
 ENV TOOL_CHECK=$SOURCES/$SOURCES_FOLDER/tool_check.sh
 
 
+
+
+RUN echo "#[INFO] Sources scripts" && \
+	if [ -e $GET_TOOL_SOURCE ]; then \
+	echo "#[INFO] GET TOOL SOURCE script exists" ; \
+	elif $(wget --no-cache --progress=bar:force -nv --quiet "$REPO/$SOURCES_FOLDER/$(basename $GET_TOOL_SOURCE)" -O $GET_TOOL_SOURCE); then \
+	echo "#[INFO] GET TOOL SOURCE script downloaded from REPO '$REPO/$SOURCES_FOLDER/$(basename $GET_TOOL_SOURCE)'" ; \
+	else \
+	mkdir -p $(dirname $GET_TOOL_SOURCE) ; \
+	echo 'echo "#[INFO] TOOL source" && \
+	mkdir -p $(dirname $TOOL_SOURCE) && \
+	if [ -e $TOOL_SOURCE ]; then \
+	echo "#[INFO] TOOL TARBALL already in $TOOL_SOURCE"; \
+	elif $(wget --no-cache --progress=bar:force "$TOOL_SOURCE_REPO" -O $TOOL_SOURCE); then \
+	echo "#[INFO] TOOL TARBALL downloaded from STARK REPO $TOOL_SOURCE_REPO"; \
+	if $(wget --no-cache --progress=bar:force -nv --quiet "$(dirname $TOOL_SOURCE_REPO)/source.info" -O $(dirname $TOOL_SOURCE)/source.info); then \
+	echo "#[INFO] TOOL TARBALL external source information downloaded from STARK REPO $TOOL_SOURCE_REPO " ; \
+	fi ; \
+	elif $(wget --no-cache --progress=bar:force "$TOOL_SOURCE_EXTERNAL" -O $TOOL_SOURCE); then \
+	echo "#[INFO] TOOL TARBALL downloaded from EXTERNAL SOURCE $TOOL_SOURCE_EXTERNAL"; \
+	echo "$TOOL_SOURCE_EXTERNAL" > $(dirname $TOOL_SOURCE)/source.info; \
+	else \
+	echo "#[ERROR] TOOL TARBALL NOT FOUND"; \
+	exit 1; \
+	fi && \
+	if [ -e $(dirname $TOOL_SOURCE)/source.info ]; then \
+	echo "#[INFO] TOOL TARBALL external source: "$(cat $(dirname $TOOL_SOURCE)/source.info) ; \
+	fi && \
+	exit 0;' > $GET_TOOL_SOURCE ; \
+	echo "#[INFO] GET TOOL SOURCE script written" ; \
+	fi && \
+	chmod u+x $GET_TOOL_SOURCE && \
+	if [ -e $TOOL_INIT ]; then \
+	echo "#[INFO] TOOL INIT script exists" ; \
+	elif $(wget --no-cache --progress=bar:force -nv --quiet "$REPO/$SOURCES_FOLDER/$(basename $TOOL_INIT)" -O $TOOL_INIT); then \
+	echo "#[INFO] TOOLS INIT script downloaded from REPO '$REPO/$SOURCES_FOLDER/$(basename $TOOL_INIT)'" ; \
+	else \
+	mkdir -p $(dirname $TOOL_INIT) ; \
+	echo 'echo "#[INFO] TOOL $TOOL_NAME/$TOOL_VERSION" && \
+	export TOOL_SOURCE=$SOURCES/$SOURCES_FOLDER/tools/$TOOL_NAME/$TOOL_VERSION/$TOOL_TARBALL && \
+	export TOOL_SOURCE_REPO=$REPO/$SOURCES_FOLDER/tools/$TOOL_NAME/$TOOL_VERSION/$TOOL_TARBALL && \
+	export TOOL_SOURCE_BUILD=$SOURCES/$SOURCES_FOLDER/tools/$TOOL_NAME/$TOOL_VERSION/build && \
+	export TOOL_DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION && \
+	export PATH=$TOOL_DEST/bin:$PATH && \
+	# Get TOOL SOURCE && \
+	$GET_TOOL_SOURCE $TOOL_SOURCE $TOOL_SOURCE_REPO $TOOL_SOURCE_EXTERNAL && \
+	# TOOL folder preparation \
+	echo "#[INFO] TOOL preparation" && \
+	mkdir -p $TOOL_SOURCE_BUILD && \
+	mkdir -p $TOOL_DEST/bin && \
+	echo "#[INFO] TOOL release as current (forced)" && \
+	ln -snf $TOOL_VERSION/ $TOOLS/$TOOL_NAME/previous && \
+	if [ -e $TOOLS/$TOOL_NAME/current ]; then ln -snf $(basename $(realpath $TOOLS/$TOOL_NAME/current))/ $TOOLS/$TOOL_NAME/previous; fi && \
+	ln -snf $TOOL_VERSION/ $TOOLS/$TOOL_NAME/current && \
+	ln -snf $TOOL_VERSION/ $TOOLS/$TOOL_NAME/latest' > $TOOL_INIT ; \
+	echo "#[INFO] TOOLS INIT script written" ; \
+	fi && \
+	chmod u+x $TOOL_INIT && \
+	if [ -e $TOOL_CHECK ]; then \
+	echo "#[INFO] TOOLS CHECK script exists" ; \
+	elif $(wget --no-cache --progress=bar:force -nv --quiet "$REPO/$SOURCES_FOLDER/$(basename $TOOL_CHECK)" -O $TOOL_CHECK); then \
+	echo "#[INFO] TOOLS CHECK script downloaded from REPO '$REPO/$SOURCES_FOLDER/$(basename $TOOL_CHECK)'" ; \
+	else \
+	mkdir -p $(dirname $TOOL_CHECK) ; \
+	echo 'echo "#[INFO] TOOL cleaning" && \
+	rm -rf $TOOL_SOURCE_BUILD && \
+	if (($REMOVE_SOURCES)); then rm -rf $SOURCES/$SOURCES_FOLDER/tools/$TOOL_NAME; fi && \
+	echo "#[INFO] TOOL $TOOL_NAME/$TOOL_VERSION installed" ;' > $TOOL_CHECK ; \
+	echo "#[INFO] TOOLS CHECK script written" ; \
+	fi && \
+	chmod u+x $TOOL_CHECK && \
+	echo "#";
+
+
+
+
+
+# System isntallation
 RUN echo "#[INFO] System installation" && \
 	# Create system repository \
 	mkdir -p $SOURCES/$SOURCES_FOLDER/system && \
@@ -224,11 +307,64 @@ RUN echo "#[INFO] System installation" && \
 	yum $YUM_PARAM install -y $YUM_INSTALL && \
 	#yum $YUM_PARAM localinstall -y --nogpgcheck $SOURCES/$SOURCES_FOLDER/system/build/install/*.rpm && \
 	rsync -auczqAXhi --no-links --no-perms --no-owner --no-group $SOURCES/$SOURCES_FOLDER/system/build/install/*rpm $SOURCES/$SOURCES_FOLDER/system/ && \
-	echo "#[INFO] System packages downloaded & installed from YUM Repository"; \
+	echo "#[INFO] System packages downloaded & installed from YUM Repository" && \
 	rm -rf $SOURCES/$SOURCES_FOLDER/system/build && \
-	# PYTHON
-	# Install whl
-	echo "#[INFO] System Python packages download from REPO '$REPO'"; \
+	yum clean -y all && \
+	rm -rf /var/cache/yum && \
+	echo "#[INFO] System Clean" && \
+	echo "#";
+
+
+
+
+#############
+# PYTHON3.9 #
+#############
+
+# ENV TOOL_NAME="python"
+# ENV TOOL_VERSION="3.9.6"
+# ENV TOOL_VERSION_SIMPLE="3.9"
+# ENV TOOL_TARBALL="Python-$TOOL_VERSION.tgz"
+# ENV TOOL_SOURCE_EXTERNAL="https://www.python.org/ftp/$TOOL_NAME/$TOOL_VERSION/$TOOL_TARBALL"
+# ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+# RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+# 	#yum install -y $YUM_INSTALL && \
+# 	source $TOOL_INIT && \
+# 	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
+# 	echo "whereis gcc" && whereis gcc && \
+# 	(cd $TOOL_SOURCE_BUILD/Python-$TOOL_VERSION && ./configure --enable-optimizations) && \
+# 	make install --quiet -j $THREADS -C $(ls -d $TOOL_SOURCE_BUILD/*) prefix=$TOOL_DEST && \
+# 	ln -sfn $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/pip3 /usr/bin/pip$TOOL_VERSION_SIMPLE && \
+# 	ln -sfn $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python3 /usr/bin/python$TOOL_VERSION_SIMPLE && \
+# 	# ln -sfn /usr/bin/pip$TOOL_VERSION_SIMPLE /usr/bin/pip3 && \
+# 	# ln -sfn /usr/bin/pip$TOOL_VERSION_SIMPLE /usr/bin/pip && \
+# 	# ln -sfn /usr/bin/python$TOOL_VERSION_SIMPLE /usr/bin/python3 && \
+# 	# ln -sfn /usr/bin/python$TOOL_VERSION_SIMPLE /usr/bin/python && \
+# 	# ln -sfn $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
+
+
+# /usr/local/bin/python3.9
+
+# 	tar xzf Python-3.9.1.tgz
+# cd Python-3.9.1
+# ./configure --enable-optimizations
+# sudo make altinstall
+
+# sudo ln -sfn /usr/local/bin/python3.9 /usr/bin/python3.9
+# sudo ln -sfn /usr/local/bin/pip3.9 /usr/bin/pip3.9
+# 	mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
+# 	ln -s /usr/bin/python3 $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python3 && \
+# 	ln -s python3 $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python && \
+# 	ln -s /usr/bin/pip3 $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/pip3 && \
+# 	ln -s pip3 $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/pip && \
+# 	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
+
+# wget https://www.python.org/ftp/python/3.7.11/Python-3.7.11.tgz  
+
+
+
+# PYTHON installation
+RUN	echo "#[INFO] System Python packages download from REPO '$REPO'"; \
 	mkdir -p $SOURCES/$SOURCES_FOLDER/python/build && \
 	# in GIT mode
 	if wget --progress=bar:force --tries=3 $REPO_PYTHON_GIT -O $SOURCES/$SOURCES_FOLDER/python/build/STARK-repo.sources.python.tar.gz; then \
@@ -275,10 +411,12 @@ RUN echo "#[INFO] System installation" && \
 	python3 -m pip  --no-cache-dir install --upgrade pip && \
 	echo "#[INFO] System Python packages downloaded & updated from PIP Repository" && \
 	echo "#[INFO] System Python packages install from PIP Repository" && \
+	echo "#[INFO] System Python packages install from PIP Repository - Python2" && \
 	if (( $(echo $PYTHON2_MODULE | wc -w | tr -d " ") )); then \
 		python2 -m pip --no-cache-dir download $PYTHON2_MODULE --dest $SOURCES/$SOURCES_FOLDER/python/2/ ; \
 		python2 -m pip --no-cache-dir install $SOURCES/$SOURCES_FOLDER/python/2/*whl ; \
 	fi && \
+	echo "#[INFO] System Python packages install from PIP Repository - Python3" && \
 	if (( $(echo $PYTHON3_MODULE | wc -w | tr -d " ") )); then \
 		python3 -m pip --no-cache-dir download $PYTHON3_MODULE --dest $SOURCES/$SOURCES_FOLDER/python/3/ ; \
 		python3 -m pip --no-cache-dir install $SOURCES/$SOURCES_FOLDER/python/3/*whl ; \
@@ -290,81 +428,7 @@ RUN echo "#[INFO] System installation" && \
 		rm -rf $SOURCES/$SOURCES_FOLDER/system $SOURCES/$SOURCES_FOLDER/python  ; \
 		echo "#[INFO] System Remove Sources" ; \
 	fi && \
-	yum clean all && \
-	rm -rf /var/cache/yum && \
 	echo "#[INFO] System Clean" && \
-	echo "#";
-
-
-RUN echo "#[INFO] Sources scripts" && \
-	if [ -e $GET_TOOL_SOURCE ]; then \
-		echo "#[INFO] GET TOOL SOURCE script exists" ; \
-	elif $(wget --no-cache --progress=bar:force -nv --quiet "$REPO/$SOURCES_FOLDER/$(basename $GET_TOOL_SOURCE)" -O $GET_TOOL_SOURCE); then \
-		echo "#[INFO] GET TOOL SOURCE script downloaded from REPO '$REPO/$SOURCES_FOLDER/$(basename $GET_TOOL_SOURCE)'" ; \
-	else \
-		mkdir -p $(dirname $GET_TOOL_SOURCE) ; \
-		echo 'echo "#[INFO] TOOL source" && \
-		mkdir -p $(dirname $TOOL_SOURCE) && \
-		if [ -e $TOOL_SOURCE ]; then \
-			echo "#[INFO] TOOL TARBALL already in $TOOL_SOURCE"; \
-		elif $(wget --no-cache --progress=bar:force "$TOOL_SOURCE_REPO" -O $TOOL_SOURCE); then \
-			echo "#[INFO] TOOL TARBALL downloaded from STARK REPO $TOOL_SOURCE_REPO"; \
-			if $(wget --no-cache --progress=bar:force -nv --quiet "$(dirname $TOOL_SOURCE_REPO)/source.info" -O $(dirname $TOOL_SOURCE)/source.info); then \
-				echo "#[INFO] TOOL TARBALL external source information downloaded from STARK REPO $TOOL_SOURCE_REPO " ; \
-			fi ; \
-		elif $(wget --no-cache --progress=bar:force "$TOOL_SOURCE_EXTERNAL" -O $TOOL_SOURCE); then \
-			echo "#[INFO] TOOL TARBALL downloaded from EXTERNAL SOURCE $TOOL_SOURCE_EXTERNAL"; \
-			echo "$TOOL_SOURCE_EXTERNAL" > $(dirname $TOOL_SOURCE)/source.info; \
-		else \
-			echo "#[ERROR] TOOL TARBALL NOT FOUND"; \
-			exit 1; \
-		fi && \
-		if [ -e $(dirname $TOOL_SOURCE)/source.info ]; then \
-			echo "#[INFO] TOOL TARBALL external source: "$(cat $(dirname $TOOL_SOURCE)/source.info) ; \
-		fi && \
-		exit 0;' > $GET_TOOL_SOURCE ; \
-		echo "#[INFO] GET TOOL SOURCE script written" ; \
-	fi && \
-	chmod u+x $GET_TOOL_SOURCE && \
-	if [ -e $TOOL_INIT ]; then \
-		echo "#[INFO] TOOL INIT script exists" ; \
-	elif $(wget --no-cache --progress=bar:force -nv --quiet "$REPO/$SOURCES_FOLDER/$(basename $TOOL_INIT)" -O $TOOL_INIT); then \
-		echo "#[INFO] TOOLS INIT script downloaded from REPO '$REPO/$SOURCES_FOLDER/$(basename $TOOL_INIT)'" ; \
-	else \
-		mkdir -p $(dirname $TOOL_INIT) ; \
-		echo 'echo "#[INFO] TOOL $TOOL_NAME/$TOOL_VERSION" && \
-		export TOOL_SOURCE=$SOURCES/$SOURCES_FOLDER/tools/$TOOL_NAME/$TOOL_VERSION/$TOOL_TARBALL && \
-		export TOOL_SOURCE_REPO=$REPO/$SOURCES_FOLDER/tools/$TOOL_NAME/$TOOL_VERSION/$TOOL_TARBALL && \
-		export TOOL_SOURCE_BUILD=$SOURCES/$SOURCES_FOLDER/tools/$TOOL_NAME/$TOOL_VERSION/build && \
-		export TOOL_DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION && \
-		export PATH=$TOOL_DEST/bin:$PATH && \
-		# Get TOOL SOURCE && \
-		$GET_TOOL_SOURCE $TOOL_SOURCE $TOOL_SOURCE_REPO $TOOL_SOURCE_EXTERNAL && \
-		# TOOL folder preparation \
-		echo "#[INFO] TOOL preparation" && \
-		mkdir -p $TOOL_SOURCE_BUILD && \
-		mkdir -p $TOOL_DEST/bin && \
-		echo "#[INFO] TOOL release as current (forced)" && \
-		ln -snf $TOOL_VERSION/ $TOOLS/$TOOL_NAME/previous && \
-		if [ -e $TOOLS/$TOOL_NAME/current ]; then ln -snf $(basename $(realpath $TOOLS/$TOOL_NAME/current))/ $TOOLS/$TOOL_NAME/previous; fi && \
-		ln -snf $TOOL_VERSION/ $TOOLS/$TOOL_NAME/current && \
-		ln -snf $TOOL_VERSION/ $TOOLS/$TOOL_NAME/latest' > $TOOL_INIT ; \
-		echo "#[INFO] TOOLS INIT script written" ; \
-	fi && \
-	chmod u+x $TOOL_INIT && \
-	if [ -e $TOOL_CHECK ]; then \
-		echo "#[INFO] TOOLS CHECK script exists" ; \
-	elif $(wget --no-cache --progress=bar:force -nv --quiet "$REPO/$SOURCES_FOLDER/$(basename $TOOL_CHECK)" -O $TOOL_CHECK); then \
-		echo "#[INFO] TOOLS CHECK script downloaded from REPO '$REPO/$SOURCES_FOLDER/$(basename $TOOL_CHECK)'" ; \
-	else \
-		mkdir -p $(dirname $TOOL_CHECK) ; \
-		echo 'echo "#[INFO] TOOL cleaning" && \
-		rm -rf $TOOL_SOURCE_BUILD && \
-		if (($REMOVE_SOURCES)); then rm -rf $SOURCES/$SOURCES_FOLDER/tools/$TOOL_NAME; fi && \
-		echo "#[INFO] TOOL $TOOL_NAME/$TOOL_VERSION installed" ;' > $TOOL_CHECK ; \
-		echo "#[INFO] TOOLS CHECK script written" ; \
-	fi && \
-	chmod u+x $TOOL_CHECK && \
 	echo "#";
 
 
@@ -438,6 +502,10 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 
 
+
+
+
+
 ###########
 # PYTHON2 #
 ###########
@@ -468,6 +536,10 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	ln -s /usr/bin/pip3 $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/pip3 && \
 	ln -s pip3 $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/pip && \
 	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
+
+
+
+
 
 
 
@@ -524,6 +596,11 @@ ENV TOOL_PARAM_DATABASE_FOLDER=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/databases/
 
 # TOOL INSTALLATION
 RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	#source $TOOL_INIT && \
+	#echo "#[INFO] TOOL check version" && \
+	#TOOL_VERSION_check=$(date '+%Y%m%d' -r $TOOL_SOURCE) && \
+	#if [ "$TOOL_VERSION_check" != "" ]; then TOOL_VERSION=$TOOL_VERSION_check; fi && \
+	#echo "#[INFO] TOOL check version: $TOOL_VERSION" && \
 	source $TOOL_INIT && \
 	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
     cp $TOOL_SOURCE_BUILD/*/*.pl $TOOL_DEST/bin/ -R && \
@@ -541,7 +618,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 # TOOL INFO
 ENV TOOL_NAME="htslib"
-ENV TOOL_VERSION="1.12"
+ENV TOOL_VERSION="1.13"
 ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.tar.bz2"
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/samtools/$TOOL_NAME/releases/download/$TOOL_VERSION/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
@@ -562,7 +639,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 # TOOL INFO
 ENV TOOL_NAME="bcftools"
-ENV TOOL_VERSION="1.12"
+ENV TOOL_VERSION="1.13"
 ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.tar.bz2"
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/samtools/$TOOL_NAME/releases/download/$TOOL_VERSION/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
@@ -625,7 +702,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 # TOOL INFO
 ENV TOOL_NAME="bowtie2"
-ENV TOOL_VERSION="2.4.2"
+ENV TOOL_VERSION="2.4.4"
 ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION-linux-x86_64.zip"
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/BenLangmead/bowtie2/releases/download/v$TOOL_VERSION/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
@@ -669,7 +746,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 # TOOL INFO
 ENV TOOL_NAME="fastp"
-ENV TOOL_VERSION="0.20.0"
+ENV TOOL_VERSION="0.22.0"
 ENV TOOL_TARBALL="$TOOL_NAME"
 ENV TOOL_SOURCE_EXTERNAL="http://opengene.org/$TOOL_NAME/$TOOL_NAME"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
@@ -713,7 +790,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 # TOOL INFO
 ENV TOOL_NAME="gatk"
 #ENV TOOL_VERSION="4.1.9.0"
-ENV TOOL_VERSION="4.2.0.0"
+ENV TOOL_VERSION="4.2.2.0"
 ENV TOOL_TARBALL="gatk-$TOOL_VERSION.zip"
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/broadinstitute/gatk/releases/download/$TOOL_VERSION/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
@@ -759,7 +836,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 # TOOL INFO
 ENV TOOL_NAME="howard"
-ENV TOOL_VERSION="0.9.15.4"
+ENV TOOL_VERSION="0.9.15.5"
 ENV TOOL_TARBALL="archive.tar.gz"
 ENV TOOL_SOURCE_EXTERNAL="https://gitlab.bioinfo-diag.fr/Strasbourg/HOWARD/repository/$TOOL_VERSION/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
@@ -852,22 +929,6 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 # OUTLYZER #
 ############
 
-# # TOOL INFO
-# ENV TOOL_NAME="outlyzer"
-# ENV TOOL_VERSION="2"
-# ENV TOOL_TARBALL="outLyzer.py"
-# ENV TOOL_SOURCE_EXTERNAL="https://raw.githubusercontent.com/EtieM/outLyzer/master/$TOOL_TARBALL"
-# ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-# # TOOL PARAMETERS
-
-# # TOOL INSTALLATION
-# RUN source $TOOL_INIT && \
-# 	echo "#[INFO] TOOL installation" && \
-# 	cp $TOOL_SOURCE -d $TOOL_DEST/bin/ && \
-# 	chmod a+x $TOOL_DEST/bin/*.py && \
-#     $TOOL_CHECK ;
-
-
 # TOOL INFO
 ENV TOOL_NAME="outlyzer"
 ENV TOOL_VERSION="3"
@@ -885,41 +946,13 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 
 
-
-##########
-# PATHOS #
-##########
-
-# # TOOL INFO
-# ENV TOOL_NAME="pathos"
-# ENV TOOL_VERSION="master"
-# ENV TOOL_TARBALL="$TOOL_VERSION.tar.gz"
-# ENV TOOL_SOURCE_EXTERNAL="https://github.com/uqfoundation/pathos/archive/$TOOL_TARBALL"
-# ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-# # TOOL PARAMETERS
-# ENV TOOL_TARBALL_FOLDER="$TOOL_NAME-$TOOL_VERSION"
-
-# # TOOL INSTALLATION
-# RUN source $TOOL_INIT && \
-# 	echo "#[INFO] TOOL installation" && \
-# 	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
-# 	echo "#[INFO] TOOL installation - pip2 install" && \
-# 	pip2 install pathos==0.2.6 && \
-# 	echo "#[INFO] TOOL installation - python2 setup.py build" && \
-# 	(cd $TOOL_SOURCE_BUILD/$TOOL_TARBALL_FOLDER/; python2 setup.py build) && \
-# 	echo "#[INFO] TOOL installation - python2 setup.py install" && \
-# 	(cd $TOOL_SOURCE_BUILD/$TOOL_TARBALL_FOLDER/; python2 setup.py install) && \
-#     $TOOL_CHECK ;
-
-
-
 ##########
 # PICARD #
 ##########
 
 # TOOL INFO
 ENV TOOL_NAME="picard"
-ENV TOOL_VERSION="2.23.7"
+ENV TOOL_VERSION="2.26.0"
 ENV TOOL_TARBALL="picard.jar"
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/broadinstitute/picard/releases/download/$TOOL_VERSION/picard.jar"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
@@ -939,7 +972,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 # TOOL INFO
 ENV TOOL_NAME="samtools"
-ENV TOOL_VERSION="1.12"
+ENV TOOL_VERSION="1.13"
 ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.tar.bz2"
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/samtools/$TOOL_NAME/releases/download/$TOOL_VERSION/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
@@ -1007,8 +1040,83 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	ln -snf $TOOL_PARAM_DATABASE_FOLDER_LINK/ $TOOL_PARAM_DATABASE_FOLDER && \
     $TOOL_CHECK ;
 
-#mkdir -p $TOOL_PARAM_DATABASE_FOLDER && \
-	
+
+
+##########
+# FGBIO #
+##########
+# https://github.com/fulcrumgenomics/fgbio/releases/download/1.3.0/fgbio-1.3.0.jar
+
+# TOOL INFO
+ENV TOOL_NAME="fgbio"
+ENV TOOL_VERSION="1.3.0"
+ENV TOOL_TARBALL="fgbio.jar"
+ENV TOOL_SOURCE_EXTERNAL="https://github.com/fulcrumgenomics/fgbio/releases/download/$TOOL_VERSION/fgbio-$TOOL_VERSION.jar"
+ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+# TOOL PARAMETERS
+
+# TOOL INSTALLATION
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
+	cp $TOOL_SOURCE $TOOL_DEST/bin/ && \
+	chmod a+x $TOOL_DEST/bin/* && \
+	$TOOL_CHECK ;
+
+
+
+#############
+# UMI_TOOLS #
+#############
+# pip install umi_tools
+# https://github.com/CGATOxford/UMI-tools/archive/1.1.2.zip
+
+# TOOL INFO
+ENV TOOL_NAME="umi_tools"
+ENV TOOL_VERSION="1.1.1"
+ENV TOOL_TARBALL="$TOOL_VERSION.zip"
+ENV TOOL_SOURCE_EXTERNAL="https://github.com/CGATOxford/UMI-tools/archive/$TOOL_VERSION.zip"
+ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+# TOOL PARAMETERS
+
+# TOOL INSTALLATION
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
+	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
+	#whereis python && \
+	#python2 --version && \
+	#python3 --version && \
+	#ls -l /usr/bin/python* && \
+	#(cd $TOOL_SOURCE_BUILD/UMI-tools-$TOOL_VERSION/; python3 setup.py install) && \
+	#(cd $TOOL_SOURCE_BUILD/$TOOL_TARBALL_FOLDER/; pip3 install umi_tools) && \
+	#(cd $TOOL_SOURCE_BUILD/; pip3 install umi_tools) && \
+	pip3 install umi_tools==$TOOL_VERSION && \
+	ln -s /usr/local/bin/umi_tools $TOOL_DEST/bin/umi_tools && \
+	chmod a+x $TOOL_DEST/bin/* && \
+	$TOOL_CHECK ;
+
+
+
+
+#############
+# GENCORE   #
+#############
+# https://github.com/OpenGene/gencore
+
+# TOOL INFO
+ENV TOOL_NAME="gencore"
+ENV TOOL_VERSION="0.16.0"
+ENV TOOL_TARBALL="$TOOL_NAME"
+ENV TOOL_SOURCE_EXTERNAL="http://opengene.org/$TOOL_NAME/$TOOL_NAME"
+ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+# TOOL PARAMETERS
+
+# TOOL INSTALLATION
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
+	cp $TOOL_SOURCE $TOOL_DEST/bin/ && \
+	chmod a+x $TOOL_DEST/bin/* && \
+	$TOOL_CHECK ;
+
 
 
 ###########
@@ -1040,7 +1148,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 # TOOL INFO
 ENV TOOL_NAME="stark"
-ENV TOOL_VERSION="0.9.18.2"
+ENV TOOL_VERSION="0.9.18.3"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
 ENV TOOL="/tool"

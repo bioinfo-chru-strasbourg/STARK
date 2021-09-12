@@ -1,0 +1,56 @@
+#!/bin/bash
+## STARK application SOMATIC_PARAMETERS
+
+# DEFAULT ENV
+######################
+#source UMI.plugapp
+
+# APPLICATION INFOS
+#####################
+APP_NAME="UMI"
+APP_RELEASE="1.0"
+APP_DESCRIPTION="PlugAPP for specific parameters to extract and mark UMI tags"
+#APP_GROUP=""
+#APP_PROJECT=""
+
+# ANALYSIS PARAMETERS
+#######################
+
+# Demultiplexing Mask
+
+# Set mask for demultiplexing for Agilent XTHS
+STARK_DEMULTIPLEXING_BASES_MASK="Y150,I8,Y10,Y150"
+
+# Set short read size for demultiplexing
+# If demultiplexing UMI within a read must be set to 0 for Agilent XTHS kits
+STARK_DEMULTIPLEXING_MASK_SHORT_ADAPTATER_READ="0"
+
+
+# Set read mapping
+#
+STARK_DEMULTIPLEXING_READS_MAPPING="R1 I1 R2 R3"
+
+
+# UMI extract location
+# Set the UMI location
+# If not null, NO UMI extraction and analysis
+# Available locations: 
+#    index1: the first index is used as UMI. If the data is PE, this UMI will be used for both read1/read2.
+#    index2 the second index is used as UMI. PE data only, this UMI will be used for both read1/read2.
+#    read1 the head of read1 is used as UMI. If the data is PE, this UMI will be used for both read1/read2.
+#    read2 the head of read2 is used as UMI. PE data only, this UMI will be used for both read1/read2.
+#    per_index read1 will use UMI extracted from index1, read2 will use UMI extracted from index2.
+#    per_read read1 will use UMI extracted from the head of read1, read2 will use UMI extracted from the head of read2.
+# e.g.: UMI_LOC="index2"
+# See FASTP/UMI TOOLS documentation for more information
+UMI_LOC="index2"
+
+# UMI extract tag
+# Set the UMI Barcode pattern
+# If not null, STARK will prepare fastq containg UMIs +/- cell barcodes for alignment
+# e.g.: UMI_BARCODE_PATTERN="NNNNNNNN"
+# See FASTP/UMI TOOLS documentation for more information
+#UMI_BARCODE_PATTERN="NNNNNNNN"
+
+
+

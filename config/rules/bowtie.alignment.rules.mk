@@ -15,9 +15,9 @@ MK_DATE="29/09/2016"
 
 %.bowtie$(POST_ALIGNMENT).sam: %.R1$(POST_SEQUENCING).fastq.gz %.R2$(POST_SEQUENCING).fastq.gz %.genome 
 	# SAM TO FASTQ
-	zcat $*.R1$(POST_SEQUENCING).fastq.gz > $*.R1$(POST_SEQUENCING).for_bowtie.fastq
-	zcat $*.R2$(POST_SEQUENCING).fastq.gz > $*.R2$(POST_SEQUENCING).for_bowtie.fastq
-	$(BOWTIE) -x $$(cat $*.genome | sed -e 's/\.fa$$//gi') -1 $*.R1$(POST_SEQUENCING).for_bowtie.fastq -2 $*.R2$(POST_SEQUENCING).for_bowtie.fastq -S $@.aligned.sam -p $(THREADS_BY_SAMPLE)
+	$(UNGZ) -c $*.R1$(POST_SEQUENCING).fastq.gz > $*.R1$(POST_SEQUENCING).for_bowtie.fastq
+	$(UNGZ) -c $*.R2$(POST_SEQUENCING).fastq.gz > $*.R2$(POST_SEQUENCING).for_bowtie.fastq
+	$(BOWTIE) -x $$(cat $*.genome | sed -e 's/\.fa$$//gi') -1 $*.R1$(POST_SEQUENCING).for_bowtie.fastq -2 $*.R2$(POST_SEQUENCING).for_bowtie.fastq -S $@.aligned.sam -p $(THREADS_BY_SAMPLE) --sam-append-comment
 	-rm -f $*.R1$(POST_SEQUENCING).for_bowtie.fastq $*.R2$(POST_SEQUENCING).for_bowtie.fastq
 	# AddOrReplaceReadGroups
 	if (($$($(SAMTOOLS) view $@.aligned.sam -H | grep "^@RG" -c))); then \

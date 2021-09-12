@@ -77,10 +77,7 @@ function usage {
 	echo "# -n|--release                 Script Release";
 	echo "# -h|--help                    Help message";
 	echo "#";
-	#echo -e "#\n# RUN Analysis\n################";
-	#$STARK_FOLDER_BIN/launch.sh -h | grep "# [ |-]";
-	#echo -e "#\n# SAMPLE Analysis\n###################";
-	#$STARK_FOLDER_BIN/launch.sample.sh -h | grep "# [ |-]";
+
 }
 
 
@@ -381,6 +378,7 @@ for service_module in \
 				(($DEBUG)) && echo "#[WARNING] STARK Module '$module_name' folder does not have docker configuration file"
 			fi;
 
+
 			# Find ENV file
 			service_module_env="";
 			if [ -e $service_module"/"$service_prefix".env" ]; then
@@ -459,7 +457,11 @@ for service_module in \
 					# DEBUG
 					(($DEBUG)) && cat $TMP_FOLDER/.env $TMP_FOLDER/.env.err
 					(($DEBUG)) && echo "    docker-compose --file $service_module_yml --env-file $TMP_FOLDER/.env -p $module_name $COMMAND"
+
+
 					(($DEBUG)) && docker-compose --file $service_module_yml --env-file $TMP_FOLDER/.env -p $module_name config
+
+					
 
 					# patch for --env-file unavailable
 					if (( $(docker-compose --help | grep "\-\-env\-file" -c) )); then
@@ -467,15 +469,33 @@ for service_module in \
 						# Command
 						if docker-compose --file $service_module_yml --env-file $TMP_FOLDER/.env -p $module_name config 1>$TMP_FOLDER/docker-compose.log 2>$TMP_FOLDER/docker-compose.err; then
 							> $TMP_FOLDER/docker-compose.err
-							if docker-compose --file $service_module_yml --env-file $TMP_FOLDER/.env -p $module_name $COMMAND $COMMAND_ARGS $SERVICES 2>>$TMP_FOLDER/docker-compose.err; then
-								(($VERBOSE)) && cat $TMP_FOLDER/docker-compose.err | grep "Found orphan containers" -v
+
+							if [ "$(cat $TMP_FOLDER/docker-compose.log)" == "services: {}" ]; then
+
+								echo "#[WARNING] docker-compose 'empty yml'"
+							
 							else
-								echo "#[ERROR] docker-compose error";
-								cat $TMP_FOLDER/docker-compose.err
-								exit 1;
+
+								if docker-compose --file $service_module_yml --env-file $TMP_FOLDER/.env -p $module_name $COMMAND $COMMAND_ARGS $SERVICES 2>>$TMP_FOLDER/docker-compose.err; then
+									(($VERBOSE)) && cat $TMP_FOLDER/docker-compose.err | grep "Found orphan containers" -v
+								else
+									if (($(cat $TMP_FOLDER/docker-compose.err | grep "no service selected" -c))); then
+										echo "#[WARNING] docker-compose 'no service selected'";
+									fi;
+									if (($(cat $TMP_FOLDER/docker-compose.err | grep " level=warning " -c))); then
+										echo "#[WARNING] docker-compose 'level=warning'";
+									fi;
+									if (($(cat $TMP_FOLDER/docker-compose.err | grep -e "no service selected" -e " level=warning " -vc))); then
+										echo "#[ERROR] docker-compose error1";
+										cat $TMP_FOLDER/docker-compose.err
+										exit 1;
+									fi;
+								fi;
+
 							fi;
+
 						else
-							echo "#[ERROR] docker-compose error";
+							echo "#[ERROR] docker-compose error2";
 							cat $TMP_FOLDER/docker-compose.log $TMP_FOLDER/docker-compose.err;
 							exit 1;
 						fi;
@@ -490,9 +510,20 @@ for service_module in \
 							if env $(cat $TMP_FOLDER/.env | grep "#" -v) docker-compose --file $service_module_yml -p $module_name $COMMAND $COMMAND_ARGS $SERVICES 2>>$TMP_FOLDER/docker-compose.out ; then
 								(($VERBOSE)) && cat $TMP_FOLDER/docker-compose.err | grep "Found orphan containers" -v
 							else
-								echo "#[ERROR] docker-compose error";
-								cat $TMP_FOLDER/docker-compose.err
-								exit 1;
+								# echo "#[ERROR] docker-compose error";
+								# cat $TMP_FOLDER/docker-compose.err
+								# exit 1;
+								if (($(cat $TMP_FOLDER/docker-compose.err | grep "no service selected" -c))); then
+									echo "#[WARNING] docker-compose 'no service selected'";
+								fi;
+								if (($(cat $TMP_FOLDER/docker-compose.err | grep " level=warning " -c))); then
+									echo "#[WARNING] docker-compose 'level=warning'";
+								fi;
+								if (($(cat $TMP_FOLDER/docker-compose.err | grep -e "no service selected" -e " level=warning " -vc))); then
+									echo "#[ERROR] docker-compose error1";
+									cat $TMP_FOLDER/docker-compose.err
+									exit 1;
+								fi;
 							fi;
 						else
 							echo "#[ERROR] docker-compose error";

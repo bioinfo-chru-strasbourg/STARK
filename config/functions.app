@@ -78,14 +78,22 @@ source_app () {
 	if [ "$FOLDER_APPS" == "" ]; then FOLDER_APPS="$STARK_FOLDER_APPS"; fi
 	if [ "$FOLDER_APPS" == "" ]; then FOLDER_APPS=".."; fi
 
-	[ "$CONFIG_HEADER" != "" ] && [ -e "$CONFIG_HEADER" ] && source $CONFIG_HEADER 1>>$TMP_VERBOSE 2>>$TMP_VERBOSE;
+	if [ "$CONFIG_HEADER" != "" ] && [ -e "$CONFIG_HEADER" ] && source $CONFIG_HEADER 1>>$TMP_VERBOSE 2>>$TMP_VERBOSE; then
+		echo "ok" 1>/dev/null 2>/dev/null
+	else
+		cat $TMP_VERBOSE && return 1;
+	fi
 
 	local ENV=$(find_app "$APP_LIST" "$FOLDER_APPS")
 
 	if [ "$ENV" == "" ]; then
 
 		# SOURCE
-		[ "$CONFIG_FOOTER" != "" ] && [ -e "$CONFIG_FOOTER" ] && source $CONFIG_FOOTER 1>>$TMP_VERBOSE 2>>$TMP_VERBOSE;
+		if [ "$CONFIG_FOOTER" != "" ] && [ -e "$CONFIG_FOOTER" ] && source $CONFIG_FOOTER 1>>$TMP_VERBOSE 2>>$TMP_VERBOSE; then
+			echo "ok" 1>/dev/null 2>/dev/null
+		else
+			cat $TMP_VERBOSE && return 1;
+		fi
 
 	else
 
@@ -93,12 +101,29 @@ source_app () {
 			
 			local APP_FOLDER=$(dirname $ENV_ONE)
 
-			source $ENV_ONE #1>/dev/null 2>/dev/null;
+			if source $ENV_ONE; then
+				echo "ok" 1>/dev/null 2>/dev/null
+			else
+				cat $TMP_VERBOSE && return 1;
+			fi
+			#source $ENV_ONE 1>>$TMP_VERBOSE 2>>$TMP_VERBOSE;
 			local APP_TYPE=${ENV_ONE##*.}
 
 			# SOURCE
-			[ "$CONFIG_FOOTER" != "" ] && [ -e "$CONFIG_FOOTER" ] && source $CONFIG_FOOTER 1>>$TMP_VERBOSE 2>>$TMP_VERBOSE;
-
+			if [ "$CONFIG_FOOTER" != "" ] && [ -e "$CONFIG_FOOTER" ] && source $CONFIG_FOOTER 1>>$TMP_VERBOSE 2>>$TMP_VERBOSE; then
+				echo "ok" 1>/dev/null 2>/dev/null
+			else
+				cat $TMP_VERBOSE && return 1;
+			fi
+			
+			
+			# if [ "$CONFIG_FOOTER" != "" ] && [ -e "$CONFIG_FOOTER" ]; then
+			# 	if source $CONFIG_FOOTER; then
+			# 		echo "ok"
+			# 	else
+			# 		echo "ko"
+			# 	fi;
+			# fi;
 		done
 
 	fi;
