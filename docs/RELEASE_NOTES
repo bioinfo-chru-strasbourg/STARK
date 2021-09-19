@@ -9,18 +9,20 @@
 
 #######################################
 # Release: 0.9.18.3                   #
-# Date: 20210912                      #
+# Date: 20210919                      #
 #######################################
 
 ## New
 
 - UMI support (using FASTP for UMI barcode, and Picard MarkDuplicates and Gencore for duplicates)
-- New HOWARD release (fields format, prioritization mode...)
+- Keep alignment for BAM/SAM/CRAM read input files
+- New HOWARD release (fields format, prioritization mode, SV compatibility...)
 
 
 ## Improvements
 
-- Setup improved
+- Report improved (add destructive pipeline check)
+- Setup improved (get databases)
 - Error catches
 
 

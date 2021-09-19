@@ -102,7 +102,7 @@ do
 			shift 2
 			;;
 		--databases_list)
-			DATABASES_LIST=$(echo "$2" | tr "," " ")
+			DATABASES_LIST_INPUT=$(echo "$2" | tr "," " ")
 			shift 2
 			;;
 		--additional_annotations)
@@ -194,8 +194,8 @@ ACTION=0
 # DATABASES LIST
 ####################
 
-[ "$DATABASES_LIST" == "" ] && DATABASES_LIST="ALL"
-echo "#[INFO] Databases list: '$DATABASES_LIST' "
+[ "$DATABASES_LIST_INPUT" == "" ] && DATABASES_LIST_INPUT="ALL"
+echo "#[INFO] Databases list: '$DATABASES_LIST_INPUT' "
 
 
 
@@ -370,7 +370,7 @@ DATABASE_WEBSITE="https://genome.ucsc.edu/"
 DATABASE_DESCRIPTION="Reference sequence was produced by the Genome Reference Consortium, and is composed of genomic sequence, primarily finished clones that were sequenced as part of the Human Genome Project"
 
 
-if in_array $DATABASE $DATABASES_LIST || in_array ALL $DATABASES_LIST; then
+if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
 
 
 	# DB TARGET
@@ -626,7 +626,7 @@ DATABASE_WEBSITE="https://genome.ucsc.edu/"
 DATABASE_DESCRIPTION="Known human protein-coding and non-protein-coding genes taken from the NCBI RNA reference sequences collection (RefSeq)"
 
 
-if in_array $DATABASE $DATABASES_LIST || in_array ALL $DATABASES_LIST; then
+if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
 
 
 	# DB TARGET
@@ -828,7 +828,7 @@ DATABASE_WEBSITE="https://www.ncbi.nlm.nih.gov/snp/"
 DATABASE_DESCRIPTION="Human single nucleotide variations, microsatellites, and small-scale insertions and deletions along with publication, population frequency, molecular consequence, and genomic and RefSeq mapping information for both common variations and clinical mutations"
 
 
-if in_array $DATABASE $DATABASES_LIST || in_array ALL $DATABASES_LIST; then
+if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
 
 
 	# DB TARGET
@@ -1030,7 +1030,7 @@ DATABASE_WEBSITE="http://snpeff.sourceforge.net/"
 DATABASE_DESCRIPTION="Genetic variant annotation and functional effect prediction toolbox"
 
 
-if in_array $DATABASE $DATABASES_LIST || in_array ALL $DATABASES_LIST; then
+if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
 
 
 	SNPEFF_TOOL_VERSION=$($JAVA -jar $SNPEFF -version | cut -f2)
@@ -1188,7 +1188,7 @@ DATABASE_WEBSITE="https://doc-openbio.readthedocs.io/projects/annovar/"
 DATABASE_DESCRIPTION="ANNOVAR is an efficient software tool to utilize update-to-date information to functionally annotate genetic variants detected from diverse genomes"
 
 
-if in_array $DATABASE $DATABASES_LIST || in_array ALL $DATABASES_LIST; then
+if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
 
 
 	# DB TARGET
