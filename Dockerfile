@@ -836,7 +836,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 # TOOL INFO
 ENV TOOL_NAME="howard"
-ENV TOOL_VERSION="0.9.15.5"
+ENV TOOL_VERSION="0.9.15.6"
 ENV TOOL_TARBALL="archive.tar.gz"
 ENV TOOL_SOURCE_EXTERNAL="https://gitlab.bioinfo-diag.fr/Strasbourg/HOWARD/repository/$TOOL_VERSION/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH

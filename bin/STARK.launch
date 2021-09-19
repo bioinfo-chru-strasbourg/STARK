@@ -79,7 +79,8 @@ function usage {
 	echo "# -t|--threads=<INTEGER>                          Number of thread to use";
 	echo "#                                                 Default: all cores in your system minus one";
 	echo "# -g|--by_sample                                  Split analysis by SAMPLE, all threads on each sample, one by one";
-	echo "# -a|--adapters=<STRING>                          Adapters to trim..";
+	echo "# --keep_alignment                                Keep alignment from input read file, for format BAM|SAM|CRAM only.";
+	echo "# -a|--adapters=<STRING>                          Adapters to trim.";
 
 	echo "# -v|--verbose                                    VERBOSE option";
 	echo "# -d|--debug                                      DEBUG option";
@@ -101,7 +102,7 @@ header;
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
-ARGS=$(getopt -o "e:f:q:b:j:m:s:r:o:u:p:t:ga:vdnh" --long "env:,app:,application:,reads:,fastq:,reads1:,reads:,fastq_R1:,fastq_R2:,reads2:,index1:,index2:,analysis_tag:,sample_tag:,other_files:,design:,bed:,manifest:,genes:,panels:,transcripts:,sample:,sample_list:,sample_filter:,runs:,demultiplexing:,demultiplexing_only,samplesheet:,analysis:,analysis_name:,output:,analysis_dir:,results:,repository:,archives:,databases:,input:,output:,tmp:,log:,pipelines:,threads:,no_header,by_sample,adapters:,verbose,debug,release,help" -- "$@" 2> /dev/null)
+ARGS=$(getopt -o "e:f:q:b:j:m:s:r:o:u:p:t:ga:vdnh" --long "env:,app:,application:,reads:,fastq:,reads1:,reads:,fastq_R1:,fastq_R2:,reads2:,index1:,index2:,analysis_tag:,sample_tag:,other_files:,design:,bed:,manifest:,genes:,panels:,transcripts:,sample:,sample_list:,sample_filter:,runs:,demultiplexing:,demultiplexing_only,samplesheet:,analysis:,analysis_name:,output:,analysis_dir:,results:,repository:,archives:,databases:,input:,output:,tmp:,log:,pipelines:,threads:,no_header,by_sample,keep_alignment,adapters:,verbose,debug,release,help" -- "$@" 2> /dev/null)
 [ $? -ne 0 ] && \
 	echo "#[ERROR] Error in the argument list." "Use -h or --help to display the help." >&2 && usage && \
 	exit 1
@@ -240,6 +241,10 @@ do
 			;;
 		-g|--by_sample)
 			BY_SAMPLE=1
+			shift 1
+			;;
+		--keep_alignment)
+			KEEP_ALIGNMENT=1
 			shift 1
 			;;
 		-a|--adapters)
@@ -1080,30 +1085,19 @@ for RUU in $RUN_UNIQ; do
 			elif (($(echo $F | grep ".bam$\|.ubam$\|.cram$\|.ucram\|.sam$\|.usam$" -c))); then
 
 				# Generate FASTQ from BAM/SAM/CRAM
-				if ((0)); then
-					(($VERBOSE)) && echo "#[INFO] Create Input data from BAM/CRAM/SAM file"
-					# Sort and FASTQ generation
-					TMP_INPUT_BAM=$TMP_FOLDER_TMP/INPUT_BAM_$RANDOM
-					$SAMTOOLS sort -n --reference $REF -@ $THREADS $F -T $TMP_INPUT_BAM -O SAM 2>/dev/null | $SAMTOOLS bam2fq - -1 $RUN_SAMPLE_DIR/$S.R1.fastq.gz -2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz -O -@ $THREADS -c 1 2>/dev/null | $GZ -c 1> $RUN_SAMPLE_DIR/$S.R0.fastq.gz 2>/dev/null;
-
-					# Ff R0 not empty or number of reads differs between R1 and R2 > Single END
-					if (( $($UNGZ -c $RUN_SAMPLE_DIR/$S.R0.fastq.gz | head -n 1 | wc -l) )) \
-						|| (( $(diff <($UNGZ -c $RUN_SAMPLE_DIR/$S.R1.fastq.gz | paste - - - - | cut -f1 -d$'\t') <($UNGZ -c $RUN_SAMPLE_DIR/$S.R2.fastq.gz | paste - - - - | cut -f1 -d$'\t') | head -n 1 | wc -l) )); then
-						echo "#[WARNING] Read names or order differ between R1 and R2 fastq files, or R0 file is not empty. Reads are supposed not to be paired (Single-End). All reads in R1.";
-						cat $RUN_SAMPLE_DIR/$S.R2.fastq.gz $RUN_SAMPLE_DIR/$S.R0.fastq.gz >> $RUN_SAMPLE_DIR/$S.R1.fastq.gz;
-						$GZ < /dev/null > $RUN_SAMPLE_DIR/$S.R2.fastq.gz;
-					fi;
-					rm -f $RUN_SAMPLE_DIR/$S.R0.fastq.gz;
-				fi;
-
 				if ((1)); then
 					(($VERBOSE)) && echo "#[INFO] Create Input data from BAM/CRAM/SAM file"
+
+					#echo "PIPELINES: $PIPELINES"
+					#exit 0
+
 
 					# Sort and FASTQ generation
 					TMP_INPUT_BAM=$TMP_FOLDER_TMP/INPUT_BAM_$RANDOM
 
 					echo "$RUN_SAMPLE_DIR/$S.R1.fastq.gz: $F
-						$SAMTOOLS sort -n --reference $REF -@ $THREADS $F -T $TMP_INPUT_BAM -O SAM 2>/dev/null | $SAMTOOLS bam2fq - -1 $RUN_SAMPLE_DIR/$S.R1.fastq.gz -2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz -O -@ $THREADS -c 1 2>/dev/null | $GZ -c 1> $RUN_SAMPLE_DIR/$S.R0.fastq.gz 2>/dev/null;
+						#$SAMTOOLS sort -n --reference $REF -@ $THREADS $F -T $TMP_INPUT_BAM -O SAM 2>/dev/null | $SAMTOOLS bam2fq - -1 $RUN_SAMPLE_DIR/$S.R1.fastq.gz -2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz -O -@ $THREADS -c 1 -T BC,RX 2>/dev/null | $GZ -c 1> $RUN_SAMPLE_DIR/$S.R0.fastq.gz 2>/dev/null;
+						$SAMTOOLS sort -n --reference $REF -@ $THREADS $F -T $TMP_INPUT_BAM -O SAM 2>/dev/null | $SAMTOOLS bam2fq - -1 $RUN_SAMPLE_DIR/$S.R1.fastq.gz -2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz -O -@ $THREADS -c 1 -T BC,RX 2>/dev/null | $GZ -c 1> $RUN_SAMPLE_DIR/$S.R0.fastq.gz 2>/dev/null;
 						if (( \$\$($UNGZ -c $RUN_SAMPLE_DIR/$S.R0.fastq.gz | head -n 1 | wc -l) )) \
 							|| [ \"\$\$($UNGZ -c $RUN_SAMPLE_DIR/$S.R1.fastq.gz | paste - - - - | cut -f1 | sha1sum | cut -d' ' -f1)\" != \"\$\$($UNGZ -c $RUN_SAMPLE_DIR/$S.R2.fastq.gz | paste - - - - | cut -f1 | sha1sum | cut -d' ' -f1)\" ]; then \
 							echo '#[WARNING] Read names or order differ between R1 and R2 fastq files, or R0 file is not empty. Reads are supposed not to be paired (Single-End). All reads in R1.'; \
@@ -1134,6 +1128,16 @@ for RUU in $RUN_UNIQ; do
 					" >> $INPUT_MK
 					INPUT_MK_ALL=$INPUT_MK_ALL" $RUN_SAMPLE_DIR/$S.I2.fastq.gz"
 
+					if (($KEEP_ALIGNMENT)); then
+						for P in $(echo $PIPELINES | tr "," " " | tr " " "\n" | sed '/^[[:space:]]*$/d' | tr "." " " | cut -d" " -f1 | sort -u); do
+							AL=$(echo $P | cut -d. -f1)
+							echo "$RUN_SAMPLE_DIR/$S.$AL.bam: $F 
+								$SAMTOOLS sort --reference $REF -@ $THREADS $F -T $TMP_INPUT_BAM -O BAM 2>/dev/null > $RUN_SAMPLE_DIR/$S.$AL.bam
+								$SAMTOOLS index $RUN_SAMPLE_DIR/$S.$AL.bam
+							" >> $INPUT_MK
+							INPUT_MK_ALL=$INPUT_MK_ALL" $RUN_SAMPLE_DIR/$S.$AL.bam"
+						done;
+					fi;
 				fi;
 			fi;
 
@@ -1236,6 +1240,14 @@ for RUU in $RUN_UNIQ; do
 				############
 
 				
+				# DEV
+				#echo $FASTQ_PROCESSED_STEPS
+				#FASTQ_PROCESSED_STEPS=".fastq_reheader.fastp.fastq_clean_header.compress"
+				#FASTQ_PROCESSED_STEPS=".fastp.fastq_clean_header.compress"
+				#FASTQ_PROCESSED_STEPS=".fastq_reheader"
+				#FASTQ_PROCESSED_STEPS=""
+				#echo $FASTQ_PROCESSED_STEPS
+				#exit 0
 
 				echo "FASTQ_DEMULTIPLEXING_KEEP?=$FASTQ_DEMULTIPLEXING_KEEP " >> $INPUT_MK
 				echo "REMOVE_FASTQ_COMMENT?=0 " >> $INPUT_MK
@@ -1263,9 +1275,6 @@ for RUU in $RUN_UNIQ; do
 				echo "RELOCATE_UMI?=$RELOCATE_UMI" >> $INPUT_MK
 				echo "FASTQ_PROCESSED_STEPS:=$FASTQ_PROCESSED_STEPS" >> $INPUT_MK
 				
-
-				# DEV
-				#cat $INPUT_MK
 
 				
 
@@ -1375,6 +1384,15 @@ for RUU in $RUN_UNIQ; do
 
 			fi;
 
+		fi;
+
+
+		# assembly & genome
+		if ((1)); then
+		if [ ! -e $RUN_SAMPLE_DIR/$S.genome ]; then
+			(($VERBOSE)) && echo "#[INFO] Create genome."
+			[ -e "$REF" ] && echo $REF > $RUN_SAMPLE_DIR/$S.genome
+		fi;
 		fi;
 
 
@@ -1676,6 +1694,14 @@ for RUU in $RUN_UNIQ; do
 
 
 	MAKE_ERROR=0
+
+	for BAM in $RESULTS/$RU/*/*bam; do
+
+		touch $BAM
+
+	done;
+	#exit 0
+	#-touch $$(ls $(@D)/../*bam 2>/dev/null)
 
 	#if ! make -k -j $THREADS -e ENV="$ENV" PARAM=$MAKEFILE_ANALYSIS_RUN $PARAMETERS $THREAD_PARAMETERS JAVA_MEMORY=$JAVA_MEMORY SNAPSHOT=0 VALIDATION=1 INPUT=$INPUT OUTDIR=$RESULTS RELEASE=$RELEASE_RUN FINAL_REPORT=$FINAL_REPORT_RUN ANALYSIS_REF=$ANALYSIS_REF -f $NGS_SCRIPTS/NGSWorkflow.mk 1>>$LOGFILE_RES_RUN 2>>$LOGFILE_RES_RUN; then
 	if ! make -k -j $THREADS -e ENV="$ENV" PARAM=$MAKEFILE_ANALYSIS_RUN $PARAMETERS $THREAD_PARAMETERS JAVA_MEMORY=$JAVA_MEMORY SNAPSHOT=0 VALIDATION=1 INPUT=$INPUT OUTDIR=$RESULTS RELEASE=$RELEASE_RUN FINAL_REPORT=$FINAL_REPORT_RUN ANALYSIS_REF=$ANALYSIS_REF -f $NGS_SCRIPTS/STARK.launch.analysis.mk 1>>$LOGFILE_RES_RUN 2>>$LOGFILE_RES_RUN; then

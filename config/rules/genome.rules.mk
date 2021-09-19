@@ -24,9 +24,12 @@ MK_DATE="23/09/2016"
 	if [ ! -s $@ ] && [ -s $*.manifest ]; then grep -Po "\thg[0-9]*\t|\\\\hg[0-9]*\\\\|\\hg[0-9]*\." $*.manifest | tr -d "\t\\\." | uniq > $@; fi;
 	# if no assembly on manifest, default (from config or parameter)
 	if [ ! -s $@ ]; then echo $(ASSEMBLY) > $@; fi;
+	if [ -s $*.bed ]; then touch -r $*.bed $@; fi;
+	if [ -s $*.manifest ]; then touch -r $*.manifest $@; fi;
 	echo "# ASSEMBLY: "`cat $@`;
 
-	
+
+
 # write the genome file in a file
 %.genome: %.assembly
 	if [ -s $(REF) ]; then \
@@ -41,7 +44,6 @@ MK_DATE="23/09/2016"
 	else \
 		echo "# NO GENOME FILE '"$(GENOMES)/`cat $<`/`cat $<`.fa"'"; \
 	fi;
-	
 	# index the reference for bwa
 	if [ ! -s `cat $@`.bwt ] \
 	|| [ ! -s `cat $@`.ann ] \
@@ -50,12 +52,12 @@ MK_DATE="23/09/2016"
 	|| [ ! -s `cat $@`.sa ]; then \
 		$(BWA) index -a bwtsw `cat $@`; \
 	fi;
-	
 	# index the reference for samtools
 	if [ ! -s `cat $@`.fai ]; then \
 		$(SAMTOOLS) faidx `cat $@`; \
 	fi;
-	
+	touch -r $*.assembly $@;
+
 
 %.dict: %.genome
 	cat $< | sed 's/\.fa$$/.dict/g' > $@

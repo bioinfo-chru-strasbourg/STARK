@@ -144,6 +144,7 @@ function usage {
 	echo "# --threads=<INTEGER>                      Number of thread to use";
 	echo "#                                          Default: all cores in your system minus one";
 	echo "# --by_sample                              Split analysis by SAMPLE, all threads on each sample, one by one.";
+	echo "# --keep_alignment                         Keep alignment from input read file, for format BAM|SAM|CRAM only.";
 	echo "";
 
 	echo "### Launch STARK with Docker";
@@ -185,7 +186,7 @@ function usage {
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
-ARGS=$(getopt -o "a:b:e:r:f:q:g:j:m:l:s:w:t:o:u:iygxvdnh" --long "env:,app:,application:,runs:,run:,fastq:,reads:,reads1:,fastq_R1:,by_sample,fastq_R2:,reads2:,index1:,index2:,other_files:,analysis_tag:,sample_tag:,adapters:,analysis:,analysis_name:,analysis_dir:,demultiplexing:,demultiplexing_only,samplesheet:,sample:,sample_filter:,design:,bed:,manifest:,genes:,panels:,transcripts:,threads:,output:,results:,repository:,archives:,databases:,input:,output:,tmp:,log:,docker-compose-file:,docker-env-file:,docker-parameters:,docker-stark-image:,docker-stark-container:,no_header,applications_infos,applications_infos_all,pipelines_infos,release_infos,tools_infos,databases_infos,verbose,debug,release,help" -- "$@" 2> /dev/null)
+ARGS=$(getopt -o "a:b:e:r:f:q:g:j:m:l:s:w:t:o:u:iygxvdnh" --long "env:,app:,application:,runs:,run:,fastq:,reads:,reads1:,fastq_R1:,by_sample,keep_alignment,fastq_R2:,reads2:,index1:,index2:,other_files:,analysis_tag:,sample_tag:,adapters:,analysis:,analysis_name:,analysis_dir:,demultiplexing:,demultiplexing_only,samplesheet:,sample:,sample_filter:,design:,bed:,manifest:,genes:,panels:,transcripts:,threads:,output:,results:,repository:,archives:,databases:,input:,output:,tmp:,log:,docker-compose-file:,docker-env-file:,docker-parameters:,docker-stark-image:,docker-stark-container:,no_header,applications_infos,applications_infos_all,pipelines_infos,release_infos,tools_infos,databases_infos,verbose,debug,release,help" -- "$@" 2> /dev/null)
 
 
 if [ $? -ne 0 ]; then
@@ -379,6 +380,10 @@ do
 			;;
 		-g|--by_sample)
 			BY_SAMPLE=1
+			shift 1
+			;;
+		--keep_alignment)
+			KEEP_ALIGNMENT=1
 			shift 1
 			;;
 		-t|--threads)

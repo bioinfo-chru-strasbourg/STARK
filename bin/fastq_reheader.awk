@@ -12,7 +12,8 @@ BEGIN {
 		}
 }
 { 
-	if(match($1, /^@/) )
+	#if(match($1, /^@/) )
+	if(NR%4 == 1)
 	{ 
 		H=$1
 	} else if( H != "") {
@@ -27,8 +28,14 @@ BEGIN {
 		if (I2!="") {
 			I=I SEP I2
 		}
-		gsub(" [0-9]*:N:0:[^ $]*", "",H)
-		H=H " " READ ":N:0:" I
+		I_TAG=""
+		if (I!="") {
+			gsub(" [0-9]*:N:0:[^ $]*", "",H)
+			I_TAG= READ ":N:0:" I
+		}
+		if (I_TAG!="") {
+			H=H " " I_TAG
+		}
 		print H 
 		print R
 		H=""

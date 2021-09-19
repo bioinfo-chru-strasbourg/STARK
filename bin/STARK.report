@@ -982,12 +982,19 @@ SECTION_ID="results_summary"
 SEQUENCING_INFOS="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.sequencing/metrics.infos.txt"
 SEQUENCING_FASTP_JSON="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.sequencing/$SAMPLE.fastp.json"
 SEQUENCING_FASTP_HTML="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.sequencing/$SAMPLE.fastp.html"
+SEQUENCING_ARCHIVE_METRICS="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.archive.cram.metrics/stats.tsv"
+
 
 # Prepare FASTP HTML file
 cp $SEQUENCING_FASTP_HTML $HTMLDIR/$(basename $SEQUENCING_FASTP_HTML)
 cat $SEQUENCING_FASTP_HTML | sed "s/https:\/\/cdn.plot.ly\/plotly-latest.min.js/plotly-latest.min.js/" > $HTMLDIR/$(basename $SEQUENCING_FASTP_HTML)
 
 SEQUENCING_FASTP_HTML_HTML=$HTMLFOLDER/$(basename $SEQUENCING_FASTP_HTML)
+
+SEQUENCING_FASTP_HTML_HTML_LINK='
+<a class="btn btn-primary-outline display-4" href="'$SEQUENCING_FASTP_HTML_HTML'">
+	Sequencing Quality Report
+</a>'
 
 
 # filtering step
@@ -1064,6 +1071,17 @@ for HOWARD_P in $(echo "$HOWARD_PRIORITIZATION_PARAM" | tr " " "\n"); do
 		HOWARD_PRIORITIZATION_LIST=$HOWARD_PRIORITIZATION_LIST" "$HOWARD_P
 	fi;
 done;
+
+# ARCHIVES
+SEQUENCING_ARCHIVE_METRICS_CRAM_SOURCE_TYPE=$(grep "CRAM_source_type" $SEQUENCING_ARCHIVE_METRICS  | cut -d$'\t' -f2)
+# grep "CRAM_cram_source" $SEQUENCING_ARCHIVE_METRICS  | cut -d$'\t' -f2 | xargs basename
+
+
+if [ "$AFTER_TOTAL_SEQUENCES" != "$BEFORE_TOTAL_SEQUENCES" ]; then
+	DESTRUCTIVE_FASTQ=$DESTRUCTIVE_FASTQ"<br>FASTQ process is <span style='color:red;'>destructive</span>"
+else
+	DESTRUCTIVE_FASTQ=$DESTRUCTIVE_FASTQ"<br>FASTQ process is not destructive"
+fi;
 
 
 
@@ -1190,7 +1208,7 @@ echo '
 	<div class="title-wrap">
 		<div class="progressbar-title mbr-fonts-style display-7">
 			<p>
-				FASTQ - Total number of sequenced reads | '$BEFORE_TOTAL_SEQUENCES_HTML'
+				<strong>FASTQ</strong> - Total number of sequenced reads | '$BEFORE_TOTAL_SEQUENCES_HTML'
 			</p>
 		</div>
 		<div class="progress_value mbr-fonts-style display-7" style="color:silver">
@@ -1207,7 +1225,7 @@ echo '
 		<div class="title-wrap">
 			<div class="progressbar-title mbr-fonts-style display-7">
 				<p>
-					FASTQ - Total number of sequenced reads filtered | '$AFTER_TOTAL_SEQUENCES_HTML'
+					Total number of sequenced reads after filtration process | '$AFTER_TOTAL_SEQUENCES_HTML'
 				</p>
 			</div>
 			<div class="progress_value mbr-fonts-style display-7">
@@ -1231,11 +1249,64 @@ for ALIGNER in $ALIGNERS; do
 	(($DEBUG)) && echo "ALIGNER: $ALIGNER";
 
 	# Files
-	DESIGN_FLAGSTAT="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.flagstat"
+	#DESIGN_FLAGSTAT="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.flagstat"
 	DESIGN_VALIDATION_FLAGSTAT="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.validation.flagstat"
 	DESIGN_ON_TARGET="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$SAMPLE.$ALIGNER.design.bed.on.target"
 	DESIGN_OFF_TARGET="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$SAMPLE.$ALIGNER.design.bed.off.target"
 
+	DESIGN_FLAGSTAT="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.flagstat"
+	if [ "$DESIGN_FLAGSTAT" != "" ]; then
+		#head $MARKDUPLICATES_METRICS
+		cp $DESIGN_FLAGSTAT $HTMLDIR/$(basename $DESIGN_FLAGSTAT)
+		DESIGN_FLAGSTAT_HTML=$HTMLFOLDER/$(basename $DESIGN_FLAGSTAT)
+		DESIGN_FLAGSTAT_HTML_MESSAGE="Flag Statistics | $ALIGNER"
+		DESIGN_FLAGSTAT_HTML_LINK='
+			<a class="btn btn-primary-outline display-4" href="'$DESIGN_FLAGSTAT_HTML'">
+				'$DESIGN_FLAGSTAT_HTML_MESSAGE'
+			</a>'
+	else
+		DESIGN_FLAGSTAT_HTML=""
+		DESIGN_FLAGSTAT_HTML_MESSAGE=""
+		DESIGN_FLAGSTAT_HTML_LINK=""
+	fi;
+
+
+	MARKDUPLICATES_METRICS=$(ls $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.*.markDuplicates.metrics 2>/dev/null)
+	#echo "MARKDUPLICATES_METRICS=$MARKDUPLICATES_METRICS"
+	if [ "$MARKDUPLICATES_METRICS" != "" ]; then
+		#head $MARKDUPLICATES_METRICS
+		cp $MARKDUPLICATES_METRICS $HTMLDIR/$(basename $MARKDUPLICATES_METRICS)
+		MARKDUPLICATES_METRICS_HTML=$HTMLFOLDER/$(basename $MARKDUPLICATES_METRICS)
+		MARKDUPLICATES_METRICS_HTML_MESSAGE="Duplicated Reads | $ALIGNER"
+		MARKDUPLICATES_METRICS_HTML_LINK='
+			<a class="btn btn-primary-outline display-4" href="'$MARKDUPLICATES_METRICS_HTML'">
+				'$MARKDUPLICATES_METRICS_HTML_MESSAGE'
+			</a>'
+	else
+		MARKDUPLICATES_METRICS_HTML=""
+		MARKDUPLICATES_METRICS_HTML_MESSAGE=""
+		MARKDUPLICATES_METRICS_HTML_LINK=""
+	fi;
+
+	GENCORE_REPORT=$(ls $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.*.gencore.metrics.html 2>/dev/null)
+	#echo "GENCORE_REPORT=$GENCORE_REPORT"
+	if [ "$GENCORE_REPORT" != "" ]; then
+		#head $GENCORE_REPORT
+		cp $GENCORE_REPORT $HTMLDIR/$(basename $GENCORE_REPORT)
+		cat $GENCORE_REPORT | sed "s/https:\/\/cdn.plot.ly\/plotly-latest.min.js/plotly-latest.min.js/" > $HTMLDIR/$(basename $GENCORE_REPORT)
+		GENCORE_REPORT_HTML=$HTMLFOLDER/$(basename $GENCORE_REPORT)
+		GENCORE_REPORT_HTML_MESSAGE="Duplicated Reads | $ALIGNER"
+		GENCORE_REPORT_HTML_LINK='
+			<a class="btn btn-primary-outline display-4" href="'$GENCORE_REPORT_HTML'">
+				'$GENCORE_REPORT_HTML_MESSAGE'
+			</a>'
+	else
+		GENCORE_REPORT_HTML=""
+		GENCORE_REPORT_HTML_MESSAGE=""
+		GENCORE_REPORT_HTML_LINK=""
+	fi;
+
+	
 	#(($DEBUG)) && cat $DESIGN_FLAGSTAT;
 
 	# Total  reads
@@ -1243,6 +1314,27 @@ for ALIGNER in $ALIGNERS; do
 	ALIGNER_TOTAL_READS_HTML=$(echo $ALIGNER_TOTAL_READS | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
 	ALIGNER_TOTAL_READS_PERCENT="100.00"
 
+	# Primary reads
+	PRIMARY_READS=$(grep "[0-9]* + [0-9]* primary$" $DESIGN_FLAGSTAT | awk '{print $1+$3+0}')
+	PRIMARY_READS_HTML=$(echo $PRIMARY_READS | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
+	PRIMARY_READS_PERCENT=$(awk 'BEGIN{printf("%.2f\n",('$PRIMARY_READS'/'$ALIGNER_TOTAL_READS')*100)}')
+
+	if [ "$AFTER_TOTAL_SEQUENCES" != "$PRIMARY_READS" ]; then
+		DESTRUCTIVE_PIPELINE=$DESTRUCTIVE_PIPELINE"<br>BAM Alignment $ALIGNER is <span style='color:red;'>destructive</span>"
+	else
+		DESTRUCTIVE_PIPELINE=$DESTRUCTIVE_PIPELINE"<br>BAM Alignment $ALIGNER is not destructive"
+	fi;
+
+	# Secondary reads
+	SECONDARY_READS=$(grep "[0-9]* + [0-9]* secondary" $DESIGN_FLAGSTAT | awk '{print $1+$3+0}')
+	SECONDARY_READS_HTML=$(echo $SECONDARY_READS | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
+	SECONDARY_READS_PERCENT=$(awk 'BEGIN{printf("%.2f\n",('$SECONDARY_READS'/'$ALIGNER_TOTAL_READS')*100)}')
+
+
+	# Supplementary reads
+	SUPPLEMENTARY_READS=$(grep "[0-9]* + [0-9]* supplementary" $DESIGN_FLAGSTAT | awk '{print $1+$3+0}')
+	SUPPLEMENTARY_READS_HTML=$(echo $SUPPLEMENTARY_READS | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
+	SUPPLEMENTARY_READS_PERCENT=$(awk 'BEGIN{printf("%.2f\n",('$SUPPLEMENTARY_READS'/'$ALIGNER_TOTAL_READS')*100)}')
 
 	# Duplicates and Uniq reads
 	DUPLICATES_READS=$(grep "[0-9]* + [0-9]* duplicates" $DESIGN_FLAGSTAT | awk 'BEGIN {total=0} {total=total+$1+$3} END {print total}')
@@ -1312,7 +1404,7 @@ for ALIGNER in $ALIGNERS; do
 			<div class="title-wrap">
 				<div class="progressbar-title mbr-fonts-style display-7">
 					<p>
-						BAM - '$ALIGNER' - Total reads | '$ALIGNER_TOTAL_READS_HTML'
+						<strong>BAM</strong> - '$ALIGNER' - Total reads | '$ALIGNER_TOTAL_READS_HTML'
 					</p>
 				</div>
 				<div class="progress_value mbr-fonts-style display-7" style="color:silver">
@@ -1326,7 +1418,7 @@ for ALIGNER in $ALIGNERS; do
 			<div class="title-wrap">
 				<div class=" mbr-fonts-style display-7">
 					<p>
-						BAM - '$ALIGNER' - Total reads | '$ALIGNER_TOTAL_READS_HTML'
+						<strong>BAM</strong> - '$ALIGNER' - '$(echo $POST_ALIGNMENT_STEPS | sed "s/ / - /g")' | '$ALIGNER_TOTAL_READS_HTML'
 					</p>
 				</div>
 				<div class="progress_value mbr-fonts-style display-7" style="color:silver">
@@ -1337,6 +1429,56 @@ for ALIGNER in $ALIGNERS; do
 
 		<div style="margin-left:50px;">
 		
+
+			<div class="progress2 pb-4 red">
+				<progress class="progress progress-primary" max="'$ALIGNER_TOTAL_READS'" value="'$PRIMARY_READS'"></progress>
+				<div class="title-wrap pb-1">
+					<div class="progressbar-title mbr-fonts-style display-7">
+						<p>
+							Primary reads | '$PRIMARY_READS_HTML'
+						</p>
+					</div>
+					<div class="progress_value mbr-fonts-style display-7">
+						<span>'$PRIMARY_READS_PERCENT'%</span>
+					</div>
+					
+				</div>				
+			</div>
+
+			<!--
+			<div class="progress2 pb-4 red">
+				<progress class="progress progress-primary" max="'$ALIGNER_TOTAL_READS'" value="'$SECONDARY_READS'"></progress>
+				<div class="title-wrap pb-1">
+					<div class="progressbar-title mbr-fonts-style display-7">
+						<p>
+							Secondary reads | '$SECONDARY_READS_HTML'
+						</p>
+					</div>
+					<div class="progress_value mbr-fonts-style display-7">
+						<span>'$SECONDARY_READS_PERCENT'%</span>
+					</div>
+					
+				</div>				
+			</div>
+			-->
+
+			<!--
+			<div class="progress2 pb-4 red">
+				<progress class="progress progress-primary" max="'$ALIGNER_TOTAL_READS'" value="'$SUPPLEMENTARY_READS'"></progress>
+				<div class="title-wrap pb-1">
+					<div class="progressbar-title mbr-fonts-style display-7">
+						<p>
+							Supplementary reads | '$SUPPLEMENTARY_READS_HTML'
+						</p>
+					</div>
+					<div class="progress_value mbr-fonts-style display-7">
+						<span>'$SUPPLEMENTARY_READS_PERCENT'%</span>
+					</div>
+					
+				</div>				
+			</div>
+			-->
+
 			<div class="progress2 pb-4 red">
 				<progress class="progress progress-primary" max="'$ALIGNER_TOTAL_READS'" value="'$DUPLICATES_READS'"></progress>
 				<div class="title-wrap pb-1">
@@ -1351,7 +1493,6 @@ for ALIGNER in $ALIGNERS; do
 					
 				</div>				
 			</div>
-
 
 
 			<!--
@@ -1493,7 +1634,10 @@ if in_array $SECTION_ID $SECTIONS || in_array ALL $SECTIONS ; then
 					'$BAM_VALIDATION_TEXT_HTML'
 					<br>
 					<strong>On target reads</strong> calculated on BAM for validation with Target Design 
-					
+					<br>
+					Archives were generated from <strong title="test">'$SEQUENCING_ARCHIVE_METRICS_CRAM_SOURCE_TYPE'</strong>
+					'$DESTRUCTIVE_PIPELINE'
+
 				</p>
 
 				<div class="row pt-1 mt-5">
@@ -1529,9 +1673,10 @@ if in_array $SECTION_ID $SECTIONS || in_array ALL $SECTIONS ; then
 					<div class="progress_elements col-md-12">
 
 						<div class="mbr-section-btn align-center">
-							<a class="btn btn-primary-outline display-4" href="'$SEQUENCING_FASTP_HTML_HTML'">
-								Sequencing Quality Report
-							</a>
+							'$SEQUENCING_FASTP_HTML_HTML_LINK'
+							'$DESIGN_FLAGSTAT_HTML_LINK'
+							'$MARKDUPLICATES_METRICS_HTML_LINK'
+							'$GENCORE_REPORT_HTML_LINK'
 						</div>
 
 						<br>
