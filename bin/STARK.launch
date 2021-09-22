@@ -79,7 +79,7 @@ function usage {
 	echo "# -t|--threads=<INTEGER>                          Number of thread to use";
 	echo "#                                                 Default: all cores in your system minus one";
 	echo "# -g|--by_sample                                  Split analysis by SAMPLE, all threads on each sample, one by one";
-	echo "# --keep_alignment                                Keep alignment from input read file, for format BAM|SAM|CRAM only.";
+	echo "# --keep_alignment                                Keep alignment from input read file, for format BAM|SAM|CRAM only (alignment autodetected).";
 	echo "#                                                 CRAM Archives integrity will not be checked";
 
 	echo "# -a|--adapters=<STRING>                          Adapters to trim.";
@@ -1303,7 +1303,10 @@ for RUU in $RUN_UNIQ; do
 
 				" >> $INPUT_MK
 
-				INPUT_MK_ALL=$INPUT_MK_ALL" $RUN_SAMPLE_DIR_SEQUENCING/$S.sequencing.log " 
+
+				if [ ! -e $RUN_SAMPLE_DIR_SEQUENCING/$S.sequencing.log ]; then
+					INPUT_MK_ALL=$INPUT_MK_ALL" $RUN_SAMPLE_DIR_SEQUENCING/$S.sequencing.log " 
+				fi;
 
 
 				# STEP UMI

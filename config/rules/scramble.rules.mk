@@ -45,12 +45,12 @@ SCRAMBLE_OPTION?=
 			cp $*.empty.vcf $@; \
 		else \
 			# add sample \
-			(grep "^##" $@.tmp.results.vcf && echo '##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">' && grep "^#CHROM" $@.tmp.results.vcf | awk '{print $$0"\tFORMAT\tHORIZON"}' && grep "^#" -v $@.tmp.results.vcf | awk '{print $0"\tGT\t0/1"}' ) > $@.tmp.add_sample.vcf; \
+			(grep "^##" $@.tmp.results.vcf && echo '##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">' && grep "^#CHROM" $@.tmp.results.vcf | awk -v SAMPLE=$$(basename $(@D)) '{print $$0"\tFORMAT\t"SAMPLE}' && grep "^#" -v $@.tmp.results.vcf | awk '{print $$0"\tGT\t0/1"}' ) > $@.tmp.add_sample.vcf; \
 			# normalize with HOWARD \
 			$(HOWARD) --input=$@.tmp.add_sample.vcf --output=$@ --translation=VCF --verbose; \
 		fi; \
 	fi;
-	$@.tmp*
+	rm -rf $@.tmp*
 
 
 # Call Rscript cluster_analyser - MEIS
@@ -63,12 +63,12 @@ SCRAMBLE_OPTION?=
 			cp $*.empty.vcf $@; \
 		else \
 			# add sample \
-			(grep "^##" $@.tmp.results.vcf && echo '##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">' && grep "^#CHROM" $@.tmp.results.vcf | awk '{print $$0"\tFORMAT\tHORIZON"}' && grep "^#" -v $@.tmp.results.vcf | awk '{print $0"\tGT\t0/1"}' ) > $@.tmp.add_sample.vcf; \
+			(grep "^##" $@.tmp.results.vcf && echo '##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">' && grep "^#CHROM" $@.tmp.results.vcf | awk -v SAMPLE=$$(basename $(@D)) '{print $$0"\tFORMAT\t"SAMPLE}' && grep "^#" -v $@.tmp.results.vcf | awk '{print $$0"\tGT\t0/1"}' ) > $@.tmp.add_sample.vcf; \
 			# normalize with HOWARD \
 			$(HOWARD) --input=$@.tmp.add_sample.vcf --output=$@ --translation=VCF --verbose; \
 		fi; \
 	fi;
-	$@.tmp*
+	rm -rf $@.tmp*
 
 
 # # Call Rscript cluster_analyser - MEIS and DELS

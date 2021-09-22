@@ -204,7 +204,7 @@ REPORT_SECTIONS?=ALL
 	# Generate Panel(s) VCF and TSV from Design VCF ($@.Design.vcf.gz)
 	+for genes_file in $$(cat $$(cat $@.tmp.vcf_list | xargs dirname | sed s/reports$$/list.genes/) | cut -d. -f2- | sort -u); do \
 		# List of Samples with $$genes_file panel \
-		List_of_samples=$$(ls $(@D)/[^.]*/[^.]*.$$genes_file | xargs -l basename | cut -d. -f1 | tr "\n" "," | sed s/,$$//) ; \
+		List_of_samples=$$(ls $(@D)/[^.]*/[^.]*.$$genes_file | xargs -l basename | cut -d. -f1 | sort -u | tr "\n" "," | sed s/,$$//) ; \
 		# List of $$genes_file within Samples folders \
 		List_of_genes_files=$$(ls $$(for L in $$(echo $$List_of_samples | tr "," "\n"); do echo $(@D)/$$L/$$L.$$genes_file; done;)) ; \
 		# Merge all $$genes_file found into uniq BED file (but supposed to be the same) \
