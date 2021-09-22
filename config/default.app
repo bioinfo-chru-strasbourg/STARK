@@ -227,7 +227,7 @@ FASTQ_COMPRESSION_LEVEL=9
 # DISABLE_ADAPTER_TRIMMING
 # Trim adapter and autodetect adapter for paired end
 # Either 0 or 1
-# Default: 0 (i.e. adapter trimming is enabled)
+# Default: 0 (i.e. adapter trimming is enable)
 DISABLE_ADAPTER_TRIMMING=0
 
 # FASTQ Read quality filtering
@@ -520,6 +520,8 @@ HOWARD_PRIORITIZATION_MINIMAL=$HOWARD_PRIORITIZATION_DEFAULT # "default"
 HOWARD_PRIORITIZATION_REPORT=$HOWARD_PRIORITIZATION_DEFAULT # "default"
 # Default prioritization with HOWARD for whole analysis (prioritization forced)
 HOWARD_PRIORITIZATION_ANALYSIS="" # "none"
+# Default prioritization with HOWARD for VaRank score mode
+HOWARD_PRIORITIZATION_VARANK=VaRank # "default"
 
 
 # TRANSLATION

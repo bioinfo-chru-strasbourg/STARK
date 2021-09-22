@@ -155,38 +155,6 @@ REMOVE_INTERMEDIATE_SAM?=1
 	# Cleaning
 
 
-# Hard filtering
-# %.hard.tsv: %.vcf
-# 	# translation step and hard filtering
-# 	$(HOWARD) --config=$(HOWARD_CONFIG) --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --prioritization=$(HOWARD_PRIORITIZATION) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --format=tab  --fields=$(HOWARD_FIELDS) --sort=$(HOWARD_SORT) --sort_by=$(HOWARD_SORT_BY) --order_by=$(HOWARD_ORDER_BY)  --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --input=$< --output=$@ --hard --force;
-# 	# Touch
-# 	if [ ! -e $@ ]; then touch $@; fi;
-# 	# Cleaning
-
-
-# VCF to tab delimiter
-# %.txt: %.vcf
-# 	# Translation step
-# 	$(HOWARD) --config=$(HOWARD_CONFIG) --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --prioritization=$(HOWARD_PRIORITIZATION) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --format=tab  --fields=$(HOWARD_FIELDS) --sort=$(HOWARD_SORT) --sort_by=$(HOWARD_SORT_BY) --order_by=$(HOWARD_ORDER_BY)  --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --input=$< --output=$@ --force;
-# 	# Touch
-# 	if [ ! -e $@ ]; then touch $@; fi;
-# 	# Cleaning
-
-
-# Hard filtering
-# %.hard.txt: %.vcf
-# 	# Translation and hard filtering
-# 	$(HOWARD) --config=$(HOWARD_CONFIG) --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --prioritization=$(HOWARD_PRIORITIZATION) --pzfields="PZScore,PZFlag,PZComment,PZInfos" --format=tab  --fields=$(HOWARD_FIELDS) --sort=$(HOWARD_SORT) --sort_by=$(HOWARD_SORT_BY) --order_by=$(HOWARD_ORDER_BY)  --multithreading --threads=$(THREADS) --snpeff_threads=$(THREADS_BY_SAMPLE) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --input=$< --output=$@ --hard --force;
-# 	# Touch
-# 	if [ ! -e $@ ]; then touch $@; fi;
-# 	# Cleaning
-
-
-# %.prioritized.vcf: %.vcf
-# 	# Prioritization step
-# 	$(HOWARD) --input=$< --output=$@ --config=$(HOWARD_CONFIG) --config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --filter=$(HOWARD_PRIORITIZATION)  --format=tab --annotation=$(HOWARD_ANNOTATION) --sort=$(HOWARD_SORT) --sort_by=$(HOWARD_SORT_BY) --env=$(CONFIG_TOOLS) --order_by=$(HOWARD_ORDER_BY)
-
-
 
 ## BAM/FASTQ Files
 ####################

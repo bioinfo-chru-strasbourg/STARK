@@ -128,18 +128,12 @@ RUN echo "#[INFO] STARK installation configuration" && \
 # This will install system packages, python packages and scripts to install tools
 
 
-ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git lzma lzma-devel make ncurses-devel perl perl-Data-Dumper perl-Digest-MD5 perl-Switch perl-devel perl-Tk tbb-devel unzip rsync wget which xz xz-devel zlib zlib-devel zlib2 zlib2-devel docker java-1.7.0 java-1.8.0 python2 python2-pip python3 python3-pip python3-devel curl-devel openssl-devel"
+ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git lzma lzma-devel make ncurses-devel perl perl-Data-Dumper perl-Digest-MD5 perl-Switch perl-devel perl-Tk tbb-devel unzip rsync wget which xz xz-devel zlib zlib-devel zlib2 zlib2-devel docker java-1.7.0 java-1.8.0 python2 python2-pip python3 python3-pip python3-devel curl-devel openssl-devel R-devel libcurl libcurl-devel libcurl-openssl-devel htslib htslib-devel libxml2-devel perl-Archive-Tar perl-List-MoreUtils"
 #ENV YUM_INSTALL=" wget rsync python2 python2-pip python3 python3-pip"
 ENV YUM_REMOVE="autoconf automake bzip2-devel lzma-devel ncurses-devel perl-devel tbb-devel xz-devel zlib-devel zlib2-devel python3-devel curl-devel openssl-devel"
 ENV PYTHON_MODULE=""
 ENV PYTHON2_MODULE=$PYTHON_MODULE" pathos numpy scipy argparse multiprocess" 
 ENV PYTHON3_MODULE=$PYTHON_MODULE" pathos numpy scipy argparse"
-
-
-
-
-
-
 
 
 ENV REPO_SYSTEM_GIT="$REPO/sources.system.tar.gz?path=sources/system"
@@ -150,7 +144,6 @@ ENV REPO_PYTHON_HTTP="$REPO/sources/python/"
 ENV GET_TOOL_SOURCE=$SOURCES/$SOURCES_FOLDER/get_tool_source.sh
 ENV TOOL_INIT=$SOURCES/$SOURCES_FOLDER/tool_init.sh
 ENV TOOL_CHECK=$SOURCES/$SOURCES_FOLDER/tool_check.sh
-
 
 
 
@@ -230,7 +223,7 @@ RUN echo "#[INFO] Sources scripts" && \
 
 
 # System isntallation
-RUN echo "#[INFO] System installation" && \
+RUN echo "#[INFO] System YUM installation - and download" && \
 	# Create system repository \
 	mkdir -p $SOURCES/$SOURCES_FOLDER/system && \
 	# INSTALL WGET \
@@ -364,7 +357,7 @@ RUN echo "#[INFO] System installation" && \
 
 
 # PYTHON installation
-RUN	echo "#[INFO] System Python packages download from REPO '$REPO'"; \
+RUN	echo "#[INFO] System Python packages installation - download from REPO '$REPO'"; \
 	mkdir -p $SOURCES/$SOURCES_FOLDER/python/build && \
 	# in GIT mode
 	if wget --progress=bar:force --tries=3 $REPO_PYTHON_GIT -O $SOURCES/$SOURCES_FOLDER/python/build/STARK-repo.sources.python.tar.gz; then \
@@ -430,6 +423,21 @@ RUN	echo "#[INFO] System Python packages download from REPO '$REPO'"; \
 	fi && \
 	echo "#[INFO] System Clean" && \
 	echo "#";
+
+
+
+
+#####
+# R #
+#####
+
+## Install R packages
+RUN echo "#[INFO] System R packages installation" && \
+	R -e "install.packages(c('BiocManager', 'devtools', 'stringr' ,'optparse'), dependencies=TRUE, repos = 'http://cran.us.r-project.org')" && \
+	R -e 'BiocManager::install(ask = F)' && R -e 'BiocManager::install(c("Biostrings", "Rsamtools", ask = F))' && \
+	echo "r <- getOption('repos'); r['CRAN'] <- 'http://cran.us.r-project.org'; options(repos = r);" > ~/.Rprofile && \
+	Rscript -e "library(devtools); install_github('mhahsler/rBLAST')"
+
 
 
 
@@ -499,10 +507,6 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
 	ln -s /usr/lib/jvm/jre-1.8.0/bin/java $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/java && \
 	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
-
-
-
-
 
 
 
@@ -608,6 +612,34 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	mkdir -p $TOOL_PARAM_DATABASE_FOLDER_LINK && \
 	mkdir -p $TOOL_PARAM_DATABASE_FOLDER && \
 	ln -s $TOOL_PARAM_DATABASE_FOLDER_LINK $TOOL_PARAM_DATABASE_FOLDER && \
+    $TOOL_CHECK ;
+
+
+
+#############
+# BLAST+    #
+#############
+
+# https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/ncbi-blast-2.12.0+-1.x86_64.rpm
+# https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/ncbi-blast-2.12.0+-x64-linux.tar.gz
+# blastn, blastp, blastx, and makeblastdb
+
+
+# TOOL INFO
+ENV TOOL_NAME="ncbi-blast"
+ENV TOOL_VERSION="2.12.0"
+ENV TOOL_TARBALL=$TOOL_NAME-$TOOL_VERSION"+-x64-linux.tar.gz"
+ENV TOOL_SOURCE_EXTERNAL="https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/$TOOL_TARBALL"
+ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+# TOOL PARAMETERS
+
+
+# TOOL INSTALLATION
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
+	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
+	cp -R $TOOL_SOURCE_BUILD/*/* $TOOL_DEST/ && \
+	chmod a+x $TOOL_DEST/bin/* && \
     $TOOL_CHECK ;
 
 
@@ -966,6 +998,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 
 
+
 ############
 # SAMTOOLS #
 ############
@@ -983,6 +1016,34 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	source $TOOL_INIT && \
 	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
 	make install --quiet -j $THREADS -C $(ls -d $TOOL_SOURCE_BUILD/*) prefix=$TOOL_DEST && \
+	$TOOL_CHECK ;
+
+
+
+############
+# SCRAMBLE #
+############
+
+# https://github.com/GeneDx/scramble/archive/refs/tags/1.0.2.zip
+
+
+# TOOL INFO
+ENV TOOL_NAME="scramble"
+ENV TOOL_VERSION="1.0.2"
+ENV TOOL_TARBALL="$TOOL_VERSION.zip"
+ENV TOOL_SOURCE_EXTERNAL="https://github.com/GeneDx/$TOOL_NAME/archive/refs/tags/$TOOL_TARBALL"
+ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+# TOOL PARAMETERS
+
+# TOOL INSTALLATION
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
+	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
+	make --quiet -j $THREADS -C $(ls -d $TOOL_SOURCE_BUILD/$TOOL_NAME-$TOOL_VERSION/cluster_identifier/src/) prefix=$TOOL_DEST && \
+	cp -R $TOOL_SOURCE_BUILD/$TOOL_NAME-$TOOL_VERSION/cluster_analysis/* $TOOL_DEST/ && \
+	cp -R $TOOL_SOURCE_BUILD/$TOOL_NAME-$TOOL_VERSION/cluster_identifier/src/build/* $TOOL_DEST/bin/ && \
+	cp -R $TOOL_SOURCE_BUILD/$TOOL_NAME-$TOOL_VERSION/cluster_analysis/resources/MEI_consensus_seqs.fa $TOOL_DEST/bin/ && \
+	chmod a+x $TOOL_DEST/bin/cluster_identifier && \
 	$TOOL_CHECK ;
 
 

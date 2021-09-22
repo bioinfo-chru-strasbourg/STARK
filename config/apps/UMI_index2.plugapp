@@ -7,9 +7,9 @@
 
 # APPLICATION INFOS
 #####################
-APP_NAME="UMI"
+APP_NAME="UMI_index2"
 APP_RELEASE="1.0"
-APP_DESCRIPTION="PlugAPP for specific parameters to extract and mark UMI tags"
+APP_DESCRIPTION="PlugAPP for specific parameters to extract and mark UMI tags - index2"
 #APP_GROUP=""
 #APP_PROJECT=""
 

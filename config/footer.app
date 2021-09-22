@@ -985,6 +985,19 @@ HOWARD_PRIORITIZATION_ANALYSIS=$(echo $(echo $HOWARD_PRIORITIZATION_ANALYSIS | t
 export HOWARD_PRIORITIZATION_ANALYSIS
 
 
+# VARANK
+# Default prioritization with HOWARD for VaRank score mode
+if [ -z "$HOWARD_PRIORITIZATION_VARANK" ]; then
+	HOWARD_PRIORITIZATION_VARANK=$HOWARD_PRIORITIZATION
+fi;
+if [ ! -z "$APP_NAME" ] && [ ${APP_NAME^^} != "DEFAULT" ]; then
+	HOWARD_PRIORITIZATION_VARANK="$APP_NAME,$HOWARD_PRIORITIZATION_VARANK"
+fi;
+# Keep fist as first and sort the rest
+HOWARD_PRIORITIZATION_VARANK=$(echo $(echo $HOWARD_PRIORITIZATION_VARANK | tr "," " " | cut -d" " -f1 | tr " " "," && echo $HOWARD_PRIORITIZATION_VARANK | tr "," " " | tr " " "\n" | sort -u | grep -v "^$(echo $HOWARD_PRIORITIZATION_VARANK | tr "," " " | cut -d" " -f1)$" | tr "\n" "," | sed s/,$//) | tr " " "," )
+export HOWARD_PRIORITIZATION_VARANK
+
+
 # TRANSLATION
 ################
 # List of fields to show in the TXT file

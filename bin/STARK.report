@@ -1062,8 +1062,8 @@ ANNOTATORS_HTML="$ANNOTATORS_NUMBER annotator"$([ $ANNOTATORS_NUMBER -gt 1 ] && 
 PIPELINES_HTML="<strong>$PIPELINES_NUMBER pipeline"$([ $PIPELINES_NUMBER -gt 1 ] && echo "s")"</strong>"
 ALIGNERS_CALLERS_ANNOTATORS_HTML="($ALIGNERS_HTML, $CALLERS_HTML, $ANNOTATORS_HTML)"
 
-# HOWARD PRIORITIZATION
-HOWARD_PRIORITIZATION_PARAM=$(FIRST=$(echo $HOWARD_PRIORITIZATION_REPORT,$HOWARD_PRIORITIZATION | tr "," " " | cut -d" " -f1) && echo $FIRST","$(echo $HOWARD_PRIORITIZATION_REPORT,$HOWARD_PRIORITIZATION | tr "," " " | tr " " "\n" | sort -u | grep -v "^$FIRST" | tr "\n" "," | sed s/,$//) | tr "," " ")
+# HOWARD PRIORITIZATION 
+HOWARD_PRIORITIZATION_PARAM=$(FIRST=$(echo $HOWARD_PRIORITIZATION_REPORT,$HOWARD_PRIORITIZATION,$HOWARD_PRIORITIZATION_VARANK | tr "," " " | cut -d" " -f1) && echo $FIRST","$(echo $HOWARD_PRIORITIZATION_REPORT,$HOWARD_PRIORITIZATION,$HOWARD_PRIORITIZATION_VARANK | tr "," " " | tr " " "\n" | sort -u | grep -v "^$FIRST" | tr "\n" "," | sed s/,$//) | tr "," " ")
 HOWARD_PRIORITIZATION_LIST=""
 for HOWARD_P in $(echo "$HOWARD_PRIORITIZATION_PARAM" | tr " " "\n"); do
 	#if (($(head -n1 $FINAL_TSV | tr "\t" "\n" | grep "^PZFlag-$HOWARD_P$" | wc -l))); then
@@ -1074,6 +1074,12 @@ done;
 
 # ARCHIVES
 SEQUENCING_ARCHIVE_METRICS_CRAM_SOURCE_TYPE=$(grep "CRAM_source_type" $SEQUENCING_ARCHIVE_METRICS  | cut -d$'\t' -f2)
+SEQUENCING_ARCHIVE_METRICS_CRAM_VALIDATION=$(grep "CRAM_validation" $SEQUENCING_ARCHIVE_METRICS  | cut -d$'\t' -f2)
+if (($SEQUENCING_ARCHIVE_METRICS_CRAM_VALIDATION)); then
+	SEQUENCING_ARCHIVE_METRICS_CRAM_MESSAGE=" (validated)"
+else
+	SEQUENCING_ARCHIVE_METRICS_CRAM_MESSAGE=" (<span style='color:red;'>NOT validated</span>)"
+fi;
 # grep "CRAM_cram_source" $SEQUENCING_ARCHIVE_METRICS  | cut -d$'\t' -f2 | xargs basename
 
 
@@ -1635,7 +1641,8 @@ if in_array $SECTION_ID $SECTIONS || in_array ALL $SECTIONS ; then
 					<br>
 					<strong>On target reads</strong> calculated on BAM for validation with Target Design 
 					<br>
-					Archives were generated from <strong title="test">'$SEQUENCING_ARCHIVE_METRICS_CRAM_SOURCE_TYPE'</strong>
+					Archives were generated from <strong title="test">'$SEQUENCING_ARCHIVE_METRICS_CRAM_SOURCE_TYPE'</strong> '$SEQUENCING_ARCHIVE_METRICS_CRAM_MESSAGE'
+					'$DESTRUCTIVE_FASTQ'
 					'$DESTRUCTIVE_PIPELINE'
 
 				</p>

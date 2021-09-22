@@ -170,6 +170,7 @@ do
 			;;
 		-d|--debug)
 			DEBUG=1
+			VERBOSE=1
 			shift 1
 			;;
 		--) shift

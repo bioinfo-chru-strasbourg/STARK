@@ -202,7 +202,8 @@ FASTQ_CLEAN_HEADER_PARAM=-v SAM_TAG=1 -v UMI_REFORMAT=1 -v UMI_TAG=1 -v UMI_LOC=
 	# FASTP parameters
 	echo " $(FASTP_PARAM) " > $@.param;
 	#echo " $(FASTP_PARAM) " > $@.param;
-	echo " --thread=$(FASTP_THREADS_BY_SAMPLE) " >> $@.param;
+	#echo " --thread=$(FASTP_THREADS_BY_SAMPLE) " >> $@.param;
+	echo " --thread=1 " >> $@.param;
 	echo " --compression=$(FASTP_COMPRESSION_LEVEL) " >> $@.param;
 	# UMI test
 	# zcat HORIZON.R1.fastq.gz | head -n1 | cut -d" " -f1 | awk -F: '{if ($9!="") {print $0}}' | wc -l
@@ -352,69 +353,84 @@ FASTQ_CLEAN_HEADER_PARAM=-v SAM_TAG=1 -v UMI_REFORMAT=1 -v UMI_TAG=1 -v UMI_LOC=
 ### Reheader
 
 %.fastq_reheader.R1.fastq.gz: %.log
-	#echo "$(UNGZ) -c $*.R1.fastq.gz | head -n1 | sed 's/^.*\(1:N:0:[^ $$]*\).*$$/\1/' > $@.tmp.read_head" > $@.tmp.read_head.cmd;
-	echo "$(UNGZ) -c $*.R1.fastq.gz | head -n1 > $@.tmp.read_head" > $@.tmp.read_head.cmd;
-	chmod u+x $@.tmp.read_head.cmd;
-	/bin/bash $@.tmp.read_head.cmd;
-	echo "paste <($(UNGZ) -c $*.R1.fastq.gz | head -n2 | tr "\t" " ") <($(UNGZ) -c $*.I1.fastq.gz | head -n2) <($(UNGZ) -c $*.I2.fastq.gz | head -n2) | awk -F'\t' -v READ=1 -f $(FASTQ_REHEADER) | head -n1 > $@.tmp.read_rehead" > $@.tmp.read_rehead.cmd;
-	chmod u+x $@.tmp.read_rehead.cmd;
-	/bin/bash $@.tmp.read_rehead.cmd;
-	if [ "$$(cat $@.tmp.read_head)" != "$$(cat $@.tmp.read_rehead)" ]; then \
-		echo 'paste <($(UNGZ) -c $*.R1.fastq.gz | tr "\t" " ") <($(UNGZ) -c $*.I1.fastq.gz) <($(UNGZ) -c $*.I2.fastq.gz) | awk -F"\t" -v READ=1 -f $(FASTQ_REHEADER) | $(GZ) -1 -c > $@' > $@.tmp.cmd; \
-		chmod u+x $@.tmp.cmd; \
-		/bin/bash $@.tmp.cmd; \
-		#rm -f $@.tmp.cmd; \
+	if (( $$($(UNGZ) -c $*.R1.fastq.gz | head -n1 | wc -l) )); then \
+		echo "$(UNGZ) -c $*.R1.fastq.gz | head -n1 | tr '\t' ' ' > $@.tmp.read_head" > $@.tmp.read_head.cmd; \
+		chmod u+x $@.tmp.read_head.cmd; \
+		/bin/bash $@.tmp.read_head.cmd; \
+		echo "paste <($(UNGZ) -c $*.R1.fastq.gz | head -n2 | tr '\t' ' ') <($(UNGZ) -c $*.I1.fastq.gz | head -n2) <($(UNGZ) -c $*.I2.fastq.gz | head -n2) | awk -F'\t' -v READ=1 -f $(FASTQ_REHEADER) | head -n1 > $@.tmp.read_rehead" > $@.tmp.read_rehead.cmd; \
+		chmod u+x $@.tmp.read_rehead.cmd; \
+		/bin/bash $@.tmp.read_rehead.cmd; \
+		if [ "$$(cat $@.tmp.read_head)" != "$$(cat $@.tmp.read_rehead)" ]; then \
+			echo 'paste <($(UNGZ) -c $*.R1.fastq.gz | tr "\t" " ") <($(UNGZ) -c $*.I1.fastq.gz) <($(UNGZ) -c $*.I2.fastq.gz) | awk -F"\t" -v READ=1 -f $(FASTQ_REHEADER) | $(GZ) -1 -c > $@' > $@.tmp.cmd; \
+			chmod u+x $@.tmp.cmd; \
+			/bin/bash $@.tmp.cmd; \
+			#rm -f $@.tmp.cmd; \
+		else \
+			ln -s $*.R1.fastq.gz $@; \
+		fi; \
 	else \
 		ln -s $*.R1.fastq.gz $@; \
 	fi;
 	rm -rf $@.tmp*
 
 %.fastq_reheader.R2.fastq.gz: %.log
-	echo "$(UNGZ) -c $*.R2.fastq.gz | head -n1 > $@.tmp.read_head" > $@.tmp.read_head.cmd;
-	chmod u+x $@.tmp.read_head.cmd;
-	/bin/bash $@.tmp.read_head.cmd;
-	echo "paste <($(UNGZ) -c $*.R2.fastq.gz | head -n2 | tr "\t" " ") <($(UNGZ) -c $*.I1.fastq.gz | head -n2) <($(UNGZ) -c $*.I2.fastq.gz | head -n2) | awk -F'\t' -v READ=2 -f $(FASTQ_REHEADER) | head -n1 > $@.tmp.read_rehead" > $@.tmp.read_rehead.cmd;
-	chmod u+x $@.tmp.read_rehead.cmd;
-	/bin/bash $@.tmp.read_rehead.cmd;
-	if [ "$$($(UNGZ) -c $*.R2.fastq.gz | head -n1)" != "" ] && [ "$$(cat $@.tmp.read_head)" != "$$(cat $@.tmp.read_rehead)" ]; then \
-		echo 'paste <($(UNGZ) -c $*.R2.fastq.gz | tr "\t" " ") <($(UNGZ) -c $*.I1.fastq.gz) <($(UNGZ) -c $*.I2.fastq.gz) | awk -F"\t" -v READ=2 -f $(FASTQ_REHEADER) | $(GZ) -1 -c > $@' > $@.tmp.cmd; \
-		chmod u+x $@.tmp.cmd; \
-		/bin/bash $@.tmp.cmd; \
-		#rm -f $@.tmp.cmd; \
+	if (( $$($(UNGZ) -c $*.R2.fastq.gz | head -n1 | wc -l) )); then \
+		echo "$(UNGZ) -c $*.R2.fastq.gz | head -n1 | tr '\t' ' ' > $@.tmp.read_head" > $@.tmp.read_head.cmd; \
+		chmod u+x $@.tmp.read_head.cmd; \
+		/bin/bash $@.tmp.read_head.cmd; \
+		echo "paste <($(UNGZ) -c $*.R2.fastq.gz | head -n2 | tr '\t' ' ') <($(UNGZ) -c $*.I1.fastq.gz | head -n2) <($(UNGZ) -c $*.I2.fastq.gz | head -n2) | awk -F'\t' -v READ=1 -f $(FASTQ_REHEADER) | head -n1 > $@.tmp.read_rehead" > $@.tmp.read_rehead.cmd; \
+		chmod u+x $@.tmp.read_rehead.cmd; \
+		/bin/bash $@.tmp.read_rehead.cmd; \
+		if [ "$$(cat $@.tmp.read_head)" != "$$(cat $@.tmp.read_rehead)" ]; then \
+			echo 'paste <($(UNGZ) -c $*.R2.fastq.gz | tr "\t" " ") <($(UNGZ) -c $*.I1.fastq.gz) <($(UNGZ) -c $*.I2.fastq.gz) | awk -F"\t" -v READ=1 -f $(FASTQ_REHEADER) | $(GZ) -1 -c > $@' > $@.tmp.cmd; \
+			chmod u+x $@.tmp.cmd; \
+			/bin/bash $@.tmp.cmd; \
+			#rm -f $@.tmp.cmd; \
+		else \
+			ln -s $*.R2.fastq.gz $@; \
+		fi; \
 	else \
 		ln -s $*.R2.fastq.gz $@; \
 	fi;
 	rm -rf $@.tmp*
 
 %.fastq_reheader.I1.fastq.gz: %.log
-	echo "$(UNGZ) -c $*.I1.fastq.gz | head -n1 > $@.tmp.read_head" > $@.tmp.read_head.cmd;
-	chmod u+x $@.tmp.read_head.cmd;
-	/bin/bash $@.tmp.read_head.cmd;
-	echo "paste <($(UNGZ) -c $*.I1.fastq.gz | head -n2 | tr "\t" " ") <($(UNGZ) -c $*.I1.fastq.gz | head -n2) <($(UNGZ) -c $*.I2.fastq.gz | head -n2) | awk -F'\t' -v READ=1 -f $(FASTQ_REHEADER) | head -n1 > $@.tmp.read_rehead" > $@.tmp.read_rehead.cmd;
-	chmod u+x $@.tmp.read_rehead.cmd;
-	/bin/bash $@.tmp.read_rehead.cmd;
-	if [ "$$($(UNGZ) -c $*.I1.fastq.gz | head -n1)" != "" ] && [ "$$(cat $@.tmp.read_head)" != "$$(cat $@.tmp.read_rehead)" ]; then \
-		echo 'paste <($(UNGZ) -c $*.I1.fastq.gz | tr "\t" " ") <($(UNGZ) -c $*.I1.fastq.gz) <($(UNGZ) -c $*.I2.fastq.gz) | awk -F"\t" -v READ=1 -f $(FASTQ_REHEADER) | $(GZ) -1 -c > $@' > $@.tmp.cmd; \
-		chmod u+x $@.tmp.cmd; \
-		/bin/bash $@.tmp.cmd; \
-		#rm -f $@.tmp.cmd; \
+	if (( $$($(UNGZ) -c $*.I1.fastq.gz | head -n1 | wc -l) )); then \
+		echo "$(UNGZ) -c $*.I1.fastq.gz | head -n1 | tr '\t' ' ' > $@.tmp.read_head" > $@.tmp.read_head.cmd; \
+		chmod u+x $@.tmp.read_head.cmd; \
+		/bin/bash $@.tmp.read_head.cmd; \
+		echo "paste <($(UNGZ) -c $*.I1.fastq.gz | head -n2 | tr '\t' ' ') <($(UNGZ) -c $*.I1.fastq.gz | head -n2) <($(UNGZ) -c $*.I2.fastq.gz | head -n2) | awk -F'\t' -v READ=1 -f $(FASTQ_REHEADER) | head -n1 > $@.tmp.read_rehead" > $@.tmp.read_rehead.cmd; \
+		chmod u+x $@.tmp.read_rehead.cmd; \
+		/bin/bash $@.tmp.read_rehead.cmd; \
+		if [ "$$(cat $@.tmp.read_head)" != "$$(cat $@.tmp.read_rehead)" ]; then \
+			echo 'paste <($(UNGZ) -c $*.I1.fastq.gz | tr "\t" " ") <($(UNGZ) -c $*.I1.fastq.gz) <($(UNGZ) -c $*.I2.fastq.gz) | awk -F"\t" -v READ=1 -f $(FASTQ_REHEADER) | $(GZ) -1 -c > $@' > $@.tmp.cmd; \
+			chmod u+x $@.tmp.cmd; \
+			/bin/bash $@.tmp.cmd; \
+			#rm -f $@.tmp.cmd; \
+		else \
+			ln -s $*.I1.fastq.gz $@; \
+		fi; \
 	else \
 		ln -s $*.I1.fastq.gz $@; \
 	fi;
 	rm -rf $@.tmp*
 
 %.fastq_reheader.I2.fastq.gz: %.log
-	echo "$(UNGZ) -c $*.I2.fastq.gz | head -n1 > $@.tmp.read_head" > $@.tmp.read_head.cmd;
-	chmod u+x $@.tmp.read_head.cmd;
-	/bin/bash $@.tmp.read_head.cmd;
-	echo "paste <($(UNGZ) -c $*.I2.fastq.gz | head -n2 | tr "\t" " ") <($(UNGZ) -c $*.I1.fastq.gz | head -n2) <($(UNGZ) -c $*.I2.fastq.gz | head -n2) | awk -F'\t' -v READ=2 -f $(FASTQ_REHEADER) | head -n1 > $@.tmp.read_rehead" > $@.tmp.read_rehead.cmd;
-	chmod u+x $@.tmp.read_rehead.cmd;
-	/bin/bash $@.tmp.read_rehead.cmd;
-	if [ "$$($(UNGZ) -c $*.I2.fastq.gz | head -n1)" != "" ] && [ "$$(cat $@.tmp.read_head)" != "$$(cat $@.tmp.read_rehead)" ]; then \
-		echo 'paste <($(UNGZ) -c $*.I2.fastq.gz | tr "\t" " ") <($(UNGZ) -c $*.I1.fastq.gz) <($(UNGZ) -c $*.I2.fastq.gz) | awk -F"\t" -v READ=2 -f $(FASTQ_REHEADER) | $(GZ) -1 -c > $@' > $@.tmp.cmd; \
-		chmod u+x $@.tmp.cmd; \
-		/bin/bash $@.tmp.cmd; \
-		#rm -f $@.tmp.cmd; \
+	if (( $$($(UNGZ) -c $*.I2.fastq.gz | head -n1 | wc -l) )); then \
+		echo "$(UNGZ) -c $*.I2.fastq.gz | head -n1 | tr '\t' ' ' > $@.tmp.read_head" > $@.tmp.read_head.cmd; \
+		chmod u+x $@.tmp.read_head.cmd; \
+		/bin/bash $@.tmp.read_head.cmd; \
+		echo "paste <($(UNGZ) -c $*.I2.fastq.gz | head -n2 | tr '\t' ' ') <($(UNGZ) -c $*.I1.fastq.gz | head -n2) <($(UNGZ) -c $*.I2.fastq.gz | head -n2) | awk -F'\t' -v READ=1 -f $(FASTQ_REHEADER) | head -n1 > $@.tmp.read_rehead" > $@.tmp.read_rehead.cmd; \
+		chmod u+x $@.tmp.read_rehead.cmd; \
+		/bin/bash $@.tmp.read_rehead.cmd; \
+		if [ "$$(cat $@.tmp.read_head)" != "$$(cat $@.tmp.read_rehead)" ]; then \
+			echo 'paste <($(UNGZ) -c $*.I2.fastq.gz | tr "\t" " ") <($(UNGZ) -c $*.I1.fastq.gz) <($(UNGZ) -c $*.I2.fastq.gz) | awk -F"\t" -v READ=1 -f $(FASTQ_REHEADER) | $(GZ) -1 -c > $@' > $@.tmp.cmd; \
+			chmod u+x $@.tmp.cmd; \
+			/bin/bash $@.tmp.cmd; \
+			#rm -f $@.tmp.cmd; \
+		else \
+			ln -s $*.I2.fastq.gz $@; \
+		fi; \
 	else \
 		ln -s $*.I2.fastq.gz $@; \
 	fi;

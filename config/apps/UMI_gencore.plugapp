@@ -1,0 +1,58 @@
+#!/bin/bash
+## STARK application SOMATIC_PARAMETERS
+
+# DEFAULT ENV
+######################
+#source $CONFIG_DEFAULT_APP
+
+# APPLICATION INFOS
+#####################
+APP_NAME="UMI_gencore"
+APP_RELEASE="1.0"
+APP_DESCRIPTION="PlugAPP for specific parameters to extract and mark UMI tags - gencore"
+#APP_GROUP=""
+#APP_PROJECT=""
+
+# ANALYSIS PARAMETERS
+#######################
+
+
+# POST ALIGNMENT STEPS
+POST_ALIGNMENT_STEPS="sorting gencore realignment recalibration compress"
+
+
+
+###################
+# GENCORE options #
+###################
+
+# supporting_reads ; set to 2 to keep the clusters with 2 or more supporting reads / ultrasensible filter
+# set to 1 to replace Picard Markduplicates dedup
+GENCORE_SUP_READS="--supporting_reads 1"
+
+# --score_threshold
+# set to 8 recommanded for dup-rate < 50% if you want to keep all the DNA fragments, and for each output read you want to discard all the low quality unoverlapped mutations to obtain a relative clean data
+GENCORE_SCORE_THREESHOLD="--score_threshold 6"
+
+# --ratio_threshold
+# if the ratio of the major base in a cluster is less than <ratio_threshold>, it will be further compared to the reference.
+# The valud should be 0.5~1.0, and the default value is 0.8
+# GENCORE_RATIO_THREESHOLD="--ratio_threshold 0.9"
+
+# --umi_diff_threshold
+# if two reads with identical mapping position have UMI difference <= <umi_diff_threshold>, then they will be merged to generate a consensus read
+# Default value is 2
+# GENCORE_DIFF_THREESHOLD="--umi_diff_threshold 3"
+
+# Quality Threeshold
+# --high_qual (Q30) ; --moderate_qual (Q20) ; --low_qual (Q15)
+# --high_qual : the threshold for a quality score to be considered as high quality. Default 30 means Q30. (int [=30])
+# --moderate_qual : the threshold for a quality score to be considered as moderate quality. Default 20 means Q20. (int [=20])
+# --low_qual : the threshold for a quality score to be considered as low quality. Default 15 means Q15. (int [=15])
+# GENCORE_QUAL_THREESHOLD="--moderate_qual 20"
+
+# --coverage_sampling
+# the sampling rate for genome scale coverage statistics. Default 10000 means 1/10000
+# for statistics purpose, can be reduce to gain performance
+# not included in the mk file
+

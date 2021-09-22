@@ -520,6 +520,8 @@ HOWARD_PRIORITIZATION_MINIMAL=$HOWARD_PRIORITIZATION_DEFAULT # "default"
 HOWARD_PRIORITIZATION_REPORT=$HOWARD_PRIORITIZATION_DEFAULT # "default"
 # Default prioritization with HOWARD for whole analysis (prioritization forced)
 HOWARD_PRIORITIZATION_ANALYSIS="" # "none"
+# Default prioritization with HOWARD for VaRank score mode
+HOWARD_PRIORITIZATION_VARANK=VaRank # "default"
 
 
 # TRANSLATION
