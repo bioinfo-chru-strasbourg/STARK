@@ -1425,7 +1425,7 @@ for RUU in $RUN_UNIQ; do
 					#cp $OF $RUN_SAMPLE_DIR/$CF
 					if ! $COMMAND_COPY $OF/* $RUN_SAMPLE_DIR/$CF/ 2>/dev/null; then
 						(($VERBOSE)) && echo "#[WARNING] Copy OTHER FILES '$OF' to '$CF' failed!"
-					if
+					fi;
 				fi;
 			done;
 
