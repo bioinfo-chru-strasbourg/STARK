@@ -146,6 +146,7 @@ function usage {
 	echo "#                                          Default: all cores in your system minus one";
 	echo "# --by_sample                              Split analysis by SAMPLE, all threads on each sample, one by one.";
 	echo "# --keep_alignment                         Keep alignment from input read file, for format BAM|SAM|CRAM only.";
+	echo "#                                          CRAM Archives integrity will not be checked";
 	echo "";
 
 	echo "### Launch STARK with Docker";

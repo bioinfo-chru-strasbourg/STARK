@@ -15,7 +15,8 @@
 ## New
 
 - UMI support (using FASTP for UMI barcode, and Picard MarkDuplicates and Gencore for duplicates)
-- Keep alignment for BAM/SAM/CRAM read input files
+- Keep alignment for BAM/SAM/CRAM read input files (if enabled)
+- MEI detection with Scramble calling tool
 - New HOWARD release (fields format, prioritization mode, SV compatibility...)
 
 

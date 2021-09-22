@@ -80,6 +80,8 @@ function usage {
 	echo "#                                                 Default: all cores in your system minus one";
 	echo "# -g|--by_sample                                  Split analysis by SAMPLE, all threads on each sample, one by one";
 	echo "# --keep_alignment                                Keep alignment from input read file, for format BAM|SAM|CRAM only.";
+	echo "#                                                 CRAM Archives integrity will not be checked";
+
 	echo "# -a|--adapters=<STRING>                          Adapters to trim.";
 
 	echo "# -v|--verbose                                    VERBOSE option";
@@ -1218,7 +1220,7 @@ for RUU in $RUN_UNIQ; do
 				#UMI_BARCODE_PATTERN_LENGTH=${#UMI_BARCODE_PATTERN}
 				
 
-				FASTQ_PROCESSED_STEPS_DEFAULT=".fastq_reheader.fastp.fastq_clean_header.compress"
+				FASTQ_PROCESSED_STEPS_DEFAULT=".fastq_reheader.sort.fastp.fastq_clean_header.compress"
 				FASTQ_PROCESSED_STEPS=$FASTQ_PROCESSED_STEPS_DEFAULT
 				#[ "$UMI_RELOC" != "" ] && FASTQ_PROCESSED_STEPS=".relocate_umi.fastp.fastq_clean_header.compress"
 
@@ -1704,6 +1706,8 @@ for RUU in $RUN_UNIQ; do
 
 
 	MAKE_ERROR=0
+
+	export KEEP_ALIGNMENT
 
 	# for BAM in $RESULTS/$RU/*/*bam; do
 

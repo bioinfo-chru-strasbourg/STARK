@@ -29,7 +29,7 @@ GZ?=$(GZ)
 UNGZ?=$(UNGZ)
 FASTQ_CLEAN_HEADER?=$(FASTQ_CLEAN_HEADER)
 RELOCATE_UMI?=$(RELOCATE_UMI)
-FASTQ_PROCESSED_STEPS?=.fastq_reheader.fastp.fastq_clean_header.compress
+FASTQ_PROCESSED_STEPS?=.fastq_reheader.sort.fastp.fastq_clean_header.compress
 
 FASTQ_CLEAN_HEADER_PARAM=-v SAM_TAG=1 -v UMI_REFORMAT=1 -v UMI_TAG=1 -v UMI_LOC=$(UMI_LOC)
 
@@ -194,6 +194,38 @@ FASTQ_CLEAN_HEADER_PARAM=-v SAM_TAG=1 -v UMI_REFORMAT=1 -v UMI_TAG=1 -v UMI_LOC=
 	#rm -rf $*.*.fastq.gz;
 	echo 'compress log !!!' > $@;
 
+
+
+### Compression
+
+%.sort.R1.fastq.gz: %.R1.fastq.gz %.log
+	mkdir -p $@.tmp.SORT;
+	$(UNGZ) $< -c | tr "\t" " " | paste - - - - | sort -T $@.tmp.SORT -n -k1,1 -t " " | tr "\t" "\n" | $(GZ) -1 -c > $@;
+	rm -rf $@.tmp*
+
+%.sort.R2.fastq.gz: %.R2.fastq.gz %.log 
+	mkdir -p $@.tmp.SORT;
+	$(UNGZ) $< -c | tr "\t" " " | paste - - - - | sort -T $@.tmp.SORT -n -k1,1 -t " " | tr "\t" "\n" | $(GZ) -1 -c > $@;
+	rm -rf $@.tmp*
+
+%.sort.I1.fastq.gz: %.I1.fastq.gz %.log
+	mkdir -p $@.tmp.SORT;
+	$(UNGZ) $< -c | tr "\t" " " | paste - - - - | sort -T $@.tmp.SORT -n -k1,1 -t " " | tr "\t" "\n" | $(GZ) -1 -c > $@;
+	rm -rf $@.tmp*
+
+%.sort.I2.fastq.gz: %.I2.fastq.gz %.log 
+	mkdir -p $@.tmp.SORT;
+	$(UNGZ) $< -c | tr "\t" " " | paste - - - - | sort -T $@.tmp.SORT -n -k1,1 -t " " | tr "\t" "\n" | $(GZ) -1 -c > $@;
+	rm -rf $@.tmp*
+
+%.sort.log: %.log %.sort.R1.fastq.gz %.sort.R2.fastq.gz %.sort.I1.fastq.gz %.sort.I2.fastq.gz
+	#rm -rf $*.*.fastq.gz;
+	echo 'compress log !!!' > $@;
+
+
+
+
+# zcat Sample3.R1.fastq.gz | tr "\t" " " | paste - - - - | sort -n -k1,1 -t " " | tr "\t" "\n" | gzip -1 -c > Sample3.R1.sorted.fastq.gz
 
 
 ### FASTP
