@@ -26,7 +26,10 @@ BEGIN {
 	if (UMI_SEP=="") {
 		UMI_SEP="-"
 	}
-	REMOVE_UMI_FROM_BC=0
+	if (REMOVE_UMI_FROM_BC=="") {
+		REMOVE_UMI_FROM_BC=0
+	}
+	#REMOVE_UMI_FROM_BC=0
 	if (match(UMI_LOC"", /.*index.*/)) {
 		REMOVE_UMI_FROM_BC=1
 	}
@@ -98,6 +101,10 @@ BEGIN {
 		if (!NO_COMMENT) {
 			sep = FIRST_SEP;
 			UMI_already_exists_in_comment=0;
+			BC_already_exists_in_comment=0;
+			if (match($0, /BC:Z:[^:]*/)) {
+				BC_already_exists_in_comment=1;
+			}
 			nb_sam_tag=0;
 			if (nb_a>1) {
 				for (i=2; i in a; i++) {
@@ -107,16 +114,19 @@ BEGIN {
 						if (SAM_TAG) {
 							nb_CASAVA=split(a[i],CASAVA,"[:]");
 							BC=CASAVA[4]
+							gsub("+","-",BC)
 							# check if UMI
 							if (UMI!="" && REMOVE_UMI_FROM_BC) {
 								UMI_AS_BC=UMI
-								gsub("-","+",UMI_AS_BC)
+								#gsub("-","+",UMI_AS_BC)
 								if (UMI_AS_BC == BC) { BC=""}
 								gsub(UMI_AS_BC,"",BC)
-								gsub("^+","",BC)
-								gsub("+$","",BC)
+								#gsub("^+","",BC)
+								#gsub("+$","",BC)
+								gsub("^-","",BC)
+								gsub("-$","",BC)
 							}
-							if (BC!="") {
+							if (BC!="" && ! BC_already_exists_in_comment) {
 								a[i]="BC:Z:"BC
 							} else {
 								a[i]=""
@@ -126,13 +136,16 @@ BEGIN {
 						# BC: if UMI already exists and need to be removed (see UMI_LOC)
 						nb_BC=split(a[i],BCZ,"[:]");
 						BC=BCZ[3]
+						gsub("+","-",BC)
 						if (UMI!="" && REMOVE_UMI_FROM_BC) {
 							UMI_AS_BC=UMI
-							gsub("-","+",UMI_AS_BC)
+							#gsub("-","+",UMI_AS_BC)
 							if (UMI_AS_BC == BC) { BC=""}
 							gsub(UMI_AS_BC,"",BC)
-							gsub("^+","",BC)
-							gsub("+$","",BC)
+							#gsub("^+","",BC)
+							#gsub("+$","",BC)
+							gsub("^-","",BC)
+							gsub("-$","",BC)
 						}
 						if (BC!="") {
 							a[i]="BC:Z:"BC

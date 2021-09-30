@@ -128,9 +128,13 @@ RUN echo "#[INFO] STARK installation configuration" && \
 # This will install system packages, python packages and scripts to install tools
 
 
-ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git lzma lzma-devel make ncurses-devel perl perl-Data-Dumper perl-Digest-MD5 perl-Switch perl-devel perl-Tk tbb-devel unzip rsync wget which xz xz-devel zlib zlib-devel zlib2 zlib2-devel docker java-1.7.0 java-1.8.0 python2 python2-pip python3 python3-pip python3-devel curl-devel openssl-devel R-devel libcurl libcurl-devel libcurl-openssl-devel htslib htslib-devel libxml2-devel perl-Archive-Tar perl-List-MoreUtils"
-#ENV YUM_INSTALL=" wget rsync python2 python2-pip python3 python3-pip"
+ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git lzma lzma-devel make ncurses-devel perl perl-Data-Dumper perl-Digest-MD5 perl-Switch perl-devel perl-Tk tbb-devel unzip rsync wget which xz xz-devel zlib zlib-devel zlib2 zlib2-devel docker java-1.7.0 java-1.8.0 python2 python2-pip python3 python3-pip python3-devel curl-devel openssl-devel"
+#ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git lzma lzma-devel make ncurses-devel perl perl-Data-Dumper perl-Digest-MD5 perl-Switch perl-devel perl-Tk tbb-devel unzip rsync wget which xz xz-devel zlib zlib-devel zlib2 zlib2-devel docker java-1.7.0 java-1.8.0 python2 python2-pip python3 python3-pip python3-devel curl-devel openssl-devel R-core R-core-devel libcurl libcurl-devel libcurl-openssl-devel htslib htslib-devel libxml2-devel"
+#ENV YUM_INSTALL_MORE=" R-devel libcurl libcurl-devel libcurl-openssl-devel htslib htslib-devel libxml2-devel perl-Archive-Tar perl-List-MoreUtils"
+#ENV YUM_INSTALL_MORE=" R-core R-core-devel libcurl libcurl-devel libcurl-openssl-devel htslib htslib-devel libxml2-devel"
+#ENV YUM_INSTALL_MORE=" wget rsync python2 python2-pip python3 python3-pip"
 ENV YUM_REMOVE="autoconf automake bzip2-devel lzma-devel ncurses-devel perl-devel tbb-devel xz-devel zlib-devel zlib2-devel python3-devel curl-devel openssl-devel"
+#ENV YUM_REMOVE="autoconf automake bzip2-devel lzma-devel ncurses-devel perl-devel tbb-devel xz-devel zlib-devel zlib2-devel python3-devel curl-devel openssl-devel R-core-devel libcurl-devel libcurl-openssl-devel htslib-devel libxml2-devel"
 ENV PYTHON_MODULE=""
 ENV PYTHON2_MODULE=$PYTHON_MODULE" pathos numpy scipy argparse multiprocess" 
 ENV PYTHON3_MODULE=$PYTHON_MODULE" pathos numpy scipy argparse"
@@ -432,11 +436,15 @@ RUN	echo "#[INFO] System Python packages installation - download from REPO '$REP
 #####
 
 ## Install R packages
-RUN echo "#[INFO] System R packages installation" && \
-	R -e "install.packages(c('BiocManager', 'devtools', 'stringr' ,'optparse'), dependencies=TRUE, repos = 'http://cran.us.r-project.org')" && \
-	R -e 'BiocManager::install(ask = F)' && R -e 'BiocManager::install(c("Biostrings", "Rsamtools", ask = F))' && \
-	echo "r <- getOption('repos'); r['CRAN'] <- 'http://cran.us.r-project.org'; options(repos = r);" > ~/.Rprofile && \
-	Rscript -e "library(devtools); install_github('mhahsler/rBLAST')"
+# RUN echo "#[INFO] System R packages installation" && \
+# 	R -e "install.packages(c('BiocManager', 'devtools', 'stringr' ,'optparse'), dependencies=TRUE, repos = 'http://cran.us.r-project.org')" && \
+# 	R -e 'BiocManager::install(ask = F)' && R -e 'BiocManager::install(c("Biostrings", "Rsamtools", ask = F))' && \
+# 	echo "r <- getOption('repos'); r['CRAN'] <- 'http://cran.us.r-project.org'; options(repos = r);" > ~/.Rprofile && \
+# 	Rscript -e "library(devtools); install_github('mhahsler/rBLAST')"
+
+# RUN echo "#[INFO] System R packages installation" && \
+# 	R -e "install.packages(c('--no-docs', '--no-help', '--no-html', 'BiocManager', 'devtools', 'stringr' ,'optparse'), dependencies=TRUE, repos = 'http://cran.us.r-project.org')" && \
+# 	R -e 'BiocManager::install(ask = F)' && R -e 'BiocManager::install(c("Biostrings", "Rsamtools", ask = F))'
 
 
 
@@ -625,22 +633,22 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 # blastn, blastp, blastx, and makeblastdb
 
 
-# TOOL INFO
-ENV TOOL_NAME="ncbi-blast"
-ENV TOOL_VERSION="2.12.0"
-ENV TOOL_TARBALL=$TOOL_NAME-$TOOL_VERSION"+-x64-linux.tar.gz"
-ENV TOOL_SOURCE_EXTERNAL="https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/$TOOL_TARBALL"
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-# TOOL PARAMETERS
+# # TOOL INFO
+# ENV TOOL_NAME="ncbi-blast"
+# ENV TOOL_VERSION="2.12.0"
+# ENV TOOL_TARBALL=$TOOL_NAME-$TOOL_VERSION"+-x64-linux.tar.gz"
+# ENV TOOL_SOURCE_EXTERNAL="https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/$TOOL_TARBALL"
+# ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+# # TOOL PARAMETERS
 
 
-# TOOL INSTALLATION
-RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-	source $TOOL_INIT && \
-	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
-	cp -R $TOOL_SOURCE_BUILD/*/* $TOOL_DEST/ && \
-	chmod a+x $TOOL_DEST/bin/* && \
-    $TOOL_CHECK ;
+# # TOOL INSTALLATION
+# RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+# 	source $TOOL_INIT && \
+# 	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
+# 	cp -R $TOOL_SOURCE_BUILD/*/* $TOOL_DEST/ && \
+# 	chmod a+x $TOOL_DEST/bin/* && \
+#     $TOOL_CHECK ;
 
 
 
@@ -778,9 +786,9 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 # TOOL INFO
 ENV TOOL_NAME="fastp"
-ENV TOOL_VERSION="0.22.0"
+ENV TOOL_VERSION="0.23.0"
 ENV TOOL_TARBALL="$TOOL_NAME"
-ENV TOOL_SOURCE_EXTERNAL="http://opengene.org/$TOOL_NAME/$TOOL_NAME"
+ENV TOOL_SOURCE_EXTERNAL="http://opengene.org/$TOOL_NAME/$TOOL_NAME.$TOOL_VERSION"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
 
@@ -1027,24 +1035,24 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 # https://github.com/GeneDx/scramble/archive/refs/tags/1.0.2.zip
 
 
-# TOOL INFO
-ENV TOOL_NAME="scramble"
-ENV TOOL_VERSION="1.0.2"
-ENV TOOL_TARBALL="$TOOL_VERSION.zip"
-ENV TOOL_SOURCE_EXTERNAL="https://github.com/GeneDx/$TOOL_NAME/archive/refs/tags/$TOOL_TARBALL"
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-# TOOL PARAMETERS
+# # TOOL INFO
+# ENV TOOL_NAME="scramble"
+# ENV TOOL_VERSION="1.0.2"
+# ENV TOOL_TARBALL="$TOOL_VERSION.zip"
+# ENV TOOL_SOURCE_EXTERNAL="https://github.com/GeneDx/$TOOL_NAME/archive/refs/tags/$TOOL_TARBALL"
+# ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+# # TOOL PARAMETERS
 
-# TOOL INSTALLATION
-RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-	source $TOOL_INIT && \
-	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
-	make --quiet -j $THREADS -C $(ls -d $TOOL_SOURCE_BUILD/$TOOL_NAME-$TOOL_VERSION/cluster_identifier/src/) prefix=$TOOL_DEST && \
-	cp -R $TOOL_SOURCE_BUILD/$TOOL_NAME-$TOOL_VERSION/cluster_analysis/* $TOOL_DEST/ && \
-	cp -R $TOOL_SOURCE_BUILD/$TOOL_NAME-$TOOL_VERSION/cluster_identifier/src/build/* $TOOL_DEST/bin/ && \
-	cp -R $TOOL_SOURCE_BUILD/$TOOL_NAME-$TOOL_VERSION/cluster_analysis/resources/MEI_consensus_seqs.fa $TOOL_DEST/bin/ && \
-	chmod a+x $TOOL_DEST/bin/cluster_identifier && \
-	$TOOL_CHECK ;
+# # TOOL INSTALLATION
+# RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+# 	source $TOOL_INIT && \
+# 	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
+# 	make --quiet -j $THREADS -C $(ls -d $TOOL_SOURCE_BUILD/$TOOL_NAME-$TOOL_VERSION/cluster_identifier/src/) prefix=$TOOL_DEST && \
+# 	cp -R $TOOL_SOURCE_BUILD/$TOOL_NAME-$TOOL_VERSION/cluster_analysis/* $TOOL_DEST/ && \
+# 	cp -R $TOOL_SOURCE_BUILD/$TOOL_NAME-$TOOL_VERSION/cluster_identifier/src/build/* $TOOL_DEST/bin/ && \
+# 	cp -R $TOOL_SOURCE_BUILD/$TOOL_NAME-$TOOL_VERSION/cluster_analysis/resources/MEI_consensus_seqs.fa $TOOL_DEST/bin/ && \
+# 	chmod a+x $TOOL_DEST/bin/cluster_identifier && \
+# 	$TOOL_CHECK ;
 
 
 

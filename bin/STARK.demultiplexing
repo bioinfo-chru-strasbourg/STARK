@@ -415,7 +415,7 @@ fi;
 # READ_STRUCTURE
 
 
-FINAL_MASK="Y150,I8,Y10,Y150"
+#FINAL_MASK="Y150,I8,Y10,Y150"
 READ_STRUCTURE=""
 if [ "$FINAL_MASK" != "" ]; then
 	READ_STRUCTURE=$(for read in $(echo $FINAL_MASK | tr "," " "); do 

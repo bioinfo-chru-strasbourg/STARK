@@ -239,12 +239,16 @@ FASTQ_CLEAN_HEADER_PARAM=-v SAM_TAG=1 -v UMI_REFORMAT=1 -v UMI_TAG=1 -v UMI_LOC=
 	echo " --compression=$(FASTP_COMPRESSION_LEVEL) " >> $@.param;
 	# UMI test
 	# zcat HORIZON.R1.fastq.gz | head -n1 | cut -d" " -f1 | awk -F: '{if ($9!="") {print $0}}' | wc -l
+	#if [ "$(UMI_RELOC)" != "" ]; then
 	if ! (( $$($(UNGZ) -c $*.R1.fastq.gz | head -n 1 | cut -d" " -f1 | awk -F: '{if ($$8!="") {print $$0}}' | wc -l) )); then \
-		if [ "$(UMI_RELOC)" != "" ]; then \
+		echo "UMI_RELOC "$(UMI_RELOC) >> $@.param.test; \
+		$(UNGZ) -c $*.R1.fastq.gz | head -n 1 | cut -d" " -f2- >> $@.param.test; \
+		$(UNGZ) -c $*.R1.fastq.gz | head -n 1 | cut -d" " -f2- | grep -P '[0-9]*:N:0:[^\t $$]*' >> $@.param.test; \
+		if [[ "$(UMI_RELOC)" =~ .*index.* ]] && (( $$($(UNGZ) -c $*.R1.fastq.gz | head -n 1 | cut -d" " -f2- | grep -P '[0-9]*:N:0:[^\t $$]*' | wc -l) )); then \
 			echo " --umi --umi_loc=$(UMI_RELOC) " >> $@.param; \
 		fi; \
 		if [[ "$(UMI_RELOC)" =~ .*read.* ]]; then \
-			echo " --umi_len=$(UMI_BARCODE_PATTERN_1_LENGTH) " >> $@.param; \
+			echo " --umi --umi_loc=$(UMI_RELOC) --umi_len=$(UMI_BARCODE_PATTERN_1_LENGTH) " >> $@.param; \
 		fi; \
 	fi;
 	# Report

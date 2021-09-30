@@ -491,7 +491,7 @@ if [ ! -z "$BAM" ]; then
 			(($VERBOSE)) && echo "#[INFO] BAM '$bam_name'"
 			if (($BAM_READ_integrity_checksum)) || [ "$STATS" != "" ]; then
 				(($VERBOSE)) && echo "#[INFO] BAM '$bam_name' BAM READS integrity checksum..."
-				BAM_checksum=$(checksum "$SAMTOOLS bam2fq -@ $THREADS -O -n --reference $REF $bam 2>/dev/null")
+				BAM_checksum=$(checksum "$SAMTOOLS fastq -@ $THREADS -O -n --reference $REF $bam 2>/dev/null")
 				(($VERBOSE)) && echo "#[INFO] BAM '$bam_name' BAM READS integrity checksum '$BAM_checksum'"
 			fi;
 			if [ "$BAM_checksum" == "$FASTQ_checksum" ] || ! (($BAM_READ_integrity_checksum)); then
@@ -526,7 +526,7 @@ if [ ! -z "$BAM" ]; then
 				(($VERBOSE)) && echo "#[INFO] BAM '$bam_name' STATS TIME Encode '$CRAM_encode_time'"
 				if (($CRAM_READ_integrity_checksum)) || [ "$STATS" != "" ]; then
 					(($VERBOSE)) && echo "#[INFO] BAM '$bam_name' CRAM READS integrity checksum..."
-					CRAM_checksum=$(checksum "$SAMTOOLS bam2fq -@ $THREADS -O -n --reference $REF $CRAM.cram 2>/dev/null")
+					CRAM_checksum=$(checksum "$SAMTOOLS fastq -@ $THREADS -O -n --reference $REF $CRAM.cram 2>/dev/null")
 					(($VERBOSE)) && echo "#[INFO] BAM '$bam_name' CRAM READS integrity checksum '$CRAM_checksum'"
 				fi;
 				if [ "$CRAM_checksum" == "$FASTQ_checksum" ] || ! (($CRAM_READ_integrity_checksum)); then
@@ -564,35 +564,65 @@ if [ ! -z "$FASTQ" ]; then
 		(($VERBOSE)) && echo "#[INFO] FASTQ '$FASTQ_names'"
 
 		PICARD_FASTQ_options=""
+		SAMTOOLS_IMPORT_options=""
 		FASTQ_first=$(echo $FASTQ | cut -d" " -f1)
 		#FASTQ_names=""
 		if [ "$(echo $FASTQ | wc -w)" -lt 3 ]; then
-			PICARD_FASTQ_index=0
-			for RX in $FASTQ; do
-				#(($PICARD_FASTQ_index)) && sep=" "
-				#FASTQ_names=$FASTQ_names$sep$(basename $RX)
-				if (($($UNGZ -c $RX | head -n 1 | wc -l))); then
-					((PICARD_FASTQ_index++))
-					#echo "RX=$RX"
-					PICARD_FASTQ_options=$PICARD_FASTQ_options" -F$PICARD_FASTQ_index $RX "
-				fi;
-			done;
-			(($VERBOSE)) && echo "#[INFO] FASTQ '$FASTQ_names' CRAM generation..."
-			[ "$SAMPLE" == "" ] && SAMPLE="unknown"
-			# Options
-			SAMTOOLS_CRAM_COMMAND_OPTIONS=" -O CRAM,$CRAM_OPTIONS -@ $THREADS $CRAM.sam --reference $REF $SAMTOOLS_CRAM_INDEX -o $CRAM.cram "
-			[ "$SAMTOOLS_CRAM_COMMAND" == "sort" ] && SAMTOOLS_CRAM_COMMAND_OPTIONS=$SAMTOOLS_CRAM_COMMAND_OPTIONS" -T $CRAM.SAMTOOLS_PREFIX$RANDOM "
-			[ "$SAMTOOLS_CRAM_COMMAND" == "view" ] && SAMTOOLS_CRAM_COMMAND_OPTIONS=$SAMTOOLS_CRAM_COMMAND_OPTIONS" -h "
-			(($DEBUG)) && echo "#[INFO] COMMAND: $SAMTOOLS $SAMTOOLS_CRAM_COMMAND $SAMTOOLS_CRAM_COMMAND_OPTIONS "
-			(($DEBUG)) && echo "#[INFO] COMMAND FULL: $JAVA $JAVA_FLAGS -jar $PICARD FastqToSam $PICARD_FASTQ_options -COMPRESSION_LEVEL 0 -OUTPUT $CRAM.sam -SAMPLE_NAME $SAMPLE 2>/dev/null && $SAMTOOLS $SAMTOOLS_CRAM_COMMAND $SAMTOOLS_CRAM_COMMAND_OPTIONS 2>/dev/null && rm -f $CRAM.sam "
-			time_start=$(date +%s%3N)
-			$JAVA $JAVA_FLAGS -jar $PICARD FastqToSam $PICARD_FASTQ_options -COMPRESSION_LEVEL 0 -OUTPUT $CRAM.sam -SAMPLE_NAME $SAMPLE 2>/dev/null && $SAMTOOLS $SAMTOOLS_CRAM_COMMAND $SAMTOOLS_CRAM_COMMAND_OPTIONS 2>/dev/null && rm -f $CRAM.sam
-			time_end=$(date +%s%3N)
+
+			# CRAM Generation with PICARD
+			if ((0)); then
+				PICARD_FASTQ_index=0
+				for RX in $FASTQ; do
+					#(($PICARD_FASTQ_index)) && sep=" "
+					#FASTQ_names=$FASTQ_names$sep$(basename $RX)
+					if (($($UNGZ -c $RX | head -n 1 | wc -l))); then
+						((PICARD_FASTQ_index++))
+						#echo "RX=$RX"
+						PICARD_FASTQ_options=$PICARD_FASTQ_options" -F$PICARD_FASTQ_index $RX "
+					fi;
+				done;
+				(($VERBOSE)) && echo "#[INFO] FASTQ '$FASTQ_names' CRAM generation..."
+				[ "$SAMPLE" == "" ] && SAMPLE="unknown"
+				# Options
+				SAMTOOLS_CRAM_COMMAND_OPTIONS=" -O CRAM,$CRAM_OPTIONS -@ $THREADS $CRAM.sam --reference $REF $SAMTOOLS_CRAM_INDEX -o $CRAM.cram "
+				[ "$SAMTOOLS_CRAM_COMMAND" == "sort" ] && SAMTOOLS_CRAM_COMMAND_OPTIONS=$SAMTOOLS_CRAM_COMMAND_OPTIONS" -T $CRAM.SAMTOOLS_PREFIX$RANDOM "
+				[ "$SAMTOOLS_CRAM_COMMAND" == "view" ] && SAMTOOLS_CRAM_COMMAND_OPTIONS=$SAMTOOLS_CRAM_COMMAND_OPTIONS" -h "
+				(($DEBUG)) && echo "#[INFO] COMMAND: $SAMTOOLS $SAMTOOLS_CRAM_COMMAND $SAMTOOLS_CRAM_COMMAND_OPTIONS "
+				(($DEBUG)) && echo "#[INFO] COMMAND FULL: $JAVA $JAVA_FLAGS -jar $PICARD FastqToSam $PICARD_FASTQ_options -COMPRESSION_LEVEL 0 -OUTPUT $CRAM.sam -SAMPLE_NAME $SAMPLE 2>/dev/null && $SAMTOOLS $SAMTOOLS_CRAM_COMMAND $SAMTOOLS_CRAM_COMMAND_OPTIONS 2>/dev/null && rm -f $CRAM.sam "
+				time_start=$(date +%s%3N)
+				$JAVA $JAVA_FLAGS -jar $PICARD FastqToSam $PICARD_FASTQ_options -COMPRESSION_LEVEL 0 -OUTPUT $CRAM.sam -SAMPLE_NAME $SAMPLE 2>/dev/null && $SAMTOOLS $SAMTOOLS_CRAM_COMMAND $SAMTOOLS_CRAM_COMMAND_OPTIONS 2>/dev/null && rm -f $CRAM.sam
+				time_end=$(date +%s%3N)
+			fi;
+
+			# CRAM génération with SAMTOOLS
+			if ((1)); then
+				SAMTOOLS_IMPORT_index=0
+				for RX in $FASTQ; do
+					if (($($UNGZ -c $RX | head -n 1 | wc -l))); then
+						((SAMTOOLS_IMPORT_index++))
+						SAMTOOLS_IMPORT_options=$SAMTOOLS_IMPORT_options" -$SAMTOOLS_IMPORT_index $RX "
+					fi;
+				done;
+				(($VERBOSE)) && echo "#[INFO] FASTQ '$FASTQ_names' CRAM generation..."
+				# Options
+				SAMTOOLS_CRAM_COMMAND_OPTIONS=" -O CRAM,$CRAM_OPTIONS -@ $THREADS --reference $REF $SAMTOOLS_CRAM_INDEX -o $CRAM.cram "
+				[ "$SAMTOOLS_CRAM_COMMAND" == "sort" ] && SAMTOOLS_CRAM_COMMAND_OPTIONS=$SAMTOOLS_CRAM_COMMAND_OPTIONS" -T $CRAM.SAMTOOLS_PREFIX$RANDOM "
+				[ "$SAMTOOLS_CRAM_COMMAND" == "view" ] && SAMTOOLS_CRAM_COMMAND_OPTIONS=$SAMTOOLS_CRAM_COMMAND_OPTIONS" -h "
+				# COMMAND
+				COMMAND="$SAMTOOLS import $SAMTOOLS_IMPORT_options -T'*' -@ $THREADS | $SAMTOOLS $SAMTOOLS_CRAM_COMMAND $SAMTOOLS_CRAM_COMMAND_OPTIONS "
+				(($DEBUG)) && echo "#[INFO] COMMAND: $COMMAND "
+				# Launch COMMAND
+				time_start=$(date +%s%3N)
+				eval $COMMAND 2>/dev/null
+				time_end=$(date +%s%3N)
+			fi;
+
+
 			CRAM_encode_time=$(echo "scale=3; "$((time_end-time_start))" / 1000" | bc )
 			(($VERBOSE)) && echo "#[INFO] FASTQ '$FASTQ_names' STATS TIME Encode '$CRAM_encode_time'"
 			if (($CRAM_READ_integrity_checksum)) || [ "$STATS" != "" ]; then
 				(($VERBOSE)) && echo "#[INFO] FASTQ '$FASTQ_names' CRAM READS integrity checksum..."
-				CRAM_checksum=$(checksum "$SAMTOOLS bam2fq -@ $THREADS -O -n --reference $REF $CRAM.cram 2>/dev/null")
+				CRAM_checksum=$(checksum "$SAMTOOLS fastq -@ $THREADS -O -n --reference $REF $CRAM.cram 2>/dev/null")
 				(($VERBOSE)) && echo "#[INFO] FASTQ '$FASTQ_names' CRAM READS integrity checksum '$CRAM_checksum'"
 			fi;
 			if [ "$CRAM_checksum" == "$FASTQ_checksum" ] || ! (($CRAM_READ_integrity_checksum)); then

@@ -1099,7 +1099,9 @@ for RUU in $RUN_UNIQ; do
 					echo "$RUN_SAMPLE_DIR/$S.R1.fastq.gz: $F
 						#$SAMTOOLS sort -n --reference $REF -@ $THREADS $F -T $TMP_INPUT_BAM -O SAM 2>/dev/null | $SAMTOOLS bam2fq - -1 $RUN_SAMPLE_DIR/$S.R1.fastq.gz -2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz -O -@ $THREADS -c 1 -T BC,RX 2>/dev/null | $GZ -c 1> $RUN_SAMPLE_DIR/$S.R0.fastq.gz 2>/dev/null;
 						#$SAMTOOLS sort -n --reference $REF -@ $THREADS $F -T $TMP_INPUT_BAM -O SAM 2>/dev/null | $SAMTOOLS bam2fq - -1 $RUN_SAMPLE_DIR/$S.R1.fastq.gz -2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz -O -@ $THREADS -c 1 -T BC,RX 2>/dev/null | $GZ -c 1> $RUN_SAMPLE_DIR/$S.R0.fastq.gz 2>/dev/null;
-						$SAMTOOLS bam2fq $F --reference $REF -1 $RUN_SAMPLE_DIR/$S.R1.fastq.gz -2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz -O -@ $THREADS_BY_SAMPLE -c 1 -T BC,RX | gzip -1 -c > $RUN_SAMPLE_DIR/$S.R0.fastq.gz
+						#$SAMTOOLS bam2fq $F --reference $REF -1 $RUN_SAMPLE_DIR/$S.R1.fastq.gz -2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz -O -@ $THREADS_BY_SAMPLE -c 1 -T BC,RX | gzip -1 -c > $RUN_SAMPLE_DIR/$S.R0.fastq.gz
+						#$SAMTOOLS fastq $F --reference $REF -1 $RUN_SAMPLE_DIR/$S.R1.fastq.gz -2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz -O -@ $THREADS_BY_SAMPLE -c 1 -n -t -T RX | gzip -1 -c > $RUN_SAMPLE_DIR/$S.R0.fastq.gz
+						$SAMTOOLS fastq $F --reference $REF -1 $RUN_SAMPLE_DIR/$S.R1.fastq.gz -2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz -O -@ $THREADS_BY_SAMPLE -c 1 -n -T BC,RX | gzip -1 -c > $RUN_SAMPLE_DIR/$S.R0.fastq.gz
 						#cp -p $RUN_SAMPLE_DIR/$S.R1.fastq.gz $RUN_SAMPLE_DIR/$S.R1.test.fastq.gz;
 						#cp -p $RUN_SAMPLE_DIR/$S.R2.fastq.gz $RUN_SAMPLE_DIR/$S.R2.test.fastq.gz;
 						#cp -p $RUN_SAMPLE_DIR/$S.R0.fastq.gz $RUN_SAMPLE_DIR/$S.R0.test.fastq.gz;
@@ -1111,6 +1113,7 @@ for RUU in $RUN_UNIQ; do
 							touch $RUN_SAMPLE_DIR/$S.R2.fastq; \
 							$GZ $RUN_SAMPLE_DIR/$S.R2.fastq; \
 						fi;
+						#exit_error;
 						rm -f $RUN_SAMPLE_DIR/$S.R0.fastq.gz;
 					" >> $INPUT_MK
 					INPUT_MK_ALL=$INPUT_MK_ALL" $RUN_SAMPLE_DIR/$S.R1.fastq.gz"
@@ -1890,6 +1893,10 @@ for RUU in $RUN_UNIQ; do
 							" >> $RES_MK
 							RES_MK_ALL=$RES_MK_ALL" $RESULTS_FOLDER_COPY_FOLDER/$RUU"
 							RES_MK_ALL_RUU=$RES_MK_ALL_RUU" $RESULTS_FOLDER_COPY_FOLDER/$RUU"
+
+
+
+
 						fi;
 						
 

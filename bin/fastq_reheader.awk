@@ -34,8 +34,9 @@ BEGIN {
 			I_TAG= READ ":N:0:" I
 		}
 		if (I_TAG!="") {
-			H=H " " I_TAG
+			H=H " " I_TAG 
 		}
+		#H=H " 1:N:0:CACCGGGA+GTCAATAC"
 		print H 
 		print R
 		H=""

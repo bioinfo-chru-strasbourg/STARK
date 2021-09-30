@@ -1,0 +1,21 @@
+#!/bin/bash
+## STARK application NO_ANNOTATION
+
+# DEFAULT ENV
+######################
+#source $CONFIG_DEFAULT_APP
+
+# APPLICATION INFOS
+#####################
+APP_NAME="FASTQ_ONLY"
+APP_RELEASE="1.0"
+APP_DESCRIPTION="PlugAPP to disable pipeline and generates only FASTQ"
+#APP_GROUP=""
+#APP_PROJECT=""
+
+# ANALYSIS PARAMETERS
+#######################
+
+# PIPELINES
+PIPELINES="no_alignment.no_calling.no_annotation"
+
