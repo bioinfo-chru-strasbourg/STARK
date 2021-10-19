@@ -7,8 +7,8 @@
 
 SCRIPT_NAME="LaunchSample"
 SCRIPT_DESCRIPTION="Launch a Sample Analysis"
-SCRIPT_RELEASE="0.9.7.0"
-SCRIPT_DATE="19/09/2021"
+SCRIPT_RELEASE="0.9.7.1"
+SCRIPT_DATE="15/10/2021"
 SCRIPT_AUTHOR="Antony Le Bechec"
 SCRIPT_COPYRIGHT="IRC"
 SCRIPT_LICENCE="GNU-AGPL"
@@ -22,6 +22,7 @@ RELEASE_NOTES=$RELEASE_NOTES"# 0.9.5.2b-13/04/2016: Adding reports process\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.6b-27/10/2016: Multi input FASTQ/BAM/CRAM/SAM and associated parameters\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.6.1b-19/03/2019: Minor change on FASTQ/BAM/CRAM/SAM input\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.7.0-06/09/2021: Include UMI treatment, rebuild FASTQ input treatment\n";
+RELEASE_NOTES=$RELEASE_NOTES"# 0.9.7.1-15/10/2021: Include Favorites folder.\n";
 
 # Script folder
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -62,7 +63,9 @@ function usage {
 	echo "# -j|--panels|--genes=<FILE1,FILE2,...>           List of corresponding GENES files in BED format.";
 	echo "#                                                 Default first GENES file or empty";
 	echo "# -m|--transcripts=<FILE1,FILE2,...>              List of corresponding TRANSCRIPTS files in TSV format (transcript geneID).";
-	echo "#                                                 Default first GENES file or empty";
+	echo "#                                                 Default first TRANSCRIPTS file or empty";
+	echo "# --pedigree=<FILE1,FILE2,...>                    List of corresponding PEDIGREE files in PED format (see GATK doc).";
+	echo "#                                                 Default first PEDIGREE file or empty";
 	echo "# -s|--sample=<STRING1,STRING2,...>               List of corresponding SAMPLE Name";
 	echo "#                                                 Automatically detected from input files.";
 	echo "# -r|--run=<STRING1,STRING2,...>                  List of corresponding RUN Name";
@@ -73,6 +76,8 @@ function usage {
 	echo "#                                                 Default: no copy in a repository";
 	echo "# --archives=<FOLDER>                             Archives directory to generate GROUP|PROJECT|RUN|SAMPLE|* specific files";
 	echo "#                                                 Default: no copy in a archives";
+	echo "# --favorites=<FOLDER>                            Favorites directory to generate GROUP|PROJECT|RUN|* specific files from repository folder";
+	echo "#                                                 Default: no copy in a favorites";
 	echo "# --databases=<FOLDER>                            Databases folder (requires STARK databases folder structure)";
 	echo "# -p|--pipelines=<STRING1,STRING2,...>            PIPELINES to launch, in the format ALIGNER.CALLER.ANNOTATOR, separated by a comma";
 	echo "#                                                 Default: 'bwamem.gatkHC.howard'";
@@ -104,7 +109,7 @@ header;
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
-ARGS=$(getopt -o "e:f:q:b:j:m:s:r:o:u:p:t:ga:vdnh" --long "env:,app:,application:,reads:,fastq:,reads1:,reads:,fastq_R1:,fastq_R2:,reads2:,index1:,index2:,analysis_tag:,sample_tag:,other_files:,design:,bed:,manifest:,genes:,panels:,transcripts:,sample:,sample_list:,sample_filter:,runs:,demultiplexing:,demultiplexing_only,samplesheet:,analysis:,analysis_name:,output:,analysis_dir:,results:,repository:,archives:,databases:,input:,output:,tmp:,log:,pipelines:,threads:,no_header,by_sample,keep_alignment,adapters:,verbose,debug,release,help" -- "$@" 2> /dev/null)
+ARGS=$(getopt -o "e:f:q:b:j:m:s:r:o:u:p:t:ga:vdnh" --long "env:,app:,application:,reads:,fastq:,reads1:,reads:,fastq_R1:,fastq_R2:,reads2:,index1:,index2:,analysis_tag:,sample_tag:,other_files:,design:,bed:,manifest:,genes:,panels:,transcripts:,pedigree:,sample:,sample_list:,sample_filter:,runs:,demultiplexing:,demultiplexing_only,samplesheet:,analysis:,analysis_name:,output:,analysis_dir:,results:,repository:,archives:,favorites:,databases:,input:,output:,tmp:,log:,pipelines:,threads:,no_header,by_sample,keep_alignment,adapters:,verbose,debug,release,help" -- "$@" 2> /dev/null)
 [ $? -ne 0 ] && \
 	echo "#[ERROR] Error in the argument list." "Use -h or --help to display the help." >&2 && usage && \
 	exit 1
@@ -164,6 +169,11 @@ do
 			TRANSCRIPTS_INPUT=$(echo $TRANSCRIPTS_INPUT | tr "," " " | xargs)
 			shift 2
 			;;
+		--pedigree)
+			PEDIGREE_INPUT="$2"
+			PEDIGREE_INPUT=$(echo $PEDIGREE_INPUT | tr "," " " | xargs)
+			shift 2
+			;;
 		-s|--sample)
 			SAMPLE="$2"
 			SAMPLE=$(echo $SAMPLE | tr "," " " | xargs)
@@ -202,6 +212,10 @@ do
 			;;
 		--archives)
 			ARCHIVES="$2"
+			shift 2
+			;;
+		--favorites)
+			FAVORITES="$2"
 			shift 2
 			;;
 		--databases)
@@ -553,7 +567,7 @@ if [ "$TRANSCRIPTS" != "" ]; then
 				# Relocation
 				if [ -f "$T" ]; then
 					TRANSCRIPTS_LIST="$TRANSCRIPTS_LIST+$T"
-				elif [ -f "$ANALYSIS_DIR/$G" ]; then
+				elif [ -f "$ANALYSIS_DIR/$T" ]; then
 					TRANSCRIPTS_LIST="$TRANSCRIPTS_LIST+$ANALYSIS_DIR/$T"
 				fi;
 			else
@@ -567,6 +581,39 @@ if [ "$TRANSCRIPTS" != "" ]; then
 fi;
 TRANSCRIPTS=$TRANSCRIPTS_RELOCATED
 TRANSCRIPTS_DEFAULT=$(echo $TRANSCRIPTS | cut -d" " -f1) #`date '+%Y%m%d-%H%M%S'`
+
+
+# PEDIGREE
+if [ "$PEDIGREE_INPUT" != "" ]; then
+	PEDIGREE=$PEDIGREE_INPUT;
+fi;
+
+PEDIGREE_DEFAULT="";
+PEDIGREE_RELOCATED=""
+if [ "$PEDIGREE" != "" ]; then
+	# Test BED files exist
+	for P_LIST_ONE in $PEDIGREE; do
+		PEDIGREE_LIST=""
+		for P in $(echo $P_LIST_ONE | tr "+" " "); do
+			if [ -f "$P" ] || [ -f "$ANALYSIS_DIR/$P" ]; then
+				(($DEBUG)) && echo "P=$P";
+				# Relocation
+				if [ -f "$P" ]; then
+					PEDIGREE_LIST="$PEDIGREE_LIST+$P"
+				elif [ -f "$ANALYSIS_DIR/$P" ]; then
+					PEDIGREE_LIST="$PEDIGREE_LIST+$ANALYSIS_DIR/$P"
+				fi;
+			else
+				echo "[ERROR] PEDIGREE '$P' file DOES NOT exist!";
+				exit 0;
+			fi;
+		done;
+		PEDIGREE_RELOCATED="$PEDIGREE_RELOCATED "$(echo $PEDIGREE_LIST | sed "s/+$//" | sed "s/^+//")
+	done;
+
+fi;
+PEDIGREE=$PEDIGREE_RELOCATED
+PEDIGREE_DEFAULT=$(echo $PEDIGREE | cut -d" " -f1) #`date '+%Y%m%d-%H%M%S'`
 
 
 # RUN
@@ -595,6 +642,8 @@ BEDFILE_GENES_CHECKED=""
 BEDFILE_GENES_ARRAY=($BEDFILE_GENES);
 TRANSCRIPTS_CHECKED=""
 TRANSCRIPTS_ARRAY=($TRANSCRIPTS);
+PEDIGREE_CHECKED=""
+PEDIGREE_ARRAY=($PEDIGREE);
 SAMPLE_TAG_CHECKED=""
 SAMPLE_TAG_ARRAY=($SAMPLE_TAG);
 
@@ -616,7 +665,6 @@ for F in $FASTQ; do
 			exit 0;
 		fi;
 	fi;
-
 
 	# SAMPLE
 	if [ "${SAMPLE_ARRAY[$NB_SAMPLE]}" == "" ]; then
@@ -670,6 +718,13 @@ for F in $FASTQ; do
 		TRANSCRIPTS_CHECKED="$TRANSCRIPTS_CHECKED${TRANSCRIPTS_ARRAY[$NB_SAMPLE]} "
 	fi;
 
+	# PEDIGREE
+	if [ "${PEDIGREE_ARRAY[$NB_SAMPLE]}" == "" ] || [ ! -f "${PEDIGREE_ARRAY[$NB_SAMPLE]}" ]; then
+		PEDIGREE_CHECKED="$PEDIGREE_CHECKED$PEDIGREE_DEFAULT "
+	else
+		PEDIGREE_CHECKED="$PEDIGREE_CHECKED${PEDIGREE_ARRAY[$NB_SAMPLE]} "
+	fi;
+
 	# SAMPLE TAG
 	if [ "${SAMPLE_TAG_ARRAY[$NB_SAMPLE]}" == "" ] || [ ! -f "${SAMPLE_TAG_ARRAY[$NB_SAMPLE]}" ]; then
 		SAMPLE_TAG_CHECKED="$SAMPLE_TAG_CHECKED"
@@ -686,6 +741,7 @@ RUN=$RUN_CHECKED;
 BED=$BED_CHECKED;
 BEDFILE_GENES=$BEDFILE_GENES_CHECKED;
 TRANSCRIPTS=$TRANSCRIPTS_CHECKED;
+PEDIGREE=$PEDIGREE_CHECKED;
 
 
 # ARRAYS
@@ -699,7 +755,7 @@ RUN_ARRAY=($RUN);
 BED_ARRAY=($BED);
 BEDFILE_GENES_ARRAY=($BEDFILE_GENES);
 TRANSCRIPTS_ARRAY=($TRANSCRIPTS);
-
+PEDIGREE_ARRAY=($PEDIGREE);
 
 
 # MULTIPLE BAM/CRAM/SAM/FASTQ
@@ -711,7 +767,7 @@ if (($BY_SAMPLE)); then
 		for f in ${FASTQ_ARRAY[@]}; do
 			q_var=""
 			if [ ! -z ${FASTQ_R2_ARRAY[$i]} ]; then q_var=" -q ${FASTQ_R2_ARRAY[$i]}"; fi;
-			$SCRIPT_DIR/$(basename $0) $PARAM_MULTI --reads=$f --reads2="${FASTQ_R2_ARRAY[$i]}" --index1="${INDEX1_ARRAY[$i]}" --index2="${INDEX2_ARRAY[$i]}" --other_files="${OTHER_FILES_ARRAY[$i]}" --sample="${SAMPLE_ARRAY[$i]}" --run="${RUN_ARRAY[$i]}" --bed="${BED_ARRAY[$i]}" --genes="${BEDFILE_GENES_ARRAY[$i]}"  --transcripts="${TRANSCRIPTS_ARRAY[$i]}" ;
+			$SCRIPT_DIR/$(basename $0) $PARAM_MULTI --reads=$f --reads2="${FASTQ_R2_ARRAY[$i]}" --index1="${INDEX1_ARRAY[$i]}" --index2="${INDEX2_ARRAY[$i]}" --other_files="${OTHER_FILES_ARRAY[$i]}" --sample="${SAMPLE_ARRAY[$i]}" --run="${RUN_ARRAY[$i]}" --bed="${BED_ARRAY[$i]}" --genes="${BEDFILE_GENES_ARRAY[$i]}" --transcripts="${TRANSCRIPTS_ARRAY[$i]}" --pedigree="${PEDIGREE_ARRAY[$i]}" ;
 			((i++))
 		done;
 		exit 0;
@@ -744,6 +800,11 @@ fi;
 # THREADS
 if [[ $THREADS_INPUT =~ $re ]] && [ "$THREADS_INPUT" != "" ]; then
 	THREADS=$THREADS_INPUT;
+fi;
+
+if ! [[ $THREADS_COPY =~ $re ]] || [ "$THREADS_COPY" == "" ]; then
+	THREADS_COPY=$THREADS
+	#THREADS_COPY=1
 fi;
 
 # TMP_SYS_FOLDER
@@ -802,8 +863,23 @@ if [ -z "$SAMPLE_PROJECT" ]; then SAMPLE_PROJECT="UNKNOWN"; fi;
 if [ -z "$APP_NAME" ]; then APP_NAME="UNKNOWN"; fi;
 
 
+
+### DEV
+
+echo "FOLDER_REPOSITORY=$FOLDER_REPOSITORY"
+echo "FOLDER_ARCHIVES=$FOLDER_ARCHIVES"
+echo "FOLDER_FAVORITES=$FOLDER_FAVORITES"
+echo "REPOSITORY=$REPOSITORY"
+echo "ARCHIVES=$ARCHIVES"
+echo "FAVORITES=$FAVORITES"
+echo "REPOSITORY_FILE_PATTERNS=$REPOSITORY_FILE_PATTERNS"
+echo "ARCHIVES_FILE_PATTERNS=$ARCHIVES_FILE_PATTERNS"
+echo "FAVORITES_FILE_PATTERNS=$FAVORITES_FILE_PATTERNS"
+#exit 0
+
+
 if (($DEBUG)); then
-	echo -e "FASTQ $FASTQ\nFASTQ_R2 $FASTQ_R2\nSAMPLE $SAMPLE\nRUN $RUN\nBED $BED\nGENES $BEDFILE_GENES\nTRANSCRIPTS $TRANSCRIPTS\nINPUT $INPUT\nOUTPUT $OUTPUT\nRESULTS $RESULTS\n\nPIPELINES $PIPELINES" | column -t;
+	echo -e "FASTQ $FASTQ\nFASTQ_R2 $FASTQ_R2\nSAMPLE $SAMPLE\nRUN $RUN\nBED $BED\nGENES $BEDFILE_GENES\nTRANSCRIPTS $TRANSCRIPTS\nPEDIGREE $PEDIGREE\nINPUT $INPUT\nOUTPUT $OUTPUT\nRESULTS $RESULTS\n\nPIPELINES $PIPELINES" | column -t;
 fi;
 
 SAMPLE_ARRAY=($SAMPLE);
@@ -816,10 +892,10 @@ RUN_ARRAY=($RUN);
 BED_ARRAY=($BED);
 BEDFILE_GENES_ARRAY=($BEDFILE_GENES);
 TRANSCRIPTS_ARRAY=($TRANSCRIPTS);
+PEDIGREE_ARRAY=($PEDIGREE);
 
 # FOREACH RUN
 RUN_UNIQ=$(echo $RUN | tr " " "\n" | sort | uniq | tr "\n" " ");
-
 
 
 (($VERBOSE)) && echo "#[INFO] *** Start Analysis        ["$(date)"]"
@@ -994,6 +1070,7 @@ for RUU in $RUN_UNIQ; do
 		B=${BED_ARRAY[$I]};
 		G=${BEDFILE_GENES_ARRAY[$I]};
 		T=${TRANSCRIPTS_ARRAY[$I]};
+		P=${PEDIGREE_ARRAY[$I]};
 		TAG=${SAMPLE_TAG_ARRAY[$I]};
 
 		# BY RUN
@@ -1005,7 +1082,7 @@ for RUU in $RUN_UNIQ; do
 		RUN_SAMPLE_DIR=$RESULTS/$RU/$S
 
 		if (($DEBUG)); then
-			echo "$F | $F_R2 | $I1 | $I2 | $OFCF | $S | $RU | $B | $G | $T | $PIPELINES | $INPUT | $RESULTS | $RUN_SAMPLE_DIR ";
+			echo "$F | $F_R2 | $I1 | $I2 | $OFCF | $S | $RU | $B | $G | $T | $P | $PIPELINES | $INPUT | $RESULTS | $RUN_SAMPLE_DIR ";
 		fi;
 
 		mkdir -p $RUN_SAMPLE_DIR
@@ -1013,7 +1090,7 @@ for RUU in $RUN_UNIQ; do
 		# INFOS
 		(($VERBOSE)) && echo "#[INFO] RUN '$RUU' - SAMPLE '$S'"
 		(($VERBOSE)) && echo "#[INFO] SAMPLE '$RU/$S' from file(s):"
-		(($VERBOSE)) && echo "#[INFO] $F $F_R2 $I1 $I2 $OFCF $B $G $T "
+		(($VERBOSE)) && echo "#[INFO] $F $F_R2 $I1 $I2 $OFCF $B $G $T $P "
 
 		# Copy FASTQ
 		PICARD_FLAGS="COMPRESSION_LEVEL=1 MAX_RECORDS_IN_RAM=500000"
@@ -1259,6 +1336,8 @@ for RUU in $RUN_UNIQ; do
 				#FASTQ_PROCESSED_STEPS=".fastp.fastq_clean_header.compress"
 				#FASTQ_PROCESSED_STEPS=".fastq_reheader"
 				#FASTQ_PROCESSED_STEPS=""
+				#FASTQ_PROCESSED_STEPS=".fastq_reheader.sort.umi_tools.fastp.fastq_clean_header.compress"
+				# 
 				#echo $FASTQ_PROCESSED_STEPS
 				#exit 0
 
@@ -1268,7 +1347,7 @@ for RUU in $RUN_UNIQ; do
 				echo "FASTP_PARAM:=" >> $INPUT_MK
 				echo "FASTP_THREADS_BY_SAMPLE:=$THREADS_BY_SAMPLE" >> $INPUT_MK
 				echo "FASTP_COMPRESSION_LEVEL:=1" >> $INPUT_MK
-				echo "DISABLE_ADAPTER_TRIMMING:=$DISABLE_ADAPTER_TRIMMING" >> $INPUT_MK
+				echo "ENABLE_ADAPTER_TRIMMING:=$ENABLE_ADAPTER_TRIMMING" >> $INPUT_MK
 				echo "FASTQ_QUALITY_FILTERING:=$FASTQ_QUALITY_FILTERING" >> $INPUT_MK
 				echo "POLY_G_MIN_LEN:=$POLY_G_MIN_LEN" >> $INPUT_MK
 				echo "READ_LENGTH_REQUIRED:=$READ_LENGTH_REQUIRED" >> $INPUT_MK
@@ -1289,7 +1368,6 @@ for RUU in $RUN_UNIQ; do
 				echo "FASTQ_PROCESSED_STEPS:=$FASTQ_PROCESSED_STEPS" >> $INPUT_MK
 				
 
-				
 
 				# STEP START
 				############
@@ -1310,93 +1388,6 @@ for RUU in $RUN_UNIQ; do
 				if [ ! -e $RUN_SAMPLE_DIR_SEQUENCING/$S.sequencing.log ]; then
 					INPUT_MK_ALL=$INPUT_MK_ALL" $RUN_SAMPLE_DIR_SEQUENCING/$S.sequencing.log " 
 				fi;
-
-
-				# STEP UMI
-				##########
-
-				# Processing UMI extraction from Index with UMI TOOLS if no UMI in header
-
-				# UMI_COMMAND_R1="echo 'NO UMI Command'"
-				# UMI_COMMAND_COPY="cp -pP \$< \$@"
-				# UMI_BARCODE_PATTERN_LENGTH=$(echo $UMI_BARCODE_PATTERN | tr -d "\n" | wc -c)
-				# echo "#[INFO] UMI source '$UMI_LOC'";
-				# ### NO UMI
-				# if [ -z $UMI_LOC ]; then
-				# 	UMI_COMMAND_R1=$UMI_COMMAND_COPY
-				# 	UMI_COMMAND_R2=$UMI_COMMAND_COPY
-				# ### INDEX1
-				# elif [ "$UMI_LOC" == "index1" ]; then
-				# 	UMI_COMMAND_R1="umi_tools extract --bc-pattern=$UMI_BARCODE_PATTERN_1 --stdin=\$*.input.I1.fastq.gz --read2-in=\$*.input.R1.fastq.gz --read2-stdout --compresslevel=1 --log=\$@.log --error=\$@.err | sed '/^@/ s/_\([A-Z]*\)/:\1/' | $GZ -1 -c > \$@"
-				# 	UMI_COMMAND_R2="umi_tools extract --bc-pattern=$UMI_BARCODE_PATTERN_1 --stdin=\$*.input.I1.fastq.gz --read2-in=\$*.input.R2.fastq.gz --read2-stdout --compresslevel=1 --log=\$@.log --error=\$@.err | sed '/^@/ s/_\([A-Z]*\)/:\1/' | $GZ -1 -c > \$@"
-				# ### INDEX2
-				# elif [ "$UMI_LOC" == "index2" ]; then
-				# 	UMI_COMMAND_R1="umi_tools extract --bc-pattern=$UMI_BARCODE_PATTERN_1 --stdin=\$*.input.I2.fastq.gz --read2-in=\$*.input.R1.fastq.gz --read2-stdout --compresslevel=1 --log=\$@.log --error=\$@.err | sed '/^@/ s/_\([A-Z]*\)/:\1/' | $GZ -1 -c > \$@"
-				# 	UMI_COMMAND_R2="umi_tools extract --bc-pattern=$UMI_BARCODE_PATTERN_1 --stdin=\$*.input.I2.fastq.gz --read2-in=\$*.input.R2.fastq.gz --read2-stdout --compresslevel=1 --log=\$@.log --error=\$@.err | sed '/^@/ s/_\([A-Z]*\)/:\1/' | $GZ -1 -c > \$@"
-				# ### PER_INDEX
-				# elif [ "$UMI_LOC" == "per_index" ]; then
-				# 	UMI_COMMAND_R1="umi_tools extract --bc-pattern=$UMI_BARCODE_PATTERN_1 --stdin=\$*.input.I1.fastq.gz --read2-in=\$*.input.R1.fastq.gz --read2-stdout --compresslevel=1 --log=\$@.log --error=\$@.err | sed '/^@/ s/_\([A-Z]*\)_\([A-Z]*\)/:\1-\2/' | $GZ -1 -c > \$@"
-				# 	UMI_COMMAND_R2="umi_tools extract --bc-pattern=$UMI_BARCODE_PATTERN_2 --stdin=\$*.input.I2.fastq.gz --read2-in=\$*.input.R2.fastq.gz --read2-stdout --compresslevel=1 --log=\$@.log --error=\$@.err | sed '/^@/ s/_\([A-Z]*\)_\([A-Z]*\)/:\1-\2/' | $GZ -1 -c > \$@"
-				# ### READ1
-				# elif [ "$UMI_LOC" == "read1" ]; then
-				# 	UMI_COMMAND_R1="umi_tools extract --bc-pattern=$UMI_BARCODE_PATTERN_1 --stdin=\$*.input.R1.fastq.gz --read2-in=\$*.input.R1.fastq.gz --read2-stdout --compresslevel=1 --log=\$@.log --error=\$@.err | sed '/^@/ s/_\([A-Z]*\)/:\1/' | $GZ -1 -c > \$@"
-				# 	UMI_COMMAND_R2="umi_tools extract --bc-pattern=$UMI_BARCODE_PATTERN_1 --stdin=\$*.input.R1.fastq.gz --read2-in=\$*.input.R2.fastq.gz --read2-stdout --compresslevel=1 --log=\$@.log --error=\$@.err | sed '/^@/ s/_\([A-Z]*\)/:\1/' | $GZ -1 -c > \$@"
-				# ### READ2
-				# elif [ "$UMI_LOC" == "read2" ]; then
-				# 	UMI_COMMAND_R1="umi_tools extract --bc-pattern=$UMI_BARCODE_PATTERN_1 --stdin=\$*.input.R2.fastq.gz --read2-in=\$*.input.R1.fastq.gz --read2-stdout --compresslevel=1 --log=\$@.log --error=\$@.err | sed '/^@/ s/_\([A-Z]*\)/:\1/' | $GZ -1 -c > \$@"
-				# 	UMI_COMMAND_R2="umi_tools extract --bc-pattern=$UMI_BARCODE_PATTERN_1 --stdin=\$*.input.R2.fastq.gz --read2-in=\$*.input.R2.fastq.gz --read2-stdout --compresslevel=1 --log=\$@.log --error=\$@.err | sed '/^@/ s/_\([A-Z]*\)/:\1/' | $GZ -1 -c > \$@"
-				# ### PER_READ
-				# elif [ "$UMI_LOC" == "per_read" ]; then
-				# 	#UMI_COMMAND_R1="umi_tools extract --bc-pattern=$UMI_BARCODE_PATTERN_1 --stdin=\$*.input.R1.fastq.gz --read2-in=\$*.input.R1.fastq.gz --read2-stdout --compresslevel=1 --log=\$@.log --error=\$@.err | sed '/^@/ s/_\([A-Z]*\)_\([A-Z]*\)/:\1-\2/' | $GZ -1 -c > \$@"
-				# 	#UMI_COMMAND_R2="umi_tools extract --bc-pattern=$UMI_BARCODE_PATTERN_2 --stdin=\$*.input.R2.fastq.gz --read2-in=\$*.input.R2.fastq.gz --read2-stdout --compresslevel=1 --log=\$@.log --error=\$@.err | sed '/^@/ s/_\([A-Z]*\)_\([A-Z]*\)/:\1-\2/' | $GZ -1 -c > \$@"
-				# 	UMI_COMMAND_R1="umi_tools extract --extract-method=string --bc-pattern=$UMI_BARCODE_PATTERN --bc-pattern2=$UMI_BARCODE_PATTERN --stdin=\$*.input.R1.fastq.gz --read2-in=\$*.input.R2.fastq.gz --stdout=\$*.umi_raw.R1.fastq.gz --read2-out=\$*.umi_raw.R2.fastq.gz --compresslevel=1 --log=\$@.log --error=\$@.err && \
-				# 	$UNGZ -c \$*.umi_raw.R1.fastq.gz | sed '/^@/ s/_\([A-Z]\{$UMI_BARCODE_PATTERN_LENGTH\}\)\([A-Z]\{$UMI_BARCODE_PATTERN_LENGTH\}\)/:\1-\2/' | $GZ -1 -c > \$*.umi_tools.R1.fastq.gz && \
-				# 	rm \$*.umi_raw.R1.fastq.gz && \
-				# 	$UNGZ -c \$*.umi_raw.R2.fastq.gz | sed '/^@/ s/_\([A-Z]\{$UMI_BARCODE_PATTERN_LENGTH\}\)\([A-Z]\{$UMI_BARCODE_PATTERN_LENGTH\}\)/:\1-\2/' | $GZ -1 -c > \$*.umi_tools.R2.fastq.gz && \
-				# 	rm \$*.umi_raw.R2.fastq.gz \
-				# 	"
-				# 	UMI_COMMAND_R2="touch \$@"
-				# else
-				# 	echo '#[ERROR] UMI source unknown';
-				# 	UMI_COMMAND_R1=$UMI_COMMAND_COPY
-				# 	UMI_COMMAND_R2=$UMI_COMMAND_COPY
-				# fi;
-
-
-				# # R1
-				# echo "%.umi_tools.R1.fastq.gz: %.log #%.R1.fastq.gz
-				# 	if ! ((\$\$($UNGZ -c \$< | head -n1 | cut -d' ' -f1 | cut -d: -f8 | grep '\S' | wc -l))); then \
-				# 		$UMI_COMMAND_R1; \
-				# 	else \
-				# 		$UMI_COMMAND_COPY; \
-				# 	fi;
-
-				# " #>> $INPUT_MK
-
-				# # R2
-				# echo "%.umi_tools.R2.fastq.gz: %.log #%.input.R2.fastq.gz %.input.log 
-				# 	if ! ((\$\$($UNGZ -c \$< | head -n1 | cut -d' ' -f1 | cut -d: -f8 | grep '\S' | wc -l))); then \
-				# 		$UMI_COMMAND_R2; \
-				# 	else \
-				# 		$UMI_COMMAND_COPY; \
-				# 	fi;
-
-				# " #>> $INPUT_MK
-
-				# # I1
-				# echo "%.umi_tools.I1.fastq.gz: %.log #%.input.log 
-				# 	cp -pP \$*.input.I1.fastq.gz \$@;
-
-				# " #>> $INPUT_MK
-
-				# # I2
-				# echo "%.umi_tools.I2.fastq.gz: %.log #%.input.log 
-				# 	cp -pP \$*.input.I2.fastq.gz \$@;
-
-				# " #>> $INPUT_MK
-
-
-				
 
 			fi;
 
@@ -1558,18 +1549,40 @@ for RUU in $RUN_UNIQ; do
 		# Copy TRANSCRIPTS
 		if [ "$T" != "" ] && [ ! -e $RUN_SAMPLE_DIR/$T.list.transcripts ]; then
 			(($VERBOSE)) && echo "#[INFO] Create LIST.TRANSCRIPTS file '$RUN_SAMPLE_DIR/$S.list.transcripts' and concatenated file .transcripts"
-			#echo $T | tr "+" "\n" > $RUN_SAMPLE_DIR/$S.list.transcripts;
 			echo $T | tr "+" "\n" | xargs -l basename | sed "s/^/$S./gi" > $RUN_SAMPLE_DIR/$S.list.transcripts;
-			#cat $(echo $T | tr "+" " ") > $RUN_SAMPLE_DIR/$S.transcripts;
 			> $RUN_SAMPLE_DIR/$S.transcripts.tmp;
 			for T_ONE in $(echo $T | tr "+" "\n"); do
 				cat $T_ONE >> $RUN_SAMPLE_DIR/$S.transcripts.tmp;
 				echo "" >> $RUN_SAMPLE_DIR/$S.transcripts.tmp;
 			done
 			cat $RUN_SAMPLE_DIR/$S.transcripts.tmp | grep -v "^$" > $RUN_SAMPLE_DIR/$S.transcripts
-			rm -f $RUN_SAMPLE_DIR/$S.transcripts.tmp
+			rm -f $RUN_SAMPLE_DIR/$S.transcripts.tmp*
 		fi;
 
+		# Copy PEDIGREE
+		if [ "$P" != "" ] && [ ! -e $RUN_SAMPLE_DIR/$T.list.pedigree ]; then
+			(($VERBOSE)) && echo "#[INFO] Create LIST.PEDIGREE file '$RUN_SAMPLE_DIR/$S.list.pedigree' and concatenated file .ped"
+			echo $P | tr "+" "\n" | xargs -l basename | sed "s/^/$S./gi" > $RUN_SAMPLE_DIR/$S.list.pedigree;
+			> $RUN_SAMPLE_DIR/$S.pedigree.tmp;
+			for P_ONE in $(echo $P | tr "+" "\n"); do
+				cat $P_ONE >> $RUN_SAMPLE_DIR/$S.pedigree.tmp;
+				echo "" >> $RUN_SAMPLE_DIR/$S.pedigree.tmp;
+			done
+			cat $RUN_SAMPLE_DIR/$S.pedigree.tmp | grep -v "^$" > $RUN_SAMPLE_DIR/$S.pedigree.tmp.clean
+			#> $RUN_SAMPLE_DIR/$S.pedigree.tmp.header
+			#> $RUN_SAMPLE_DIR/$S.pedigree.tmp.samples
+			grep "^#" $RUN_SAMPLE_DIR/$S.pedigree.tmp.clean > $RUN_SAMPLE_DIR/$S.pedigree.tmp.header
+			grep "^#" -v $RUN_SAMPLE_DIR/$S.pedigree.tmp.clean | sort -u > $RUN_SAMPLE_DIR/$S.pedigree.tmp.samples
+			cat $RUN_SAMPLE_DIR/$S.pedigree.tmp.header $RUN_SAMPLE_DIR/$S.pedigree.tmp.samples > $RUN_SAMPLE_DIR/$S.ped
+			if [[ $(grep "^#" -c $RUN_SAMPLE_DIR/$S.ped) -gt 1 ]]; then
+				echo "#[ERROR] Pedigree files not compatible (check header):"
+				grep "^#" $RUN_SAMPLE_DIR/$S.ped
+				exit 1
+			fi;
+			rm -f $RUN_SAMPLE_DIR/$S.pedigree.tmp*
+			# Pedigree tags
+			awk -v SAMPLE=$S -f $STARK_FOLDER_BIN/ped_to_tag.awk $RUN_SAMPLE_DIR/$S.ped > $RUN_SAMPLE_DIR/$S.pedigree.tag
+		fi;
 
 		# SAMPLE TAG
 		if [ ! -e $RUN_SAMPLE_DIR/$S.tag ]; then
@@ -1647,6 +1660,7 @@ for RUU in $RUN_UNIQ; do
 	(($VERBOSE)) && echo "#[INFO] DESIGN                    $B_LIST"
 	(($VERBOSE)) && echo "#[INFO] GENES                     $G_LIST"
 	(($VERBOSE)) && echo "#[INFO] TRANSCRIPTS               $T_LIST"
+	(($VERBOSE)) && echo "#[INFO] PEDIGREE                  $P_LIST"
 	(($VERBOSE)) && echo "#[INFO] * APPLICATION               "
 	echo "#[INFO] APPLICATION NAME          $APP_NAME"
 	(($VERBOSE)) && echo "#[INFO] APPLICATION FILE          "$(echo $ENV | sed s#$STARK_FOLDER_APPS/##gi)
@@ -1660,12 +1674,14 @@ for RUU in $RUN_UNIQ; do
 	echo "#[INFO] RESULTS                   $RESULTS"
 	echo "#[INFO] REPOSITORY                $REPOSITORY"
 	echo "#[INFO] ARCHIVES                  $ARCHIVES"
+	echo "#[INFO] FAVORITES                 $FAVORITES"
 	(($VERBOSE)) && echo "#[INFO] RELEASE INFOS             $RELEASE_RUN"
 	(($VERBOSE)) && echo "#[INFO] MAKEFILE CONFIGURATION    $MAKEFILE_ANALYSIS_RUN"
 	#(($VERBOSE)) && echo "#[INFO] SHELL CONFIGURATION       $SHELL_ANALYSIS_RUN"
 	(($VERBOSE)) && echo "#[INFO] LOGFILE                   $LOGFILE_RES_RUN"
 	(($VERBOSE)) && echo "#[INFO] THREADS                   $THREADS"
 	(($VERBOSE)) && echo "#[INFO] THREADS_BY_SAMPLE         $THREADS_BY_SAMPLE"
+	(($VERBOSE)) && echo "#[INFO] THREADS_COPY              $THREADS_COPY"
 	
 
 	STARK_QUEUED=$(source_app "$APP" "$STARK_FOLDER_APPS"; echo $STARK_QUEUED)
@@ -1766,6 +1782,16 @@ for RUU in $RUN_UNIQ; do
 				fi;
 			done;
 		fi;
+		# Favorites
+		if [ "$FAVORITES" != "" ] ; then
+			for RESULTS_FOLDER_COPY_FOLDER in $(echo $FAVORITES | tr "," " " | tr " " "\n" | sort -u ); do #
+				if [ -d $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT/$RU ] || \
+					mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT/$RU; then
+					#echo "Copy $LOGFILE_RES_RUN $LOGFILE_DEM_RUN in $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT/$RU/ "
+					cp -pf $LOGFILE_RES_RUN $LOGFILE_DEM_RUN $CONFIG_RES_RUN $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT/$RU/;
+				fi;
+			done;
+		fi;
 
 	done
 
@@ -1783,15 +1809,9 @@ for RUU in $RUN_UNIQ; do
 		(($VERBOSE)) && grep "\*\*\*" $LOGFILE_RES_RUN -B10 | awk '{print "#[ERROR] LOG: "$0}';
 		# RUNNING stop
 		
-		
-		
 		# EXIT
 		exit 1;
-		
 
-		
-		#continue;
-	#fi;
 
 	else
 
@@ -1806,9 +1826,6 @@ for RUU in $RUN_UNIQ; do
 		#if ((1)); then
 
 		echo "#[INFO] STARK Copy Processing...";
-
-		#THREADS_COPY=$THREADS
-		THREADS_COPY=1
 
 		I=0
 		RESULTS_FOLDER_COPY_FOLDER_RUU_STARKCopyComplete_list=""
@@ -1851,6 +1868,17 @@ for RUU in $RUN_UNIQ; do
 						done;
 					fi;
 				fi;
+				# Favorites
+				if ((1)); then
+					if [ "$FAVORITES" != "" ] ; then
+						for RESULTS_FOLDER_COPY_FOLDER in $(echo $FAVORITES | tr "," " " | tr " " "\n" | sort -u ); do #
+							if [ -d $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT ] || \
+								mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT; then
+								RESULTS_FOLDER_COPY_ALL=$RESULTS_FOLDER_COPY_ALL" $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT:favorites";
+							fi;
+						done;
+					fi;
+				fi;
 
 
 				RES_MK_ALL_RUU_S=""
@@ -1869,9 +1897,16 @@ for RUU in $RUN_UNIQ; do
 						if [ "$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE" == "repository" ]; then
 							REPOSITORY_TYPE_FILE_PATTERNS=$REPOSITORY_FILE_PATTERNS
 							ROOT_FILE_SOURCE=$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA
+							F_TARGET_FOLDER=$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S
 						elif [ "$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE" == "archives" ]; then
 							REPOSITORY_TYPE_FILE_PATTERNS=$ARCHIVES_FILE_PATTERNS
 							ROOT_FILE_SOURCE=$RESULTS/$RUU/$S
+							F_TARGET_FOLDER=$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S
+						elif [ "$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE" == "favorites" ]; then
+							REPOSITORY_TYPE_FILE_PATTERNS=$FAVORITES_FILE_PATTERNS
+							#ROOT_FILE_SOURCE=$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA
+							ROOT_FILE_SOURCE=$RESULTS/$RUU/$S
+							F_TARGET_FOLDER=$RESULTS_FOLDER_COPY_FOLDER/$RUU
 						else
 							echo "#[ERROR] Repository type '$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE' failed"
 						fi;
@@ -1893,12 +1928,8 @@ for RUU in $RUN_UNIQ; do
 							" >> $RES_MK
 							RES_MK_ALL=$RES_MK_ALL" $RESULTS_FOLDER_COPY_FOLDER/$RUU"
 							RES_MK_ALL_RUU=$RES_MK_ALL_RUU" $RESULTS_FOLDER_COPY_FOLDER/$RUU"
-
-
-
-
 						fi;
-						
+
 
 						# Copy STARK RESULTS files
 						#RES_MK_COPY_ROOT_TMP=$TMP_FOLDER_TMP/rsync_$RANDOM$RANDOM
@@ -1914,6 +1945,11 @@ for RUU in $RUN_UNIQ; do
 								#[INFO] Copying '$RUU/$S' - STARK Results
 								#[INFO] Copying '$RUU/$S' - NO Copy
 							" >> $RES_MK
+						elif [ "$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE" == "favorites" ]; then
+							echo "$ROOT_FILE_SOURCE:
+								#[INFO] Copying '$RUU/$S' - STARK Results
+								#[INFO] Copying '$RUU/$S' - NO Copy
+							" >> $RES_MK
 						else
 							echo "#[ERROR] Repository type failed"
 						fi;
@@ -1925,7 +1961,6 @@ for RUU in $RUN_UNIQ; do
 						#echo "#[INFO] Copying REPOSITORY files patterns to $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S..."
 						if [ $RESULTS_SUBFOLDER_DATA != "" ]; then
 
-							
 							for ROOT_FILE_PATTERN_INFO in $REPOSITORY_TYPE_FILE_PATTERNS; do
 
 								#RES_MK_COPY_ROOT_TMP=$TMP_FOLDER_TMP/rsync_$RANDOM$RANDOM
@@ -1943,16 +1978,16 @@ for RUU in $RUN_UNIQ; do
 								fi;
 								ROOT_FILE_PATTERN_VAR_TARGET=$(echo $ROOT_FILE_PATTERN_VAR | sed -e 's/[][\\^*+.$-]/____/g')
 
-								echo "$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S$ROOT_FILE_PATTERN_VAR: $ROOT_FILE_SOURCE
+								echo "$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE/$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S$ROOT_FILE_PATTERN_VAR: $ROOT_FILE_SOURCE
 									#[INFO] Making  '$RUU/$S' - STARK Main Results
 									mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S
 									#[INFO] Copying '$RUU/$S' - STARK Main Results
 									for F_SOURCE in \$\$(ls $FILE_PATTERN_TYPE_LS $ROOT_FILE_SOURCE$ROOT_FILE_PATTERN_VAR 2>/dev/null); do \
-										F_TARGET=$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/\$\$(basename \$\$F_SOURCE); \
 										F_SOURCE_BASE=\$\$(echo \$\$F_SOURCE | sed \"s#$ROOT_FILE_SOURCE/##\"); \
-										F_TARGET_BASE=\$\$(echo \$\$F_TARGET | sed \"s#$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/##\"); \
+										F_TARGET=$F_TARGET_FOLDER/\$\$(basename \$\$F_SOURCE); \
+										F_TARGET_BASE=\$\$(echo \$\$F_TARGET | sed \"s#$F_TARGET_FOLDER/##\"); \
 										[ '$ROOT_FILE_PATTERN_TYPE' == "FOLDER" ] && F_SOURCE=\$\$F_SOURCE/; \
-										if [ ! -e \$\$F_TARGET ] && [ '$ROOT_FILE_PATTERN_TYPE' != "FOLDER" ] ; then \
+										if [ ! -e \$\$F_TARGET ] && [ '$ROOT_FILE_PATTERN_TYPE' != "FOLDER" ] && [ '$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE' == 'favorites' ] ; then \
 											$COMMAND_LINK \$\$F_SOURCE \$\$F_TARGET 1>/dev/null 2>/dev/null; \
 										fi; \
 										if [ ! -e \$\$F_TARGET ]; then \
@@ -1965,8 +2000,22 @@ for RUU in $RUN_UNIQ; do
 									done;
 								" >> $RES_MK
 
+										#F_TARGET=$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/\$\$(basename \$\$F_SOURCE); \
+										#F_TARGET_BASE=\$\$(echo \$\$F_TARGET | sed \"s#$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/##\"); \
+
+										# FF_TARGET=$RESULTS_FOLDER_COPY_FOLDER/$RUU/\$\$(basename \$\$F_SOURCE); \
+										# FF_TARGET_BASE=\$\$(echo \$\$F_TARGET | sed \"s#$RESULTS_FOLDER_COPY_FOLDER/$RUU/##\"); \
+
+										# if [ ! -e \$\$FF_TARGET ]; then \
+										# 	rm -f \$\$FF_TARGET; \
+										# 	$COMMAND_COPY_NO_COMPRESS \$\$F_SOURCE \$\$FF_TARGET 1>/dev/null 2>/dev/null; \
+										# fi; \
+										# if [ ! -e \$\$FF_TARGET ]; then \
+										# 	(($DEBUG)) && echo '#[ERROR] Copy file $F_SOURCE_BASE to $FF_TARGET_BASE FAILED'; \
+										# fi; \
+
 								#RES_MK_ALL=$RES_MK_ALL" $ROOT_FILE_SOURCE$ROOT_FILE_PATTERN_VAR_TARGET"
-								RES_MK_ALL_RUU_S=$RES_MK_ALL_RUU_S" $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S$ROOT_FILE_PATTERN_VAR"
+								RES_MK_ALL_RUU_S=$RES_MK_ALL_RUU_S" $RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE/$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S$ROOT_FILE_PATTERN_VAR"
 								
 							done;
 						fi;
@@ -1974,6 +2023,7 @@ for RUU in $RUN_UNIQ; do
 						# CREATE CopyComplete file
 						echo "$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/STARKCopyComplete.txt: $RES_MK_ALL_RUU_S
 							#(($VERBOSE)) && echo '#[INFO] STARK Copy $RUU/$S Complete'
+							mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S
 							echo "["\$\$(date '+%Y%m%d-%H%M%S')"] Copy complete" >> $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/STARKCopyComplete.txt
 							chmod $PERMS $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/STARKCopyComplete.txt
 						" >> $RES_MK

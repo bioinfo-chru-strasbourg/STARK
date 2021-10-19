@@ -17,11 +17,7 @@ APP_DESCRIPTION="PlugAPP for specific parameters to detect Somatic mutation (no 
 #######################
 
 
-# DISABLE_ADAPTER_TRIMMING
-# Trim adapter and autodetect adapter for paired end
-# Either 0 or 1
-# Default: 0 (i.e. adapter trimming is enabled)
-DISABLE_ADAPTER_TRIMMING=1
+
 
 # POST ALIGNEMENT STEPS
 POST_ALIGNMENT_STEPS="sorting realignment recalibration clipping compress"

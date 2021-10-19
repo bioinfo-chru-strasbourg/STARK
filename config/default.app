@@ -37,6 +37,9 @@ FOLDER_INPUT=$STARK_FOLDER_MAIN/input
 # Illumina Manifests repository.
 # Files to provide in the SampleSheet of each run
 #FOLDER_MANIFEST=$FOLDER_INPUT/manifests
+# Pedigree repository.
+#FOLDER_PEDIGREE=$FOLDER_INPUT/pedigree
+
 
 # OUTPUT FOLDER
 # All results will be generated in this folder :
@@ -55,6 +58,8 @@ FOLDER_OUTPUT=$STARK_FOLDER_MAIN/output
 FOLDER_REPOSITORY=$FOLDER_OUTPUT/repository
 # Results data can be copy in a archives folder. leave it blank for no copy
 FOLDER_ARCHIVES=$FOLDER_OUTPUT/archives
+# Results data can be copy in a favorites folder. leave it blank for no copy
+FOLDER_FAVORITES=$FOLDER_OUTPUT/favorites
 
 
 # PARAMETERS
@@ -213,6 +218,12 @@ STARK_DEMULTIPLEXING_READS_MAPPING=""
 # For BCL2FASTQ demultiplexing (see doc)
 ADAPTER_STRINGENCY=0.9
 
+# Demultiplexing options
+# For BCL2FASTQ demultiplexing (see doc)
+# Usually: "--no-lane-splitting --create-fastq-for-index-reads"
+# Default: ""
+STARK_DEMULTIPLEXING_BCL2FASTQ_OPTIONS="--no-lane-splitting --create-fastq-for-index-reads"
+
 # FASTQ compression level for demultiplexing FASTQ files
 # zlib compression level (1-9) used for FASTQ files during demultiplexing
 # Used by BCL2FASTQ
@@ -224,11 +235,11 @@ FASTQ_DEMULTIPLEXING_COMPRESSION_LEVEL=1
 # Used by FASTP
 FASTQ_COMPRESSION_LEVEL=9
 
-# DISABLE_ADAPTER_TRIMMING
+# ENABLE_ADAPTER_TRIMMING
 # Trim adapter and autodetect adapter for paired end
 # Either 0 or 1
-# Default: 0 (i.e. adapter trimming is enable)
-DISABLE_ADAPTER_TRIMMING=0
+# Default: 0 (i.e. adapter trimming is disabled)
+ENABLE_ADAPTER_TRIMMING=0
 
 # FASTQ Read quality filtering
 # Read Quality threshold. Read quality below will be removed
@@ -287,21 +298,37 @@ FASTQ_DEMULTIPLEXING_KEEP=0
 
 
 
-# POST SEQUENCING STEPS (default '')
-# All steps after sequeing and before alignment
-# This sequence correspond to the FASTQ file processing before the alignemnt (trimming, umi...)
+# FASTQ_PROCESSING_STEPS
+# All steps to process input FASTQ files, after sequencing and demultiplexing (if any)
 # Format: "step1 step2 step3"
-# Example: trimming umi_extract
-#    This sequence will generate files $ALIGNER.umi_extract.trimming*.fastq.gz
-#    Then, this FASTQ file will be 1/ trimmed, 2/ umi tagged
+# Example (default): fastq_reheader sort fastp fastq_clean_header compress
+# Example (UMItools): fastq_reheader sort umi_tools fastp fastq_clean_header compress
+# Available steps:
+#    fastq_reheader: FASTQ reheader to integreate index within FASTQ comment Illumina tag (e.g. 1:N:0:xxx). Nothing done if already integrated (same header or tag BC or RX exists)
+#    fastq_clean_header: FASTQ read head formatting, especially SAMTOOLS tags. Nothing done if no needs
+#    compress: FASTQ files compression (see FASTQ_COMPRESSION_LEVEL)
+#    sort: sort FASTQ using read name
+#    fastp: process FASTP algorithm and report, UMI extraction (if any, see UMI_LOC and UMI_BARCODE_PATTERN), quality filtration...
+#    umi_tools: process UMITools algorithm for UMI extraction (if any, see UMI_LOC and UMI_BARCODE_PATTERN)
+# Usually:
+#    "fastq_reheader sort fastp fastq_clean_header compress" for UMI technology
+# dafault:
+#    "sort compress" for sorting and compression
+
+#FASTQ_PROCESSING_STEPS="fastq_reheader sort umi_tools fastp fastq_clean_header compress"
+FASTQ_PROCESSING_STEPS="fastq_reheader sort fastp fastq_clean_header compress"
+
+
+
+# POST SEQUENCING STEPS (default '')
+# All steps and before alignment
+# This sequence correspond to the FASTQ file processing before the alignemnt (trimming...)
+# Format: "step1 step2 step3"
 # The steps are defined as makefiles rules
 # Check available steps by using the command: STARK --pipelines_infos
 # Available steps (not up-to-date):
-#    trimming: FASTQ trimming quality (TODO)
-#    umi_extract: extraction of UMI sequence and create BX:Z tag (TODO)
 # Usually:
-#    "umi_extract" for UMI technology
-#POST_SEQUENCING_STEPS="umi_extract"
+#    "" nothing to do
 POST_SEQUENCING_STEPS=""
 
 
@@ -451,6 +478,10 @@ THREADS=AUTO
 # The number of threads need to be between 1 and the total number of cores available (autoadjusting if bad value)
 #THREADS_WRITING=
 
+# THREADS_COPY (default 1)
+# Number of threads used for copy files in repositories
+# The number of threads need to be between 1 and the total number of cores available (autoadjusting if bad value)
+#THREADS_COPY=
 
 
 # MEMORY (default AUTO)
@@ -553,6 +584,11 @@ HOWARD_ORDER_BY_REPORT="DESC,DESC"
 #   Report Sections: results_summary sequencing_mapping depth coverage variant_calling variant_stats
 #   Report Annex Sections: annex_coverage annex_depth annex_genes_coverage annex_variants annex_annotations
 REPORT_SECTIONS="ALL"
+
+
+### REPORT for run Files
+# Generate variants files from run with full VCF (include all calling information)
+REPORT_VARIANTS_FULL=0
 
 
 # REPOSITORY and ARCHIVES

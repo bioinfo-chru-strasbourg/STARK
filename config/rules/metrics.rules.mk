@@ -332,11 +332,11 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 			echo "#chrom	start	stop	target	mean	min	max	count" > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.PASS.tsv; \
 			cat $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp | awk -F"\t" -v PASS=$(EXPECTED_DEPTH) '($$4>=PASS) {print $$1 "\t" $$2-1 "\t" $$2 "\t" $$3 "\t" $$4}' | $(BEDTOOLS) merge -c 4,5,5,5,5 -o distinct,mean,min,max,count >> $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.PASS.tsv 2>/dev/null; \
 			# Flag HsMetrics per_target_coverage in one BED file \
-			cat $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp | awk -F"\t" -v MISS=$(SEQUENCING_DEPTH) -v FAIL=$(MINIMUM_DEPTH) -v WARN=$(EXPECTED_DEPTH) '($$4<MISS) {print $$1 "\t" $$2-1 "\t" $$2 "\t" $$3 "\t" $$4 "\t'$(MISS_COLOR_RGB)'\t+" }' | $(BEDTOOLS) merge -c 4,5,7,2,3,6 -o distinct,mean,first,first,last,distinct >> $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.bed.tmp 2>/dev/null; \
-			cat $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp | awk -F"\t" -v MISS=$(SEQUENCING_DEPTH) -v FAIL=$(MINIMUM_DEPTH) -v WARN=$(EXPECTED_DEPTH) '($$4>=MISS && $$4<FAIL) {print $$1 "\t" $$2-1 "\t" $$2 "\t" $$3 "\t" $$4 "\t'$(FAIL_COLOR_RGB)'\t+" }' | $(BEDTOOLS) merge -c 4,5,7,2,3,6 -o distinct,mean,first,first,last,distinct >> $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.bed.tmp 2>/dev/null; \
-			cat $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp | awk -F"\t" -v MISS=$(SEQUENCING_DEPTH) -v FAIL=$(MINIMUM_DEPTH) -v WARN=$(EXPECTED_DEPTH) '($$4>=FAIL && $$4<WARN) {print $$1 "\t" $$2-1 "\t" $$2 "\t" $$3 "\t" $$4 "\t'$(WARN_COLOR_RGB)'\t+" }' | $(BEDTOOLS) merge -c 4,5,7,2,3,6 -o distinct,mean,first,first,last,distinct >> $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.bed.tmp 2>/dev/null; \
-			cat $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp | awk -F"\t" -v MISS=$(SEQUENCING_DEPTH) -v FAIL=$(MINIMUM_DEPTH) -v WARN=$(EXPECTED_DEPTH) '($$4>=WARN) {print $$1 "\t" $$2-1 "\t" $$2 "\t" $$3 "\t" $$4 "\t'$(PASS_COLOR_RGB)'\t+" }' | $(BEDTOOLS) merge -c 4,5,7,2,3,6 -o distinct,mean,first,first,last,distinct >> $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.bed.tmp 2>/dev/null; \
-			$(BEDTOOLS) sort -i $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.bed.tmp | cut -f1-9 > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.bed; \
+			cat $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp | awk -F"\t" -v MISS=$(SEQUENCING_DEPTH) -v FAIL=$(MINIMUM_DEPTH) -v WARN=$(EXPECTED_DEPTH) '($$4<MISS) {print $$1 "\t" $$2-1 "\t" $$2 "\t" $$3 "\t" $$4 "\t'$(MISS_COLOR_RGB)'\t+\tMISS" }' | $(BEDTOOLS) merge -c 4,5,7,2,3,6,8 -o distinct,mean,first,first,last,distinct,distinct >> $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.bed.tmp 2>/dev/null; \
+			cat $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp | awk -F"\t" -v MISS=$(SEQUENCING_DEPTH) -v FAIL=$(MINIMUM_DEPTH) -v WARN=$(EXPECTED_DEPTH) '($$4>=MISS && $$4<FAIL) {print $$1 "\t" $$2-1 "\t" $$2 "\t" $$3 "\t" $$4 "\t'$(FAIL_COLOR_RGB)'\t+\tFAIL" }' | $(BEDTOOLS) merge -c 4,5,7,2,3,6,8 -o distinct,mean,first,first,last,distinct,distinct >> $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.bed.tmp 2>/dev/null; \
+			cat $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp | awk -F"\t" -v MISS=$(SEQUENCING_DEPTH) -v FAIL=$(MINIMUM_DEPTH) -v WARN=$(EXPECTED_DEPTH) '($$4>=FAIL && $$4<WARN) {print $$1 "\t" $$2-1 "\t" $$2 "\t" $$3 "\t" $$4 "\t'$(WARN_COLOR_RGB)'\t+\tWARN" }' | $(BEDTOOLS) merge -c 4,5,7,2,3,6,8 -o distinct,mean,first,first,last,distinct,distinct >> $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.bed.tmp 2>/dev/null; \
+			cat $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp | awk -F"\t" -v MISS=$(SEQUENCING_DEPTH) -v FAIL=$(MINIMUM_DEPTH) -v WARN=$(EXPECTED_DEPTH) '($$4>=WARN) {print $$1 "\t" $$2-1 "\t" $$2 "\t" $$3 "\t" $$4 "\t'$(PASS_COLOR_RGB)'\t+\tPASS" }' | $(BEDTOOLS) merge -c 4,5,7,2,3,6,8 -o distinct,mean,first,first,last,distinct,distinct >> $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.bed.tmp 2>/dev/null; \
+			$(BEDTOOLS) sort -i $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.bed.tmp | cut -f1-10 > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.bed; \
 			# Copy Design bed \
 			cp -p $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.bed $(@D)/$(*F).validation.flags.$$bed_subname.bed; \
 			# HsMetrics per_target_coverage compression file file \
@@ -481,8 +481,6 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 
 
 
-
-
 %.bam.metrics/metrics.samtools.on.target: %.validation.bam %.validation.bam.bai %.list.genes %.design.bed
 	# Create directory ;
 	mkdir -p $(@D);
@@ -502,6 +500,11 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 		fi; \
 	done;
 	[ ! -z $@ ] && echo "#[INFO] ON TARGET not done because not bed/genes files. " >> $@;
+
+
+
+#if [ -e $$(basename $*)/$$(basename $$one_bed) ]; then \
+#			$(SAMTOOLS) view -c $*.validation.bam -L $$(basename $*)/$$(basename $$one_bed) > $(@D)/$(*F).$$(basename $$one_bed).on.target; \
 
 
 %.bam.metrics/metrics.samtools.off.target: %.validation.bam %.validation.bam.bai %.list.genes %.design.bed
@@ -641,6 +644,7 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 	echo -e $$((($$(zcat $*.R2.fastq.gz | head -n1 | wc -l))) && echo "mode\tPaired-End" || echo "mode\tSingle-End") >> $@.txt
 	#echo -e $$((($$(grep "Amplicon Start" $*.manifest | grep -c "Upstream Probe Length"))) && echo "technology\tAmplicon" || echo "technology\tCapture") >> $@.txt
 	echo -e $$((($$(grep -c "Upstream Probe Length\|ULSO Sequence" $*.manifest))) && echo "technology\tAmplicon" || echo "technology\tCapture") >> $@.txt
+	echo -e $$((($$(zcat $*.R1.fastq.gz | head -n1 | cut -d" " -f1 | awk -F: '{print $$8}' | tr -d "\n" | wc -c))) && echo "UMI\ttrue" || echo "UMI\tfalse") >> $@.txt
 	echo "#[INFO] SEQUENCING INFOS done. See 'metrics.infos.txt' file." > $@;
 	#-rm -f $@.*
 
@@ -759,7 +763,7 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 	#cp $@ $*.test
 
 
-%.list.genes: %.bed %.manifest %.bams.for_metrics_bed
+%.list.genes: %.bed %.manifest %.bams.for_metrics_bed #%.design.bed #
 	mkdir -p $(@D);
 	+if [ ! -s $@ ]; then \
 		if [ -s $$(sample=$$(basename $* | cut -d. -f1 ); echo "$(*D)/$$sample.list.genes") ] ; then \
@@ -789,38 +793,35 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 			done; \
 		else \
 			echo "BEDFILE_GENES for $* generated from SAMPLE.bed, SAMPLE.manifest or from BAMs"; \
-			bedfile_genes_list=`file=$$( basename $* | cut -d. -f1 ); echo "$$file.from_design.genes"`; \
-			# Look for defined Design (bed or manifest) \
-			if [ -s $*.bed ] ; then \
-				#echo "genes from BED '$$bed'" >> $*.test; \
-				cut -f1,2,3 $*.bed > $@.manifest.bed ; \
-				bedfile_genes_list=`file=$$( basename $* | cut -d. -f1 ); echo "$$file.from_bed.genes"`; \
-			#elif [ -s `echo "$$manifest"` ] ; then \
-			elif [ -s $*.manifest ] ; then \
-				# manifest to bed ; \
-				$(CAP_ManifestToBED) --input "$*.manifest" --output "$@.manifest.bed.tmp" --output_type "region" --type=PCR; \
-				cut -f1,2,3 $@.manifest.bed.tmp > $@.manifest.bed ; \
-				bedfile_genes_list=`file=$$( basename $* | cut -d. -f1 ); echo "$$file.from_manifest.genes"`; \
-				#rm $@.manifest.bed.tmp ; \
-			elif [ -s $*.bams.for_metrics_bed ] ; then \
+			# Test if subfolder within Sample folder \
+			#if [ $$(basename $(@D)) != $$( basename $* | cut -d. -f1 ) ]; then \
+			#if [ $$(basename $* | awk -F. '{print $$2}') != "" ]; then \
+			if [ $$(echo $(@D) | awk -F. '{print $$2}') != "" ]; then \
+				dir_path=$$(dirname $(@D)); \
+			else \
+				dir_path=$(@D); \
+			fi; \
+			echo "DIR_PATH for $@ is $$dir_path"; \
+			if [ -s $*.bams.for_metrics_bed ] ; then \
 				cut -f1,2,3 $*.bams.for_metrics_bed > $@.manifest.bed ; \
-				bedfile_genes_list=`file=$$( basename $* | cut -d. -f1 ); echo "$$file.from_alignments.genes"`; \
+				bedfile_genes_list=`file=$$( basename $* | cut -d. -f1 ); echo "$$dir_path/$$file.panel_from_alignments.genes"`; \
 			fi; \
 			# Generate BEDGENES \
 			if [ -s $@.manifest.bed ] ; then \
 				echo "MANIFEST.bed to bedfile_genes_list : $$bedfile_genes_list"; \
 				$(BEDTOOLS) intersect -wb -a $@.manifest.bed -b $(REFSEQ_GENES) | cut -f7 | sort -u > $@.manifest.bed.intersect; \
-				#sort -k5 $(REFSEQ_GENES) > $@.manifest.bed.refseq; \
 				sort -k4 $(REFSEQ_GENES) > $@.manifest.bed.refseq; \
-				#join -1 1 -2 5 $@.manifest.bed.intersect $@.manifest.bed.refseq -o 2.1,2.2,2.3,2.5 | sort -u -k1,2 | tr " " "\t" | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$4}' > $$bedfile_genes_list; \
 				join -1 1 -2 4 $@.manifest.bed.intersect $@.manifest.bed.refseq -o 2.1,2.2,2.3,2.4,2.5,2.6 | sort -u -k1,2 | tr " " "\t" | $(BEDTOOLS) sort | $(BEDTOOLS) merge -c 4,5,6 -o distinct,collapse,first | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$4"\t0\t"$$6}' | $(STARK_BED_NORMALIZATION) > $$bedfile_genes_list; \
 				#rm -f $*.manifest.bed.intersect $*.manifest.bed.refseq; \
 			else \
 				#echo "" > $$bedfile_genes_list ; \
 				#echo "#[ERROR] Generating GENES failed. GENES file empty"; \
 				echo "#[ERROR] Generating GENES failed."; \
-			fi;\
-			#bedfile_genes_list=$$(basename $$(echo $$bedfile_genes_list)); \
+			fi; \
+			# Case of main list.genes in Sample folder \
+			if [ $$(basename $*) == $$(basename $(@D)) ]; then \
+				bedfile_genes_list=$$(basename $$(echo $$bedfile_genes_list)); \
+			fi; \
 			rm -f $@.manifest*; \
 		fi; \
 		echo "bed_file list is : `echo $$bedfile_genes_list` "; \
@@ -831,17 +832,6 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 		echo "BEDFILE_GENES exists!!! "; \
 	fi;
 
-# elif [ -s $*.manifest ] ; then \
-# 				# manifest to bed ; \
-# 				$(CAP_ManifestToBED) --input "$*.manifest" --output "$@.manifest.bed.tmp" --output_type "region" --type=PCR; \
-# 				cut -f1,2,3 $@.manifest.bed.tmp > $(@D)/$(*F).from_manifest.bed ; \
-# 				bedfile_genes_list=`file=$$( basename $* | cut -d. -f1 ); echo "$(@D)/$(*F).from_manifest.bed"`; \
-# 				#rm $@.manifest.bed.tmp ; \
-# 			elif [ -s $*.bams.for_metrics_bed ] ; then \
-# 				cut -f1,2,3 $*.bams.for_metrics_bed > $(@D)/$(*F).from_alignments.bed ; \
-# 				#bedfile_genes_list=`file=$$( basename $* | cut -d. -f1 ); echo "$$file.from_alignments.genes"`; \
-# 				bedfile_genes_list=`file=$$( basename $* | cut -d. -f1 ); echo "$(@D)/$(*F).from_alignments.bed"`; \
-# 			fi; \
 
 
 # Regnions COVERAGE METRICS

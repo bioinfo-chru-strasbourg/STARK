@@ -196,8 +196,8 @@ TOOLS_LIST=$TOOLS_LIST" FASTQC"
 
 
 # FASTP
+export FASTP_VERSION=0.23.0											# VER
 export FASTP=$NGS_TOOLS/fastp/current/bin/fastp		# BIN
-export FASTP_VERSION=0.22.0							# VER
 export FASTP_DESCRIPTION="A tool designed to provide fast all-in-one preprocessing for FastQ files."
 export FASTP_REF="https://github.com/OpenGene/fastp"
 TOOLS_LIST=$TOOLS_LIST" FASTP"
@@ -276,13 +276,13 @@ export RSCRIPT_REF="https://www.r-project.org/ "
 TOOLS_LIST=$TOOLS_LIST" RSCRIPT"
 
 
-# SCRAMBLE
-export SCRAMBLE_FOLDER=$NGS_TOOLS/scramble/current/bin		# FOLDER
-export SCRAMBLE=$SCRAMBLE_FOLDER/SCRAMble.R					# BIN-JAR
-export SCRAMBLE_VERSION=1.0.2								# VER
-export SCRAMBLE_DESCRIPTION="SCRAMble identifies clusters of soft clipped reads in a BAM file, builds consensus sequences, aligns to representative L1Ta, AluYa5, and SVA-E sequences, and outputs MEI calls"
-export SCRAMBLE_REF="Mobile element insertion detection in 89,874 clinical exomes, Genet Med. 2020 May;22(5):974-978. doi: 10.1038/s41436-020-0749-x. Epub 2020 Jan 22. "
-TOOLS_LIST=$TOOLS_LIST" SCRAMBLE"
+# # SCRAMBLE
+# export SCRAMBLE_FOLDER=$NGS_TOOLS/scramble/current/bin		# FOLDER
+# export SCRAMBLE=$SCRAMBLE_FOLDER/SCRAMble.R					# BIN-JAR
+# export SCRAMBLE_VERSION=1.0.2								# VER
+# export SCRAMBLE_DESCRIPTION="SCRAMble identifies clusters of soft clipped reads in a BAM file, builds consensus sequences, aligns to representative L1Ta, AluYa5, and SVA-E sequences, and outputs MEI calls"
+# export SCRAMBLE_REF="Mobile element insertion detection in 89,874 clinical exomes, Genet Med. 2020 May;22(5):974-978. doi: 10.1038/s41436-020-0749-x. Epub 2020 Jan 22. "
+# TOOLS_LIST=$TOOLS_LIST" SCRAMBLE"
 
 
 # SNPEFF

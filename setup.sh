@@ -245,7 +245,7 @@ fi;
 
 # Folder creation
 (($VERBOSE)) && echo "#[INFO] STARK Docker Compose Setup - Folders creation"
-if docker-compose --project-name STARK up stark-folders >> $DOCKER_STARK_SETUP_LOG 2>> $DOCKER_STARK_SETUP_LOG; then
+if docker-compose --project-name STARK up stark-setup >> $DOCKER_STARK_SETUP_LOG 2>> $DOCKER_STARK_SETUP_LOG; then
 	(($VERBOSE)) && echo "#[INFO] STARK Docker Compose Setup - Folders creation done."
 else
 	echo "#[ERROR] STARK Docker Compose Setup - Folders creation failed"

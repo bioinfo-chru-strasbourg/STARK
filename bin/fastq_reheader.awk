@@ -31,6 +31,7 @@ BEGIN {
 		I_TAG=""
 		if (I!="") {
 			gsub(" [0-9]*:N:0:[^ $]*", "",H)
+			#gsub("\n", "",H)
 			I_TAG= READ ":N:0:" I
 		}
 		if (I_TAG!="") {

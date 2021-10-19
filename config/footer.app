@@ -65,7 +65,7 @@ export STARK_FOLDER_RULES=$STARK_FOLDER_CONFIG/rules
 STARK_FOLDER_MAIN="/STARK"
 
 # INPUT FOLDER
-[ "$INPUT" != "" ] && FOLDER_INPUT=$INPUT && FOLDER_RUN="$FOLDER_INPUT/runs" && FOLDER_MANIFEST="$FOLDER_INPUT/manifests"
+[ "$INPUT" != "" ] && FOLDER_INPUT=$INPUT && FOLDER_RUN="$FOLDER_INPUT/runs" && FOLDER_MANIFEST="$FOLDER_INPUT/manifests" && FOLDER_MANIFEST="$FOLDER_INPUT/pedigree"
 if [ "$FOLDER_INPUT" == "" ]; then
 	FOLDER_INPUT="$STARK_FOLDER_MAIN/input"
 fi;
@@ -76,6 +76,9 @@ if [ "$FOLDER_RUN" == "" ]; then
 fi;
 if [ "$FOLDER_MANIFEST" == "" ]; then
 	FOLDER_MANIFEST="$FOLDER_INPUT/manifests"
+fi;
+if [ "$FOLDER_PEDIGREE" == "" ]; then
+	FOLDER_PEDIGREE="$FOLDER_INPUT/pedigree"
 fi;
 
 # OUTPUT FOLDER
@@ -116,6 +119,9 @@ export FOLDER_REPOSITORY
 # EXPORT FOLDER ARCHIVES
 export FOLDER_ARCHIVES
 
+# EXPORT FOLDER FAVORITES
+export FOLDER_FAVORITES
+
 
 # CONFIG FOLDERS
 
@@ -129,12 +135,15 @@ if [ "$FOLDER_DATABASES" == "" ]; then
 fi;
 
 
+# RUNS FOLDER
 export MISEQ_FOLDER=$FOLDER_RUN				# MISEQ RAW folder
 MSR_SUBFOLDER=Data/Intensities/BaseCalls		# SUBFOLDER Illumina Sequencer Data subfolder
 
-
 # MANIFEST FOLDER
-export MANIFEST_FOLDER=$FOLDER_MANIFEST			# MISEQ RAW folder
+export MANIFEST_FOLDER=$FOLDER_MANIFEST			# MANIFEST folder
+
+# PEDIGREE FOLDER
+export PEDIGREE_FOLDER=$FOLDER_PEDIGREE			# PEDIGREE folder
 
 
 # RESULTS FOLDER
@@ -172,10 +181,13 @@ export RESULTS_SUBFOLDER_DATA="STARK";				# Copy sample results in a SUBFOLDER
 export REPOSITORY_FILE_PATTERNS_CORE='$SAMPLE.reports/$SAMPLE.final.vcf.gz $SAMPLE.reports/$SAMPLE.final.Panel*.vcf.gz $SAMPLE.reports/$SAMPLE.final.Panel*.tsv $SAMPLE.reports/*.*.config $SAMPLE.reports/*.report*.html $SAMPLE.reports/*.report.html.folder:FOLDER $SAMPLE.*.bam.metrics/$SAMPLE.*.validation.flags.Panel*.bed';
 # CORE Files to copy to ARCHIVES
 export ARCHIVES_FILE_PATTERNS_CORE='$SAMPLE.reports/$SAMPLE.final.vcf.gz $SAMPLE.reports/*.*.config $SAMPLE.reports/*.report*.html $SAMPLE.reports/*.report.html.folder:FOLDER $SAMPLE.bed $SAMPLE.manifest $SAMPLE*.genes $SAMPLE*.transcripts $SAMPLE*.tag $SAMPLE.archive.cram $SAMPLE.archive.cram.crai $SAMPLE.analysis.json';
+# CORE Files to copy to FAVORITES
+export FAVORITES_FILE_PATTERNS_CORE='';
 
 # Copy some sample results files in the root sample folder, if any SUBFOLDER defined
 export REPOSITORY_FILE_PATTERNS=$(echo $REPOSITORY_FILE_PATTERNS' '$REPOSITORY_FILE_PATTERNS_CORE | tr "," " " | tr " " "\n" | sort -u | tr "\n" " ");
 export ARCHIVES_FILE_PATTERNS=$(echo $ARCHIVES_FILE_PATTERNS' '$ARCHIVES_FILE_PATTERNS_CORE | tr "," " " | tr " " "\n" | sort -u | tr "\n" " ");
+export FAVORITES_FILE_PATTERNS=$(echo $FAVORITES_FILE_PATTERNS' '$FAVORITES_FILE_PATTERNS_CORE | tr "," " " | tr " " "\n" | sort -u | tr "\n" " ");
 
 # Useful file patterns to add in repository (variable REPOSITORY_FILE_PATTERNS)
 # $SAMPLE.reports/$SAMPLE.full.Design.vcf.gz $SAMPLE.reports/$SAMPLE.full.Design.tsv $SAMPLE.*.validation.bam $SAMPLE.*.validation.bam.bai
@@ -561,6 +573,12 @@ export STARK_DEMULTIPLEXING_READS_MAPPING
 [ "$ADAPTER_STRINGENCY" == "" ] && ADAPTER_STRINGENCY=0.9
 export ADAPTER_STRINGENCY
 
+# Demultiplexing options
+# For BCL2FASTQ demultiplexing (see doc)
+# Usually: "--no-lane-splitting --create-fastq-for-index-reads"
+# Default: ""
+export STARK_DEMULTIPLEXING_BCL2FASTQ_OPTIONS
+
 # FASTQ compression level for demultiplexing FASTQ files
 # zlib compression level (1-9) used for FASTQ files during demultiplexing
 # Used by BCL2FASTQ
@@ -574,12 +592,12 @@ export FASTQ_DEMULTIPLEXING_COMPRESSION_LEVEL
 [ "$FASTQ_COMPRESSION_LEVEL" == "" ] && FASTQ_COMPRESSION_LEVEL=9
 export FASTQ_COMPRESSION_LEVEL
 
-# DISABLE_ADAPTER_TRIMMING
+# ENABLE_ADAPTER_TRIMMING
 # Trim adapter and autodetect adapter for paired end
 # Either 0 or 1
-# Default: 0 (i.e. adapter trimming is enabled)
-[ "$DISABLE_ADAPTER_TRIMMING" == "" ] && DISABLE_ADAPTER_TRIMMING=0
-export DISABLE_ADAPTER_TRIMMING
+# Default: 0 (i.e. adapter trimming is disable)
+[ "$ENABLE_ADAPTER_TRIMMING" == "" ] && ENABLE_ADAPTER_TRIMMING=0
+export ENABLE_ADAPTER_TRIMMING
 
 # FASTQ Read quality filtering
 # Read Quality threshold. Read quality below will be removed
@@ -662,20 +680,42 @@ export FASTQ_DEMULTIPLEXING_KEEP
 
 
 
-# POST SEQUENCING STEPS (default '')
-# All steps after sequeing and before alignment
-# This sequence correspond to the FASTQ file processing before the alignemnt (trimming, umi...)
+# FASTQ_PROCESSING_STEPS
+# All steps to process input FASTQ files, after sequencing and demultiplexing (if any)
 # Format: "step1 step2 step3"
-# Example: trimming umi_extract
-#    This sequence will generate files $ALIGNER.umi_extract.trimming*.fastq.gz
-#    Then, this FASTQ file will be 1/ trimmed, 2/ umi tagged
+# Example (default): fastq_reheader sort fastp fastq_clean_header compress
+# Example (UMItools): fastq_reheader sort umi_tools fastp fastq_clean_header compress
+# Available steps:
+#    fastq_reheader: FASTQ reheader to integreate index within FASTQ comment Illumina tag (e.g. 1:N:0:xxx). Nothing done if already integrated (same header or tag BC or RX exists)
+#    fastq_clean_header: FASTQ read head formatting, especially SAMTOOLS tags. Nothing done if no needs
+#    compress: FASTQ files compression (see FASTQ_COMPRESSION_LEVEL)
+#    sort: sort FASTQ using read name
+#    fastp: process FASTP algorithm and report, UMI extraction (if any, see UMI_LOC and UMI_BARCODE_PATTERN), quality filtration...
+#    umi_tools: process UMITools algorithm for UMI extraction (if any, see UMI_LOC and UMI_BARCODE_PATTERN)
+# Usually:
+#    "fastq_reheader sort fastp fastq_clean_header compress" for UMI technology
+# dafault:
+#    "sort compress" for sorting and compression
+
+if [ -z "$FASTQ_PROCESSING_STEPS" ]; then
+	FASTQ_PROCESSING_STEPS="sort compress"
+fi;
+
+# Create FASTQ_PROCESSED_STEPS variable
+[ "$FASTQ_PROCESSING_STEPS" != "" ] && FASTQ_PROCESSED_STEPS=$(echo -n "." && echo $FASTQ_PROCESSING_STEPS | tr -d "." | tr " " ".") || FASTQ_PROCESSED_STEPS=""
+export FASTQ_PROCESSED_STEPS
+
+
+
+# POST SEQUENCING STEPS (default '')
+# All steps and before alignment
+# This sequence correspond to the FASTQ file processing before the alignemnt (trimming...)
+# Format: "step1 step2 step3"
 # The steps are defined as makefiles rules
 # Check available steps by using the command: STARK --pipelines_infos
 # Available steps (not up-to-date):
-#    trimming: FASTQ trimming quality (TODO)
-#    umi_extract: extraction of UMI sequence and create BX:Z tag (TODO)
 # Usually:
-#    "umi_extract" for UMI technology
+#    "" nothing to do
 
 if [ -z "$POST_SEQUENCING_STEPS" ]; then
 	POST_SEQUENCING_STEPS=""
@@ -1132,6 +1172,13 @@ fi;
 export THREADS_WRITING
 
 
+# THREADS COPY
+# Threads to use for results copy in repositories (repository, archives, favorites)
+if ! [[ $THREADS_COPY =~ $re ]] || [ -z "$THREADS_COPY" ] || [ "$THREADS_COPY" == "" ] || [ $THREADS_COPY -gt $CORES ] ; then
+	THREADS_COPY=1
+fi;
+export THREADS_COPY
+
 
 # MEMORY
 MEMTOTAL=$(cat /proc/meminfo 2>/dev/null | grep MemTotal | awk '{print $2}')	# MEMORY in octet
@@ -1204,6 +1251,11 @@ if [ -z "$REPORT_SECTIONS" ]; then
 fi;
 export REPORT_SECTIONS
 
+
+
+### REPORT for run Files
+# Generate variants files from run with full VCF (include all calling information)
+export REPORT_VARIANTS_FULL
 
 # CHECK
 #re='^[0-9]+$'

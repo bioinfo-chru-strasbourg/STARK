@@ -49,7 +49,8 @@ function usage {
 	echo "# -f|--analysis=<STRING>                         Analysis name (required).";
 	echo "# -p|--project=<STRING>                          Project name (not required)";
 	echo "# -g|--group=<STRING>                            Group name (not required)";
-	echo "# -u|--user=<STRING>                             User name (not required)";
+	#echo "# -u|--user=<STRING>                             User name (not required)";
+	echo "# -u|--sample_sub_folder=<STRING>                Subfolder in sample folder (e.g. STARK for repository, not required)";
 	echo "# -s|--sample=<STRING>                           Sample name (required)";
 	echo "# -e|--application=<STRING>                      Application (required)";
 	echo "# -r|--results=<FOLDER>                          Result folder (not required)";
@@ -60,6 +61,7 @@ function usage {
 	echo "# -c|--sections=<STRING>                         List of sections (default ALL)";
 	echo "#                                                Report Sections: results_summary sequencing_mapping depth coverage variant_calling variant_stats";
 	echo "#                                                Report Annex Sections: annex_coverage annex_depth annex_genes_coverage annex_variants annex_annotations";
+	echo "# --tmp                                          Temporary folder";
 	echo "# -v|--verbose                                   Verbose mode";
 	echo "# -d|--debug                                     Debug mode";
 	echo "# -n|--release                                   Script Release";
@@ -73,14 +75,14 @@ function usage {
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
-ARGS=$(getopt -o "f:p:g:u:s:e:r:i:k:o:t:c:vdnh" --long "analysis:,project:,group:,user:,sample:,env:,app:,application:,results:,pipelines:,date:,output:,output_type:,sections:,verbose,debug,release,help" -- "$@" 2> /dev/null)
+ARGS=$(getopt -o "f:p:g:u:s:e:r:i:k:o:t:c:vdnh" --long "analysis:,project:,group:,sample_sub_folder:,sample:,env:,app:,application:,results:,pipelines:,date:,output:,output_type:,sections:,tmp:,verbose,debug,release,help" -- "$@" 2> /dev/null)
 if [ $? -ne 0 ]; then
 	:
 	echo "#[ERROR] Error in the argument list:";
 	echo "#[ERROR] $@"
 	echo ""
 	usage;
-	exit;
+	exit 1;
 fi;
 
 
@@ -110,8 +112,12 @@ do
 			GROUP_INPUT="$2"
 			shift 2
 			;;
-		-u|--user)
-			USER_INPUT="$2"
+		# -u|--user)
+		# 	USER_INPUT="$2"
+		# 	shift 2
+		# 	;;
+		-u|--sample_sub_folder)
+			SAMPLE_SUB_FOLDER_INPUT="$2"
 			shift 2
 			;;
 		-s|--sample)
@@ -142,6 +148,10 @@ do
 		-c|--sections)
 			SECTIONS_INPUT="$2"
 			SECTIONS_INPUT=$(echo $SECTIONS_INPUT | tr "," " ")
+			shift 2
+			;;
+		--tmp)
+			TMP_INPUT="$2"
 			shift 2
 			;;
 		-h|--help)
@@ -277,10 +287,19 @@ if [ -z $DATE ]; then
 	DATE=$(date '+%Y%m%d-%H%M%S')
 fi;
 
-if [ ! -z $TMP_FOLDER_TMP ]; then
+if [ ! -z $TMP_INPUT ]; then
+	TMP_REPORT=$TMP_INPUT;
+elif [ ! -z $TMP_FOLDER_TMP ]; then
 	TMP_REPORT=$TMP_FOLDER_TMP;
 else
 	TMP_REPORT=/tmp;
+fi;
+
+if [ ! -d $TMP_REPORT ]; then
+	if ! mkdir -p $TMP_REPORT; then
+		echo "#[ERROR] Tmp folder creation failed!!!";
+		exit 1;
+	fi;
 fi;
 
 
@@ -292,6 +311,12 @@ fi;
 
 if [ ! -z $RESULTS_FOLDER_INPUT ] && [ -d $RESULTS_FOLDER_INPUT ]; then
 	RESULTS_FOLDER=$RESULTS_FOLDER_INPUT;
+fi;
+
+if [ "$SAMPLE_SUB_FOLDER_INPUT" == "" ]; then
+	SAMPLE_FOLDER=$RESULTS_FOLDER/$ANALYSIS/$SAMPLE
+else
+	SAMPLE_FOLDER=$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE_SUB_FOLDER_INPUT
 fi;
 
 if [ ! -z $OUTPUT_INPUT ]; then
@@ -429,9 +454,9 @@ if [ -z "$APP" ]; then APP="DEFAULT"; fi;
 # DESIGN
 #########
 
-MANIFEST_NAME_FILE=$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.manifest_name
-BED_NAME_FILE=$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.bed_name
-GENES_LIST_FILE=$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.list.genes
+MANIFEST_NAME_FILE=$SAMPLE_FOLDER/$SAMPLE.manifest_name
+BED_NAME_FILE=$SAMPLE_FOLDER/$SAMPLE.bed_name
+GENES_LIST_FILE=$SAMPLE_FOLDER/$SAMPLE.list.genes
 MANIFEST_NAME=""
 MANIFEST_SOURCE=""
 BED_NAME=""
@@ -491,7 +516,7 @@ BAM_VALIDATION_TEXT_HTML=$BAM_VALIDATION_TEXT_HTML' Minimum <strong>Base</strong
 
 
 # LIST_GENES_PANEL
-LIST_GENES_PANEL="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.list.genes"
+LIST_GENES_PANEL="$SAMPLE_FOLDER/$SAMPLE.list.genes"
 LIST_GENES_PANEL_BASENAME=$REPORTDIR/list.genes
 > $LIST_GENES_PANEL_BASENAME
 for GENES_PANEL in $(cat $LIST_GENES_PANEL); do
@@ -720,29 +745,50 @@ echo '
 
 
 # TITLE
-####################
+##########
 
 (($VERBOSE)) && echo "#[INFO] TITLE section"
 
 HTMLFILE_TITLE=$HTMLFILE".title"
 
 # SAMPLE TAG
-SAMPLE_TAG=$(extract_tag $(cat $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.tag) "" "TYPE#TAG")
-SAMPLE_TAG_HTML=""
-for TYPETAG in $SAMPLE_TAG; do
-	TYPE=$(echo "$TYPETAG" | awk -F"#" '{print $1}' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
-	TAG=$(echo "$TYPETAG" | cut -d"#" -f2- | tr "#" " " | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
-	SAMPLE_TAG_HTML="$SAMPLE_TAG_HTML&nbsp;&nbsp;&nbsp; <small>$TYPE</small><strong>#$TAG</strong>"
-done
+if [ -e $SAMPLE_FOLDER/$SAMPLE.tag ]; then
+	SAMPLE_TAG=$(extract_tag $(cat $SAMPLE_FOLDER/$SAMPLE.tag) "" "TYPE#TAG")
+	SAMPLE_TAG_HTML=""
+	for TYPETAG in $SAMPLE_TAG; do
+		TYPE=$(echo "$TYPETAG" | awk -F"#" '{print $1}' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+		TAG=$(echo "$TYPETAG" | cut -d"#" -f2- | tr "#" " " | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+		SAMPLE_TAG_HTML="$SAMPLE_TAG_HTML&nbsp;&nbsp;&nbsp; <small>$TYPE</small><strong>#$TAG</strong>"
+	done
+else
+	SAMPLE_TAG_HTML=""
+fi;
 
 # ANALYSIS TAG
-ANALYSIS_TAG=$(extract_tag $(cat $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.analysis.tag) "" "TYPE#TAG")
-ANALYSIS_TAG_HTML=""
-for TYPETAG in $ANALYSIS_TAG; do
-	TYPE=$(echo "$TYPETAG" | awk -F"#" '{print $1}' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
-	TAG=$(echo "$TYPETAG" | cut -d"#" -f2- | tr "#" " " | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
-	ANALYSIS_TAG_HTML="$ANALYSIS_TAG_HTML<small>$TYPE</small><strong>#$TAG</strong>&nbsp;&nbsp;&nbsp; "
-done
+if [ -e $SAMPLE_FOLDER/$SAMPLE.analysis.tag ]; then
+	ANALYSIS_TAG=$(extract_tag $(cat $SAMPLE_FOLDER/$SAMPLE.analysis.tag) "" "TYPE#TAG")
+	ANALYSIS_TAG_HTML=""
+	for TYPETAG in $ANALYSIS_TAG; do
+		TYPE=$(echo "$TYPETAG" | awk -F"#" '{print $1}' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+		TAG=$(echo "$TYPETAG" | cut -d"#" -f2- | tr "#" " " | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+		ANALYSIS_TAG_HTML="$ANALYSIS_TAG_HTML<small>$TYPE</small><strong>#$TAG</strong>&nbsp;&nbsp;&nbsp; "
+	done
+else
+	ANALYSIS_TAG_HTML=""
+fi;
+
+# PEDIGREE TAG
+if [ -e $SAMPLE_FOLDER/$SAMPLE.pedigree.tag ]; then
+	PEDIGREE_TAG=$(extract_tag $(cat $SAMPLE_FOLDER/$SAMPLE.pedigree.tag) "" "TYPE#TAG")
+	PEDIGREE_TAG_HTML=""
+	for TYPETAG in $PEDIGREE_TAG; do
+		TYPE=$(echo "$TYPETAG" | awk -F"#" '{print $1}' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+		TAG=$(echo "$TYPETAG" | cut -d"#" -f2- | tr "#" " " | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+		PEDIGREE_TAG_HTML="$PEDIGREE_TAG_HTML<small>$TYPE</small><strong>#$TAG</strong>&nbsp;&nbsp;&nbsp; "
+	done
+else
+	PEDIGREE_TAG_HTML=""
+fi;
 
 
 echo '
@@ -776,6 +822,7 @@ echo '
 						</h1>
 	                    <p class="mbr-text pb-3 mbr-fonts-style display-7 align-right">
 							'$SAMPLE_TAG_HTML'
+							'$PEDIGREE_TAG_HTML'
 						</p>
 	                </div>
 	            </div>
@@ -819,14 +866,14 @@ HTMLFILE_MAIN=$HTMLFILE".main"
 
 # TARGET DESIGN
 DESIGN_NAME=$(echo $MANIFEST_NAME"$(if [ "$MANIFEST_NAME" != "$BED_NAME" ]; then echo " / $BED_NAME"; fi)")
-BED="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.bed"
-MANIFEST="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.manifest"
+BED="$SAMPLE_FOLDER/$SAMPLE.bed"
+MANIFEST="$SAMPLE_FOLDER/$SAMPLE.manifest"
 # Number of regions
 DESIGN_NUMBER_REGIONS=$(grep -vc "^#" $BED)
 
 # COPY
 DESIGN_FILES_DOWNLOAD_FILENAME=$RANDOM$RANDOM.design.tar.gz
-(cd $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/ && tar -czf $OUTPUT_FILES_HTMLDIR/$DESIGN_FILES_DOWNLOAD_FILENAME $SAMPLE.bed $SAMPLE.manifest)
+(cd $SAMPLE_FOLDER/ && tar -czf $OUTPUT_FILES_HTMLDIR/$DESIGN_FILES_DOWNLOAD_FILENAME $SAMPLE.bed $SAMPLE.manifest)
 DESIGN_DOWNLOAD_FILE=$OUTPUT_FILES_HTMLFOLDER/$DESIGN_FILES_DOWNLOAD_FILENAME
 
 # HTML
@@ -843,14 +890,14 @@ else
 fi;
 
 # GENE PANEL
-LIST_GENE_PANEL="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.list.genes"
+LIST_GENE_PANEL="$SAMPLE_FOLDER/$SAMPLE.list.genes"
 GENE_PANEL_FILES_NAME=$(grep -v "^#" $LIST_GENE_PANEL | sed "s/^$SAMPLE\.//gi")
 GENE_PANEL_FILES_NAME_HTML=$(echo $GENE_PANEL_FILES_NAME | sed "s/ /<br>/gi")
 
 
 # Gene number
 if [ "$(cat $LIST_GENE_PANEL)" != "" ]; then
-	GENES_NUMBER=$(cd $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/; cat $(cat $LIST_GENE_PANEL) | $STARK_BED_NORMALIZATION | cut -f4 | sort -u | wc -l)
+	GENES_NUMBER=$(cd $SAMPLE_FOLDER/; cat $(cat $LIST_GENE_PANEL) | $STARK_BED_NORMALIZATION | cut -f4 | sort -u | wc -l)
 else
 	GENES_NUMBER=0
 fi;
@@ -859,7 +906,7 @@ GENE_PANEL_NUMBER=$(grep -vc "^#" $LIST_GENE_PANEL)
 
 # COPY
 GENE_PANEL_FILES_DOWNLOAD_FILENAME=$RANDOM$RANDOM.panel.tar.gz
-(cd $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/ && tar -czf $OUTPUT_FILES_HTMLDIR/$GENE_PANEL_FILES_DOWNLOAD_FILENAME $(cat $LIST_GENE_PANEL))
+(cd $SAMPLE_FOLDER/ && tar -czf $OUTPUT_FILES_HTMLDIR/$GENE_PANEL_FILES_DOWNLOAD_FILENAME $(cat $LIST_GENE_PANEL))
 GENE_PANEL_DOWNLOAD_FILE=$OUTPUT_FILES_HTMLFOLDER/$GENE_PANEL_FILES_DOWNLOAD_FILENAME
 # HTML
 if (($GENE_PANEL_NUMBER)); then
@@ -873,8 +920,8 @@ fi;
 
 
 # TRANSCRIPTS
-TRANSCRIPTS_LIST="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.list.transcripts"
-TRANSCRIPTS="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.transcripts"
+TRANSCRIPTS_LIST="$SAMPLE_FOLDER/$SAMPLE.list.transcripts"
+TRANSCRIPTS="$SAMPLE_FOLDER/$SAMPLE.transcripts"
 if [ -s $TRANSCRIPTS ]; then
 	TRANSCRIPTS_NUMBER=$(grep -v "^#" $TRANSCRIPTS | cut -f1 | sort -u | wc -l )
 	TRANSCRIPTS_GENES_NUMBER=$(grep -v "^#" $TRANSCRIPTS | cut -f2 | sort -u | wc -l )
@@ -892,7 +939,7 @@ if [ -s $TRANSCRIPTS ]; then
 	# HTML
 	if (($TRANSCRIPTS_NUMBER)); then
 		TRANSCRIPTS_NUMBER_HTML="
-			<br><a href='$TRANSCRIPTS_DOWNLOAD_FILE' download>Transcript list</a> includes <strong>$TRANSCRIPTS_NUMBER transcript"$([ $TRANSCRIPTS_NUMBER -gt 1 ] && echo "s")"</strong> ($TRANSCRIPTS_GENES_NUMBER gene"$([ $TRANSCRIPTS_GENES_NUMBER -gt 1 ] && echo "s")")
+			<br><a href='$TRANSCRIPTS_DOWNLOAD_FILE' download>Transcripts</a> list includes <strong>$TRANSCRIPTS_NUMBER transcript"$([ $TRANSCRIPTS_NUMBER -gt 1 ] && echo "s")"</strong> ($TRANSCRIPTS_GENES_NUMBER gene"$([ $TRANSCRIPTS_GENES_NUMBER -gt 1 ] && echo "s")")
 			<br><strong>$TRANSCRIPTS_FILES_NAME_HTML</strong>
 			"
 	else
@@ -903,8 +950,41 @@ else
 fi;
 
 
+
+# PEDIGREE
+PEDIGREE_LIST="$SAMPLE_FOLDER/$SAMPLE.list.pedigree"
+PEDIGREE="$SAMPLE_FOLDER/$SAMPLE.ped"
+if [ -s $PEDIGREE ]; then
+	PEDIGREE_NUMBER=$(grep -v "^#" $PEDIGREE | cut -f2 | sort -u | wc -l )
+	PEDIGREE_FAM_NUMBER=$(grep -v "^#" $PEDIGREE | cut -f1 | sort -u | wc -l )
+	#PEDIGREE_FILES_NAME=$(basename $PEDIGREE)
+	#PEDIGREE_FILES_NUMBER=1
+	if [ -s $PEDIGREE_LIST ]; then
+		PEDIGREE_FILES_NAME=$(grep -v "^#" $PEDIGREE_LIST | sed "s/^$SAMPLE\.//gi")
+		PEDIGREE_FILES_NUMBER=$(grep -vc "^#" $PEDIGREE_LIST)
+	fi;
+	PEDIGREE_FILES_NAME_HTML=$(echo $PEDIGREE_FILES_NAME | sed "s/ /<br>/gi" )
+	# COPY FILES
+	PEDIGREE_DOWNLOAD_FILENAME=$RANDOM$RANDOM.PEDIGREE.txt.gz
+	$GZ $PEDIGREE -c > $OUTPUT_FILES_HTMLDIR/$PEDIGREE_DOWNLOAD_FILENAME
+	PEDIGREE_DOWNLOAD_FILE=$OUTPUT_FILES_HTMLFOLDER/$PEDIGREE_DOWNLOAD_FILENAME
+	# HTML
+	if (($PEDIGREE_NUMBER)); then
+		PEDIGREE_NUMBER_HTML="
+			<br><a href='$PEDIGREE_DOWNLOAD_FILE' download>Pedigree</a> includes <strong>$PEDIGREE_NUMBER individual"$([ $PEDIGREE_NUMBER -gt 1 ] && echo "s")"</strong> ($PEDIGREE_FAM_NUMBER famil"$([ $PEDIGREE_FAM_NUMBER -gt 1 ] && echo "ies" || echo "y")")
+			<br><strong>$PEDIGREE_FILES_NAME_HTML</strong>
+			"
+	else
+		PEDIGREE_NUMBER_HTML="<br>No pedigree defined"
+	fi;
+else
+	PEDIGREE_NUMBER_HTML="<br>No pedigree defined"
+fi;
+
+
+
 # CONFIG
-CONFIG_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.reports/$SAMPLE.$DATE.config"
+CONFIG_FILE="$SAMPLE_FOLDER/$SAMPLE.reports/$SAMPLE.$DATE.config"
 
 # COPY FILES
 CONFIG_FILE_DOWNLOAD_FILENAME=$RANDOM$RANDOM.config.txt.gz
@@ -950,13 +1030,14 @@ echo '
                     <div class="card-img align-self-center">
                         <span class="mbr-iconfont mbri-target" style="color: rgb(20, 157, 204); fill: rgb(20, 157, 204);"></span>
                     </div>
-                    <h4 class="card-title media-body py-3 mbr-fonts-style display-7">Target Design <br> Gene Panel <br> Transcripts list</h4>
+                    <h4 class="card-title media-body py-3 mbr-fonts-style display-7">Target Design <br> Gene Panel <br> Transcripts <br> Pedigree </h4>
                 </div>
                 <div class="card-box">
                     <p class="mbr-text mbr-fonts-style display-7">
 						'$TARGET_DESIGN_HTML'
 						'$GENE_PANEL_HTML'
 						'$TRANSCRIPTS_NUMBER_HTML'
+						'$PEDIGREE_NUMBER_HTML'
 					</p>
                 </div>
             </div>
@@ -979,10 +1060,10 @@ SECTION_NAME="Results Summary"
 SECTION_ID="results_summary"
 
 # FILES
-SEQUENCING_INFOS="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.sequencing/metrics.infos.txt"
-SEQUENCING_FASTP_JSON="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.sequencing/$SAMPLE.fastp.json"
-SEQUENCING_FASTP_HTML="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.sequencing/$SAMPLE.fastp.html"
-SEQUENCING_ARCHIVE_METRICS="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.archive.cram.metrics/stats.tsv"
+SEQUENCING_INFOS="$SAMPLE_FOLDER/$SAMPLE.sequencing/metrics.infos.txt"
+SEQUENCING_FASTP_JSON="$SAMPLE_FOLDER/$SAMPLE.sequencing/$SAMPLE.fastp.json"
+SEQUENCING_FASTP_HTML="$SAMPLE_FOLDER/$SAMPLE.sequencing/$SAMPLE.fastp.html"
+SEQUENCING_ARCHIVE_METRICS="$SAMPLE_FOLDER/$SAMPLE.archive.cram.metrics/stats.tsv"
 
 
 # Prepare FASTP HTML file
@@ -1041,16 +1122,17 @@ fi;
 # SEQUENCING TECHNOLOGY
 SEQUENCING_MODE_HTML=$(grep "^mode" $SEQUENCING_INFOS | cut -f2)
 SEQUENCING_TECHNOLOGY_HTML=$(grep "^technology" $SEQUENCING_INFOS | cut -f2)
-
+SEQUENCING_UMI=$(grep "^UMI" $SEQUENCING_INFOS | cut -f2)
+[ "$SEQUENCING_UMI" == "true" ] && SEQUENCING_UMI_HTML=" (<strong>UMI</strong> enabled)" || SEQUENCING_UMI=""
 
 # BASES count
-GENES_BASES_NUMBER=$(cd $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/; cat $(cat $LIST_GENE_PANEL) | $BEDTOOLS sort -i - | $BEDTOOLS merge -i - > $REPORTDIR/merge_all_genes.bed; $BEDTOOLS coverage -a $REPORTDIR/merge_all_genes.bed  -b $REPORTDIR/merge_all_genes.bed | awk -F '\t' 'BEGIN{sum = 0} {sum += $6} END {print sum}'; rm $REPORTDIR/merge_all_genes.bed; )
+GENES_BASES_NUMBER=$(cd $SAMPLE_FOLDER/; cat $(cat $LIST_GENE_PANEL) | $BEDTOOLS sort -i - | $BEDTOOLS merge -i - > $REPORTDIR/merge_all_genes.bed; $BEDTOOLS coverage -a $REPORTDIR/merge_all_genes.bed  -b $REPORTDIR/merge_all_genes.bed | awk -F '\t' 'BEGIN{sum = 0} {sum += $6} END {print sum}'; rm $REPORTDIR/merge_all_genes.bed; )
 GENES_BASES_HTML=$(echo $GENES_BASES_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
 
 
 # VARIANTS count
-FINAL_VCF="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.reports/$SAMPLE.final.vcf.gz"
-#FINAL_TSV="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.reports/$SAMPLE.final.tsv"
+FINAL_VCF="$SAMPLE_FOLDER/$SAMPLE.reports/$SAMPLE.final.vcf.gz"
+#FINAL_TSV="$SAMPLE_FOLDER/$SAMPLE.reports/$SAMPLE.final.tsv"
 #VARIANT_NUMBER=$(grep -cv "^#" $FINAL_VCF)
 VARIANT_NUMBER=$(zcat $FINAL_VCF | grep -cv "^#" )
 FINAL_VCF_PZFLAG_HEADER=$(zcat $FINAL_VCF | grep  "^##INFO=<ID=PZFlag")
@@ -1124,7 +1206,7 @@ if in_array $SECTION_ID $SECTIONS || in_array ALL $SECTIONS ; then
 										'$BEFORE_TOTAL_SEQUENCES_HTML'</h3>
 									<h4 class="mbr-content-title mbr-bold mbr-fonts-style display-7">Number of sequenced reads</h4>
 									<p class="mbr-content-text mbr-fonts-style display-7">
-										of <strong>'$BEFORE_SEQUENCE_LENGTH'</strong> bases length corresponding to <strong>'$BEFORE_TOTAL_BASES_HTML'</strong> bases sequenced in <strong>'$SEQUENCING_MODE_HTML'</strong> with <strong>'$SEQUENCING_TECHNOLOGY_HTML'</strong> technology</p>
+										of <strong>'$BEFORE_SEQUENCE_LENGTH'</strong> bases length corresponding to <strong>'$BEFORE_TOTAL_BASES_HTML'</strong> bases sequenced in <strong>'$SEQUENCING_MODE_HTML'</strong> with <strong>'$SEQUENCING_TECHNOLOGY_HTML'</strong> technology '$SEQUENCING_UMI_HTML'</p>
 								</div>
 							</div>
 						</div>
@@ -1200,8 +1282,8 @@ SECTION_NAME="Sequencing &amp; Mapping"
 SECTION_ID="sequencing_mapping"
 
 # FILES
-#FASTQCDATA="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.sequencing/metrics.fastqc.txt"
-#FASTQCIMAGESDIR="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.sequencing/"$SAMPLE"_fastqc/Images"
+#FASTQCDATA="$SAMPLE_FOLDER/$SAMPLE.sequencing/metrics.fastqc.txt"
+#FASTQCIMAGESDIR="$SAMPLE_FOLDER/$SAMPLE.sequencing/"$SAMPLE"_fastqc/Images"
 
 #PER_BASE_QUALITY_FILE="$FASTQCIMAGESDIR/per_base_quality.png"
 #cp $PER_BASE_QUALITY_FILE $HTMLDIR/$(basename $PER_BASE_QUALITY_FILE)
@@ -1255,12 +1337,12 @@ for ALIGNER in $ALIGNERS; do
 	(($DEBUG)) && echo "ALIGNER: $ALIGNER";
 
 	# Files
-	#DESIGN_FLAGSTAT="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.flagstat"
-	DESIGN_VALIDATION_FLAGSTAT="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.validation.flagstat"
-	DESIGN_ON_TARGET="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$SAMPLE.$ALIGNER.design.bed.on.target"
-	DESIGN_OFF_TARGET="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$SAMPLE.$ALIGNER.design.bed.off.target"
+	#DESIGN_FLAGSTAT="$SAMPLE_FOLDER/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.flagstat"
+	DESIGN_VALIDATION_FLAGSTAT="$SAMPLE_FOLDER/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.validation.flagstat"
+	DESIGN_ON_TARGET="$SAMPLE_FOLDER/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$SAMPLE.$ALIGNER.design.bed.on.target"
+	DESIGN_OFF_TARGET="$SAMPLE_FOLDER/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$SAMPLE.$ALIGNER.design.bed.off.target"
 
-	DESIGN_FLAGSTAT="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.flagstat"
+	DESIGN_FLAGSTAT="$SAMPLE_FOLDER/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.flagstat"
 	if [ "$DESIGN_FLAGSTAT" != "" ]; then
 		#head $MARKDUPLICATES_METRICS
 		cp $DESIGN_FLAGSTAT $HTMLDIR/$(basename $DESIGN_FLAGSTAT)
@@ -1277,7 +1359,7 @@ for ALIGNER in $ALIGNERS; do
 	fi;
 
 
-	MARKDUPLICATES_METRICS=$(ls $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.*.markDuplicates.metrics 2>/dev/null)
+	MARKDUPLICATES_METRICS=$(ls $SAMPLE_FOLDER/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.*.markDuplicates.metrics 2>/dev/null)
 	#echo "MARKDUPLICATES_METRICS=$MARKDUPLICATES_METRICS"
 	if [ "$MARKDUPLICATES_METRICS" != "" ]; then
 		#head $MARKDUPLICATES_METRICS
@@ -1294,7 +1376,7 @@ for ALIGNER in $ALIGNERS; do
 		MARKDUPLICATES_METRICS_HTML_LINK=""
 	fi;
 
-	GENCORE_REPORT=$(ls $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.*.gencore.metrics.html 2>/dev/null)
+	GENCORE_REPORT=$(ls $SAMPLE_FOLDER/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.*.gencore.metrics.html 2>/dev/null)
 	#echo "GENCORE_REPORT=$GENCORE_REPORT"
 	if [ "$GENCORE_REPORT" != "" ]; then
 		#head $GENCORE_REPORT
@@ -1749,8 +1831,8 @@ for ALIGNER in $ALIGNERS; do
 	(($DEBUG)) && echo "ALIGNER: $ALIGNER";
 
 	# FILES
-	#LIST_GENES_PANEL="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.list.genes"
-	#TARGET_DESIGN_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.design.bed"
+	#LIST_GENES_PANEL="$SAMPLE_FOLDER/$SAMPLE.list.genes"
+	#TARGET_DESIGN_FILE="$SAMPLE_FOLDER/$SAMPLE.$ALIGNER.design.bed"
 	TARGET_DESIGN_NAME="$SAMPLE.$ALIGNER.design.bed"
 	AMPLICON_DESIGN_NAME="$SAMPLE.manifest"
 
@@ -1759,9 +1841,9 @@ for ALIGNER in $ALIGNERS; do
 
 
 		# FILES
-		GENES_PANEL_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$GENES_PANEL"
-		#GENES_PANEL_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$GENES_PANEL"
-		if [ ! -s $GENES_PANEL_FILE ]; then GENES_PANEL_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$GENES_PANEL"; fi;
+		GENES_PANEL_FILE="$SAMPLE_FOLDER/$SAMPLE.$ALIGNER.bam.metrics/$GENES_PANEL"
+		#GENES_PANEL_FILE="$SAMPLE_FOLDER/$GENES_PANEL"
+		if [ ! -s $GENES_PANEL_FILE ]; then GENES_PANEL_FILE="$SAMPLE_FOLDER/$GENES_PANEL"; fi;
 
 
 
@@ -1772,7 +1854,7 @@ for ALIGNER in $ALIGNERS; do
 			GENE_PANEL_TYPE_NAME_HTML="Target"
 			GENE_PANEL_TYPE_TYPE_HTML="Design"
 		elif [ "$GENES_PANEL" == "$AMPLICON_DESIGN_NAME" ]; then
-			GENES_PANEL_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$TARGET_DESIGN_NAME"
+			GENES_PANEL_FILE="$SAMPLE_FOLDER/$TARGET_DESIGN_NAME"
 			GENES_PANEL_NAME="Amplicon Design"
 			GENE_PANEL_NAME_HTML="$GENES_PANEL_NAME"
 			GENE_PANEL_TYPE_HTML="Amplicon<br>Design"
@@ -1788,9 +1870,9 @@ for ALIGNER in $ALIGNERS; do
 		fi;
 
 		if [ "$GENES_PANEL" == "$AMPLICON_DESIGN_NAME" ]; then
-			DEPTH_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.HsMetrics.per_amplicon_coverage.flags"
+			DEPTH_FILE="$SAMPLE_FOLDER/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.HsMetrics.per_amplicon_coverage.flags"
 		else
-			DEPTH_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.HsMetrics.per_target_coverage.flags"
+			DEPTH_FILE="$SAMPLE_FOLDER/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.HsMetrics.per_target_coverage.flags"
 		fi;
 
 
@@ -2092,16 +2174,16 @@ for ALIGNER in $ALIGNERS; do
 		### COVERAGE ###
 		################
 
-		#GENES_PANEL_GENES_MSG="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.genes.msg"
-		GENES_PANEL_GENES_TXT="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.genes.txt"
-		GENES_PANEL_GENES_PASS_TXT="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.genes.PASS.txt"
-		GENES_PANEL_GENES_WARN_TXT="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.genes.WARN.txt"
-		GENES_PANEL_GENES_FAIL_TXT="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.genes.FAIL.txt"
-		GENES_PANEL_GENES_FAIL_WARN_TXT="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.genes.FAIL.WARN.txt"
-		GENES_PANEL_GENES_MISS_TXT="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.genes.MISS.txt"
-		GENES_PANEL_DEPTHBED_COVS="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.coverage"
-		GENES_PANEL_ON_TARGET="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.on.target"
-		GENES_PANEL_OFF_TARGET="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.off.target"
+		#GENES_PANEL_GENES_MSG="$SAMPLE_FOLDER/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.genes.msg"
+		GENES_PANEL_GENES_TXT="$SAMPLE_FOLDER/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.genes.txt"
+		GENES_PANEL_GENES_PASS_TXT="$SAMPLE_FOLDER/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.genes.PASS.txt"
+		GENES_PANEL_GENES_WARN_TXT="$SAMPLE_FOLDER/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.genes.WARN.txt"
+		GENES_PANEL_GENES_FAIL_TXT="$SAMPLE_FOLDER/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.genes.FAIL.txt"
+		GENES_PANEL_GENES_FAIL_WARN_TXT="$SAMPLE_FOLDER/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.genes.FAIL.WARN.txt"
+		GENES_PANEL_GENES_MISS_TXT="$SAMPLE_FOLDER/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.genes.MISS.txt"
+		GENES_PANEL_DEPTHBED_COVS="$SAMPLE_FOLDER/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.coverage"
+		GENES_PANEL_ON_TARGET="$SAMPLE_FOLDER/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.on.target"
+		GENES_PANEL_OFF_TARGET="$SAMPLE_FOLDER/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.off.target"
 
 		#if [ -s $GENES_PANEL_FILE ]; then
 		if [ -e $GENES_PANEL_GENES_TXT ] \
@@ -2487,8 +2569,8 @@ if ((1)); then
 
 
 	# FILES
-	#LIST_GENES_PANEL="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.list.genes"
-	#TARGET_DESIGN_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.design.bed"
+	#LIST_GENES_PANEL="$SAMPLE_FOLDER/$SAMPLE.list.genes"
+	#TARGET_DESIGN_FILE="$SAMPLE_FOLDER/$SAMPLE.$ALIGNER.design.bed"
 	TARGET_DESIGN_NAME="$SAMPLE.$ALIGNER.design.bed"
 
 
@@ -2504,28 +2586,28 @@ if ((1)); then
 			GENE_PANEL_NAME_HTML="$GENES_PANEL_NAME"
 			GENE_PANEL_TYPE_HTML="Target<br>Regions"
 			GENE_PANEL_TYPE_NAME_HTML="Region"
-			GENES_PANEL_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.bed"
+			GENES_PANEL_FILE="$SAMPLE_FOLDER/$SAMPLE.bed"
 		else
 			GENES_PANEL_NAME=$(echo $GENES_PANEL | sed "s/^$SAMPLE.//" | sed "s/.genes$//")
 			GENE_PANEL_NAME_HTML="Gene Panel<br>$GENES_PANEL_NAME"
 			GENE_PANEL_TYPE_HTML="Gene<br>Panel"
 			GENE_PANEL_TYPE_NAME_HTML="Gene"
-			GENES_PANEL_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$GENES_PANEL"
+			GENES_PANEL_FILE="$SAMPLE_FOLDER/$GENES_PANEL"
 		fi;
 
 
 		# FILES
-		#GENES_PANEL_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$GENES_PANEL"
+		#GENES_PANEL_FILE="$SAMPLE_FOLDER/$GENES_PANEL"
 
 		# FILES
 		BCFTOOLS_STATS=""
 		if [ "$GENES_PANEL" == "Target Design" ]; then
-			#BCFTOOLS_STATS=$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.bcftools.stats.tsv
-			BCFTOOLS_STATS=$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.Design.report.bcftools.stats.tsv
+			#BCFTOOLS_STATS=$SAMPLE_FOLDER/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.bcftools.stats.tsv
+			BCFTOOLS_STATS=$SAMPLE_FOLDER/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.Design.report.bcftools.stats.tsv
 		else
-			#ls $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics*$GENES_PANEL*.bcftools.stats
-			#BCFTOOLS_STATS=$(ls $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics*$GENES_PANEL*.bcftools.stats 2>/dev/null)
-			BCFTOOLS_STATS=$(ls $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.Panel.$GENES_PANEL.report.bcftools.stats.tsv 2>/dev/null)
+			#ls $SAMPLE_FOLDER/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics*$GENES_PANEL*.bcftools.stats
+			#BCFTOOLS_STATS=$(ls $SAMPLE_FOLDER/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics*$GENES_PANEL*.bcftools.stats 2>/dev/null)
+			BCFTOOLS_STATS=$(ls $SAMPLE_FOLDER/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.Panel.$GENES_PANEL.report.bcftools.stats.tsv 2>/dev/null)
 		fi;
 
 
@@ -2548,7 +2630,7 @@ if ((1)); then
 			[ "$GENES_PANEL" == "Target Design" ] && GENES_PANEL_GENES_NUMBER=$GENES_PANEL_REGIONS_NUMBER && GENES_PANEL_GENES_NUMBER_HTML=$GENES_PANEL_REGIONS_NUMBER_HTML
 
 
-			#GENES_PANEL_BASES_NUMBER=$(cd $RESULTS_FOLDER/$ANALYSIS/$SAMPLE/; $BEDTOOLS merge -i $GENES_PANEL_FILE > $REPORTDIR/merge_genes.bed; $BEDTOOLS coverage -a $REPORTDIR/merge_genes.bed  -b $REPORTDIR/merge_genes.bed | awk -F '\t' '{sum += $6} END {print sum}'; rm $REPORTDIR/merge_genes.bed; )
+			#GENES_PANEL_BASES_NUMBER=$(cd $SAMPLE_FOLDER/; $BEDTOOLS merge -i $GENES_PANEL_FILE > $REPORTDIR/merge_genes.bed; $BEDTOOLS coverage -a $REPORTDIR/merge_genes.bed  -b $REPORTDIR/merge_genes.bed | awk -F '\t' '{sum += $6} END {print sum}'; rm $REPORTDIR/merge_genes.bed; )
 			GENES_PANEL_BASES_NUMBER=$($BEDTOOLS sort -i $GENES_PANEL_FILE | $BEDTOOLS merge -i - > $REPORTDIR/merge_genes.bed; $BEDTOOLS coverage -a $REPORTDIR/merge_genes.bed  -b $REPORTDIR/merge_genes.bed | awk -F '\t' 'BEGIN{sum = 0} {sum += $6} END {print sum}'; rm $REPORTDIR/merge_genes.bed; )
 			#GENES_PANEL_BASES_NUMBER=$(cat $GENES_PANEL_FILE | grep -v "^#" | grep -v "^@" | awk '{for(i=$2;i<$3;i++) print $1"\t"i}' | sort -u | wc -l)
 			GENES_PANEL_BASES_NUMBER_HTML=$(echo $GENES_PANEL_BASES_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
@@ -2900,10 +2982,10 @@ for ALIGNER in $ALIGNERS; do
 	#####################
 
 
-	ALIGNER_FLAGSTAT="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.flagstat"
-	ALIGNER_IDXSTATS="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.idxstats"
-	ALIGNER_VALIDATION_FLAGSTAT="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.validation.flagstat"
-	ALIGNER_VALIDATION_IDXSTATS="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.validation.idxstats"
+	ALIGNER_FLAGSTAT="$SAMPLE_FOLDER/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.flagstat"
+	ALIGNER_IDXSTATS="$SAMPLE_FOLDER/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.idxstats"
+	ALIGNER_VALIDATION_FLAGSTAT="$SAMPLE_FOLDER/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.validation.flagstat"
+	ALIGNER_VALIDATION_IDXSTATS="$SAMPLE_FOLDER/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.validation.idxstats"
 
 	# COPY FILES
 	#ALIGNER_FLAGSTAT_DOWNLOAD_FILENAME=$(basename $ALIGNER_FLAGSTAT).gz
@@ -2977,12 +3059,12 @@ for ALIGNER in $ALIGNERS; do
 
 
 	# FILES
-	#LIST_GENES_PANEL="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.list.genes"
-	#TARGET_DESIGN_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.design.bed"
+	#LIST_GENES_PANEL="$SAMPLE_FOLDER/$SAMPLE.list.genes"
+	#TARGET_DESIGN_FILE="$SAMPLE_FOLDER/$SAMPLE.$ALIGNER.design.bed"
 	TARGET_DESIGN_NAME="$SAMPLE.$ALIGNER.design.bed"
 
 	# FILES
-	GENES_PANEL_AMPLICON="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.HsMetrics.per_amplicon_coverage.flags"
+	GENES_PANEL_AMPLICON="$SAMPLE_FOLDER/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.HsMetrics.per_amplicon_coverage.flags"
 
 	# COPY FILES
 	#GENES_PANEL_AMPLICON_DOWNLOAD_FILENAME=$(basename $GENES_PANEL_AMPLICON).gz
@@ -3091,21 +3173,21 @@ for ALIGNER in $ALIGNERS; do
 	for GENES_PANEL in $TARGET_DESIGN_NAME $(cat $LIST_GENES_PANEL_BASENAME); do # LIST_GENES_PANEL_BASENAME
 
 		# FILES
-		GENES_PANEL_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$GENES_PANEL"
-		#GENES_PANEL_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$GENES_PANEL"
-		if [ -s $GENES_PANEL_FILE ]; then GENES_PANEL_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$GENES_PANEL"; fi;
+		GENES_PANEL_FILE="$SAMPLE_FOLDER/$SAMPLE.$ALIGNER.bam.metrics/$GENES_PANEL"
+		#GENES_PANEL_FILE="$SAMPLE_FOLDER/$GENES_PANEL"
+		if [ -s $GENES_PANEL_FILE ]; then GENES_PANEL_FILE="$SAMPLE_FOLDER/$GENES_PANEL"; fi;
 
-		GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.HsMetrics.per_base_coverage.gz"
-		GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE_MISS="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.HsMetrics.per_base_coverage.MISS.tsv"
-		GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE_FAIL="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.HsMetrics.per_base_coverage.FAIL.tsv"
-		GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE_WARN="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.HsMetrics.per_base_coverage.WARN.tsv"
-		GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE_PASS="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.HsMetrics.per_base_coverage.PASS.tsv"
-		GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE_BED="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.HsMetrics.per_base_coverage.bed"
-		GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.coverage"
-		GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.genes.txt"
-		GENES_PANEL_HSMETRICS_PER_TARGET_GENES_REPORT_COVERAGE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.report.genes.txt"
-		GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.HsMetrics.per_target_coverage.flags"
-		GENES_PANEL_GENES_FLAGS_PATTERN="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.genes"
+		GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE="$SAMPLE_FOLDER/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.HsMetrics.per_base_coverage.gz"
+		GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE_MISS="$SAMPLE_FOLDER/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.HsMetrics.per_base_coverage.MISS.tsv"
+		GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE_FAIL="$SAMPLE_FOLDER/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.HsMetrics.per_base_coverage.FAIL.tsv"
+		GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE_WARN="$SAMPLE_FOLDER/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.HsMetrics.per_base_coverage.WARN.tsv"
+		GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE_PASS="$SAMPLE_FOLDER/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.HsMetrics.per_base_coverage.PASS.tsv"
+		GENES_PANEL_HSMETRICS_PER_BASE_COVERAGE_BED="$SAMPLE_FOLDER/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.HsMetrics.per_base_coverage.bed"
+		GENES_PANEL_HSMETRICS_PER_TARGET_COVERAGE="$SAMPLE_FOLDER/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.coverage"
+		GENES_PANEL_HSMETRICS_PER_TARGET_GENES_COVERAGE="$SAMPLE_FOLDER/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.genes.txt"
+		GENES_PANEL_HSMETRICS_PER_TARGET_GENES_REPORT_COVERAGE="$SAMPLE_FOLDER/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.report.genes.txt"
+		GENES_PANEL_HSMETRICS_PER_TARGET_DEPTH="$SAMPLE_FOLDER/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.HsMetrics.per_target_coverage.flags"
+		GENES_PANEL_GENES_FLAGS_PATTERN="$SAMPLE_FOLDER/$SAMPLE.$ALIGNER.bam.metrics/$SAMPLE.$ALIGNER.$GENES_PANEL.genes"
 		#echo "PASS" && head $GENES_PANEL_GENES_FLAGS_PATTERN".PASS.txt"
 		#echo "WARN" && head $GENES_PANEL_GENES_FLAGS_PATTERN".WARN.txt"
 		#echo "FAIL" && head $GENES_PANEL_GENES_FLAGS_PATTERN".FAIL.txt"
@@ -3841,8 +3923,8 @@ GENES_PANEL_NUM=0
 
 
 	# FILES
-	#LIST_GENES_PANEL="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.list.genes"
-	#TARGET_DESIGN_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.$ALIGNER.design.bed"
+	#LIST_GENES_PANEL="$SAMPLE_FOLDER/$SAMPLE.list.genes"
+	#TARGET_DESIGN_FILE="$SAMPLE_FOLDER/$SAMPLE.$ALIGNER.design.bed"
 	#TARGET_DESIGN_NAME="$SAMPLE.bed"
 	#TARGET_DESIGN_NAME="$SAMPLE.from_design.genes" # TEST.final.design.bed
 	TARGET_DESIGN_NAME="$SAMPLE.final.design.bed" # TEST.final.design.bed
@@ -3852,7 +3934,7 @@ GENES_PANEL_NUM=0
 	for GENES_PANEL in $TARGET_DESIGN_NAME $(cat $LIST_GENES_PANEL_BASENAME | grep -v "^$TARGET_DESIGN_NAME$"); do # LIST_GENES_PANEL_BASENAME
 
 		# FILES
-		GENES_PANEL_FILE="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$GENES_PANEL"
+		GENES_PANEL_FILE="$SAMPLE_FOLDER/$GENES_PANEL"
 
 		# TYPE
 		if [ "$GENES_PANEL" == "$TARGET_DESIGN_NAME" ]; then
@@ -3861,22 +3943,22 @@ GENES_PANEL_NUM=0
 			GENE_PANEL_TYPE_NAME="Panel."$GENES_PANEL
 		fi
 
-		# GENES_PANEL_VCF="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.genes.$GENES_PANEL.vcf"
-		# GENES_PANEL_TSV="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.genes.$GENES_PANEL.tsv"
-		# GENES_PANEL_REPORT_TSV="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.genes.$GENES_PANEL.report.tsv"
-		# GENES_PANEL_INFO_FIELD_STATS="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.genes.$GENES_PANEL.report.info_field.stats.tsv"
+		# GENES_PANEL_VCF="$SAMPLE_FOLDER/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.genes.$GENES_PANEL.vcf"
+		# GENES_PANEL_TSV="$SAMPLE_FOLDER/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.genes.$GENES_PANEL.tsv"
+		# GENES_PANEL_REPORT_TSV="$SAMPLE_FOLDER/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.genes.$GENES_PANEL.report.tsv"
+		# GENES_PANEL_INFO_FIELD_STATS="$SAMPLE_FOLDER/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.genes.$GENES_PANEL.report.info_field.stats.tsv"
 
-		# GENES_PANEL_VCF="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.genes.$GENE_PANEL_TYPE_NAME.vcf"
-		# GENES_PANEL_TSV="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.genes.$GENE_PANEL_TYPE_NAME.tsv"
-		# GENES_PANEL_REPORT_TSV="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.genes.$GENE_PANEL_TYPE_NAME.report.tsv"
-		# GENES_PANEL_INFO_FIELD_STATS="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.genes.$GENE_PANEL_TYPE_NAME.report.info_field.stats.tsv"
+		# GENES_PANEL_VCF="$SAMPLE_FOLDER/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.genes.$GENE_PANEL_TYPE_NAME.vcf"
+		# GENES_PANEL_TSV="$SAMPLE_FOLDER/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.genes.$GENE_PANEL_TYPE_NAME.tsv"
+		# GENES_PANEL_REPORT_TSV="$SAMPLE_FOLDER/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.genes.$GENE_PANEL_TYPE_NAME.report.tsv"
+		# GENES_PANEL_INFO_FIELD_STATS="$SAMPLE_FOLDER/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.genes.$GENE_PANEL_TYPE_NAME.report.info_field.stats.tsv"
 
-		GENES_PANEL_VCF="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.reports/$SAMPLE.final.$GENE_PANEL_TYPE_NAME.vcf.gz"
-		GENES_PANEL_TSV="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.reports/$SAMPLE.final.$GENE_PANEL_TYPE_NAME.tsv"
-		GENES_PANEL_REPORT_TSV="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.$GENE_PANEL_TYPE_NAME.report.tsv"
-		GENES_PANEL_INFO_FIELD_STATS="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.$GENE_PANEL_TYPE_NAME.report.info_field.stats.tsv"
-		GENES_PANEL_BCFTOOLS_STATS="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.$GENE_PANEL_TYPE_NAME.report.bcftools.stats.tsv"
-		GENES_PANEL_SNPEFF_STATS="$RESULTS_FOLDER/$ANALYSIS/$SAMPLE/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.$GENE_PANEL_TYPE_NAME.snpeff.html"
+		GENES_PANEL_VCF="$SAMPLE_FOLDER/$SAMPLE.reports/$SAMPLE.final.$GENE_PANEL_TYPE_NAME.vcf.gz"
+		GENES_PANEL_TSV="$SAMPLE_FOLDER/$SAMPLE.reports/$SAMPLE.final.$GENE_PANEL_TYPE_NAME.tsv"
+		GENES_PANEL_REPORT_TSV="$SAMPLE_FOLDER/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.$GENE_PANEL_TYPE_NAME.report.tsv"
+		GENES_PANEL_INFO_FIELD_STATS="$SAMPLE_FOLDER/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.$GENE_PANEL_TYPE_NAME.report.info_field.stats.tsv"
+		GENES_PANEL_BCFTOOLS_STATS="$SAMPLE_FOLDER/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.$GENE_PANEL_TYPE_NAME.report.bcftools.stats.tsv"
+		GENES_PANEL_SNPEFF_STATS="$SAMPLE_FOLDER/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.$GENE_PANEL_TYPE_NAME.snpeff.html"
 
 
 
@@ -4440,6 +4522,16 @@ if [ "$OUTPUT_TYPE" == "html" ]; then
 	mkdir -p $OUTPUT_HTMLDIR
 	cp -Rf $HTMLDIR/* $OUTPUT_HTMLDIR/
 
+
+fi;
+
+# TEST OUTPUT
+###############
+
+if [ ! -e $OUTPUT_HTMLFILE ] || [ ! -e $OUTPUT_ANNEX_HTMLFILE ]; then
+
+	echo "#[ERROR] Report generation failed!!!"
+	exit 1;
 
 fi;
 

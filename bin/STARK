@@ -7,8 +7,8 @@
 
 SCRIPT_NAME="STARKLaunch"
 SCRIPT_DESCRIPTION="STARK launch RUN or FASTQ/BAM analysis"
-SCRIPT_RELEASE="0.9.2.0"
-SCRIPT_DATE="19/09/2021"
+SCRIPT_RELEASE="0.9.2.2"
+SCRIPT_DATE="19/10/2021"
 SCRIPT_AUTHOR="Antony Le Bechec"
 SCRIPT_COPYRIGHT="IRC"
 SCRIPT_LICENCE="GNU-AGPL"
@@ -17,6 +17,8 @@ SCRIPT_LICENCE="GNU-AGPL"
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9b-30/05/2016: Script creation\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.1.0-23/04/2021: Completely recoded\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.2.0-19/09/2021: add parameters\n";
+RELEASE_NOTES=$RELEASE_NOTES"# 0.9.2.1-19/09/2021: add favorites parameter\n";
+RELEASE_NOTES=$RELEASE_NOTES"# 0.9.2.2-19/10/2021: add pedigree parameter\n";
 
 # Script folder
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -118,6 +120,8 @@ function usage {
 	echo "#                                          Default: no copy in a repository";
 	echo "# --archives=<FOLDER>                      Archives directory to generate GROUP|PROJECT|RUN|SAMPLE|* specific files";
 	echo "#                                          Default: no copy in a archives";
+	echo "# --favorites=<FOLDER>                     Favorites directory to generate GROUP|PROJECT|RUN|* specific files from repository folder";
+	echo "#                                          Default: no copy in a favorites";
 	echo "# --databases=<FOLDER>                     Databases folder (requires STARK databases folder structure)";
 	echo "";
 
@@ -142,6 +146,10 @@ function usage {
 	echo "#                                          OR force TRANSCRIPTS file for RUN analysis (use only one TRANSCRIPTS file).";
 	echo "#                                          Format: TSV (transcript<TAB>geneID).";
 	echo "#                                          Default first TRANSCRIPTS file or empty";
+	echo "# --pedigree=<FILE1,FILE2...>              List of corresponding PEDIGREE files.";
+	echo "#                                          OR force PEDIGREE file for RUN analysis.";
+	echo "#                                          Format: PED (see GATK doc).";
+	echo "#                                          Default first PEDIGREE file or empty";
 	echo "# --threads=<INTEGER>                      Number of thread to use";
 	echo "#                                          Default: all cores in your system minus one";
 	echo "# --by_sample                              Split analysis by SAMPLE, all threads on each sample, one by one.";
@@ -188,7 +196,7 @@ function usage {
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
-ARGS=$(getopt -o "a:b:e:r:f:q:g:j:m:l:s:w:t:o:u:iygxvdnh" --long "env:,app:,application:,runs:,run:,fastq:,reads:,reads1:,fastq_R1:,by_sample,keep_alignment,fastq_R2:,reads2:,index1:,index2:,other_files:,analysis_tag:,sample_tag:,adapters:,analysis:,analysis_name:,analysis_dir:,demultiplexing:,demultiplexing_only,samplesheet:,sample:,sample_filter:,design:,bed:,manifest:,genes:,panels:,transcripts:,threads:,output:,results:,repository:,archives:,databases:,input:,output:,tmp:,log:,docker-compose-file:,docker-env-file:,docker-parameters:,docker-stark-image:,docker-stark-container:,no_header,applications_infos,applications_infos_all,pipelines_infos,release_infos,tools_infos,databases_infos,verbose,debug,release,help" -- "$@" 2> /dev/null)
+ARGS=$(getopt -o "a:b:e:r:f:q:g:j:m:l:s:w:t:o:u:iygxvdnh" --long "env:,app:,application:,runs:,run:,fastq:,reads:,reads1:,fastq_R1:,by_sample,keep_alignment,fastq_R2:,reads2:,index1:,index2:,other_files:,analysis_tag:,sample_tag:,adapters:,analysis:,analysis_name:,analysis_dir:,demultiplexing:,demultiplexing_only,samplesheet:,sample:,sample_filter:,design:,bed:,manifest:,genes:,panels:,transcripts:,pedigree:,threads:,output:,results:,repository:,archives:,favorites:,databases:,input:,output:,tmp:,log:,docker-compose-file:,docker-env-file:,docker-parameters:,docker-stark-image:,docker-stark-container:,no_header,applications_infos,applications_infos_all,pipelines_infos,release_infos,tools_infos,databases_infos,verbose,debug,release,help" -- "$@" 2> /dev/null)
 
 
 if [ $? -ne 0 ]; then
@@ -295,12 +303,21 @@ do
 			TRANSCRIPTS_INPUT=$(echo $TRANSCRIPTS_INPUT | tr "," " ")
 			shift 2
 			;;
+		--pedigree)
+			PEDIGREE_INPUT="$2"
+			PEDIGREE_INPUT=$(echo $PEDIGREE_INPUT | tr "," " ")
+			shift 2
+			;;
 		-u|--repository)
 			REPOSITORY="$2"
 			shift 2
 			;;
 		--archives)
 			ARCHIVES="$2"
+			shift 2
+			;;
+		--favorites)
+			FAVORITES="$2"
 			shift 2
 			;;
 		--databases)
@@ -631,7 +648,7 @@ if (($APPLICATIONS_INFOS)); then
 			#FIELD_SEP="\t"
 			#APP_INFOS=$(source_app "$STARK_FOLDER_APPS/$ENV_DEF"
 			if ! APP_INFOS=$(source_app "$STARK_FOLDER_APPS/$ENV_DEF"; 
-			echo -e "$APP_RELEASE\t$APP_DESCRIPTION\t$APP_GROUP\t$APP_PROJECT\t$FOLDER_RUN\t$FOLDER_RESULTS\t$FOLDER_REPOSITORY\t$FOLDER_ARCHIVES\t$PIPELINES\t$POST_SEQUENCING_STEPS\t$POST_ALIGNMENT_STEPS\t$POST_CALLING_STEPS\t$POST_ANNOTATION_STEPS\t$HOWARD_ANNOTATION_REPORT"); then
+			echo -e "$APP_RELEASE\t$APP_DESCRIPTION\t$APP_GROUP\t$APP_PROJECT\t$FOLDER_RUN\t$FOLDER_RESULTS\t$FOLDER_REPOSITORY\t$FOLDER_ARCHIVES\t$FOLDER_FAVORITES\t$PIPELINES\t$POST_SEQUENCING_STEPS\t$POST_ALIGNMENT_STEPS\t$POST_CALLING_STEPS\t$POST_ANNOTATION_STEPS\t$HOWARD_ANNOTATION_REPORT"); then
 			 	echo "#[ERROR] Application '$ENV_DEF' error";
 			 	exit 1
 			fi
@@ -643,12 +660,13 @@ if (($APPLICATIONS_INFOS)); then
 			FOLDER_RESULTS=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $6}')
 			FOLDER_REPOSITORY=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $7}')
 			FOLDER_ARCHIVES=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $8}')
-			PIPELINES=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $9}')
-			POST_SEQUENCING_STEPS=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $10}')
-			POST_ALIGNMENT_STEPS=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $11}')
-			POST_CALLING_STEPS=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $12}')
-			POST_ANNOTATION_STEPS=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $13}')
-			HOWARD_ANNOTATION_REPORT=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $14}')
+			FOLDER_FAVORITES=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $9}')
+			PIPELINES=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $10}')
+			POST_SEQUENCING_STEPS=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $11}')
+			POST_ALIGNMENT_STEPS=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $12}')
+			POST_CALLING_STEPS=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $13}')
+			POST_ANNOTATION_STEPS=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $14}')
+			HOWARD_ANNOTATION_REPORT=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $15}')
 
 			[ -z "$APP_DESCRIPTION" ] && APP_DESCRIPTION="-";
 			[ -z "$APP_GROUP" ] && APP_GROUP="UNKNOWN";
@@ -670,6 +688,7 @@ if (($APPLICATIONS_INFOS)); then
 				# echo "#[INFO]    RESULTS                $FOLDER_RESULTS";
 				# echo "#[INFO]    REPOSITORY             $FOLDER_REPOSITORY";
 				# echo "#[INFO]    ARCHIVES               $FOLDER_ARCHIVES";
+				# echo "#[INFO]    FAVORITES               $FOLDER_FAVORITES";
 				echo "#[INFO]    PIPELINES              $PIPELINES "
 				echo "#[INFO]    ANNOTATIONS            $HOWARD_ANNOTATION_REPORT "
 				echo "#[INFO]    POST SEQUENCING STEPS  $POST_SEQUENCING_STEPS "
@@ -945,7 +964,7 @@ if [ -s "$DOCKER_COMPOSE_FILE" ] || [ -s "$DOCKER_ENV_FILE" ] || [ "$DOCKER_STAR
 	[ -z $DOCKER_STARK_IMAGE_INPUT ] && DOCKER_STARK_IMAGE_INPUT="stark:latest"
 	if [ "$DOCKER_STARK_IMAGE_INPUT" != "" ]; then
 		if [[ "$(docker images -q $DOCKER_STARK_IMAGE_INPUT | wc -l | tr -d " ")" != "1" ]]; then
-			echo "#[WARNING] Docker STARK image '$DOCKER_STARK_IMAGE_INPUT' NOT found" #&& exit 1
+			echo "#[WARN] Docker STARK image '$DOCKER_STARK_IMAGE_INPUT' NOT found" #&& exit 1
 		fi
 		(($VERBOSE)) && echo "#[INFO] Docker STARK image '$DOCKER_STARK_IMAGE_INPUT'"
 	fi;
@@ -1106,7 +1125,7 @@ if [ "$ANALYSIS" != "" ]; then
 
 		elif [ "$J" != "" ]; then
 
-			echo "#[WARNING] Analysis configuration file '$J' does NOT exist"
+			echo "#[WARN] Analysis configuration file '$J' does NOT exist"
 
 		fi;
 
@@ -1135,7 +1154,7 @@ if [ ! -z "$FASTQ" ]; then # && [ -e "$FASTQ" ]; then
 		if (($(ls $F $ANALYSIS_DIR/$F 2>/dev/null | wc -w))); then
 			echo "#[INFO] Input File '$F' exists"
 		else
-			echo "#[WARNING] Input File '$F' does NOT exist"
+			echo "#[WARN] Input File '$F' does NOT exist"
 			FASTQ_EXISTS=0;
 		fi;
 	done;
@@ -1535,7 +1554,7 @@ if [ ! -z "$RUNS" ]; then
 						SAMPLE_FASTQ_I2_PATTERN=$SAMPLE_NAME'_S*_'$(echo $STARK_DEMULTIPLEXING_READS_MAPPING | tr "," " " | cut -d' ' -f3)'_*.fastq.gz'
 						SAMPLE_FASTQ_R1=$(find -L $R -name "$SAMPLE_FASTQ_R1_PATTERN")
 						if [ "$SAMPLE_FASTQ_R1" == "" ]; then
-							(($VERBOSE)) && echo "[WARNING] No Reads for sample '$SAMPLE_NAME' with pattern '$FASTQ_PATTERN_ILLUMINA'. Check with generic parrtern '$FASTQ_PATTERN_GENERIC'";
+							(($VERBOSE)) && echo "[WARN] No Reads for sample '$SAMPLE_NAME' with pattern '$FASTQ_PATTERN_ILLUMINA'. Check with generic parrtern '$FASTQ_PATTERN_GENERIC'";
 							SAMPLE_FASTQ_R1_PATTERN=$SAMPLE_NAME'.*'$(echo $STARK_DEMULTIPLEXING_READS_MAPPING | tr "," " " | cut -d' ' -f1)'*.fastq.gz'
 							SAMPLE_FASTQ_R2_PATTERN=$SAMPLE_NAME'.*'$(echo $STARK_DEMULTIPLEXING_READS_MAPPING | tr "," " " | cut -d' ' -f4)'*.fastq.gz'
 							SAMPLE_FASTQ_I1_PATTERN=$SAMPLE_NAME'.*'$(echo $STARK_DEMULTIPLEXING_READS_MAPPING | tr "," " " | cut -d' ' -f2)'*.fastq.gz'
@@ -1563,6 +1582,14 @@ if [ ! -z "$RUNS" ]; then
 
 						[ ! -z $APP ] && SAMPLE_APP=$(echo $APP | tr " " "+" | tr "," "+") && echo "#[INFO] APP forced '$SAMPLE_APP'" # Force APP if in parameters
 
+
+						if ! APP_INFOS=$(source_app "$SAMPLE_APP" "$STARK_FOLDER_APPS/"; echo -e "$APP_GROUP\t$APP_PROJECT"); then
+							echo "#[ERROR] Application '$SAMPLE_APP' error";
+							exit 1
+						fi
+						SAMPLE_APP_GROUP=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $1}')
+						SAMPLE_APP_PROJECT=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $2}')
+
 						CONFIG_FILE_TAB=$TMP_FOLDER_TMP_R/$SAMPLE_APP.config.tab
 						CONFIG_FILE_TAB_LIST=$(echo "$CONFIG_FILE_TAB_LIST$CONFIG_FILE_TAB " | tr " " "\n" | sort -u | tr "\n" " ")
 
@@ -1586,7 +1613,7 @@ if [ ! -z "$RUNS" ]; then
 								MANIFEST_FILE=$FOLDER_MANIFEST/$MANIFEST_FILENAME && (($VERBOSE)) && echo "#[INFO] Manifest file found for sample '$SAMPLE_NAME': $MANIFEST_FILE"
 							else
 								MANIFEST_FILE=""
-								#echo "#[WARNING] Manifest file NOT found"
+								#echo "#[WARN] Manifest file NOT found"
 								echo "#[ERROR] Manifest file NOT found: $MANIFEST_FILENAME"
 								exit 1
 							fi;
@@ -1610,11 +1637,29 @@ if [ ! -z "$RUNS" ]; then
 								MANIFEST_TRANSCRIPTS_FILE=$(ls $FOLDER_MANIFEST/$MANIFEST_FILENAME*.transcripts 2>/dev/null | tr "\n" "+" | sed "s/+$//" | sed "s/^+//") && (($VERBOSE)) &&  echo "#[INFO] Manifest Transcripts file found for sample '$SAMPLE_NAME': $MANIFEST_TRANSCRIPTS_FILE"
 							else
 								MANIFEST_TRANSCRIPTS_FILE=""
-								(($VERBOSE)) && echo "#[WARNING] Manifest Transcripts file NOT found"
+								(($VERBOSE)) && echo "#[WARN] Manifest Transcripts file NOT found"
 							fi;
 							MANIFEST_TRANSCRIPTS_FILE=$(echo $MANIFEST_TRANSCRIPTS_FILE | sed "s/+$//")
 
 						fi;
+
+						# PEDIGREE File
+						PEDIGREE_FILE=
+						if [ "$PEDIGREE_INPUT" != "" ] && [ -f $R/$PEDIGREE_INPUT ]; then
+							PEDIGREE_FILE=$R/$PEDIGREE_INPUT && (($VERBOSE)) && echo "#[INFO] Pedigree file found for sample '$SAMPLE_NAME': $PEDIGREE_FILE"
+						elif [ -f $FOLDER_PEDIGREE/$SAMPLE_APP_GROUP.$SAMPLE_APP_PROJECT.ped ]; then
+							PEDIGREE_FILE=$FOLDER_PEDIGREE/$SAMPLE_APP_GROUP.$SAMPLE_APP_PROJECT.ped && (($VERBOSE)) && echo "#[INFO] Manifest file found for sample '$SAMPLE_NAME': $PEDIGREE_FILE"
+						else
+							PEDIGREE_FILE=""
+							#echo "#[WARN] Manifest file NOT found"
+							echo "#[WARN] Pediree file NOT found"
+						fi;
+						
+						# echo "FOLDER_PEDIGREE=$FOLDER_PEDIGREE"
+						# echo "SAMPLE_APP_GROUP=$SAMPLE_APP_GROUP"
+						# echo "SAMPLE_APP_PROJECT=$SAMPLE_APP_PROJECT"
+						# cat $PEDIGREE_FILE
+						# exit 0
 
 						# OTHER FILES
 						OTHER_FILES="";
@@ -1622,13 +1667,13 @@ if [ ! -z "$RUNS" ]; then
 							(($DEBUG)) && echo "#[INFO] $R/Stats added to Others Files"
 							OTHER_FILES="$R/Stats:$SAMPLE_NAME.demultiplexing/Stats+"
 						else
-							(($DEBUG)) && echo "#[WARNING] $R/Stats added to Others Files"
+							(($DEBUG)) && echo "#[WARN] $R/Stats added to Others Files"
 						fi;
 						if [ -d $R/Reports ]; then
 							(($DEBUG)) && echo "#[INFO] $R/Reports added to Others Files"
 							OTHER_FILES="$R/Reports:$SAMPLE_NAME.demultiplexing/Reports+"
 						else
-							(($DEBUG)) && echo "#[WARNING] $R/Stats added to Others Files"
+							(($DEBUG)) && echo "#[WARN] $R/Stats added to Others Files"
 						fi;
 						#echo "OTHER_FILES=$OTHER_FILES"
 						#exit 0
@@ -1637,7 +1682,7 @@ if [ ! -z "$RUNS" ]; then
 
 						#	echo "SAMPLE_LIST '$SAMPLE_NAME' found in the list '$SAMPLE_LIST'"
 						APP_LIST=$(echo "$APP_LIST $SAMPLE_APP" | tr " " "\n" | sort -u | tr "\n" " ")
-						echo "$SAMPLE_APP,$SAMPLE_ID,$SAMPLE_NAME,$SAMPLE_FASTQ_R1,$SAMPLE_FASTQ_R2,$SAMPLE_FASTQ_I1,$SAMPLE_FASTQ_I2,$MANIFEST_FILE,$MANIFEST_GENES_FILE,$MANIFEST_TRANSCRIPTS_FILE,$SAMPLE_TAG,$OTHER_FILES" >> $CONFIG_FILE_TAB
+						echo "$SAMPLE_APP,$SAMPLE_ID,$SAMPLE_NAME,$SAMPLE_FASTQ_R1,$SAMPLE_FASTQ_R2,$SAMPLE_FASTQ_I1,$SAMPLE_FASTQ_I2,$MANIFEST_FILE,$MANIFEST_GENES_FILE,$MANIFEST_TRANSCRIPTS_FILE,$PEDIGREE_FILE,$SAMPLE_TAG,$OTHER_FILES" >> $CONFIG_FILE_TAB
 						#echo "$SAMPLE_APP,$SAMPLE_ID,$SAMPLE_NAME,$SAMPLE_FASTQ_R1,$SAMPLE_FASTQ_R2,$SAMPLE_FASTQ_I1,$SAMPLE_FASTQ_I2,$MANIFEST_FILE,$MANIFEST_GENES_FILE,$MANIFEST_TRANSCRIPTS_FILE,$SAMPLE_TAG,$OTHER_FILES >> $CONFIG_FILE_TAB"
 					fi;
 
@@ -1664,7 +1709,7 @@ if [ ! -z "$RUNS" ]; then
 
 					SAMPLE_TEST=$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u | awk -F"," -v APP=$APP_ONE '$1==APP{print $3}' | tr '\n' ',' | sed s/,$//)
 
-					if ! APP_INFOS=$(source_app "$APP_ONE" "$STARK_FOLDER_APPS/"; echo -e "$APP_RELEASE\t$APP_DESCRIPTION\t$APP_GROUP\t$APP_PROJECT\t$FOLDER_RUN\t$FOLDER_RESULTS\t$FOLDER_REPOSITORY\t$FOLDER_ARCHIVES\t$PIPELINES\t$POST_ALIGNMENT_STEPS\t$HOWARD_ANNOTATION_REPORT"); then
+					if ! APP_INFOS=$(source_app "$APP_ONE" "$STARK_FOLDER_APPS/"; echo -e "$APP_RELEASE\t$APP_DESCRIPTION\t$APP_GROUP\t$APP_PROJECT\t$FOLDER_RUN\t$FOLDER_RESULTS\t$FOLDER_REPOSITORY\t$FOLDER_ARCHIVES\t$FOLDER_FAVORITES\t$PIPELINES\t$POST_ALIGNMENT_STEPS\t$HOWARD_ANNOTATION_REPORT"); then
 						echo "#[ERROR] Application '$APP_ONE' error";
 						exit 1
 					fi
@@ -1676,9 +1721,10 @@ if [ ! -z "$RUNS" ]; then
 					#FOLDER_RESULTS_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $6}')
 					FOLDER_REPOSITORY_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $7}')
 					FOLDER_ARCHIVES_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $8}')
-					#PIPELINES_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $9}')
-					#POST_ALIGNMENT_STEPS_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $10}')
-					#HOWARD_ANNOTATION_REPORT_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $11}')
+					FOLDER_FAVORITES_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $9}')
+					#PIPELINES_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $10}')
+					#POST_ALIGNMENT_STEPS_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $11}')
+					#HOWARD_ANNOTATION_REPORT_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $12}')
 
 					#echo APP_ONE=$APP_ONE
 					#echo APP_INFOS=$APP_INFOS
@@ -1703,24 +1749,28 @@ if [ ! -z "$RUNS" ]; then
 					# SAMPLE NAME
 					echo "\"sample\":\""$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u | awk -F"," -v APP=$APP_ONE '$1==APP{print $3}' | tr '\n' ',' | sed s/,$//)"\"," >> $RUN_CONFIG_FILE
 					# SAMPLE NAME
-					echo "\"sample_tag\":\""$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u | awk -F"," -v APP=$APP_ONE '$1==APP{print $11}' | tr '\n' ',' | sed s/,$//)"\"," >> $RUN_CONFIG_FILE
+					echo "\"sample_tag\":\""$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u | awk -F"," -v APP=$APP_ONE '$1==APP{print $12}' | tr '\n' ',' | sed s/,$//)"\"," >> $RUN_CONFIG_FILE
 					# FASTQ R1/R2
 					echo "\"reads1\":\""$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u | awk -F"," -v APP=$APP_ONE '$1==APP{print $4}' | tr '\n' ',' | sed s/,$//)"\"," >> $RUN_CONFIG_FILE
 					echo "\"reads2\":\""$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u | awk -F"," -v APP=$APP_ONE '$1==APP{print $5}' | tr '\n' ',' | sed s/,$//)"\"," >> $RUN_CONFIG_FILE
 					echo "\"index1\":\""$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u | awk -F"," -v APP=$APP_ONE '$1==APP{print $6}' | tr '\n' ',' | sed s/,$//)"\"," >> $RUN_CONFIG_FILE
 					echo "\"index2\":\""$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u | awk -F"," -v APP=$APP_ONE '$1==APP{print $7}' | tr '\n' ',' | sed s/,$//)"\"," >> $RUN_CONFIG_FILE
-					echo "\"other_files\":\""$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u| awk -F"," -v APP=$APP_ONE '$1==APP{print $12}' | tr '\n' ',' | sed s/,$//)"\"," >> $RUN_CONFIG_FILE
+					echo "\"other_files\":\""$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u| awk -F"," -v APP=$APP_ONE '$1==APP{print $13}' | tr '\n' ',' | sed s/,$//)"\"," >> $RUN_CONFIG_FILE
 					# MANIFEST
 					echo "\"design\":\""$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u| awk -F"," -v APP=$APP_ONE '$1==APP{print $8}' | tr '\n' ',' | sed s/,$//)"\"," >> $RUN_CONFIG_FILE
 					# GENES
 					echo "\"genes\":\""$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u| awk -F"," -v APP=$APP_ONE '$1==APP{print $9}' | tr '\n' ',' | sed s/,$//)"\"," >> $RUN_CONFIG_FILE
 					# TRANSCRIPTS
 					echo "\"transcripts\":\""$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u| awk -F"," -v APP=$APP_ONE '$1==APP{print $10}' | tr '\n' ',' | sed s/,$//)"\"," >> $RUN_CONFIG_FILE
+					# PEDIGREE
+					echo "\"pedigree\":\""$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u| awk -F"," -v APP=$APP_ONE '$1==APP{print $11}' | tr '\n' ',' | sed s/,$//)"\"," >> $RUN_CONFIG_FILE
 
 					# REPOSITORY
 					echo "\"repository\":\"$FOLDER_REPOSITORY_ONE\"," >> $RUN_CONFIG_FILE
 					# ARCHIVE
 					echo "\"archives\":\"$FOLDER_ARCHIVES_ONE\"," >> $RUN_CONFIG_FILE
+					# FAVORITES
+					echo "\"favorites\":\"$FOLDER_FAVORITES_ONE\"," >> $RUN_CONFIG_FILE
 
 					# SAMPLESHEET
 					echo "\"samplesheet\":\"$RUN_SAMPLESHEET\"" >> $RUN_CONFIG_FILE
@@ -1820,7 +1870,7 @@ if [ ! -z "$RUNS" ]; then
 
 	else
 
-		echo "#[WARNING] NO Input RUN to launch";
+		echo "#[WARN] NO Input RUN to launch";
 
 	fi;
 
