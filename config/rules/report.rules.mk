@@ -189,8 +189,14 @@ REPORT_SECTIONS?=ALL
 %.full.filtration.sorting.vcf: %.merge.vcf %.transcripts %.genome
 	# HOWARD annotation
 	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$< --output=$@.tmp --annotation=$(HOWARD_ANNOTATION_REPORT) --norm=$$(cat $*.genome);
+	# HOWARD annotation dejavu (forced)
+	+if [ "$(HOWARD_DEJAVU_ANNOTATION)" != "" ]; then \
+		$(HOWARD) $(HOWARD_DEJAVU_CONFIG_OPTIONS) --input=$@.tmp --output=$@.tmp1 --annotation=$(HOWARD_DEJAVU_ANNOTATION) --norm=$$(cat $*.genome) --force; \
+	else \
+		mv $@.tmp $@.tmp1; \
+	fi;
 	# HOWARD calculation and prioritization
-	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp --output=$@.tmp2 --calculation=$(HOWARD_CALCULATION_REPORT) --nomen_fields=$(HOWARD_NOMEN_FIELDS) --prioritization=$(HOWARD_PRIORITIZATION_REPORT) --transcripts=$*.transcripts --force --norm=$$(cat $*.genome);
+	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp1 --output=$@.tmp2 --calculation=$(HOWARD_CALCULATION_REPORT) --nomen_fields=$(HOWARD_NOMEN_FIELDS) --prioritization=$(HOWARD_PRIORITIZATION_REPORT) --transcripts=$*.transcripts --force --norm=$$(cat $*.genome);
 	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp2 --output=$@ --prioritization=$(HOWARD_PRIORITIZATION_VARANK) --force --norm=$$(cat $*.genome);
 	# cleaning
 	rm -rf $@.tmp*
@@ -222,7 +228,13 @@ REPORT_SECTIONS?=ALL
 	echo $^ | tr " " "\n" | tr "\t" "\n" | grep "final.vcf.gz$$" > $@.tmp.vcf_list
 	$(BCFTOOLS) merge -l $@.tmp.vcf_list > $@.tmp.merged;
 	# Annotation
-	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp.merged --output=$@.tmp.annotated --annotation=$(HOWARD_ANNOTATION_ANALYSIS) --threads=$(THREADS);
+	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp.merged --output=$@.tmp.annotated1 --annotation=$(HOWARD_ANNOTATION_ANALYSIS) --threads=$(THREADS);
+	# Annotation dejavu (forced)
+	+if [ "$(HOWARD_DEJAVU_ANNOTATION)" != "" ]; then \
+		$(HOWARD) $(HOWARD_DEJAVU_CONFIG_OPTIONS) --input=$@.tmp.annotated1 --output=$@.tmp.annotated --annotation=$(HOWARD_DEJAVU_ANNOTATION) --norm=$$(cat $*.genome) --threads=$(THREADS) --force; \
+	else \
+		mv $@.tmp.annotated1 $@.tmp.annotated; \
+	fi;
 	# Calculation and prioritization (forced)
 	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp.annotated --output=$@.tmp.calculated.prioritized --calculation=$(HOWARD_CALCULATION_ANALYSIS) --prioritization=$(HOWARD_PRIORITIZATION_ANALYSIS) --nomen_fields=$(HOWARD_NOMEN_FIELDS) --force --threads=$(THREADS);
 	# Sort VCF
@@ -266,7 +278,13 @@ REPORT_SECTIONS?=ALL
 		for f in $$(cat $@.tmp.vcf_list); do $(BCFTOOLS) view -h $$f | grep "^#CHROM" | cut -f10- | sed  "s/^/$$(basename $$f | cut -d. -f1)./g;s/\t/\t$$(basename $$f | cut -d. -f1)./g";  done | tr "\t" "\n" > $@.tmp.vcf_list.pipelines; \
 		$(BCFTOOLS) merge -l $@.tmp.vcf_list --force-samples | $(BCFTOOLS) reheader -s $@.tmp.vcf_list.pipelines > $@.tmp.merged; \
 		# Annotation; \
-		$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp.merged --output=$@.tmp.annotated --annotation=$(HOWARD_ANNOTATION_ANALYSIS) --threads=$(THREADS); \
+		$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp.merged --output=$@.tmp.annotated0 --annotation=$(HOWARD_ANNOTATION_ANALYSIS) --norm=$$(cat $*.genome) --threads=$(THREADS); \
+		# Annotation dejavu (forced); \
+		if [ "$(HOWARD_DEJAVU_ANNOTATION)" != "" ]; then \
+			$(HOWARD) $(HOWARD_DEJAVU_CONFIG_OPTIONS) --input=$@.tmp.annotated0 --output=$@.tmp.annotated --annotation=$(HOWARD_DEJAVU_ANNOTATION) --norm=$$(cat $*.genome) --threads=$(THREADS) --force; \
+		else \
+			$mv @.tmp.annotated0 $@.tmp.annotated; \
+		fi; \
 		# Calculation and prioritization (forced); \
 		$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp.annotated --output=$@.tmp.calculated.prioritized --calculation=$(HOWARD_CALCULATION_ANALYSIS) --prioritization=$(HOWARD_PRIORITIZATION_ANALYSIS) --nomen_fields=$(HOWARD_NOMEN_FIELDS) --force --threads=$(THREADS); \
 		# Sort VCF; \

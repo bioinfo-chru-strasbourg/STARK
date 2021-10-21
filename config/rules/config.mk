@@ -85,13 +85,6 @@ PICARD_UNALIGNED_FLAGS?=-COMPRESSION_LEVEL 1 -MAX_RECORDS_IN_RAM 500000
 PICARD_UNALIGNED_NAME_FLAGS?=-LIBRARY_NAME 001 -PLATFORM ILLUMINA -PLATFORM_UNIT PU -READ_GROUP_NAME A
 
 
-# HOWARD OPTIONS
-HOWARD_ANNOTATION?=$(HOWARD_FOLDER)/VCFannotation.pl
-HOWARD_PRIORITIZATION?=$(HOWARD_FOLDER)/VCFprioritization.pl
-HOWARD_TRANSLATION?=$(HOWARD_FOLDER)/VCFtranslation.pl
-
-
-
 # DATABASES
 DBFOLDER?=/STARK/databases
 VCFDBSNP?=$(DBFOLDER)/snp138.vcf.gz
@@ -106,6 +99,7 @@ PHASE1_1000G?=$(DBFOLDER)/1000G_phase1.snps.high_confidence.hg19.sites.vcf
 
 # HOWARD
 HOWARD_CONFIG_OPTIONS?=--config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS)
+HOWARD_DEJAVU_CONFIG_OPTIONS?=--config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_DEJAVU_ANNOTATION) --annovar_folder=$(ANNOVAR) --annovar_databases=$(DEJAVU_ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS)
 
 # BAM Check option
 BAM_CHECK_STEPS?=1

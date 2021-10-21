@@ -28,7 +28,6 @@ HOWARD_CONFIG_ANNOTATION?="config.annotation.ini"
 #HOWARD_CONFIG_FILTER?=$(HOWARD_CONFIG_PRIORITIZATION)
 
 # HOWARD Translation
-HOWARD_ANNOTATION?="PZScore,PZFlag,PZComment,Symbol,hgvs,location,outcome,AlleleFrequency,AD,dbSNP,dbSNPNonFlagged,popfreq,database_CPSGEN,DP,AF,VF,GQ,Ensembl,TI,FC,GWASCatalog,COSMIC,LocalDB,1000genomesALL,1000genomesEUR,6500NHLBIALL,6500NHLBIEUR,PolyPhen2HumanVarPred,PolyPhen2HumanDivPred,MutationTasterPred,MutationAssessorPred,LTRPred,IARCTP53,SIFT,phastCons,PhyloP,SiPhy,FATHMM,LRT,GERP,PolyPhen2HumanVar,PolyPhen2HumanDiv,MutationTaster,MutationAssessor,TFBS,FilterComment,ALL"
 #HOWARD_FIELDS?="PZScore,PZFlag,PZComment,Symbol,hgvs,location,outcome,AlleleFrequency,AD,dbSNP,dbSNPNonFlagged,popfreq,ALL"
 HOWARD_FIELDS?="NOMEN,PZFlag,PZScore,PZComment,CNOMEN,PNOMEN,location,outcome,VAF_average,dbSNP,dbSNPNonFlagged,popfreq,ALL"
 HOWARD_SORT?="PZFlag::DESC,PZScore:n:DESC"

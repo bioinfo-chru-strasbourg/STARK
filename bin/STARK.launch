@@ -1922,7 +1922,7 @@ for RUU in $RUN_UNIQ; do
 							echo "$RESULTS_FOLDER_COPY_FOLDER/$RUU:
 								#[INFO] Copying '$RUU'
 								mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$RUU
-								$COMMAND_COPY_NO_COMPRESS \$\$(find -L $RESULTS/$RUU -mindepth 1 -maxdepth 1 -type f) $RESULTS_FOLDER_COPY_FOLDER/$RUU
+								$COMMAND_COPY_NO_COMPRESS \$\$(find -L $RESULTS/$RUU -name "$ANALYSIS_PREFIX*" -mindepth 1 -maxdepth 1 -type f) $RESULTS_FOLDER_COPY_FOLDER/$RUU
 								rm $RESULTS_FOLDER_COPY_FOLDER/$RUU/*copy.mk* $RESULTS_FOLDER_COPY_FOLDER/$RUU/$(basename $FINAL_REPORT_RUN).metrics $RESULTS_FOLDER_COPY_FOLDER/$RUU/$(basename $FINAL_REPORT_RUN).variants
 								chmod $PERMS -R $RESULTS_FOLDER_COPY_FOLDER/$RUU $RESULTS_FOLDER_COPY_FOLDER/$RUU/* 
 							" >> $RES_MK

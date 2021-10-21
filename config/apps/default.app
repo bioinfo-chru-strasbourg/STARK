@@ -499,18 +499,28 @@ THREADS=AUTO
 # HOWARD ANNOTATION/PRIOTITIZATION/TRANSLATION CONFIGURATION
 
 
-# DATABASES FOLDER for HOWARD/ANNOVAR/SNPEFF
-# Define ANNOVAR and SNPEFF folders by default
+# DATABASES FOLDER for HOWARD/ANNOVAR/SNPEFF/DEJAVU
+# Define ANNOVAR and SNPEFF and DEJAVU folders by default
 #FOLDER_DATABASES_ANNOVAR=$FOLDER_DATABASES/annovar
 #FOLDER_DATABASES_SNPEFF=$FOLDER_DATABASES/snpeff/current
+#FOLDER_DATABASES_DEJAVU_ANNOVAR=$FOLDER_DATABASES/annovar
+#FOLDER_DATABASES_DEJAVU_ANNOVAR=$FOLDER_DATABASES/dejavu/latest/annovar
 
 
 # HOWARD Configuration files for Annotation and Prioritization
 # Use APP_FOLDER if necessary
-# Example: HOWARD_CONFIG_ANNOTATION=$APP_FOLDER/config.annotation.stark.ini
-# Example: HOWARD_CONFIG_ANNOTATION=$STARK_FOLDER_APPS/MY_APP_GROUP/config.annotation.stark.ini
-#HOWARD_CONFIG_ANNOTATION=$APP_FOLDER/config.annotation.stark.ini
-#HOWARD_CONFIG_PRIORITIZATION=$APP_FOLDER/config.prioritization.stark.ini
+# default: $HOWARD_FOLDER_CONFIG/config.annotation.ini and $HOWARD_FOLDER_CONFIG/config.prioritization.ini
+# Example: HOWARD_CONFIG_ANNOTATION=$APP_FOLDER/config.annotation.ini
+# Example: HOWARD_CONFIG_PRIORITIZATION=$STARK_FOLDER_APPS/MY_APP_GROUP/config.prioritization.ini
+#HOWARD_CONFIG_ANNOTATION=$HOWARD_FOLDER_CONFIG/config.annotation.ini
+#HOWARD_CONFIG_PRIORITIZATION=$HOWARD_FOLDER_CONFIG/config.prioritization.ini
+
+# HOWARD DEJAVU Configuration files for Annotation
+# Use APP_FOLDER if necessary
+# default: $HOWARD_FOLDER_CONFIG/config.annotation.ini
+# Example: HOWARD_CONFIG_DEJAVU_ANNOTATION=$APP_FOLDER/config.annotation.ini
+# Example: HOWARD_CONFIG_DEJAVU_ANNOTATION=$STARK_FOLDER_APPS/MY_APP_GROUP/config.annotation.ini
+#HOWARD_CONFIG_DEJAVU_ANNOTATION=$HOWARD_FOLDER_CONFIG/config.annotation.ini
 
 
 # ANNOTATION

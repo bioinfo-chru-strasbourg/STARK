@@ -894,15 +894,29 @@ if [ -z "$HOWARD_ANNOTATION" ]; then
 	# ANNOTATINO FULL
 	#HOWARD_ANNOTATION="core,frequency,score,annotation,prediction,snpeff,snpeff_hgvs"
 fi;
+
 # DEJAVU
-if [ -s $ANNOVAR_DATABASES/$ASSEMBLY"_dejavu."$APP_GROUP.$APP_PROJECT.txt ]; then
-	HOWARD_ANNOTATION="$HOWARD_ANNOTATION,dejavu.$APP_GROUP.$APP_PROJECT"
+# if [ -s $ANNOVAR_DATABASES/$ASSEMBLY"_dejavu."$APP_GROUP.$APP_PROJECT.txt ]; then
+# 	HOWARD_ANNOTATION="$HOWARD_ANNOTATION,dejavu.$APP_GROUP.$APP_PROJECT"
+# fi
+# # DEJAVU for all the GROUP
+# for DEJAVU_DATABASE_ONE in $(find $ANNOVAR_DATABASES -name $ASSEMBLY"_dejavu."$APP_GROUP".*txt" 2>/dev/null); do
+# 	HOWARD_ANNOTATION=$HOWARD_ANNOTATION","$(basename $DEJAVU_DATABASE_ONE | sed s/^$ASSEMBLY"_"//g | sed s/.txt$//g );
+# done;
+# export HOWARD_ANNOTATION
+
+# DEJAVU
+if [ -s $DEJAVU_ANNOVAR_DATABASES/$ASSEMBLY"_dejavu."$APP_GROUP.$APP_PROJECT.txt ]; then
+	HOWARD_DEJAVU_ANNOTATION="dejavu.$APP_GROUP.$APP_PROJECT"
 fi
 # DEJAVU for all the GROUP
-for DEJAVU_DATABASE_ONE in $(find $ANNOVAR_DATABASES -name $ASSEMBLY"_dejavu."$APP_GROUP".*txt" 2>/dev/null); do
-	HOWARD_ANNOTATION=$HOWARD_ANNOTATION","$(basename $DEJAVU_DATABASE_ONE | sed s/^$ASSEMBLY"_"//g | sed s/.txt$//g );
+for DEJAVU_DATABASE_ONE in $(find $DEJAVU_ANNOVAR_DATABASES -name $ASSEMBLY"_dejavu."$APP_GROUP".*txt" 2>/dev/null); do
+	HOWARD_DEJAVU_ANNOTATION=$HOWARD_DEJAVU_ANNOTATION","$(basename $DEJAVU_DATABASE_ONE | sed s/^$ASSEMBLY"_"//g | sed s/.txt$//g );
 done;
-export HOWARD_ANNOTATION
+HOWARD_DEJAVU_ANNOTATION=$(echo $HOWARD_DEJAVU_ANNOTATION | tr "," "\n" | sort -u | tr "\n" "," | sed s/,$//)
+export HOWARD_DEJAVU_ANNOTATION
+
+
 
 # MINIMAL
 

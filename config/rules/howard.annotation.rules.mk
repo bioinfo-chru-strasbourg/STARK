@@ -37,7 +37,13 @@ HOWARD_CALCULATION?=VAF,NOMEN,VAF_STATS,DP_STATS,VARTYPE
 # HOWARD ANNOTATION
 %.howard$(POST_ANNOTATION).vcf: %.vcf %.empty.vcf %.transcripts %.genome
 	# Annotation step
-	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$< --output=$@.tmp --annotation=$(HOWARD_ANNOTATION) --calculation=$(HOWARD_CALCULATION) --prioritization=$(HOWARD_PRIORITIZATION) --transcripts=$*.transcripts --nomen_fields=$(HOWARD_NOMEN_FIELDS) --norm=$$(cat $*.genome);
+	#+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$< --output=$@.tmp --annotation=$(HOWARD_ANNOTATION) --calculation=$(HOWARD_CALCULATION) --prioritization=$(HOWARD_PRIORITIZATION) --transcripts=$*.transcripts --nomen_fields=$(HOWARD_NOMEN_FIELDS) --norm=$$(cat $*.genome);
+	+if [ "$(HOWARD_DEJAVU_ANNOTATION)" != "" ]; then \
+		$(HOWARD) $(HOWARD_DEJAVU_CONFIG_OPTIONS) --input=$< --output=$@.tmp0 --annotation=$(HOWARD_DEJAVU_ANNOTATION) --norm=$$(cat $*.genome); \
+	else \
+		mv $< $@.tmp0; \
+	fi;
+	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp0 --output=$@.tmp --annotation=$(HOWARD_ANNOTATION) --calculation=$(HOWARD_CALCULATION) --transcripts=$*.transcripts --nomen_fields=$(HOWARD_NOMEN_FIELDS) --norm=$$(cat $*.genome);
 	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp --output=$@ --prioritization=$(HOWARD_PRIORITIZATION_VARANK) --norm=$$(cat $*.genome);
 	-if [ ! -e $@ ]; then cp $*.empty.vcf $@; fi;
 	# Downgrading VCF format 4.2 to 4.1
