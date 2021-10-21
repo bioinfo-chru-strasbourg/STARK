@@ -9,7 +9,7 @@
 
 #######################################
 # Release: 0.9.18.3                   #
-# Date: 20211019                      #
+# Date: 20211021                      #
 #######################################
 
 ## New
@@ -25,6 +25,7 @@
 
 - New HOWARD release (fields format, prioritization mode, SV compatibility...)
 - Report improved (add destructive pipeline check, pedigree information...)
+- DejaVu databases source improved
 - Setup improved (get databases)
 - Archives improved (SAM tags and FASTQ comment, performances)
 - Error catches
