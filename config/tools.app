@@ -156,7 +156,7 @@ TOOLS_LIST=$TOOLS_LIST" GATK4"
 
 # GENCORE
 export GENCORE=$NGS_TOOLS/gencore/current/bin/gencore	 # BIN-JAR
-export GENCORE_VERSION=0.16.0							# VER
+export GENCORE_VERSION=0.17.1							# VER
 export GENCORE_DESCRIPTION="An efficient tool to remove sequencing duplications and eliminate sequencing errors by generating consensus reads."
 export GENCORE_REF="Chen, S., Zhou, Y., Chen, Y. et al. Gencore: an efficient tool to generate consensus reads for error suppressing and duplicate removing of NGS data. BMC Bioinformatics 20, 606 (2019) doi:10.1186/s12859-019-3280-9"
 TOOLS_LIST=$TOOLS_LIST" GENCORE"
@@ -196,7 +196,7 @@ TOOLS_LIST=$TOOLS_LIST" FASTQC"
 
 
 # FASTP
-export FASTP_VERSION=0.23.0											# VER
+export FASTP_VERSION=0.23.1											# VER
 export FASTP=$NGS_TOOLS/fastp/current/bin/fastp		# BIN
 export FASTP_DESCRIPTION="A tool designed to provide fast all-in-one preprocessing for FastQ files."
 export FASTP_REF="https://github.com/OpenGene/fastp"
