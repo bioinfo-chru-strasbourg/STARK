@@ -46,7 +46,7 @@ function release () {
 
 # Usage
 function usage {
-	echo "# USAGE: $(basename $0) --config_annotation=<FILE> [options...]";
+	echo "# USAGE: $(basename $0) [options...]";
 	echo "# --dbnsfp_release=<STRING>                     dbNSFP Release";
 	echo "#                                               Default: '4.2a'";
 	echo "# --dbnsfp_url=<URL>                            dbNSFP URL to download";
@@ -495,8 +495,8 @@ if [ ! -e $DBNSFP_HOWARD_CONFIG_ANNOTATION ]; then
 	ANNOVAR_CODE=$(basename $DBNSFP_ANNOVAR | sed 's/^'$ASSEMBLY'_//gi' | sed 's/\.txt$//gi')
 	#echo $ANNOVAR_CODE
 	#exit 0
-
-	if ! $HOWARD_FOLDER/toolbox/dbnsfp_to_config_annotation.sh --input=$DBNSFP_ANNOVAR --output=$DBNSFP_HOWARD_CONFIG_ANNOTATION_TMP --input_name=$ANNOVAR_CODE --input_readme=$DBNSFP_ZIP_README >/dev/null ; then
+	#$SCRIPT_DIR
+	if ! $SCRIPT_DIR/dbnsfp_to_config_annotation.sh --input=$DBNSFP_ANNOVAR --output=$DBNSFP_HOWARD_CONFIG_ANNOTATION_TMP --input_name=$ANNOVAR_CODE --input_readme=$DBNSFP_ZIP_README >/dev/null ; then
 		echo "#[ERROR] DBNSFP HOWARD Config Annotation ini file creation '$DBNSFP_HOWARD_CONFIG_ANNOTATION' from '$DBNSFP_ANNOVAR' FAILED!!!"
 		exit 0	
 	fi
