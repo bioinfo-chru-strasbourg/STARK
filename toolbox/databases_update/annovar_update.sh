@@ -58,7 +58,7 @@ function usage {
 	echo "#                                               Default: 'date +%Y%m%d-%H%M%S'";
 	echo "# --stark_main_folder=<FOLDER>                  STARK main folder";
 	echo "#                                               Default: '$HOME/STARK'";
-	echo "# --check_update                                 Check if update needed";	
+	echo "# --check_update                                Check if update needed";	
 	echo "# --verbose                                     VERBOSE";
 	echo "# --debug                                       DEBUG";
 	echo "# --release                                     RELEASE";

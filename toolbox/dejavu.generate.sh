@@ -478,7 +478,10 @@ LOG=$DEJAVU_FOLDER_LOG/$RELEASE.log
 (($VERBOSE)) && echo "#[INFO] GROUP/PROJECT FILTER FILE:"
 (($VERBOSE)) && echo "#[INFO]    $GROUP_PROJECT_FILTER_FILE"
 (($VERBOSE)) && echo "#[INFO] GROUP/PROJECT FILTER:"
-(($VERBOSE)) && for GPF in $GROUP_PROJECT_FILTER; do echo "#[INFO]    "$GPF; done
+#(($VERBOSE)) && [ "$GROUP_PROJECT_FILTER" != "*/*/*" ] && for GPF in $(echo "$GROUP_PROJECT_FILTER" | tr " " "\n"); do echo "#[INFO]    "$GPF; done
+#(($VERBOSE)) && for GPF in $GROUP_PROJECT_FILTER; do echo "#[INFO]    $GPF"; done
+#($VERBOSE)) && for GPF in "$GROUP_PROJECT_FILTER"; do echo "$GPF" | sed "s/[^ ]/#[INFO]    $GPF/gi"; done
+(($VERBOSE)) && echo "#[INFO]    $GROUP_PROJECT_FILTER"
 
 (($VERBOSE)) && echo "#[INFO] SAMPLE EXCLUDE FILE:"
 (($VERBOSE)) && echo "#[INFO]    $SAMPLE_EXCLUDE_FILE"
@@ -498,7 +501,6 @@ LOG=$DEJAVU_FOLDER_LOG/$RELEASE.log
 (($DEBUG)) && echo "#[INFO] BGZIP: $BGZIP"
 (($DEBUG)) && echo "#[INFO] TABIX: $TABIX"
 (($DEBUG)) && echo "#[INFO] VCFSTATS: $VCFSTATS"
-
 
 
 ### Find Group folders
@@ -659,9 +661,8 @@ fi;
 
 
 # Repository found
-
 #GP_FOLDER_LIST_UNIQ=$(echo -e $GP_FOLDER_LIST | sort -u)
-GP_FOLDER_LIST_UNIQ=$(ls -d $GP_FOLDER_LIST 2>/dev/null | grep -v " " | sort -u)
+GP_FOLDER_LIST_UNIQ=$(ls -d $(echo -e $GP_FOLDER_LIST) 2>/dev/null | grep -v " " | sort -u)
 #GP_FOLDER_LIST_UNIQ="${GP_FOLDER_LIST_UNIQ// /\\ }"
 GP_FOLDER_LIST_UNIQ_COUNT=$(echo $GP_FOLDER_LIST_UNIQ | wc -w)
 
@@ -988,10 +989,17 @@ for GP_FOLDER in $GP_LIST_UNIQ; do
 						# 	cp $VCF.empty.vcf $<.tmp.fixed.vcf; \
 						# fi;
 						ln -s $< $<.tmp.fixed.vcf;
-						if zcat $<.tmp.fixed.vcf | grep -v '^##Prioritize list is' | sed s/Number=R/Number=./g | sed s/Number=G/Number=./g | $BCFTOOLS sort -T $<.sort2. > $<.tmp.fixed2.vcf; then \
+						if zcat $<.tmp.fixed.vcf | sed 's/[^\x00-\x7F]//gi' | grep -v '^##Prioritize list is' | sed s/Number=R/Number=./g | sed s/Number=G/Number=./g | $BCFTOOLS sort -T $<.sort2. > $<.tmp.fixed2.vcf; then \
 							echo '#[INFO] VCF well-formed for $VCF (sedBCFToolsSort)' ; \
 						else \
 							echo '#[ERROR] VCF not well-formed for $VCF (sedBCFToolsSort)' ; \
+							cp $VCF.empty.vcf $<.tmp.fixed2.vcf; \
+						fi;
+						# If not correctly fixed for merge
+						$BGZIP -c $<.tmp.fixed2.vcf -l 0 > $<.tmp.fixed2.vcf.gz;
+						$TABIX $<.tmp.fixed2.vcf.gz;
+						if ! $BCFTOOLS merge $<.tmp.fixed2.vcf.gz $<.tmp.fixed2.vcf.gz --force-samples 2>/dev/null; then \
+							echo '#[ERROR] VCF not well-formed for $VCF (merge test)' ; \
 							cp $VCF.empty.vcf $<.tmp.fixed2.vcf; \
 						fi;
 						$BGZIP -c $<.tmp.fixed2.vcf -l 0 > $<.tmp.fixed.vcf.gz;
@@ -1019,9 +1027,13 @@ for GP_FOLDER in $GP_LIST_UNIQ; do
 			#echo $VCFGZ_LIST > $TMP/$GROUP/$PROJECT/VCF_LIST
 			
 			# Minimum VCF
-			echo "$TMP/$GROUP/$PROJECT/dejavu.simple.vcf: $VCFGZ_LIST" >> $MK
+			echo "$TMP/$GROUP/$PROJECT/dejavu.simple.vcf: $VCFGZ_LIST $TMP/$GROUP/$PROJECT/dejavu.simple.empty.vcf" >> $MK
 			if [ $VCFGZ_NB -gt 1 ]; then
-				echo "	$BCFTOOLS merge --force-samples $TMP/$GROUP/$PROJECT/*.simple.vcf.gz | $BCFTOOLS norm -m -any -c s --fasta-ref $GENOMES/current/$ASSEMBLY.fa | $BCFTOOLS norm --rm-dup=exact | $BCFTOOLS +setGT  -- -t . -n 0 | $BCFTOOLS +fill-tags -- -t AN,AC,AF,AC_Hemi,AC_Hom,AC_Het,ExcHet,HWE,MAF,NS > \$@;" >> $MK
+				echo "	if ! $BCFTOOLS merge --force-samples $TMP/$GROUP/$PROJECT/*.simple.vcf.gz | $BCFTOOLS norm -m -any -c s --fasta-ref $GENOMES/current/$ASSEMBLY.fa | $BCFTOOLS norm --rm-dup=exact | $BCFTOOLS +setGT  -- -t . -n 0 | $BCFTOOLS +fill-tags -- -t AN,AC,AF,AC_Hemi,AC_Hom,AC_Het,ExcHet,HWE,MAF,NS > \$@; then \
+							cp $TMP/$GROUP/$PROJECT/dejavu.simple.empty.vcf \$@; \
+							echo '#[ERROR] VCF not well-formed for \$@' ; \
+						fi;
+				" >> $MK
 			else
 				echo "	$BCFTOOLS norm -m -any $VCFGZ_LIST | $BCFTOOLS +setGT  -- -t . -n 0 | $BCFTOOLS +fill-tags -- -t AN,AC,AF,AC_Hemi,AC_Hom,AC_Het,ExcHet,HWE,MAF,NS > \$@;" >> $MK
 			fi;
@@ -1094,7 +1106,9 @@ for GP_FOLDER in $GP_LIST_UNIQ; do
 			# Annotated
 			# TODO: check if EFF exists
 			echo "$TMP/$GROUP/$PROJECT/dejavu.annotated.vcf: $TMP/$GROUP/$PROJECT/dejavu.annotated.eff.vcf.gz $TMP/$GROUP/$PROJECT/dejavu.annotated.eff.vcf.gz.tbi $TMP/$GROUP/$PROJECT/dejavu.annotated.howard.vcf.gz $TMP/$GROUP/$PROJECT/dejavu.annotated.howard.vcf.gz.tbi
-				$BCFTOOLS annotate -a $TMP/$GROUP/$PROJECT/dejavu.annotated.eff.vcf.gz -c EFF $TMP/$GROUP/$PROJECT/dejavu.annotated.howard.vcf.gz --threads $THREADS --single-overlaps -k > $TMP/$GROUP/$PROJECT/dejavu.annotated.vcf
+				if ! $BCFTOOLS annotate -a $TMP/$GROUP/$PROJECT/dejavu.annotated.eff.vcf.gz -c EFF $TMP/$GROUP/$PROJECT/dejavu.annotated.howard.vcf.gz --threads $THREADS --single-overlaps -k > $TMP/$GROUP/$PROJECT/dejavu.annotated.vcf; then \
+					$BGZIP -dc $TMP/$GROUP/$PROJECT/dejavu.annotated.howard.vcf.gz > $TMP/$GROUP/$PROJECT/dejavu.annotated.vcf ; \
+				fi;
 			" >> $MK
 
 
