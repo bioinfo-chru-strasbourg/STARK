@@ -14,7 +14,7 @@ Getting Started
 ---------------
 
 
-Use curl from BioInfoDiag GitLab to setup STARK environment by default. 
+Use curl from BioInfoDiag GitLab to setup STARK environment by default.
 
 ```
 $ mkdir -p ${HOME}/STARK && cd ${HOME}/STARK && curl https://gitlab.bioinfo-diag.fr/Strasbourg/STARK/raw/master/setup.sh | bash
