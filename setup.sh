@@ -154,7 +154,7 @@ if [ -z "$ENV" ]; then
 	ENV=".env";
 fi;
 
-(($VERBOSE)) && echo "#[INFO] STARK Docker environment configuration file '$ENV' "
+echo "#[INFO] STARK Docker environment configuration file '$ENV' "
 
 if [ -s $ENV ]; then
 	source $ENV;
@@ -170,7 +170,7 @@ if [ -s $DOCKER_STARK_MAIN_FOLDER ]; then
 	echo "#[INFO] STARK Main folder '$DOCKER_STARK_MAIN_FOLDER' by default"
 fi
 if mkdir -p $DOCKER_STARK_MAIN_FOLDER; then
-	(($VERBOSE)) && echo "#[INFO] STARK Main folder '$DOCKER_STARK_MAIN_FOLDER' created"
+	echo "#[INFO] STARK Main folder '$DOCKER_STARK_MAIN_FOLDER' created"
 else
 	echo "#[ERROR] STARK Main folder '$DOCKER_STARK_MAIN_FOLDER' NOT created "
 	exit 1;
@@ -182,7 +182,7 @@ echo "### STARK Setup" >> $DOCKER_STARK_SETUP_LOG 2>> $DOCKER_STARK_SETUP_LOG
 echo -e '# STARK Setup DATE: '`date '+%Y%m%d-%H%M%S'` >> $DOCKER_STARK_SETUP_LOG 2>> $DOCKER_STARK_SETUP_LOG
 echo -e '\n' >> $DOCKER_STARK_SETUP_LOG 2>> $DOCKER_STARK_SETUP_LOG
 if [ -s $DOCKER_STARK_SETUP_LOG ]; then
-	(($VERBOSE)) && echo "#[INFO] STARK setup log file '$DOCKER_STARK_SETUP_LOG' created "
+	echo "#[INFO] STARK setup log file '$DOCKER_STARK_SETUP_LOG' created "
 else
 	echo "#[ERROR] STARK setup log file '$DOCKER_STARK_SETUP_LOG' NOT created "
 	exit 1;
@@ -214,81 +214,81 @@ fi;
 
 
 # Git Clone
-(($VERBOSE)) && echo "#[INFO] STARK GIT Clone URL '$GIT_CLONE_URL' "
+echo "#[INFO] STARK GIT Clone '$GIT_CLONE_URL'..."
 if [ "$GIT_CLONE_URL" != "" ]; then
-	(($VERBOSE)) && echo "#[INFO] STARK GIT Clone "
+	#echo "#[INFO] STARK GIT Clone "
 	if git clone $GIT_CLONE_URL >> $DOCKER_STARK_SETUP_LOG 2>> $DOCKER_STARK_SETUP_LOG; then
 		cd STARK
-		(($VERBOSE)) && echo "#[INFO] STARK GIT Clone '$GIT_CLONE_URL' done."
+		echo "#[INFO] STARK GIT Clone '$GIT_CLONE_URL' done."
 	else
-		echo "#[ERROR] STARK GIT Clone '$GIT_CLONE_URL' failed"
+		echo "#[ERROR] STARK GIT Clone '$GIT_CLONE_URL' failed!"
 		exit 1;
 	fi;
 else
-	(($VERBOSE)) && echo "#[INFO] STARK GIT Clone skipped."
+	echo "#[INFO] STARK GIT Clone skipped."
 fi;
 
 
 # Build
-(($VERBOSE)) && echo "#[INFO] STARK Docker Compose Build "
+echo "#[INFO] STARK Docker Compose Build..."
 if docker-compose build >> $DOCKER_STARK_SETUP_LOG 2>> $DOCKER_STARK_SETUP_LOG; then
-	(($VERBOSE)) && echo "#[INFO] STARK Docker Compose Build done."
+	echo "#[INFO] STARK Docker Compose Build done."
 else
-	echo "#[ERROR] STARK Docker Compose Build failed"
+	echo "#[ERROR] STARK Docker Compose Build failed!"
 	exit 1;
 fi;
 
 
 # Setup
-(($VERBOSE)) && echo "#[INFO] STARK Docker Compose Setup "
+echo "#[INFO] STARK Docker Compose Setup "
 #source .env
 #mkdir -p $DOCKER_STARK_MAIN_FOLDER
 
 # Folder creation
-(($VERBOSE)) && echo "#[INFO] STARK Docker Compose Setup - Folders creation"
+echo "#[INFO] STARK Docker Compose Setup - Folders creation..."
 if docker-compose --project-name STARK up stark-setup >> $DOCKER_STARK_SETUP_LOG 2>> $DOCKER_STARK_SETUP_LOG; then
-	(($VERBOSE)) && echo "#[INFO] STARK Docker Compose Setup - Folders creation done."
+	echo "#[INFO] STARK Docker Compose Setup - Folders creation done."
 else
-	echo "#[ERROR] STARK Docker Compose Setup - Folders creation failed"
+	echo "#[ERROR] STARK Docker Compose Setup - Folders creation failed!"
 	exit 1;
 fi;
 
 # Databases download
-(($VERBOSE)) && echo "#[INFO] STARK Docker Compose Setup - Databases Download"
+echo "#[INFO] STARK Docker Compose Setup - Databases Download..."
 if docker-compose --project-name STARK up stark-databases >> $DOCKER_STARK_SETUP_LOG 2>> $DOCKER_STARK_SETUP_LOG; then
-	(($VERBOSE)) && echo "#[INFO] STARK Docker Compose Setup - Databases Download done."
+	echo "#[INFO] STARK Docker Compose Setup - Databases Download done."
 else
-	echo "#[ERROR] STARK Docker Compose Setup - Databases Download failed"
+	echo "#[ERROR] STARK Docker Compose Setup - Databases Download failed!"
 	exit 1;
 fi;
 
 # Sources archives
-(($VERBOSE)) && echo "#[INFO] STARK Docker Compose Setup - Sources Archives"
+echo "#[INFO] STARK Docker Compose Setup - Sources Archives..."
 if docker-compose --project-name STARK up stark-sources-archives >> $DOCKER_STARK_SETUP_LOG 2>> $DOCKER_STARK_SETUP_LOG; then
-	(($VERBOSE)) && echo "#[INFO] STARK Docker Compose Setup - Sources Archives done."
+	echo "#[INFO] STARK Docker Compose Setup - Sources Archives done."
 else
-	echo "#[ERROR] STARK Docker Compose Setup - Sources Archives failed"
+	echo "#[ERROR] STARK Docker Compose Setup - Sources Archives failed!"
 	exit 1;
 fi;
 
-(($VERBOSE)) && echo "#[INFO] STARK Docker Compose Setup done."
+echo "#[INFO] STARK Docker Compose Setup done."
 
 
 # Start services Build
-(($VERBOSE)) && echo "#[INFO] STARK Docker Compose Build - Services Modules"
+echo "#[INFO] STARK Docker Compose Build - Services Modules..."
 if $SCRIPT_DIR/services/services.sh --module=* --command=build --verbose >> $DOCKER_STARK_SETUP_LOG 2>> $DOCKER_STARK_SETUP_LOG; then
-	(($VERBOSE)) && echo "#[INFO] STARK Docker Compose Build - Services Modules done."
+	echo "#[INFO] STARK Docker Compose Build - Services Modules done."
 else
-	echo "#[ERROR] STARK Docker Compose Build - Services Modules failed"
+	echo "#[ERROR] STARK Docker Compose Build - Services Modules failed!"
 	exit 1;
 fi;
 
 # Start services Start
-(($VERBOSE)) && echo "#[INFO] STARK Docker Compose Start - Services Modules"
+echo "#[INFO] STARK Docker Compose Start - Services Modules..."
 if $SCRIPT_DIR/services/services.sh --module=* --command=up --verbose >> $DOCKER_STARK_SETUP_LOG 2>> $DOCKER_STARK_SETUP_LOG; then
-	(($VERBOSE)) && echo "#[INFO] STARK Docker Compose Start - Services Modules done."
+	echo "#[INFO] STARK Docker Compose Start - Services Modules done."
 else
-	echo "#[ERROR] STARK Docker Compose Start - Services Modules failed"
+	echo "#[ERROR] STARK Docker Compose Start - Services Modules failed!"
 	exit 1;
 fi;
 
