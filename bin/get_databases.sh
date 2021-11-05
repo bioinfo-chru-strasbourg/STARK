@@ -1234,6 +1234,9 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 
 		HOWARD_DB="$HOWARD_ANNOTATION,$HOWARD_ANNOTATION_REPORT,$HOWARD_ANNOTATION_MINIMAL,$ADDITIONAL_ANNOTATIONS" # ALL, CORE, snpeff $HOWARD_ANNOTATION
 
+		# remove snpeff
+		HOWARD_DB=$(echo $HOWARD_DB | tr "," "\n" | grep "snpeff" -v | tr "/n" ",") 
+
 		if [ ! -e "$HOWARD_CONFIG_ANNOTATION" ]; then
 			HOWARD_CONFIG_ANNOTATION=$HOWARDDIR/config.annotation.ini
 		fi;
@@ -1259,10 +1262,12 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 			# validation folder
 			HOWARD_VALIDATION_FOLDER=$DB_TMP/example.annotation.validation
 			HOWARD_DATABASES_FOLDER=$DB_TMP/databases
+			HOWARD_SNPEFF_FOLDER=$DB_TMP/snpeff
+			mkdir -p $DB_TMP/databases $DB_TMP/snpeff 
 
 
 			#INPUT_VCF=$HOWARDDIR/docs/example.vcf
-			HOWARD_CMD="$HOWARD --input=$INPUT_VCF --output=$HOWARD_VALIDATION_FOLDER/HOWARD.download.vcf --env=$CONFIG_TOOLS --annotation=$HOWARD_DB --annovar_folder=$ANNOVAR --annovar_databases=$HOWARD_DATABASES_FOLDER --config_annotation=$HOWARD_CONFIG_ANNOTATION --snpeff_jar=$SNPEFF --snpeff_threads=$THREADS --tmp=$HOWARD_VALIDATION_FOLDER --assembly=$ASSEMBLY --java=$JAVA --java_flags='\"$JAVA_FLAGS\"' --threads=1 --verbose >$HOWARD_DATABASES_FOLDER/HOWARD.download.log 2>$HOWARD_DATABASES_FOLDER/HOWARD.download.err;"
+			HOWARD_CMD="$HOWARD --input=$INPUT_VCF --output=$HOWARD_VALIDATION_FOLDER/HOWARD.download.vcf --env=$CONFIG_TOOLS --annotation=$HOWARD_DB --annovar_folder=$ANNOVAR --annovar_databases=$HOWARD_DATABASES_FOLDER --config_annotation=$HOWARD_CONFIG_ANNOTATION --snpeff_jar=$SNPEFF --snpeff_databases=$HOWARD_SNPEFF_FOLDER --snpeff_threads=$THREADS --tmp=$HOWARD_VALIDATION_FOLDER --assembly=$ASSEMBLY --java=$JAVA --java_flags='\"$JAVA_FLAGS\"' --threads=1 --verbose >$HOWARD_DATABASES_FOLDER/HOWARD.download.log 2>$HOWARD_DATABASES_FOLDER/HOWARD.download.err;"
 			(($DEBUG)) && echo "#[INFO] CMD= $HOWARD_CMD"
 			#echo "#"
 
