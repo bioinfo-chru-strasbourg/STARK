@@ -471,8 +471,8 @@ fi
 
 
 #echo "if [ "$FASTQ" == "ollow" ] && [ "$THREADS_INPUT" == "he" ] && [ "$W" == "hite" ] && [ "$RUNS" == "abbit" ];"
-if [ "$FASTQ" == "ollow" ] && [ "$THREADS_INPUT" == "he" ] && [ "$W" == "hite" ] && [ "$RUNS" == "abbit" ]; then
-	echo "test";
+if [ "$FASTQ" == "ollow" ] && [ "$THREADS_INPUT" == "he" ] && [ "$ANALYSIS" == "hite" ] && [ "$RUNS" == "abbit" ]; then
+	#echo "test";
 	echo -e "\033[2J\033[?25l"; R=`tput lines` C=`tput cols`;: $[R--] ; while true
 	do ( e=echo\ -e s=sleep j=$[RANDOM%C] d=$[RANDOM%R];for i in `eval $e {1..$R}`;
 	do c=`printf '\\\\0%o' $[RANDOM%57+33]` ###  ###
