@@ -314,7 +314,7 @@ DATABASES_RELEASE=$DATE
 
 echo ""
 echo "#[INFO] DATABASES_RELEASE=$DATABASES_RELEASE"
-echo "#[INFO] ASSEMBY=$ASSEMBLY"
+echo "#[INFO] ASSEMBLY=$ASSEMBLY"
 echo "#[INFO] REF=$REF"
 echo "#[INFO] REFSEQ_GENES=$REFSEQ_GENES"
 echo "#[INFO] VCFDBSNP=$VCFDBSNP"
@@ -426,9 +426,12 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		DB_RELEASE_FROM_DOWNLOAD=$(date -d "$UCSC_GENOME_URL_FILE_DATE")
 
 		# Check chromosomes files
+		CHROM_FILES_CURL=""
+		CHROM_FILES_WGET=""
 		for CHROM_FILE in $CHRS; do
 			CHROM_FILES=$CHROM_FILES" $DB_TMP/$CHROM_FILE"
 			CHROM_FILES_CURL=$CHROM_FILES_CURL" && curl -s -R $UCSC_GENOME_URL/$CHROM_FILE -o $DB_TMP/$CHROM_FILE"
+			CHROM_FILES_WGET=$CHROM_FILES_WGET" && wget --no-verbose -S -c -O $DB_TMP/$CHROM_FILE $UCSC_GENOME_URL/$CHROM_FILE "
 		done;
 
 		# DATABASE Infos
@@ -470,7 +473,8 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		echo "$DB_TMP/$DB_RELEASE_FILE: $DB_TMP
 				curl $UCSC_GENOME_URL/README.txt -s -R -o $DB_TMP/README.txt
 				curl $UCSC_GENOME_URL/md5sum.txt -s -R -o $DB_TMP/md5sum.txt
-				((1)) $CHROM_FILES_CURL
+				#((1)) $CHROM_FILES_CURL
+				((1)) $CHROM_FILES_WGET
 				$GZ -dc $CHROM_FILES > $DB_TMP/$DB_RELEASE_FILE
 		    " >> $MK
 
@@ -884,7 +888,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		else
 		  	ASSEMBLY_NCBI="GRCh37p13";
 		  	SPECIES_NCBI="human_9606";
-		  	NUM_NCBI="xx";
+		  	NUM_NCBI="25";
 		fi;
 		(($VERBOSE)) && echo "#[INFO] NCBI SPECIES=$SPECIES_NCBI"
 		(($VERBOSE)) && echo "#[INFO] NCBI ASSEMBLY=$ASSEMBLY_NCBI"
@@ -910,16 +914,29 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		else
 
 			# Find latest dbsnp file
-			DBSNP_URL="ftp://ftp.ncbi.nlm.nih.gov/snp/pre_build152/organisms/"
-			DBSNP_SPECIES_ASSEMBLY="$SPECIES_NCBI/$ASSEMBLY_NCBI"
-			(($VERBOSE)) && echo "#[INFO] Check last DBSNP on '$DBSNP_URL'..."
-			DBSNP_LATEST=$(curl -s $DBSNP_URL | awk '{print $9}' | grep $SPECIES_NCBI.*$ASSEMBLY_NCBI | sort -k1,1 | tail -n 1)
-			if [ "$DBSNP_LATEST" == "" ]; then
-				DBSNP_LATEST=$(curl -s $DBSNP_URL | awk -F"\">" '{print $2}' | awk -F"</A>" '{print $1}' | grep $SPECIES_NCBI.*$ASSEMBLY_NCBI | sort -k1,1 | tail -n 1)
-			fi;
-			#curl -s $DBSNP_URL -l  #| awk '{print $9}'
-			DBSNP_LATEST_FILE=$DBSNP_URL$DBSNP_LATEST"/VCF/00-common_all.vcf.gz" # 00-All.vcf.gz
+			if ((1)); then
 
+				# ftp://ftp.ncbi.nlm.nih.gov/snp/latest_release/VCF/GCF_000001405.25.gz
+				DBSNP_URL="ftp://ftp.ncbi.nlm.nih.gov/snp/pre_build152/organisms/"
+				DBSNP_SPECIES_ASSEMBLY="$SPECIES_NCBI/$ASSEMBLY_NCBI"
+				(($VERBOSE)) && echo "#[INFO] Check last DBSNP on '$DBSNP_URL'..."
+				DBSNP_LATEST=$(curl -s $DBSNP_URL | awk '{print $9}' | grep $SPECIES_NCBI.*$ASSEMBLY_NCBI | sort -k1,1 | tail -n 1)
+				if [ "$DBSNP_LATEST" == "" ]; then
+					DBSNP_LATEST=$(curl -s $DBSNP_URL | awk -F"\">" '{print $2}' | awk -F"</A>" '{print $1}' | grep $SPECIES_NCBI.*$ASSEMBLY_NCBI | sort -k1,1 | tail -n 1)
+				fi;
+				#curl -s $DBSNP_URL -l  #| awk '{print $9}'
+				DBSNP_LATEST_FILE=$DBSNP_URL$DBSNP_LATEST"/VCF/00-common_all.vcf.gz" # 00-All.vcf.gz
+			
+			else
+
+				# from lastest release
+				DBSNP_URL="ftp://ftp.ncbi.nlm.nih.gov/snp/latest_release/VCF/"
+				DBSNP_SPECIES_ASSEMBLY="$SPECIES_NCBI/$ASSEMBLY_NCBI/$NUM_NCBI"
+				DBSNP_LATEST="GCF_000001405.$NUM_NCBI.gz"
+				DBSNP_URL_FILE=$DBSNP_LATEST
+				DBSNP_LATEST_FILE="$DBSNP_URL/$DBSNP_URL_FILE" # 00-All.vcf.gz
+
+			fi;
 
 		fi;
 
@@ -976,10 +993,10 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 			# Download
 			mkdir -p $DB_TMP;
 			chmod 0775 $DB_TMP;
-			#wget --no-verbose -S -c -O $DB_TMP/$DBSNP_LATEST.tbi $DBSNP_LATEST_FILE.tbi;
-			#wget --no-verbose -S -c -O $DB_TMP/$DBSNP_LATEST $DBSNP_LATEST_FILE;
-			curl -s -R -o $DB_TMP/$DBSNP_LATEST.tbi $DBSNP_LATEST_FILE.tbi;
-			curl -s -R -o $DB_TMP/$DBSNP_LATEST $DBSNP_LATEST_FILE;
+			wget --no-verbose -S -c -O $DB_TMP/$DBSNP_LATEST.tbi $DBSNP_LATEST_FILE.tbi;
+			wget --no-verbose -S -c -O $DB_TMP/$DBSNP_LATEST $DBSNP_LATEST_FILE;
+			#curl -s -R -o $DB_TMP/$DBSNP_LATEST.tbi $DBSNP_LATEST_FILE.tbi;
+			#curl -s -R -o $DB_TMP/$DBSNP_LATEST $DBSNP_LATEST_FILE;
 			# Sources
 			mkdir -p $DB_RELEASE_FOLDER/sources
 			chmod 0775 $DB_RELEASE_FOLDER/sources
@@ -1091,10 +1108,12 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 
 			#SNPEFF_CMD="$JAVA $JAVA_FLAGS -jar $SNPEFF download $DB_ASSEMBLY -dataDir $SNPEFF_DATABASES_FOLDER 1>$SNPEFF_DATABASES_FOLDER/STARK.SNPEFF.download.log 2>$SNPEFF_DATABASES_FOLDER/STARK.SNPEFF.download.err";
 			#SNPEFF_CMD_ALT="if ((\$\$(grep 'ERROR while connecting to' $SNPEFF_DATABASES_FOLDER/STARK.SNPEFF.download.err -c))); then wget --no-verbose -O $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip \$\$(grep 'ERROR while connecting to' $SNPEFF_DATABASES_FOLDER/STARK.SNPEFF.download.err | cut -f2 | cut -d' ' -f5); unzip $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip -d $SNPEFF_DATABASES_FOLDER/; mv $SNPEFF_DATABASES_FOLDER/data/* $SNPEFF_DATABASES_FOLDER/; fi"
+			# https://snpeff.blob.core.windows.net/databases/v5_0
+			# wget --progress=bar -O ${DOCKER_HOWARD_SETUP_SNPEFF_DATABASES}/snpEff_v5_0_${DOCKER_HOWARD_SETUP_ASSEMBLY}.zip https://snpeff.blob.core.windows.net/databases/v5_0/snpEff_v5_0_${DOCKER_HOWARD_SETUP_ASSEMBLY}.zip ; unzip -o ${DOCKER_HOWARD_SETUP_SNPEFF_DATABASES}/snpEff_v5_0_${DOCKER_HOWARD_SETUP_ASSEMBLY}.zip -d ${DOCKER_HOWARD_SETUP_SNPEFF_DATABASES}/
 
 			#SNPEFF_CMD="echo 'ERROR while connecting to' > $SNPEFF_DATABASES_FOLDER/STARK.SNPEFF.download.err"
 			#SNPEFF_CMD="echo ''"
-			SNPEFF_CMD="wget --no-verbose -O $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip \$\$($JAVA -jar $SNPEFF databases | grep '^$ASSEMBY ' | awk -F' ' 'NF>1{print \$\$NF}'); unzip $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip -d $SNPEFF_DATABASES_FOLDER/; mv $SNPEFF_DATABASES_FOLDER/data/* $SNPEFF_DATABASES_FOLDER/;"
+			SNPEFF_CMD="wget --no-verbose -O $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip \$\$($JAVA -jar $SNPEFF databases | grep '^$ASSEMBLY ' | awk -F' ' 'NF>1{print \$\$NF}'); unzip $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip -d $SNPEFF_DATABASES_FOLDER/; mv $SNPEFF_DATABASES_FOLDER/data/* $SNPEFF_DATABASES_FOLDER/;"
 			#SNPEFF_CMD_ALT="if ((\$\$(grep 'ERROR while connecting to' $SNPEFF_DATABASES_FOLDER/STARK.SNPEFF.download.err -c))); then wget --no-verbose -O $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip \$\$($JAVA -jar $SNPEFF databases | grep '^hg19 ' | awk -F' ' 'NF>1{print $NF}'); unzip $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip -d $SNPEFF_DATABASES_FOLDER/; mv $SNPEFF_DATABASES_FOLDER/data/* $SNPEFF_DATABASES_FOLDER/; fi"
 
 			(($DEBUG)) && echo "#[INFO] SNPEFF CMD = $SNPEFF_CMD"

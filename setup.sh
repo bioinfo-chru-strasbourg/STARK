@@ -276,7 +276,7 @@ echo "#[INFO] STARK Docker Compose Setup done."
 
 # Start services Build
 echo "#[INFO] STARK Docker Compose Build - Services Modules..."
-if $SCRIPT_DIR/services/services.sh --module=* --command=build --verbose >> $DOCKER_STARK_SETUP_LOG 2>> $DOCKER_STARK_SETUP_LOG; then
+if $SCRIPT_DIR/services/services.sh --modules=* --command=build --verbose >> $DOCKER_STARK_SETUP_LOG 2>> $DOCKER_STARK_SETUP_LOG; then
 	echo "#[INFO] STARK Docker Compose Build - Services Modules done."
 else
 	echo "#[ERROR] STARK Docker Compose Build - Services Modules failed!"
@@ -285,7 +285,7 @@ fi;
 
 # Start services Start
 echo "#[INFO] STARK Docker Compose Start - Services Modules..."
-if $SCRIPT_DIR/services/services.sh --module=* --command=up --verbose >> $DOCKER_STARK_SETUP_LOG 2>> $DOCKER_STARK_SETUP_LOG; then
+if $SCRIPT_DIR/services/services.sh --modules=* --command=up --verbose >> $DOCKER_STARK_SETUP_LOG 2>> $DOCKER_STARK_SETUP_LOG; then
 	echo "#[INFO] STARK Docker Compose Start - Services Modules done."
 else
 	echo "#[ERROR] STARK Docker Compose Start - Services Modules failed!"
