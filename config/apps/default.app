@@ -526,7 +526,7 @@ THREADS=AUTO
 # ANNOTATION
 # Default annotation with HOWARD for intermediate VCF (for each caller) used by default with annotation rule "howard"
 #ANNOTATION_TYPE="core,frequency,score,annotation,prediction,snpeff,snpeff_hgvs" "core,symbol,location,outcome,hgvs,snpeff,snpeff_hgvs,snpeff_split"
-HOWARD_ANNOTATION="core,snpeff_split"
+HOWARD_ANNOTATION="symbol,location,outcome,hgvs"
 # Default annotation with HOWARD for minimal VCF annotation (rule howard_minimal)
 HOWARD_ANNOTATION_MINIMAL="core,snpeff_split"
 # Default annotation with HOWARD for report
@@ -583,6 +583,26 @@ HOWARD_FIELDS_REPORT="NOMEN,PZFlag,PZScore,PZComment,CNOMEN,PNOMEN,location,outc
 HOWARD_SORT_REPORT="PZFlag::DESC,PZScore:n:DESC"
 HOWARD_SORT_BY_REPORT="PZFlag,PZScore"
 HOWARD_ORDER_BY_REPORT="DESC,DESC"
+
+
+# FILTRATION VCF
+# Filter variant calls based on INFO and/or FORMAT annotations
+
+# One or more expression used with INFO fields to filter
+# default: FILTRATION_VCF_FILTER_EXPRESSION=''
+# example: FILTRATION_VCF_FILTER_EXPRESSION='--filterExpression "MQ0 >= 4 && ((MQ0 / (1.0 * DP)) > 0.1)" --filterName "HARD_TO_VALIDATE" --filterExpression "DP == 0" --filterName "VeryVeryLowDepth" --filterExpression "DP > 0 && DP < 10" --filterName "VeryLowDepth" --filterExpression "DP >= 10 && DP < 30" --filterName "LowDepth" --filterExpression "QUAL == 0" --filterName "VeryVeryLowQual" --filterExpression "QUAL > 0 && QUAL < 30.0" --filterName "VeryLowQual" --filterExpression "QUAL >= 30.0 && QUAL < 50.0" --filterName "LowQual" --filterExpression "QD >= 0.0 && QD < 1.5" --filterName "LowQD"'
+FILTRATION_VCF_FILTER_EXPRESSION='--filterExpression "MQ0 >= 4 && ((MQ0 / (1.0 * DP)) > 0.1)" --filterName "HARD_TO_VALIDATE" --filterExpression "DP == 0" --filterName "VeryVeryLowDepth" --filterExpression "DP > 0 && DP < 10" --filterName "VeryLowDepth" --filterExpression "DP >= 10 && DP < 30" --filterName "LowDepth" --filterExpression "QUAL == 0" --filterName "VeryVeryLowQual" --filterExpression "QUAL > 0 && QUAL < 30.0" --filterName "VeryLowQual" --filterExpression "QUAL >= 30.0 && QUAL < 50.0" --filterName "LowQual" --filterExpression "QD >= 0.0 && QD < 1.5" --filterName "LowQD"'
+
+
+# One or more expression used with FORMAT (sample/genotype-level) fields to filter (see documentation guide for more info)
+# default: FILTRATION_VCF_GENOTYPE_FILTER_EXPRESSION=''
+# example: FILTRATION_VCF_GENOTYPE_FILTER_EXPRESSION='--genotypeFilterExpression "GQ == 0" --genotypeFilterName "VeryVeryLowGQ"  --genotypeFilterExpression "GQ > 0 && GQ < 50.0" --genotypeFilterName "VeryLowGQ"  --genotypeFilterExpression "GQ >= 50.0 && GQ < 90.0" --genotypeFilterName "LowGQ" --genotypeFilterExpression "DP == 0" --genotypeFilterName "VeryVeryLowDP" --genotypeFilterExpression "DP >= 0 && DP < 10" --genotypeFilterName "VeryLowDP"  --genotypeFilterExpression "DP >= 10 && DP < 30" --genotypeFilterName "LowDP"'
+FILTRATION_VCF_GENOTYPE_FILTER_EXPRESSION='--genotypeFilterExpression "GQ == 0" --genotypeFilterName "VeryVeryLowGQ"  --genotypeFilterExpression "GQ > 0 && GQ < 50.0" --genotypeFilterName "VeryLowGQ"  --genotypeFilterExpression "GQ >= 50.0 && GQ < 90.0" --genotypeFilterName "LowGQ" --genotypeFilterExpression "DP == 0" --genotypeFilterName "VeryVeryLowDP" --genotypeFilterExpression "DP >= 0 && DP < 10" --genotypeFilterName "VeryLowDP"  --genotypeFilterExpression "DP >= 10 && DP < 30" --genotypeFilterName "LowDP"'
+
+# Remove previous filters applied to the VCF
+# within makefile rule: FILTRATION_VCF_INVALIDATE_PREVIOUS_FILTERS_OPTION?=$(shell if (( $(FILTRATION_VCF_INVALIDATE_PREVIOUS_FILTERS) )); then echo " --invalidatePreviousFilters "; fi )
+# default: FILTRATION_VCF_INVALIDATE_PREVIOUS_FILTERS=0
+FILTRATION_VCF_INVALIDATE_PREVIOUS_FILTERS=1
 
 
 # REPORT

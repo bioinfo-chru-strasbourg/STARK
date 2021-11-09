@@ -890,10 +890,12 @@ export CRAM_REMOVE_TAGS
 if [ -z "$HOWARD_ANNOTATION" ]; then
 	#HOWARD_ANNOTATION="core,symbol,location,outcome,hgvs,snpeff,snpeff_hgvs"
 	#HOWARD_ANNOTATION="core,snpeff_hgvs"
-	HOWARD_ANNOTATION="snpeff_split"
+	HOWARD_ANNOTATION="symbol,location,outcome,hgvs"
 	# ANNOTATINO FULL
 	#HOWARD_ANNOTATION="core,frequency,score,annotation,prediction,snpeff,snpeff_hgvs"
 fi;
+export HOWARD_ANNOTATION
+
 
 # DEJAVU
 # if [ -s $ANNOVAR_DATABASES/$ASSEMBLY"_dejavu."$APP_GROUP.$APP_PROJECT.txt ]; then
@@ -915,7 +917,6 @@ for DEJAVU_DATABASE_ONE in $(find $DEJAVU_ANNOVAR_DATABASES -name $ASSEMBLY"_dej
 done;
 HOWARD_DEJAVU_ANNOTATION=$(echo $HOWARD_DEJAVU_ANNOTATION | tr "," "\n" | sort -u | tr "\n" "," | sed s/,$//)
 export HOWARD_DEJAVU_ANNOTATION
-
 
 
 # MINIMAL
@@ -1109,6 +1110,39 @@ if [ -z $HOWARD_ORDER_BY_REPORT ]; then
 	HOWARD_ORDER_BY_REPORT=$HOWARD_ORDER_BY
 fi;
 export HOWARD_ORDER_BY_REPORT
+
+
+
+# FILTRATION VCF
+################
+# Filter variant calls based on INFO and/or FORMAT annotations
+
+# One or more expression used with INFO fields to filter
+# default: FILTRATION_VCF_FILTER_EXPRESSION=''
+# example: FILTRATION_VCF_FILTER_EXPRESSION='--filterExpression "MQ0 >= 4 && ((MQ0 / (1.0 * DP)) > 0.1)" --filterName "HARD_TO_VALIDATE" --filterExpression "DP == 0" --filterName "VeryVeryLowDepth" --filterExpression "DP > 0 && DP < 10" --filterName "VeryLowDepth" --filterExpression "DP >= 10 && DP < 30" --filterName "LowDepth" --filterExpression "QUAL == 0" --filterName "VeryVeryLowQual" --filterExpression "QUAL > 0 && QUAL < 30.0" --filterName "VeryLowQual" --filterExpression "QUAL >= 30.0 && QUAL < 50.0" --filterName "LowQual" --filterExpression "QD >= 0.0 && QD < 1.5" --filterName "LowQD"'
+if [ -z "$FILTRATION_VCF_FILTER_EXPRESSION" ]; then
+	FILTRATION_VCF_FILTER_EXPRESSION=''
+fi;
+export FILTRATION_VCF_FILTER_EXPRESSION
+
+# One or more expression used with FORMAT (sample/genotype-level) fields to filter (see documentation guide for more info)
+# default: FILTRATION_VCF_GENOTYPE_FILTER_EXPRESSION=''
+# example: FILTRATION_VCF_GENOTYPE_FILTER_EXPRESSION='--genotypeFilterExpression "GQ == 0" --genotypeFilterName "VeryVeryLowGQ"  --genotypeFilterExpression "GQ > 0 && GQ < 50.0" --genotypeFilterName "VeryLowGQ"  --genotypeFilterExpression "GQ >= 50.0 && GQ < 90.0" --genotypeFilterName "LowGQ" --genotypeFilterExpression "DP == 0" --genotypeFilterName "VeryVeryLowDP" --genotypeFilterExpression "DP >= 0 && DP < 10" --genotypeFilterName "VeryLowDP"  --genotypeFilterExpression "DP >= 10 && DP < 30" --genotypeFilterName "LowDP"'
+if [ -z "$FILTRATION_VCF_GENOTYPE_FILTER_EXPRESSION" ]; then
+	FILTRATION_VCF_GENOTYPE_FILTER_EXPRESSION=''
+fi;
+export FILTRATION_VCF_GENOTYPE_FILTER_EXPRESSION
+
+# Remove previous filters applied to the VCF
+# within makefile rule: FILTRATION_VCF_INVALIDATE_PREVIOUS_FILTERS_OPTION?=$(shell if (( $(FILTRATION_VCF_INVALIDATE_PREVIOUS_FILTERS) )); then echo " --invalidatePreviousFilters "; fi )
+# default: FILTRATION_VCF_INVALIDATE_PREVIOUS_FILTERS=0
+if [ -z "$FILTRATION_VCF_INVALIDATE_PREVIOUS_FILTERS" ]; then
+	FILTRATION_VCF_INVALIDATE_PREVIOUS_FILTERS=0
+fi;
+export FILTRATION_VCF_INVALIDATE_PREVIOUS_FILTERS
+
+
+
 
 
 # DAEMON CONFIG
