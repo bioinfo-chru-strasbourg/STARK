@@ -179,6 +179,8 @@ export RESULTS_SUBFOLDER_DATA="STARK";				# Copy sample results in a SUBFOLDER
 
 # CORE Files to copy to REPOSITORY
 export REPOSITORY_FILE_PATTERNS_CORE='$SAMPLE.reports/$SAMPLE.final.vcf.gz $SAMPLE.reports/$SAMPLE.final.Panel*.vcf.gz $SAMPLE.reports/$SAMPLE.final.Panel*.tsv $SAMPLE.reports/*.*.config $SAMPLE.reports/*.report*.html $SAMPLE.reports/*.report.html.folder:FOLDER $SAMPLE.*.bam.metrics/$SAMPLE.*.validation.flags.Panel*.bed';
+# CORE Files to exclude to REPOSITORY results subfolder
+export REPOSITORY_FILE_SUBFOLDER_PATTERNS_CORE='';
 # CORE Files to copy to ARCHIVES
 export ARCHIVES_FILE_PATTERNS_CORE='$SAMPLE.reports/$SAMPLE.final.vcf.gz $SAMPLE.reports/*.*.config $SAMPLE.reports/*.report*.html $SAMPLE.reports/*.report.html.folder:FOLDER $SAMPLE.bed $SAMPLE.manifest $SAMPLE*.genes $SAMPLE*.transcripts $SAMPLE*.tag $SAMPLE.archive.cram $SAMPLE.archive.cram.crai $SAMPLE.analysis.json';
 # CORE Files to copy to FAVORITES
@@ -186,6 +188,7 @@ export FAVORITES_FILE_PATTERNS_CORE='';
 
 # Copy some sample results files in the root sample folder, if any SUBFOLDER defined
 export REPOSITORY_FILE_PATTERNS=$(echo $REPOSITORY_FILE_PATTERNS' '$REPOSITORY_FILE_PATTERNS_CORE | tr "," " " | tr " " "\n" | sort -u | tr "\n" " ");
+export REPOSITORY_FILE_SUBFOLDER_PATTERNS=$(echo $REPOSITORY_FILE_SUBFOLDER_PATTERNS' '$REPOSITORY_FILE_SUBFOLDER_PATTERNS_CORE | tr "," " " | tr " " "\n" | sort -u | tr "\n" " ");
 export ARCHIVES_FILE_PATTERNS=$(echo $ARCHIVES_FILE_PATTERNS' '$ARCHIVES_FILE_PATTERNS_CORE | tr "," " " | tr " " "\n" | sort -u | tr "\n" " ");
 export FAVORITES_FILE_PATTERNS=$(echo $FAVORITES_FILE_PATTERNS' '$FAVORITES_FILE_PATTERNS_CORE | tr "," " " | tr " " "\n" | sort -u | tr "\n" " ");
 

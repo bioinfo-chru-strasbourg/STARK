@@ -625,6 +625,8 @@ REPORT_VARIANTS_FULL=0
 # Copy files into folders for repository and archives
 # Repository files patterns to add
 REPOSITORY_FILE_PATTERNS=' $SAMPLE.*.validation.bam $SAMPLE.*.validation.bam.bai $SAMPLE.*.bam.metrics/$SAMPLE.*.validation.flags.Design.bed $SAMPLE.reports/$SAMPLE.full.Design.vcf.gz $SAMPLE.reports/$SAMPLE.full.Design.tsv '
+# Repository files patterns to exclude on results subfolder (usually 'STARK'). Useful to reduce storage and exclude repeated files (in others files patterns varaibles)
+REPOSITORY_FILE_SUBFOLDER_PATTERNS=' $SAMPLE.*fastq.gz $SAMPLE.*.validation.bam $SAMPLE.*.validation.bam.bai '
 # Archives files patterns to add
 ARCHIVES_FILE_PATTERNS=' $SAMPLE.reports/$SAMPLE.full.vcf.gz $SAMPLE.reports/$SAMPLE.final.tsv $SAMPLE.*.bam.metrics/$SAMPLE.*.validation.flags.*.bed '
 # Favorites files patterns to add

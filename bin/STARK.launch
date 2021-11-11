@@ -7,8 +7,8 @@
 
 SCRIPT_NAME="LaunchSample"
 SCRIPT_DESCRIPTION="Launch a Sample Analysis"
-SCRIPT_RELEASE="0.9.7.1"
-SCRIPT_DATE="15/10/2021"
+SCRIPT_RELEASE="0.9.7.2"
+SCRIPT_DATE="11/11/2021"
 SCRIPT_AUTHOR="Antony Le Bechec"
 SCRIPT_COPYRIGHT="IRC"
 SCRIPT_LICENCE="GNU-AGPL"
@@ -23,6 +23,7 @@ RELEASE_NOTES=$RELEASE_NOTES"# 0.9.6b-27/10/2016: Multi input FASTQ/BAM/CRAM/SAM
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.6.1b-19/03/2019: Minor change on FASTQ/BAM/CRAM/SAM input\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.7.0-06/09/2021: Include UMI treatment, rebuild FASTQ input treatment\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.7.1-15/10/2021: Include Favorites folder.\n";
+RELEASE_NOTES=$RELEASE_NOTES"# 0.9.7.2-11/11/2021: Add subfolder files patterns.\n";
 
 # Script folder
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -1907,69 +1908,70 @@ for RUU in $RUN_UNIQ; do
 						RESULTS_FOLDER_COPY_FOLDER=$(echo $RESULTS_FOLDER_COPY_FOLDER_INFO | awk -F: '{print $1}')
 						RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE=$(echo $RESULTS_FOLDER_COPY_FOLDER_INFO | awk -F: '{print $2}')
 
+						ROOT_FILE_SOURCE=$RESULTS/$RUU/$S
+
 						### Repository type
+
 						REPOSITORY_TYPE_FILE_PATTERNS=""
 						if [ "$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE" == "repository" ]; then
 							REPOSITORY_TYPE_FILE_PATTERNS=$REPOSITORY_FILE_PATTERNS
-							ROOT_FILE_SOURCE=$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA
 							F_TARGET_FOLDER=$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S
 						elif [ "$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE" == "archives" ]; then
 							REPOSITORY_TYPE_FILE_PATTERNS=$ARCHIVES_FILE_PATTERNS
-							ROOT_FILE_SOURCE=$RESULTS/$RUU/$S
 							F_TARGET_FOLDER=$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S
 						elif [ "$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE" == "favorites" ]; then
 							REPOSITORY_TYPE_FILE_PATTERNS=$FAVORITES_FILE_PATTERNS
-							#ROOT_FILE_SOURCE=$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA
-							ROOT_FILE_SOURCE=$RESULTS/$RUU/$S
 							F_TARGET_FOLDER=$RESULTS_FOLDER_COPY_FOLDER/$RUU
 						else
 							echo "#[ERROR] Repository type '$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE' failed"
 						fi;
- 
+
 
 						#echo "#[INFO] Copying '$RUU/$S' files from '$RESULTS' to '$RESULTS_FOLDER_COPY_FOLDER' [$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE]..."
 						(($VERBOSE)) && echo "#[INFO] STARK Copy '$RUU/$S' Process... from '$RESULTS' to '$RESULTS_FOLDER_COPY_FOLDER' [$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE]"
 						 
 
 						# Copy RUN files
-						#RES_MK_COPY_ROOT_TMP=$TMP_FOLDER_TMP/rsync_$RANDOM$RANDOM
+						# TODO use --exclude 
 						if ! in_array $RESULTS_FOLDER_COPY_FOLDER/$RUU $RES_MK_ALL; then
 							echo "$RESULTS_FOLDER_COPY_FOLDER/$RUU:
 								#[INFO] Copying '$RUU'
 								mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$RUU
-								$COMMAND_COPY_NO_COMPRESS \$\$(find -L $RESULTS/$RUU -name "$ANALYSIS_PREFIX*" -mindepth 1 -maxdepth 1 -type f) $RESULTS_FOLDER_COPY_FOLDER/$RUU
-								rm $RESULTS_FOLDER_COPY_FOLDER/$RUU/*copy.mk* $RESULTS_FOLDER_COPY_FOLDER/$RUU/$(basename $FINAL_REPORT_RUN).metrics $RESULTS_FOLDER_COPY_FOLDER/$RUU/$(basename $FINAL_REPORT_RUN).variants
+								#$COMMAND_COPY_NO_COMPRESS \$\$(find -L $RESULTS/$RUU -name "$ANALYSIS_PREFIX*" -mindepth 1 -maxdepth 1 -type f) $RESULTS_FOLDER_COPY_FOLDER/$RUU
+								#rm $RESULTS_FOLDER_COPY_FOLDER/$RUU/*copy.mk* $RESULTS_FOLDER_COPY_FOLDER/$RUU/$(basename $FINAL_REPORT_RUN).metrics $RESULTS_FOLDER_COPY_FOLDER/$RUU/$(basename $FINAL_REPORT_RUN).variants
+								$COMMAND_COPY_NO_COMPRESS --exclude '*copy.mk*' --exclude $(basename $FINAL_REPORT_RUN)'.metrics' --exclude $(basename $FINAL_REPORT_RUN)'.variants' \$\$(find -L $RESULTS/$RUU -name "$ANALYSIS_PREFIX*" -mindepth 1 -maxdepth 1 -type f) $RESULTS_FOLDER_COPY_FOLDER/$RUU
 								chmod $PERMS -R $RESULTS_FOLDER_COPY_FOLDER/$RUU $RESULTS_FOLDER_COPY_FOLDER/$RUU/* 
 							" >> $RES_MK
 							RES_MK_ALL=$RES_MK_ALL" $RESULTS_FOLDER_COPY_FOLDER/$RUU"
 							RES_MK_ALL_RUU=$RES_MK_ALL_RUU" $RESULTS_FOLDER_COPY_FOLDER/$RUU"
 						fi;
 
+						# Copy results subfolder files patterns parameters
+						REPOSITORY_FILE_SUBFOLDER_PATTERNS_PARAM="--exclude '"$(echo $REPOSITORY_FILE_SUBFOLDER_PATTERNS | sed "s/ /' --exclude '/gi")"'"
+						REPOSITORY_FILE_SUBFOLDER_PATTERNS_PARAM=$(echo $REPOSITORY_FILE_SUBFOLDER_PATTERNS_PARAM | sed 's/$SAMPLE/'$S'/gi')
 
-						# Copy STARK RESULTS files
-						#RES_MK_COPY_ROOT_TMP=$TMP_FOLDER_TMP/rsync_$RANDOM$RANDOM
 						if [ "$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE" == "repository" ]; then
-							echo "$ROOT_FILE_SOURCE:
+							echo "copy_results_into_subfolder_$RESULTS_FOLDER_COPY_FOLDER$ROOT_FILE_SOURCE:
 								#[INFO] Copying '$RUU/$S' - STARK Results
-								mkdir -p $ROOT_FILE_SOURCE
-								$COMMAND_COPY_NO_COMPRESS $RESULTS/$RUU/$S/* $ROOT_FILE_SOURCE
+								mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA
+								$COMMAND_COPY_NO_COMPRESS $REPOSITORY_FILE_SUBFOLDER_PATTERNS_PARAM $RESULTS/$RUU/$S/* $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA
 								chmod $PERMS -R $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/* 
 							" >> $RES_MK
 						elif [ "$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE" == "archives" ]; then
-							echo "$ROOT_FILE_SOURCE:
+							echo "copy_results_into_subfolder_$RESULTS_FOLDER_COPY_FOLDER$ROOT_FILE_SOURCE:
 								#[INFO] Copying '$RUU/$S' - STARK Results
 								#[INFO] Copying '$RUU/$S' - NO Copy
 							" >> $RES_MK
 						elif [ "$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE" == "favorites" ]; then
-							echo "$ROOT_FILE_SOURCE:
+							echo "copy_results_into_subfolder_$RESULTS_FOLDER_COPY_FOLDER$ROOT_FILE_SOURCE:
 								#[INFO] Copying '$RUU/$S' - STARK Results
 								#[INFO] Copying '$RUU/$S' - NO Copy
 							" >> $RES_MK
 						else
 							echo "#[ERROR] Repository type failed"
 						fi;
-						RES_MK_ALL=$RES_MK_ALL" $ROOT_FILE_SOURCE"
-						RES_MK_ALL_RUU_S=$RES_MK_ALL_RUU_S" $ROOT_FILE_SOURCE"
+						RES_MK_ALL=$RES_MK_ALL" copy_results_into_subfolder_$RESULTS_FOLDER_COPY_FOLDER$ROOT_FILE_SOURCE"
+						RES_MK_ALL_RUU_S=$RES_MK_ALL_RUU_S" copy_results_into_subfolder_$RESULTS_FOLDER_COPY_FOLDER$ROOT_FILE_SOURCE"
 
 						
 						# Copy ROOT FILE PATTERNS
@@ -1978,19 +1980,13 @@ for RUU in $RUN_UNIQ; do
 
 							for ROOT_FILE_PATTERN_INFO in $REPOSITORY_TYPE_FILE_PATTERNS; do
 
-								#RES_MK_COPY_ROOT_TMP=$TMP_FOLDER_TMP/rsync_$RANDOM$RANDOM
-
 								ROOT_FILE_PATTERN=$(echo $ROOT_FILE_PATTERN_INFO | awk -F: '{print $1}')
 								ROOT_FILE_PATTERN_TYPE=$(echo $ROOT_FILE_PATTERN_INFO | awk -F: '{print $2}')
 
 								FILE_PATTERN_TYPE_LS=" ";
 								[ "$ROOT_FILE_PATTERN_TYPE" == "FOLDER" ] && FILE_PATTERN_TYPE_LS=" -d ";
 
-								if [[ $ROOT_FILE_PATTERN =~ '$SAMPLE' ]]; then
-									eval ROOT_FILE_PATTERN_VAR="/"$(echo $ROOT_FILE_PATTERN | sed s/\$SAMPLE/\$S/gi)
-								else
-									ROOT_FILE_PATTERN_VAR="/$ROOT_FILE_PATTERN"
-								fi;
+								ROOT_FILE_PATTERN_VAR="/"$(echo $ROOT_FILE_PATTERN | sed 's/$SAMPLE/'$S'/gi')
 								ROOT_FILE_PATTERN_VAR_TARGET=$(echo $ROOT_FILE_PATTERN_VAR | sed -e 's/[][\\^*+.$-]/____/g')
 
 								echo "$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE/$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S$ROOT_FILE_PATTERN_VAR: $ROOT_FILE_SOURCE
@@ -2002,11 +1998,7 @@ for RUU in $RUN_UNIQ; do
 										F_TARGET=$F_TARGET_FOLDER/\$\$(basename \$\$F_SOURCE); \
 										F_TARGET_BASE=\$\$(echo \$\$F_TARGET | sed \"s#$F_TARGET_FOLDER/##\"); \
 										[ '$ROOT_FILE_PATTERN_TYPE' == "FOLDER" ] && F_SOURCE=\$\$F_SOURCE/; \
-										if [ ! -e \$\$F_TARGET ] && [ '$ROOT_FILE_PATTERN_TYPE' != "FOLDER" ] && [ '$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE' == 'favorites' ] ; then \
-											$COMMAND_LINK \$\$F_SOURCE \$\$F_TARGET 1>/dev/null 2>/dev/null; \
-										fi; \
 										if [ ! -e \$\$F_TARGET ]; then \
-											rm -f \$\$F_TARGET; \
 											$COMMAND_COPY_NO_COMPRESS \$\$F_SOURCE \$\$F_TARGET 1>/dev/null 2>/dev/null; \
 										fi; \
 										if [ ! -e \$\$F_TARGET ]; then \
@@ -2015,21 +2007,6 @@ for RUU in $RUN_UNIQ; do
 									done;
 								" >> $RES_MK
 
-										#F_TARGET=$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/\$\$(basename \$\$F_SOURCE); \
-										#F_TARGET_BASE=\$\$(echo \$\$F_TARGET | sed \"s#$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/##\"); \
-
-										# FF_TARGET=$RESULTS_FOLDER_COPY_FOLDER/$RUU/\$\$(basename \$\$F_SOURCE); \
-										# FF_TARGET_BASE=\$\$(echo \$\$F_TARGET | sed \"s#$RESULTS_FOLDER_COPY_FOLDER/$RUU/##\"); \
-
-										# if [ ! -e \$\$FF_TARGET ]; then \
-										# 	rm -f \$\$FF_TARGET; \
-										# 	$COMMAND_COPY_NO_COMPRESS \$\$F_SOURCE \$\$FF_TARGET 1>/dev/null 2>/dev/null; \
-										# fi; \
-										# if [ ! -e \$\$FF_TARGET ]; then \
-										# 	(($DEBUG)) && echo '#[ERROR] Copy file $F_SOURCE_BASE to $FF_TARGET_BASE FAILED'; \
-										# fi; \
-
-								#RES_MK_ALL=$RES_MK_ALL" $ROOT_FILE_SOURCE$ROOT_FILE_PATTERN_VAR_TARGET"
 								RES_MK_ALL_RUU_S=$RES_MK_ALL_RUU_S" $RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE/$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S$ROOT_FILE_PATTERN_VAR"
 								
 							done;
