@@ -178,11 +178,11 @@ export RESULTS_FOLDER_BY_GROUP_PROJECT_COPY=$FOLDER_REPOSITORY	# Copy data into 
 export RESULTS_SUBFOLDER_DATA="STARK";				# Copy sample results in a SUBFOLDER
 
 # CORE Files to copy to REPOSITORY
-export REPOSITORY_FILE_PATTERNS_CORE='$SAMPLE.reports/$SAMPLE.final.vcf.gz $SAMPLE.reports/$SAMPLE.final.Panel*.vcf.gz $SAMPLE.reports/$SAMPLE.final.Panel*.tsv $SAMPLE.reports/*.*.config $SAMPLE.reports/*.report*.html $SAMPLE.reports/*.report.html.folder:FOLDER $SAMPLE.*.bam.metrics/$SAMPLE.*.validation.flags.Panel*.bed';
+export REPOSITORY_FILE_PATTERNS_CORE='$SAMPLE.reports/$SAMPLE.final.vcf.gz $SAMPLE.reports/$SAMPLE.final.vcf.gz.tbi $SAMPLE.reports/$SAMPLE.final.Panel*.vcf.gz $SAMPLE.reports/$SAMPLE.final.Panel*.vcf.gz.tbi $SAMPLE.reports/$SAMPLE.final.Panel*.tsv $SAMPLE.reports/*.*.config $SAMPLE.reports/*.report*.html $SAMPLE.reports/*.report.html.folder:FOLDER $SAMPLE.*.bam.metrics/$SAMPLE.*.validation.flags.Panel*.bed $SAMPLE*.tag';
 # CORE Files to exclude to REPOSITORY results subfolder
 export REPOSITORY_FILE_SUBFOLDER_PATTERNS_CORE='';
 # CORE Files to copy to ARCHIVES
-export ARCHIVES_FILE_PATTERNS_CORE='$SAMPLE.reports/$SAMPLE.final.vcf.gz $SAMPLE.reports/*.*.config $SAMPLE.reports/*.report*.html $SAMPLE.reports/*.report.html.folder:FOLDER $SAMPLE.bed $SAMPLE.manifest $SAMPLE*.genes $SAMPLE*.transcripts $SAMPLE*.tag $SAMPLE.archive.cram $SAMPLE.archive.cram.crai $SAMPLE.analysis.json';
+export ARCHIVES_FILE_PATTERNS_CORE='$SAMPLE.reports/$SAMPLE.final.vcf.gz $SAMPLE.reports/$SAMPLE.final.vcf.gz.tbi $SAMPLE.reports/*.*.config $SAMPLE.reports/*.report*.html $SAMPLE.reports/*.report.html.folder:FOLDER $SAMPLE.bed $SAMPLE.manifest $SAMPLE*.genes $SAMPLE*.transcripts $SAMPLE*.tag $SAMPLE.archive.cram $SAMPLE.archive.cram.crai $SAMPLE.analysis.json';
 # CORE Files to copy to FAVORITES
 export FAVORITES_FILE_PATTERNS_CORE='';
 

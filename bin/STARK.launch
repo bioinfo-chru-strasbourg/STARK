@@ -1106,7 +1106,17 @@ for RUU in $RUN_UNIQ; do
 		# INFOS
 		(($VERBOSE)) && echo "#[INFO] RUN '$RUU' - SAMPLE '$S'"
 		(($VERBOSE)) && echo "#[INFO] SAMPLE '$RU/$S' from file(s):"
-		(($VERBOSE)) && echo "#[INFO] $F $F_R2 $I1 $I2 $OFCF $B $G $T $P "
+		#(($VERBOSE)) && echo "#[INFO] $F $F_R2 $I1 $I2 $OFCF $B $G $T $P "
+		(($VERBOSE)) && echo "#[INFO]    Read1:         $F"
+		(($VERBOSE)) && echo "#[INFO]    Read2:         $F_R2"
+		(($VERBOSE)) && echo "#[INFO]    Index1:        $I1"
+		(($VERBOSE)) && echo "#[INFO]    Index2:        $I2"
+		(($VERBOSE)) && echo "#[INFO]    Others:        $OFCF"
+		(($VERBOSE)) && echo "#[INFO]    Design:        $B"
+		(($VERBOSE)) && echo "#[INFO]    Panels:        $G"
+		(($VERBOSE)) && echo "#[INFO]    Transcripts:   $T"
+		(($VERBOSE)) && echo "#[INFO]    Pedigree:      $P"
+		(($VERBOSE)) && echo "#[INFO]    Tags:          $TAG"
 
 		# Copy FASTQ
 		PICARD_FLAGS="COMPRESSION_LEVEL=1 MAX_RECORDS_IN_RAM=500000"
@@ -1997,18 +2007,24 @@ for RUU in $RUN_UNIQ; do
 										F_SOURCE_BASE=\$\$(echo \$\$F_SOURCE | sed \"s#$ROOT_FILE_SOURCE/##\"); \
 										F_TARGET=$F_TARGET_FOLDER/\$\$(basename \$\$F_SOURCE); \
 										F_TARGET_BASE=\$\$(echo \$\$F_TARGET | sed \"s#$F_TARGET_FOLDER/##\"); \
-										[ '$ROOT_FILE_PATTERN_TYPE' == "FOLDER" ] && F_SOURCE=\$\$F_SOURCE/; \
-										if [ ! -e \$\$F_TARGET ]; then \
-											$COMMAND_COPY_NO_COMPRESS \$\$F_SOURCE \$\$F_TARGET 1>/dev/null 2>/dev/null; \
+										if [ '$ROOT_FILE_PATTERN_TYPE' == "FOLDER" ]; then \
+											$COMMAND_COPY_NO_COMPRESS \$\$F_SOURCE/ \$\$F_TARGET 1>/dev/null 2>/dev/null; \
+										else \
+											cp \$\$F_SOURCE \$\$F_TARGET 1>/dev/null 2>/dev/null; \
 										fi; \
 										if [ ! -e \$\$F_TARGET ]; then \
 											(($DEBUG)) && echo '#[ERROR] Copy file $F_SOURCE_BASE to $F_TARGET_BASE FAILED'; \
+										else \
+											chmod $PERMS -R \$\$F_TARGET; \
 										fi; \
 									done;
 								" >> $RES_MK
 
 								RES_MK_ALL_RUU_S=$RES_MK_ALL_RUU_S" $RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE/$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S$ROOT_FILE_PATTERN_VAR"
 								
+								#$COMMAND_COPY_NO_COMPRESS \$\$F_SOURCE \$\$F_TARGET 1>/dev/null 2>/dev/null;
+								#cp \$\$F_SOURCE \$\$F_TARGET 1>/dev/null 2>/dev/null;
+
 							done;
 						fi;
 

@@ -747,6 +747,7 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 			# Copy VCF and TSV for rename \
 			cp $@.$$bed_subname.tsv $*.$$bed_subname.tsv; \
 			$(BGZIP) -c $@.$$bed_subname.vcf > $*.$$bed_subname.vcf.gz; \
+			$(TABIX) $*.$$bed_subname.vcf.gz; \
 		fi ; \
 		rm -f  ; \
 		echo "#[INFO] VCF filtered by '$$one_bed' done. See files '$@.$$bed_subname.vcf', '$@.$$bed_subname.tsv' and stats" >> $@; \

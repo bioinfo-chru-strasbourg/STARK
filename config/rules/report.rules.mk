@@ -245,6 +245,7 @@ REPORT_SECTIONS?=ALL
 	$(BGZIP) -c $@.tmp.calculated.prioritized.sorted > $@.tmp.calculated.prioritized.sorted.vcf.gz;
 	$(TABIX) $@.tmp.calculated.prioritized.sorted.vcf.gz;
 	cp $@.tmp.calculated.prioritized.sorted.vcf.gz $@.Design.vcf.gz;
+	$(TABIX) $@.Design.vcf.gz; \
 	# Generate Design TSV
 	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.Design.vcf.gz --output=$@.Design.tsv --translation=TSV --fields="$(HOWARD_FIELDS)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)" --pzfields="PZScore,PZFlag,PZComment,PZInfos" --force --threads=$(THREADS);
 	# Generate Panel(s) VCF and TSV from Design VCF ($@.Design.vcf.gz)
@@ -262,6 +263,7 @@ REPORT_SECTIONS?=ALL
 			$(BCFTOOLS) view --samples $$List_of_samples --force-samples $@.tmp.calculated.prioritized.sorted.vcf.gz -R $@.tmp.GENES.$$genes_file > $@.Panel.$$genes_file.vcf; \
 			# Compress VCF \
 			$(BGZIP) $@.Panel.$$genes_file.vcf; \
+			$(TABIX) $@.Panel.$$genes_file.vcf.gz; \
 			# Generate TSV Panel from VCF Panel compressed  \
 			$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.Panel.$$genes_file.vcf.gz --output=$@.Panel.$$genes_file.tsv --translation=TSV --fields="$(HOWARD_FIELDS)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)" --pzfields="PZScore,PZFlag,PZComment,PZInfos" --force --threads=$(THREADS); \
 		fi; \
@@ -295,6 +297,7 @@ REPORT_SECTIONS?=ALL
 		$(BGZIP) -c $@.tmp.calculated.prioritized.sorted > $@.tmp.calculated.prioritized.sorted.vcf.gz; \
 		$(TABIX) $@.tmp.calculated.prioritized.sorted.vcf.gz; \
 		cp $@.tmp.calculated.prioritized.sorted.vcf.gz $@.Design.vcf.gz; \
+		$(TABIX) $@.Design.vcf.gz; \
 		# Generate Design TSV; \
 		$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.Design.vcf.gz --output=$@.Design.tsv --translation=TSV --fields="$(HOWARD_FIELDS)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)" --pzfields="PZScore,PZFlag,PZComment,PZInfos" --force --threads=$(THREADS); \
 		# Generate Panel(s) VCF and TSV from Design VCF ($@.Design.vcf.gz); \
@@ -312,6 +315,7 @@ REPORT_SECTIONS?=ALL
 				$(BCFTOOLS) view --force-samples $@.tmp.calculated.prioritized.sorted.vcf.gz -R $@.tmp.GENES.$$genes_file > $@.Panel.$$genes_file.vcf; \
 				# Compress VCF \
 				$(BGZIP) $@.Panel.$$genes_file.vcf; \
+				$(TABIX) $@.Panel.$$genes_file.vcf.gz; \
 				# Generate TSV Panel from VCF Panel compressed  \
 				$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.Panel.$$genes_file.vcf.gz --output=$@.Panel.$$genes_file.tsv --translation=TSV --fields="$(HOWARD_FIELDS)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)" --pzfields="PZScore,PZFlag,PZComment,PZInfos" --force --threads=$(THREADS); \
 			fi; \
