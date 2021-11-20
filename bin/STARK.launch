@@ -1861,6 +1861,42 @@ for RUU in $RUN_UNIQ; do
 
 		#RES_MK_RSYNC_PARAM=" --temp-dir=$TMP_FOLDER_TMP/rsync_$RANDOM "
 
+		# List of folders
+		RESULTS_FOLDER_COPY_ALL=""
+		# Repositories
+		if [ "$REPOSITORY" != "" ] ; then
+			for RESULTS_FOLDER_COPY_FOLDER in $(echo $REPOSITORY | tr "," " " | tr " " "\n" | sort -u ); do #
+				if [ -d $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT ] || \
+					mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT; then
+					RESULTS_FOLDER_COPY_ALL=$RESULTS_FOLDER_COPY_ALL" $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT:repository";
+				fi;
+			done;
+		fi;
+		# Archives
+		if ((1)); then
+			if [ "$ARCHIVES" != "" ] ; then
+				for RESULTS_FOLDER_COPY_FOLDER in $(echo $ARCHIVES | tr "," " " | tr " " "\n" | sort -u ); do #
+					if [ -d $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT ] || \
+						mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT; then
+						RESULTS_FOLDER_COPY_ALL=$RESULTS_FOLDER_COPY_ALL" $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT:archives";
+					fi;
+				done;
+			fi;
+		fi;
+		# Favorites
+		if ((1)); then
+			if [ "$FAVORITES" != "" ] ; then
+				for RESULTS_FOLDER_COPY_FOLDER in $(echo $FAVORITES | tr "," " " | tr " " "\n" | sort -u ); do #
+					if [ -d $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT ] || \
+						mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT; then
+						RESULTS_FOLDER_COPY_ALL=$RESULTS_FOLDER_COPY_ALL" $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT:favorites";
+					fi;
+				done;
+			fi;
+		fi;
+
+		IGV_SESSION_DAS_REPOSITORIES_ARRAY=($IGV_SESSION_DAS_REPOSITORIES)
+
 		for S in $SAMPLE; do
 			RU=${RUN_ARRAY[$I]};
 
@@ -1871,40 +1907,10 @@ for RUU in $RUN_UNIQ; do
 			
 			# REPOSITORY
 			if ((1)); then
+
+
 				# COPY of run/sample
-				# List of folders
-				RESULTS_FOLDER_COPY_ALL=""
-				# Repositories
-				if [ "$REPOSITORY" != "" ] ; then
-					for RESULTS_FOLDER_COPY_FOLDER in $(echo $REPOSITORY | tr "," " " | tr " " "\n" | sort -u ); do #
-						if [ -d $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT ] || \
-							mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT; then
-							RESULTS_FOLDER_COPY_ALL=$RESULTS_FOLDER_COPY_ALL" $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT:repository";
-						fi;
-					done;
-				fi;
-				# Archives
-				if ((1)); then
-					if [ "$ARCHIVES" != "" ] ; then
-						for RESULTS_FOLDER_COPY_FOLDER in $(echo $ARCHIVES | tr "," " " | tr " " "\n" | sort -u ); do #
-							if [ -d $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT ] || \
-								mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT; then
-								RESULTS_FOLDER_COPY_ALL=$RESULTS_FOLDER_COPY_ALL" $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT:archives";
-							fi;
-						done;
-					fi;
-				fi;
-				# Favorites
-				if ((1)); then
-					if [ "$FAVORITES" != "" ] ; then
-						for RESULTS_FOLDER_COPY_FOLDER in $(echo $FAVORITES | tr "," " " | tr " " "\n" | sort -u ); do #
-							if [ -d $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT ] || \
-								mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT; then
-								RESULTS_FOLDER_COPY_ALL=$RESULTS_FOLDER_COPY_ALL" $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT:favorites";
-							fi;
-						done;
-					fi;
-				fi;
+				
 
 
 				RES_MK_ALL_RUU_S=""
@@ -1912,11 +1918,16 @@ for RUU in $RUN_UNIQ; do
 
 				# Copy
 				if [ "$RESULTS_FOLDER_COPY_ALL" != "$RESULTS" ] && [ "$RESULTS_FOLDER_COPY_ALL" != "" ] ; then
+
+					FOLDER_COPY_RANK=-1
 					for RESULTS_FOLDER_COPY_FOLDER_INFO in $RESULTS_FOLDER_COPY_ALL;
 					do
 
 						RESULTS_FOLDER_COPY_FOLDER=$(echo $RESULTS_FOLDER_COPY_FOLDER_INFO | awk -F: '{print $1}')
 						RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE=$(echo $RESULTS_FOLDER_COPY_FOLDER_INFO | awk -F: '{print $2}')
+
+						((FOLDER_COPY_RANK++))
+						IGV_SESSION_DAS_URL=${IGV_SESSION_DAS_REPOSITORIES_ARRAY[$FOLDER_COPY_RANK]}/$SAMPLE_GROUP/$SAMPLE_PROJECT/$RUU/$S
 
 						ROOT_FILE_SOURCE=$RESULTS/$RUU/$S
 
@@ -2028,6 +2039,42 @@ for RUU in $RUN_UNIQ; do
 							done;
 						fi;
 
+						# IGV SESSION
+						if ((1)); then
+
+							# SAMPLE
+							IGV_SESSION_PATTERNS=' $SAMPLE.final.vcf.gz $SAMPLE*Design*bed $SAMPLE*Panel*bed *Design*vcf.gz *Panel*vcf.gz *bam '
+							IGV_SESSION_MINDEPTH=0
+							IGV_SESSION_MAXDEPTH=1
+							if [ "$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE" == "repository" ]; then
+								IGV_SESSION_PATTERNS=$REPOSITORY_SAMPLE_IGV_SESSION_PATTERNS
+								IGV_SESSION_MINDEPTH=$REPOSITORY_SAMPLE_IGV_SESSION_MINDEPTH
+								IGV_SESSION_MAXDEPTH=$REPOSITORY_SAMPLE_IGV_SESSION_MAXDEPTH
+							elif [ "$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE" == "archives" ]; then
+								IGV_SESSION_PATTERNS=$ARCHIVES_SAMPLE_IGV_SESSION_PATTERNS
+								IGV_SESSION_MINDEPTH=$ARCHIVES_SAMPLE_IGV_SESSION_MINDEPTH
+								IGV_SESSION_MAXDEPTH=$ARCHIVES_SAMPLE_IGV_SESSION_MAXDEPTH
+							elif [ "$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE" == "favorites" ]; then
+								IGV_SESSION_PATTERNS=$FAVORITES_SAMPLE_IGV_SESSION_PATTERNS
+								IGV_SESSION_MINDEPTH=$FAVORITES_SAMPLE_IGV_SESSION_MINDEPTH
+								IGV_SESSION_MAXDEPTH=$FAVORITES_SAMPLE_IGV_SESSION_MAXDEPTH
+							fi;
+
+							# PATTERNS PARAM
+							IGV_SESSION_PATTERNS_PARAM=$(echo $IGV_SESSION_PATTERNS | sed 's/$SAMPLE/'$S'/gi' | tr ' ' ',')
+
+							# MK
+							echo "$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$S.igv_session.xml: $RES_MK_ALL_RUU_S
+								-$STARK_FOLDER_BIN/igv_session.sh --folder=$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S --folder_mindepth=$IGV_SESSION_MINDEPTH --folder_maxdepth=$IGV_SESSION_MAXDEPTH --patterns='$IGV_SESSION_PATTERNS_PARAM' --ressources='$(echo $IGV_SESSION_RESSOURCES)' --datapanel='$(echo $IGV_SESSION_DATAPANEL)' --featurepanel='$(echo $IGV_SESSION_FEATUREPANEL)' --igv_session_xml=$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$S.igv_session.xml --igv_session_json=$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$S.igv_session.json --das_url='$IGV_SESSION_DAS_URL' --json_tracks_additional='$(echo $IGV_SESSION_JSON_TRACKS_ADDITIONAL)'
+								-chmod $PERMS $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$S.igv_session*
+								#(($VERBOSE)) && echo '#[INFO] STARK IGV Session $RUU/$S Complete'
+							" >> $RES_MK
+							RES_MK_ALL=$RES_MK_ALL" $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$S.igv_session.xml"
+
+							# --gmt=$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$S.igv_session.gmt
+
+						fi;
+
 						# CREATE CopyComplete file
 						echo "$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/STARKCopyComplete.txt: $RES_MK_ALL_RUU_S
 							#(($VERBOSE)) && echo '#[INFO] STARK Copy $RUU/$S Complete'
@@ -2048,8 +2095,64 @@ for RUU in $RUN_UNIQ; do
 			((I++))
 		done
 
+
+		# IGV SESSION
+		if ((1)); then
+
+			if [ "$RESULTS_FOLDER_COPY_ALL" != "$RESULTS" ] && [ "$RESULTS_FOLDER_COPY_ALL" != "" ] ; then
+
+				FOLDER_COPY_RANK=-1
+				for RESULTS_FOLDER_COPY_FOLDER_INFO in $RESULTS_FOLDER_COPY_ALL; do
+
+					RESULTS_FOLDER_COPY_FOLDER=$(echo $RESULTS_FOLDER_COPY_FOLDER_INFO | awk -F: '{print $1}')
+					RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE=$(echo $RESULTS_FOLDER_COPY_FOLDER_INFO | awk -F: '{print $2}')
+
+					((FOLDER_COPY_RANK++))
+					IGV_SESSION_DAS_URL=${IGV_SESSION_DAS_REPOSITORIES_ARRAY[$FOLDER_COPY_RANK]}/$SAMPLE_GROUP/$SAMPLE_PROJECT/$RUU
+
+					# RUN
+					IGV_SESSION_PATTERNS=' *.final.vcf.gz *Design*bed *Panel*bed *Design*vcf.gz *Panel*vcf.gz *bam'
+					IGV_SESSION_MINDEPTH=0
+					IGV_SESSION_MAXDEPTH=2
+					if [ "$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE" == "repository" ]; then
+						IGV_SESSION_PATTERNS=$REPOSITORY_RUN_IGV_SESSION_PATTERNS
+						IGV_SESSION_MINDEPTH=$REPOSITORY_RUN_IGV_SESSION_MINDEPTH
+						IGV_SESSION_MAXDEPTH=$REPOSITORY_RUN_IGV_SESSION_MAXDEPTH
+					elif [ "$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE" == "archives" ]; then
+						IGV_SESSION_PATTERNS=$ARCHIVES_RUN_IGV_SESSION_PATTERNS
+						IGV_SESSION_MINDEPTH=$ARCHIVES_RUN_IGV_SESSION_MINDEPTH
+						IGV_SESSION_MAXDEPTH=$ARCHIVES_RUN_IGV_SESSION_MAXDEPTH
+					elif [ "$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE" == "favorites" ]; then
+						IGV_SESSION_PATTERNS=$FAVORITES_RUN_IGV_SESSION_PATTERNS
+						IGV_SESSION_MINDEPTH=$FAVORITES_RUN_IGV_SESSION_MINDEPTH
+						IGV_SESSION_MAXDEPTH=$FAVORITES_RUN_IGV_SESSION_MAXDEPTH
+					fi;
+
+					# PATTERNS PARAM
+					IGV_SESSION_PATTERNS_PARAM=$(echo $IGV_SESSION_PATTERNS | sed 's/$SAMPLE/'$S'/gi' | tr ' ' ',')
+
+					# MK
+					#echo "$STARK_FOLDER_BIN/igv_session.sh --folder=$RESULTS_FOLDER_COPY_FOLDER/$RUU --folder_mindepth=$IGV_SESSION_MINDEPTH --folder_maxdepth=$IGV_SESSION_MAXDEPTH --patterns='$IGV_SESSION_PATTERNS_PARAM' --ressources='$(echo $IGV_SESSION_RESSOURCES)' --datapanel='$(echo $IGV_SESSION_DATAPANEL)' --featurepanel='$(echo $IGV_SESSION_FEATUREPANEL)' --igv_session_xml=$RESULTS_FOLDER_COPY_FOLDER/$RUU/$ANALYSIS_PREFIX.variants.igv_session.xml --igv_session_json=$RESULTS_FOLDER_COPY_FOLDER/$RUU/$ANALYSIS_PREFIX.variants.igv_session.json --das_url='$IGV_SESSION_DAS_URL' --json_tracks_additional='$(echo $IGV_SESSION_JSON_TRACKS_ADDITIONAL)'"
+					echo "$RESULTS_FOLDER_COPY_FOLDER/$RUU/$ANALYSIS_PREFIX.variants.igv_session.xml: $RES_MK_ALL
+						-$STARK_FOLDER_BIN/igv_session.sh --folder=$RESULTS_FOLDER_COPY_FOLDER/$RUU --folder_mindepth=$IGV_SESSION_MINDEPTH --folder_maxdepth=$IGV_SESSION_MAXDEPTH --patterns='$IGV_SESSION_PATTERNS_PARAM' --ressources='$(echo $IGV_SESSION_RESSOURCES)' --datapanel='$(echo $IGV_SESSION_DATAPANEL)' --featurepanel='$(echo $IGV_SESSION_FEATUREPANEL)' --igv_session_xml=$RESULTS_FOLDER_COPY_FOLDER/$RUU/$ANALYSIS_PREFIX.variants.igv_session.xml --igv_session_json=$RESULTS_FOLDER_COPY_FOLDER/$RUU/$ANALYSIS_PREFIX.variants.igv_session.json --das_url='$IGV_SESSION_DAS_URL' --json_tracks_additional='$(echo $IGV_SESSION_JSON_TRACKS_ADDITIONAL)'
+						-chmod $PERMS $RESULTS_FOLDER_COPY_FOLDER/$RUU/$ANALYSIS_PREFIX.variants.igv_session*
+						#(($VERBOSE)) && echo '#[INFO] STARK IGV Session $RUU/$S Complete'
+					" >> $RES_MK
+					RES_MK_ALL=$RES_MK_ALL" $RESULTS_FOLDER_COPY_FOLDER/$RUU/$ANALYSIS_PREFIX.variants.igv_session.xml"
+					RES_MK_ALL_RUU=$RES_MK_ALL_RUU" $RESULTS_FOLDER_COPY_FOLDER/$RUU/$ANALYSIS_PREFIX.variants.igv_session.xml"
+
+					# --gmt=$RESULTS_FOLDER_COPY_FOLDER/$RUU/$ANALYSIS_PREFIX.variants.igv_session.gmt
+
+				done;
+
+			fi;
+
+		fi;
+
+
 		echo "all: $RES_MK_ALL
 		" >> $RES_MK
+
 
 		#if make -j $THREADS --always-make -f $RES_MK all 1>$RES_MK.log 2>$RES_MK.err; then
 		if [ -s $RES_MK ]; then

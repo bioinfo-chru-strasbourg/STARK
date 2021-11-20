@@ -19,6 +19,7 @@
 - FASTQ only application to generate only FASTQ files
 - New favorites folder (create a run folder by group and projet with favorites files)
 - New pedigree input file (describe sample information, such as family, sex, pathology...)
+- New IGV session files (for IGV desktop and IGV-Web)
 
 
 ## Improvements

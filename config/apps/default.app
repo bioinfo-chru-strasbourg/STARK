@@ -631,3 +631,88 @@ REPOSITORY_FILE_SUBFOLDER_PATTERNS=' $SAMPLE.*fastq.gz $SAMPLE.*.validation.bam 
 ARCHIVES_FILE_PATTERNS=' $SAMPLE.reports/$SAMPLE.full.vcf.gz $SAMPLE.reports/$SAMPLE.full.vcf.gz.tbi $SAMPLE.reports/$SAMPLE.final.tsv $SAMPLE.*.bam.metrics/$SAMPLE.*.validation.flags.*.bed '
 # Favorites files patterns to add
 FAVORITES_FILE_PATTERNS=''
+
+
+# IGV SESSION
+# IGV session xml file (*igv_session.xml) is generated with Samples and Runs files (BAM, VCF, BED)
+# Parameters select files through patterns and folder depth
+# Be aware to coordinate these parameters with availabled files within repositories folders
+
+# SAMPLE
+IGV_SESSION_PATTERNS_SAMPLE_DEFAULT_APP=' $SAMPLE.final.vcf.gz $SAMPLE*Design*bed $SAMPLE*Panel*bed *Design*vcf.gz *Panel*vcf.gz *bam *cram '
+IGV_SESSION_MINDEPTH_SAMPLE_DEFAULT_APP=0
+IGV_SESSION_MAXDEPTH_SAMPLE_DEFAULT_APP=1
+
+REPOSITORY_SAMPLE_IGV_SESSION_PATTERNS=$IGV_SESSION_PATTERNS_SAMPLE_DEFAULT_APP
+REPOSITORY_SAMPLE_IGV_SESSION_MINDEPTH=$IGV_SESSION_MINDEPTH_SAMPLE_DEFAULT_APP
+REPOSITORY_SAMPLE_IGV_SESSION_MAXDEPTH=$IGV_SESSION_MAXDEPTH_SAMPLE_DEFAULT_APP
+
+
+ARCHIVES_SAMPLE_IGV_SESSION_PATTERNS=$IGV_SESSION_PATTERNS_SAMPLE_DEFAULT_APP
+ARCHIVES_SAMPLE_IGV_SESSION_MINDEPTH=$IGV_SESSION_MINDEPTH_SAMPLE_DEFAULT_APP
+ARCHIVES_SAMPLE_IGV_SESSION_MAXDEPTH=$IGV_SESSION_MAXDEPTH_SAMPLE_DEFAULT_APP
+
+FAVORITES_SAMPLE_IGV_SESSION_PATTERNS=$IGV_SESSION_PATTERNS_SAMPLE_DEFAULT_APP
+FAVORITES_SAMPLE_IGV_SESSION_MINDEPTH=$IGV_SESSION_MINDEPTH_SAMPLE_DEFAULT_APP
+FAVORITES_SAMPLE_IGV_SESSION_MAXDEPTH=$IGV_SESSION_MAXDEPTH_SAMPLE_DEFAULT_APP
+
+# RUN
+IGV_SESSION_PATTERNS_RUN_DEFAULT_APP=' *.final.vcf.gz *Design*bed *Panel*bed *Design*vcf.gz *Panel*vcf.gz *bam *cram '
+IGV_SESSION_MINDEPTH_RUN_DEFAULT_APP=0
+IGV_SESSION_MAXDEPTH_RUN_DEFAULT_APP=2
+
+REPOSITORY_RUN_IGV_SESSION_PATTERNS=$IGV_SESSION_PATTERNS_RUN_DEFAULT_APP
+REPOSITORY_RUN_IGV_SESSION_MINDEPTH=$IGV_SESSION_MINDEPTH_RUN_DEFAULT_APP
+REPOSITORY_RUN_IGV_SESSION_MAXDEPTH=$IGV_SESSION_MAXDEPTH_RUN_DEFAULT_APP
+
+ARCHIVES_RUN_IGV_SESSION_PATTERNS=$IGV_SESSION_PATTERNS_RUN_DEFAULT_APP
+ARCHIVES_RUN_IGV_SESSION_MINDEPTH=$IGV_SESSION_MINDEPTH_RUN_DEFAULT_APP
+ARCHIVES_RUN_IGV_SESSION_MAXDEPTH=$IGV_SESSION_MAXDEPTH_RUN_DEFAULT_APP
+
+FAVORITES_RUN_IGV_SESSION_PATTERNS=$IGV_SESSION_PATTERNS_RUN_DEFAULT_APP
+FAVORITES_RUN_IGV_SESSION_MINDEPTH=$IGV_SESSION_MINDEPTH_RUN_DEFAULT_APP
+FAVORITES_RUN_IGV_SESSION_MAXDEPTH=$IGV_SESSION_MAXDEPTH_RUN_DEFAULT_APP
+
+
+# IGV SESSION DB
+# Additionnal databases for IGV session (see IGV doc)
+# Example :
+# IGV_SESSION_RESSOURCES='
+# 	<Resource index="https://ftp.ncbi.nlm.nih.gov/snp/organisms/human_9606_b151_GRCh37p13/VCF/00-All.vcf.gz.tbi" path="https://ftp.ncbi.nlm.nih.gov/snp/organisms/human_9606_b151_GRCh37p13/VCF/00-All.vcf.gz" type="vcf"/>
+# 	<Resource index="http://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/clinvar.vcf.gz.tbi" path="http://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/clinvar.vcf.gz" type="vcf"/>
+# 	<Resource name="GC Percentage" path="http://www.broadinstitute.org/igvdata/annotations/hg19/hg19.gc5base.tdf" type="tdf"/>
+# 	<Resource index="https://s3.amazonaws.com/igv.org.genomes/hg19/ncbiRefSeq.sorted.txt.gz.tbi" name="Refseq Genes" path="https://s3.amazonaws.com/igv.org.genomes/hg19/ncbiRefSeq.sorted.txt.gz" type="refgene"/>
+# 	<Resource hyperlink="http://www.gencodegenes.org/" index="https://s3.amazonaws.com/igv.broadinstitute.org/annotations/hg19/genes/gencode.v18.annotation.sorted.gtf.gz.tbi" name="Gencode Genes (v18)" path="https://s3.amazonaws.com/igv.broadinstitute.org/annotations/hg19/genes/gencode.v18.annotation.sorted.gtf.gz" trackLine="visibilitywindow:10000000" type="gtf"/>
+# '
+# IGV_SESSION_DATAPANEL='
+# 	<Track attributeKey="00-All.vcf.gz" clazz="org.broad.igv.variant.VariantTrack" featureVisibilityWindow="100100" fontSize="10" groupByStrand="false" id="https://ftp.ncbi.nlm.nih.gov/snp/organisms/human_9606_b151_GRCh37p13/VCF/00-All.vcf.gz" name="dbSNP" siteColorMode="ALLELE_FREQUENCY" displayMode="COLLAPSE" visible="true"/>
+# 	<Track attributeKey="clinvar.vcf.gz" clazz="org.broad.igv.variant.VariantTrack" featureVisibilityWindow="100100" fontSize="10" groupByStrand="false" id="http://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/clinvar.vcf.gz" name="ClinVar" siteColorMode="ALLELE_FREQUENCY" displayMode="COLLAPSE" visible="true"/>
+# '
+# IGV_SESSION_FEATUREPANEL='
+# 	<Track attributeKey="GC Percentage" autoScale="false" clazz="org.broad.igv.track.DataSourceTrack" colorScale="ContinuousColorScale;0.0;80.0;255,255,255;0,0,178" fontSize="10" height="20" id="http://www.broadinstitute.org/igvdata/annotations/hg19/hg19.gc5base.tdf" name="GC Percentage" renderer="HEATMAP" visible="true" windowFunction="mean">
+# 		<DataRange baseline="0.0" drawBaseline="true" flipAxis="false" maximum="80.0" minimum="0.0" type="LINEAR"/>
+# 	</Track>
+# 	<Track attributeKey="Refseq Genes" clazz="org.broad.igv.track.FeatureTrack" featureVisibilityWindow="63761233" fontSize="10" groupByStrand="false" id="https://s3.amazonaws.com/igv.org.genomes/hg19/ncbiRefSeq.sorted.txt.gz" name="Refseq Genes" visible="true"/>
+# 	<Track attributeKey="Gencode Genes (v18)" clazz="org.broad.igv.track.FeatureTrack" featureVisibilityWindow="1000000" fontSize="10" groupByStrand="false" id="https://s3.amazonaws.com/igv.broadinstitute.org/annotations/hg19/genes/gencode.v18.annotation.sorted.gtf.gz" name="Gencode Genes (v18)" visible="true"/>
+# '
+# Default Refseq Gene
+IGV_SESSION_RESSOURCES='<Resource index="https://s3.amazonaws.com/igv.org.genomes/hg19/ncbiRefSeq.sorted.txt.gz.tbi" name="Refseq Genes" path="https://s3.amazonaws.com/igv.org.genomes/hg19/ncbiRefSeq.sorted.txt.gz" type="refgene"/>'
+IGV_SESSION_DATAPANEL=''
+IGV_SESSION_FEATUREPANEL='<Track attributeKey="Refseq Genes" clazz="org.broad.igv.track.FeatureTrack" featureVisibilityWindow="63761233" fontSize="10" groupByStrand="false" id="https://s3.amazonaws.com/igv.org.genomes/hg19/ncbiRefSeq.sorted.txt.gz" name="Refseq Genes" visible="true"/>'
+
+
+# IGV SESSION JSON
+# Example:
+# IGV_SESSION_JSON_TRACKS_ADDITIONAL='
+# {
+# 	"type": "bed",
+# 	"url": "https://s3.amazonaws.com/igv.org.test/data/gencode.v18.collapsed.bed",
+# 	"indexURL": "https://s3.amazonaws.com/igv.org.test/data/gencode.v18.collapsed.bed.idx",
+# 	"name": "Gencode V18",
+#   "type": "annotation",
+#   "displayMode": "COLLAPSED"
+# }'
+IGV_SESSION_DAS="http://localhost:4201/static/data/public/repositories"
+IGV_SESSION_DAS_REPOSITORIES="$IGV_SESSION_DAS/Repository $IGV_SESSION_DAS/Archives $IGV_SESSION_DAS/Favorites"
+IGV_SESSION_JSON_TRACKS_ADDITIONAL=""
+
