@@ -350,7 +350,7 @@ for file_infos in $FILES; do
 				DataPanel=$DataPanel' <Track attributeKey="'$file'" clazz="org.broad.igv.variant.VariantTrack" displayMode="COLLAPSED" fontSize="10" groupByStrand="false" id="'$file'" name="'$file'" siteColorMode="ALLELE_FREQUENCY" squishedHeight="1" visible="true"/>'
 				(($VERBOSE)) && echo "#[INFO] file '$FORMAT' processed"
 				# JSON
-				if [ "$IGV_SESSION_JSON" != "" ] && [ "$DAS_URL" != "" ]; then
+				if [ "$IGV_SESSION_JSON" != "" ] && [ "$DAS_URL" != "" ] && [ -e $file_path.$INDEX ]; then
 					# TODO
 					[ "$JSON_TRACKS_VARIANTS" != "" ] && JSON_TRACKS_SEP="," || JSON_TRACKS_SEP=""
 					JSON_TRACKS_VARIANTS=$JSON_TRACKS_VARIANTS$JSON_TRACKS_SEP'{
@@ -399,7 +399,6 @@ for file_infos in $FILES; do
 				[ "$JSON_TRACKS_BED" != "" ] && JSON_TRACKS_SEP="," || JSON_TRACKS_SEP=""
 				JSON_TRACKS_BED=$JSON_TRACKS_BED$JSON_TRACKS_SEP'{
 					"url": "'$DAS_URL'/'$file'",
-					"indexURL": null,
 					"name": "'$file'",
 					"sourceType": "file",
 					"format": "",

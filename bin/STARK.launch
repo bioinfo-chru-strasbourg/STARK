@@ -2065,6 +2065,7 @@ for RUU in $RUN_UNIQ; do
 
 							# MK
 							echo "$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$S.igv_session.xml: $RES_MK_ALL_RUU_S
+								touch $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$S.igv_session.xml
 								-$STARK_FOLDER_BIN/igv_session.sh --folder=$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S --folder_mindepth=$IGV_SESSION_MINDEPTH --folder_maxdepth=$IGV_SESSION_MAXDEPTH --patterns='$IGV_SESSION_PATTERNS_PARAM' --ressources='$(echo $IGV_SESSION_RESSOURCES)' --datapanel='$(echo $IGV_SESSION_DATAPANEL)' --featurepanel='$(echo $IGV_SESSION_FEATUREPANEL)' --igv_session_xml=$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$S.igv_session.xml --igv_session_json=$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$S.igv_session.json --das_url='$IGV_SESSION_DAS_URL' --json_tracks_additional='$(echo $IGV_SESSION_JSON_TRACKS_ADDITIONAL)'
 								-chmod $PERMS $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$S.igv_session*
 								#(($VERBOSE)) && echo '#[INFO] STARK IGV Session $RUU/$S Complete'
@@ -2134,6 +2135,7 @@ for RUU in $RUN_UNIQ; do
 					# MK
 					#echo "$STARK_FOLDER_BIN/igv_session.sh --folder=$RESULTS_FOLDER_COPY_FOLDER/$RUU --folder_mindepth=$IGV_SESSION_MINDEPTH --folder_maxdepth=$IGV_SESSION_MAXDEPTH --patterns='$IGV_SESSION_PATTERNS_PARAM' --ressources='$(echo $IGV_SESSION_RESSOURCES)' --datapanel='$(echo $IGV_SESSION_DATAPANEL)' --featurepanel='$(echo $IGV_SESSION_FEATUREPANEL)' --igv_session_xml=$RESULTS_FOLDER_COPY_FOLDER/$RUU/$ANALYSIS_PREFIX.variants.igv_session.xml --igv_session_json=$RESULTS_FOLDER_COPY_FOLDER/$RUU/$ANALYSIS_PREFIX.variants.igv_session.json --das_url='$IGV_SESSION_DAS_URL' --json_tracks_additional='$(echo $IGV_SESSION_JSON_TRACKS_ADDITIONAL)'"
 					echo "$RESULTS_FOLDER_COPY_FOLDER/$RUU/$ANALYSIS_PREFIX.variants.igv_session.xml: $RES_MK_ALL
+						touch $RESULTS_FOLDER_COPY_FOLDER/$RUU/$ANALYSIS_PREFIX.variants.igv_session.xml
 						-$STARK_FOLDER_BIN/igv_session.sh --folder=$RESULTS_FOLDER_COPY_FOLDER/$RUU --folder_mindepth=$IGV_SESSION_MINDEPTH --folder_maxdepth=$IGV_SESSION_MAXDEPTH --patterns='$IGV_SESSION_PATTERNS_PARAM' --ressources='$(echo $IGV_SESSION_RESSOURCES)' --datapanel='$(echo $IGV_SESSION_DATAPANEL)' --featurepanel='$(echo $IGV_SESSION_FEATUREPANEL)' --igv_session_xml=$RESULTS_FOLDER_COPY_FOLDER/$RUU/$ANALYSIS_PREFIX.variants.igv_session.xml --igv_session_json=$RESULTS_FOLDER_COPY_FOLDER/$RUU/$ANALYSIS_PREFIX.variants.igv_session.json --das_url='$IGV_SESSION_DAS_URL' --json_tracks_additional='$(echo $IGV_SESSION_JSON_TRACKS_ADDITIONAL)'
 						-chmod $PERMS $RESULTS_FOLDER_COPY_FOLDER/$RUU/$ANALYSIS_PREFIX.variants.igv_session*
 						#(($VERBOSE)) && echo '#[INFO] STARK IGV Session $RUU/$S Complete'
