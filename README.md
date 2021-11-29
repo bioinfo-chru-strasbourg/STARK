@@ -45,7 +45,7 @@ $ git clone https://gitlab.bioinfo-diag.fr/Strasbourg/STARK.git .
 ---
 **2. Configuration**
 
-Edit ".env" file to configure STARK environment with ".env". Basically, change the STARK main host folder with the variable "DOCKER_STARK_MAIN_FOLDER". All sub-folders (input, output, databases location... and create/configure them by yourself) can be configured, such as STARK variables (see ".env" file comments). The default configuration is adequate for a standard environment, but all variables in ".env" file and services in "docker-compose.yml" file can be modified to fit infrastructure specificity.
+Edit ".env" file to configure STARK environment with ".env". Basically, change the STARK main host folder with the variable "DOCKER_STARK_MAIN_FOLDER" (default ${HOME}/STARK). All sub-folders (input, output, databases location... and create/configure them by yourself) can be configured, such as STARK variables (see ".env" file comments). The default configuration is adequate for a standard environment, but all variables in ".env" file and services in "docker-compose.yml" file can be modified to fit infrastructure specificity.
 
 
 ---
