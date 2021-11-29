@@ -24,7 +24,8 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 DOCKER_STARK_MAIN_FOLDER_DEFAULT=${HOME}/STARK
 
 # GIT_CLONE_DEFAULT
-GIT_CLONE_DEFAULT="https://gitlab.bioinfo-diag.fr/Strasbourg/STARK.git"
+#GIT_CLONE_DEFAULT="https://gitlab.bioinfo-diag.fr/Strasbourg/STARK.git"
+GIT_CLONE_DEFAULT="https://github.com/bioinfo-chru-strasbourg/STARK.git"
 
 
 # Header
@@ -48,18 +49,18 @@ function usage {
 	echo "# USAGE: $(basename $0) [-h] [options...]";
 	echo "#";
 	echo "### This script setup STARK envronment.";
-	echo "### Can be used with curl (e.g. curl https://gitlab.bioinfo-diag.fr/Strasbourg/vision/raw/master/setup.sh | bash)";
-	echo "###    (e.g. curl https://gitlab.bioinfo-diag.fr/Strasbourg/STARK/raw/master/setup.sh | bash)";
+	echo "### Can be used with curl (e.g. curl https://raw.githubusercontent.com/bioinfo-chru-strasbourg/STARK/master/setup.sh | bash)";
+	echo "###    (e.g. curl https://raw.githubusercontent.com/bioinfo-chru-strasbourg/STARK/master/setup.sh | bash)";
 	echo "#";
 	echo "# --env=<FILE>                     Dockerfile environment configuration file ";
 	echo "#                                  Default: '.env'";
 	echo "# --git-clone=<STRING>             Download STARK code on GIT ";
 	echo "#                                     - 'auto': Will detect '.git' folder to check if GIT clone is needed, if not 'default'";
 	echo "#                                     - '0': Will not GIT clone STARK code and consider current directory as STARK code folder ";
-	echo "#                                     - 'default': Will DO GIT clone STARK code from default GIT repository (BioInfoDiag GitLab) ";
+	echo "#                                     - 'default': Will DO GIT clone STARK code from default GIT repository (GitHub) ";
 	echo "#                                     - <URL>: Will DO GIT clone STARK code from GIT URL ";
 	echo "#                                  Default: 'auto' (detect '.git' folder to check if GIT clone is needed)";
-	echo "#                                  BioInfoDiag GitLab URL: $GIT_CLONE_DEFAULT";
+	echo "#                                  GitHub URL: $GIT_CLONE_DEFAULT";
 	echo "# -v|--verbose                     Verbose mode";
 	echo "# -d|--debug                       Debug mode";
 	echo "# -n|--release                     Script Release";
