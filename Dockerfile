@@ -50,7 +50,7 @@ LABEL Software="STARK" \
 
 ########
 # ARGS #
-#######
+########
 
 ARG THREADS="1"
 # REPO from GIT
@@ -128,7 +128,7 @@ RUN echo "#[INFO] STARK installation configuration" && \
 # This will install system packages, python packages and scripts to install tools
 
 
-ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git lzma lzma-devel make ncurses-devel perl perl-Data-Dumper perl-Digest-MD5 perl-Switch perl-devel perl-Tk tbb-devel unzip rsync wget which xz xz-devel zlib zlib-devel zlib2 zlib2-devel docker java-1.7.0 java-1.8.0 python2 python2-pip python3 python3-pip python3-devel curl-devel openssl-devel"
+ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git lzma lzma-devel make ncurses-devel perl perl-Data-Dumper perl-Digest-MD5 perl-Switch perl-devel perl-Tk tbb-devel unzip rsync wget which xz xz-devel zlib zlib-devel zlib2 zlib2-devel docker java-1.7.0 java-1.8.0 python2 python2-pip python3 python3-pip python3-devel curl-devel openssl-devel htslib"
 #ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git lzma lzma-devel make ncurses-devel perl perl-Data-Dumper perl-Digest-MD5 perl-Switch perl-devel perl-Tk tbb-devel unzip rsync wget which xz xz-devel zlib zlib-devel zlib2 zlib2-devel docker java-1.7.0 java-1.8.0 python2 python2-pip python3 python3-pip python3-devel curl-devel openssl-devel R-core R-core-devel libcurl libcurl-devel libcurl-openssl-devel htslib htslib-devel libxml2-devel"
 #ENV YUM_INSTALL_MORE=" R-devel libcurl libcurl-devel libcurl-openssl-devel htslib htslib-devel libxml2-devel perl-Archive-Tar perl-List-MoreUtils"
 #ENV YUM_INSTALL_MORE=" R-core R-core-devel libcurl libcurl-devel libcurl-openssl-devel htslib htslib-devel libxml2-devel"
@@ -158,7 +158,7 @@ RUN echo "#[INFO] Sources scripts" && \
 	echo "#[INFO] GET TOOL SOURCE script downloaded from REPO '$REPO/$SOURCES_FOLDER/$(basename $GET_TOOL_SOURCE)'" ; \
 	else \
 	mkdir -p $(dirname $GET_TOOL_SOURCE) ; \
-	echo 'echo "#[INFO] TOOL source" && \
+	echo 'echo "#[INFO] TOOL source ($TOOL_SOURCE)" && \
 	mkdir -p $(dirname $TOOL_SOURCE) && \
 	if [ -e $TOOL_SOURCE ]; then \
 	echo "#[INFO] TOOL TARBALL already in $TOOL_SOURCE"; \
@@ -215,7 +215,7 @@ RUN echo "#[INFO] Sources scripts" && \
 	mkdir -p $(dirname $TOOL_CHECK) ; \
 	echo 'echo "#[INFO] TOOL cleaning" && \
 	rm -rf $TOOL_SOURCE_BUILD && \
-	if (($REMOVE_SOURCES)); then rm -rf $SOURCES/$SOURCES_FOLDER/tools/$TOOL_NAME; fi && \
+	if (($REMOVE_SOURCES)); then rm -rf $SOURCES/$SOURCES_FOLDER/tools/$TOOL_NAME/$TOOL_VERSION; fi && \
 	echo "#[INFO] TOOL $TOOL_NAME/$TOOL_VERSION installed" ;' > $TOOL_CHECK ; \
 	echo "#[INFO] TOOLS CHECK script written" ; \
 	fi && \
@@ -587,7 +587,9 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 #echo "#[INFO] TOOL installation - pip2 install" && \
 #	pip2 install pathos==0.2.6 && \
-	
+
+
+
 
 
 ###########
@@ -596,7 +598,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 # TOOL INFO
 ENV TOOL_NAME="annovar"
-ENV TOOL_VERSION="2019Oct24"
+ENV TOOL_VERSION="2020Jun08"
 ENV TOOL_TARBALL="$TOOL_NAME.latest.tar.gz"
 ENV TOOL_SOURCE_EXTERNAL="http://www.openbioinformatics.org/annovar/download/0wgxR2rIVP/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
@@ -608,11 +610,6 @@ ENV TOOL_PARAM_DATABASE_FOLDER=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/databases/
 
 # TOOL INSTALLATION
 RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-	#source $TOOL_INIT && \
-	#echo "#[INFO] TOOL check version" && \
-	#TOOL_VERSION_check=$(date '+%Y%m%d' -r $TOOL_SOURCE) && \
-	#if [ "$TOOL_VERSION_check" != "" ]; then TOOL_VERSION=$TOOL_VERSION_check; fi && \
-	#echo "#[INFO] TOOL check version: $TOOL_VERSION" && \
 	source $TOOL_INIT && \
 	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
     cp $TOOL_SOURCE_BUILD/*/*.pl $TOOL_DEST/bin/ -R && \
@@ -658,7 +655,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 # TOOL INFO
 ENV TOOL_NAME="htslib"
-ENV TOOL_VERSION="1.13"
+ENV TOOL_VERSION="1.14"
 ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.tar.bz2"
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/samtools/$TOOL_NAME/releases/download/$TOOL_VERSION/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
@@ -669,9 +666,9 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	source $TOOL_INIT && \
 	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
 	make install --quiet -j $THREADS -C $(ls -d $TOOL_SOURCE_BUILD/*) prefix=$TOOL_DEST && \
-    $TOOL_CHECK ;
+	$TOOL_CHECK ;
 
-
+    
 
 ############
 # BCFTOOLS #
@@ -679,7 +676,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 # TOOL INFO
 ENV TOOL_NAME="bcftools"
-ENV TOOL_VERSION="1.13"
+ENV TOOL_VERSION="1.14"
 ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.tar.bz2"
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/samtools/$TOOL_NAME/releases/download/$TOOL_VERSION/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
@@ -808,8 +805,8 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 # TOOL INFO
 ENV TOOL_NAME="cap"
 ENV TOOL_VERSION="0.9.13"
-ENV TOOL_TARBALL="archive.tar.gz"
-ENV TOOL_SOURCE_EXTERNAL="https://gitlab.bioinfo-diag.fr/Strasbourg/CAP/repository/$TOOL_VERSION/$TOOL_TARBALL"
+ENV TOOL_TARBALL="$TOOL_VERSION.tar.gz"
+ENV TOOL_SOURCE_EXTERNAL="https://github.com/bioinfo-chru-strasbourg/CAP/archive/refs/heads/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
 
@@ -856,6 +853,7 @@ ENV TOOL_NAME="gatk"
 ENV TOOL_VERSION="3.8-1-0"
 ENV TOOL_TARBALL="GenomeAnalysisTK-$TOOL_VERSION.tar.bz2"
 ENV TOOL_SOURCE_EXTERNAL="https://software.broadinstitute.org/gatk/download/auth?package=GATK-archive&version=$TOOL_VERSION-gf15c1c3ef"
+#ENV TOOL_SOURCE_EXTERNAL="https://storage.googleapis.com/gatk-software/package-archive/gatk/GenomeAnalysisTK-$TOOL_VERSION-gf15c1c3ef.tar.bz2"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
 ENV TOOL_JAR=GenomeAnalysisTK.jar
@@ -877,11 +875,10 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 # TOOL INFO
 ENV TOOL_NAME="howard"
 ENV TOOL_VERSION="0.9.15.6"
-ENV TOOL_TARBALL="archive.tar.gz"
-ENV TOOL_SOURCE_EXTERNAL="https://gitlab.bioinfo-diag.fr/Strasbourg/HOWARD/repository/$TOOL_VERSION/$TOOL_TARBALL"
+ENV TOOL_TARBALL="$TOOL_VERSION.tar.gz"
+ENV TOOL_SOURCE_EXTERNAL="https://github.com/bioinfo-chru-strasbourg/howard/archive/refs/heads/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
-#ENV TOOL_DATABASE_FOLDER=/databases
 ENV TOOL_PARAM_DATABASE_FOLDER_LINK=$DATABASES
 ENV TOOL_PARAM_DATABASE_FOLDER=/databases
 
@@ -896,6 +893,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	mkdir -p $TOOL_PARAM_DATABASE_FOLDER && \
 	ln -s $DATABASES $TOOL_DATABASE_FOLDER && \
     $TOOL_CHECK ;
+
 
 
 
@@ -1013,7 +1011,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 # TOOL INFO
 ENV TOOL_NAME="samtools"
-ENV TOOL_VERSION="1.13"
+ENV TOOL_VERSION="1.14"
 ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.tar.bz2"
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/samtools/$TOOL_NAME/releases/download/$TOOL_VERSION/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
@@ -1081,8 +1079,6 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	ln -snf $TOOL_PARAM_DATABASE_FOLDER_LINK/ $TOOL_PARAM_DATABASE_FOLDER && \
     $TOOL_CHECK ;
 
-#mkdir -p $TOOL_PARAM_DATABASE_FOLDER && \
-	
 
 
 ##########
@@ -1151,13 +1147,6 @@ ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	source $TOOL_INIT && \
 	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
-	#whereis python && \
-	#python2 --version && \
-	#python3 --version && \
-	#ls -l /usr/bin/python* && \
-	#(cd $TOOL_SOURCE_BUILD/UMI-tools-$TOOL_VERSION/; python3 setup.py install) && \
-	#(cd $TOOL_SOURCE_BUILD/$TOOL_TARBALL_FOLDER/; pip3 install umi_tools) && \
-	#(cd $TOOL_SOURCE_BUILD/; pip3 install umi_tools) && \
 	pip3 install umi_tools==$TOOL_VERSION && \
 	ln -s /usr/local/bin/umi_tools $TOOL_DEST/bin/umi_tools && \
 	chmod a+x $TOOL_DEST/bin/* && \

@@ -1,5 +1,5 @@
 # Get TOOL SOURCE
-echo "#[INFO] TOOL source" && \
+echo "#[INFO] TOOL source ($TOOL_SOURCE)" && \
 mkdir -p $(dirname $TOOL_SOURCE) && \
 if [ -e $TOOL_SOURCE ]; then \
 	echo "#[INFO] TOOL TARBALL already in $TOOL_SOURCE"; \

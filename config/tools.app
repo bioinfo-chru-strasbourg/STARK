@@ -70,7 +70,7 @@ TOOLS_LIST=$TOOLS_LIST" BCL2FASTQ"
 
 # SAMTOOLS
 export SAMTOOLS=$NGS_TOOLS/samtools/current/bin/samtools		# BIN
-export SAMTOOLS_VERSION=1.13									# VER
+export SAMTOOLS_VERSION=1.14									# VER
 export SAMTOOLS_DESCRIPTION="Reading/writing/editing/indexing/viewing SAM/BAM/CRAM format"
 export SAMTOOLS_REF="Li H.*, Handsaker B.*, Wysoker A., Fennell T., Ruan J., Homer N., Marth G., Abecasis G., Durbin R. and 1000 Genome Project Data Processing Subgroup (2009) The Sequence alignment/map (SAM) format and SAMtools. Bioinformatics, 25, 2078-9. [PMID: 19505943]. Li H A statistical framework for SNP calling, mutation discovery, association mapping and population genetical parameter estimation from sequencing data. Bioinformatics. 2011 Nov 1;27(21):2987-93. Epub 2011 Sep 8. [PMID: 21903627]"
 TOOLS_LIST=$TOOLS_LIST" SAMTOOLS"
@@ -78,7 +78,7 @@ TOOLS_LIST=$TOOLS_LIST" SAMTOOLS"
 
 # VCFUTILS
 export VCFUTILS=$NGS_TOOLS/bcftools/current/bin/vcfutils.pl		# BIN-SCRIPT
-export VCFUTILS_VERSION=1.13									# VER
+export VCFUTILS_VERSION=1.14									# VER
 export VCFUTILS_DESCRIPTION="fix a compatibility issue with the new bcftools"
 export VCFUTILS_REF="unknown"
 TOOLS_LIST=$TOOLS_LIST" VCFUTILS"
@@ -92,7 +92,7 @@ export HTSLIB_REF="http://www.htslib.org/"
 # TABIX
 export TABIX=$NGS_TOOLS/htslib/current/bin/tabix			# BIN
 export TABIX_PATH=$(dirname $TABIX)							# BIN
-export TABIX_VERSION=1.13									# VER
+export TABIX_VERSION=1.14									# VER
 export TABIX_DESCRIPTION="Indexing VCF files"
 export TABIX_REF=$HTSLIB_REF
 TOOLS_LIST=$TOOLS_LIST" TABIX"
@@ -100,7 +100,7 @@ TOOLS_LIST=$TOOLS_LIST" TABIX"
 
 # BGZIP
 export BGZIP=$NGS_TOOLS/htslib/current/bin/bgzip			# BIN
-export BGZIP_VERSION=1.13									# VER
+export BGZIP_VERSION=1.14									# VER
 export BGZIP_DESCRIPTION="Compressing VCF files"
 export BGZIP_REF=$HTSLIB_REF
 TOOLS_LIST=$TOOLS_LIST" BGZIP"
@@ -108,7 +108,7 @@ TOOLS_LIST=$TOOLS_LIST" BGZIP"
 
 # BCFTOOLS
 export BCFTOOLS=$NGS_TOOLS/bcftools/current/bin/bcftools		# BIN
-export BCFTOOLS_VERSION=1.13									# VER
+export BCFTOOLS_VERSION=1.14									# VER
 export BCFTOOLS_DESCRIPTION="Reading/writing BCF2/VCF/gVCF files and calling/filtering/summarising SNP and short indel sequence variants"
 export BCFTOOLS_REF=$HTSLIB_REF
 TOOLS_LIST=$TOOLS_LIST" BCFTOOLS"
@@ -238,7 +238,8 @@ TOOLS_LIST=$TOOLS_LIST" BEDTOOLS"
 
 # ANNOVAR
 export ANNOVAR=$NGS_TOOLS/annovar/current/bin			# DIR
-export ANNOVAR_VERSION=2019Oct24						# VER
+#export ANNOVAR_VERSION=2019Oct24						# VER
+export ANNOVAR_VERSION=2020Jun08						# VER
 export ANNOVAR_DESCRIPTION="an efficient software tool to utilize update-to-date information to functionally annotate genetic variants detected from diverse genomes"
 export ANNOVAR_REF="Wang K, Li M, Hakonarson H. ANNOVAR: Functional annotation of genetic variants from next-generation sequencing data Nucleic Acids Research, 38:e164, 2010"
 TOOLS_LIST=$TOOLS_LIST" ANNOVAR"
