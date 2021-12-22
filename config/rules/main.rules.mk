@@ -78,6 +78,7 @@ REMOVE_INTERMEDIATE_SAM?=1
 	-mkdir -p $(@D)
 	# Header
 	echo "##fileformat=VCFv4.1" > $@
+	echo '##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">' >> $@
 	# Head first line
 	echo "#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	"$$(echo $$(basename $@) | awk -F"." '{print $$1}') >> $@
 
