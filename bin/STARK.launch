@@ -1958,9 +1958,10 @@ for RUU in $RUN_UNIQ; do
 							echo "$RESULTS_FOLDER_COPY_FOLDER/$RUU:
 								#[INFO] Copying '$RUU'
 								mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$RUU
-								#$COMMAND_COPY_NO_COMPRESS \$\$(find -L $RESULTS/$RUU -name "$ANALYSIS_PREFIX*" -mindepth 1 -maxdepth 1 -type f) $RESULTS_FOLDER_COPY_FOLDER/$RUU
-								#rm $RESULTS_FOLDER_COPY_FOLDER/$RUU/*copy.mk* $RESULTS_FOLDER_COPY_FOLDER/$RUU/$(basename $FINAL_REPORT_RUN).metrics $RESULTS_FOLDER_COPY_FOLDER/$RUU/$(basename $FINAL_REPORT_RUN).variants
-								$COMMAND_COPY_NO_COMPRESS --exclude '*copy.mk*' --exclude $(basename $FINAL_REPORT_RUN)'.metrics' --exclude $(basename $FINAL_REPORT_RUN)'.variants' \$\$(find -L $RESULTS/$RUU -name "$ANALYSIS_PREFIX*" -mindepth 1 -maxdepth 1 -type f) $RESULTS_FOLDER_COPY_FOLDER/$RUU
+								if ! $COMMAND_COPY_NO_COMPRESS --exclude '*copy.mk*' --exclude $(basename $FINAL_REPORT_RUN)'.metrics' --exclude $(basename $FINAL_REPORT_RUN)'.variants' \$\$(find -L $RESULTS/$RUU -mindepth 1 -maxdepth 1 -name "$ANALYSIS_PREFIX*" -type f) $RESULTS_FOLDER_COPY_FOLDER/$RUU; then \
+									echo '[ERROR] Error copy within $RESULTS_FOLDER_COPY_FOLDER/$RUU'; \
+									exit_0; \
+								fi;
 								chmod $PERMS -R $RESULTS_FOLDER_COPY_FOLDER/$RUU $RESULTS_FOLDER_COPY_FOLDER/$RUU/* 
 							" >> $RES_MK
 							RES_MK_ALL=$RES_MK_ALL" $RESULTS_FOLDER_COPY_FOLDER/$RUU"
@@ -1971,28 +1972,33 @@ for RUU in $RUN_UNIQ; do
 						REPOSITORY_FILE_SUBFOLDER_PATTERNS_PARAM="--exclude '"$(echo $REPOSITORY_FILE_SUBFOLDER_PATTERNS | sed "s/ /' --exclude '/gi")"'"
 						REPOSITORY_FILE_SUBFOLDER_PATTERNS_PARAM=$(echo $REPOSITORY_FILE_SUBFOLDER_PATTERNS_PARAM | sed 's/$SAMPLE/'$S'/gi')
 
+						PRE_RULE="copy_results_into_"$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE"_subfolder"
+
 						if [ "$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE" == "repository" ]; then
-							echo "copy_results_into_subfolder_$RESULTS_FOLDER_COPY_FOLDER$ROOT_FILE_SOURCE:
+							echo $PRE_RULE"_$RESULTS_FOLDER_COPY_FOLDER$ROOT_FILE_SOURCE:
 								#[INFO] Copying '$RUU/$S' - STARK Results
 								mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA
-								$COMMAND_COPY_NO_COMPRESS $REPOSITORY_FILE_SUBFOLDER_PATTERNS_PARAM $RESULTS/$RUU/$S/* $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA
+								if ! $COMMAND_COPY_NO_COMPRESS $REPOSITORY_FILE_SUBFOLDER_PATTERNS_PARAM $RESULTS/$RUU/$S/* $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA; then \
+									echo '[ERROR] Error copy $RESULTS/$RUU/$S/* to $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA'; \
+									exit_0; \
+								fi;
 								chmod $PERMS -R $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/* 
 							" >> $RES_MK
 						elif [ "$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE" == "archives" ]; then
-							echo "copy_results_into_subfolder_$RESULTS_FOLDER_COPY_FOLDER$ROOT_FILE_SOURCE:
+							echo $PRE_RULE"_$RESULTS_FOLDER_COPY_FOLDER$ROOT_FILE_SOURCE:
 								#[INFO] Copying '$RUU/$S' - STARK Results
 								#[INFO] Copying '$RUU/$S' - NO Copy
 							" >> $RES_MK
 						elif [ "$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE" == "favorites" ]; then
-							echo "copy_results_into_subfolder_$RESULTS_FOLDER_COPY_FOLDER$ROOT_FILE_SOURCE:
+							echo $PRE_RULE"_$RESULTS_FOLDER_COPY_FOLDER$ROOT_FILE_SOURCE:
 								#[INFO] Copying '$RUU/$S' - STARK Results
 								#[INFO] Copying '$RUU/$S' - NO Copy
 							" >> $RES_MK
 						else
 							echo "#[ERROR] Repository type failed"
 						fi;
-						RES_MK_ALL=$RES_MK_ALL" copy_results_into_subfolder_$RESULTS_FOLDER_COPY_FOLDER$ROOT_FILE_SOURCE"
-						RES_MK_ALL_RUU_S=$RES_MK_ALL_RUU_S" copy_results_into_subfolder_$RESULTS_FOLDER_COPY_FOLDER$ROOT_FILE_SOURCE"
+						RES_MK_ALL=$RES_MK_ALL" "$PRE_RULE"_"$RESULTS_FOLDER_COPY_FOLDER$ROOT_FILE_SOURCE
+						RES_MK_ALL_RUU_S=$RES_MK_ALL_RUU_S" "$PRE_RULE"_"$RESULTS_FOLDER_COPY_FOLDER$ROOT_FILE_SOURCE
 
 						
 						# Copy ROOT FILE PATTERNS
@@ -2011,17 +2017,23 @@ for RUU in $RUN_UNIQ; do
 								ROOT_FILE_PATTERN_VAR_TARGET=$(echo $ROOT_FILE_PATTERN_VAR | sed -e 's/[][\\^*+.$-]/____/g')
 
 								echo "$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE/$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S$ROOT_FILE_PATTERN_VAR: $ROOT_FILE_SOURCE
-									#[INFO] Making  '$RUU/$S' - STARK Main Results
+									#[INFO] creating '$RUU/$S' - STARK Main Results
 									mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S
-									#[INFO] Copying '$RUU/$S' - STARK Main Results
+									#[INFO] Copying  '$RUU/$S' - STARK Main Results
 									for F_SOURCE in \$\$(ls $FILE_PATTERN_TYPE_LS $ROOT_FILE_SOURCE$ROOT_FILE_PATTERN_VAR 2>/dev/null); do \
 										F_SOURCE_BASE=\$\$(echo \$\$F_SOURCE | sed \"s#$ROOT_FILE_SOURCE/##\"); \
 										F_TARGET=$F_TARGET_FOLDER/\$\$(basename \$\$F_SOURCE); \
 										F_TARGET_BASE=\$\$(echo \$\$F_TARGET | sed \"s#$F_TARGET_FOLDER/##\"); \
 										if [ '$ROOT_FILE_PATTERN_TYPE' == "FOLDER" ]; then \
-											$COMMAND_COPY_NO_COMPRESS \$\$F_SOURCE/ \$\$F_TARGET 1>/dev/null 2>/dev/null; \
+											if ! $COMMAND_COPY_NO_COMPRESS \$\$F_SOURCE/ \$\$F_TARGET 1>/dev/null 2>/dev/null; then \
+												echo '[ERROR] Error copy \$\$F_SOURCE/ to \$\$F_TARGET'; \
+												exit_0; \
+											fi; \
 										else \
-											cp \$\$F_SOURCE \$\$F_TARGET 1>/dev/null 2>/dev/null; \
+											if ! cp \$\$F_SOURCE \$\$F_TARGET 1>/dev/null 2>/dev/null; then \
+												echo '[ERROR] Error copy \$\$F_SOURCE to \$\$F_TARGET'; \
+												exit_0; \
+											fi; \
 										fi; \
 										if [ ! -e \$\$F_TARGET ]; then \
 											(($DEBUG)) && echo '#[ERROR] Copy file $F_SOURCE_BASE to $F_TARGET_BASE FAILED'; \
@@ -2032,9 +2044,6 @@ for RUU in $RUN_UNIQ; do
 								" >> $RES_MK
 
 								RES_MK_ALL_RUU_S=$RES_MK_ALL_RUU_S" $RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE/$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S$ROOT_FILE_PATTERN_VAR"
-								
-								#$COMMAND_COPY_NO_COMPRESS \$\$F_SOURCE \$\$F_TARGET 1>/dev/null 2>/dev/null;
-								#cp \$\$F_SOURCE \$\$F_TARGET 1>/dev/null 2>/dev/null;
 
 							done;
 						fi;

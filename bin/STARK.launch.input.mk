@@ -239,9 +239,6 @@ FASTQ_CLEAN_HEADER_PARAM=-v SAM_TAG=1 -v UMI_REFORMAT=1 -v UMI_TAG=1 -v UMI_LOC=
 	# UMI test
 	#if [ "$(UMI_RELOC)" != "" ]; then
 	if ! (( $$($(UNGZ) -c $*.R1.fastq.gz | head -n 1 | cut -d" " -f1 | awk -F: '{if ($$8!="") {print $$0}}' | wc -l) )); then \
-		echo "UMI_RELOC "$(UMI_RELOC) >> $@.param.test; \
-		$(UNGZ) -c $*.R1.fastq.gz | head -n 1 | cut -d" " -f2- >> $@.param.test; \
-		$(UNGZ) -c $*.R1.fastq.gz | head -n 1 | cut -d" " -f2- | grep -P '[0-9]*:N:0:[^\t $$]*' >> $@.param.test; \
 		if [[ "$(UMI_RELOC)" =~ .*index.* ]] && (( $$($(UNGZ) -c $*.R1.fastq.gz | head -n 1 | cut -d" " -f2- | grep -P '[0-9]*:N:0:[^\t $$]*' | wc -l) )); then \
 			echo " --umi --umi_loc=$(UMI_RELOC) " >> $@.param; \
 		fi; \
@@ -289,6 +286,8 @@ FASTQ_CLEAN_HEADER_PARAM=-v SAM_TAG=1 -v UMI_REFORMAT=1 -v UMI_TAG=1 -v UMI_LOC=
 	if [ ! -e $*.fastp.R2.fastq.gz ]; then \
 		ln -s $*.R2.fastq.gz $*.fastp.R2.fastq.gz; \
 	fi;
+	# clean
+	#rm -rf $@.param
 
 %.fastp.R2.fastq.gz: %.log
 	touch $@;
@@ -434,7 +433,7 @@ FASTQ_CLEAN_HEADER_PARAM=-v SAM_TAG=1 -v UMI_REFORMAT=1 -v UMI_TAG=1 -v UMI_LOC=
 	else \
 		ln -s $*.R1.fastq.gz $@; \
 	fi;
-	#rm -rf $@.tmp*
+	rm -rf $@.tmp*
 
 %.fastq_reheader.R2.fastq.gz: %.log
 	if (( $$($(UNGZ) -c $*.R2.fastq.gz | head -n1 | wc -l) )) && ! (( $$($(UNGZ) -c $*.R2.fastq.gz | head -n1 | grep -e "BC:Z:" -e "RX:Z:" -c) )); then \
@@ -455,7 +454,7 @@ FASTQ_CLEAN_HEADER_PARAM=-v SAM_TAG=1 -v UMI_REFORMAT=1 -v UMI_TAG=1 -v UMI_LOC=
 	else \
 		ln -s $*.R2.fastq.gz $@; \
 	fi;
-	#rm -rf $@.tmp*
+	rm -rf $@.tmp*
 
 %.fastq_reheader.I1.fastq.gz: %.log
 	if (( $$($(UNGZ) -c $*.I1.fastq.gz | head -n1 | wc -l) )) && ! (( $$($(UNGZ) -c $*.I1.fastq.gz | head -n1 | grep -e "BC:Z:" -e "RX:Z:" -c) )); then \
@@ -476,7 +475,7 @@ FASTQ_CLEAN_HEADER_PARAM=-v SAM_TAG=1 -v UMI_REFORMAT=1 -v UMI_TAG=1 -v UMI_LOC=
 	else \
 		ln -s $*.I1.fastq.gz $@; \
 	fi;
-	#rm -rf $@.tmp*
+	rm -rf $@.tmp*
 
 %.fastq_reheader.I2.fastq.gz: %.log
 	if (( $$($(UNGZ) -c $*.I2.fastq.gz | head -n1 | wc -l) )) && ! (( $$($(UNGZ) -c $*.I2.fastq.gz | head -n1 | grep -e "BC:Z:" -e "RX:Z:" -c) )); then \
@@ -497,18 +496,10 @@ FASTQ_CLEAN_HEADER_PARAM=-v SAM_TAG=1 -v UMI_REFORMAT=1 -v UMI_TAG=1 -v UMI_LOC=
 	else \
 		ln -s $*.I2.fastq.gz $@; \
 	fi;
-	#rm -rf $@.tmp*
+	rm -rf $@.tmp*
 
 %.fastq_reheader.log: %.log %.fastq_reheader.R1.fastq.gz %.fastq_reheader.R2.fastq.gz %.fastq_reheader.I1.fastq.gz %.fastq_reheader.I2.fastq.gz
 	echo 'fastq_reheader log' > $@;
-	# for f in $**gz; do \
-	# 	echo $$f >> $@; \
-	# 	zcat $$f | grep -cvP '\S' >> $@; \
-	# 	zcat $$f | grep -cP '\S' >> $@; \
-	# 	zcat $$f | head -n4 >> $@; \
-	# 	echo "empty:" >> $@; \
-	# 	zcat $$f | grep -vP '\S' -B4 -A3 | head -n 4 >> $@; \
-	# done;
 
 
 

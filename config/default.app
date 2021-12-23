@@ -59,6 +59,10 @@ FOLDER_REPOSITORY=$FOLDER_OUTPUT/repository
 # Results data can be copy in a archives folder. leave it blank for no copy
 FOLDER_ARCHIVES=$FOLDER_OUTPUT/archives
 # Results data can be copy in a favorites folder. leave it blank for no copy
+# Configurations:
+#    - to NOT use favorites folder: FOLDER_FAVORITES=
+#    - to copy favorites within repository folder: FOLDER_FAVORITES=$FOLDER_REPOSITORY
+#    - to copy favorites within default favorites folder: FOLDER_FAVORITES=$FOLDER_OUTPUT/favorites
 FOLDER_FAVORITES=
 
 
