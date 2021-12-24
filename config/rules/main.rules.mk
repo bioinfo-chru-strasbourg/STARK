@@ -496,7 +496,14 @@ GATKRR_FLAGS=
 		$(CAP_ManifestToBED) --input=$< --output=$@.tmp --output_type=region_clipped; \
 		#$(BEDTOOLS) sort -i $@.tmp | $(BEDTOOLS) merge -c 5 -o collapse  | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$4}' > $@; \
 		#$(BEDTOOLS) sort -i $@.tmp | $(BEDTOOLS) merge -c 4,5 -o first,collapse  | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$4"\t"$$5}' > $@; \
-		$(BEDTOOLS) sort -i $@.tmp | $(BEDTOOLS) merge -c 4,5 -o first,distinct  | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$5"\t0\t+"}' > $@; \
+		if (( $$(grep ^ $@.tmp -c) )); then \
+			echo "region_clipped in Manifest is NOT empty "; \
+			cat $@.tmp; \
+			$(BEDTOOLS) sort -i $@.tmp | $(BEDTOOLS) merge -c 4,5 -o first,distinct  | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$5"\t0\t+"}' > $@; \
+		else \
+			echo "region_clipped in Manifest is empty "; \
+			touch $@; \
+		fi; \
 		rm -f $@.tmp; \
 	elif [ -e "$(BED)" ] && [ "$(BED)" != "" ]; then \
 		echo "# Input BED '$(BED)' exists" ; \
@@ -584,7 +591,14 @@ GATKRR_FLAGS=
 		rm -f $@.tmp $@.sorted.tmp; \
 		$(CAP_ManifestToBED) --input=$< --output=$@.tmp --output_type=region_clipped; \
 		#$(BEDTOOLS) sort -i $@.tmp | $(BEDTOOLS) merge -c 4,5 -o first,collapse  | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$4"\t"$$5}' > $@; \
-		$(BEDTOOLS) sort -i $@.tmp | $(BEDTOOLS) merge -c 4,5 -o first,distinct | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$5"\t0\t"$$4}' > $@; \
+		if (( $$(grep ^ $@.tmp -c) )); then \
+			echo "region_clipped in Manifest is NOT empty "; \
+			cat $@.tmp; \
+			$(BEDTOOLS) sort -i $@.tmp | $(BEDTOOLS) merge -c 4,5 -o first,distinct | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$5"\t0\t"$$4}' > $@; \
+		else \
+			echo "region_clipped in Manifest is empty "; \
+			touch $@; \
+		fi; \
 		rm -f $@.tmp; \
 	else \
 		echo "# Error creating region BED"; \

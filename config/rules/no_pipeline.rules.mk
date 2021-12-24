@@ -19,7 +19,7 @@
 	awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$4}' $*.bed > $@.tmp.4fields.tmp;
 	# Clean bed with dict contig
 	grep -Po 'SN:([^\t]*)' $$(cat $*.dict) | cut -d: -f2 | sed "s/^/^/gi" | sed "s/$$/\t/gi" > $@.tmp.4fields.contig_from_dict;
-	grep -f $@.tmp.4fields.contig_from_dict $@.tmp.4fields.tmp > $@.tmp.4fields;
+	-grep -f $@.tmp.4fields.contig_from_dict $@.tmp.4fields.tmp > $@.tmp.4fields;
 	# BedToIntervalList
 	#$(JAVA) $(JAVA_FLAGS_BY_SAMPLE) -jar $(PICARD) BedToIntervalList -I $@.tmp.4fields -O $@.tmp.interval -SD $$(cat $*.dict);
 	$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) BedToIntervalList -I $@.tmp.4fields -O $@.tmp.interval -SD $$(cat $*.dict);

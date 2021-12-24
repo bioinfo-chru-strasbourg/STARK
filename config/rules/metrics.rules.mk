@@ -451,6 +451,7 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 	for one_bed in $$(cat $*.list.genes) $*.design.bed; do \
 		# Test if BED exists \
 		bedfile_name=$$( basename $$one_bed ); \
+		#touch $(@D)/$(*F).$$(basename $$one_bed).coverage; \
 		if [ -s $$one_bed ]; then \
 			echo -e "#Depth\tCoveredBases\tTotalBases\tPercent" > $(@D)/$(*F).$$(basename $$one_bed).coverage; \
 			#$(UNGZ) -c $(@D)/$(*F).$$(basename $$one_bed).depthbed.gz | \
@@ -871,7 +872,7 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 	#echo "reads.metrics test: ";
 	#ls -l $$(dirname $@)/*/*.list.genes;
 	#cat $$(dirname $@)/*/*.list.genes;
-	$(PYTHON3) $(STARK_RUN_METRICS) --metricsFileList $$(echo $^ | tr " " ",") --outputPrefix $@. ;
+	-$(PYTHON3) $(STARK_RUN_METRICS) --metricsFileList $$(echo $^ | tr " " ",") --outputPrefix $@. ;
 	echo "#[INFO] All metrics files on Design and Panel(s), by targets and by genes, for global coverage, depth and coverage, are named $$(basename $@).*" > $@;
 	#touch $@;
 
