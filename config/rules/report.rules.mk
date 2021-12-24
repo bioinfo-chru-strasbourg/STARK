@@ -262,7 +262,11 @@ REPORT_SECTIONS?=ALL
 			# Merge all $$genes_file found into uniq BED file (but supposed to be the same) \
 			cat $$(echo $$List_of_genes_files) | $(BEDTOOLS) sort | $(BEDTOOLS) merge > $@.tmp.GENES.$$genes_file; \
 			# Generate VCF Panel from VCF Design (especially $@.tmp.calculated.prioritized.sorted.vcf.gz because tabix) with $$genes_file for List of Samples \
-			$(BCFTOOLS) view --samples $$List_of_samples --force-samples $@.tmp.calculated.prioritized.sorted.vcf.gz -R $@.tmp.GENES.$$genes_file > $@.Panel.$$genes_file.vcf; \
+			if (( $$(grep ^ $@.tmp.GENES.$$genes_file -c) )); then \
+				$(BCFTOOLS) view --samples $$List_of_samples --force-samples $@.tmp.calculated.prioritized.sorted.vcf.gz -R $@.tmp.GENES.$$genes_file > $@.Panel.$$genes_file.vcf; \
+			else \
+				$(BCFTOOLS) view --samples $$List_of_samples --force-samples $@.tmp.calculated.prioritized.sorted.vcf.gz > $@.Panel.$$genes_file.vcf; \
+			fi; \
 			# Compress VCF \
 			$(BGZIP) $@.Panel.$$genes_file.vcf; \
 			$(TABIX) $@.Panel.$$genes_file.vcf.gz; \
@@ -314,7 +318,11 @@ REPORT_SECTIONS?=ALL
 				# Merge all $$genes_file found into uniq BED file (but supposed to be the same) \
 				cat $$(echo $$List_of_genes_files) | $(BEDTOOLS) sort | $(BEDTOOLS) merge > $@.tmp.GENES.$$genes_file; \
 				# Generate VCF Panel from VCF Design (especially $@.tmp.calculated.prioritized.sorted.vcf.gz because tabix) with $$genes_file for List of Samples \
-				$(BCFTOOLS) view --force-samples $@.tmp.calculated.prioritized.sorted.vcf.gz -R $@.tmp.GENES.$$genes_file > $@.Panel.$$genes_file.vcf; \
+				if (( $$(grep ^ $@.tmp.GENES.$$genes_file -c) )); then \
+					$(BCFTOOLS) view --force-samples $@.tmp.calculated.prioritized.sorted.vcf.gz -R $@.tmp.GENES.$$genes_file > $@.Panel.$$genes_file.vcf; \
+				else \
+					$(BCFTOOLS) view --force-samples $@.tmp.calculated.prioritized.sorted.vcf.gz > $@.Panel.$$genes_file.vcf; \
+				fi; \
 				# Compress VCF \
 				$(BGZIP) $@.Panel.$$genes_file.vcf; \
 				$(TABIX) $@.Panel.$$genes_file.vcf.gz; \
