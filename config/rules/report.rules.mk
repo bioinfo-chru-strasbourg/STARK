@@ -64,7 +64,7 @@ REPORT_SECTIONS?=ALL
 
 %.config: %.report.header $(RELEASE) #%.empty.vcf
 	mkdir -p $(@D)
-	-cat $*.report.header > $@
+	cat $*.report.header > $@
 	# echo "" >> $@
 	# $(STARK_FOLDER_BIN)/STARK --applications_infos_all --app="$(ENV)" >> $@
 	# $(STARK_FOLDER_BIN)/STARK --tools_infos --app="$(ENV)" >> $@

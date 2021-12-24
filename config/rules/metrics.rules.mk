@@ -344,6 +344,7 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 			rm $(@D)/$(*F).$$(basename $$one_bed).4fields* $(@D)/$(*F).$$(basename $$one_bed).interval $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_target_coverage.tmp $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp rm -f $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.bed.tmp; \
 		else \
 			# BED empty \
+			echo "#" > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_target_coverage.flags; \
 			cp $*.empty.HsMetrics $(@D)/$(*F).$$(basename $$one_bed).HsMetrics; \
 			echo "#[WARNING] BAM PICARD Metrics warning. Empty HsMetrics file generated. See '$(@D)/$(*F).$$(basename $$one_bed).HsMetrics.err'" >> $@; \
 		fi; \
@@ -451,7 +452,6 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 	for one_bed in $$(cat $*.list.genes) $*.design.bed; do \
 		# Test if BED exists \
 		bedfile_name=$$( basename $$one_bed ); \
-		#touch $(@D)/$(*F).$$(basename $$one_bed).coverage; \
 		if [ -s $$one_bed ]; then \
 			echo -e "#Depth\tCoveredBases\tTotalBases\tPercent" > $(@D)/$(*F).$$(basename $$one_bed).coverage; \
 			#$(UNGZ) -c $(@D)/$(*F).$$(basename $$one_bed).depthbed.gz | \
@@ -466,7 +466,10 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 				echo "#[INFO] SAMTOOLS coverage with '"$$bedfile_name"' failed. " >> $@; \
 			fi; \
 		else \
-			echo "#[INFO] SAMTOOLS depthbed and coverage with '"$$bedfile_name"' failed, because no '"$$bedfile_name"'." >> $@; \
+			echo -e "#Depth\tCoveredBases\tTotalBases\tPercent" > $(@D)/$(*F).$$(basename $$one_bed).coverage; \
+			echo $(COVERAGE_CRITERIA) | tr "," "\n" | sort -n | awk '{print $$1"X\t0\t0\t0"}' >> $(@D)/$(*F).$$(basename $$one_bed).coverage; \
+			#echo "#[INFO] SAMTOOLS depthbed and coverage with '"$$bedfile_name"' failed, because no '"$$bedfile_name"'." >> $@; \
+			echo "#[INFO] SAMTOOLS depthbed and coverage with '"$$bedfile_name"' failed, because no '"$$bedfile_name"'. Coverage file generated as empty, with 0 values." >> $@; \
 		fi; \
 	done;
 	[ ! -z $@ ] && echo "#[INFO] SAMTOOLS depthbed and coverage not done because not bed/genes files. " >> $@;
@@ -872,7 +875,7 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 	#echo "reads.metrics test: ";
 	#ls -l $$(dirname $@)/*/*.list.genes;
 	#cat $$(dirname $@)/*/*.list.genes;
-	-$(PYTHON3) $(STARK_RUN_METRICS) --metricsFileList $$(echo $^ | tr " " ",") --outputPrefix $@. ;
+	$(PYTHON3) $(STARK_RUN_METRICS) --metricsFileList $$(echo $^ | tr " " ",") --outputPrefix $@. ;
 	echo "#[INFO] All metrics files on Design and Panel(s), by targets and by genes, for global coverage, depth and coverage, are named $$(basename $@).*" > $@;
 	#touch $@;
 
