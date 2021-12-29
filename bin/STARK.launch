@@ -1522,7 +1522,7 @@ for RUU in $RUN_UNIQ; do
 						echo $S.$G_ONE_TARGET >> $BEDFILE_GENES_LIST_ONE
 					done;
 				elif [ -s $B ] && [ "$B" != "" ]; then
-					# GEnerate BEDFILE_GENES from design
+					# Generate BEDFILE_GENES from design
 					#if [ -s $B ]; then
 					(($VERBOSE)) && echo "#[INFO] Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' from Design file '$B'."
 					# Generate intermediate bed from Design (BED or manifest)
@@ -1548,13 +1548,24 @@ for RUU in $RUN_UNIQ; do
 						join -1 1 -2 4 $BEDFILE_GENES_INTERMEDIATE.intersect $BEDFILE_GENES_INTERMEDIATE.refseq -o 2.1,2.2,2.3,2.4,2.5,2.6 | sort -u -k1,2 | tr " " "\t" | $BEDTOOLS sort | $BEDTOOLS merge -c 4,5,6 -o distinct,collapse,first | awk -F"\t" '{print $1"\t"$2"\t"$3"\t"$4"\t0\t"$6}' | $STARK_BED_NORMALIZATION > $BEDFILE_GENES_ONE;
 						echo $(basename $BEDFILE_GENES_ONE) > $BEDFILE_GENES_LIST_ONE;
 					else
-						(($VERBOSE)) && echo "#[WARNING] Generating GENES failed";
+						# Generate BEDFILE_GENES from design
+						(($VERBOSE)) && echo "#[WARN] Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' with empty Design."
+						# Generate intermediate bed from Design (BED or manifest)
+						BEDFILE_GENES_ONE=$RUN_SAMPLE_DIR/$S.empty_design.genes
+						touch $BEDFILE_GENES_ONE
+						echo $(basename $BEDFILE_GENES_ONE) > $BEDFILE_GENES_LIST_ONE;
 					fi;
 
 					rm -f $BEDFILE_GENES_INTERMEDIATE*
 					# ADD GENES in input files
 					G=$BEDFILE_GENES_ONE
-
+				else 
+					# Generate BEDFILE_GENES from design
+					(($VERBOSE)) && echo "#[WARN] Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' with empty Design."
+					# Generate intermediate bed from Design (BED or manifest)
+					BEDFILE_GENES_ONE=$RUN_SAMPLE_DIR/$S.empty_design.genes
+					touch $BEDFILE_GENES_ONE
+					echo $(basename $BEDFILE_GENES_ONE) > $BEDFILE_GENES_LIST_ONE;
 				fi;
 
 			else
