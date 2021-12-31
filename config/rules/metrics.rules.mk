@@ -320,6 +320,7 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 			$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) CollectHsMetrics -INPUT $*.validation.bam -OUTPUT $(@D)/$(*F).$$(basename $$one_bed).HsMetrics -R $$(cat $*.genome) -BAIT_INTERVALS $(@D)/$(*F).$$(basename $$one_bed).interval -TARGET_INTERVALS $(@D)/$(*F).$$(basename $$one_bed).interval -PER_TARGET_COVERAGE $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_target_coverage.tmp -PER_BASE_COVERAGE $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp $(PICARD_CollectHsMetrics_PARAM) -VALIDATION_STRINGENCY SILENT 2>$(@D)/$(*F).$$(basename $$one_bed).HsMetrics.err ; \
 			# If bed empty just touch \
 			touch $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_target_coverage.tmp ; \
+			touch $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp ; \
 			# Flag HsMetrics per_target_coverage \
 			awk -f $(STARK_FOLDER_BIN)/per_target_coverage_flag.awk -F"\t" -v EXPECTED_DEPTH=$(EXPECTED_DEPTH) -v MINIMUM_DEPTH=$(MINIMUM_DEPTH) $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_target_coverage.tmp > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_target_coverage.flags; \
 			# Flag HsMetrics per_target_coverage by FLAG \
@@ -763,12 +764,16 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 	mkdir -p $(@D);
 	+if [ ! -s $@ ]; then \
 		if [ -s $$(sample=$$(basename $* | cut -d. -f1 ); echo "$(*D)/$$sample.list.genes") ] ; then \
+		#if [ -s $$(sample=$$(basename $* | cut -d. -f1 ); echo "$(*D)/$$sample.list.genes") ] \
+		#	&& (( $$(for panel in $$(cat $$(sample=$$(basename $* | cut -d. -f1 ); echo "$(*D)/$$(cat $$(sample=$$(basename $* | cut -d. -f1 ); echo "$(*D)/$$sample.list.genes")") ); do cat $(*D)/$$panel; done | grep ^ -c) )) ; then \
 			echo "BEDFILE_GENES for $* from SAMPLE.list.genes in same directory"; \
 			for g in $$(sample=$$(basename $* | cut -d. -f1 ); cat "$(*D)/$$sample.list.genes"); do \
 				echo "BEDFILE_GENES for $* from SAMPLE.list.genes: $(*D)/$$g "; \
 				bedfile_genes_list="$$bedfile_genes_list $(*D)/$$g"; \
 			done; \
 		elif [ -s $$(sample=$$(basename $* | cut -d. -f1 ); echo "$$(dirname $(*D))/$$sample.list.genes") ] ; then \
+		#elif [ -s $$(sample=$$(basename $* | cut -d. -f1 ); echo "$$(dirname $(*D))/$$sample.list.genes") ] \
+		#	&& (( $$(for panel in $$(cat $$(sample=$$(basename $* | cut -d. -f1 ); echo "$$(dirname $(*D))/$$(cat $$(sample=$$(basename $* | cut -d. -f1 ); echo "$$(dirname $(*D))/$$sample.list.genes")") ); do cat $$(dirname $(*D))/$$panel; done | grep ^ -c) )) ; then \
 			echo "BEDFILE_GENES for $* from SAMPLE.list.genes from previous directory"; \
 			for g in $$(sample=$$(basename $* | cut -d. -f1 ); cat "$$(dirname $(*D))/$$sample.list.genes"); do \
 				echo "BEDFILE_GENES for $* from SAMPLE.list.genes: $$(dirname $(*D))/$$g "; \
@@ -801,6 +806,9 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 			if [ -s $*.bams.for_metrics_bed ] ; then \
 				cut -f1,2,3 $*.bams.for_metrics_bed > $@.manifest.bed ; \
 				bedfile_genes_list=`file=$$( basename $* | cut -d. -f1 ); echo "$$dir_path/$$file.panel_from_alignments.genes"`; \
+			else \
+				touch $@.manifest.bed ; \
+				bedfile_genes_list=`file=$$( basename $* | cut -d. -f1 ); echo "$$dir_path/$$file.panel_from_alignments.genes"`; \
 			fi; \
 			# Generate BEDGENES \
 			if [ -s $@.manifest.bed ] ; then \
@@ -811,8 +819,9 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 				#rm -f $*.manifest.bed.intersect $*.manifest.bed.refseq; \
 			else \
 				#echo "" > $$bedfile_genes_list ; \
+				touch $$bedfile_genes_list ; \
 				#echo "#[ERROR] Generating GENES failed. GENES file empty"; \
-				echo "#[ERROR] Generating GENES failed."; \
+				echo "#[WARN] Generating GENES failed. GENES file empty"; \
 			fi; \
 			# Case of main list.genes in Sample folder \
 			if [ $$(basename $*) == $$(basename $(@D)) ]; then \

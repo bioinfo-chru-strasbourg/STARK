@@ -1468,7 +1468,11 @@ for RUU in $RUN_UNIQ; do
 							$COMMAND_COPY -p $B $RUN_SAMPLE_DIR/$S.original.bed;
 
 							(($VERBOSE)) && echo "#[INFO] Sort/Merge/Normalize BED file."
-							$BEDTOOLS sort -i $B  | $STARK_BED_NORMALIZATION | $BEDTOOLS merge -i - -c 4 -o distinct > $RUN_SAMPLE_DIR/$S.bed;
+							if (( $(cat $B | grep "^#" -v | grep "^browser" -v | grep "^track" -v | wc -l) )); then
+								$BEDTOOLS sort -i $B  | $STARK_BED_NORMALIZATION | $BEDTOOLS merge -i - -c 4 -o distinct > $RUN_SAMPLE_DIR/$S.bed;
+							else
+								touch $RUN_SAMPLE_DIR/$S.bed;
+							fi;
 							
 							touch $RUN_SAMPLE_DIR/$S.bed -r $B;
 							$COMMAND_COPY $B $RUN_SAMPLE_DIR/$S.metrics.bed;
@@ -1521,6 +1525,7 @@ for RUU in $RUN_UNIQ; do
 						fi;
 						echo $S.$G_ONE_TARGET >> $BEDFILE_GENES_LIST_ONE
 					done;
+				# Design is not empty
 				elif [ -s $B ] && [ "$B" != "" ]; then
 					# Generate BEDFILE_GENES from design
 					#if [ -s $B ]; then
@@ -1530,12 +1535,20 @@ for RUU in $RUN_UNIQ; do
 					BEDFILE_GENES_ONE=$RUN_SAMPLE_DIR/$S.from_design.genes
 
 					if [[ $B =~ .bed$ ]]; then
-						#cut -f1,2,3 $B > $BEDFILE_GENES_INTERMEDIATE;
-						$BEDTOOLS sort -i $B | $BEDTOOLS merge -i - | cut -f1,2,3 > $BEDFILE_GENES_INTERMEDIATE;
+						# Test if header (no Design for no Panel)
+						if (( $(cat $B | grep "^#" -v | grep "^browser" -v | grep "^track" -v | wc -l) )); then
+							$BEDTOOLS sort -i $B | $BEDTOOLS merge -i - | cut -f1,2,3 > $BEDFILE_GENES_INTERMEDIATE;
+						else
+							touch $BEDFILE_GENES_INTERMEDIATE;
+						fi
 					else
 						$CAP_ManifestToBED --input $B --output $BEDFILE_GENES_INTERMEDIATE.tmp --output_type "region" --type=PCR 1>/dev/null;
-						#cut -f1,2,3 $BEDFILE_GENES_INTERMEDIATE.tmp > $BEDFILE_GENES_INTERMEDIATE;
-						$BEDTOOLS sort -i $BEDFILE_GENES_INTERMEDIATE.tmp | $BEDTOOLS merge -i - | cut -f1,2,3 > $BEDFILE_GENES_INTERMEDIATE;
+						# Test if header (no Design for no Panel)
+						if (( $(cat $BEDFILE_GENES_INTERMEDIATE.tmp  | grep "^#" -v | grep "^browser" -v | grep "^track" -v | wc -l) )); then
+							$BEDTOOLS sort -i $BEDFILE_GENES_INTERMEDIATE.tmp | $BEDTOOLS merge -i - | cut -f1,2,3 > $BEDFILE_GENES_INTERMEDIATE;
+						else
+							touch $BEDFILE_GENES_INTERMEDIATE;
+						fi
 						rm -f $BEDFILE_GENES_INTERMEDIATE.tmp;
 					fi;
 
@@ -1549,7 +1562,7 @@ for RUU in $RUN_UNIQ; do
 						echo $(basename $BEDFILE_GENES_ONE) > $BEDFILE_GENES_LIST_ONE;
 					else
 						# Generate BEDFILE_GENES from design
-						(($VERBOSE)) && echo "#[WARN] Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' with empty Design."
+						(($VERBOSE)) && echo "#[WARN] Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' with empty Panel (no regions found)."
 						# Generate intermediate bed from Design (BED or manifest)
 						BEDFILE_GENES_ONE=$RUN_SAMPLE_DIR/$S.empty_design.genes
 						touch $BEDFILE_GENES_ONE
@@ -1559,13 +1572,16 @@ for RUU in $RUN_UNIQ; do
 					rm -f $BEDFILE_GENES_INTERMEDIATE*
 					# ADD GENES in input files
 					G=$BEDFILE_GENES_ONE
+				# No Panel and no Design 
 				else 
-					# Generate BEDFILE_GENES from design
-					(($VERBOSE)) && echo "#[WARN] Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' with empty Design."
-					# Generate intermediate bed from Design (BED or manifest)
-					BEDFILE_GENES_ONE=$RUN_SAMPLE_DIR/$S.empty_design.genes
-					touch $BEDFILE_GENES_ONE
-					echo $(basename $BEDFILE_GENES_ONE) > $BEDFILE_GENES_LIST_ONE;
+					# # Generate BEDFILE_GENES from design
+					# (($VERBOSE)) && echo "#[WARN] Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' with empty Panel (no Panel and no Design found)."
+					# # Generate intermediate bed from Design (BED or manifest)
+					# BEDFILE_GENES_ONE=$RUN_SAMPLE_DIR/$S.empty_design.genes
+					# touch $BEDFILE_GENES_ONE
+					# echo $(basename $BEDFILE_GENES_ONE) > $BEDFILE_GENES_LIST_ONE;
+
+					(($VERBOSE)) && echo "#[WARN] NOT Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' (no Panel and no Design found). Panel will be autodetected."
 				fi;
 
 			else
