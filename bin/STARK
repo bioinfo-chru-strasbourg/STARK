@@ -936,7 +936,7 @@ if [ -s "$DOCKER_COMPOSE_FILE" ] || [ -s "$DOCKER_ENV_FILE" ] || [ "$DOCKER_STAR
 	if [ -s "$DOCKER_COMPOSE_FILE" ]; then
 		(($VERBOSE)) && echo "#[INFO] Compose build with file '$DOCKER_COMPOSE_FILE' to build image (if necessary)"
 		DOCKER_CMD="docker-compose -f $DOCKER_COMPOSE_FILE --project-directory=$(dirname $DOCKER_COMPOSE_FILE) $DOCKER_STARK_IMAGE_ENV up --no-start stark stark-databases"
-		(($DEBUG)) && echo "[INFO] DOCKER CMD: $DOCKER_CMD"
+		(($DEBUG)) && echo "#[INFO] DOCKER CMD: $DOCKER_CMD"
 		eval $DOCKER_CMD
 	fi;
 
@@ -1080,9 +1080,9 @@ if [ "$ANALYSIS" != "" ]; then
 			#PARAM_STARK="$($PYTHON2 $STARK_FOLDER_BIN/json_to_options.py $J)" && PARAM_STARK_TEST=1
 			PARAM_STARK="$($PYTHON2 $STARK_FOLDER_BIN/json_to_options.py $J)" && PARAM_STARK_TEST=1
 
-			! (($PARAM_STARK_TEST)) && echo "[ERROR] Config file '$J' malformed " && cat $J && exit 1;
+			! (($PARAM_STARK_TEST)) && echo "#[ERROR] Config file '$J' malformed " && cat $J && exit 1;
 
-			#(($DEBUG)) && echo "[INFO] PARAM_STARK=$PARAM_STARK" && exit 0;
+			#(($DEBUG)) && echo "#[INFO] PARAM_STARK=$PARAM_STARK" && exit 0;
 
 			#ANALYSIS_DIR=$(dirname $J)
 			ANALYSIS_DIR=$(cd "$( dirname $J )" && pwd)
@@ -1146,7 +1146,7 @@ if [ ! -z "$FASTQ" ]; then # && [ -e "$FASTQ" ]; then
 
 	FASTQ_EXISTS=1
 
-	for F in $(echo "$FASTQ" | tr "," " "); do
+	for F in $(echo "$FASTQ" | tr "," " " | tr "+" " "); do
 		if (($(ls $F $ANALYSIS_DIR/$F 2>/dev/null | wc -w))); then
 			echo "#[INFO] Input File '$F' exists"
 		else
@@ -1381,7 +1381,7 @@ if [ ! -z "$RUNS" ]; then
 				mkdir -p $DEMULTIPLEXING_FOLDER;
 				(($VERBOSE)) && echo "#[INFO] Main Demultiplexing APP: $APP_DEMULTIPLEXING"
 				if [ ! -d $DEMULTIPLEXING_FOLDER ]; then
-					echo "[ERROR] No demultiplexing folder '$DEMULTIPLEXING_FOLDER'.";
+					echo "#[ERROR] No demultiplexing folder '$DEMULTIPLEXING_FOLDER'.";
 					exit 1;
 				else
 					echo "#[INFO] Demultiplexing folder for RUN '$R': $DEMULTIPLEXING_FOLDER";
@@ -1447,7 +1447,7 @@ if [ ! -z "$RUNS" ]; then
 				# sampleSheet within the RUN folder
 				[ -z $RUN_SAMPLESHEET ] && RUN_SAMPLESHEET=$R/SampleSheet.csv
 				# Echo
-				#(($DEBUG)) && echo "[INFO] [ -f $R/SampleSheet.csv ] || [ -f $SAMPLESHEET_INPUT_RI ]";
+				#(($DEBUG)) && echo "#[INFO] [ -f $R/SampleSheet.csv ] || [ -f $SAMPLESHEET_INPUT_RI ]";
 				[ ! -e $RUN_SAMPLESHEET ] && echo "#[ERROR] No SampleSheet for RUN '$R'" && exit 1;
 				echo "#[INFO] SampleSheet found for RUN '$R': $RUN_SAMPLESHEET";
 
@@ -1548,21 +1548,23 @@ if [ ! -z "$RUNS" ]; then
 						SAMPLE_FASTQ_R2_PATTERN=$SAMPLE_NAME'_S*_'$(echo $STARK_DEMULTIPLEXING_READS_MAPPING | tr "," " " | cut -d' ' -f4)'_*.fastq.gz'
 						SAMPLE_FASTQ_I1_PATTERN=$SAMPLE_NAME'_S*_'$(echo $STARK_DEMULTIPLEXING_READS_MAPPING | tr "," " " | cut -d' ' -f2)'_*.fastq.gz'
 						SAMPLE_FASTQ_I2_PATTERN=$SAMPLE_NAME'_S*_'$(echo $STARK_DEMULTIPLEXING_READS_MAPPING | tr "," " " | cut -d' ' -f3)'_*.fastq.gz'
-						SAMPLE_FASTQ_R1=$(find -L $R -name "$SAMPLE_FASTQ_R1_PATTERN")
+						SAMPLE_FASTQ_R1=$(find -L $R -name "$SAMPLE_FASTQ_R1_PATTERN" | tr "\n" "+" | sed s/+$//)
 						if [ "$SAMPLE_FASTQ_R1" == "" ]; then
-							(($VERBOSE)) && echo "[WARN] No Reads for sample '$SAMPLE_NAME' with pattern '$FASTQ_PATTERN_ILLUMINA'. Check with generic parrtern '$FASTQ_PATTERN_GENERIC'";
+							(($VERBOSE)) && echo "#[WARN] No Reads for sample '$SAMPLE_NAME' with pattern '$FASTQ_PATTERN_ILLUMINA'. Check with generic parrtern '$FASTQ_PATTERN_GENERIC'";
 							SAMPLE_FASTQ_R1_PATTERN=$SAMPLE_NAME'.*'$(echo $STARK_DEMULTIPLEXING_READS_MAPPING | tr "," " " | cut -d' ' -f1)'*.fastq.gz'
 							SAMPLE_FASTQ_R2_PATTERN=$SAMPLE_NAME'.*'$(echo $STARK_DEMULTIPLEXING_READS_MAPPING | tr "," " " | cut -d' ' -f4)'*.fastq.gz'
 							SAMPLE_FASTQ_I1_PATTERN=$SAMPLE_NAME'.*'$(echo $STARK_DEMULTIPLEXING_READS_MAPPING | tr "," " " | cut -d' ' -f2)'*.fastq.gz'
 							SAMPLE_FASTQ_I2_PATTERN=$SAMPLE_NAME'.*'$(echo $STARK_DEMULTIPLEXING_READS_MAPPING | tr "," " " | cut -d' ' -f3)'*.fastq.gz'
-							SAMPLE_FASTQ_R1=$(find -L $R -name "$SAMPLE_FASTQ_R1_PATTERN")
+							SAMPLE_FASTQ_R1=$(find -L $R -name "$SAMPLE_FASTQ_R1_PATTERN" | tr "\n" "+" | sed s/+$//)
 						fi;
-						[ "$SAMPLE_FASTQ_R1" == "" ] && echo "[ERROR] No Reads for sample '$SAMPLE_NAME'" && exit 1;
+						[ "$SAMPLE_FASTQ_R1" == "" ] && echo "#[ERROR] No Reads for sample '$SAMPLE_NAME'" && exit 1;
 
 						# Fastq others
-						SAMPLE_FASTQ_R2=$(find -L $R -name "$SAMPLE_FASTQ_R2_PATTERN")
-						SAMPLE_FASTQ_I1=$(find -L $R -name "$SAMPLE_FASTQ_I1_PATTERN")
-						SAMPLE_FASTQ_I2=$(find -L $R -name "$SAMPLE_FASTQ_I2_PATTERN")
+						SAMPLE_FASTQ_R2=$(find -L $R -name "$SAMPLE_FASTQ_R2_PATTERN" | tr "\n" "+" | sed s/+$//)
+						SAMPLE_FASTQ_I1=$(find -L $R -name "$SAMPLE_FASTQ_I1_PATTERN" | tr "\n" "+" | sed s/+$//)
+						SAMPLE_FASTQ_I2=$(find -L $R -name "$SAMPLE_FASTQ_I2_PATTERN" | tr "\n" "+" | sed s/+$//)
+
+
 						# APP
 						#SAMPLE_APP="$(echo $L | cut -d, -f$SAMPLE_PROJECT_FIELD | awk -F[$TAG_DELIMITER ] '{print $1}' | tr " " "+" | tr "," "+")"
 						# NEW APP extraction format
@@ -1846,7 +1848,7 @@ if [ ! -z "$RUNS" ]; then
 
 			((RI_NUM++))
 
-			(($DEBUG)) && echo "[INFO] CMD=$CMD"
+			(($DEBUG)) && echo "#[INFO] CMD=$CMD"
 			[ "$CMD" != "" ] && eval $CMD --no_header || exit 1
 			# if [ "$CMD" != "" ]; then
 			# 	if $CMD --no_header; then

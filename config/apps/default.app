@@ -300,6 +300,9 @@ PICARD_MARKDUP_OPTICAL_DEDUP=""
 # Keep fastq demultiplexed or from input reads/reads2
 FASTQ_DEMULTIPLEXING_KEEP=0
 
+# Folder for demultiplexing FASTQ
+# within $SAMPLE.sequencing folder
+SEQUENCING_DEMULTIPLEXING_FOLDER=demultiplexing
 
 
 # FASTQ_PROCESSING_STEPS

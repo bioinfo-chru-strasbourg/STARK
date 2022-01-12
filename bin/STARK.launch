@@ -356,85 +356,85 @@ DEBUG=$(echo $DEBUG | awk '{print $0+0}')
 ENV=$(find_app "$APP" "$STARK_FOLDER_APPS")
 source_app "$APP" "$STARK_FOLDER_APPS" 1
 
-if (($DEBUG)); then
-	echo "#[INFO] APP=$APP"
-	echo "#[INFO] ASSEMBLY=$ASSEMBLY"
-	echo "#[INFO] PIPELINES=$PIPELINES"
-	echo "#[INFO] ALIGNERS=$ALIGNERS"
-	echo "#[INFO] CALLERS=$CALLERS"
-	echo "#[INFO] ANNOTATORS=$ANNOTATORS"
-	echo "#[INFO] ASSEMBLY=$ASSEMBLY"
-	#exit 0
-fi;
-
-
-(($DEBUG)) && echo "#[INFO] SAMPLE=$SAMPLE"
 
 
 
 # FASTQ_R1
 FASTQ_R1_RELOCATED=""
 if [ "$FASTQ" != "" ]; then
-	for F_INPUT in $FASTQ; do
-		# Find file
-		F=$(echo $(ls $F_INPUT 2>/dev/null | xargs realpath 2>/dev/null) $(cd $ANALYSIS_DIR && ls $F_INPUT 2>/dev/null | xargs realpath 2>/dev/null) | tr " " "\n" | sort -u)
-		if [ "$F" == "" ] || [ $(echo $F | wc -w) -gt 1 ] || [ ! -f "$F" ]; then
-			echo "[ERROR] No input FASTQ/BAM/CRAM/SAM '$F' file!";
-			exit 0;
-		fi
-		(($DEBUG)) && echo "F=$F";
-		# Relocate
-		if ! (($(echo "$F" | grep ".fastq.gz$\|.fq.gz$\|.bam$\|.ubam$\|.cram$\|.ucram$" -c))); then
-			echo "[ERROR]! Format of input file '$F' Unknown! Please check file format (.fastq.gz|.fq.gz|.bam|.ubam|.cram|.ucram)";
-			exit 0;
-		fi
+	#for F_INPUT in $(echo $FASTQ | tr "+" " "); do
+	for FS_INPUT in $FASTQ; do
+		FS_INPUT_RELOC=""
+		for F_INPUT in $(echo $FS_INPUT | tr "+" " "); do
+			# Find file
+			F=$(echo $(ls $F_INPUT 2>/dev/null | xargs realpath 2>/dev/null) $(cd $ANALYSIS_DIR && ls $F_INPUT 2>/dev/null | xargs realpath 2>/dev/null) | tr " " "\n" | sort -u)
+			if [ "$F" == "" ] || [ $(echo $F | wc -w) -gt 1 ] || [ ! -f "$F" ]; then
+				echo "[ERROR] No input FASTQ/BAM/CRAM/SAM '$F' file!";
+				exit 0;
+			fi
+			(($DEBUG)) && echo "#[DEBUG] F=$F";
+			# Relocate
+			if ! (($(echo "$F" | grep ".fastq.gz$\|.fq.gz$\|.bam$\|.ubam$\|.cram$\|.ucram$" -c))); then
+				echo "[ERROR]! Format of input file '$F' Unknown! Please check file format (.fastq.gz|.fq.gz|.bam|.ubam|.cram|.ucram)";
+				exit 0;
+			fi
+			FS_INPUT_RELOC=$FS_INPUT_RELOC"+"$F
+		done;
 		# Relocation
-		FASTQ_R1_RELOCATED="$FASTQ_R1_RELOCATED $F"
+		FASTQ_R1_RELOCATED="$FASTQ_R1_RELOCATED "$(echo $FS_INPUT_RELOC | sed s/^+//)
 	done;
-	FASTQ=$FASTQ_R1_RELOCATED
+	FASTQ=$FASTQ_R1_RELOCATED #$(echo $FASTQ_R1_RELOCATED | tr " " "+")
 fi;
 
 
 # FASTQ_R2
 FASTQ_R2_RELOCATED=""
 if [ "$FASTQ_R2" != "" ]; then
-	for F_INPUT in $FASTQ_R2; do
-		# Find file
-		F=$(echo $(ls $F_INPUT 2>/dev/null | xargs realpath 2>/dev/null) $(cd $ANALYSIS_DIR && ls $F_INPUT 2>/dev/null | xargs realpath 2>/dev/null) | tr " " "\n" | sort -u)
-		if [ "$F" == "" ] || [ $(echo $F | wc -w) -gt 1 ] || [ ! -f "$F" ]; then
-			echo "[ERROR] No input FASTQ '$F' file!";
-			exit 0;
-		fi
-		(($DEBUG)) && echo "Q=$F";
-		# Relocated
-		if ! (($(echo "$F" | grep ".fastq.gz$\|.fq.gz$" -c))); then
-			echo "[ERROR]! Format of input file '$F' Unknown! Please check file format (.fastq.gz|.fq.gz)";
-			exit 0;
-		fi
+	for FS_INPUT in $FASTQ_R2; do
+		FS_INPUT_RELOC=""
+		for F_INPUT in $(echo $FS_INPUT | tr "+" " "); do
+			# Find file
+			F=$(echo $(ls $F_INPUT 2>/dev/null | xargs realpath 2>/dev/null) $(cd $ANALYSIS_DIR && ls $F_INPUT 2>/dev/null | xargs realpath 2>/dev/null) | tr " " "\n" | sort -u)
+			if [ "$F" == "" ] || [ $(echo $F | wc -w) -gt 1 ] || [ ! -f "$F" ]; then
+				echo "[ERROR] No input FASTQ '$F' file!";
+				exit 0;
+			fi
+			(($DEBUG)) && echo "#[DEBUG] Q=$F";
+			# Relocated
+			if ! (($(echo "$F" | grep ".fastq.gz$\|.fq.gz$" -c))); then
+				echo "[ERROR]! Format of input file '$F' Unknown! Please check file format (.fastq.gz|.fq.gz)";
+				exit 0;
+			fi
+			FS_INPUT_RELOC=$FS_INPUT_RELOC"+"$F
+		done;
 		# Relocation
-		FASTQ_R2_RELOCATED="$FASTQ_R2_RELOCATED $F"
+		FASTQ_R2_RELOCATED="$FASTQ_R2_RELOCATED "$(echo $FS_INPUT_RELOC | sed s/^+//)
 	done;
-	FASTQ_R2=$FASTQ_R2_RELOCATED
+	FASTQ_R2=$FASTQ_R2_RELOCATED # "$(echo $FS_INPUT_RELOC | sed s/^+//) #$(echo $FASTQ_R2_RELOCATED | tr " " "+")
 fi;
 
 
 # INDEX1
 INDEX1_RELOCATED=""
 if [ "$INDEX1" != "" ]; then
-	for F_INPUT in $INDEX1; do
-		# Find file
-		F=$(echo $(ls $F_INPUT 2>/dev/null | xargs realpath 2>/dev/null) $(cd $ANALYSIS_DIR && ls $F_INPUT 2>/dev/null | xargs realpath 2>/dev/null) | tr " " "\n" | sort -u)
-		if [ "$F" == "" ] || [ $(echo $F | wc -w) -gt 1 ] || [ ! -f "$F" ]; then
-			echo "[ERROR] No input FASTQ '$F' file!";
-			exit 0;
-		fi
-		(($DEBUG)) && echo "I1=$F";
-		if ! (($(echo "$F" | grep ".fastq.gz$\|.fq.gz$" -c))); then
-			echo "[ERROR]! Format of input file '$F' Unknown! Please check file format (.fastq.gz|.fq.gz)";
-			exit 0;
-		fi
+	for FS_INPUT in $INDEX1; do
+		FS_INPUT_RELOC=""
+		for F_INPUT in $(echo $FS_INPUT | tr "+" " "); do
+			# Find file
+			F=$(echo $(ls $F_INPUT 2>/dev/null | xargs realpath 2>/dev/null) $(cd $ANALYSIS_DIR && ls $F_INPUT 2>/dev/null | xargs realpath 2>/dev/null) | tr " " "\n" | sort -u)
+			if [ "$F" == "" ] || [ $(echo $F | wc -w) -gt 1 ] || [ ! -f "$F" ]; then
+				echo "[ERROR] No input FASTQ '$F' file!";
+				exit 0;
+			fi
+			(($DEBUG)) && echo "I1=$F";
+			if ! (($(echo "$F" | grep ".fastq.gz$\|.fq.gz$" -c))); then
+				echo "[ERROR]! Format of input file '$F' Unknown! Please check file format (.fastq.gz|.fq.gz)";
+				exit 0;
+			fi
+			FS_INPUT_RELOC=$FS_INPUT_RELOC"+"$F
+		done;
 		# Relocation
-		INDEX1_RELOCATED="$INDEX1_RELOCATED $F"
+		INDEX1_RELOCATED="$INDEX1_RELOCATED "$(echo $FS_INPUT_RELOC | sed s/^+//)
 	done;
 	INDEX1=$INDEX1_RELOCATED
 fi;
@@ -443,20 +443,24 @@ fi;
 # INDEX2
 INDEX2_RELOCATED=""
 if [ "$INDEX2" != "" ]; then
-	for F_INPUT in $INDEX2; do
-		# Find file
-		F=$(echo $(ls $F_INPUT 2>/dev/null | xargs realpath 2>/dev/null) $(cd $ANALYSIS_DIR && ls $F_INPUT 2>/dev/null | xargs realpath 2>/dev/null) | tr " " "\n" | sort -u)
-		if [ "$F" == "" ] || [ $(echo $F | wc -w) -gt 1 ] || [ ! -f "$F" ]; then
-			echo "[ERROR] No input FASTQ '$F' file!";
-			exit 0;
-		fi
-		(($DEBUG)) && echo "I2=$F";
-		if ! (($(echo "$F" | grep ".fastq.gz$\|.fq.gz$" -c))); then
-			echo "[ERROR]! Format of input file '$F' Unknown! Please check file format (.fastq.gz|.fq.gz)";
-			exit 0;
-		fi
+	for FS_INPUT in $INDEX2; do
+		FS_INPUT_RELOC=""
+		for F_INPUT in $(echo $FS_INPUT | tr "+" " "); do
+			# Find file
+			F=$(echo $(ls $F_INPUT 2>/dev/null | xargs realpath 2>/dev/null) $(cd $ANALYSIS_DIR && ls $F_INPUT 2>/dev/null | xargs realpath 2>/dev/null) | tr " " "\n" | sort -u)
+			if [ "$F" == "" ] || [ $(echo $F | wc -w) -gt 1 ] || [ ! -f "$F" ]; then
+				echo "[ERROR] No input FASTQ '$F' file!";
+				exit 0;
+			fi
+			(($DEBUG)) && echo "I2=$F";
+			if ! (($(echo "$F" | grep ".fastq.gz$\|.fq.gz$" -c))); then
+				echo "[ERROR]! Format of input file '$F' Unknown! Please check file format (.fastq.gz|.fq.gz)";
+				exit 0;
+			fi
+			FS_INPUT_RELOC=$FS_INPUT_RELOC"+"$F
+		done;
 		# Relocation
-		INDEX2_RELOCATED="$INDEX2_RELOCATED $F"
+		INDEX2_RELOCATED="$INDEX2_RELOCATED "$(echo $FS_INPUT_RELOC | sed s/^+//)
 	done;
 	INDEX2=$INDEX2_RELOCATED
 fi;
@@ -625,6 +629,8 @@ fi;
 
 
 NB_SAMPLE=0
+FASTQ_ARRAY=($FASTQ);
+FASTQ_CHECKED=""
 FASTQ_R2_ARRAY=($FASTQ_R2);
 FASTQ_R2_CHECKED=""
 INDEX1_ARRAY=($INDEX1);
@@ -649,36 +655,72 @@ SAMPLE_TAG_CHECKED=""
 SAMPLE_TAG_ARRAY=($SAMPLE_TAG);
 
 
-(($DEBUG)) && echo "#[INFO] FASTQ=$FASTQ";
+(($DEBUG)) && echo "#[DEBUG] FASTQ=$FASTQ";
+
 
 for F in $FASTQ; do
 
 	# Test FASTQ format
-	if ! (($(echo "$F" | grep ".fastq.gz$\|.fq.gz$\|.bam$\|.ubam$\|.cram$\|.ucram$\|.sam$\|.usam$" -c))); then
-		echo "[ERROR] Format of input file '$F' Unknown! Please check file format (.fastq.gz|.fq.gz|.bam|.ubam|.cram|.ucram|.sam|.usam)";
-		exit 0;
-	fi;
+	for F1_TEST in $(echo $F | tr "+" " "); do
+		if ! (($(echo "$F1_TEST" | grep ".fastq.gz$\|.fq.gz$\|.bam$\|.ubam$\|.cram$\|.ucram$\|.sam$\|.usam$" -c))); then
+			echo "#[ERROR] Format of input file '$F1_TEST' Unknown! Please check file format (.fastq.gz|.fq.gz|.bam|.ubam|.cram|.ucram|.sam|.usam)";
+			exit 0;
+		else
+			(($DEBUG)) && echo "#[DEBUG] Format of input file '$F1_TEST' ok"
+		fi;
+	done;
 
 	# Test FASTQ R2 format if exists
-	if [ "${FASTQ_R2_ARRAY[$NB_SAMPLE]}" != "" ]; then
-		if ! (($(echo "${FASTQ_R2_ARRAY[$NB_SAMPLE]}" | grep ".fastq.gz$\|.fq.gz$" -c))); then
-			echo "[ERROR] Format of input file Read2 '${FASTQ_R2_ARRAY[$NB_SAMPLE]}' Unknown! Please check file format (.fastq.gz|.fq.gz)";
-			exit 0;
+	for F2_TEST in $(echo ${FASTQ_R2_ARRAY[$NB_SAMPLE]} | tr "+" " "); do
+		if [ "$F2_TEST" != "" ]; then
+			if ! (($(echo "$F2_TEST" | grep ".fastq.gz$\|.fq.gz$" -c))); then
+				echo "#[ERROR] Format of input file Read2 '$F2_TEST' Unknown! Please check file format (.fastq.gz|.fq.gz)";
+				exit 0;
+			else
+				(($DEBUG)) && echo "#[DEBUG] Format of input file '$F2_TEST' ok"
+			fi;
 		fi;
-	fi;
+	done;
+
+	# Test FASTQ I1 format if exists
+	for I1_TEST in $(echo ${FASTQ_I1_ARRAY[$NB_SAMPLE]} | tr "+" " "); do
+		if [ "$I1_TEST" != "" ]; then
+			if ! (($(echo "$I1_TEST" | grep ".fastq.gz$\|.fq.gz$" -c))); then
+				echo "#[ERROR] Format of input file Read2 '$I1_TEST' Unknown! Please check file format (.fastq.gz|.fq.gz)";
+				exit 0;
+			else
+				(($DEBUG)) && echo "#[DEBUG] Format of input file '$I1_TEST' ok"
+			fi;
+		fi;
+	done;
+
+	# Test FASTQ R2 format if exists
+	for I2_TEST in $(echo ${FASTQ_I2_ARRAY[$NB_SAMPLE]} | tr "+" " "); do
+		if [ "$I2_TEST" != "" ]; then
+			if ! (($(echo "$I2_TEST" | grep ".fastq.gz$\|.fq.gz$" -c))); then
+				echo "#[ERROR] Format of input file Read2 '$I2_TEST' Unknown! Please check file format (.fastq.gz|.fq.gz)";
+				exit 0;
+			else
+				(($DEBUG)) && echo "#[DEBUG] Format of input file '$I2_TEST' ok"
+			fi;
+		fi;
+	done;
 
 	# SAMPLE
 	if [ "${SAMPLE_ARRAY[$NB_SAMPLE]}" == "" ]; then
-		F_PATTERN=$(basename $F | sed "s/.fastq.gz$\|.fq.gz$\|.bam$\|.ubam$\|.cram$\|.ucram$\|.sam$\|.usam$//g" | tr "." "_" | sed "s/_S[0-9]*_R[12]_[0-9]*//gi")
+
+		F1=$(echo $F | cut -d+ -f1)
+
+		F_PATTERN=$(basename $F1 | sed "s/.fastq.gz$\|.fq.gz$\|.bam$\|.ubam$\|.cram$\|.ucram$\|.sam$\|.usam$//g" | tr "." "_" | sed "s/_S[0-9]*_R[12]_[0-9]*//gi")
 
 		# IF SAMPLE name exist
 		# try with the filename (removing FASTQ pattern filename) KEEP EXTENSION
 		if (($(echo $SAMPLE_CHECKED | tr " " "\n" | grep $F_PATTERN -c))); then
-			F_PATTERN=$(basename $F | tr "." "_" | sed "s/_S[0-9]*_R[12]_[0-9]*//gi")
+			F_PATTERN=$(basename $F1 | tr "." "_" | sed "s/_S[0-9]*_R[12]_[0-9]*//gi")
 		fi;
 		# try with the filename (NOT removing FASTQ pattern filename) KEEP EXTENSION and fastq pattern
 		if (($(echo $SAMPLE_CHECKED | tr " " "\n" | grep $F_PATTERN -c))); then
-			F_PATTERN=$(basename $F | tr "." "_")
+			F_PATTERN=$(basename $F1 | tr "." "_")
 		fi;
 		# try with the filename (NOT removing FASTQ pattern filename) KEEP EXTENSION and fastq pattern WITH number
 		I=1
@@ -1098,7 +1140,7 @@ for RUU in $RUN_UNIQ; do
 		RUN_SAMPLE_DIR=$RESULTS/$RU/$S
 
 		if (($DEBUG)); then
-			echo "$F | $F_R2 | $I1 | $I2 | $OFCF | $S | $RU | $B | $G | $T | $P | $PIPELINES | $INPUT | $RESULTS | $RUN_SAMPLE_DIR ";
+			echo "#[DEBUG] $F | $F_R2 | $I1 | $I2 | $OFCF | $S | $RU | $B | $G | $T | $P | $PIPELINES | $INPUT | $RESULTS | $RUN_SAMPLE_DIR ";
 		fi;
 
 		mkdir -p $RUN_SAMPLE_DIR
@@ -1136,16 +1178,26 @@ for RUU in $RUN_UNIQ; do
 				# Create FASTQ
 
 				# READ 1
-				echo "$RUN_SAMPLE_DIR/$S.R1.fastq.gz: $F
+				echo "$RUN_SAMPLE_DIR/$S.R1.fastq.gz: $(echo $F | tr "+" " ")
 					#$COMMAND_COPY_NO_COMPRESS $F $RUN_SAMPLE_DIR/$S.R1.fastq.gz;
-					ln -s $F $RUN_SAMPLE_DIR/$S.R1.fastq.gz;
+					if [[ \$\$(echo '$^' | wc -w) -gt 1 ]]; then \
+						cat $^ > $RUN_SAMPLE_DIR/$S.R1.fastq.gz; \
+					else \
+						ln -s $F $RUN_SAMPLE_DIR/$S.R1.fastq.gz; \
+					fi;
 				" >> $INPUT_MK
 				INPUT_MK_ALL=$INPUT_MK_ALL" $RUN_SAMPLE_DIR/$S.R1.fastq.gz"
 
 				# READ 2
-				if [ -s "$F_R2" ]; then
-					echo "$RUN_SAMPLE_DIR/$S.R2.fastq.gz: $F_R2
-						ln -s $F_R2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz
+				#if [ -s "$F_R2" ]; then
+				if [ -s "$F_R2" ] || (( $(zcat $(echo $F_R2 | tr "+" " ") 2>/dev/null | head -n1 | wc -l ) )); then
+					echo "$RUN_SAMPLE_DIR/$S.R2.fastq.gz: $(echo $F_R2 | tr "+" " ")
+						#ln -s $F_R2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz
+						if [[ \$\$(echo '$^' | wc -w) -gt 1 ]]; then \
+							cat $^ > $RUN_SAMPLE_DIR/$S.R2.fastq.gz; \
+						else \
+							ln -s $F $RUN_SAMPLE_DIR/$S.R2.fastq.gz; \
+						fi;
 					" >> $INPUT_MK
 					INPUT_MK_ALL=$INPUT_MK_ALL" $RUN_SAMPLE_DIR/$S.R2.fastq.gz"
 				else
@@ -1156,11 +1208,16 @@ for RUU in $RUN_UNIQ; do
 					INPUT_MK_ALL=$INPUT_MK_ALL" $RUN_SAMPLE_DIR/$S.R2.fastq.gz"
 				fi;
 
-
 				# INDEX1
-				if [ -s "$I1" ]; then
-					echo "$RUN_SAMPLE_DIR/$S.I1.fastq.gz: $I1
-						ln -s $I1 $RUN_SAMPLE_DIR/$S.I1.fastq.gz
+				#if [ -s "$I1" ]; then
+				if [ -s "$I1" ] || (( $(zcat $(echo $I1 | tr "+" " ") 2>/dev/null | head -n1 | wc -l ) )); then
+					echo "$RUN_SAMPLE_DIR/$S.I1.fastq.gz: $(echo $I1 | tr "+" " ")
+						#ln -s $I1 $RUN_SAMPLE_DIR/$S.I1.fastq.gz
+						if [[ \$\$(echo '$^' | wc -w) -gt 1 ]]; then \
+							cat $^ > $RUN_SAMPLE_DIR/$S.I1.fastq.gz; \
+						else \
+							ln -s $F $RUN_SAMPLE_DIR/$S.I1.fastq.gz; \
+						fi;
 					" >> $INPUT_MK
 					INPUT_MK_ALL=$INPUT_MK_ALL" $RUN_SAMPLE_DIR/$S.I1.fastq.gz"
 				else
@@ -1172,9 +1229,15 @@ for RUU in $RUN_UNIQ; do
 				fi;
 
 				# INDEX2
-				if [ -s "$I2" ]; then
-					echo "$RUN_SAMPLE_DIR/$S.I2.fastq.gz: $I2
-						ln -s $I2 $RUN_SAMPLE_DIR/$S.I2.fastq.gz
+				#if [ -s "$I2" ]; then
+				if [ -s "$I2" ] || (( $(zcat $(echo $I2 | tr "+" " ") 2>/dev/null | head -n1 | wc -l ) )); then
+					echo "$RUN_SAMPLE_DIR/$S.I2.fastq.gz: $(echo $I2 | tr "+" " ")
+						#ln -s $I2 $RUN_SAMPLE_DIR/$S.I2.fastq.gz
+						if [[ \$\$(echo '$^' | wc -w) -gt 1 ]]; then \
+							cat $^ > $RUN_SAMPLE_DIR/$S.I2.fastq.gz; \
+						else \
+							ln -s $F $RUN_SAMPLE_DIR/$S.I2.fastq.gz; \
+						fi;
 					" >> $INPUT_MK
 					INPUT_MK_ALL=$INPUT_MK_ALL" $RUN_SAMPLE_DIR/$S.I2.fastq.gz"
 				else
@@ -1275,18 +1338,6 @@ for RUU in $RUN_UNIQ; do
 				(($VERBOSE)) && echo "#[INFO] FASTQ processing (Adaptors, UMIs, quality)"
 
 
-				# DEV
-
-				#UMI_LOC="" # index1/index2/read1/read2/per_index/per_read"
-				#UMI_BARCODE_PATTERN=""
-				#UMI_LOC="read2" # index1/index2/read1/read2/per_index/per_read"
-				#UMI_BARCODE_PATTERN="NNNNNNNNNN"
-				#UMI_LOC="per_read" # index1/index2/read1/read2/per_index/per_read"
-				#UMI_BARCODE_PATTERN="NNNNN-NNNNN"
-
-				#FASTQ_COMPRESSION_LEVEL=1
-
-
 				### INIT
 
 				# UMI_LOC
@@ -1328,21 +1379,7 @@ for RUU in $RUN_UNIQ; do
 
 				FASTQ_PROCESSED_STEPS_DEFAULT=".fastq_reheader.sort.fastp.fastq_clean_header.compress"
 				FASTQ_PROCESSED_STEPS=$FASTQ_PROCESSED_STEPS_DEFAULT
-				#[ "$UMI_RELOC" != "" ] && FASTQ_PROCESSED_STEPS=".relocate_umi.fastp.fastq_clean_header.compress"
 
-
-				# echo "UMI_LOC=$UMI_LOC"
-				# echo "UMI_RELOC=$UMI_RELOC"
-				# echo "R1_RELOC=$R1_RELOC"
-				# echo "R2_RELOC=$R2_RELOC"
-				# echo "UMI_BARCODE_PATTERN=$UMI_BARCODE_PATTERN"
-				# echo "UMI_BARCODE_PATTERN_1=$UMI_BARCODE_PATTERN_1"
-				# echo "UMI_BARCODE_PATTERN_2=$UMI_BARCODE_PATTERN_2"
-				# echo "UMI_BARCODE_PATTERN_LENGTH=$UMI_BARCODE_PATTERN_LENGTH"
-				# echo "UMI_BARCODE_PATTERN_1_LENGTH=$UMI_BARCODE_PATTERN_1_LENGTH"
-				# echo "UMI_BARCODE_PATTERN_2_LENGTH=$UMI_BARCODE_PATTERN_2_LENGTH"
-				# echo "FASTQ_PROCESSED_STEPS=$FASTQ_PROCESSED_STEPS"
-				#exit 0
 
 
 				# FOLDERS & FILES
@@ -1352,20 +1389,13 @@ for RUU in $RUN_UNIQ; do
 				#echo "init log" > $RUN_SAMPLE_DIR_SEQUENCING/$S.log;
 
 
+				echo $(echo $F | tr "+" " ") $(echo $F_R2 | tr "+" " ") $(echo $I1 | tr "+" " ") $(echo $I2 | tr "+" " ") > $RUN_SAMPLE_DIR_SEQUENCING/fastq.list
+
+
 				# VARIABLES
 				############
 
-				
-				# DEV
-				#echo $FASTQ_PROCESSED_STEPS
-				#FASTQ_PROCESSED_STEPS=".fastq_reheader.fastp.fastq_clean_header.compress"
-				#FASTQ_PROCESSED_STEPS=".fastp.fastq_clean_header.compress"
-				#FASTQ_PROCESSED_STEPS=".fastq_reheader"
-				#FASTQ_PROCESSED_STEPS=""
-				#FASTQ_PROCESSED_STEPS=".fastq_reheader.sort.umi_tools.fastp.fastq_clean_header.compress"
-				# 
-				#echo $FASTQ_PROCESSED_STEPS
-				#exit 0
+
 
 				echo "FASTQ_DEMULTIPLEXING_KEEP?=$FASTQ_DEMULTIPLEXING_KEEP " >> $INPUT_MK
 				echo "REMOVE_FASTQ_COMMENT?=0 " >> $INPUT_MK
@@ -1392,6 +1422,7 @@ for RUU in $RUN_UNIQ; do
 				echo "FASTQ_CLEAN_HEADER?=$FASTQ_CLEAN_HEADER" >> $INPUT_MK
 				echo "RELOCATE_UMI?=$RELOCATE_UMI" >> $INPUT_MK
 				echo "FASTQ_PROCESSED_STEPS:=$FASTQ_PROCESSED_STEPS" >> $INPUT_MK
+				echo "SEQUENCING_DEMULTIPLEXING_FOLDER:=$SEQUENCING_DEMULTIPLEXING_FOLDER" >> $INPUT_MK
 				
 
 
@@ -1771,6 +1802,7 @@ for RUU in $RUN_UNIQ; do
 			exit 1
 		fi;
 	fi;
+	#cat $INPUT_MK;
 	#exit 0; # DEV
 	! (($DEBUG)) && rm -f $INPUT_MK $INPUT_MK.log $INPUT_MK.err
 

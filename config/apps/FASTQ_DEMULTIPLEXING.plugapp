@@ -7,7 +7,7 @@
 
 # APPLICATION INFOS
 #####################
-APP_NAME="FASTQ_ONLY"
+APP_NAME="FASTQ_DEMULTIPLEXING"
 APP_RELEASE="1.0"
 APP_DESCRIPTION="PlugAPP to disable pipeline and generates only FASTQ"
 #APP_GROUP=""
@@ -16,17 +16,33 @@ APP_DESCRIPTION="PlugAPP to disable pipeline and generates only FASTQ"
 # ANALYSIS PARAMETERS
 #######################
 
+# Demultiplexing options
+#STARK_DEMULTIPLEXING_BCL2FASTQ_OPTIONS="--no-lane-splitting --create-fastq-for-index-reads"
+STARK_DEMULTIPLEXING_BCL2FASTQ_OPTIONS="--create-fastq-for-index-reads"
+
+# FASTQ compression level for main FASTQ files
+FASTQ_COMPRESSION_LEVEL=1
+
+# FASTQ_PROCESSING_STEPS
+FASTQ_PROCESSING_STEPS=" "
+
 # PIPELINES
 PIPELINES="no_alignment.no_calling.no_annotation"
 
 # POST ALIGNEMENT STEPS (default "sorting realignment clipping compress")
-POST_ALIGNMENT_STEPS=" "
+POST_ALIGNMENT_STEPS=" compress "
 
 # POST CALLING STEPS (default "recalibration filtration")
 POST_CALLING_STEPS=" "
 
 # POST ANNOTATION STEPS (default "sorting normalization")
 POST_ANNOTATION_STEPS=" "
+
+# Keep demultiplexing FASTQ
+FASTQ_DEMULTIPLEXING_KEEP=1
+
+# Folder for demultiplexing FASTQ
+SEQUENCING_DEMULTIPLEXING_FOLDER=demultiplexing
 
 
 # REPOSITORY and ARCHIVES folder
@@ -44,5 +60,5 @@ REPOSITORY_FILE_SUBFOLDER_PATTERNS=' $SAMPLE.sequencing/demultiplexing/* $SAMPLE
 # Archives files patterns to add
 ARCHIVES_FILE_PATTERNS='' 
 # Favorites files patterns to add
-FAVORITES_FILE_PATTERNS='$SAMPLE.*fastq.gz'
+FAVORITES_FILE_PATTERNS='$SAMPLE.sequencing/demultiplexing/*'
 

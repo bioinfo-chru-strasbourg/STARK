@@ -30,12 +30,11 @@ UNGZ?=$(UNGZ)
 FASTQ_CLEAN_HEADER?=$(FASTQ_CLEAN_HEADER)
 RELOCATE_UMI?=$(RELOCATE_UMI)
 FASTQ_PROCESSED_STEPS?=.fastq_reheader.sort.fastp.fastq_clean_header.compress
+SEQUENCING_DEMULTIPLEXING_FOLDER?=demultiplexing
 
 FASTQ_CLEAN_HEADER_PARAM=-v SAM_TAG=1 -v UMI_REFORMAT=1 -v UMI_TAG=1 -v UMI_LOC=$(UMI_LOC)
 
-#.SECONDARY: %.input.R1.fastq.gz %.input.R2.fastq.gz %.compress.R1.fastq.gz %.compress.R2.fastq.gz %.fastp.R1.fastq.gz %.fastp.R2.fastq.gz %.fastq_clean_header.R1.fastq.gz %.fastq_clean_header.R2.fastq.gz %.relocate_umi.R1.fastq.gz %.relocate_umi.R2.fastq.gz
 
-#.PRECIOUS: %.input.R1.fastq.gz %.input.R2.fastq.gz %.compress.R1.fastq.gz %.compress.R2.fastq.gz %.fastp.R1.fastq.gz %.fastp.R2.fastq.gz %.fastq_clean_header.R1.fastq.gz %.fastq_clean_header.R2.fastq.gz %.relocate_umi.R1.fastq.gz %.relocate_umi.R2.fastq.gz
 
 ### Mandatory rules
 ###################
@@ -43,36 +42,14 @@ FASTQ_CLEAN_HEADER_PARAM=-v SAM_TAG=1 -v UMI_REFORMAT=1 -v UMI_TAG=1 -v UMI_LOC=
 
 ### Demultiplexing keep
 
-%.demultiplexing_keep.R1.fastq.gz: %.log
-	if (($(FASTQ_DEMULTIPLEXING_KEEP))); then \
-		for f in $(@D)/../*.R1.fastq.gz; do \
-			cp -p $$f $$(echo $@ | sed s/demultiplexing_keep/demultiplexing/); \
-		done; \
-	fi;
-
-%.demultiplexing_keep.R2.fastq.gz: %.log
-	if (($(FASTQ_DEMULTIPLEXING_KEEP))); then \
-		for f in $(@D)/../*.R2.fastq.gz; do \
-			cp -p $$f $$(echo $@ | sed s/demultiplexing_keep/demultiplexing/); \
-		done; \
-	fi;
-
-%.demultiplexing_keep.I1.fastq.gz: %.log
-	if (($(FASTQ_DEMULTIPLEXING_KEEP))); then \
-		for f in $(@D)/../*.I1.fastq.gz; do \
-			cp -p $$f $$(echo $@ | sed s/demultiplexing_keep/demultiplexing/); \
-		done; \
-	fi;
-
-%.demultiplexing_keep.I2.fastq.gz: %.log
-	if (($(FASTQ_DEMULTIPLEXING_KEEP))); then \
-		for f in $(@D)/../*.I2.fastq.gz; do \
-			cp -p $$f $$(echo $@ | sed s/demultiplexing_keep/demultiplexing/); \
-		done; \
-	fi;
-
-%.demultiplexing_keep.log: %.log %.demultiplexing_keep.R1.fastq.gz %.demultiplexing_keep.R2.fastq.gz %.demultiplexing_keep.I1.fastq.gz %.demultiplexing_keep.I2.fastq.gz
+%.demultiplexing_keep.log: %.log
 	echo 'demultiplexing_keep log' >> $@;
+	if (($(FASTQ_DEMULTIPLEXING_KEEP))); then \
+		mkdir -p $(@D)/$(SEQUENCING_DEMULTIPLEXING_FOLDER); \
+		cp -p $$(cat $(@D)/fastq.list) $(@D)/$(SEQUENCING_DEMULTIPLEXING_FOLDER)/; \
+		echo 'FASTQ files:' >> $@; \
+		cat $(@D)/fastq.list  >> $@; \
+	fi;
 
 
 
