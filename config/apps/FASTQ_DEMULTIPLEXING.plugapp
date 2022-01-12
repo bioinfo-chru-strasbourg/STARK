@@ -20,6 +20,9 @@ APP_DESCRIPTION="PlugAPP to disable pipeline and generates only FASTQ"
 #STARK_DEMULTIPLEXING_BCL2FASTQ_OPTIONS="--no-lane-splitting --create-fastq-for-index-reads"
 STARK_DEMULTIPLEXING_BCL2FASTQ_OPTIONS="--create-fastq-for-index-reads"
 
+# FASTQ compression level for demultiplexing FASTQ files
+FASTQ_DEMULTIPLEXING_COMPRESSION_LEVEL=9
+
 # FASTQ compression level for main FASTQ files
 FASTQ_COMPRESSION_LEVEL=1
 
