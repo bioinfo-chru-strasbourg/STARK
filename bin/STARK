@@ -1527,9 +1527,33 @@ if [ ! -z "$RUNS" ]; then
 					[ -z $SAMPLE_NAME ] && SAMPLE_NAME=$SAMPLE_ID
 
 					if [ "$SAMPLE_LIST" == "" ] || $(list_include_item "$SAMPLE_LIST" "$SAMPLE_NAME"); then #
+
+						# APP
+						#SAMPLE_APP="$(echo $L | cut -d, -f$SAMPLE_PROJECT_FIELD | awk -F[$TAG_DELIMITER ] '{print $1}' | tr " " "+" | tr "," "+")"
+						# NEW APP extraction format
+						SAMPLE_DESCRIPTION_FIELD_VALUE=$(echo $L | cut -d, -f$SAMPLE_DESCRIPTION_FIELD)
+						SAMPLE_TAG=$(echo $L | cut -d, -f$SAMPLE_DESCRIPTION_FIELD | tr " " "!")"!"
+						SAMPLE_APP=$(extract_tag "$SAMPLE_DESCRIPTION_FIELD_VALUE" "APP" | tr " " "+")
+						[ -z "$SAMPLE_APP" ] && SAMPLE_APP="$MAIN_APP"
+
+						SAMPLE_PLUGAPP=$(extract_tag "$SAMPLE_DESCRIPTION_FIELD_VALUE" "PLUGAPP" | tr " " "+")
+						[ "$SAMPLE_PLUGAPP" != "" ] && SAMPLE_APP=$SAMPLE_APP"+"$SAMPLE_PLUGAPP
+						(($DEBUG)) && echo "SAMPLE_APP=$SAMPLE_APP"
+						(($DEBUG)) && echo "SAMPLE_PLUGAPP=$SAMPLE_PLUGAPP"
+
+						[ ! -z $APP ] && SAMPLE_APP=$(echo $APP | tr " " "+" | tr "," "+") && echo "#[INFO] APP forced '$SAMPLE_APP'" # Force APP if in parameters
+
+						if ! APP_INFOS=$(source_app "$SAMPLE_APP" "$STARK_FOLDER_APPS/"; echo -e "$APP_GROUP\t$APP_PROJECT"); then
+							echo "#[ERROR] Application '$SAMPLE_APP' error";
+							exit 1
+						fi
+						SAMPLE_APP_GROUP=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $1}')
+						SAMPLE_APP_PROJECT=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $2}')
+
 						# SAMPLE FASTQ R1/R2
 
 						# Reads mapping
+						STARK_DEMULTIPLEXING_READS_MAPPING=$(source_app "$SAMPLE_APP" "$STARK_FOLDER_APPS/"; echo -e "$STARK_DEMULTIPLEXING_READS_MAPPING")
 						if [ "$STARK_DEMULTIPLEXING_READS_MAPPING" == "" ]; then
 							STARK_DEMULTIPLEXING_READS_MAPPING="R1 I1 I2 R2";
 						fi;
@@ -1564,30 +1588,7 @@ if [ ! -z "$RUNS" ]; then
 						SAMPLE_FASTQ_I1=$(find -L $R -name "$SAMPLE_FASTQ_I1_PATTERN" | tr "\n" "+" | sed s/+$//)
 						SAMPLE_FASTQ_I2=$(find -L $R -name "$SAMPLE_FASTQ_I2_PATTERN" | tr "\n" "+" | sed s/+$//)
 
-
-						# APP
-						#SAMPLE_APP="$(echo $L | cut -d, -f$SAMPLE_PROJECT_FIELD | awk -F[$TAG_DELIMITER ] '{print $1}' | tr " " "+" | tr "," "+")"
-						# NEW APP extraction format
-						SAMPLE_DESCRIPTION_FIELD_VALUE=$(echo $L | cut -d, -f$SAMPLE_DESCRIPTION_FIELD)
-						SAMPLE_TAG=$(echo $L | cut -d, -f$SAMPLE_DESCRIPTION_FIELD | tr " " "!")"!"
-						SAMPLE_APP=$(extract_tag "$SAMPLE_DESCRIPTION_FIELD_VALUE" "APP" | tr " " "+")
-						[ -z "$SAMPLE_APP" ] && SAMPLE_APP="$MAIN_APP"
-
-						SAMPLE_PLUGAPP=$(extract_tag "$SAMPLE_DESCRIPTION_FIELD_VALUE" "PLUGAPP" | tr " " "+")
-						[ "$SAMPLE_PLUGAPP" != "" ] && SAMPLE_APP=$SAMPLE_APP"+"$SAMPLE_PLUGAPP
-						(($DEBUG)) && echo "SAMPLE_APP=$SAMPLE_APP"
-						(($DEBUG)) && echo "SAMPLE_PLUGAPP=$SAMPLE_PLUGAPP"
-
-						[ ! -z $APP ] && SAMPLE_APP=$(echo $APP | tr " " "+" | tr "," "+") && echo "#[INFO] APP forced '$SAMPLE_APP'" # Force APP if in parameters
-
-
-						if ! APP_INFOS=$(source_app "$SAMPLE_APP" "$STARK_FOLDER_APPS/"; echo -e "$APP_GROUP\t$APP_PROJECT"); then
-							echo "#[ERROR] Application '$SAMPLE_APP' error";
-							exit 1
-						fi
-						SAMPLE_APP_GROUP=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $1}')
-						SAMPLE_APP_PROJECT=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $2}')
-
+						# FILE TAB
 						CONFIG_FILE_TAB=$TMP_FOLDER_TMP_R/$SAMPLE_APP.config.tab
 						CONFIG_FILE_TAB_LIST=$(echo "$CONFIG_FILE_TAB_LIST$CONFIG_FILE_TAB " | tr " " "\n" | sort -u | tr "\n" " ")
 
