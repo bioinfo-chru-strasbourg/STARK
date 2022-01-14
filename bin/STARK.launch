@@ -1196,7 +1196,7 @@ for RUU in $RUN_UNIQ; do
 						if [[ \$\$(echo '$^' | wc -w) -gt 1 ]]; then \
 							cat $^ > $RUN_SAMPLE_DIR/$S.R2.fastq.gz; \
 						else \
-							ln -s $F $RUN_SAMPLE_DIR/$S.R2.fastq.gz; \
+							ln -s $F_R2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz; \
 						fi;
 					" >> $INPUT_MK
 					INPUT_MK_ALL=$INPUT_MK_ALL" $RUN_SAMPLE_DIR/$S.R2.fastq.gz"
@@ -1216,7 +1216,7 @@ for RUU in $RUN_UNIQ; do
 						if [[ \$\$(echo '$^' | wc -w) -gt 1 ]]; then \
 							cat $^ > $RUN_SAMPLE_DIR/$S.I1.fastq.gz; \
 						else \
-							ln -s $F $RUN_SAMPLE_DIR/$S.I1.fastq.gz; \
+							ln -s $I1 $RUN_SAMPLE_DIR/$S.I1.fastq.gz; \
 						fi;
 					" >> $INPUT_MK
 					INPUT_MK_ALL=$INPUT_MK_ALL" $RUN_SAMPLE_DIR/$S.I1.fastq.gz"
@@ -1236,7 +1236,7 @@ for RUU in $RUN_UNIQ; do
 						if [[ \$\$(echo '$^' | wc -w) -gt 1 ]]; then \
 							cat $^ > $RUN_SAMPLE_DIR/$S.I2.fastq.gz; \
 						else \
-							ln -s $F $RUN_SAMPLE_DIR/$S.I2.fastq.gz; \
+							ln -s $I2 $RUN_SAMPLE_DIR/$S.I2.fastq.gz; \
 						fi;
 					" >> $INPUT_MK
 					INPUT_MK_ALL=$INPUT_MK_ALL" $RUN_SAMPLE_DIR/$S.I2.fastq.gz"
