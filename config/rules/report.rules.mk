@@ -112,8 +112,8 @@ REPORT_SECTIONS?=ALL
 	if ! $(STARK_FOLDER_BIN)/STARK.report -f "`echo $$(basename $$(dirname $$(dirname $(@D))))`" -s "$(*F)" -e "$(ENV)" -i $$(echo $(PIPELINES) | tr " " ",") --sections="$(REPORT_SECTIONS)" -k $(ANALYSIS_DATE) -r $(OUTDIR) --tmp=$(TMP_FOLDER_TMP) --output=$*.report --verbose; then \
 		$(STARK_FOLDER_BIN)/STARK.report -f "`echo $$(basename $$(dirname $$(dirname $(@D))))`" -s "$(*F)" -e "$(ENV)" -i $$(echo $(PIPELINES) | tr " " ",") --sections="$(REPORT_SECTIONS)" -k $(ANALYSIS_DATE) -r $(OUTDIR) --tmp=/tmp --output=$*.report --verbose; \
 	fi;
-	tar -C $(@D) -cvf $@.tar.gz $(*F).report.html $(*F).report.annex.html $(*F).report.html.folder/
-
+	tar -C $(@D) -cvf $@.tar.gz $(*F).report.html $(*F).report.annex.html $(*F).report.html.folder/;
+	
 
 
 ## list of vcf
