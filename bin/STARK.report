@@ -604,7 +604,7 @@ echo '
 	<link rel="shortcut icon" href="'$HTMLFOLDER/favicon.ico'" type="image/x-icon">
 	<meta name="description" content="STARK Report">
 
-	<title>STARK Report - '$SAMPLEID'</title>
+	<title>STARK Report - '$SAMPLEID' - '$DATE'</title>
 	<link rel="stylesheet" href="'$HTMLFOLDER'/web/assets/mobirise-icons/mobirise-icons.css">
 	<link rel="stylesheet" href="'$HTMLFOLDER'/tether/tether.min.css">
 	<link rel="stylesheet" href="'$HTMLFOLDER'/bootstrap/css/bootstrap.min.css">
@@ -802,7 +802,10 @@ echo '
 		   		 <div class="card p-6 col-12 col-md-12">
 		   			 <div class="card-box">
 		   				 <h1 class="mbr-section-title mbr-bold pb-3 mbr-fonts-style display-2">
-			   					<img src="'$HTML_LOGO'" width="128">
+			   				<img src="'$HTML_LOGO'" width="128">
+							<br>
+							<!--<span style="color:rgb(124,101,158);"><small><small><small><small><b>'$DATE'</b></small></small></small></small></span>-->
+							<span><small><small><small><small><b>'$DATE'</b></small></small></small></small></span>
 		   				 </h1>
 		   			 </div>
 		   		 </div>
