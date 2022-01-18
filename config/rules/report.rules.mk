@@ -230,7 +230,7 @@ REPORT_SECTIONS?=ALL
 %.variants: $(VCF_REPORT_FILES) %.variants_full #$(REPORT_FILES)
 	# List of final VCF files
 	echo $^ | tr " " "\n" | tr "\t" "\n" | grep "final.vcf.gz$$" > $@.tmp.vcf_list
-	$(BCFTOOLS) merge -l $@.tmp.vcf_list | $(BCFTOOLS) filter -S . -e 'GT=="0/0" | GT=="0|0"' > $@.tmp.merged;
+	$(BCFTOOLS) merge -l $@.tmp.vcf_list --force-samples | $(BCFTOOLS) filter -S . -e 'GT=="0/0" | GT=="0|0"' > $@.tmp.merged;
 	# Annotation
 	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp.merged --output=$@.tmp.annotated1 --annotation=$(HOWARD_ANNOTATION_ANALYSIS) --threads=$(THREADS);
 	# Annotation dejavu (forced)
