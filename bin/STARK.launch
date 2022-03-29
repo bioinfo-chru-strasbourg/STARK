@@ -1303,6 +1303,7 @@ for RUU in $RUN_UNIQ; do
 					INPUT_MK_ALL=$INPUT_MK_ALL" $RUN_SAMPLE_DIR/$S.I2.fastq.gz"
 
 					if (($KEEP_ALIGNMENT)); then
+						(($VERBOSE)) && echo "#[INFO] Keep Alignment from Input BAM/CRAM/SAM file"
 						for PIPELINE in $(echo $PIPELINES | tr "," " " | tr " " "\n" | sed '/^[[:space:]]*$/d' | tr "." " " | cut -d" " -f1 | sort -u); do
 							AL=$(echo $PIPELINE | cut -d. -f1)
 							echo "$RUN_SAMPLE_DIR/$S.$AL.bam: $F 
