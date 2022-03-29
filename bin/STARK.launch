@@ -1303,8 +1303,8 @@ for RUU in $RUN_UNIQ; do
 					INPUT_MK_ALL=$INPUT_MK_ALL" $RUN_SAMPLE_DIR/$S.I2.fastq.gz"
 
 					if (($KEEP_ALIGNMENT)); then
-						for P in $(echo $PIPELINES | tr "," " " | tr " " "\n" | sed '/^[[:space:]]*$/d' | tr "." " " | cut -d" " -f1 | sort -u); do
-							AL=$(echo $P | cut -d. -f1)
+						for PIPELINE in $(echo $PIPELINES | tr "," " " | tr " " "\n" | sed '/^[[:space:]]*$/d' | tr "." " " | cut -d" " -f1 | sort -u); do
+							AL=$(echo $PIPELINE | cut -d. -f1)
 							echo "$RUN_SAMPLE_DIR/$S.$AL.bam: $F 
 								if ((\$\$($SAMTOOLS flagstat -@ $THREADS_BY_SAMPLE $F | grep '[0-9]* + [0-9]* mapped (' | awk 'BEGIN {total=0} {total=total+\$\$1+\$\$3} END {print total}'))); then \
 									if [ ! -e $RUN_SAMPLE_DIR/$S.genome ]; then \
