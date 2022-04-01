@@ -29,12 +29,15 @@ FILTRATION_VCF_INVALIDATE_PREVIOUS_FILTERS_OPTION?=$(shell if (( $(FILTRATION_VC
 
 #%.vcf: %.filtration.vcf %.filtration.vcf.idx %.empty.vcf %.genome
 %.vcf: %.filtration.vcf %.empty.vcf %.genome
-	if [ ! $*.filtration.vcf.idx ]; then rm -f $*.filtration.vcf.idx; fi;
-	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) -T VariantFiltration -R $$(cat $*.genome) --variant $< -o $@ $(FILTRATION_VCF_INVALIDATE_PREVIOUS_FILTERS_OPTION) $(FILTRATION_VCF_FILTER_EXPRESSION) $(FILTRATION_VCF_GENOTYPE_FILTER_EXPRESSION)
+	if [ ! -s $*.filtration.vcf.idx ]; then rm -f $*.filtration.vcf.idx; fi;
+	-$(JAVA) $(JAVA_FLAGS) -jar $(GATK) -T VariantFiltration -R $$(cat $*.genome) --variant $< -o $@ $(FILTRATION_VCF_INVALIDATE_PREVIOUS_FILTERS_OPTION) $(FILTRATION_VCF_FILTER_EXPRESSION) $(FILTRATION_VCF_GENOTYPE_FILTER_EXPRESSION)
+	if [ ! -e $@ ]; then cp $*.filtration.vcf $@; fi;
 	if [ ! -e $@ ]; then cp $*.empty.vcf $@; fi;
 	if [ ! -e $@ ]; then touch $@; fi;
 	rm -f $<.idx $@.idx $*.filtration.vcf*
 
+#if [ ! -e $@ ]; then cp $*.empty.vcf $@; fi;
+	
 
 
 RELEASE_COMMENT := "\#\# VCF FILTRATION: GATK VariantFiltration to tag FILTER info in VCF file."
