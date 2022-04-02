@@ -4,13 +4,15 @@
 # Date: 25/05/2021
 # Author: Antony Le Bechec
 ############################
-MK_RELEASE="0.9.1.0"
-MK_DATE="09/11/2021"
+MK_RELEASE="0.9.2.0"
+MK_DATE="02/04/2022"
 
 # Release notes:
 # 0.9.0.0-14/10/2019: Creation
 # 0.9.0.1-25/05/2021: Recheck Expressions
 # 0.9.1.0-09/11/2021: Expression variables
+# 0.9.1.0-09/11/2021: Expression variables
+# 0.9.2.0-02/04/2022: Remove idx if empty
 
 
 #####################
@@ -27,16 +29,14 @@ FILTRATION_VCF_INVALIDATE_PREVIOUS_FILTERS_OPTION?=$(shell if (( $(FILTRATION_VC
 
 
 
-#%.vcf: %.filtration.vcf %.filtration.vcf.idx %.empty.vcf %.genome
 %.vcf: %.filtration.vcf %.empty.vcf %.genome
 	if [ ! -s $*.filtration.vcf.idx ]; then rm -f $*.filtration.vcf.idx; fi;
-	-$(JAVA) $(JAVA_FLAGS) -jar $(GATK) -T VariantFiltration -R $$(cat $*.genome) --variant $< -o $@ $(FILTRATION_VCF_INVALIDATE_PREVIOUS_FILTERS_OPTION) $(FILTRATION_VCF_FILTER_EXPRESSION) $(FILTRATION_VCF_GENOTYPE_FILTER_EXPRESSION)
+	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) -T VariantFiltration -R $$(cat $*.genome) --variant $< -o $@ $(FILTRATION_VCF_INVALIDATE_PREVIOUS_FILTERS_OPTION) $(FILTRATION_VCF_FILTER_EXPRESSION) $(FILTRATION_VCF_GENOTYPE_FILTER_EXPRESSION)
 	if [ ! -e $@ ]; then cp $*.filtration.vcf $@; fi;
 	if [ ! -e $@ ]; then cp $*.empty.vcf $@; fi;
 	if [ ! -e $@ ]; then touch $@; fi;
 	rm -f $<.idx $@.idx $*.filtration.vcf*
 
-#if [ ! -e $@ ]; then cp $*.empty.vcf $@; fi;
 	
 
 
