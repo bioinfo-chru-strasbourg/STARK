@@ -111,12 +111,29 @@ def get_total_mapped_duplicate_reads(sampleDir, sample, aligner):
 	"""
 	flagstatFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+".flagstat")
 	assert_file_exists_and_is_readable(flagstatFile)
+
+	stats = {}
 	with open(flagstatFile, "r") as f:
-		col1 = [int(line.split()[0]) for line in f]
-	if col1[0] != 0:
-		return [col1[0], col1[4], format(col1[4]/col1[0]*100, ".2f"), col1[3], format(col1[3]/col1[0]*100, ".2f")]
+		for l in f:
+			if l.rstrip().endswith("in total (QC-passed reads + QC-failed reads)"):
+				stats["total"] = int(l.split(" ")[0])
+			elif "mapped" in l and "primary mapped" not in l and "different chr" not in l:
+				stats["mapped"] = int(l.split(" ")[0])
+			elif l.rstrip().endswith("duplicates") and "primary duplicates" not in l:
+				stats["dup"] = int(l.split(" ")[0])
+
+	assert all([k in stats.keys() for k in ("total", "mapped", "dup")])
+
+	if stats["total"] == 0:
+		return [stats["total"], stats["mapped"], "NA", stats["dup"], "NA"]
 	else:
-		return [col1[0], col1[4], "NA", col1[3], "NA"]
+		return [
+			stats["total"],
+			stats["mapped"],
+			format(stats["mapped"] / stats["total"] * 100, ".2f"),
+			stats["dup"],
+			format(stats["dup"] / stats["total"] * 100, ".2f"),
+		]
 
 def get_on_target_reads(sampleDir, sample, aligner, bed):
 	"""
