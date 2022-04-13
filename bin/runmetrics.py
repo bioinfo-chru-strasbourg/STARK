@@ -117,7 +117,7 @@ def get_total_mapped_duplicate_reads(sampleDir, sample, aligner):
 		for l in f:
 			if l.rstrip().endswith("in total (QC-passed reads + QC-failed reads)"):
 				stats["total"] = int(l.split(" ")[0])
-			elif "mapped" in l and "primary mapped" not in l and "different chr" not in l:
+			elif "mapped" in l and "primary mapped" not in l and "different chr" not in l and "mate mapped" not in l:
 				stats["mapped"] = int(l.split(" ")[0])
 			elif l.rstrip().endswith("duplicates") and "primary duplicates" not in l:
 				stats["dup"] = int(l.split(" ")[0])
