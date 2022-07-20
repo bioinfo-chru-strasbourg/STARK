@@ -230,7 +230,7 @@ REPORT_SECTIONS?=ALL
 %.variants: $(VCF_REPORT_FILES) %.variants_full #$(REPORT_FILES)
 	# List of final VCF files
 	echo $^ | tr " " "\n" | tr "\t" "\n" | grep "final.vcf.gz$$" > $@.tmp.vcf_list
-	$(BCFTOOLS) merge -l $@.tmp.vcf_list --force-samples | $(BCFTOOLS) filter -S . -e 'GT=="0/0" | GT=="0|0"' > $@.tmp.merged;
+	$(BCFTOOLS) merge -l $@.tmp.vcf_list -m none --force-samples | $(BCFTOOLS) filter -S . -e 'GT=="0/0" | GT=="0|0"' > $@.tmp.merged;
 	# Annotation
 	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp.merged --output=$@.tmp.annotated1 --annotation=$(HOWARD_ANNOTATION_ANALYSIS) --threads=$(THREADS);
 	# Annotation dejavu (forced)
@@ -286,7 +286,7 @@ REPORT_SECTIONS?=ALL
 		# List of full VCF files \
 		echo $^ | tr " " "\n" | tr "\t" "\n" | grep "full.vcf.gz$$" > $@.tmp.vcf_list; \
 		for f in $$(cat $@.tmp.vcf_list); do $(BCFTOOLS) view -h $$f | grep "^#CHROM" | cut -f10- | sed  "s/^/$$(basename $$f | cut -d. -f1)./g;s/\t/\t$$(basename $$f | cut -d. -f1)./g";  done | tr "\t" "\n" > $@.tmp.vcf_list.pipelines; \
-		$(BCFTOOLS) merge -l $@.tmp.vcf_list --force-samples | $(BCFTOOLS) filter -S . -e 'GT=="0/0" | GT=="0|0"' | $(BCFTOOLS) reheader -s $@.tmp.vcf_list.pipelines > $@.tmp.merged; \
+		$(BCFTOOLS) merge -l $@.tmp.vcf_list -m none --force-samples | $(BCFTOOLS) filter -S . -e 'GT=="0/0" | GT=="0|0"' | $(BCFTOOLS) reheader -s $@.tmp.vcf_list.pipelines > $@.tmp.merged; \
 		# Annotation; \
 		$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp.merged --output=$@.tmp.annotated0 --annotation=$(HOWARD_ANNOTATION_ANALYSIS) --norm=$$(cat $*.genome) --threads=$(THREADS); \
 		# Annotation dejavu (forced); \
