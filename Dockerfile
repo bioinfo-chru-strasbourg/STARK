@@ -667,7 +667,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 # TOOL INFO
 ENV TOOL_NAME="htslib"
-ENV TOOL_VERSION="1.14"
+ENV TOOL_VERSION="1.15.1"
 ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.tar.bz2"
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/samtools/$TOOL_NAME/releases/download/$TOOL_VERSION/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
@@ -688,7 +688,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 # TOOL INFO
 ENV TOOL_NAME="bcftools"
-ENV TOOL_VERSION="1.14"
+ENV TOOL_VERSION="1.15.1"
 ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.tar.bz2"
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/samtools/$TOOL_NAME/releases/download/$TOOL_VERSION/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
@@ -751,7 +751,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 # TOOL INFO
 ENV TOOL_NAME="bowtie2"
-ENV TOOL_VERSION="2.4.4"
+ENV TOOL_VERSION="2.4.5"
 ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION-linux-x86_64.zip"
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/BenLangmead/bowtie2/releases/download/v$TOOL_VERSION/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
@@ -795,7 +795,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 # TOOL INFO
 ENV TOOL_NAME="fastp"
-ENV TOOL_VERSION="0.23.1"
+ENV TOOL_VERSION="0.23.2"
 ENV TOOL_TARBALL="$TOOL_NAME"
 ENV TOOL_SOURCE_EXTERNAL="http://opengene.org/$TOOL_NAME/$TOOL_NAME.$TOOL_VERSION"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
@@ -1058,7 +1058,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 # TOOL INFO
 ENV TOOL_NAME="picard"
-ENV TOOL_VERSION="2.26.0"
+ENV TOOL_VERSION="2.27.4"
 ENV TOOL_TARBALL="picard.jar"
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/broadinstitute/picard/releases/download/$TOOL_VERSION/picard.jar"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
@@ -1078,7 +1078,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 # TOOL INFO
 ENV TOOL_NAME="samtools"
-ENV TOOL_VERSION="1.14"
+ENV TOOL_VERSION="1.15.1"
 ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.tar.bz2"
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/samtools/$TOOL_NAME/releases/download/$TOOL_VERSION/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
@@ -1125,20 +1125,20 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 ##########
 # https://github.com/fulcrumgenomics/fgbio/releases/download/1.3.0/fgbio-1.3.0.jar
 
-# TOOL INFO
-ENV TOOL_NAME="fgbio"
-ENV TOOL_VERSION="1.3.0"
-ENV TOOL_TARBALL="fgbio.jar"
-ENV TOOL_SOURCE_EXTERNAL="https://github.com/fulcrumgenomics/fgbio/releases/download/$TOOL_VERSION/fgbio-$TOOL_VERSION.jar"
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-# TOOL PARAMETERS
+# # TOOL INFO
+# ENV TOOL_NAME="fgbio"
+# ENV TOOL_VERSION="2.0.2"
+# ENV TOOL_TARBALL="fgbio.jar"
+# ENV TOOL_SOURCE_EXTERNAL="https://github.com/fulcrumgenomics/fgbio/releases/download/$TOOL_VERSION/fgbio-$TOOL_VERSION.jar"
+# ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+# # TOOL PARAMETERS
 
-# TOOL INSTALLATION
-RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-	source $TOOL_INIT && \
-	cp $TOOL_SOURCE $TOOL_DEST/bin/ && \
-	chmod a+x $TOOL_DEST/bin/* && \
-	$TOOL_CHECK ;
+# # TOOL INSTALLATION
+# RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+# 	source $TOOL_INIT && \
+# 	cp $TOOL_SOURCE $TOOL_DEST/bin/ && \
+# 	chmod a+x $TOOL_DEST/bin/* && \
+# 	$TOOL_CHECK ;
 
 
 
@@ -1150,7 +1150,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 # TOOL INFO
 ENV TOOL_NAME="umi_tools"
-ENV TOOL_VERSION="1.1.1"
+ENV TOOL_VERSION="1.1.2"
 ENV TOOL_TARBALL="$TOOL_VERSION.zip"
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/CGATOxford/UMI-tools/archive/$TOOL_VERSION.zip"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
@@ -1174,7 +1174,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 # TOOL INFO
 ENV TOOL_NAME="gencore"
-ENV TOOL_VERSION="0.17.1"
+ENV TOOL_VERSION="0.17.2"
 ENV TOOL_TARBALL="$TOOL_NAME"
 ENV TOOL_SOURCE_EXTERNAL="http://opengene.org/$TOOL_NAME/$TOOL_NAME"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH

@@ -28,7 +28,8 @@ MK_DATE="28/06/2021"
 # SAMTOOLS mpileup
 ####################
 
-MPILEUP_VARSCAN_OPTIONS= -E -d 10000000 -L 10000000 -C 50 -Q 10 -q 1 --output-tags SP,DP,DP4,DV,ADF,ADR,AD # -B  -d 100000 -L 100000 -C200
+#MPILEUP_VARSCAN_OPTIONS= -E -d 10000000 -L 10000000 -C 50 -Q 10 -q 1 --output-tags SP,DP,DP4,DV,ADF,ADR,AD # -B  -d 100000 -L 100000 -C200
+MPILEUP_VARSCAN_OPTIONS= -E -d 10000000 -C 50 -Q 10 -q 1 # -B  -d 100000 -L 100000 -C200
 
 
 %.bam.mpileup: %.bam %.bam.bai %.genome %.design.bed

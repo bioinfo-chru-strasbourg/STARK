@@ -88,7 +88,7 @@ TOOLS_LIST=$TOOLS_LIST" BCL2FASTQ"
 
 # SAMTOOLS
 export SAMTOOLS=$NGS_TOOLS/samtools/current/bin/samtools		# BIN
-export SAMTOOLS_VERSION=1.14									# VER
+export SAMTOOLS_VERSION=1.15.1									# VER
 export SAMTOOLS_DESCRIPTION="Reading/writing/editing/indexing/viewing SAM/BAM/CRAM format"
 export SAMTOOLS_REF="Li H.*, Handsaker B.*, Wysoker A., Fennell T., Ruan J., Homer N., Marth G., Abecasis G., Durbin R. and 1000 Genome Project Data Processing Subgroup (2009) The Sequence alignment/map (SAM) format and SAMtools. Bioinformatics, 25, 2078-9. [PMID: 19505943]. Li H A statistical framework for SNP calling, mutation discovery, association mapping and population genetical parameter estimation from sequencing data. Bioinformatics. 2011 Nov 1;27(21):2987-93. Epub 2011 Sep 8. [PMID: 21903627]"
 TOOLS_LIST=$TOOLS_LIST" SAMTOOLS"
@@ -96,7 +96,7 @@ TOOLS_LIST=$TOOLS_LIST" SAMTOOLS"
 
 # VCFUTILS
 export VCFUTILS=$NGS_TOOLS/bcftools/current/bin/vcfutils.pl		# BIN-SCRIPT
-export VCFUTILS_VERSION=1.14									# VER
+export VCFUTILS_VERSION=1.15.1									# VER
 export VCFUTILS_DESCRIPTION="fix a compatibility issue with the new bcftools"
 export VCFUTILS_REF="unknown"
 TOOLS_LIST=$TOOLS_LIST" VCFUTILS"
@@ -110,7 +110,7 @@ export HTSLIB_REF="http://www.htslib.org/"
 # TABIX
 export TABIX=$NGS_TOOLS/htslib/current/bin/tabix			# BIN
 export TABIX_PATH=$(dirname $TABIX)							# BIN
-export TABIX_VERSION=1.14									# VER
+export TABIX_VERSION=1.15.1									# VER
 export TABIX_DESCRIPTION="Indexing VCF files"
 export TABIX_REF=$HTSLIB_REF
 TOOLS_LIST=$TOOLS_LIST" TABIX"
@@ -118,7 +118,7 @@ TOOLS_LIST=$TOOLS_LIST" TABIX"
 
 # BGZIP
 export BGZIP=$NGS_TOOLS/htslib/current/bin/bgzip			# BIN
-export BGZIP_VERSION=1.14									# VER
+export BGZIP_VERSION=1.15.1									# VER
 export BGZIP_DESCRIPTION="Compressing VCF files"
 export BGZIP_REF=$HTSLIB_REF
 TOOLS_LIST=$TOOLS_LIST" BGZIP"
@@ -126,7 +126,7 @@ TOOLS_LIST=$TOOLS_LIST" BGZIP"
 
 # BCFTOOLS
 export BCFTOOLS=$NGS_TOOLS/bcftools/current/bin/bcftools		# BIN
-export BCFTOOLS_VERSION=1.14									# VER
+export BCFTOOLS_VERSION=1.15.1									# VER
 export BCFTOOLS_DESCRIPTION="Reading/writing BCF2/VCF/gVCF files and calling/filtering/summarising SNP and short indel sequence variants"
 export BCFTOOLS_REF=$HTSLIB_REF
 TOOLS_LIST=$TOOLS_LIST" BCFTOOLS"
@@ -134,7 +134,7 @@ TOOLS_LIST=$TOOLS_LIST" BCFTOOLS"
 
 # PICARD
 export PICARD=$NGS_TOOLS/picard/current/bin/picard.jar		# BIN
-export PICARD_VERSION=2.26.0								# VER
+export PICARD_VERSION=2.27.4								# VER
 export PICARD_DESCRIPTION="Java command line tools for manipulating high-throughput sequencing data (HTS) data and formats"
 export PICARDLIB=$NGS_TOOLS/picard/2.18.5/bin				# DIR
 export PICARD_REF="http://broadinstitute.github.io/picard/"
@@ -175,7 +175,7 @@ TOOLS_LIST=$TOOLS_LIST" GATK4"
 
 # GENCORE
 export GENCORE=$NGS_TOOLS/gencore/current/bin/gencore	# BIN-JAR
-export GENCORE_VERSION=0.17.1							# VER
+export GENCORE_VERSION=0.17.2							# VER
 export GENCORE_DESCRIPTION="An efficient tool to remove sequencing duplications and eliminate sequencing errors by generating consensus reads."
 export GENCORE_REF="Chen, S., Zhou, Y., Chen, Y. et al. Gencore: an efficient tool to generate consensus reads for error suppressing and duplicate removing of NGS data. BMC Bioinformatics 20, 606 (2019) doi:10.1186/s12859-019-3280-9"
 TOOLS_LIST=$TOOLS_LIST" GENCORE"
@@ -220,7 +220,7 @@ TOOLS_LIST=$TOOLS_LIST" FASTQC"
 
 
 # FASTP
-export FASTP_VERSION=0.23.1											# VER
+export FASTP_VERSION=0.23.2											# VER
 export FASTP=$NGS_TOOLS/fastp/current/bin/fastp		# BIN
 export FASTP_DESCRIPTION="A tool designed to provide fast all-in-one preprocessing for FastQ files."
 export FASTP_REF="https://github.com/OpenGene/fastp"
@@ -229,7 +229,7 @@ TOOLS_LIST=$TOOLS_LIST" FASTP"
 
 # UMI TOOLS
 export UMITOOLS=$NGS_TOOLS/umi_tools/current/bin/umi_tools		# BIN
-export FASTQC_VERSION=1.1.1										# VER
+export FASTQC_VERSION=1.1.2										# VER
 export FASTQC_DESCRIPTION="UMI-tools contains tools for dealing with Unique Molecular Identifiers (UMIs)/Random Molecular Tags (RMTs) and single cell RNA-Seq cell barcodes."
 export FASTQC_REF="https://github.com/CGATOxford/UMI-tools"
 TOOLS_LIST=$TOOLS_LIST" UMITOOLS"
@@ -245,7 +245,7 @@ TOOLS_LIST=$TOOLS_LIST" BWA"
 
 # BOWTIE2
 export BOWTIE=$NGS_TOOLS/bowtie2/current/bin/bowtie2			# BIN
-export BOWTIE_VERSION=2.4.4										# VER
+export BOWTIE_VERSION=2.4.5										# VER
 export BOWTIE_DESCRIPTION="Bowtie 2 is an ultrafast and memory-efficient tool for aligning sequencing reads to long reference sequences."
 export BOWTIE_REF="Langmead B1, Trapnell C, Pop M, Salzberg SL. (2009) Ultrafast and memory-efficient alignment of short DNA sequences to the human genome. Genome Biol. 2009;10(3):R25. doi: 10.1186/gb-2009-10-3-r25. Epub 2009 Mar 4. [PMID: 19261174]"
 TOOLS_LIST=$TOOLS_LIST" BOWTIE"
