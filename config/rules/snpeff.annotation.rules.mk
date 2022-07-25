@@ -13,7 +13,7 @@ MK_DATE="21/04/2016"
 
 %.snpeff$(POST_ANNOTATION).vcf: %.vcf
 	mkdir -p $@.stats
-	$(JAVA) -jar $(SNPEFF) $(ASSEMBLY) $< -v -stats $@.stats/$(@F).stats.html > $@ ;
+	$(JAVA11) -jar $(SNPEFF) $(ASSEMBLY) $< -v -stats $@.stats/$(@F).stats.html > $@ ;
 
 
 # CONFIG/RELEASE

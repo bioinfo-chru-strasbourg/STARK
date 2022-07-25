@@ -39,7 +39,7 @@
 
 FROM centos:7
 LABEL Software="STARK" \
-	Version="0.9.18.3" \
+	Version="0.9.18.4" \
 	Website="https://gitlab.bioinfo-diag.fr/Strasbourg/STARK" \
 	maintainer="Antony Le Bechec <antony.lebechec@gmail.com>" \
 	Description="STARK" \
@@ -128,7 +128,7 @@ RUN echo "#[INFO] STARK installation configuration" && \
 # This will install system packages, python packages and scripts to install tools
 
 
-ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git lzma lzma-devel make ncurses-devel perl perl-Data-Dumper perl-Digest-MD5 perl-Switch perl-devel perl-Tk tbb-devel unzip rsync wget which xz xz-devel zlib zlib-devel zlib2 zlib2-devel docker java-1.7.0 java-1.8.0 python2 python2-pip python3 python3-pip python3-devel curl-devel openssl-devel htslib"
+ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git lzma lzma-devel make ncurses-devel perl perl-Data-Dumper perl-Digest-MD5 perl-Switch perl-devel perl-Tk tbb-devel unzip rsync wget which xz xz-devel zlib zlib-devel zlib2 zlib2-devel docker java-1.7.0 java-1.8.0 java-11 python2 python2-pip python3 python3-pip python3-devel curl-devel openssl-devel htslib"
 #ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git lzma lzma-devel make ncurses-devel perl perl-Data-Dumper perl-Digest-MD5 perl-Switch perl-devel perl-Tk tbb-devel unzip rsync wget which xz xz-devel zlib zlib-devel zlib2 zlib2-devel docker java-1.7.0 java-1.8.0 python2 python2-pip python3 python3-pip python3-devel curl-devel openssl-devel R-core R-core-devel libcurl libcurl-devel libcurl-openssl-devel htslib htslib-devel libxml2-devel"
 #ENV YUM_INSTALL_MORE=" R-devel libcurl libcurl-devel libcurl-openssl-devel htslib htslib-devel libxml2-devel perl-Archive-Tar perl-List-MoreUtils"
 #ENV YUM_INSTALL_MORE=" R-core R-core-devel libcurl libcurl-devel libcurl-openssl-devel htslib htslib-devel libxml2-devel"
@@ -310,7 +310,6 @@ RUN echo "#[INFO] System YUM installation - and download" && \
 	rm -rf /var/cache/yum && \
 	echo "#[INFO] System Clean" && \
 	echo "#";
-
 
 
 
@@ -501,6 +500,19 @@ ENV TOOL_VERSION="1.7.0"
 RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
 	ln -s /usr/lib/jvm/jre-1.7.0/bin/java $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/java ;
+
+
+
+##########
+# JAVA11 #
+##########
+
+ENV TOOL_NAME="java"
+ENV TOOL_VERSION="11"
+ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
+	ln -s /usr/lib/jvm/jre-11/bin/java $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/java ;
 
 
 
@@ -820,6 +832,62 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 
 
+# #################
+# # PYTHON 3.10.5 #
+# #################
+
+# ENV TOOL_NAME="python"
+# ENV TOOL_VERSION="3.10.5"
+# ENV TOOL_VERSION_SIMPLE="3.10.5"
+# ENV TOOL_TARBALL="Python-$TOOL_VERSION.tgz"
+# ENV TOOL_SOURCE_EXTERNAL="https://www.python.org/ftp/$TOOL_NAME/$TOOL_VERSION/$TOOL_TARBALL"
+# # ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+# # use /STARK/tools/python/3.10.5/bin/python
+# RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+# 	#yum install -y $YUM_INSTALL && \
+# 	source $TOOL_INIT && \
+# 	tar xf $TOOL_SOURCE -C $TOOL_DEST/bin && \
+# 	(cd $TOOL_DEST/bin/Python-$TOOL_VERSION && ./configure --enable-optimizations && \
+# 	make altinstall --quiet -j $THREADS prefix=$TOOL_DEST) ;
+# # 	# ln -sfn $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/pip3 /usr/bin/pip$TOOL_VERSION_SIMPLE && \
+# # 	# ln -sfn $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python3 /usr/bin/python$TOOL_VERSION_SIMPLE && \
+# # 	# ln -sfn /usr/bin/pip$TOOL_VERSION_SIMPLE /usr/bin/pip3 && \
+# # 	# ln -sfn /usr/bin/pip$TOOL_VERSION_SIMPLE /usr/bin/pip && \
+# # 	# ln -sfn /usr/bin/python$TOOL_VERSION_SIMPLE /usr/bin/python3 && \
+# # 	# ln -sfn /usr/bin/python$TOOL_VERSION_SIMPLE /usr/bin/python && \
+# # 	# ln -sfn $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
+
+
+
+# ###############
+# # CUTEVARIANT #
+# ###############
+
+# # TOOL INFO
+# ENV TOOL_NAME="cutevariant"
+# ENV TOOL_VERSION="0.4.4"
+# ENV TOOL_TARBALL="$TOOL_VERSION.tar.gz"
+# ENV TOOL_SOURCE_EXTERNAL="https://github.com/labsquare/cutevariant/archive/refs/tags/$TOOL_TARBALL"
+# ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+# # make sure correct python release is used
+# # TOOL PARAMETERS
+
+# # TOOL INSTALLATION
+# RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+# 	source $TOOL_INIT && \
+# 	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
+# 	cp -R $TOOL_SOURCE_BUILD/*/* $TOOL_DEST/bin/ && \
+# 	ls -l /STARK/tools/python/3.10.5/ && \
+# 	ls -l /STARK/tools/python/3.10.5/bin && \
+# 	# ls -l /STARK/tools/python/3.10.5/bin/bin && \
+# 	# ls -l /STARK/tools/python/3.10.5/lib && \
+# 	# ls -l /STARK/tools/python/3.10.5/share && \
+# 	/STARK/tools/python/3.10.5/bin/python3.10 -m pip install --trusted-host pypi.org -e $TOOL_DEST/bin/ && \
+# 	chmod a+x $TOOL_DEST/bin/* && \
+#     $TOOL_CHECK ;
+
+
+
 #########
 # GATK4 #
 #########
@@ -827,7 +895,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 # TOOL INFO
 ENV TOOL_NAME="gatk"
 #ENV TOOL_VERSION="4.1.9.0"
-ENV TOOL_VERSION="4.2.2.0"
+ENV TOOL_VERSION="4.2.6.1"
 ENV TOOL_TARBALL="gatk-$TOOL_VERSION.zip"
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/broadinstitute/gatk/releases/download/$TOOL_VERSION/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
@@ -1004,7 +1072,6 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 
 
-
 ############
 # SAMTOOLS #
 ############
@@ -1026,68 +1093,14 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 
 
-############
-# SCRAMBLE #
-############
-
-# https://github.com/GeneDx/scramble/archive/refs/tags/1.0.2.zip
-
-
-# # TOOL INFO
-# ENV TOOL_NAME="scramble"
-# ENV TOOL_VERSION="1.0.2"
-# ENV TOOL_TARBALL="$TOOL_VERSION.zip"
-# ENV TOOL_SOURCE_EXTERNAL="https://github.com/GeneDx/$TOOL_NAME/archive/refs/tags/$TOOL_TARBALL"
-# ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-# # TOOL PARAMETERS
-
-# # TOOL INSTALLATION
-# RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-# 	source $TOOL_INIT && \
-# 	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
-# 	make --quiet -j $THREADS -C $(ls -d $TOOL_SOURCE_BUILD/$TOOL_NAME-$TOOL_VERSION/cluster_identifier/src/) prefix=$TOOL_DEST && \
-# 	cp -R $TOOL_SOURCE_BUILD/$TOOL_NAME-$TOOL_VERSION/cluster_analysis/* $TOOL_DEST/ && \
-# 	cp -R $TOOL_SOURCE_BUILD/$TOOL_NAME-$TOOL_VERSION/cluster_identifier/src/build/* $TOOL_DEST/bin/ && \
-# 	cp -R $TOOL_SOURCE_BUILD/$TOOL_NAME-$TOOL_VERSION/cluster_analysis/resources/MEI_consensus_seqs.fa $TOOL_DEST/bin/ && \
-# 	chmod a+x $TOOL_DEST/bin/cluster_identifier && \
-# 	$TOOL_CHECK ;
-
-
-
 ##########
 # SNPEFF #
 ##########
 
 # TOOL INFO
+# Beware of TARBALL release
 ENV TOOL_NAME="snpeff"
-ENV TOOL_VERSION="4.3t"
-ENV TOOL_TARBALL="snpEff_v4_3t_core.zip"
-ENV TOOL_SOURCE_EXTERNAL="https://sourceforge.net/projects/snpeff/files/$TOOL_TARBALL"
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-# TOOL PARAMETERS
-#ENV TOOL_PARAM_DATABASE_FOLDER_LINK=$DATABASES/snpeff/4.3t
-ENV TOOL_PARAM_DATABASE_FOLDER_LINK=$DATABASES/snpeff/$TOOL_VERSION
-ENV TOOL_PARAM_DATABASE_FOLDER=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/data
-
-# TOOL INSTALLATION
-RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-	source $TOOL_INIT && \
-	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
-	cp $TOOL_SOURCE_BUILD/*/*jar $TOOL_DEST/bin/ && \
-	cp $TOOL_SOURCE_BUILD/*/*config $TOOL_DEST/bin/ && \
-	mkdir -p $TOOL_PARAM_DATABASE_FOLDER_LINK && \
-	ln -snf $TOOL_PARAM_DATABASE_FOLDER_LINK/ $TOOL_PARAM_DATABASE_FOLDER && \
-    $TOOL_CHECK ;
-
-
-
-##########
-# SNPEFF #
-##########
-
-# TOOL INFO
-ENV TOOL_NAME="snpeff"
-ENV TOOL_VERSION="5.0e"
+ENV TOOL_VERSION="5.1d"
 ENV TOOL_TARBALL="snpEff_latest_core.zip"
 ENV TOOL_SOURCE_EXTERNAL="https://snpeff.blob.core.windows.net/versions/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
@@ -1154,7 +1167,6 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 
 
-
 #############
 # GENCORE   #
 #############
@@ -1206,7 +1218,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 # TOOL INFO
 ENV TOOL_NAME="stark"
-ENV TOOL_VERSION="0.9.18.3"
+ENV TOOL_VERSION="0.9.18.4"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
 ENV TOOL="/tool"

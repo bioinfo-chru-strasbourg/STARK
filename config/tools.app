@@ -24,6 +24,24 @@ export JAVA_REF="http://java.com"
 TOOLS_LIST=$TOOLS_LIST" JAVA"
 
 
+# JAVA11
+export JAVA11=$NGS_TOOLS/java/11/bin/java			# BIN
+export JAVA8_PATH=$NGS_TOOLS/java/11/bin			# BIN
+export JAVA8_VERSION=11								# VER
+export JAVA8_DESCRIPTION="A high-level programming language developed by Sun Microsystems"
+export JAVA8_REF="http://java.com"
+TOOLS_LIST=$TOOLS_LIST" JAVA11"
+
+
+# JAVA8
+export JAVA8=$NGS_TOOLS/java/1.8.0/bin/java			# BIN
+export JAVA8_PATH=$NGS_TOOLS/java/1.8.0/bin			# BIN
+export JAVA8_VERSION=1.8.0							# VER
+export JAVA8_DESCRIPTION="A high-level programming language developed by Sun Microsystems"
+export JAVA8_REF="http://java.com"
+TOOLS_LIST=$TOOLS_LIST" JAVA8"
+
+
 # JAVA7
 export JAVA7=$NGS_TOOLS/java/1.7.0/bin/java			# BIN
 export JAVA7_PATH=$NGS_TOOLS/java/1.7.0/bin			# BIN
@@ -148,20 +166,26 @@ TOOLS_LIST=$TOOLS_LIST" GATK"
 
 
 # GATK4
-export GATK4=$NGS_TOOLS/gatk/4.2.2.0/bin/gatk-package-4.2.2.0-local.jar	# BIN-JAR
-export GATK4_VERSION=4.2.2.0											# VER
+export GATK4=$NGS_TOOLS/gatk/4.2.6.1/bin/gatk-package-4.2.6.1-local.jar	# BIN-JAR
+export GATK4_BIN=$NGS_TOOLS/gatk/4.2.6.1/bin/gatk	# BIN-JAR
+export GATK4_VERSION=4.2.6.1											# VER
 export GATK4_DESCRIPTION="The toolkit offers a wide variety of tools, with a primary focus on variant discovery and genotyping as well as strong emphasis on data quality assurance."
 export GATK4_REF="The Genome Analysis Toolkit: a MapReduce framework for analyzing next-generation DNA sequencing data. McKenna A, Hanna M, Banks E, Sivachenko A, Cibulskis K, Kernytsky A, Garimella K, Altshuler D, Gabriel S, Daly M, DePristo MA, 2010 GENOME RESEARCH 20:1297-303"
 TOOLS_LIST=$TOOLS_LIST" GATK4"
 
 # GENCORE
-export GENCORE=$NGS_TOOLS/gencore/current/bin/gencore	 # BIN-JAR
+export GENCORE=$NGS_TOOLS/gencore/current/bin/gencore	# BIN-JAR
 export GENCORE_VERSION=0.17.1							# VER
 export GENCORE_DESCRIPTION="An efficient tool to remove sequencing duplications and eliminate sequencing errors by generating consensus reads."
 export GENCORE_REF="Chen, S., Zhou, Y., Chen, Y. et al. Gencore: an efficient tool to generate consensus reads for error suppressing and duplicate removing of NGS data. BMC Bioinformatics 20, 606 (2019) doi:10.1186/s12859-019-3280-9"
 TOOLS_LIST=$TOOLS_LIST" GENCORE"
 
-
+# CUTEVARIANT
+export CUTEVARIANT=$NGS_TOOLS/cutevariant/current/bin/cutevariant-cli	# BIN-JAR
+export CUTEVARIANT_VERSION=0.4.4										# VER
+export CUTEVARIANT_DESCRIPTION="A standalone and free application to explore genetics variations from VCF files."
+export CUTEVARIANT_REF="Cutevariant: a standalone GUI-based desktop application to explore genetic variations from an annotated VCF file Sacha Schutz, Charles Monod-Broca, Lucas Bourneuf, Pierre Marijon, Tristan Montier Bioinformatics Advances, Volume 2, Issue 1, 2022, vbab028, doi.org/10.1093/bioadv/vbab028"
+TOOLS_LIST=$TOOLS_LIST" CUTEVARIANT"
 
 # R
 export R=$NGS_TOOLS/anaconda/miniconda2/bin/R	# BIN-R
@@ -289,7 +313,7 @@ TOOLS_LIST=$TOOLS_LIST" RSCRIPT"
 # SNPEFF
 export SNPEFF_FOLDER=$NGS_TOOLS/snpeff/current/bin		# FOLDER
 export SNPEFF=$SNPEFF_FOLDER/snpEff.jar					# BIN-JAR
-export SNPEFF_VERSION=5.0e								# VER
+export SNPEFF_VERSION=5.1d								# VER
 export SNPEFF_DESCRIPTION="Genetic variant annotation and effect prediction toolbox. It annotates and predicts the effects of variants on genes (such as amino acid changes)"
 export SNPEFF_REF="A program for annotating and predicting the effects of single nucleotide polymorphisms, SnpEff: SNPs in the genome of Drosophila melanogaster strain w1118; iso-2; iso-3., Cingolani P, Platts A, Wang le L, Coon M, Nguyen T, Wang L, Land SJ, Lu X, Ruden DM. Fly (Austin). 2012 Apr-Jun;6(2):80-92 "
 TOOLS_LIST=$TOOLS_LIST" SNPEFF"
