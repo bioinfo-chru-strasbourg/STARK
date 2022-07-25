@@ -309,7 +309,6 @@ if ((0)); then
 
 			" >> $MK
 			fi;
-		#head $BEDFILE_GENES_CUT.$chr.coverage_bases
 	done; fi;
 
 	echo "$BEDFILE_GENES_CUT.coverage_bases: $BEDFILE_GENES_CHR_COVERAGE_BASES_LIST
@@ -319,11 +318,6 @@ if ((0)); then
 	(($DEBUG)) && cat $MK
 
 
-
-	#cat $$one_bed | awk -F"\t" '{print $$1"\t"$$2-1"\t"$$3"\t"$$4"\t"$$5}' > $$one_bed.0_based; \
-	#$(SAMTOOLS) mpileup $(SAMTOOLS_METRICS_MPILEUP_PARAM) -aa -l $$one_bed.0_based $< | cut -f1,2,4
-
-	#THREADS=1
 	time if [ ! -e ${OUTPUT}.coverage_bases ]; then
 		echo "#[INFO] Coverage bases generation"
 		make -j $THREADS -f $MK $BEDFILE_GENES_CUT.coverage_bases 1>/dev/null 2>/dev/null
