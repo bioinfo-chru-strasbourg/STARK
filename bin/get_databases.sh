@@ -1113,7 +1113,8 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 
 			#SNPEFF_CMD="echo 'ERROR while connecting to' > $SNPEFF_DATABASES_FOLDER/STARK.SNPEFF.download.err"
 			#SNPEFF_CMD="echo ''"
-			SNPEFF_CMD="wget --no-verbose -O $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip \$\$($JAVA11 -jar $SNPEFF databases | grep '^$ASSEMBLY '  | grep '^hg19 ' | grep -Po 'http[^, ]*zip' | head -n1); unzip $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip -d $SNPEFF_DATABASES_FOLDER/; mv $SNPEFF_DATABASES_FOLDER/data/* $SNPEFF_DATABASES_FOLDER/;"
+			#SNPEFF_CMD="wget --no-verbose -O $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip \$\$($JAVA11 -jar $SNPEFF databases | grep '^$ASSEMBLY ' | grep -Po 'http[^, ]*zip' | head -n1) || wget --no-verbose -O $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip \$\$($JAVA11 -jar $SNPEFF databases | grep '^$ASSEMBLY ' | grep -Po 'http[^, ]*zip' | head -n1); unzip $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip -d $SNPEFF_DATABASES_FOLDER/; mv $SNPEFF_DATABASES_FOLDER/data/* $SNPEFF_DATABASES_FOLDER/;"
+			SNPEFF_CMD="wget --no-verbose -O $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip \$\$($JAVA11 -jar $SNPEFF databases | grep '^$ASSEMBLY ' | grep -Po 'http[^, ]*zip' | head -n1) || wget --no-verbose -O $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip \$\$($JAVA11 -jar $SNPEFF databases | grep '^$ASSEMBLY ' | grep -Po 'http[^, ]*zip' | tail -n1); unzip $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip -d $SNPEFF_DATABASES_FOLDER/; mv $SNPEFF_DATABASES_FOLDER/data/* $SNPEFF_DATABASES_FOLDER/;"
 			#SNPEFF_CMD_ALT="if ((\$\$(grep 'ERROR while connecting to' $SNPEFF_DATABASES_FOLDER/STARK.SNPEFF.download.err -c))); then wget --no-verbose -O $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip \$\$($JAVA -jar $SNPEFF databases | grep '^hg19 ' | awk -F' ' 'NF>1{print $NF}'); unzip $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip -d $SNPEFF_DATABASES_FOLDER/; mv $SNPEFF_DATABASES_FOLDER/data/* $SNPEFF_DATABASES_FOLDER/; fi"
 
 			(($DEBUG)) && echo "#[INFO] SNPEFF CMD = $SNPEFF_CMD"
@@ -1384,6 +1385,10 @@ if ((1)); then
 			fi;
 		else
 			make -k -j $THREADS $MK_OPTION -f $MK all 1>$MK_LOG 2>$MK_ERR;
+			if (($(cat $MK_LOG $MK_ERR | grep "\*\*\*" -c))); then
+				echo "#[ERROR] Fail download databases"
+				exit 1
+			fi;
 		fi;
 		echo "#[INFO] DATABASES DOWNLOADED"
 	else
