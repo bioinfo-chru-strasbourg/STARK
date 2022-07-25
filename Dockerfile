@@ -832,62 +832,6 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 
 
-# #################
-# # PYTHON 3.10.5 #
-# #################
-
-# ENV TOOL_NAME="python"
-# ENV TOOL_VERSION="3.10.5"
-# ENV TOOL_VERSION_SIMPLE="3.10.5"
-# ENV TOOL_TARBALL="Python-$TOOL_VERSION.tgz"
-# ENV TOOL_SOURCE_EXTERNAL="https://www.python.org/ftp/$TOOL_NAME/$TOOL_VERSION/$TOOL_TARBALL"
-# # ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-# # use /STARK/tools/python/3.10.5/bin/python
-# RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-# 	#yum install -y $YUM_INSTALL && \
-# 	source $TOOL_INIT && \
-# 	tar xf $TOOL_SOURCE -C $TOOL_DEST/bin && \
-# 	(cd $TOOL_DEST/bin/Python-$TOOL_VERSION && ./configure --enable-optimizations && \
-# 	make altinstall --quiet -j $THREADS prefix=$TOOL_DEST) ;
-# # 	# ln -sfn $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/pip3 /usr/bin/pip$TOOL_VERSION_SIMPLE && \
-# # 	# ln -sfn $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python3 /usr/bin/python$TOOL_VERSION_SIMPLE && \
-# # 	# ln -sfn /usr/bin/pip$TOOL_VERSION_SIMPLE /usr/bin/pip3 && \
-# # 	# ln -sfn /usr/bin/pip$TOOL_VERSION_SIMPLE /usr/bin/pip && \
-# # 	# ln -sfn /usr/bin/python$TOOL_VERSION_SIMPLE /usr/bin/python3 && \
-# # 	# ln -sfn /usr/bin/python$TOOL_VERSION_SIMPLE /usr/bin/python && \
-# # 	# ln -sfn $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
-
-
-
-# ###############
-# # CUTEVARIANT #
-# ###############
-
-# # TOOL INFO
-# ENV TOOL_NAME="cutevariant"
-# ENV TOOL_VERSION="0.4.4"
-# ENV TOOL_TARBALL="$TOOL_VERSION.tar.gz"
-# ENV TOOL_SOURCE_EXTERNAL="https://github.com/labsquare/cutevariant/archive/refs/tags/$TOOL_TARBALL"
-# ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-# # make sure correct python release is used
-# # TOOL PARAMETERS
-
-# # TOOL INSTALLATION
-# RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-# 	source $TOOL_INIT && \
-# 	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
-# 	cp -R $TOOL_SOURCE_BUILD/*/* $TOOL_DEST/bin/ && \
-# 	ls -l /STARK/tools/python/3.10.5/ && \
-# 	ls -l /STARK/tools/python/3.10.5/bin && \
-# 	# ls -l /STARK/tools/python/3.10.5/bin/bin && \
-# 	# ls -l /STARK/tools/python/3.10.5/lib && \
-# 	# ls -l /STARK/tools/python/3.10.5/share && \
-# 	/STARK/tools/python/3.10.5/bin/python3.10 -m pip install --trusted-host pypi.org -e $TOOL_DEST/bin/ && \
-# 	chmod a+x $TOOL_DEST/bin/* && \
-#     $TOOL_CHECK ;
-
-
-
 #########
 # GATK4 #
 #########
@@ -911,7 +855,6 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 
 
-
 ########
 # GATK #
 ########
@@ -932,7 +875,6 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
 	cp -R $TOOL_SOURCE_BUILD/*/$TOOL_JAR $TOOL_DEST/bin/ && \
     $TOOL_CHECK ;
-
 
 
 
@@ -961,7 +903,6 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	mkdir -p $TOOL_PARAM_DATABASE_FOLDER && \
 	ln -s $DATABASES $TOOL_DATABASE_FOLDER && \
     $TOOL_CHECK ;
-
 
 
 

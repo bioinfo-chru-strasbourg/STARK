@@ -48,8 +48,8 @@ services:
             - stark_stark
         healthcheck:
             test: "STARK --help | head -n5 && /tool/bin/STARK.setup --setup-type=INNER && /tool/bin/get_databases.sh"
-            interval: 600s
-            timeout: 30s
+            interval: 10s
+            timeout: 10s
             retries: 3
 
 
@@ -88,8 +88,8 @@ services:
             - ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_DAS_PARAM_PORT_PUBLISHED}:${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_DAS_PARAM_PORT_TARGET}
         healthcheck:
             test: "curl -f http://0.0.0.0:5000 || exit 1"
-            interval: 30s
-            timeout: 5s
+            interval: 10s
+            timeout: 10s
             retries: 3
 
         
@@ -140,8 +140,8 @@ services:
             - ${DOCKER_STARK_MAIN_NETWORK}
         healthcheck:
             test: "curl -f http://0.0.0.0:8000 || exit 1"
-            interval: 30s
-            timeout: 5s
+            interval: 10s
+            timeout: 10s
             retries: 3
 
 
@@ -196,8 +196,8 @@ services:
             - ${DOCKER_STARK_MAIN_NETWORK}
         healthcheck:
             test: "STARK --help | head -n5 && /tool/bin/STARK.setup --setup-type=INNER && /tool/bin/get_databases.sh"
-            interval: 600s
-            timeout: 30s
+            interval: 10s
+            timeout: 10s
             retries: 3
 
         
