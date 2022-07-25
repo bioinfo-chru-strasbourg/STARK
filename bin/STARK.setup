@@ -216,6 +216,6 @@ if [ -d $HOWARD_FOLDER_CONFIG ] || [ -L $HOWARD_FOLDER_CONFIG ]; then
 	cp -nr $HOWARD_FOLDER_CONFIG/*ini $SETUP_MAIN_FOLDER_PATTERN/$DOCKER_STARK_INNER_FOLDER_CONFIG_HOWARD/ #2>/dev/null
 fi;
 
-
-
 (($VERBOSE)) && echo "#[INFO] STARK Setup done."
+
+exit 0

@@ -1113,13 +1113,13 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 
 			#SNPEFF_CMD="echo 'ERROR while connecting to' > $SNPEFF_DATABASES_FOLDER/STARK.SNPEFF.download.err"
 			#SNPEFF_CMD="echo ''"
-			SNPEFF_CMD="wget --no-verbose -O $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip \$\$($JAVA -jar $SNPEFF databases | grep '^$ASSEMBLY ' | awk -F' ' 'NF>1{print \$\$NF}'); unzip $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip -d $SNPEFF_DATABASES_FOLDER/; mv $SNPEFF_DATABASES_FOLDER/data/* $SNPEFF_DATABASES_FOLDER/;"
+			SNPEFF_CMD="wget --no-verbose -O $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip \$\$($JAVA -jar $SNPEFF databases | grep '^$ASSEMBLY '  | grep '^hg19 ' | grep -Po 'http[^, ]*zip' | head -n1); unzip $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip -d $SNPEFF_DATABASES_FOLDER/; mv $SNPEFF_DATABASES_FOLDER/data/* $SNPEFF_DATABASES_FOLDER/;"
 			#SNPEFF_CMD_ALT="if ((\$\$(grep 'ERROR while connecting to' $SNPEFF_DATABASES_FOLDER/STARK.SNPEFF.download.err -c))); then wget --no-verbose -O $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip \$\$($JAVA -jar $SNPEFF databases | grep '^hg19 ' | awk -F' ' 'NF>1{print $NF}'); unzip $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip -d $SNPEFF_DATABASES_FOLDER/; mv $SNPEFF_DATABASES_FOLDER/data/* $SNPEFF_DATABASES_FOLDER/; fi"
 
 			(($DEBUG)) && echo "#[INFO] SNPEFF CMD = $SNPEFF_CMD"
 			(($DEBUG)) && echo "#[INFO] SNPEFF CMD ALT = $SNPEFF_CMD_ALT"
 			#(($VERBOSE)) && echo "#["
-			echo "$DB_TARGET_RELEASE != $DB_RELEASE"
+			#echo "$DB_TARGET_RELEASE != $DB_RELEASE"
 			#echo "test"; exit 0
 
 			# RELEASE
