@@ -118,7 +118,7 @@ VARIANTRECALIBRATOR_INDEL_OPTIONS?=$(VARIANTRECALIBRATION_INDEL_RESOURCES_OPTION
 
 # SNP
 
-%.POST_CALLING_SNP.vcf: %.variantrecalibrator.vcf %.genome
+%.POST_CALLING_SNP.vcf: %.variantrecalibration.vcf %.genome
 	$(JAVA11) $(JAVA_FLAGS_GATK4) -jar $(GATK4) \
 		SelectVariants \
 		-R $$(cat $*.genome) \
@@ -176,7 +176,7 @@ VARIANTRECALIBRATOR_INDEL_OPTIONS?=$(VARIANTRECALIBRATION_INDEL_RESOURCES_OPTION
 
 # INDEL
 
-%.POST_CALLING_InDel.vcf: %.variantrecalibrator.vcf %.genome
+%.POST_CALLING_InDel.vcf: %.variantrecalibration.vcf %.genome
 	$(JAVA11) $(JAVA_FLAGS_GATK4) -jar $(GATK4) \
 		SelectVariants \
 		-R $$(cat $*.genome) \
@@ -233,9 +233,16 @@ VARIANTRECALIBRATOR_INDEL_OPTIONS?=$(VARIANTRECALIBRATION_INDEL_RESOURCES_OPTION
 
 
 
+RELEASE_COMMENT := "\#\# Variant Filtration: GATK4 VariantFiltration."
+RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
+
+PIPELINES_COMMENT := "POST_CALLING:variantfiltration:VariantFiltration of VCF using GATK databases."
+PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
+
+
 RELEASE_COMMENT := "\#\# Variant Recalibrator: GATK4 VariantRecalibrator."
 RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
-PIPELINES_COMMENT := "POST_CALLING:variantrecalibrator:VariantRecalibrator of VCF using GATK databases."
+PIPELINES_COMMENT := "POST_CALLING:variantrecalibration:VariantRecalibrator of VCF using GATK databases."
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
 

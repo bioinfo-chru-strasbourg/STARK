@@ -377,14 +377,14 @@ POST_ALIGNMENT_STEPS="sorting markduplicates realignment recalibration compress"
 # Check available steps by using the command: STARK --pipelines_infos
 # Available steps (not up-to-date):
 #    normalization: VCF normalization
-#    variantrecalibrator: VCF recalibration (using GATK4). Include variantfiltration if no recalibration possible
+#    variantrecalibration: VCF recalibration (using GATK4). Include variantfiltration if no recalibration possible
 #    variantfiltration: VCF filtration (using GATK4)
 # Usually:
 #    "normalization variantfiltration" for gene panel
-#    "normalization variantrecalibrator" for exome or genome
-# default: "normalization variantrecalibrator"
+#    "normalization variantrecalibration" for exome or genome
+# default: "normalization variantrecalibration"
 #POST_CALLING_STEPS="normalization variantfiltration"
-POST_CALLING_STEPS="normalization variantrecalibrator"
+POST_CALLING_STEPS="normalization variantrecalibration"
 
 
 
