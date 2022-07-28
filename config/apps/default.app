@@ -377,11 +377,14 @@ POST_ALIGNMENT_STEPS="sorting markduplicates realignment recalibration compress"
 # Check available steps by using the command: STARK --pipelines_infos
 # Available steps (not up-to-date):
 #    normalization: VCF normalization
-#    recalibration: VCF recalibration (not yet available)
-#    filtration: VCF filtration
+#    variantrecalibrator: VCF recalibration (using GATK4). Include variantfiltration if no recalibration possible
+#    variantfiltration: VCF filtration (using GATK4)
 # Usually:
-#    "normalization filtration"
-POST_CALLING_STEPS="normalization filtration"
+#    "normalization variantfiltration" for gene panel
+#    "normalization variantrecalibrator" for exome or genome
+# default: "normalization variantrecalibrator"
+#POST_CALLING_STEPS="normalization variantfiltration"
+POST_CALLING_STEPS="normalization variantrecalibrator"
 
 
 
@@ -610,6 +613,110 @@ FILTRATION_VCF_GENOTYPE_FILTER_EXPRESSION='--genotypeFilterExpression "GQ == 0" 
 # within makefile rule: FILTRATION_VCF_INVALIDATE_PREVIOUS_FILTERS_OPTION?=$(shell if (( $(FILTRATION_VCF_INVALIDATE_PREVIOUS_FILTERS) )); then echo " --invalidatePreviousFilters "; fi )
 # default: FILTRATION_VCF_INVALIDATE_PREVIOUS_FILTERS=0
 FILTRATION_VCF_INVALIDATE_PREVIOUS_FILTERS=1
+
+
+
+# GATK4 Recalibrator and Filtration
+
+# Variant Filtration
+# Filter variant calls based on INFO and/or FORMAT annotations
+
+# Variant Filtration main option (see documentation guide for more info)
+# default: VARIANTFILTRATION_OPTIONS=
+#VARIANTFILTRATION_OPTIONS=
+
+# One or more expression used with INFO fields to filter SNP (see documentation guide for more info)
+# default: VARIANTFILTRATION_SNP_FILTER_OPTION=''
+# example: VARIANTFILTRATION_SNP_FILTER_OPTION='--filter-name "SNP_filter_QD" --filter-expression "QD < 2.0" --filter-name "SNP_filter_FS" --filter-expression "FS > 60.0" --filter-name "SNP_filter_MQ" --filter-expression "MQ < 40.0" --filter-name "SNP_filter_MQRankSum" --filter-expression "MQRankSum < -12.5" --filter-name "SNP_filter_ReadPosRankSum" --filter-expression "ReadPosRankSum < -8.0"'
+# example: VARIANTFILTRATION_SNP_FILTER_OPTION='--filter-name "HARD_TO_VALIDATE" --filter-expression "MQ0 >= 4 && ((MQ0 / (1.0 * DP)) > 0.1)"    --filter-name "VeryVeryLowDepth" --filter-expression "DP == 0"    --filter-name "VeryLowDepth" --filter-expression "DP > 0 && DP < 10"    --filter-name "LowDepth" --filter-expression "DP >= 10 && DP < 30"    --filter-name "VeryVeryLowQual" --filter-expression "QUAL == 0"    --filter-name "VeryLowQual" --filter-expression "QUAL > 0 && QUAL < 30.0"    --filter-name "LowQual" --filter-expression "QUAL >= 30.0 && QUAL < 50.0"    --filter-name "LowQD" --filter-expression "QD >= 0.0 && QD < 1.5"'
+VARIANTFILTRATION_SNP_FILTER_OPTION='--filter-name "SNP_filter_QD" --filter-expression "QD < 2.0" --filter-name "SNP_filter_FS" --filter-expression "FS > 60.0" --filter-name "SNP_filter_MQ" --filter-expression "MQ < 40.0" --filter-name "SNP_filter_MQRankSum" --filter-expression "MQRankSum < -12.5" --filter-name "SNP_filter_ReadPosRankSum" --filter-expression "ReadPosRankSum < -8.0"'
+
+# One or more expression used with FORMAT (sample/genotype-level) fields to filter SNP (see documentation guide for more info)
+# default: VARIANTFILTRATION_SNP_FILTER_EXPRESSION_OPTION=''
+# example: VARIANTFILTRATION_SNP_FILTER_EXPRESSION_OPTION='--genotype-filter-expression "GQ == 0" --genotype-filter-name "genotype_GQ_filter_VeryVeryLow" --genotype-filter-expression "GQ > 0 && GQ < 50.0" --genotype-filter-name "genotype_GQ_filter_VeryLow"  --genotype-filter-expression "GQ >= 50.0 && GQ < 90.0" --genotype-filter-name "genotype_GQ_filter_Low" --genotype-filter-expression "DP == 0" --genotype-filter-name "genotype_DP_filter_VeryVeryLow" --genotype-filter-expression "DP >= 0 && DP < 10" --genotype-filter-name "genotype_DP_filter_VeryLow"  --genotype-filter-expression "DP >= 10 && DP < 30" --genotype-filter-name "genotype_GQ_filter_Low"'
+# example: VARIANTFILTRATION_SNP_FILTER_EXPRESSION_OPTION='--genotype-filter-name "VeryVeryLowGQ" --genotype-filter-expression "GQ == 0"    --genotype-filter-name "VeryLowGQ" --genotype-filter-expression "GQ > 0 && GQ < 50.0"    --genotype-filter-name "LowGQ" --genotype-filter-expression "GQ >= 50.0 && GQ < 90.0"    --genotype-filter-name "VeryVeryLowDP" --genotype-filter-expression "DP == 0"    --genotype-filter-name "VeryLowDP" --genotype-filter-expression "DP >= 0 && DP < 10"    --genotype-filter-name "LowDP" --genotype-filter-expression "DP >= 10 && DP < 30" '
+VARIANTFILTRATION_SNP_FILTER_EXPRESSION_OPTION='--genotype-filter-expression "GQ == 0" --genotype-filter-name "genotype_GQ_filter_VeryVeryLow" --genotype-filter-expression "GQ > 0 && GQ < 50.0" --genotype-filter-name "genotype_GQ_filter_VeryLow"  --genotype-filter-expression "GQ >= 50.0 && GQ < 90.0" --genotype-filter-name "genotype_GQ_filter_Low" --genotype-filter-expression "DP == 0" --genotype-filter-name "genotype_DP_filter_VeryVeryLow" --genotype-filter-expression "DP >= 0 && DP < 10" --genotype-filter-name "genotype_DP_filter_VeryLow"  --genotype-filter-expression "DP >= 10 && DP < 30" --genotype-filter-name "genotype_GQ_filter_Low"'
+
+# One or more expression used with INFO fields to filter INDEL (see documentation guide for more info)
+# default: VARIANTFILTRATION_INDEL_FILTER_OPTION=''
+# example: VARIANTFILTRATION_INDEL_FILTER_OPTION='--filter-name "INDEL_filter_QD" --filter-expression "QD < 2.0" --filter-name "INDEL_filter_FS" --filter-expression "FS > 200.0" --filter-name "INDEL_filter_ReadPosRankSum" --filter-expression "ReadPosRankSum < -20.0"'
+# example: VARIANTFILTRATION_INDEL_FILTER_OPTION='--filter-name "HARD_TO_VALIDATE" --filter-expression "MQ0 >= 4 && ((MQ0 / (1.0 * DP)) > 0.1)"    --filter-name "VeryVeryLowDepth" --filter-expression "DP == 0"    --filter-name "VeryLowDepth" --filter-expression "DP > 0 && DP < 10"    --filter-name "LowDepth" --filter-expression "DP >= 10 && DP < 30"    --filter-name "VeryVeryLowQual" --filter-expression "QUAL == 0"    --filter-name "VeryLowQual" --filter-expression "QUAL > 0 && QUAL < 30.0"    --filter-name "LowQual" --filter-expression "QUAL >= 30.0 && QUAL < 50.0"    --filter-name "LowQD" --filter-expression "QD >= 0.0 && QD < 1.5"'
+VARIANTFILTRATION_INDEL_FILTER_OPTION='--filter-name "INDEL_filter_QD" --filter-expression "QD < 2.0" --filter-name "INDEL_filter_FS" --filter-expression "FS > 200.0" --filter-name "INDEL_filter_ReadPosRankSum" --filter-expression "ReadPosRankSum < -20.0"'
+
+# One or more expression used with FORMAT (sample/genotype-level) fields to filter INDEL (see documentation guide for more info)
+# default: VARIANTFILTRATION_INDEL_FILTER_EXPRESSION_OPTION=''
+# example: VARIANTFILTRATION_INDEL_FILTER_EXPRESSION_OPTION='--genotype-filter-expression "GQ == 0" --genotype-filter-name "genotype_GQ_filter_VeryVeryLow" --genotype-filter-expression "GQ > 0 && GQ < 50.0" --genotype-filter-name "genotype_GQ_filter_VeryLow"  --genotype-filter-expression "GQ >= 50.0 && GQ < 90.0" --genotype-filter-name "genotype_GQ_filter_Low" --genotype-filter-expression "DP == 0" --genotype-filter-name "genotype_DP_filter_VeryVeryLow" --genotype-filter-expression "DP >= 0 && DP < 10" --genotype-filter-name "genotype_DP_filter_VeryLow"  --genotype-filter-expression "DP >= 10 && DP < 30" --genotype-filter-name "genotype_GQ_filter_Low"'
+# example: VARIANTFILTRATION_INDEL_FILTER_EXPRESSION_OPTION='--genotype-filter-name "VeryVeryLowGQ" --genotype-filter-expression "GQ == 0"    --genotype-filter-name "VeryLowGQ" --genotype-filter-expression "GQ > 0 && GQ < 50.0"    --genotype-filter-name "LowGQ" --genotype-filter-expression "GQ >= 50.0 && GQ < 90.0"    --genotype-filter-name "VeryVeryLowDP" --genotype-filter-expression "DP == 0"    --genotype-filter-name "VeryLowDP" --genotype-filter-expression "DP >= 0 && DP < 10"    --genotype-filter-name "LowDP" --genotype-filter-expression "DP >= 10 && DP < 30" '
+VARIANTFILTRATION_INDEL_FILTER_EXPRESSION_OPTION='--genotype-filter-expression "GQ == 0" --genotype-filter-name "genotype_GQ_filter_VeryVeryLow" --genotype-filter-expression "GQ > 0 && GQ < 50.0" --genotype-filter-name "genotype_GQ_filter_VeryLow"  --genotype-filter-expression "GQ >= 50.0 && GQ < 90.0" --genotype-filter-name "genotype_GQ_filter_Low" --genotype-filter-expression "DP == 0" --genotype-filter-name "genotype_DP_filter_VeryVeryLow" --genotype-filter-expression "DP >= 0 && DP < 10" --genotype-filter-name "genotype_DP_filter_VeryLow"  --genotype-filter-expression "DP >= 10 && DP < 30" --genotype-filter-name "genotype_GQ_filter_Low"'
+
+# Remove previous filters applied to the VCF
+# within makefile rule: VARIANTFILTRATION_INVALIDATE_PREVIOUS_FILTERS_OPTION?=$(shell if (( $(VARIANTFILTRATION_INVALIDATE_PREVIOUS_FILTERS) )); then echo " --invalidate-previous-filters "; fi )
+# default: VARIANTFILTRATION_INVALIDATE_PREVIOUS_FILTERS=0
+VARIANTFILTRATION_INVALIDATE_PREVIOUS_FILTERS=1
+
+
+# Variant Recalibrator
+
+# Variant Recalibrator main option (see documentation guide for more info)
+# default: VARIANTRECALIBRATOR_OPTIONS=
+#VARIANTRECALIBRATOR_OPTIONS=
+
+# Variant Recalibrator SNP resources option (see documentation guide for more info)
+# These resources need to be available on STARK Databases folder for GATK
+# default:
+# VARIANTRECALIBRATION_SNP_RESOURCES="
+#   -resource:hapmap,known=false,training=true,truth=true,prior=15.0 hapmap_3.3.b37.vcf.gz
+#   -resource:omni,known=false,training=true,truth=true,prior=12.0 1000G_omni2.5.b37.vcf.gz
+#   -resource:1000G,known=false,training=true,truth=false,prior=10.0 1000G_phase1.snps.high_confidence.b37.vcf.gz 
+#   -resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.b37.vcf.gz
+# "
+VARIANTRECALIBRATION_SNP_RESOURCES="
+    -resource:hapmap,known=false,training=true,truth=true,prior=15.0 hapmap_3.3.b37.vcf.gz
+    -resource:omni,known=false,training=true,truth=true,prior=12.0 1000G_omni2.5.b37.vcf.gz
+    -resource:1000G,known=false,training=true,truth=false,prior=10.0 1000G_phase1.snps.high_confidence.b37.vcf.gz 
+    -resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.b37.vcf.gz
+"
+
+# Variant Recalibrator INDEL resources option (see documentation guide for more info)
+# These resources need to be available on STARK Databases folder for GATK
+# default:
+# VARIANTRECALIBRATION_INDEL_RESOURCES="
+#   -resource:mills,known=false,training=true,truth=true,prior=12.0 Mills_and_1000G_gold_standard.indels.b37.vcf.gz
+#   -resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.b37.vcf.gz
+# "
+VARIANTRECALIBRATION_INDEL_RESOURCES="
+    -resource:mills,known=false,training=true,truth=true,prior=12.0 Mills_and_1000G_gold_standard.indels.b37.vcf.gz
+    -resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.b37.vcf.gz
+"
+
+# Variant Recalibrator SNP annotations option (see documentation guide for more info)
+# default: VARIANTRECALIBRATION_SNP_ANNOTATIONS="-an QD -an MQ -an MQRankSum -an ReadPosRankSum -an FS -an SOR -an DP"
+VARIANTRECALIBRATION_SNP_ANNOTATIONS="-an QD -an MQ -an MQRankSum -an ReadPosRankSum -an FS -an SOR -an DP"
+
+# Variant Recalibrator INDEL annotations option (see documentation guide for more info)
+# default: VARIANTRECALIBRATION_INDEL_ANNOTATIONS="-an QD -an DP -an FS -an SOR -an ReadPosRankSum -an MQRankSum"
+VARIANTRECALIBRATION_INDEL_ANNOTATIONS="-an QD -an DP -an FS -an SOR -an ReadPosRankSum -an MQRankSum"
+
+
+# Variant Recalibrator Optional Variant Filtration 
+# If Variant Recalibrator failed, usually due to lack of variant in the input callset, a Variant Filtration is optional
+# default: no filtration
+# example: Use empty value to switch off this option (no filtration)
+# VARIANTRECALIBRATOR_VARIANTFILTRATION_SNP_FILTER_OPTION=
+# VARIANTRECALIBRATOR_VARIANTFILTRATION_SNP_FILTER_EXPRESSION_OPTION=
+# VARIANTRECALIBRATOR_VARIANTFILTRATION_INDEL_FILTER_OPTION=
+# VARIANTRECALIBRATOR_VARIANTFILTRATION_INDEL_FILTER_EXPRESSION_OPTION=
+# example: Use same options than Variant Filtration in stand alone (see above)
+# VARIANTRECALIBRATOR_VARIANTFILTRATION_SNP_FILTER_OPTION=$VARIANTFILTRATION_SNP_FILTER_OPTION
+# VARIANTRECALIBRATOR_VARIANTFILTRATION_SNP_FILTER_EXPRESSION_OPTION=$VARIANTFILTRATION_SNP_FILTER_EXPRESSION_OPTION
+# VARIANTRECALIBRATOR_VARIANTFILTRATION_INDEL_FILTER_OPTION=$VARIANTFILTRATION_INDEL_FILTER_OPTION
+# VARIANTRECALIBRATOR_VARIANTFILTRATION_INDEL_FILTER_EXPRESSION_OPTION=$VARIANTFILTRATION_INDEL_FILTER_EXPRESSION_OPTION
+# Filter variant calls based on INFO and/or FORMAT annotations for SNP and INDEL 
+VARIANTRECALIBRATOR_VARIANTFILTRATION_SNP_FILTER_OPTION=$VARIANTFILTRATION_SNP_FILTER_OPTION
+VARIANTRECALIBRATOR_VARIANTFILTRATION_SNP_FILTER_EXPRESSION_OPTION=$VARIANTFILTRATION_SNP_FILTER_EXPRESSION_OPTION
+VARIANTRECALIBRATOR_VARIANTFILTRATION_INDEL_FILTER_OPTION=$VARIANTFILTRATION_INDEL_FILTER_OPTION
+VARIANTRECALIBRATOR_VARIANTFILTRATION_INDEL_FILTER_EXPRESSION_OPTION=$VARIANTFILTRATION_INDEL_FILTER_EXPRESSION_OPTION
+
 
 
 # REPORT

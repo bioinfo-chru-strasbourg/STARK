@@ -190,7 +190,7 @@ REPORT_SECTIONS?=ALL
 
 
 ## FULL VCF: ANNOTATION OF A MERGE FILE
-%.full.filtration.sorting.vcf: %.merge.vcf %.transcripts %.genome
+%.full.variantfiltration.sorting.vcf: %.merge.vcf %.transcripts %.genome
 	# HOWARD annotation
 	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$< --output=$@.tmp --annotation=$(HOWARD_ANNOTATION_REPORT) --norm=$$(cat $*.genome);
 	# HOWARD annotation dejavu (forced)

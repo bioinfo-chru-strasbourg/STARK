@@ -119,25 +119,44 @@ REMOVE_INTERMEDIATE_SAM?=1
 
 # MERGE SNP and InDel VCF
 # Use internal ngzip and idexation because of generic rules not found, probably due to complexe/loop tree resolution
+# %.vcf: %.SNP.vcf %.InDel.vcf
+# 	# BGZIP TABIX
+# 	$(BCFTOOLS) sort -T $*.SNP.vcf.tmp.SAMTOOLS_PREFIX $< > $*.SNP.vcf.tmp.sorted
+# 	$(BCFTOOLS) sort -T $*.InDel.vcf.tmp.SAMTOOLS_PREFIX $< > $*.InDel.vcf.tmp.sorted
+# 	$(BGZIP) -f $*.SNP.vcf.tmp.sorted -c > $*.SNP.vcf.tmp.sorted.gz
+# 	$(BGZIP) -f $*.InDel.vcf.tmp.sorted -c > $*.InDel.vcf.tmp.sorted.gz
+# 	$(TABIX) $*.SNP.vcf.tmp.sorted.gz
+# 	$(TABIX) $*.InDel.vcf.tmp.sorted.gz
+# 	# CONCAT
+# 	$(BCFTOOLS) concat -a $*.SNP.vcf.tmp.sorted.gz $*.InDel.vcf.tmp.sorted.gz > $@.tmp
+# 	# Sorting
+# 	grep "^#" $@.tmp > $@
+# 	mkdir -p $@.tmp"_VCF_sort"
+# 	grep -v "^#" $@.tmp | sort -k1,1V -k2,2n -T $@.tmp"_VCF_sort" >> $@
+# 	# Cleaning
+# 	-rm -rf $@.tmp* $*.SNP.vcf.tmp* $*.InDel.vcf.tmp*
+# 	#-rm -f $*.SNP.vcf.gz.tbi $*.InDel.vcf.gz.tbi
+# 	#-rm -f $*.SNP.vcf.idx $*.InDel.vcf.idx
+# 	#-rm -f $*.idx
+
+# MERGE SNP and InDel VCF
 %.vcf: %.SNP.vcf %.InDel.vcf
-	# BGZIP TABIX
-	$(BCFTOOLS) sort -T $*.SNP.vcf.tmp.SAMTOOLS_PREFIX $< > $*.SNP.vcf.tmp.sorted
-	$(BCFTOOLS) sort -T $*.InDel.vcf.tmp.SAMTOOLS_PREFIX $< > $*.InDel.vcf.tmp.sorted
-	$(BGZIP) -f $*.SNP.vcf.tmp.sorted -c > $*.SNP.vcf.tmp.sorted.gz
-	$(BGZIP) -f $*.InDel.vcf.tmp.sorted -c > $*.InDel.vcf.tmp.sorted.gz
-	$(TABIX) $*.SNP.vcf.tmp.sorted.gz
-	$(TABIX) $*.InDel.vcf.tmp.sorted.gz
-	# CONCAT
-	$(BCFTOOLS) concat -a $*.SNP.vcf.tmp.sorted.gz $*.InDel.vcf.tmp.sorted.gz > $@.tmp
-	# Sorting
-	grep "^#" $@.tmp > $@
-	mkdir -p $@.tmp"_VCF_sort"
-	grep -v "^#" $@.tmp | sort -k1,1V -k2,2n -T $@.tmp"_VCF_sort" >> $@
-	# Cleaning
-	-rm -rf $@.tmp* $*.SNP.vcf.tmp* $*.InDel.vcf.tmp*
-	#-rm -f $*.SNP.vcf.gz.tbi $*.InDel.vcf.gz.tbi
-	#-rm -f $*.SNP.vcf.idx $*.InDel.vcf.idx
-	#-rm -f $*.idx
+	$(JAVA11) $(JAVA_FLAGS_GATK4) -jar $(GATK4) \
+		MergeVcfs \
+		-I $*.SNP.vcf \
+		-I $*.InDel.vcf \
+		--CREATE_INDEX false \
+		-O $@;
+
+# MERGE SNP and InDel VCF for Post calling steps. Because of loop in rules
+%.vcf: %.POST_CALLING_SNP.vcf %.POST_CALLING_InDel.vcf
+	$(JAVA11) $(JAVA_FLAGS_GATK4) -jar $(GATK4) \
+		MergeVcfs \
+		-I $*.POST_CALLING_SNP.vcf \
+		-I $*.POST_CALLING_InDel.vcf \
+		--CREATE_INDEX false \
+		-O $@;
+
 
 
 
