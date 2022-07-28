@@ -1,10 +1,9 @@
 ############################
 # Main Rules
+# Release: 0.9.5.2
+# Date: 28/07/2022
 # Author: Antony Le Bechec
 ############################
-# Release
-MK_RELEASE="0.9.5.1b"
-MK_DATE="27/09/2019"
 
 # Release note
 # 10/03/2015-0.9.4beta: change genome reference location, in the file %.genome
@@ -17,6 +16,7 @@ MK_DATE="27/09/2019"
 # 07/05/2018-0.9.4.7b: Add --force for translation vcf to txt
 # 02/10/2018-0.9.5b: Change HOWARD translation, prioritization and hard filtering. Change Manifest/bed link generation
 # 27/09/2019-0.9.5.1b: Change FATBAM to CAP tool
+# 28/07/2022-0.9.5.2: Change SNP and InDel merge, 2 rules for POST_CALLING and Callers (such as VarScan)
 
 
 

@@ -1,11 +1,9 @@
 ############################
 # VarScan Calling Rules
-# Release: 0.9.4.7
-# Date: 28/06/2021
+# Release: 0.9.4.8
+# Date: 29/07/2022
 # Author: Antony Le Bechec
 ############################
-MK_RELEASE="0.9.4.7"
-MK_DATE="28/06/2021"
 
 # Release notes:
 # 0.9.1-24/04/2015: Add 'varscanlowfreqlowcovsnp' calling
@@ -20,6 +18,7 @@ MK_DATE="28/06/2021"
 # 0.9.4.5-27/09/2019: Change FATBAM to CAP tool
 # 0.9.4.6-25/05/2021: Change VARSCAN_FILTERS
 # 0.9.4.7-28/06/2021: Homogenize VARSCAN thresholds 
+# 0.9.4.8-29/07/2022: Homogenize VARSCAN rules path 
 
 
 

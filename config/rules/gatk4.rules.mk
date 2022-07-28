@@ -5,6 +5,8 @@
 # Author: Antony Le Bechec
 ############################
 
+# Release notes:
+# 0.9.0-29/07/2022: Creation, variant filtration and variant recalibration
 
 # OPTIONS
 
