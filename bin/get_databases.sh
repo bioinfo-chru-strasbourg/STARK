@@ -7,8 +7,8 @@
 
 SCRIPT_NAME="STARKDatabases"
 SCRIPT_DESCRIPTION="STARK download and build databases"
-SCRIPT_RELEASE="0.9.5.0"
-SCRIPT_DATE="11/04/2021"
+SCRIPT_RELEASE="0.9.6.0"
+SCRIPT_DATE="28/07/2022"
 SCRIPT_AUTHOR="Antony Le Bechec"
 SCRIPT_COPYRIGHT="IRC"
 SCRIPT_LICENCE="GNU-GPL"
@@ -20,6 +20,7 @@ RELEASE_NOTES=$RELEASE_NOTES"# 0.9.2b-21/12/2018: Add update, build, rebuild and
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.3b-31/05/2019: Add APP configuration\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.4b-17/06/2020: Clarify code, organisation DB/RELEASE, add STARK.description\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.5.0-11/04/2021: Change snpEff download, some bugs fixed, option --current, remove option --rebuild\n";
+RELEASE_NOTES=$RELEASE_NOTES"# 0.9.6.0-28/07/2022: Change snpEff download, add GATK databases, some bugs fixed\n";
 
 # Script folder
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -335,6 +336,7 @@ MK_LOG=$TMP_DATABASES_DOWNLOAD_FOLDER/mk.log
 MK_ERR=$TMP_DATABASES_DOWNLOAD_FOLDER/mk.err
 MK_ALL=""
 
+> $MK
 
 # DBFOLDER
 ############
@@ -343,12 +345,6 @@ if (($REBUILD)); then
 	mv -f $REBUILD.V$DATE;
 fi;
 
-# Create DBFOLDER
-# MK
-echo "$DBFOLDER:
-	mkdir -p $DBFOLDER
-	chmod 0775 $DBFOLDER
-" >> $MK
 
 # INFOS
 #########
@@ -612,7 +608,249 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 
 	fi;
 
+	## GATK IMG 
+
+	if [ ! -e $DB_TARGET.img ]; then
+
+		if [ "$PICARD" != "" ]; then
+
+		    (($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME' release '$DB_RELEASE' for '$DB_TARGET_RELEASE' GATK Index Image"
+
+			# MK
+		    echo "$DB_TARGET.img: $REF
+				$JAVA11 -XX:+UseParallelGC -XX:ParallelGCThreads=$THREADS -jar $GATK4 BwaMemIndexImageCreator \
+					--input $REF \
+					--output $DB_TARGET.img;
+		    " >> $MK
+
+			MK_ALL="$MK_ALL $DB_TARGET.img"
+
+		fi;
+
+	fi;
+
 fi;
+
+
+
+##############################
+# GATK VARIANT RECALIBRATION #
+##############################
+
+#if ((1)); then
+
+# DB
+DATABASE="gatk"
+DATABASE_NAME="GATK"
+DATABASE_FULLNAME="GATK Databases"
+DATABASE_WEBSITE="https://www.broadinstitute.org//"
+DATABASE_DESCRIPTION="Databases for GATK Variant Recalibration"
+
+
+if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
+
+	DBFOLDER_GATK_URL_FULL_COPY=0
+	GATK_RESOURCE_NB=0
+	MK_DBFOLDER_GATK_ALL=""
+	COPY_MODE_DBFOLDER_GATK=$COPY_MODE_DEFAULT
+	> $MK.existing_gatk_db
+
+	for GATK_RESOURCE in $GATK_DATABASES_LIST; do
+		#echo $DBFOLDER_GATK/current/$ASSEMBLY/$(echo $GATK_RESOURCE | cut -d: -f2)
+
+		# DB TARGET
+		DB_TARGET=$DBFOLDER_GATK/current/$(echo $GATK_RESOURCE | cut -d: -f2);	# /STARK/databases/gatk/current/1000G_omni2.5.b37.vcf.gz
+		DB_ASSEMBLY=$ASSEMBLY; 													# hg19
+		DB_TARGET_FILE=$(basename $DB_TARGET);									# 1000G_omni2.5.b37.vcf.gz
+		DB_TARGET_FOLDER=$(dirname $DB_TARGET);									# /STARK/databases/gatk/current
+		DB_TARGET_RELEASE=$(basename $DB_TARGET_FOLDER);						# current
+		#DB_TARGET_RELEASE=$DATABASES_RELEASE;									# DATE
+		DB_TARGET_DB_FOLDER=$(dirname $DB_TARGET_FOLDER);						# /STARK/databases/gatk
+
+		# DB RELEASE
+		DB_RELEASE=$DATABASES_RELEASE;								# DATE
+		#[ -s $DB_TARGET_FOLDER ] && DB_RELEASE=$DB_TARGET_RELEASE	# if /STARK/databases/refGene/current exists then keep release
+		DB_RELEASE_DATE=$DATABASES_RELEASE;							# DATE
+		DB_RELEASE_FILE=$DB_TARGET_FILE;							# 1000G_omni2.5.b37.vcf.gz
+		DB_RELEASE_FOLDER=$DB_TARGET_DB_FOLDER/$DB_RELEASE;			# /STARK/databases/refGene/DATE
+		DB_RELEASE_FILE_PATH="$DB_RELEASE_FOLDER/$DB_RELEASE_FILE";	# /STARK/databases/refGene/DATE/1000G_omni2.5.b37.vcf.gz
+
+		# TMP files and folders
+		DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DB_RELEASE
+		mkdir -p $DB_TMP
+
+		# Update
+		if (($UPDATE)); then
+			if [ -e $DB_TARGET ]; then mv -f $DB_TARGET $DB_TARGET.V$DATE; fi;
+		fi;
+
+		#if [ ! -e $DBFOLDER_GATK/current/$(echo $GATK_RESOURCE | cut -d: -f2) ]; then
+		#if [ ! -e $DB_TARGET_FOLDER/$(echo $GATK_RESOURCE | cut -d: -f2) ]; then
+		if [ -e $DB_TARGET_FOLDER/$(echo $GATK_RESOURCE | cut -d: -f2) ]; then
+
+			echo "$DB_RELEASE_FILE_PATH: $DBFOLDER $REF
+				mkdir -p $DB_RELEASE_FOLDER
+				$COPY_MODE_DBFOLDER_GATK $DB_TARGET_FOLDER/$(echo $GATK_RESOURCE | cut -d: -f2) $DB_RELEASE_FILE_PATH
+				$COPY_MODE_DBFOLDER_GATK $DB_TARGET_FOLDER/$(echo $GATK_RESOURCE | cut -d: -f2).tbi $DB_RELEASE_FILE_PATH.tbi
+			" >> $MK.existing_gatk_db
+
+			MK_DBFOLDER_GATK_ALL_existing_gatk_db="$MK_DBFOLDER_GATK_ALL_existing_gatk_db $DB_RELEASE_FILE_PATH"
+			MK_ALL_existing_gatk_db="$MK_ALL_existing_gatk_db $DB_RELEASE_FILE_PATH" 
+
+		else
+
+			((GATK_RESOURCE_NB++))
+
+			# VERBOSE
+			(($VERBOSE)) && echo ""
+			(($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME/$GATK_RESOURCE' release '$DB_RELEASE' for '$DB_TARGET_RELEASE' [$DB_ASSEMBLY]"
+
+			if [ $DB_ASSEMBLY == "hg38" ]; then
+				DBFOLDER_GATK_URL="https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0"
+			elif [ $DB_ASSEMBLY == "hg19" ]; then
+				DBFOLDER_GATK_URL="https://data.broadinstitute.org/snowman/hg19/variant_calling/vqsr_resources/Exome/v2"
+			else
+				DBFOLDER_GATK_URL="https://data.broadinstitute.org/snowman/$DB_ASSEMBLY/variant_calling/vqsr_resources/Exome/v2"
+			fi;
+			DBFOLDER_GATK_URL_FILE="$DB_TARGET_FILE"
+			
+			DB_TARGET_FILE_LIST="$DB_TARGET_FILE_LIST $DB_TARGET_FILE"
+
+			DBFOLDER_GATK_URL_FILE_DATE=$(curl -s -I $DBFOLDER_GATK_URL/$DBFOLDER_GATK_URL_FILE | grep "Last-Modified: " | sed "s/Last-Modified: //g" | sed "s/\r$//g")
+
+			# RELEASE
+			DB_RELEASE_FROM_DOWNLOAD=$(date -d "$DBFOLDER_GATK_URL_FILE_DATE")
+			
+			# REFSEQ_GENE folder
+			DB_RELEASE_FILE=$(basename $DB_RELEASE_FILE_PATH)
+
+			# OUTPUT
+			(($VERBOSE)) && echo "#[INFO] GATK Resource URL   = $DBFOLDER_GATK_URL"
+			(($VERBOSE)) && echo "#[INFO] GATK Resource File  = $DBFOLDER_GATK_URL_FILE"
+
+
+			DBFOLDER_GATK_DOWNLOAD_MULTITHREAD=1
+
+			# Get refGene txt file
+			if ! (($DBFOLDER_GATK_URL_FULL_COPY)); then
+				DBFOLDER_GATK_URL_PATH=$(echo $DBFOLDER_GATK_URL | sed 's#^https://##gi'  | sed 's#^http://##gi')
+				
+				if (($DBFOLDER_GATK_DOWNLOAD_MULTITHREAD)); then
+					echo "$DB_TMP/original/chr_name_conv.txt: $DBFOLDER $REF
+						mkdir -p $DB_TMP/original
+						cat $REF.fai | awk '{a=\$\$1; gsub(\"^chr\",\"\",a); print a\" \"\$\$1}' > $DB_TMP/original/chr_name_conv.txt
+				
+					" >> $MK
+				else
+					echo "$DB_TMP/original/chr_name_conv.txt: $DBFOLDER $REF
+						mkdir -p $DB_TMP
+						wget -q -r --no-parent $DBFOLDER_GATK_URL --directory-prefix=$DB_TMP/original
+						mv $DB_TMP/original/$DBFOLDER_GATK_URL_PATH/*vcf.gz* $DB_TMP/original/
+						cat $REF.fai | awk '{a=\$\$1; gsub(\"^chr\",\"\",a); print a\" \"\$\$1}' > $DB_TMP/original/chr_name_conv.txt
+					" >> $MK
+				fi;
+				DBFOLDER_GATK_URL_FULL_COPY=1
+			fi;
+
+			echo "$DB_TMP/$DB_RELEASE_FILE: $DBFOLDER $REF $DB_TMP/original/chr_name_conv.txt
+				mkdir -p $DB_TMP/original
+				if (($DBFOLDER_GATK_DOWNLOAD_MULTITHREAD)); then \
+					curl $DBFOLDER_GATK_URL/$DBFOLDER_GATK_URL_FILE -s -R -o $DB_TMP/original/$DBFOLDER_GATK_URL_FILE; \
+				else \
+					$COPY_MODE_DBFOLDER_GATK $DB_TMP/original/$DBFOLDER_GATK_URL_FILE $DB_TMP/$DBFOLDER_GATK_URL_FILE; \
+				fi;
+				$BGZIP -dc -@$THREADS $DB_TMP/original/$DBFOLDER_GATK_URL_FILE | sed 's/\\t\$\$//gi' | $BGZIP -l1 -@$THREADS -c > $DB_TMP/$DBFOLDER_GATK_URL_FILE.tmp.vcf.gz
+				$TABIX $DB_TMP/$DBFOLDER_GATK_URL_FILE.tmp.vcf.gz
+				$BCFTOOLS reheader --fai $REF.fai --threads $THREADS $DB_TMP/$DBFOLDER_GATK_URL_FILE.tmp.vcf.gz > $DB_TMP/$DBFOLDER_GATK_URL_FILE.tmp2.vcf.gz
+				$TABIX $DB_TMP/$DBFOLDER_GATK_URL_FILE.tmp2.vcf.gz
+				$BCFTOOLS annotate --rename-chrs $DB_TMP/original/chr_name_conv.txt --threads $THREADS $DB_TMP/$DBFOLDER_GATK_URL_FILE.tmp2.vcf.gz | grep -v '^##contig=<ID=[^,]*>' | $BGZIP -l1 -@$THREADS > $DB_TMP/$DB_RELEASE_FILE.tmp3.vcf.gz
+				$TABIX $DB_TMP/$DBFOLDER_GATK_URL_FILE.tmp3.vcf.gz
+				$BCFTOOLS view --threads $THREADS -r \$\$(cat $DB_TMP/original/chr_name_conv.txt | cut -d' ' -f2 | tr '\\n' ',') $DB_TMP/$DB_RELEASE_FILE.tmp3.vcf.gz | $BGZIP -@$THREADS > $DB_TMP/$DB_RELEASE_FILE 
+				$TABIX $DB_TMP/$DBFOLDER_GATK_URL_FILE
+				rm -f $DB_TMP/$DBFOLDER_GATK_URL_FILE.tmp*
+				mkdir -p $DB_RELEASE_FOLDER
+				chmod 0775 $DB_RELEASE_FOLDER
+
+			" >> $MK
+			# Copy in database folder
+			echo "$DB_RELEASE_FILE_PATH: $DB_TMP/$DB_RELEASE_FILE
+				mkdir -p $DB_RELEASE_FOLDER/original
+				$COPY_MODE_DBFOLDER_GATK $DB_TMP/original/$DBFOLDER_GATK_URL_FILE $DB_RELEASE_FOLDER/original/
+				$COPY_MODE_DBFOLDER_GATK $DB_TMP/$DB_RELEASE_FILE $DB_RELEASE_FILE_PATH
+				$COPY_MODE_DBFOLDER_GATK $DB_TMP/$DB_RELEASE_FILE.tbi $DB_RELEASE_FILE_PATH.tbi
+			" >> $MK
+
+			MK_DBFOLDER_GATK_ALL="$MK_DBFOLDER_GATK_ALL $DB_RELEASE_FILE_PATH"
+			MK_ALL="$MK_ALL $DB_RELEASE_FILE_PATH" 
+
+		fi;
+
+
+
+	done;
+
+
+
+	# DATABASE Infos
+	DB_INFOS_JSON='
+	{
+		"code": "'$DATABASE'",
+		"name": "'$DATABASE_NAME'",
+		"fullname": "'$DATABASE_FULLNAME'",
+		"website": "'$DATABASE_WEBSITE'",
+		"description": "'$DATABASE_DESCRIPTION'"
+	}
+	';
+	#echo "$DB_INFOS_JSON" 
+	echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
+
+	# DATABASE Release Infos
+	DB_RELEASE_INFOS_JSON='
+	{
+		"release": "'$DB_RELEASE_FROM_DOWNLOAD'",
+		"date": "'$DB_RELEASE_DATE'",
+		"files": [ "'$(echo $DB_TARGET_FILE_LIST | sed 's/ /", "/gi')'" ],
+		"assembly": [ "'$DB_ASSEMBLY'" ],
+		"download": {
+			"methode": "'$DOWNLOAD_METHOD'",
+			"URL": "'$DBFOLDER_GATK_URL'",
+			"file": "'$(echo $DB_TARGET_FILE_LIST | sed 's/ /,/gi')'",
+			"date": "'$DBFOLDER_GATK_URL_FILE_DATE'"
+		}
+	}
+	';
+	#echo "$DB_RELEASE_INFOS_JSON"
+	echo "$DB_RELEASE_INFOS_JSON" > $DB_TMP/STARK.database.release
+
+	if (($GATK_RESOURCE_NB)); then
+
+		cat $MK.existing_gatk_db >> $MK
+
+		MK_DBFOLDER_GATK_ALL="$MK_DBFOLDER_GATK_ALL $MK_DBFOLDER_GATK_ALL_existing_gatk_db"
+		MK_ALL="$MK_ALL $MK_ALL_existing_gatk_db" 
+
+		echo "$DB_TARGET_FOLDER: $MK_DBFOLDER_GATK_ALL
+			# folder
+			mkdir -p $DB_RELEASE_FOLDER/original
+			chmod 0775 $DB_RELEASE_FOLDER -R
+			# database release info
+			-[ ! -s $DB_TARGET_DB_FOLDER/STARK.database ] && cp $DB_TMP/STARK.database $DB_TARGET_DB_FOLDER/STARK.database
+			cp $DB_TMP/STARK.database.release $DB_RELEASE_FOLDER/
+			chmod o+r $DB_TARGET_DB_FOLDER/STARK.database $DB_RELEASE_FOLDER/STARK.database.release
+			# links
+			-[ $DB_TARGET_RELEASE != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_FOLDER
+			-[ latest != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_DB_FOLDER/latest
+			-(($CURRENT)) && [ current != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_DB_FOLDER/current
+			# Clear
+			rm -rf $DB_TMP;
+		" >> $MK
+
+		MK_ALL="$MK_ALL $DB_TARGET_FOLDER" 
+
+	fi;
+
+fi;
+
 
 
 ################
@@ -696,7 +934,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		if (($UPDATE)); then
 			if [ -e $DB_TARGET_TXT ]; then mv -f $DB_TARGET_TXT $DB_TARGET_TXT.V$DATE; fi;
 			if [ -e $DB_TARGET_GENES ]; then mv -f $DB_TARGET_GENES $DB_TARGET_GENES.V$DATE; fi;
-			if [ -e $DB_TARGET ]; then mv -f $RDB_TARGET $DB_TARGET.V$DATE; fi;
+			if [ -e $DB_TARGET ]; then mv -f $DB_TARGET $DB_TARGET.V$DATE; fi;
 		fi;
 		COPY_MODE_REFSEQ_GENES=$COPY_MODE_DEFAULT
 
@@ -1364,39 +1602,52 @@ fi;
 # ALL
 ######
 
-echo "all: $MK_ALL
-	echo '#[INFO] Build release: $DATABASES_RELEASE' >> $DATABASES/STARK.download.releases
-" >> $MK
+if [ ! -z "$MK_ALL" ]; then
+
+	# Create DBFOLDER
+	echo "$DBFOLDER:
+		mkdir -p $DBFOLDER
+		chmod 0775 $DBFOLDER
+	" >> $MK
+
+	# Create ALL
+	echo "all: $MK_ALL
+		echo '#[INFO] Build release: $DATABASES_RELEASE' >> $DATABASES/STARK.download.releases
+	" >> $MK
 
 
+	# DATABASES INIT
+	(($VERBOSE)) && echo ""
+	#(($VERBOSE)) && echo "#[INFO] DATABASES INIT..."
 
-# DATABASES INIT
-(($VERBOSE)) && echo ""
-#(($VERBOSE)) && echo "#[INFO] DATABASES INIT..."
-
-if ((1)); then
-	if (($BUILD)) || (($REBUILD)) || (($UPDATE)); then
-		echo "#[INFO] DATABASES DOWNLOADING..."
-		if (($VERBOSE)) || (($DEBUG)); then
-			if (($DEBUG)); then
-				make -k -j $THREADS $MK_OPTION -f $MK all;
-			elif (($VERBOSE)); then
-				make -k -j $THREADS $MK_OPTION -f $MK all;
+	if ((1)); then
+		if (($BUILD)) || (($REBUILD)) || (($UPDATE)); then
+			echo "#[INFO] DATABASES DOWNLOADING..."
+			if (($VERBOSE)) || (($DEBUG)); then
+				if (($DEBUG)); then
+					make -k -j $THREADS $MK_OPTION -f $MK all;
+				elif (($VERBOSE)); then
+					make -k -j $THREADS $MK_OPTION -f $MK all;
+				fi;
+			else
+				make -k -j $THREADS $MK_OPTION -f $MK all 1>$MK_LOG 2>$MK_ERR;
+				if (($(cat $MK_LOG $MK_ERR | grep "\*\*\*" -c))); then
+					echo "#[ERROR] Fail download databases"
+					exit 1
+				fi;
 			fi;
+			echo "#[INFO] DATABASES DOWNLOADED"
 		else
-			make -k -j $THREADS $MK_OPTION -f $MK all 1>$MK_LOG 2>$MK_ERR;
-			if (($(cat $MK_LOG $MK_ERR | grep "\*\*\*" -c))); then
-				echo "#[ERROR] Fail download databases"
-				exit 1
-			fi;
+			echo "## use --build, --rebuild or --update to download databases"
 		fi;
-		echo "#[INFO] DATABASES DOWNLOADED"
-	else
-		echo "## use --build, --rebuild or --update to download databases"
 	fi;
+
+else
+
+	(($VERBOSE)) && echo ""
+	(($VERBOSE)) && echo "#[INFO] Nothing to download"
+
 fi;
-
-
 
 if (($DEBUG)); then
 	echo ""
