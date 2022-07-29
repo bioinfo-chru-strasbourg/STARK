@@ -48,8 +48,8 @@ services:
             - stark_stark
         healthcheck:
             test: "STARK --help | head -n5 && /tool/bin/STARK.setup --setup-type=INNER && /tool/bin/get_databases.sh"
-            interval: 10s
-            timeout: 10s
+            interval: 60s
+            timeout: 60s
             retries: 3
 
 
@@ -196,8 +196,8 @@ services:
             - ${DOCKER_STARK_MAIN_NETWORK}
         healthcheck:
             test: "STARK --help | head -n5 && /tool/bin/STARK.setup --setup-type=INNER && /tool/bin/get_databases.sh"
-            interval: 10s
-            timeout: 10s
+            interval: 60s
+            timeout: 60s
             retries: 3
 
         

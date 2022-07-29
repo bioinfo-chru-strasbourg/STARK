@@ -22,7 +22,7 @@ BARCODE_TAG?=
 	# MarkDuplicates if BAM sorted
 	if (( $$($(SAMTOOLS) view -H $< | grep "^@HD.*VN:.*SO:coordinate" | wc -l))); then \
 		mkdir -p $<.metrics; \
-		$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) MarkDuplicates \
+		$(JAVA11) $(JAVA_FLAGS) -jar $(PICARD) MarkDuplicates \
 		I=$< \
 		O=$@ \
 		M=$<.metrics/$(*F).markDuplicates.metrics \

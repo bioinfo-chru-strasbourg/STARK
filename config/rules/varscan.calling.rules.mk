@@ -66,14 +66,14 @@ VARSCAN_TIMEOUT=3600 # 1 = 1sec, 60=1min, 3600=1h
 		echo "# GENERATION of '$@' start: "`date`; \
 		sample=`basename $* | cut -d"." -f1`; \
 		echo $$sample > $*.SNP.sample.txt; \
-		#timeout $(VARSCAN_TIMEOUT) cat $< | $(JAVA) -jar $(VARSCAN) mpileup2snp --output-vcf 1 $(VARSCAN_SNP_OPTIONS) --vcf-sample-list $*.SNP.sample.txt > $@.unfiltered.vcf; \
-		cat $< | $(JAVA) -jar $(VARSCAN) mpileup2snp --output-vcf 1 $(VARSCAN_SNP_OPTIONS) --vcf-sample-list $*.SNP.sample.txt > $@.unfiltered.vcf; \
+		#timeout $(VARSCAN_TIMEOUT) cat $< | $(JAVA11) -jar $(VARSCAN) mpileup2snp --output-vcf 1 $(VARSCAN_SNP_OPTIONS) --vcf-sample-list $*.SNP.sample.txt > $@.unfiltered.vcf; \
+		cat $< | $(JAVA11) -jar $(VARSCAN) mpileup2snp --output-vcf 1 $(VARSCAN_SNP_OPTIONS) --vcf-sample-list $*.SNP.sample.txt > $@.unfiltered.vcf; \
 		rm -f $*.SNP.sample.txt; \
 		echo "# GENERATION of '$@' stop: "`date`; \
 	fi;
 	-if [ ! -s $@.unfiltered.vcf ]; then cp $*.empty.vcf $@.unfiltered.vcf; fi;
 	echo "#NBVARIANT ($@.unfiltered.vcf after calling)"`grep -cv ^# $@.unfiltered.vcf`
-	-$(JAVA) -jar $(IGVTOOLS) index $@.unfiltered.vcf;
+	-$(JAVA11) -jar $(IGVTOOLS) index $@.unfiltered.vcf;
 	-$(JAVA) $(JAVA_FLAGS) -jar $(GATK) -T VariantFiltration -R `cat $*.genome` --variant $@.unfiltered.vcf -o $@ $(VARSCAN_SNP_FILTERS);
 	echo "#NBVARIANT ($@ after calling)"`grep -cv ^# $@`
 	-if [ ! -s $@ ]; then cp $*.empty.vcf $@; fi;
@@ -90,14 +90,14 @@ VARSCAN_TIMEOUT=3600 # 1 = 1sec, 60=1min, 3600=1h
 		echo "# GENERATION of '$@' start: "`date`; \
 		sample=`basename $* | cut -d"." -f1`; \
 		echo $$sample > $*.InDel.sample.txt; \
-		#timeout $(VARSCAN_TIMEOUT) cat $< | $(JAVA) -jar $(VARSCAN) mpileup2indel --output-vcf 1 $(VARSCAN_INDEL_OPTIONS) --vcf-sample-list $*.InDel.sample.txt > $@.unfiltered.vcf; \
-		cat $< | $(JAVA) -jar $(VARSCAN) mpileup2indel --output-vcf 1 $(VARSCAN_INDEL_OPTIONS) --vcf-sample-list $*.InDel.sample.txt > $@.unfiltered.vcf; \
+		#timeout $(VARSCAN_TIMEOUT) cat $< | $(JAVA11) -jar $(VARSCAN) mpileup2indel --output-vcf 1 $(VARSCAN_INDEL_OPTIONS) --vcf-sample-list $*.InDel.sample.txt > $@.unfiltered.vcf; \
+		cat $< | $(JAVA11) -jar $(VARSCAN) mpileup2indel --output-vcf 1 $(VARSCAN_INDEL_OPTIONS) --vcf-sample-list $*.InDel.sample.txt > $@.unfiltered.vcf; \
 		rm -f $*.InDel.sample.txt; \
 		echo "# GENERATION of '$@' stop: "`date`; \
 	fi;
 	-if [ ! -s $@.unfiltered.vcf ]; then cp $*.empty.vcf $@.unfiltered.vcf; fi;
 	echo "#NBVARIANT ($@.unfiltered.vcf after calling)"`grep -cv ^# $@.unfiltered.vcf`
-	-$(JAVA) -jar $(IGVTOOLS) index $@.unfiltered.vcf;
+	-$(JAVA11) -jar $(IGVTOOLS) index $@.unfiltered.vcf;
 	-$(JAVA) $(JAVA_FLAGS) -jar $(GATK) -T VariantFiltration -R `cat $*.genome` --variant $@.unfiltered.vcf -o $@ $(VARSCAN_INDEL_FILTERS);
 	echo "#NBVARIANT ($@ after calling)"`grep -cv ^# $@`
 	-if [ ! -s $@ ]; then cp $*.empty.vcf $@; fi;
@@ -133,14 +133,14 @@ VARSCAN_SOMATIC_TIMEOUT=3600 # 1 = 1sec, 60=1min, 3600=1h
 		echo "# GENERATION of '$@' start: "`date`; \
 		sample=`basename $* | cut -d"." -f1`; \
 		echo $$sample > $*.SNP.sample.txt; \
-		#timeout $(VARSCAN_TIMEOUT) cat $< | $(JAVA) -jar $(VARSCAN) mpileup2snp --output-vcf 1 $(VARSCAN_SOMATIC_SNP_OPTIONS) --vcf-sample-list $*.SNP.sample.txt > $@.unfiltered.vcf; \
-		cat $< | $(JAVA) -jar $(VARSCAN) mpileup2snp --output-vcf 1 $(VARSCAN_SOMATIC_SNP_OPTIONS) --vcf-sample-list $*.SNP.sample.txt > $@.unfiltered.vcf; \
+		#timeout $(VARSCAN_TIMEOUT) cat $< | $(JAVA11) -jar $(VARSCAN) mpileup2snp --output-vcf 1 $(VARSCAN_SOMATIC_SNP_OPTIONS) --vcf-sample-list $*.SNP.sample.txt > $@.unfiltered.vcf; \
+		cat $< | $(JAVA11) -jar $(VARSCAN) mpileup2snp --output-vcf 1 $(VARSCAN_SOMATIC_SNP_OPTIONS) --vcf-sample-list $*.SNP.sample.txt > $@.unfiltered.vcf; \
 		rm -f $*.SNP.sample.txt; \
 		echo "# GENERATION of '$@' stop: "`date`; \
 	fi;
 	-if [ ! -s $@.unfiltered.vcf ]; then cp $*.empty.vcf $@.unfiltered.vcf; fi;
 	echo "#NBVARIANT ($@.unfiltered.vcf after calling)"`grep -cv ^# $@.unfiltered.vcf`
-	-$(JAVA) -jar $(IGVTOOLS) index $@.unfiltered.vcf;
+	-$(JAVA11) -jar $(IGVTOOLS) index $@.unfiltered.vcf;
 	-$(JAVA) $(JAVA_FLAGS) -jar $(GATK) -T VariantFiltration -R `cat $*.genome` --variant $@.unfiltered.vcf -o $@ $(VARSCAN_SOMATIC_SNP_FILTERS);
 	echo "#NBVARIANT ($@ after filtering)"`grep -cv ^# $@`
 	-if [ ! -s $@ ]; then cp $*.empty.vcf $@; fi;
@@ -156,14 +156,14 @@ VARSCAN_SOMATIC_TIMEOUT=3600 # 1 = 1sec, 60=1min, 3600=1h
 		echo "# GENERATION of '$@' start: "`date`; \
 		sample=`basename $* | cut -d"." -f1`; \
 		echo $$sample > $*.InDel.sample.txt; \
-		#timeout $(VARSCAN_TIMEOUT) cat $< | $(JAVA) -jar $(VARSCAN) mpileup2indel --output-vcf 1 $(VARSCAN_SOMATIC_INDEL_OPTIONS) --vcf-sample-list $*.InDel.sample.txt > $@.unfiltered.vcf; \
-		cat $< | $(JAVA) -jar $(VARSCAN) mpileup2indel --output-vcf 1 $(VARSCAN_SOMATIC_INDEL_OPTIONS) --vcf-sample-list $*.InDel.sample.txt > $@.unfiltered.vcf; \
+		#timeout $(VARSCAN_TIMEOUT) cat $< | $(JAVA11) -jar $(VARSCAN) mpileup2indel --output-vcf 1 $(VARSCAN_SOMATIC_INDEL_OPTIONS) --vcf-sample-list $*.InDel.sample.txt > $@.unfiltered.vcf; \
+		cat $< | $(JAVA11) -jar $(VARSCAN) mpileup2indel --output-vcf 1 $(VARSCAN_SOMATIC_INDEL_OPTIONS) --vcf-sample-list $*.InDel.sample.txt > $@.unfiltered.vcf; \
 		rm -f $*.InDel.sample.txt; \
 		echo "# GENERATION of '$@' stop: "`date`; \
 	fi;
 	-if [ ! -s $@.unfiltered.vcf ]; then cp $*.empty.vcf $@.unfiltered.vcf; fi;
 	echo "#NBVARIANT ($@.unfiltered.vcf after calling)"`grep -cv ^# $@.unfiltered.vcf`
-	-$(JAVA) -jar $(IGVTOOLS) index $@.unfiltered.vcf;
+	-$(JAVA11) -jar $(IGVTOOLS) index $@.unfiltered.vcf;
 	-$(JAVA) $(JAVA_FLAGS) -jar $(GATK) -T VariantFiltration -R `cat $*.genome` --variant $@.unfiltered.vcf -o $@ $(VARSCAN_SOMATIC_INDEL_FILTERS);
 	echo "#NBVARIANT ($@ after calling)"`grep -cv ^# $@`
 	-if [ ! -s $@ ]; then cp $*.empty.vcf $@; fi;
@@ -199,14 +199,14 @@ VARSCAN_EXOME_SOMATIC_TIMEOUT=36000 # 1 = 1sec, 60=1min, 3600=1h
 		echo "# GENERATION of '$@' start: "`date`; \
 		sample=`basename $* | cut -d"." -f1`; \
 		echo $$sample > $*.SNP.sample.txt; \
-		#timeout $(VARSCAN_TIMEOUT) cat $< | $(JAVA) -jar $(VARSCAN) mpileup2snp --output-vcf 1 $(VARSCAN_EXOME_SOMATIC_SNP_OPTIONS) --vcf-sample-list $*.SNP.sample.txt > $@.unfiltered.vcf; \
-		cat $< | $(JAVA) -jar $(VARSCAN) mpileup2snp --output-vcf 1 $(VARSCAN_EXOME_SOMATIC_SNP_OPTIONS) --vcf-sample-list $*.SNP.sample.txt > $@.unfiltered.vcf; \
+		#timeout $(VARSCAN_TIMEOUT) cat $< | $(JAVA11) -jar $(VARSCAN) mpileup2snp --output-vcf 1 $(VARSCAN_EXOME_SOMATIC_SNP_OPTIONS) --vcf-sample-list $*.SNP.sample.txt > $@.unfiltered.vcf; \
+		cat $< | $(JAVA11) -jar $(VARSCAN) mpileup2snp --output-vcf 1 $(VARSCAN_EXOME_SOMATIC_SNP_OPTIONS) --vcf-sample-list $*.SNP.sample.txt > $@.unfiltered.vcf; \
 		rm -f $*.SNP.sample.txt; \
 		echo "# GENERATION of '$@' stop: "`date`; \
 	fi;
 	-if [ ! -s $@.unfiltered.vcf ]; then cp $*.empty.vcf $@.unfiltered.vcf; fi;
 	echo "#NBVARIANT ($@.unfiltered.vcf after calling)"`grep -cv ^# $@.unfiltered.vcf`
-	-$(JAVA) -jar $(IGVTOOLS) index $@.unfiltered.vcf;
+	-$(JAVA11) -jar $(IGVTOOLS) index $@.unfiltered.vcf;
 	-$(JAVA) $(JAVA_FLAGS) -jar $(GATK) -T VariantFiltration -R `cat $*.genome` --variant $@.unfiltered.vcf -o $@ $(VARSCAN_EXOME_SOMATIC_SNP_FILTERS);
 	echo "#NBVARIANT ($@ after filtering)"`grep -cv ^# $@`
 	-if [ ! -s $@ ]; then cp $*.empty.vcf $@; fi;
@@ -223,14 +223,14 @@ VARSCAN_EXOME_SOMATIC_TIMEOUT=36000 # 1 = 1sec, 60=1min, 3600=1h
 		echo "# GENERATION of '$@' start: "`date`; \
 		sample=`basename $* | cut -d"." -f1`; \
 		echo $$sample > $*.InDel.sample.txt; \
-		#timeout $(VARSCAN_TIMEOUT) cat $< | $(JAVA) -jar $(VARSCAN) mpileup2indel --output-vcf 1 $(VARSCAN_EXOME_SOMATIC_INDEL_OPTIONS) --vcf-sample-list $*.InDel.sample.txt > $@.unfiltered.vcf; \
-		cat $< | $(JAVA) -jar $(VARSCAN) mpileup2indel --output-vcf 1 $(VARSCAN_EXOME_SOMATIC_INDEL_OPTIONS) --vcf-sample-list $*.InDel.sample.txt > $@.unfiltered.vcf; \
+		#timeout $(VARSCAN_TIMEOUT) cat $< | $(JAVA11) -jar $(VARSCAN) mpileup2indel --output-vcf 1 $(VARSCAN_EXOME_SOMATIC_INDEL_OPTIONS) --vcf-sample-list $*.InDel.sample.txt > $@.unfiltered.vcf; \
+		cat $< | $(JAVA11) -jar $(VARSCAN) mpileup2indel --output-vcf 1 $(VARSCAN_EXOME_SOMATIC_INDEL_OPTIONS) --vcf-sample-list $*.InDel.sample.txt > $@.unfiltered.vcf; \
 		rm -f $*.InDel.sample.txt; \
 		echo "# GENERATION of '$@' stop: "`date`; \
 	fi;
 	-if [ ! -s $@.unfiltered.vcf ]; then cp $*.empty.vcf $@.unfiltered.vcf; fi;
 	echo "#NBVARIANT ($@.unfiltered.vcf after calling)"`grep -cv ^# $@.unfiltered.vcf`
-	-$(JAVA) -jar $(IGVTOOLS) index $@.unfiltered.vcf;
+	-$(JAVA11) -jar $(IGVTOOLS) index $@.unfiltered.vcf;
 	-$(JAVA) $(JAVA_FLAGS) -jar $(GATK) -T VariantFiltration -R `cat $*.genome` --variant $@.unfiltered.vcf -o $@ $(VARSCAN_EXOME_SOMATIC_INDEL_FILTERS);
 	echo "#NBVARIANT ($@ after calling)"`grep -cv ^# $@`
 	-if [ ! -s $@ ]; then cp $*.empty.vcf $@; fi;
@@ -268,14 +268,14 @@ VARSCAN_HEMATOLOGY_TIMEOUT=3600 # 1 = 1sec, 60=1min, 3600=1h
 		echo "# GENERATION of '$@' start: "`date`; \
 		sample=`basename $* | cut -d"." -f1`; \
 		echo $$sample > $*.SNP.sample.txt; \
-		#timeout $(VARSCAN_TIMEOUT) cat $< | $(JAVA) -jar $(VARSCAN) mpileup2snp --output-vcf 1 $(VARSCAN_HEMATOLOGY_SNP_OPTIONS) --vcf-sample-list $*.SNP.sample.txt > $@.unfiltered.vcf; \
-		cat $< | $(JAVA) -jar $(VARSCAN) mpileup2snp --output-vcf 1 $(VARSCAN_HEMATOLOGY_SNP_OPTIONS) --vcf-sample-list $*.SNP.sample.txt > $@.unfiltered.vcf; \
+		#timeout $(VARSCAN_TIMEOUT) cat $< | $(JAVA11) -jar $(VARSCAN) mpileup2snp --output-vcf 1 $(VARSCAN_HEMATOLOGY_SNP_OPTIONS) --vcf-sample-list $*.SNP.sample.txt > $@.unfiltered.vcf; \
+		cat $< | $(JAVA11) -jar $(VARSCAN) mpileup2snp --output-vcf 1 $(VARSCAN_HEMATOLOGY_SNP_OPTIONS) --vcf-sample-list $*.SNP.sample.txt > $@.unfiltered.vcf; \
 		rm -f $*.SNP.sample.txt; \
 		echo "# GENERATION of '$@' stop: "`date`; \
 	fi;
 	-if [ ! -s $@.unfiltered.vcf ]; then cp $*.empty.vcf $@.unfiltered.vcf; fi;
 	echo "#NBVARIANT ($@.unfiltered.vcf after calling)"`grep -cv ^# $@.unfiltered.vcf`
-	-$(JAVA) -jar $(IGVTOOLS) index $@.unfiltered.vcf;
+	-$(JAVA11) -jar $(IGVTOOLS) index $@.unfiltered.vcf;
 	-$(JAVA) $(JAVA_FLAGS) -jar $(GATK) -T VariantFiltration -R `cat $*.genome` --variant $@.unfiltered.vcf -o $@ $(VARSCAN_HEMATOLOGY_SNP_FILTERS);
 	echo "#NBVARIANT ($@ after filtering)"`grep -cv ^# $@`
 	-if [ ! -s $@ ]; then cp $*.empty.vcf $@; fi;
@@ -292,14 +292,14 @@ VARSCAN_HEMATOLOGY_TIMEOUT=3600 # 1 = 1sec, 60=1min, 3600=1h
 		echo "# GENERATION of '$@' start: "`date`; \
 		sample=`basename $* | cut -d"." -f1`; \
 		echo $$sample > $*.InDel.sample.txt; \
-		#timeout $(VARSCAN_TIMEOUT) cat $< | $(JAVA) -jar $(VARSCAN) mpileup2indel --output-vcf 1 $(VARSCAN_HEMATOLOGY_INDEL_OPTIONS) --vcf-sample-list $*.InDel.sample.txt > $@.unfiltered.vcf; \
-		cat $< | $(JAVA) -jar $(VARSCAN) mpileup2indel --output-vcf 1 $(VARSCAN_HEMATOLOGY_INDEL_OPTIONS) --vcf-sample-list $*.InDel.sample.txt > $@.unfiltered.vcf; \
+		#timeout $(VARSCAN_TIMEOUT) cat $< | $(JAVA11) -jar $(VARSCAN) mpileup2indel --output-vcf 1 $(VARSCAN_HEMATOLOGY_INDEL_OPTIONS) --vcf-sample-list $*.InDel.sample.txt > $@.unfiltered.vcf; \
+		cat $< | $(JAVA11) -jar $(VARSCAN) mpileup2indel --output-vcf 1 $(VARSCAN_HEMATOLOGY_INDEL_OPTIONS) --vcf-sample-list $*.InDel.sample.txt > $@.unfiltered.vcf; \
 		rm -f $*.InDel.sample.txt; \
 		echo "# GENERATION of '$@' stop: "`date`; \
 	fi;
 	-if [ ! -s $@.unfiltered.vcf ]; then cp $*.empty.vcf $@.unfiltered.vcf; fi;
 	echo "#NBVARIANT ($@.unfiltered.vcf after calling)"`grep -cv ^# $@.unfiltered.vcf`
-	-$(JAVA) -jar $(IGVTOOLS) index $@.unfiltered.vcf;
+	-$(JAVA11) -jar $(IGVTOOLS) index $@.unfiltered.vcf;
 	-$(JAVA) $(JAVA_FLAGS) -jar $(GATK) -T VariantFiltration -R `cat $*.genome` --variant $@.unfiltered.vcf -o $@ $(VARSCAN_HEMATOLOGY_INDEL_FILTERS);
 	echo "#NBVARIANT ($@ after calling)"`grep -cv ^# $@`
 	-if [ ! -s $@ ]; then cp $*.empty.vcf $@; fi;
@@ -335,14 +335,14 @@ VARSCAN_SOLIDTUMOR_TIMEOUT=3600 # 1 = 1sec, 60=1min, 3600=1h
 		echo "# GENERATION of '$@' start: "`date`; \
 		sample=`basename $* | cut -d"." -f1`; \
 		echo $$sample > $*.SNP.sample.txt; \
-		#timeout $(VARSCAN_TIMEOUT) cat $< | $(JAVA) -jar $(VARSCAN) mpileup2snp --output-vcf 1 $(VARSCAN_SOLIDTUMOR_SNP_OPTIONS) --vcf-sample-list $*.SNP.sample.txt > $@.unfiltered.vcf; \
-		cat $< | $(JAVA) -jar $(VARSCAN) mpileup2snp --output-vcf 1 $(VARSCAN_SOLIDTUMOR_SNP_OPTIONS) --vcf-sample-list $*.SNP.sample.txt > $@.unfiltered.vcf; \
+		#timeout $(VARSCAN_TIMEOUT) cat $< | $(JAVA11) -jar $(VARSCAN) mpileup2snp --output-vcf 1 $(VARSCAN_SOLIDTUMOR_SNP_OPTIONS) --vcf-sample-list $*.SNP.sample.txt > $@.unfiltered.vcf; \
+		cat $< | $(JAVA11) -jar $(VARSCAN) mpileup2snp --output-vcf 1 $(VARSCAN_SOLIDTUMOR_SNP_OPTIONS) --vcf-sample-list $*.SNP.sample.txt > $@.unfiltered.vcf; \
 		rm -f $*.SNP.sample.txt; \
 		echo "# GENERATION of '$@' stop: "`date`; \
 	fi;
 	-if [ ! -s $@.unfiltered.vcf ]; then cp $*.empty.vcf $@.unfiltered.vcf; fi;
 	echo "#NBVARIANT ($@.unfiltered.vcf after calling)"`grep -cv ^# $@.unfiltered.vcf`
-	-$(JAVA) -jar $(IGVTOOLS) index $@.unfiltered.vcf;
+	-$(JAVA11) -jar $(IGVTOOLS) index $@.unfiltered.vcf;
 	-$(JAVA) $(JAVA_FLAGS) -jar $(GATK) -T VariantFiltration -R `cat $*.genome` --variant $@.unfiltered.vcf -o $@ $(VARSCAN_SOLIDTUMOR_SNP_FILTERS);
 	echo "#NBVARIANT ($@ after filtering)"`grep -cv ^# $@`
 	-if [ ! -s $@ ]; then cp $*.empty.vcf $@; fi;
@@ -359,14 +359,14 @@ VARSCAN_SOLIDTUMOR_TIMEOUT=3600 # 1 = 1sec, 60=1min, 3600=1h
 		echo "# GENERATION of '$@' start: "`date`; \
 		sample=`basename $* | cut -d"." -f1`; \
 		echo $$sample > $*.InDel.sample.txt; \
-		#timeout $(VARSCAN_TIMEOUT) cat $< | $(JAVA) -jar $(VARSCAN) mpileup2indel --output-vcf 1 $(VARSCAN_SOLIDTUMOR_INDEL_OPTIONS) --vcf-sample-list $*.InDel.sample.txt > $@.unfiltered.vcf; \
-		cat $< | $(JAVA) -jar $(VARSCAN) mpileup2indel --output-vcf 1 $(VARSCAN_SOLIDTUMOR_INDEL_OPTIONS) --vcf-sample-list $*.InDel.sample.txt > $@.unfiltered.vcf; \
+		#timeout $(VARSCAN_TIMEOUT) cat $< | $(JAVA11) -jar $(VARSCAN) mpileup2indel --output-vcf 1 $(VARSCAN_SOLIDTUMOR_INDEL_OPTIONS) --vcf-sample-list $*.InDel.sample.txt > $@.unfiltered.vcf; \
+		cat $< | $(JAVA11) -jar $(VARSCAN) mpileup2indel --output-vcf 1 $(VARSCAN_SOLIDTUMOR_INDEL_OPTIONS) --vcf-sample-list $*.InDel.sample.txt > $@.unfiltered.vcf; \
 		rm -f $*.InDel.sample.txt; \
 		echo "# GENERATION of '$@' stop: "`date`; \
 	fi;
 	-if [ ! -s $@.unfiltered.vcf ]; then cp $*.empty.vcf $@.unfiltered.vcf; fi;
 	echo "#NBVARIANT ($@.unfiltered.vcf after calling)"`grep -cv ^# $@.unfiltered.vcf`
-	-$(JAVA) -jar $(IGVTOOLS) index $@.unfiltered.vcf;
+	-$(JAVA11) -jar $(IGVTOOLS) index $@.unfiltered.vcf;
 	-$(JAVA) $(JAVA_FLAGS) -jar $(GATK) -T VariantFiltration -R `cat $*.genome` --variant $@.unfiltered.vcf -o $@ $(VARSCAN_SOLIDTUMOR_INDEL_FILTERS);
 	echo "#NBVARIANT ($@ after calling)"`grep -cv ^# $@`
 	-if [ ! -s $@ ]; then cp $*.empty.vcf $@; fi;

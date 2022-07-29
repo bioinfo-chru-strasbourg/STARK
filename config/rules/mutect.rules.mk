@@ -78,7 +78,7 @@ GATK4_MUTECT2_FLAGS_SHARED?=--disable-read-filter MateOnSameContigOrNoMappedMate
 #--dont-use-soft-clipped-bases
 
 %.MuTect2$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.genome %.dict %.design.bed.interval_list #%.from_manifest.interval_list
-	$(JAVA) $(JAVA_FLAGS) -jar $(GATK4) Mutect2 $(GATK4_MUTECT2_FLAGS_SHARED) \
+	$(JAVA11) $(JAVA_FLAGS) -jar $(GATK4) Mutect2 $(GATK4_MUTECT2_FLAGS_SHARED) \
 		-R $$(cat $*.genome) \
 		-I $< \
 		-tumor $$(basename $< | cut -d"." -f1) \
@@ -88,7 +88,7 @@ GATK4_MUTECT2_FLAGS_SHARED?=--disable-read-filter MateOnSameContigOrNoMappedMate
 	grep "^##" $@.tmp1 | sed s/ID=TLOD,Number=A/ID=TLOD,Number=./gi > $@.tmp.vcf
 	grep "^##" -v $@.tmp1 | cut -f1-10 >> $@.tmp.vcf
 	# sort
-	$(JAVA) -jar $(PICARD) SortVcf -I $@.tmp.vcf -O $@.tmp2.vcf -SD $$(cat $*.dict);
+	$(JAVA11) -jar $(PICARD) SortVcf -I $@.tmp.vcf -O $@.tmp2.vcf -SD $$(cat $*.dict);
 	# DPMIN_MUTECT2
 	#$(VCFUTILS) varFilter -d $(DPMIN_MUTECT2) $@.tmp2.vcf > $@.tmp3.vcf;
 	$(BCFTOOLS) view  -i 'FORMAT/DP>=$(DPMIN_MUTECT2)' $@.tmp2.vcf > $@.tmp3.vcf;
@@ -121,7 +121,7 @@ GATK4_MUTECT2_FILTERED_FLAGS_SHARED?=--disable-read-filter MateOnSameContigOrNoM
 
 %.MuTect2_filtered$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.genome %.dict %.design.bed.interval_list #%.from_manifest.interval_list
 	# Calling by MuTect2
-	$(JAVA) $(JAVA_FLAGS) -jar $(GATK4) Mutect2 $(GATK4_MUTECT2_FILTERED_FLAGS_SHARED) \
+	$(JAVA11) $(JAVA_FLAGS) -jar $(GATK4) Mutect2 $(GATK4_MUTECT2_FILTERED_FLAGS_SHARED) \
 		-R $$(cat $*.genome) \
 		-I $< \
 		-tumor $$(basename $< | cut -d"." -f1) \
@@ -131,7 +131,7 @@ GATK4_MUTECT2_FILTERED_FLAGS_SHARED?=--disable-read-filter MateOnSameContigOrNoM
 	grep "^##" $@.tmp.unfiltered.vcf | sed s/ID=TLOD,Number=A/ID=TLOD,Number=./gi > $@.tmp.unfiltered.TLOD.vcf
 	grep "^##" -v $@.tmp.unfiltered.vcf | cut -f1-10 >> $@.tmp.unfiltered.TLOD.vcf
 	# Sorting
-	#$(JAVA) -jar $(PICARD) SortVcf -I $@.tmp.unfiltered.TLOD.vcf -O $@.tmp.unfiltered.TLOD.sorted.vcf -SD $$(cat $*.dict);
+	#$(JAVA11) -jar $(PICARD) SortVcf -I $@.tmp.unfiltered.TLOD.vcf -O $@.tmp.unfiltered.TLOD.sorted.vcf -SD $$(cat $*.dict);
 	# HOWARD VAF calculation & Filtration by BCFTOOLS
 	+if (($$($(BCFTOOLS) view -H $@.tmp.unfiltered.TLOD.vcf | wc -l ))); then \
 		$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp.unfiltered.TLOD.vcf --output=$@.tmp.unfiltered.TLOD.HOWARD.vcf --calculation="VAF"; \
@@ -140,7 +140,7 @@ GATK4_MUTECT2_FILTERED_FLAGS_SHARED?=--disable-read-filter MateOnSameContigOrNoM
 		cp $@.tmp.unfiltered.TLOD.vcf $@.tmp.cleaned.vcf; \
 	fi;
 	# Sorting and contig
-	$(JAVA) -jar $(PICARD) SortVcf -I $@.tmp.cleaned.vcf -O $@ -SD $$(cat $*.dict);
+	$(JAVA11) -jar $(PICARD) SortVcf -I $@.tmp.cleaned.vcf -O $@ -SD $$(cat $*.dict);
 	# Empty
 	#if [ ! -e $@.tmp.FilterMutectCalls.TLOD.sorted.HOWARD.bcftools.vcf ]; then cp $*.empty.vcf $@.tmp.FilterMutectCalls.TLOD.sorted.HOWARD.bcftools.vcf; fi;
 	# Copy
@@ -174,14 +174,14 @@ GATK4_MUTECT2_STRINGENT_FLAGS_SHARED?=--disable-read-filter MateOnSameContigOrNo
 
 %.MuTect2_stringent$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.genome %.dict %.design.bed.interval_list #%.from_manifest.interval_list
 	# Calling by MuTect2
-	$(JAVA) $(JAVA_FLAGS) -jar $(GATK4) Mutect2 $(GATK4_MUTECT2_STRINGENT_FLAGS_SHARED) \
+	$(JAVA11) $(JAVA_FLAGS) -jar $(GATK4) Mutect2 $(GATK4_MUTECT2_STRINGENT_FLAGS_SHARED) \
 		-R $$(cat $*.genome) \
 		-I $< \
 		-tumor $$(basename $< | cut -d"." -f1) \
 		$$(if [ "`grep ^ -c $*.design.bed.interval_list`" == "0" ]; then echo ""; else echo "-L $*.design.bed.interval_list"; fi;) \
 		-O $@.tmp.unfiltered.vcf;
 	# Filtration by MuTect2
-	$(JAVA) $(JAVA_FLAGS) -jar $(GATK4) FilterMutectCalls \
+	$(JAVA11) $(JAVA_FLAGS) -jar $(GATK4) FilterMutectCalls \
 		-R $$(cat $*.genome) \
 		-V $@.tmp.unfiltered.vcf \
 		-O $@.tmp.FilterMutectCalls.vcf;
@@ -189,7 +189,7 @@ GATK4_MUTECT2_STRINGENT_FLAGS_SHARED?=--disable-read-filter MateOnSameContigOrNo
 	grep "^##" $@.tmp.FilterMutectCalls.vcf | sed s/ID=TLOD,Number=A/ID=TLOD,Number=./gi > $@.tmp.FilterMutectCalls.TLOD.vcf
 	grep "^##" -v $@.tmp.FilterMutectCalls.vcf | cut -f1-10 >> $@.tmp.FilterMutectCalls.TLOD.vcf
 	# Sorting
-	$(JAVA) -jar $(PICARD) SortVcf -I $@.tmp.FilterMutectCalls.TLOD.vcf -O $@.tmp.FilterMutectCalls.TLOD.sorted.vcf -SD $$(cat $*.dict);
+	$(JAVA11) -jar $(PICARD) SortVcf -I $@.tmp.FilterMutectCalls.TLOD.vcf -O $@.tmp.FilterMutectCalls.TLOD.sorted.vcf -SD $$(cat $*.dict);
 	# Filtration by BCFTOOLS
 	$(BCFTOOLS) view -i 'FORMAT/DP>=$(DPMIN_MUTECT2_STRINGENT) && FORMAT/AF>=$(VAF_MUTECT2_STRINGENT) && FORMAT/AF<$(VAF_MUTECT2_STRINGENT_HOM)' $@.tmp.FilterMutectCalls.TLOD.sorted.vcf | $(BCFTOOLS) view -f PASS  -e 'GT="0/0"' -o $@;
 	# Clean
@@ -226,7 +226,7 @@ GATK3_MUTECT2_FLAGS= -nct $(THREADS_GATK3_MUTECT2) -stand_call_conf 10 -dfrac $(
 	# Clean header
 	cat $@.tmp1 | sed s/ID=QSS,Number=A/ID=QSS,Number=./gi > $@.tmp.vcf
 	# sort
-	$(JAVA) -jar $(PICARD) SortVcf -I $@.tmp.vcf -O $@.tmp2.vcf -SD $$(cat $*.dict);
+	$(JAVA11) -jar $(PICARD) SortVcf -I $@.tmp.vcf -O $@.tmp2.vcf -SD $$(cat $*.dict);
 	# DPMIN_MUTECT2
 	#$(VCFUTILS) varFilter -d $(DPMIN_MUTECT2) $@.tmp2.vcf > $@.tmp3.vcf;
 	$(BCFTOOLS) view  -i 'FORMAT/DP>=$(DPMIN_MUTECT2)' $@.tmp2.vcf > $@.tmp3.vcf;

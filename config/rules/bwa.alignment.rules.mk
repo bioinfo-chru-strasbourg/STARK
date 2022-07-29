@@ -46,7 +46,7 @@ BWAMEM_FLAGS?= mem -C -M -t $(THREADS_BWA)
 		mv $@.tmp $@; \
 	else \
 		echo "# BAM $@.tmp without read group"; \
-		$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) AddOrReplaceReadGroups $(PICARD_FLAGS) -I $@.tmp O=$@ -COMPRESSION_LEVEL 1 -RGSM $(*F); \
+		$(JAVA11) $(JAVA_FLAGS) -jar $(PICARD) AddOrReplaceReadGroups $(PICARD_FLAGS) -I $@.tmp O=$@ -COMPRESSION_LEVEL 1 -RGSM $(*F); \
 	fi;
 	-rm $@.tmp $@.RG
 

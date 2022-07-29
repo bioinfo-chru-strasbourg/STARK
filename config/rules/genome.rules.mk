@@ -62,7 +62,7 @@ MK_DATE="23/09/2016"
 %.dict: %.genome
 	cat $< | sed 's/\.fa$$/.dict/g' > $@
 	if [ ! -s $$(cat $@) ]; then \
-		$(JAVA) -jar $(PICARD) CreateSequenceDictionary REFERENCE=$$(cat $<) OUTPUT=$$(cat $@); \
+		$(JAVA11) -jar $(PICARD) CreateSequenceDictionary REFERENCE=$$(cat $<) OUTPUT=$$(cat $@); \
 	fi;
 
 
