@@ -237,7 +237,7 @@ FASTQ_DEMULTIPLEXING_COMPRESSION_LEVEL=1
 # FASTQ compression level for main FASTQ files
 # zlib compression level (1-9) used for FASTQ files
 # Used by FASTP
-FASTQ_COMPRESSION_LEVEL=9
+FASTQ_COMPRESSION_LEVEL=1
 
 # ENABLE_ADAPTER_TRIMMING
 # Trim adapter and autodetect adapter for paired end

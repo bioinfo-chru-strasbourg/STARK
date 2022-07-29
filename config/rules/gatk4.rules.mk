@@ -13,8 +13,10 @@
 
 # JAVA flags
 
-JAVA_FLAGS_GATK4?=$(JAVA_FLAGS) -XX:+UseParallelGC -XX:ParallelGCThreads=$(THREADS_BY_CALLER) -Dsamjdk.use_async_io_write_samtools=true -Dsamjdk.use_async_io_read_samtools=true -Dsamjdk.use_async_io_write_tribble=false
+JAVA_FLAGS_GATK4_CALLING_STEP?=$(JAVA_FLAGS) -XX:+UseParallelGC -XX:ParallelGCThreads=$(THREADS_BY_CALLER) -Dsamjdk.use_async_io_write_samtools=true -Dsamjdk.use_async_io_read_samtools=true -Dsamjdk.use_async_io_write_tribble=false
 
+
+JAVA_FLAGS_GATK4_ALIGNMENT_STEP?=$(JAVA_FLAGS) -XX:+UseParallelGC -XX:ParallelGCThreads=$(THREADS_BY_ALIGNER) -Dsamjdk.use_async_io_write_samtools=true -Dsamjdk.use_async_io_read_samtools=true -Dsamjdk.use_async_io_write_tribble=false
 
 # Variant Filtration
 
@@ -53,13 +55,13 @@ VARIANTRECALIBRATOR_INDEL_OPTIONS?=$(VARIANTRECALIBRATION_INDEL_RESOURCES_OPTION
 # SNP
 
 %.POST_CALLING_SNP.vcf: %.variantfiltration.vcf %.genome
-	$(JAVA11) $(JAVA_FLAGS_GATK4) -jar $(GATK4) \
+	$(JAVA11) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
 		SelectVariants \
 		-R $$(cat $*.genome) \
 		-V $< \
 		--select-type-to-include SNP \
 		-O $@.tmp.SNP.vcf;
-	$(JAVA11) $(JAVA_FLAGS_GATK4) -jar $(GATK4) \
+	$(JAVA11) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
 		VariantFiltration \
 		-R $$(cat $*.genome) \
 		-V $@.tmp.SNP.vcf \
@@ -67,7 +69,7 @@ VARIANTRECALIBRATOR_INDEL_OPTIONS?=$(VARIANTRECALIBRATION_INDEL_RESOURCES_OPTION
 		$(VARIANTFILTRATION_INVALIDATE_PREVIOUS_FILTERS_OPTION) \
 		--verbosity ERROR; \
 	if [ ! -z '$(VARIANTFILTRATION_SNP_FILTER_OPTION)' ] && [ ! -z '$(VARIANTFILTRATION_SNP_FILTER_EXPRESSION_OPTION)' ]; then \
-		$(JAVA11) $(JAVA_FLAGS_GATK4) -jar $(GATK4) \
+		$(JAVA11) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
 			VariantFiltration \
 			-R $$(cat $*.genome) \
 			-V $@.tmp.SNP.invalidate.vcf \
@@ -85,13 +87,13 @@ VARIANTRECALIBRATOR_INDEL_OPTIONS?=$(VARIANTRECALIBRATION_INDEL_RESOURCES_OPTION
 # INDEL
 
 %.POST_CALLING_InDel.vcf: %.variantfiltration.vcf %.genome
-	$(JAVA11) $(JAVA_FLAGS_GATK4) -jar $(GATK4) \
+	$(JAVA11) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
 		SelectVariants \
 		-R $$(cat $*.genome) \
 		-V $< \
 		--select-type-to-include INDEL \
 		-O $@.tmp.INDEL.vcf;
-	$(JAVA11) $(JAVA_FLAGS_GATK4) -jar $(GATK4) \
+	$(JAVA11) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
 		VariantFiltration \
 		-R $$(cat $*.genome) \
 		-V $@.tmp.INDEL.vcf \
@@ -99,7 +101,7 @@ VARIANTRECALIBRATOR_INDEL_OPTIONS?=$(VARIANTRECALIBRATION_INDEL_RESOURCES_OPTION
 		$(VARIANTFILTRATION_INVALIDATE_PREVIOUS_FILTERS_OPTION) \
 		--verbosity ERROR; \
 	if [ ! -z '$(VARIANTFILTRATION_INDEL_FILTER_OPTION)' ] && [ ! -z '$(VARIANTFILTRATION_INDEL_FILTER_EXPRESSION_OPTION)' ]; then \
-		$(JAVA11) $(JAVA_FLAGS_GATK4) -jar $(GATK4) \
+		$(JAVA11) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
 			VariantFiltration \
 			-R $$(cat $*.genome) \
 			-V $@.tmp.INDEL.invalidate.vcf \
@@ -121,14 +123,14 @@ VARIANTRECALIBRATOR_INDEL_OPTIONS?=$(VARIANTRECALIBRATION_INDEL_RESOURCES_OPTION
 # SNP
 
 %.POST_CALLING_SNP.vcf: %.variantrecalibration.vcf %.genome
-	$(JAVA11) $(JAVA_FLAGS_GATK4) -jar $(GATK4) \
+	$(JAVA11) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
 		SelectVariants \
 		-R $$(cat $*.genome) \
 		-V $< \
 		--select-type-to-include SNP \
 		-O $@.tmp.SNP.vcf;
 	-if (($(VARIANTRECALIBRATION_CHECK))); then \
-		if ! $(JAVA11) $(JAVA_FLAGS_GATK4) -jar $(GATK4) \
+		if ! $(JAVA11) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
 			VariantRecalibrator \
 			$(VARIANTRECALIBRATOR_OPTIONS) \
 			$(VARIANTRECALIBRATOR_SNP_OPTIONS) \
@@ -142,7 +144,7 @@ VARIANTRECALIBRATOR_INDEL_OPTIONS?=$(VARIANTRECALIBRATION_INDEL_RESOURCES_OPTION
 		fi; \
 	fi;
 	if (($$(grep '^#' -vc $@.tmp.SNP.recal.vcf))) && (($(VARIANTRECALIBRATION_CHECK))); then \
-		$(JAVA11) $(JAVA_FLAGS_GATK4) -jar $(GATK4) \
+		$(JAVA11) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
 			ApplyVQSR \
 			-R $$(cat $*.genome) \
 			-V $@.tmp.SNP.vcf \
@@ -153,7 +155,7 @@ VARIANTRECALIBRATOR_INDEL_OPTIONS?=$(VARIANTRECALIBRATION_INDEL_RESOURCES_OPTION
 			--mode SNP; \
 	else \
 		echo "[WARNING] No ApplyVQRS on SNP due to resources error or lack of variant in the input callset"; \
-		$(JAVA11) $(JAVA_FLAGS_GATK4) -jar $(GATK4) \
+		$(JAVA11) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
 			VariantFiltration \
 			-R $$(cat $*.genome) \
 			-V $@.tmp.SNP.vcf \
@@ -161,7 +163,7 @@ VARIANTRECALIBRATOR_INDEL_OPTIONS?=$(VARIANTRECALIBRATION_INDEL_RESOURCES_OPTION
 			$(VARIANTFILTRATION_INVALIDATE_PREVIOUS_FILTERS_OPTION) \
 			--verbosity ERROR; \
 		if [ ! -z '$(VARIANTRECALIBRATOR_VARIANTFILTRATION_SNP_FILTER_OPTION)' ] && [ ! -z '$(VARIANTRECALIBRATOR_VARIANTFILTRATION_SNP_FILTER_EXPRESSION_OPTION)' ]; then \
-			$(JAVA11) $(JAVA_FLAGS_GATK4) -jar $(GATK4) \
+			$(JAVA11) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
 				VariantFiltration \
 				-R $$(cat $*.genome) \
 				-V $@.tmp.SNP.invalidate.vcf \
@@ -179,14 +181,14 @@ VARIANTRECALIBRATOR_INDEL_OPTIONS?=$(VARIANTRECALIBRATION_INDEL_RESOURCES_OPTION
 # INDEL
 
 %.POST_CALLING_InDel.vcf: %.variantrecalibration.vcf %.genome
-	$(JAVA11) $(JAVA_FLAGS_GATK4) -jar $(GATK4) \
+	$(JAVA11) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
 		SelectVariants \
 		-R $$(cat $*.genome) \
 		-V $< \
 		--select-type-to-include INDEL \
 		-O $@.tmp.InDel.vcf;
 	-if (($(VARIANTRECALIBRATION_CHECK))); then \
-		if ! $(JAVA11) $(JAVA_FLAGS_GATK4) -jar $(GATK4) \
+		if ! $(JAVA11) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
 			VariantRecalibrator \
 			$(VARIANTRECALIBRATOR_OPTIONS) \
 			$(VARIANTRECALIBRATOR_INDEL_OPTIONS) \
@@ -200,7 +202,7 @@ VARIANTRECALIBRATOR_INDEL_OPTIONS?=$(VARIANTRECALIBRATION_INDEL_RESOURCES_OPTION
 		fi; \
 	fi;
 	if (($$(grep '^#' -vc $@.tmp.InDel.recal.vcf))) && (($(VARIANTRECALIBRATION_CHECK))); then \
-		$(JAVA11) $(JAVA_FLAGS_GATK4) -jar $(GATK4) \
+		$(JAVA11) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
 			ApplyVQSR \
 			-R $$(cat $*.genome) \
 			-V $@.tmp.InDel.vcf \
@@ -211,7 +213,7 @@ VARIANTRECALIBRATOR_INDEL_OPTIONS?=$(VARIANTRECALIBRATION_INDEL_RESOURCES_OPTION
 			--mode INDEL; \
 	else \
 		echo "[WARNING] No ApplyVQRS on INDEL due to resources error or lack of variant in the input callset"; \
-		$(JAVA11) $(JAVA_FLAGS_GATK4) -jar $(GATK4) \
+		$(JAVA11) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
 			VariantFiltration \
 			-R $$(cat $*.genome) \
 			-V $@.tmp.InDel.vcf \
@@ -219,7 +221,7 @@ VARIANTRECALIBRATOR_INDEL_OPTIONS?=$(VARIANTRECALIBRATION_INDEL_RESOURCES_OPTION
 			$(VARIANTFILTRATION_INVALIDATE_PREVIOUS_FILTERS_OPTION) \
 			--verbosity ERROR; \
 		if [ ! -z '$(VARIANTRECALIBRATOR_VARIANTFILTRATION_INDEL_FILTER_OPTION)' ] && [ ! -z '$(VARIANTRECALIBRATOR_VARIANTFILTRATION_INDEL_FILTER_EXPRESSION_OPTION)' ]; then \
-			$(JAVA11) $(JAVA_FLAGS_GATK4) -jar $(GATK4) \
+			$(JAVA11) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
 				VariantFiltration \
 				-R $$(cat $*.genome) \
 				-V $@.tmp.InDel.invalidate.vcf \
@@ -232,6 +234,27 @@ VARIANTRECALIBRATOR_INDEL_OPTIONS?=$(VARIANTRECALIBRATION_INDEL_RESOURCES_OPTION
 			cp $@.tmp.InDel.invalidate.vcf $@; \
 		fi; \
 	fi;
+
+
+
+# BAM Recalibration
+####################
+# TODO
+
+# %.bam: %.BQSRSpark.bam %.BQSRSpark.bam.bai %.BQSRSpark.from_manifest.interval_list %.genome %.design.bed #%.recalibration.bam.grp #%.recalibration.bam.bai %.from_manifest.intervals %.recalibration.from_manifest.intervals
+# 	# Recalibrate BAM with BQSRPipelineSpark 
+# 	$(JAVA11) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
+# 		BQSRPipelineSpark \
+# 		-I $< \
+# 		-O $@ \
+# 		-R $$(cat $*.genome) \
+# 		--known-sites $(VCFDBSNP) \
+# 		--emit-original-quals true \
+# 		--intervals $*.design.bed \
+# 		--spark-master local[$(THREADS_BY_ALIGNER)] ;
+# 	# clean
+# 	#-rm -f $<;
+# 	-rm -f $*.BQSRSpark.*;
 
 
 
