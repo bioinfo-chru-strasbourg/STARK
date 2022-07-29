@@ -1,10 +1,10 @@
 ############################
 # GATK Calling Rules
+# Release: 0.9.3.8
+# Date: 29/07/2022
 # Author: Antony Le Bechec
 ############################
-# Release
-MK_RELEASE="0.9.3.7b"
-MK_DATE="22/03/2019"
+
 
 # Release note
 # 0.9.1beta-10/03/2015: change genome reference location, in the file %.genome
@@ -18,6 +18,7 @@ MK_DATE="22/03/2019"
 # 0.9.3.5b-04/05/2016: Rewrite rules and update release information
 # 0.9.3.6b-10/11/2017: adding gatkUG_ONCOGENET pipeline
 # 0.9.3.7b-22/03/2019: Add --dontUseSoftClippedBases for GATKHC
+# 0.9.3.8-29/07/2022: Remove --dontUseSoftClippedBases for GATKHC
 
 
 
@@ -28,7 +29,8 @@ MBQ_HC=17
 MBQ_UG=17
 STAND_EMIT_CONF=20
 STAND_CALL_CONF=20
-GATKHC_FLAGS_SHARED=--baq OFF --read_filter BadCigar --allow_potentially_misencoded_quality_scores --dontUseSoftClippedBases
+#GATKHC_FLAGS_SHARED=--baq OFF --read_filter BadCigar --allow_potentially_misencoded_quality_scores --dontUseSoftClippedBases
+GATKHC_FLAGS_SHARED=--baq OFF --read_filter BadCigar --allow_potentially_misencoded_quality_scores
 
 
 
