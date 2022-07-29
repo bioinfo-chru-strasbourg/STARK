@@ -1269,35 +1269,6 @@ export HOWARD_ORDER_BY_REPORT
 
 
 
-# FILTRATION VCF
-################
-# Filter variant calls based on INFO and/or FORMAT annotations
-
-# One or more expression used with INFO fields to filter
-# default: FILTRATION_VCF_FILTER_EXPRESSION=''
-# example: FILTRATION_VCF_FILTER_EXPRESSION='--filterExpression "MQ0 >= 4 && ((MQ0 / (1.0 * DP)) > 0.1)" --filterName "HARD_TO_VALIDATE" --filterExpression "DP == 0" --filterName "VeryVeryLowDepth" --filterExpression "DP > 0 && DP < 10" --filterName "VeryLowDepth" --filterExpression "DP >= 10 && DP < 30" --filterName "LowDepth" --filterExpression "QUAL == 0" --filterName "VeryVeryLowQual" --filterExpression "QUAL > 0 && QUAL < 30.0" --filterName "VeryLowQual" --filterExpression "QUAL >= 30.0 && QUAL < 50.0" --filterName "LowQual" --filterExpression "QD >= 0.0 && QD < 1.5" --filterName "LowQD"'
-if [ -z "$FILTRATION_VCF_FILTER_EXPRESSION" ]; then
-	FILTRATION_VCF_FILTER_EXPRESSION=''
-fi;
-export FILTRATION_VCF_FILTER_EXPRESSION
-
-# One or more expression used with FORMAT (sample/genotype-level) fields to filter (see documentation guide for more info)
-# default: FILTRATION_VCF_GENOTYPE_FILTER_EXPRESSION=''
-# example: FILTRATION_VCF_GENOTYPE_FILTER_EXPRESSION='--genotypeFilterExpression "GQ == 0" --genotypeFilterName "VeryVeryLowGQ"  --genotypeFilterExpression "GQ > 0 && GQ < 50.0" --genotypeFilterName "VeryLowGQ"  --genotypeFilterExpression "GQ >= 50.0 && GQ < 90.0" --genotypeFilterName "LowGQ" --genotypeFilterExpression "DP == 0" --genotypeFilterName "VeryVeryLowDP" --genotypeFilterExpression "DP >= 0 && DP < 10" --genotypeFilterName "VeryLowDP"  --genotypeFilterExpression "DP >= 10 && DP < 30" --genotypeFilterName "LowDP"'
-if [ -z "$FILTRATION_VCF_GENOTYPE_FILTER_EXPRESSION" ]; then
-	FILTRATION_VCF_GENOTYPE_FILTER_EXPRESSION=''
-fi;
-export FILTRATION_VCF_GENOTYPE_FILTER_EXPRESSION
-
-# Remove previous filters applied to the VCF
-# within makefile rule: FILTRATION_VCF_INVALIDATE_PREVIOUS_FILTERS_OPTION?=$(shell if (( $(FILTRATION_VCF_INVALIDATE_PREVIOUS_FILTERS) )); then echo " --invalidatePreviousFilters "; fi )
-# default: FILTRATION_VCF_INVALIDATE_PREVIOUS_FILTERS=0
-if [ -z "$FILTRATION_VCF_INVALIDATE_PREVIOUS_FILTERS" ]; then
-	FILTRATION_VCF_INVALIDATE_PREVIOUS_FILTERS=0
-fi;
-export FILTRATION_VCF_INVALIDATE_PREVIOUS_FILTERS
-
-
 # Recalibration and Filtration
 ################################
 
@@ -1405,6 +1376,20 @@ if [ -z "$VARIANTRECALIBRATION_INDEL_ANNOTATIONS" ]; then
 	VARIANTRECALIBRATION_INDEL_ANNOTATIONS="-an QD -an DP -an FS -an SOR -an ReadPosRankSum -an MQRankSum"
 fi;
 export VARIANTRECALIBRATION_INDEL_ANNOTATIONS
+
+# Variant Recalibrator SNP tranches option (see documentation guide for more info)
+# default: VARIANTRECALIBRATION_SNP_TRANCHES="-tranche 100.0 -tranche 99.95 -tranche 99.9 -tranche 99.8 -tranche 99.7 -tranche 99.6 -tranche 99.5 -tranche 99.4 -tranche 99.3 -tranche 99.2 -tranche 99.1 -tranche 99.0 -tranche 98.0 -tranche 97.0 -tranche 96.0 -tranche 95.0 -tranche 94.0 -tranche 93.0 -tranche 92.0 -tranche 91.0 -tranche 90.0"
+if [ -z "$VARIANTRECALIBRATION_SNP_TRANCHES" ]; then
+	VARIANTRECALIBRATION_SNP_TRANCHES="-tranche 100.0 -tranche 99.95 -tranche 99.9 -tranche 99.8 -tranche 99.7 -tranche 99.6 -tranche 99.5 -tranche 99.4 -tranche 99.3 -tranche 99.2 -tranche 99.1 -tranche 99.0 -tranche 98.0 -tranche 97.0 -tranche 96.0 -tranche 95.0 -tranche 94.0 -tranche 93.0 -tranche 92.0 -tranche 91.0 -tranche 90.0"
+fi;
+export VARIANTRECALIBRATION_SNP_TRANCHES
+
+# Variant Recalibrator INDEL tranches option (see documentation guide for more info)
+# default: VARIANTRECALIBRATION_INDEL_TRANCHES="-tranche 100.0 -tranche 99.95 -tranche 99.9 -tranche 99.8 -tranche 99.7 -tranche 99.6 -tranche 99.5 -tranche 99.4 -tranche 99.3 -tranche 99.2 -tranche 99.1 -tranche 99.0 -tranche 98.0 -tranche 97.0 -tranche 96.0 -tranche 95.0 -tranche 94.0 -tranche 93.0 -tranche 92.0 -tranche 91.0 -tranche 90.0"
+if [ -z "$VARIANTRECALIBRATION_INDEL_TRANCHES" ]; then
+	VARIANTRECALIBRATION_INDEL_TRANCHES="-tranche 100.0 -tranche 99.95 -tranche 99.9 -tranche 99.8 -tranche 99.7 -tranche 99.6 -tranche 99.5 -tranche 99.4 -tranche 99.3 -tranche 99.2 -tranche 99.1 -tranche 99.0 -tranche 98.0 -tranche 97.0 -tranche 96.0 -tranche 95.0 -tranche 94.0 -tranche 93.0 -tranche 92.0 -tranche 91.0 -tranche 90.0"
+fi;
+export VARIANTRECALIBRATION_INDEL_TRANCHES
 
 
 # Variant Recalibrator Optional Variant Filtration 
