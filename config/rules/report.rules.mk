@@ -190,7 +190,7 @@ REPORT_SECTIONS?=ALL
 
 
 ## FULL VCF: ANNOTATION OF A MERGE FILE
-%.full.variantfiltration.sorting.vcf: %.merge.vcf %.transcripts %.genome
+%.full.vcf: %.merge.vcf %.transcripts %.genome
 	# HOWARD annotation
 	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$< --output=$@.tmp --annotation=$(HOWARD_ANNOTATION_REPORT) --norm=$$(cat $*.genome);
 	# HOWARD annotation dejavu (forced)
@@ -214,7 +214,7 @@ REPORT_SECTIONS?=ALL
 
 
 ## FINAL VCF  RULE
-%.final.sorting.vcf: %.full.vcf
+%.final$(POST_CALLING_MERGING).vcf: %.full.vcf
 	-rm -f $<.tmp.*
 	for S in $$(grep "^#CHROM" $< | cut -f10-); do \
 		$(BCFTOOLS) view -U -s $$S $< | $(BCFTOOLS) view -e 'FORMAT/GT="0/0"' | sed '/^#CHROM/s/'$$S'/'$$(echo $(@F) | cut -d\. -f1)'/' > $<.tmp.$$S; \

@@ -366,7 +366,7 @@ POST_ALIGNMENT_STEPS="sorting markduplicates realignment recalibration compress"
 
 
 
-# POST CALLING STEPS (default "recalibration filtration")
+# POST CALLING STEPS (default " ")
 # All steps after calling
 # This sequence correspond to the VCF file generated just after the calling
 # Format: "step1 step2 step3"
@@ -376,31 +376,54 @@ POST_ALIGNMENT_STEPS="sorting markduplicates realignment recalibration compress"
 # The steps are defined as makefiles rules
 # Check available steps by using the command: STARK --pipelines_infos
 # Available steps (not up-to-date):
+#    sorting: VCF sort
 #    normalization: VCF normalization
 #    variantrecalibration: VCF recalibration (using GATK4). Include variantfiltration if no recalibration possible
 #    variantfiltration: VCF filtration (using GATK4)
 # Usually:
+#    " " to avoid at this pipeline step (see POST_CALLING_MERGING_STEPS)
 #    "normalization variantfiltration" for gene panel
 #    "normalization variantrecalibration" for exome or genome
-#POST_CALLING_STEPS="normalization variantfiltration"
-POST_CALLING_STEPS="normalization variantrecalibration"
+POST_CALLING_STEPS=" "
 
 
 
-# POST ANNOTATION STEPS (default "sorting normalization")
+# POST CALLING MERGING STEPS (default "sorting normalization variantrecalibration")
+# All steps after merging calling
+# This sequence correspond to the VCF file generated after the merge of VCF calling
+# Format: "step1 step2 step3"
+# Example: "recalibration filtration"
+#    This sequence will generate the file $CALLER.filtration.recalibration.vcf whose will be processed
+#    Then, this VCF file will be 1/ recalibrated, 2/ filtrered
+# The steps are defined as makefiles rules
+# Check available steps by using the command: STARK --pipelines_infos
+# Available steps (not up-to-date):
+#    sorting: VCF sort
+#    normalization: VCF normalization
+#    variantrecalibration: VCF recalibration (using GATK4). Include variantfiltration if no recalibration possible
+#    variantfiltration: VCF filtration (using GATK4)
+# Usually:
+#    "sorting normalization variantrecalibration" for exome or genome
+#    "sorting normalization variantfiltration" for gene panel
+POST_CALLING_MERGING_STEPS="sorting normalization variantrecalibration"
+
+
+
+# POST ANNOTATION STEPS (default " ")
 # All steps after annotation
 # This sequence correspond to the VCF file generated just after the annotation
 # Format: "step1 step2 step3"
 # Example: "sorting normalization"
-#    This sequence will generate the file $ANNOTATION.normalization.sorting.vcf whose will be processed
+#    This sequence will generate the file $ANNOTATION.sorting.vcf whose will be processed
 #    Then, this VCF file will be 1/ sorted, 2/ normalized
 # The steps are defined as makefiles rules
 # Check available steps by using the command: STARK --pipelines_infos
 # Available steps (not up-to-date):
 #    sorting: VCF sorting
 # Usually:
+#    " " to avoid at this pipeline step (see POST_CALLING_MERGING_STEPS)
 #    "sorting"
-POST_ANNOTATION_STEPS="sorting"
+POST_ANNOTATION_STEPS=" "
 
 
 
