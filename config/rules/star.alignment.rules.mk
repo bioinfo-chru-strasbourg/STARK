@@ -16,10 +16,8 @@ MK_DATE="24/08/2022"
 ###################################
 
 %.star$(POST_ALIGNMENT).bam: %.R1$(POST_SEQUENCING).fastq.gz %.R2$(POST_SEQUENCING).fastq.gz %.genome
-	# rm -rf /home1/BAS/DOCKER_STARK_MAIN_FOLDER/data/users/nicaises/rnaseq/172824_stark
 	STAR --genomeDir $$(cat $*.genome | dirname)/ref_genome.fa.star.idx/ --runThreadN 4 --readFilesIn $*.R1$(POST_SEQUENCING).fastq.gz $*.R2$(POST_SEQUENCING).fastq.gz --readFilesCommand zcat --outFileNamePrefix $@. --outSAMattrRGline "ID:1 PL:ILLUMINA PU:PU LB:001 SM:"$$(basename $@ | cut -f1 -d ".") --outSAMtype BAM SortedByCoordinate --chimOutJunctionFormat 1 --outSAMunmapped Within --outBAMcompression 0 --outFilterMultimapNmax 50 --peOverlapNbasesMin 10 --alignSplicedMateMapLminOverLmate 0.5 --alignSJstitchMismatchNmax 5 -1 5 5 --chimSegmentMin 10 --chimOutType WithinBAM HardClip --chimJunctionOverhangMin 10 --chimScoreDropMax 30 --chimScoreJunctionNonGTAG 0 --chimScoreSeparation 1 --chimSegmentReadGapMax 3 --chimMultimapNmax 50 --twopassMode Basic --quantMode TranscriptomeSAM GeneCounts --quantTranscriptomeBan Singleend
 	mv $@.Aligned.sortedByCoord.out.bam $@
-	# $(SAMTOOLS) index $< -@ $(THREADS_SAMTOOLS)
 
 %.bam: %.splitncigar.bam %.splitncigar.bam.bai %.genome
 	$(JAVA11) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) SplitNCigarReads -R $$(cat $*.genome) -I $< -O $@
