@@ -347,14 +347,14 @@ export RULES=$(find $RULES $RULES_APP -maxdepth 0 -type f 2>/dev/null | sort -u 
 
 # ASSEMBLY & REF
 ################
+# default Assembly
+if [ -z $ASSEMBLY ] || [ "$ASSEMBLY" == "" ]; then
+	ASSEMBLY=hg19
+fi;
+export ASSEMBLY
 
-if [ ! -s $REF ]; then
-	# default Assembly
-	if [ -z $ASSEMBLY ] || [ "$ASSEMBLY" == "" ]; then
-		ASSEMBLY=hg19
-	fi;
-	export ASSEMBLY
-
+echo "@DEBUG@@@@REF="$REF
+if [ "$REF" == "" ]; then
 	# default REF
 	if [ -s $GENOMES/$ASSEMBLY/$ASSEMBLY.fa ]; then
 		REF=$GENOMES/$ASSEMBLY/$ASSEMBLY.fa
@@ -364,8 +364,9 @@ if [ ! -s $REF ]; then
 	if [ ! -s $REF ] || [ "$REF" == "" ]; then
 		REF=$GENOMES/current/$ASSEMBLY.fa
 	fi;
+	export REF
 fi;
-export REF
+echo "@DEBUG@@@@REF="$REF
 
 # REF_CACHE_FOLDER and REF_CACHE and REF_PATH
 
