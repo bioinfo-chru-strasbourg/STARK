@@ -348,20 +348,22 @@ export RULES=$(find $RULES $RULES_APP -maxdepth 0 -type f 2>/dev/null | sort -u 
 # ASSEMBLY & REF
 ################
 
-# default Assembly
-if [ -z $ASSEMBLY ] || [ "$ASSEMBLY" == "" ]; then
-	ASSEMBLY=hg19
-fi;
-export ASSEMBLY
+if [ ! -s $REF ]; then
+	# default Assembly
+	if [ -z $ASSEMBLY ] || [ "$ASSEMBLY" == "" ]; then
+		ASSEMBLY=hg19
+	fi;
+	export ASSEMBLY
 
-# default REF
-if [ -s $GENOMES/$ASSEMBLY/$ASSEMBLY.fa ]; then
-	REF=$GENOMES/$ASSEMBLY/$ASSEMBLY.fa
-elif [ -s $GENOMES/current/$ASSEMBLY.fa ]; then
-	REF=$GENOMES/current/$ASSEMBLY.fa
-fi;
-if [ ! -s $REF ] || [ "$REF" == "" ]; then
-	REF=$GENOMES/current/$ASSEMBLY.fa
+	# default REF
+	if [ -s $GENOMES/$ASSEMBLY/$ASSEMBLY.fa ]; then
+		REF=$GENOMES/$ASSEMBLY/$ASSEMBLY.fa
+	elif [ -s $GENOMES/current/$ASSEMBLY.fa ]; then
+		REF=$GENOMES/current/$ASSEMBLY.fa
+	fi;
+	if [ ! -s $REF ] || [ "$REF" == "" ]; then
+		REF=$GENOMES/current/$ASSEMBLY.fa
+	fi;
 fi;
 export REF
 
