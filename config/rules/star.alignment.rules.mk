@@ -25,6 +25,8 @@ MK_DATE="24/08/2022"
 %.bam: %.splitncigar.bam %.splitncigar.bam.bai %.genome
 	$(JAVA11) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) SplitNCigarReads -R $$(cat $*.genome) -I $< -O $@
 
+%.star.junction: %.star$(POST_ALIGNMENT).bam
+	mv $<.Chimeric.out.junction $@
 
 # CONFIG/RELEASE
 RELEASE_COMMENT := "\#\# STAR ALIGNMENT '$(MK_RELEASE)': STAR generates an aligned BAM file from FASTQ file
