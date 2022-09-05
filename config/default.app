@@ -304,6 +304,10 @@ FASTQ_DEMULTIPLEXING_KEEP=0
 # within $SAMPLE.sequencing folder
 SEQUENCING_DEMULTIPLEXING_FOLDER=demultiplexing
 
+# Additional FASTP options
+# see FASTP doc
+FASTP_ADDITIONAL_OPTIONS=""
+
 
 # FASTQ_PROCESSING_STEPS
 # All steps to process input FASTQ files, after sequencing and demultiplexing (if any)

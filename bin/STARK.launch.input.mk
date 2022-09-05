@@ -29,6 +29,7 @@ GZ?=$(GZ)
 UNGZ?=$(UNGZ)
 FASTQ_CLEAN_HEADER?=$(FASTQ_CLEAN_HEADER)
 RELOCATE_UMI?=$(RELOCATE_UMI)
+FASTP_ADDITIONAL_OPTIONS?=$(FASTP_ADDITIONAL_OPTIONS)
 FASTQ_PROCESSED_STEPS?=.fastq_reheader.sort.fastp.fastq_clean_header.compress
 SEQUENCING_DEMULTIPLEXING_FOLDER?=demultiplexing
 
@@ -209,10 +210,9 @@ FASTQ_CLEAN_HEADER_PARAM=-v SAM_TAG=1 -v UMI_REFORMAT=1 -v UMI_TAG=1 -v UMI_LOC=
 %.fastp.R1.fastq.gz: %.log
 	# FASTP parameters
 	echo " $(FASTP_PARAM) " > $@.param;
-	#echo " $(FASTP_PARAM) " > $@.param;
-	#echo " --thread=$(FASTP_THREADS_BY_SAMPLE) " >> $@.param;
 	echo " --thread=1 " >> $@.param;
 	echo " --compression=$(FASTP_COMPRESSION_LEVEL) " >> $@.param;
+	echo " $(FASTP_ADDITIONAL_OPTIONS) " >> $@.param;
 	# UMI test
 	#if [ "$(UMI_RELOC)" != "" ]; then
 	if ! (( $$($(UNGZ) -c $*.R1.fastq.gz | head -n 1 | cut -d" " -f1 | awk -F: '{if ($$8!="") {print $$0}}' | wc -l) )); then \

@@ -805,6 +805,11 @@ export FASTQ_DEMULTIPLEXING_KEEP
 [ "$SEQUENCING_DEMULTIPLEXING_FOLDER" == "" ] && SEQUENCING_DEMULTIPLEXING_FOLDER=demultiplexing
 export SEQUENCING_DEMULTIPLEXING_FOLDER
 
+# Additional FASTP options
+# see FASTP doc
+[ "$FASTP_ADDITIONAL_OPTIONS" == "" ] && FASTP_ADDITIONAL_OPTIONS=""
+export FASTP_ADDITIONAL_OPTIONS
+
 
 # FASTQ_PROCESSING_STEPS
 # All steps to process input FASTQ files, after sequencing and demultiplexing (if any)
