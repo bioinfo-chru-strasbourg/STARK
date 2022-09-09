@@ -16,9 +16,6 @@ APP_PROJECT="UNKNOWN"
 # ANALYSIS PARAMETERS
 #######################
 
-VCF_HAVE_BREAKPOINTS="true"
-export VCF_HAVE_BREAKPOINTS
-
 REF="/home1/BAS/DOCKER_STARK_MAIN_FOLDER/data/users/nicaises/rnaseq/GRCh37_gencode_v19_CTAT_lib_Mar012021.plug-n-play/ctat_genome_lib_build_dir/ref_genome.fa"
 
 POST_ALIGNMENT_STEPS="sorting splitncigar recalibration compress"

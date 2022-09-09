@@ -20,7 +20,7 @@ MK_DATE="24/08/2022"
 	STAR --genomeDir $$(cat $*.genome | xargs -0 dirname)/ref_genome.fa.star.idx/ --runThreadN 4 --readFilesIn $*.R1$(POST_SEQUENCING).fastq.gz $*.R2$(POST_SEQUENCING).fastq.gz --readFilesCommand zcat --outFileNamePrefix $@. --outSAMattrRGline $$(cat $@.RG_STAR) --outSAMtype BAM SortedByCoordinate --chimOutJunctionFormat 1 --outSAMunmapped Within --outBAMcompression 0 --outFilterMultimapNmax 50 --peOverlapNbasesMin 10 --alignSplicedMateMapLminOverLmate 0.5 --alignSJstitchMismatchNmax 5 -1 5 5 --chimSegmentMin 10 --chimOutType Junctions --chimJunctionOverhangMin 10 --chimScoreDropMax 30 --chimScoreJunctionNonGTAG 0 --chimScoreSeparation 1 --chimSegmentReadGapMax 3 --chimMultimapNmax 50 --twopassMode Basic --quantMode TranscriptomeSAM 	GeneCounts --quantTranscriptomeBan Singleend
 	# fix issue with base recalibration and rename output
 	$(JAVA11) $(JAVA_FLAGS) -jar $(PICARD) AddOrReplaceReadGroups $(PICARD_FLAGS) -I $@.Aligned.sortedByCoord.out.bam -O $@ -COMPRESSION_LEVEL 1 -RGSM $(*F);
-	-rm $@.Aligned.sortedByCoord.out.bam $@.RG_STAR
+	-rm -rf $@.Aligned.sortedByCoord.out.bam $@.RG_STAR $@._STARgenome $@._STARpass1
 
 %.bam: %.splitncigar.bam %.splitncigar.bam.bai %.genome
 	$(JAVA11) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) SplitNCigarReads -R $$(cat $*.genome) -I $< -O $@

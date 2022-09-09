@@ -149,12 +149,19 @@ REPORT_SECTIONS?=ALL
 %.merge.vcf: %.final_variants_files_vcf_gz $(BAM) %.genome
 	# Generate pipeline name list
 	cat $< | rev | cut -d/ -f1 | rev | sed s/\.vcf.gz//gi | cut -d. -f2- > $@.pipelines
-	# Merge VCF, noramize and rehead with pipelines names
-	if [ "$(VCF_HAVE_BREAKPOINTS)" == "true" ]; then \
-		$(BCFTOOLS) merge -l $< --force-samples -m none --info-rules - | $(BCFTOOLS) norm --rm-dup exact | $(BCFTOOLS) +fill-tags -- -t AN,AC,AF,AC_Hemi,AC_Hom,AC_Het,ExcHet,HWE,MAF,NS | $(BCFTOOLS) reheader -s $@.pipelines > $@.tmp.merged.vcf; \
-	else \
-		$(BCFTOOLS) merge -l $< --force-samples -m none --info-rules - | $(BCFTOOLS) norm -m- -f $$(cat $*.genome) | $(BCFTOOLS) norm --rm-dup exact | $(BCFTOOLS) +fill-tags -- -t AN,AC,AF,AC_Hemi,AC_Hom,AC_Het,ExcHet,HWE,MAF,NS | $(BCFTOOLS) reheader -s $@.pipelines > $@.tmp.merged.vcf; \
-	fi;
+	# Merge VCF, normalize and rehead with pipelines names
+	# bcftools norm -f <ref> <vcf> is not compatible with breakends. Do that treatment separately.
+	# merge | keep only breakends
+	$(BCFTOOLS) merge -l $< --force-samples -m none --info-rules - | $(BCFTOOLS) view -i 'INFO/SVTYPE="BND"' > $@.bnd_only.tmp.vcf
+	$(BGZIP) $@.bnd_only.tmp.vcf
+	$(TABIX) $@.bnd_only.tmp.vcf.gz
+	# merge | exclude breakends | do the bcftools norm that crashes on breakends
+	$(BCFTOOLS) merge -l $< --force-samples -m none --info-rules - | $(BCFTOOLS) view -e 'INFO/SVTYPE="BND"' | $(BCFTOOLS) norm -m- -f $$(cat $*.genome) > $@.all_except_bnd.tmp.vcf
+	$(BGZIP) $@.all_except_bnd.tmp.vcf
+	$(TABIX) $@.all_except_bnd.tmp.vcf.gz
+	# merge the two above | rest of normalization
+	$(BCFTOOLS) concat $@.bnd_only.tmp.vcf.gz $@.all_except_bnd.tmp.vcf.gz -a | $(BCFTOOLS) sort | $(BCFTOOLS) norm --rm-dup exact | $(BCFTOOLS) +fill-tags -- -t AN,AC,AF,AC_Hemi,AC_Hom,AC_Het,ExcHet,HWE,MAF,NS | $(BCFTOOLS) reheader -s $@.pipelines > $@.tmp.merged.vcf; 
+	rm -f $@.bnd_only.tmp.vcf $@.all_except_bnd.tmp.vcf
 	# | $(BCFTOOLS) view --exclude 'FORMAT/GT="0/0"'
 	# | $(BCFTOOLS) +setGT  -- -t . -n 0 
 	# header file
