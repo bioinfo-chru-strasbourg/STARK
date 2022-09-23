@@ -5,10 +5,10 @@
 # Author: Samuel Nicaise, Thomas Lavaux
 ############################
 
-%.Arriba$(POST_CALLING).vcf: %.star$(POST_ALIGNMENT).bam %.empty.vcf %.genome
+%.Arriba$(POST_CALLING).vcf: %.bam %.empty.vcf %.genome
 	mkdir -p $*.arriba.reports;
-	arriba -x $< -g $$(cat $*.genome) -k /STARK/tools/arriba/current/database/known_fusions_hg19_hs37d5_GRCh37_v2.2.1.tsv.gz -b /STARK/tools/arriba/current/database/blacklist_hg19_hs37d5_GRCh37_v2.2.1.tsv.gz -p /STARK/tools/arriba/current/database/protein_domains_hg19_hs37d5_GRCh37_v2.2.1.gff3 -o $*.arriba.reports/arriba.fusions.tsv -O $*.arriba.reports/arriba.fusions.discarded.tsv
-	variantconvert convert -i $*.arriba.reports/arriba.fusions.tsv -o $@ -fi breakpoints -fo vcf -c /STARK/data/variantconvert/configs/config_starfusion_bas.json
+	arriba -x $< -a $$(cat $*.genome) -g $$(cat $*.genome | xargs -0 dirname)/ref_annot.gtf -k /STARK/tools/arriba/current/database/known_fusions_hg19_hs37d5_GRCh37_v2.2.1.tsv.gz -b /STARK/tools/arriba/current/database/blacklist_hg19_hs37d5_GRCh37_v2.2.1.tsv.gz -p /STARK/tools/arriba/current/database/protein_domains_hg19_hs37d5_GRCh37_v2.2.1.gff3 -o $*.arriba.reports/arriba.fusions.tsv -O $*.arriba.reports/arriba.fusions.discarded.tsv
+	variantconvert convert -i $*.arriba.reports/arriba.fusions.tsv -o $@ -fi breakpoints -fo vcf -c /STARK/data/variantconvert/configs/config_arriba_bas.json
 
 # CONFIG/RELEASE
 RELEASE_COMMENT := "\#\# CALLING Arriba '$(MK_RELEASE)': Tool to detect fusions based on RNA-Seq data"

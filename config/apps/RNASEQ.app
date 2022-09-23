@@ -20,7 +20,7 @@ REF="/home1/BAS/DOCKER_STARK_MAIN_FOLDER/data/users/nicaises/rnaseq/GRCh37_genco
 
 POST_ALIGNMENT_STEPS="sorting splitncigar recalibration compress"
 
-PIPELINES="star.STARFusion.howard star.gatkHC_SOMATIC.howard"
+PIPELINES="star.STARFusion.howard star.gatkHC_SOMATIC.howard star_raw.Arriba.howard"
 
 POST_CALLING_MERGING_STEPS="sorting"
 
