@@ -1,0 +1,48 @@
+#!/bin/bash
+## STARK application FASTQ_ONLY_EMPTY_BAM
+
+# DEFAULT ENV
+######################
+#source $CONFIG_DEFAULT_APP
+
+# APPLICATION INFOS
+#####################
+APP_NAME="FASTQ_ONLY_EMPTY_BAM"
+APP_RELEASE="1.0"
+APP_DESCRIPTION="PlugAPP to disable pipeline and generates only FASTQ with empty BAM"
+#APP_GROUP=""
+#APP_PROJECT=""
+
+# ANALYSIS PARAMETERS
+#######################
+
+# PIPELINES
+PIPELINES="empty_alignment.no_calling.no_annotation"
+
+# POST ALIGNEMENT STEPS (default "sorting realignment clipping compress")
+POST_ALIGNMENT_STEPS=" "
+
+# POST CALLING STEPS (default "recalibration filtration")
+POST_CALLING_STEPS=" "
+
+# POST ANNOTATION STEPS (default "sorting normalization")
+POST_ANNOTATION_STEPS=" "
+
+
+# REPOSITORY and ARCHIVES folder
+# Results data can be copy in a favorites folder. leave it blank for no copy
+FOLDER_FAVORITES=$FOLDER_REPOSITORY
+#FOLDER_FAVORITES=$FOLDER_OUTPUT/favorites
+
+
+# REPOSITORY and ARCHIVES
+# Copy files into folders for repository and archives
+# Repository files patterns to add
+REPOSITORY_FILE_PATTERNS=''
+# Repository files patterns to exclude on results subfolder (usually 'STARK'). Useful to reduce storage and exclude repeated files (in others files patterns varaibles)
+REPOSITORY_FILE_SUBFOLDER_PATTERNS=' $SAMPLE.sequencing/demultiplexing/* $SAMPLE.*fastq.gz $SAMPLE.*.validation.bam $SAMPLE.*.validation.bam.bai $SAMPLE.*.bam $SAMPLE.*.bam.bai $SAMPLE.*.cram $SAMPLE.*.cram.crai'
+# Archives files patterns to add
+ARCHIVES_FILE_PATTERNS='' 
+# Favorites files patterns to add
+FAVORITES_FILE_PATTERNS='$SAMPLE.*fastq.gz'
+

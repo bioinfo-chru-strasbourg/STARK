@@ -19,6 +19,7 @@
 # 0.9.3.6b-10/11/2017: adding gatkUG_ONCOGENET pipeline
 # 0.9.3.7b-22/03/2019: Add --dontUseSoftClippedBases for GATKHC
 # 0.9.3.8-29/07/2022: Remove --dontUseSoftClippedBases for GATKHC
+# 0.9.3.9-29/07/2022: Add --dontUseSoftClippedBases for GATKHC, add GATKUG_LONG_INDELS and GATKHC_LONG_INDELS
 
 
 
@@ -30,7 +31,7 @@ MBQ_UG=17
 STAND_EMIT_CONF=20
 STAND_CALL_CONF=20
 #GATKHC_FLAGS_SHARED=--baq OFF --read_filter BadCigar --allow_potentially_misencoded_quality_scores --dontUseSoftClippedBases
-GATKHC_FLAGS_SHARED=--baq OFF --read_filter BadCigar --allow_potentially_misencoded_quality_scores
+GATKHC_FLAGS_SHARED=--baq OFF --read_filter BadCigar --allow_potentially_misencoded_quality_scores --dontUseSoftClippedBases
 
 
 
@@ -87,6 +88,7 @@ DPMIN=1
 	-$(VCFUTILS) varFilter -d $(DPMIN) $@.tmp > $@ 		# filter on DP, cause UG is too relax, espacially because the clipping can generate few errors
 	-if [ ! -e $@ ]; then cp $@.tmp $@; fi; 		# in case of error in previous line
 	-rm -f $@.tmp $@.tmp.idx $@.idx
+
 
 ###################
 # gatkUG_GERMLINE #
@@ -346,9 +348,6 @@ DPMIN_SOMATIC=1
 	-rm -f $@.tmp $@.tmp.idx $@.idx
 
 
-
-
-
 ####################
 # gatkUG_ONCOGENET #
 ####################
@@ -389,6 +388,42 @@ DPMIN_ONCOGENET=4
 
 
 
+######################
+# gatkUG_LONG_INDELS #
+######################
+
+# GATKUG_LONG_INDELS Flags
+THREADS_GATK?=$(THREADS_BY_CALLER)
+THREADS_GATKUG_LONG_INDELS?=$(THREADS_GATK)
+INTERVAL_PADDING?=0
+#GATKUG_LONG_INDELS_THREADS=4
+GATKUG_LONG_INDELS_FLAGS= -nct $(THREADS_GATKUG_LONG_INDELS) -glm INDEL \
+		-minIndelFrac 0.01 \
+		-minIndelCnt 2 \
+		-deletions 0.01 \
+		-baq OFF \
+		-stand_call_conf 10 -dfrac $(DFRAC) --dbsnp $(VCFDBSNP) -mbq $(MBQ_UG) -rf BadCigar -dt NONE \
+		-allowPotentiallyMisencodedQuals
+# Minimum coverage for a variant called by gatkUG
+DPMIN_GATKUG_LONG_INDELS?=4
+# Minimum indel size called by gatkUG
+GATKUG_INDEL_SIZE_LONG_INDELS?=20
+
+%.gatkUG_LONG_INDELS$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.genome %.design.bed.interval_list #%.from_manifest.interval_list
+	#
+	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKUG_LONG_INDELS_FLAGS) \
+		-T UnifiedGenotyper \
+		-R `cat $*.genome` \
+		$$(if [ "`grep ^ -c $*.design.bed.interval_list`" == "0" ]; then echo ""; else echo "-L $*.design.bed.interval_list"; fi;) \
+		-I $< \
+		-ip $(INTERVAL_PADDING) \
+		-o $@.tmp;
+	-if [ ! -e $@.tmp ]; then cp $*.empty.vcf $@.tmp; fi;
+	-if [ ! -e $@.tmp ]; then touch $@.tmp; fi; 		# in case of no vcf creation, to not kill the pipeline
+	$(JAVA) $(JAVA_FLAGS) -jar $(GATK4) SelectVariants -V $@.tmp --select-type-to-include INDEL --min-indel-size $(GATKUG_INDEL_SIZE_LONG_INDELS) -O $@.tmp2;
+	-$(VCFUTILS) varFilter -d $(DPMIN_GATKUG_LONG_INDELS) $@.tmp2 > $@; 		# filter on DP, cause UG is too relax, espacially because the clipping can generate few errors
+	-if [ ! -e $@ ]; then cp $@.tmp $@; fi; 		# in case of error in previous line
+	-rm -f $@.tmp* $@.idx
 
 
 
@@ -660,6 +695,35 @@ GATKHC_ONCOGENET_FLAGS= -nct $(THREADS_GATKHC_ONCOGENET) -stand_call_conf 10 -df
 
 
 
+######################
+# gatkHC_LONG_INDELS #
+######################
+
+MINPRUNING_LONG_INDELS?=4
+THREADS_GATKHC_LONG_INDELS?=$(THREADS_GATK)
+DFRAC_LONG_INDELS?=$(DFRAC)
+MBQ_HC_LONG_INDELS?=$(MBQ_HC)
+maxReadsInRegionPerSample_LONG_INDELS=250
+GATKHC_FLAGS_LONG_INDELS= -nct $(THREADS_GATKHC_LONG_INDELS) -stand_call_conf 10 -dfrac $(DFRAC_LONG_INDELS) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample_LONG_INDELS) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC_LONG_INDELS) -minPruning $(MINPRUNING_LONG_INDELS) --baq OFF --read_filter BadCigar --allow_potentially_misencoded_quality_scores
+GATKHC_INDEL_SIZE_LONG_INDELS?=20
+
+%.gatkHC_LONG_INDELS$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.genome %.design.bed.interval_list #%.from_manifest.interval_list
+	#
+	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKHC_FLAGS_LONG_INDELS) \
+		-T HaplotypeCaller \
+		-R `cat $*.genome` \
+		$$(if [ "`grep ^ -c $*.design.bed.interval_list`" == "0" ]; then echo ""; else echo "-L $*.design.bed.interval_list"; fi;) \
+		-I $< \
+		-ip $(INTERVAL_PADDING) \
+		-o $@.tmp;
+	-if [ ! -e $@ ]; then cp $*.empty.vcf $@.tmp; fi;
+	-if [ ! -e $@ ]; then touch $@.tmp; fi;
+	$(JAVA) $(JAVA_FLAGS) -jar $(GATK4) SelectVariants -V $@.tmp --select-type-to-include INDEL --min-indel-size $(GATKHC_INDEL_SIZE_LONG_INDELS) -O $@;
+	-if [ ! -e $@ ]; then cp $*.empty.vcf $@; fi;
+	-if [ ! -e $@ ]; then touch $@; fi;
+	-rm -f $@.idx $@.tmp*
+
+
 
 ##########
 # gatk4HC #
@@ -716,7 +780,10 @@ RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 RELEASE_COMMENT := "\#\# CALLING GATKUG SOMATIC identify variants and generate *.gatkUG_SOMATIC.vcf files with parameters: GATKUG_SOMATIC_FLAGS='$(GATKUG_SOMATIC_FLAGS)', DPMIN_SOMATIC='$(DPMIN_SOMATIC)'"
 RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
-RELEASE_COMMENT := "\#\# CALLING GATKUG ONCOGENET identify variants and generate *.gatkUG_ONCOGENET.vcf files with parameters: GATKUG_ONCOGENET_FLAGS='$(GATKUG_ONCOGENET_FLAGS)', DPMIN_SOLIDTUMOR='$(DPMIN_ONCOGENET)'"
+RELEASE_COMMENT := "\#\# CALLING GATKUG ONCOGENET identify variants and generate *.gatkUG_ONCOGENET.vcf files with parameters: GATKUG_ONCOGENET_FLAGS='$(GATKUG_ONCOGENET_FLAGS)', DPMIN_ONCOGENET='$(DPMIN_ONCOGENET)'"
+RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
+
+RELEASE_COMMENT := "\#\# CALLING GATKUG LONG INDELS identify long indels and generate *.gatkUG_LONG INDELS.vcf files with parameters: GATKUG_LONG_INDELS_FLAGS='$(GATKUG_LONG_INDELS_FLAGS)', DPMIN_GATKUG_LONG_INDELS='$(DPMIN_GATKUG_LONG_INDELS)'"
 RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
 
@@ -742,6 +809,9 @@ RELEASE_COMMENT := "\#\# CALLING GATKHC SOLIDTUMOR identify variants and generat
 RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
 RELEASE_COMMENT := "\#\# CALLING GATKHC ONCOGENET identify variants and generate *.gatkHC_ONCOGENET.vcf files with parameters: GATKHC_ONCOGENET_FLAGS='$(GATKHC_ONCOGENET_FLAGS)'"
+RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
+
+RELEASE_COMMENT := "\#\# CALLING GATKHC LONG INDELS identify long indels and generate *.gatkHC_LONG_INDELS.vcf files with parameters: GATKHC_FLAGS_LONG_INDELS='$(GATKHC_FLAGS_LONG_INDELS)', GATKHC_INDEL_SIZE_LONG_INDELS='$(GATKHC_INDEL_SIZE_LONG_INDELS)'"
 RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
 
@@ -776,6 +846,9 @@ PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
 PIPELINES_COMMENT := "CALLER:gatkUG_ONCOGENET:GATK Unified Genotyper - designed for ONCOGENET variant discovery:GATKUG_ONCOGENET_FLAGS='$(GATKUG_ONCOGENET_FLAGS)', DPMIN_SOLIDTUMOR='$(DPMIN_ONCOGENET)'"
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
 
+PIPELINES_COMMENT := "CALLER:gatkUG_LONG_INDELS:GATK Unified Genotyper - designed for long indels discovery:GATKUG_LONG_INDELS_FLAGS='$(GATKUG_LONG_INDELS_FLAGS)', DPMIN_GATKUG_LONG_INDELS='$(DPMIN_GATKUG_LONG_INDELS)', GATKUG_INDEL_SIZE_LONG_INDELS='$(GATKUG_INDEL_SIZE_LONG_INDELS)'"
+PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
+
 
 PIPELINES_COMMENT := "CALLER:gatkHC:GATK Haplotype Caller - by default:GATKHC_FLAGS='$(GATKHC_FLAGS)'"
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
@@ -802,6 +875,9 @@ PIPELINES_COMMENT := "CALLER:gatkHC_SOMATIC:GATK Haplotype Caller - designed for
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
 
 PIPELINES_COMMENT := "CALLER:gatkHC_ONCOGENET:GATK Haplotype Caller - designed for ONCOGENET variant discovery:GATKHC_ONCOGENET_FLAGS='$(GATKHC_ONCOGENET_FLAGS)'"
+PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
+
+PIPELINES_COMMENT := "CALLER:gatkHC_LONG_INDELS:GATK Haplotype Caller - designed for long indels variant discovery:GATKHC_FLAGS_LONG_INDELS='$(GATKHC_FLAGS_LONG_INDELS)'"
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
 
 

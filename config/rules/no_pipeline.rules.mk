@@ -1,12 +1,14 @@
 ############################
 # No Pipeline Rules
-# Release: 0.9.0.0
-# Date: 29/09/2021
+# Release: 0.9.1.0
+# Date: 10/10/2021
 # Author: Antony Le Bechec
 ############################
 
 
-
+# Release note
+# 0.9.0.0-29/09/2021: no_alignment, no_calling, no_annotation creation
+# 0.9.1.0-10/10/2021: empty_alignment creation
 
 
 ################
@@ -36,6 +38,25 @@
 	rm -rf $@.tmp*
 	
 
+###################
+# EMPTY_ALIGNMENT #
+###################
+
+%.empty_alignment.bam: %.R1.fastq.gz %.R2.fastq.gz %.genome %.bed %.dict
+	# Generate dict
+	# 4fields file
+	awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$4}' $*.bed > $@.tmp.4fields.tmp;
+	# Clean bed with dict contig
+	grep -Po 'SN:([^\t]*)' $$(cat $*.dict) | cut -d: -f2 | sed "s/^/^/gi" | sed "s/$$/\t/gi" > $@.tmp.4fields.contig_from_dict;
+	-grep -f $@.tmp.4fields.contig_from_dict $@.tmp.4fields.tmp > $@.tmp.4fields;
+	# BedToIntervalList
+	$(JAVA11) $(JAVA_FLAGS) -jar $(PICARD) BedToIntervalList -I $@.tmp.4fields -O $@.tmp.interval -SD $$(cat $*.dict);
+	# Alignment - Empty BAM
+	grep "^@" $@.tmp.interval > $@.tmp.sam
+	$(SAMTOOLS) view -O BAM,level=$(BAM_COMPRESSION) --no-PG -@ $(THREADS_SAMTOOLS) $@.tmp.sam > $@
+	# Clean
+	rm -rf $@.tmp*
+	
 
 ##############
 # NO_CALLING #
@@ -59,10 +80,16 @@
 
 # CONFIG/RELEASE
 
-RELEASE_COMMENT := "\#\# ALIGNER: No alignemnt, generates an empty BAM "
+RELEASE_COMMENT := "\#\# ALIGNER: No alignemnt, generates an unaligned BAM "
 RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
-PIPELINES_COMMENT := "ALIGNER:no_alignment:No Alignment - generates an empty BAM"
+PIPELINES_COMMENT := "ALIGNER:no_alignment:No Alignment - generates an unaligned BAM"
+PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
+
+RELEASE_COMMENT := "\#\# ALIGNER: Empty alignemnt, generates an empty BAM "
+RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
+
+PIPELINES_COMMENT := "ALIGNER:empty_alignment:Empty Alignment - generates an empty BAM"
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
 
 

@@ -1,0 +1,67 @@
+#!/bin/bash
+## STARK application FASTQ_DEMULTIPLEXING_EMPTY_BAM
+
+# DEFAULT ENV
+######################
+#source $CONFIG_DEFAULT_APP
+
+# APPLICATION INFOS
+#####################
+APP_NAME="FASTQ_DEMULTIPLEXING_EMPTY_BAM"
+APP_RELEASE="1.0"
+APP_DESCRIPTION="PlugAPP to disable pipeline and generates only FASTQ and empty BAM"
+#APP_GROUP=""
+#APP_PROJECT=""
+
+# ANALYSIS PARAMETERS
+#######################
+
+# Demultiplexing options
+#STARK_DEMULTIPLEXING_BCL2FASTQ_OPTIONS="--no-lane-splitting --create-fastq-for-index-reads"
+STARK_DEMULTIPLEXING_BCL2FASTQ_OPTIONS="--create-fastq-for-index-reads"
+
+# FASTQ compression level for demultiplexing FASTQ files
+FASTQ_DEMULTIPLEXING_COMPRESSION_LEVEL=9
+
+# FASTQ compression level for main FASTQ files
+FASTQ_COMPRESSION_LEVEL=1
+
+# FASTQ_PROCESSING_STEPS
+FASTQ_PROCESSING_STEPS=" "
+
+# PIPELINES
+PIPELINES="empty_alignment.no_calling.no_annotation"
+
+# POST ALIGNEMENT STEPS (default "sorting realignment clipping compress")
+POST_ALIGNMENT_STEPS=" compress "
+
+# POST CALLING STEPS (default "recalibration filtration")
+POST_CALLING_STEPS=" "
+
+# POST ANNOTATION STEPS (default "sorting normalization")
+POST_ANNOTATION_STEPS=" "
+
+# Keep demultiplexing FASTQ
+FASTQ_DEMULTIPLEXING_KEEP=1
+
+# Folder for demultiplexing FASTQ
+SEQUENCING_DEMULTIPLEXING_FOLDER=demultiplexing
+
+
+# REPOSITORY and ARCHIVES folder
+# Results data can be copy in a favorites folder. leave it blank for no copy
+FOLDER_FAVORITES=$FOLDER_REPOSITORY
+#FOLDER_FAVORITES=$FOLDER_OUTPUT/favorites
+
+
+# REPOSITORY and ARCHIVES
+# Copy files into folders for repository and archives
+# Repository files patterns to add
+REPOSITORY_FILE_PATTERNS=''
+# Repository files patterns to exclude on results subfolder (usually 'STARK'). Useful to reduce storage and exclude repeated files (in others files patterns varaibles)
+REPOSITORY_FILE_SUBFOLDER_PATTERNS=' $SAMPLE.sequencing/demultiplexing/* $SAMPLE.*fastq.gz $SAMPLE.*.validation.bam $SAMPLE.*.validation.bam.bai $SAMPLE.*.bam $SAMPLE.*.bam.bai $SAMPLE.*.cram $SAMPLE.*.cram.crai'
+# Archives files patterns to add
+ARCHIVES_FILE_PATTERNS='' 
+# Favorites files patterns to add
+FAVORITES_FILE_PATTERNS='$SAMPLE.sequencing/demultiplexing/*'
+
