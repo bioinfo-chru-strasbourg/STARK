@@ -224,8 +224,6 @@ RUN echo "#[INFO] Sources scripts" && \
 
 
 
-
-
 # System isntallation
 RUN echo "#[INFO] System YUM installation - and download" && \
 	# Create system repository \
@@ -312,53 +310,6 @@ RUN echo "#[INFO] System YUM installation - and download" && \
 	echo "#";
 
 
-
-#############
-# PYTHON3.9 #
-#############
-
-# ENV TOOL_NAME="python"
-# ENV TOOL_VERSION="3.9.6"
-# ENV TOOL_VERSION_SIMPLE="3.9"
-# ENV TOOL_TARBALL="Python-$TOOL_VERSION.tgz"
-# ENV TOOL_SOURCE_EXTERNAL="https://www.python.org/ftp/$TOOL_NAME/$TOOL_VERSION/$TOOL_TARBALL"
-# ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-# RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-# 	#yum install -y $YUM_INSTALL && \
-# 	source $TOOL_INIT && \
-# 	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
-# 	echo "whereis gcc" && whereis gcc && \
-# 	(cd $TOOL_SOURCE_BUILD/Python-$TOOL_VERSION && ./configure --enable-optimizations) && \
-# 	make install --quiet -j $THREADS -C $(ls -d $TOOL_SOURCE_BUILD/*) prefix=$TOOL_DEST && \
-# 	ln -sfn $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/pip3 /usr/bin/pip$TOOL_VERSION_SIMPLE && \
-# 	ln -sfn $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python3 /usr/bin/python$TOOL_VERSION_SIMPLE && \
-# 	# ln -sfn /usr/bin/pip$TOOL_VERSION_SIMPLE /usr/bin/pip3 && \
-# 	# ln -sfn /usr/bin/pip$TOOL_VERSION_SIMPLE /usr/bin/pip && \
-# 	# ln -sfn /usr/bin/python$TOOL_VERSION_SIMPLE /usr/bin/python3 && \
-# 	# ln -sfn /usr/bin/python$TOOL_VERSION_SIMPLE /usr/bin/python && \
-# 	# ln -sfn $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
-
-
-# /usr/local/bin/python3.9
-
-# 	tar xzf Python-3.9.1.tgz
-# cd Python-3.9.1
-# ./configure --enable-optimizations
-# sudo make altinstall
-
-# sudo ln -sfn /usr/local/bin/python3.9 /usr/bin/python3.9
-# sudo ln -sfn /usr/local/bin/pip3.9 /usr/bin/pip3.9
-# 	mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
-# 	ln -s /usr/bin/python3 $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python3 && \
-# 	ln -s python3 $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python && \
-# 	ln -s /usr/bin/pip3 $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/pip3 && \
-# 	ln -s pip3 $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/pip && \
-# 	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
-
-# wget https://www.python.org/ftp/python/3.7.11/Python-3.7.11.tgz  
-
-
-
 # PYTHON installation
 RUN	echo "#[INFO] System Python packages installation - download from REPO '$REPO'"; \
 	mkdir -p $SOURCES/$SOURCES_FOLDER/python/build && \
@@ -438,21 +389,8 @@ ENV PYTHON_VERSION="3.9.9"
 
 RUN wget https://www.python.org/ftp/python/$PYTHON_VERSION/Python-$PYTHON_VERSION.tgz && tar xvf Python-$PYTHON_VERSION.tgz ;
 RUN cd Python-$PYTHON_VERSION && ./configure --enable-optimizations && make altinstall ;
-
-#RUN python3.9 -m pip install --upgrade pip
-
-#############
-# SNAKEMAKE #
-#############
-
 RUN pip3.9 install numpy requests igv-reports;
-
-###############
-# PYTHON LIBS #
-###############
-
 RUN pip3.9 install Biopython && pip3.9 install pandas ;
-#RUN pip3.9 install -U setuptools && pip3.9 install pyfaidx ;
 
 # Export LANG
 RUN export LANG="en_US.UTF-8" ;
@@ -482,7 +420,6 @@ RUN wget http://eddylab.org/software/hmmer3/3.1b2/hmmer-3.1b2-linux-intel-x86_64
 	tar xf hmmer-3.1b2-linux-intel-x86_64.tar.gz && \
 	cp /tmp/hmmer-3.1b2-linux-intel-x86_64/binaries/* /usr/local/bin/ ;
 
-
 ########
 # DFAM #
 ########
@@ -499,7 +436,6 @@ RUN wget https://dfam.org/releases/Dfam_3.1/infrastructure/dfamscan.pl.gz && \
 #####
 
 # R-core or R-core-devel
-
 # https://cdn.rstudio.com/r/centos-7/pkgs/R-4.1.2-1-1.x86_64.rpm
 
 # Choose R version and distribution
@@ -664,10 +600,6 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 
 
-
-
-
-
 ################
 # TOOLS EXTERN #
 ################
@@ -700,8 +632,6 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 #echo "#[INFO] TOOL installation - pip2 install" && \
 #	pip2 install pathos==0.2.6 && \
-
-
 
 
 
@@ -1257,7 +1187,6 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 # STARK #
 #########
 
-
 # TOOL INFO
 ENV TOOL_NAME="stark"
 ENV TOOL_VERSION="0.9.18.4"
@@ -1301,7 +1230,6 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 ##########
 
 # https://github.com/COMBINE-lab/salmon/releases/download/v1.8.0/salmon-1.8.0_linux_x86_64.tar.gz
-
 # TOOL INFO
 ENV TOOL_NAME="salmon"
 ENV TOOL_VERSION="1.8.0"
@@ -1309,7 +1237,6 @@ ENV TOOL_TARBALL=$TOOL_NAME-$TOOL_VERSION"_linux_x86_64.tar.gz"
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/COMBINE-lab/$TOOL_NAME/releases/download/v$TOOL_VERSION/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
-
 # TOOL INSTALLATION
 RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	source $TOOL_INIT && \
@@ -1325,12 +1252,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 # STAR #
 ########
 
-# https://github.com/alexdobin/STAR/archive/refs/tags/2.7.10a.zip
-
 # https://github.com/alexdobin/STAR/archive/refs/tags/2.7.8a.zip
-
-# v2.7.8a
-
 # TOOL INFO
 ENV TOOL_NAME="STAR"
 #ENV TOOL_VERSION="2.7.10a"
@@ -1339,7 +1261,6 @@ ENV TOOL_TARBALL="$TOOL_VERSION.zip"
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/alexdobin/$TOOL_NAME/archive/refs/tags/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
-
 # TOOL INSTALLATION
 RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	source $TOOL_INIT && \
@@ -1357,7 +1278,6 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 ###############
 
 # https://github.com/STAR-Fusion/STAR-Fusion/releases/download/STAR-Fusion-v1.10.1/STAR-Fusion.v1.10.1.tar.gz
-
 # Compatibility with STAR v2.7.8a
 
 # TOOL INFO
@@ -1367,7 +1287,6 @@ ENV TOOL_TARBALL="$TOOL_NAME.v$TOOL_VERSION.tar.gz"
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/$TOOL_NAME/$TOOL_NAME/releases/download/$TOOL_NAME-v$TOOL_VERSION/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
-
 # TOOL INSTALLATION
 RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	source $TOOL_INIT && \
@@ -1420,7 +1339,6 @@ RUN echo "#[INFO] Cleaning" && \
 	rm -rf $WORKDIR/* && \
 	rm -rf /tmp/* && \
 	if (($REMOVE_SOURCES)); then rm -rf $SOURCES; fi;
-
 
 
 ##############################
