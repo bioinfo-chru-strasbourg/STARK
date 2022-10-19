@@ -13,10 +13,16 @@ APP_DESCRIPTION="Application to detect somatic mutations in RNA-Seq data"
 APP_GROUP="UNKNOWN"
 APP_PROJECT="UNKNOWN"
 
+# DEMULTIPLEXING
+#######################
+#FASTP/UMI options are for Takara. Comment if used with Agilent kit. 
+# FASTP_ADDITIONAL_OPTIONS=" --trim_front2=6"
+# UMI_LOC="index2"
+# UMI_BARCODE_PATTERN="NNNNNNNN"
+THREADS_LOADING=2
+
 # ANALYSIS PARAMETERS
 #######################
-
-FASTP_ADDITIONAL_OPTIONS=" --trim_front2=6"
 
 REF="/home1/BAS/DOCKER_STARK_MAIN_FOLDER/data/users/nicaises/rnaseq/GRCh37_gencode_v19_CTAT_lib_Mar012021.plug-n-play/ctat_genome_lib_build_dir/ref_genome.fa"
 
