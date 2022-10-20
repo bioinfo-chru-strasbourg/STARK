@@ -212,11 +212,11 @@ TOOLS_LIST=$TOOLS_LIST" OUTLYZER"
 
 
 # FASTQC
-export FASTQC=$NGS_TOOLS/fastqc/current/bin/fastqc		# BIN
-export FASTQC_VERSION=0.11.8							# VER
-export FASTQC_DESCRIPTION="A quality control tool for high throughput sequence data."
-export FASTQC_REF="http://www.bioinformatics.bbsrc.ac.uk/projects/fastqc"
-TOOLS_LIST=$TOOLS_LIST" FASTQC"
+# export FASTQC=$NGS_TOOLS/fastqc/current/bin/fastqc		# BIN
+# export FASTQC_VERSION=0.11.8							# VER
+# export FASTQC_DESCRIPTION="A quality control tool for high throughput sequence data."
+# export FASTQC_REF="http://www.bioinformatics.bbsrc.ac.uk/projects/fastqc"
+# TOOLS_LIST=$TOOLS_LIST" FASTQC"
 
 
 # FASTP
@@ -229,9 +229,9 @@ TOOLS_LIST=$TOOLS_LIST" FASTP"
 
 # UMI TOOLS
 export UMITOOLS=$NGS_TOOLS/umi_tools/current/bin/umi_tools		# BIN
-export FASTQC_VERSION=1.1.2										# VER
-export FASTQC_DESCRIPTION="UMI-tools contains tools for dealing with Unique Molecular Identifiers (UMIs)/Random Molecular Tags (RMTs) and single cell RNA-Seq cell barcodes."
-export FASTQC_REF="https://github.com/CGATOxford/UMI-tools"
+export UMITOOLS_VERSION=1.1.2										# VER
+export UMITOOLS_DESCRIPTION="UMI-tools contains tools for dealing with Unique Molecular Identifiers (UMIs)/Random Molecular Tags (RMTs) and single cell RNA-Seq cell barcodes."
+export UMITOOLS_REF="https://github.com/CGATOxford/UMI-tools"
 TOOLS_LIST=$TOOLS_LIST" UMITOOLS"
 
 
