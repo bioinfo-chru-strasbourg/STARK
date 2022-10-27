@@ -7,9 +7,13 @@ Author: Samuel Nicaise (2019)
 from __future__ import division
 from __future__ import print_function
 
+import argparse
+import glob
 import os
 import re
 import subprocess
+
+from os.path import join as osj
 
 def assert_file_exists_and_is_readable(filePath):
 	assert os.path.isfile(filePath) and os.access(filePath, os.R_OK), \
@@ -126,3 +130,77 @@ def tags_and_types_to_lists(tags, tagTypes="", associator="#", separator="!"):
 			tagTypesList.append(tags.split(associator)[0])
 
 	return (tagValuesList, tagTypesList)
+
+def is_rule_startable(run_dir, target, max_jobs, shell_mode=False):
+	"""
+	Input:
+		run_dir: run directory, used because it is a common path accessible for all rules
+		target: target of the rule instance
+		max_jobs: maximum number of instances of the rule that can be executed at once
+	
+	Output:
+		print stating if the rule instance invoking this function can be allowed to start
+			1 if yes
+			0 if no
+
+	Usage:
+		Invoke from a make function with a format such as:
+		while <target> does not exist:
+			if limit_rule_concurrency == True:
+				create target
+			else:
+				sleep 10
+
+	Python functions can be invoked from make with a syntax such as:
+	python -c "import sys; sys.path.append('/home1/bin/STARK/0.9.18.4.rnaseq/bin'); import functions; functions.limit_rule_concurrency(args)"
+
+	"""
+	if not os.path.exists(run_dir):
+		raise FileNotFoundError(run_dir)
+
+	if len(glob.glob(osj(run_dir, "*rule_lock.*"))) < int(max_jobs): #int cast in case of user error
+		lock_file = osj(run_dir, "rule_lock." + target)
+		open(osj(lock_file, ), 'a').close()
+		if shell_mode:
+			print("1")
+		return True
+	else:
+		if shell_mode:
+			print("0")
+		return False
+
+def rule_finished(run_dir, target):
+	"""
+	Inputs: 
+		See is_job_startable
+	Output: 
+		None, cleans run_dir of target lockfile so other jobs can start
+	"""
+	lock_file = osj(run_dir, "rule_lock." + target)
+	os.remove(lock_file)
+
+
+
+
+if __name__ == "__main__":
+	parser = argparse.ArgumentParser()
+	subparsers = parser.add_subparsers(help="sub-command help")
+	parser_startable = subparsers.add_parser(
+		"is_rule_startable", help="returns 1 if rule is startable, 0 otherwise"
+	)
+	parser_finished = subparsers.add_parser(
+		"rule_finished", help="signals that rule is finished so others can start"
+	)
+
+	for p in (parser_startable, parser_finished):
+		p.add_argument("run_dir", type=str, required=True)
+		p.add_argument("target", type=str, required=True)
+	parser_startable.add_argument("max_jobs", type=int, required=True)
+	parser_startable.add_argument("shell_mode", type=bool, default=True)
+
+	args = parser.parse_args()
+
+	if "max_jobs" in args:
+		is_rule_startable(args.run_dir, args.target, args.max_jobs)
+	else:
+		rule_finished(args.run_dir, args.target)
