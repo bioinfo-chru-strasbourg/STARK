@@ -60,6 +60,7 @@ from __future__ import division
 from __future__ import print_function
 
 import argparse
+import json
 import os
 import re
 import subprocess
@@ -111,12 +112,40 @@ def get_total_mapped_duplicate_reads(sampleDir, sample, aligner):
 	"""
 	flagstatFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+".flagstat")
 	assert_file_exists_and_is_readable(flagstatFile)
+
+	metrics = {}
+	metrics["primary"] = None #flagstat label for total reads in primary alignment
+	metrics["primary duplicates"] = None
+	metrics["primary mapped"] = None
+	# flagstat file has such lines: "numbers + numbers <label of interest (more values)>"
+	pattern = re.compile( "\d* \+ \d* (.*)") #extract <label of interest (more values)>
+
 	with open(flagstatFile, "r") as f:
-		col1 = [int(line.split()[0]) for line in f]
-	if col1[0] != 0:
-		return [col1[0], col1[4], format(col1[4]/col1[0]*100, ".2f"), col1[3], format(col1[3]/col1[0]*100, ".2f")]
+		for l in f:
+			if pattern.match(l) == None:
+				continue
+			label = pattern.match(l).group(1)
+			if " (" in label:
+				label = label.split(" (")[0]
+			if label in metrics:
+				metrics[label] = int(l.split()[0])
+
+	if metrics["primary"] == 0:
+		return [
+			metrics["primary"],
+			metrics["primary mapped"],
+			"NA",
+			metrics["primary duplicates"],
+			"NA"
+		]
 	else:
-		return [col1[0], col1[4], "NA", col1[3], "NA"]
+		return [
+			metrics["primary"],
+			metrics["primary mapped"],
+			format(metrics["primary mapped"] / metrics["primary"] * 100, ".2f"),
+			metrics["primary duplicates"],
+			format(metrics["primary duplicates"] / metrics["primary"] * 100, ".2f")
+		]
 
 def get_on_target_reads(sampleDir, sample, aligner, bed):
 	"""
@@ -210,6 +239,12 @@ def get_depth_metrics(sampleDir, sample, aligner, bed):
 	assert len(covMetrics) == len(covCriteriaList), "[ERROR] Content of the environment variable COVERAGE_CRITERIA did not fit the content of the coverage file "+depthFile
 	return covMetrics
 
+def get_q30(sampleDir, sample):
+	fastp_json = osj(sampleDir, sample + ".sequencing", sample + ".fastp.json")
+	with open(fastp_json, "r") as f:
+		fastp = json.load(fastp_json)
+	return fastp.get("summary", {}).get("after_filtering", {}).get("q30_rate", "Not found")
+
 def get_sample_metrics(runPath, sample, fromResDir, aligner, bed):
 	"""
 	Fetches all the metrics defined in the docstring at the top of this script for <run>.reads.metrics.
@@ -218,7 +253,8 @@ def get_sample_metrics(runPath, sample, fromResDir, aligner, bed):
 		sampleDir = osj(runPath, sample)
 	else:
 		sampleDir = osj(runPath, sample, "STARK")
-	metricsList = get_total_mapped_duplicate_reads(sampleDir, sample, aligner)
+	metricsList = get_q30(sampleDir, sample)
+	metricsList += get_total_mapped_duplicate_reads(sampleDir, sample, aligner)
 	metricsList += get_on_target_reads(sampleDir, sample, aligner, bed)
 	metricsList += get_depth_metrics(sampleDir, sample, aligner, bed)
 	return metricsList
@@ -401,7 +437,7 @@ def make_global_coverage_file(run, regionsType, regionsFileList, metricsFileList
 				"## On-target reads are reads that are aligned within the regions defined in " + regionsType + " and that aren't duplicates, unmapped or with low mapping quality (MAPQ < 10)\n"
 				"## Cov 30X is the % of coverage with at least 30X read depth ; in the regions defined in " + regionsType +".\n"
 				"##\n"
-				"#Run\tSample\t" + regionsType + "\tTotal reads\tMapped reads\t% Mapped reads\tDuplicate reads\t% Duplicate reads\tOn-target reads\t% On-target reads\t"+covHeader+"\n")
+				"#Run\tSample\t" + regionsType + "\tQ30\tTotal reads\tMapped reads\t% Mapped reads\tDuplicate reads\t% Duplicate reads\tOn-target reads\t% On-target reads\t"+covHeader+"\n")
 			#Could be converted to "," for French Excel visualization with str(v).replace(".", ",") ; triggered by a variable from a STARK app
 
 			if regionsType == "Design":
