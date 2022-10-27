@@ -669,11 +669,11 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 
 		# DB RELEASE
 		DB_RELEASE=$DATABASES_RELEASE;								# DATE
-		#[ -s $DB_TARGET_FOLDER ] && DB_RELEASE=$DB_TARGET_RELEASE	# if /STARK/databases/refGene/current exists then keep release
+		#[ -s $DB_TARGET_FOLDER ] && DB_RELEASE=$DB_TARGET_RELEASE	# if /STARK/databases/gatk/current exists then keep release
 		DB_RELEASE_DATE=$DATABASES_RELEASE;							# DATE
 		DB_RELEASE_FILE=$DB_TARGET_FILE;							# 1000G_omni2.5.b37.vcf.gz
-		DB_RELEASE_FOLDER=$DB_TARGET_DB_FOLDER/$DB_RELEASE;			# /STARK/databases/refGene/DATE
-		DB_RELEASE_FILE_PATH="$DB_RELEASE_FOLDER/$DB_RELEASE_FILE";	# /STARK/databases/refGene/DATE/1000G_omni2.5.b37.vcf.gz
+		DB_RELEASE_FOLDER=$DB_TARGET_DB_FOLDER/$DB_RELEASE;			# /STARK/databases/gatk/DATE
+		DB_RELEASE_FILE_PATH="$DB_RELEASE_FOLDER/$DB_RELEASE_FILE";	# /STARK/databases/gatk/DATE/1000G_omni2.5.b37.vcf.gz
 
 		# TMP files and folders
 		DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DB_RELEASE
@@ -731,7 +731,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 
 			DBFOLDER_GATK_DOWNLOAD_MULTITHREAD=1
 
-			# Get refGene txt file
+			# Get gatk txt file
 			if ! (($DBFOLDER_GATK_URL_FULL_COPY)); then
 				DBFOLDER_GATK_URL_PATH=$(echo $DBFOLDER_GATK_URL | sed 's#^https://##gi'  | sed 's#^http://##gi')
 				
@@ -1493,7 +1493,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		HOWARD_DB="$HOWARD_ANNOTATION,$HOWARD_ANNOTATION_REPORT,$HOWARD_ANNOTATION_MINIMAL,$ADDITIONAL_ANNOTATIONS" # ALL, CORE, snpeff $HOWARD_ANNOTATION
 
 		# remove snpeff
-		HOWARD_DB=$(echo $HOWARD_DB | tr "," "\n" | grep "snpeff" -v | tr "/n" ",") 
+		HOWARD_DB=$(echo $HOWARD_DB | tr "," "\n" | grep "snpeff" -v | tr "\n" ",") 
 
 		if [ ! -e "$HOWARD_CONFIG_ANNOTATION" ]; then
 			HOWARD_CONFIG_ANNOTATION=$HOWARDDIR/config.annotation.ini
