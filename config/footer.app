@@ -368,6 +368,7 @@ if [ "$REF" == "" ]; then
 fi;
 echo "@DEBUG@@@@REF="$REF
 
+
 # REF_CACHE_FOLDER and REF_CACHE and REF_PATH
 
 if [ -z $REF_PATH ] || [ "$REF_PATH" == "" ]; then
@@ -1515,6 +1516,10 @@ if ! [[ $THREADS_COPY =~ $re ]] || [ -z "$THREADS_COPY" ] || [ "$THREADS_COPY" =
 fi;
 export THREADS_COPY
 
+if [ -z $MAX_CONCURRENT_ALIGNMENTS ] || [ "$MAX_CONCURRENT_ALIGNMENTS" == "" ]; then
+	MAX_CONCURRENT_ALIGNMENTS=1
+fi;
+export MAX_CONCURRENT_ALIGNMENTS
 
 # MEMORY
 MEMTOTAL=$(cat /proc/meminfo 2>/dev/null | grep MemTotal | awk '{print $2}')	# MEMORY in octet
