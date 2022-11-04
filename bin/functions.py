@@ -12,6 +12,7 @@ import glob
 import os
 import re
 import subprocess
+import time
 
 from os.path import join as osj
 
@@ -179,12 +180,31 @@ def rule_finished(run_dir, target):
 	lock_file = osj(run_dir, "rule_lock." + target)
 	os.remove(lock_file)
 
+def launch_when_possible(cmd, run_dir, target, max_jobs, current_dir, timeout):
+	"""
+	current_dir allows to emulate launching commands from the user's current directory, even if this python script is elsewhere.
+	timeout is in hours
+	"""
+	cmd = "cd " + current_dir + " && " + cmd
+	starting_time = time.time()
 
+	while not os.path.exists(target):
+		if is_rule_startable(run_dir, target, max_jobs):
+			print("Launching: ", cmd)
+			subprocess.call(cmd, shell=True)
+			rule_finished(run_dir, target)
+
+		if time.time() - starting_time > timeout * 3600:
+			raise RuntimeError("Timeout: couldn't create target: " + target)
+		time.sleep(10)
 
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 	subparsers = parser.add_subparsers(help="sub-command help")
+	parser_launch = subparsers.add_parser(
+		"launch", help="launch command, ensuring rule is not started more than X times at once"
+	)
 	parser_startable = subparsers.add_parser(
 		"is_rule_startable", help="returns 1 if rule is startable, 0 otherwise"
 	)
@@ -192,15 +212,25 @@ if __name__ == "__main__":
 		"rule_finished", help="signals that rule is finished so others can start"
 	)
 
-	for p in (parser_startable, parser_finished):
-		p.add_argument("run_dir", type=str, required=True)
-		p.add_argument("target", type=str, required=True)
-	parser_startable.add_argument("max_jobs", type=int, required=True)
-	parser_startable.add_argument("shell_mode", type=bool, default=True)
+	parser_launch.add_argument("-c", "--cmd", type=str, required=True)
+
+	for p in (parser_launch, parser_startable, parser_finished):
+		p.add_argument("-r", "--run_dir", type=str, required=True)
+		p.add_argument("-t", "--target", type=str, required=True)
+	
+	for p in (parser_launch, parser_startable):
+		p.add_argument("-m", "--max_jobs", type=int, required=True)
+		p.add_argument("--shell_mode", action='store_true', default=False)
+
+	parser_launch.add_argument("-d", "--current_dir", type=str, default=os.path.abspath("."))
+	parser_launch.add_argument("-z", "--timeout", type=int, default=48)
 
 	args = parser.parse_args()
 
 	if "max_jobs" in args:
-		is_rule_startable(args.run_dir, args.target, args.max_jobs)
+		if "cmd" in args:
+			launch_when_possible(args.cmd, args.run_dir, args.target, args.max_jobs, args.current_dir, args.timeout)
+		else:
+			is_rule_startable(args.run_dir, args.target, args.max_jobs, args.shell_mode)
 	else:
 		rule_finished(args.run_dir, args.target)
