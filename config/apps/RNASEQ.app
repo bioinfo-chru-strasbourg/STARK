@@ -26,7 +26,7 @@ FASTQ_COMPRESSION_LEVEL=1
 #######################
 
 REF="/home1/BAS/DOCKER_STARK_MAIN_FOLDER/data/users/nicaises/rnaseq/GRCh37_gencode_v19_CTAT_lib_Mar012021.plug-n-play/ctat_genome_lib_build_dir/ref_genome.fa"
-MAX_CONCURRENT_ALIGNMENTS = 2
+MAX_CONCURRENT_ALIGNMENTS="2"
 
 POST_ALIGNMENT_STEPS="sorting splitncigar recalibration compress"
 PIPELINES="star.STARFusion.howard star.gatkHC_SOMATIC.howard star_raw.Arriba.howard"
