@@ -242,7 +242,7 @@ def get_depth_metrics(sampleDir, sample, aligner, bed):
 def get_q30(sampleDir, sample):
 	fastp_json = osj(sampleDir, sample + ".sequencing", sample + ".fastp.json")
 	with open(fastp_json, "r") as f:
-		fastp = json.load(fastp_json)
+		fastp = json.load(f)
 	return fastp.get("summary", {}).get("after_filtering", {}).get("q30_rate", "Not found")
 
 def get_sample_metrics(runPath, sample, fromResDir, aligner, bed):
@@ -253,7 +253,7 @@ def get_sample_metrics(runPath, sample, fromResDir, aligner, bed):
 		sampleDir = osj(runPath, sample)
 	else:
 		sampleDir = osj(runPath, sample, "STARK")
-	metricsList = get_q30(sampleDir, sample)
+	metricsList = [get_q30(sampleDir, sample)]
 	metricsList += get_total_mapped_duplicate_reads(sampleDir, sample, aligner)
 	metricsList += get_on_target_reads(sampleDir, sample, aligner, bed)
 	metricsList += get_depth_metrics(sampleDir, sample, aligner, bed)
