@@ -253,7 +253,7 @@ def get_sample_metrics(runPath, sample, fromResDir, aligner, bed):
 		sampleDir = osj(runPath, sample)
 	else:
 		sampleDir = osj(runPath, sample, "STARK")
-	metricsList = get_q30(sampleDir, sample)
+	metricsList = [get_q30(sampleDir, sample)]
 	metricsList += get_total_mapped_duplicate_reads(sampleDir, sample, aligner)
 	metricsList += get_on_target_reads(sampleDir, sample, aligner, bed)
 	metricsList += get_depth_metrics(sampleDir, sample, aligner, bed)
