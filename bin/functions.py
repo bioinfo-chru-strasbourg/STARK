@@ -132,6 +132,9 @@ def tags_and_types_to_lists(tags, tagTypes="", associator="#", separator="!"):
 
 	return (tagValuesList, tagTypesList)
 
+def get_lockfile_path(run_dir, target):
+	return osj(run_dir, "rule_lock." + os.path.basename(target))
+
 def is_rule_startable(run_dir, target, max_jobs, shell_mode=False):
 	"""
 	Input:
@@ -160,7 +163,7 @@ def is_rule_startable(run_dir, target, max_jobs, shell_mode=False):
 		raise FileNotFoundError(run_dir)
 
 	if len(glob.glob(osj(run_dir, "*rule_lock.*"))) < int(max_jobs): #int cast in case of user error
-		lock_file = osj(run_dir, "rule_lock." + target)
+		lock_file = get_lockfile_path(run_dir, target)
 		open(osj(lock_file, ), 'a').close()
 		if shell_mode:
 			print("1")
@@ -177,7 +180,7 @@ def rule_finished(run_dir, target):
 	Output: 
 		None, cleans run_dir of target lockfile so other jobs can start
 	"""
-	lock_file = osj(run_dir, "rule_lock." + target)
+	lock_file = get_lockfile_path(run_dir, target)
 	os.remove(lock_file)
 
 def launch_when_possible(cmd, run_dir, target, max_jobs, current_dir, timeout):
