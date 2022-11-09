@@ -229,8 +229,16 @@ if __name__ == "__main__":
 
 	if "max_jobs" in args:
 		if "cmd" in args:
-			launch_when_possible(args.cmd, args.run_dir, args.target, args.max_jobs, args.current_dir, args.timeout)
+			launch_when_possible(args.cmd,
+								args.run_dir,
+								args.target,
+								args.max_jobs,
+								args.current_dir,
+								args.timeout)
 		else:
-			is_rule_startable(args.run_dir, args.target, args.max_jobs, args.shell_mode)
+			is_rule_startable(args.run_dir,
+							args.target,
+							args.max_jobs,
+							args.shell_mode)
 	else:
 		rule_finished(args.run_dir, args.target)
