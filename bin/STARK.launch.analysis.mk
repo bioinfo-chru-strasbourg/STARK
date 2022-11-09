@@ -144,6 +144,27 @@ endif
 
 # Load rules
 include $(RULES)
+ifneq (,$(findstring star.,$(PIPELINES)))
+	include $(STARK_FOLDER_RULES)/alignement/star.alignment.rules.mk
+endif
+ifneq (,$(findstring markduplicates,$(POST_ALIGNMENT_STEPS)))
+	include $(STARK_FOLDER_RULES)/postalignment/markduplicates.rules.mk
+endif
+ifneq (,$(findstring realignment,$(POST_ALIGNMENT_STEPS)))
+	include $(STARK_FOLDER_RULES)/postalignment/realignment.rules.mk
+endif
+ifneq (,$(findstring recalibration,$(POST_ALIGNMENT_STEPS)))
+	include $(STARK_FOLDER_RULES)/postalignment/recalibration.rules.mk
+endif
+ifneq (,$(findstring gatkHC_SOMATIC,$(PIPELINES)))
+	include $(STARK_FOLDER_RULES)/calling/gatk.calling.rules.mk
+endif
+ifneq (,$(findstring STARFusion,$(PIPELINES)))
+	include $(STARK_FOLDER_RULES)/calling/starfusion.calling.rules.mk
+endif
+ifneq (,$(findstring Arriba,$(PIPELINES)))
+	include $(STARK_FOLDER_RULES)/calling/arriba.calling.rules.mk
+endif
 
 all: $(FINAL) $(FINAL_REPORT) $(FINAL_REPORT_FILES) $(FINAL_REPORT).variants $(FINAL_REPORT).metrics $(FINAL_REPORT).config $(JSON) #$(FINAL_REPORT_FULL) $(FINAL_REPORT_FULL_VCF)
 	# List of files to generate
