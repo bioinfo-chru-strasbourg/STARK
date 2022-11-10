@@ -1885,14 +1885,14 @@ for RUU in $RUN_UNIQ; do
 
 	### TEST ERROR
 
-	if (( $(grep "\*\*\*" $LOGFILE_RES_RUN -c) || $MAKE_ERROR )); then
+	if (( $(grep "make: \*\*\*" $LOGFILE_RES_RUN -c) || $MAKE_ERROR )); then
 
 		echo "["`date '+%Y%m%d-%H%M%S'`"] Main Analysis Process for Analysis '$RELEASE_RUN' ERROR" >>$LOGFILE_RES_RUN
 		STOP_ANALYSIS=$(date +%s)
 		ANALYSIS_TIME=$(convertsecs $((STOP_ANALYSIS - START_ANALYSIS)))
 		echo "#[INFO] Main Analysis Process for Analysis '$RELEASE_RUN' finished with ERRORS [`date`] - $ANALYSIS_TIME"
-		#if (($VERBOSE)); then grep "\*\*\*" $LOGFILE_RES_RUN; fi;
-		(($VERBOSE)) && grep "\*\*\*" $LOGFILE_RES_RUN -B10 | awk '{print "#[ERROR] LOG: "$0}';
+		#if (($VERBOSE)); then grep ""make: \*\*\*" $LOGFILE_RES_RUN; fi;
+		(($VERBOSE)) && grep "make: \*\*\*" $LOGFILE_RES_RUN -B10 | awk '{print "#[ERROR] LOG: "$0}';
 		# RUNNING stop
 		
 		# EXIT
