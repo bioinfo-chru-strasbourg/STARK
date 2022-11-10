@@ -132,14 +132,14 @@ def tags_and_types_to_lists(tags, tagTypes="", associator="#", separator="!"):
 
 	return (tagValuesList, tagTypesList)
 
-def get_lockfile_path(run_dir, lock):
-	return osj(run_dir, "rule_lock." + os.path.basename(lock))
+def get_lockfile_path(lockfile_prefix, target):
+	return lockfile_prefix + os.path.basename(target)
 
-def is_rule_startable(run_dir, lock_name, max_jobs, shell_mode=False):
+def is_rule_startable(lockfile_prefix, target, max_jobs, shell_mode=False):
 	"""
 	Input:
 		run_dir: run directory, used because it is a common path accessible for all rules
-		lock_name: lock_file basename (usually named to easily identify the launched rule)
+		target: targeted file, used to create the lockfile suffix
 		max_jobs: maximum number of instances of the rule that can be executed at once
 	
 	Output:
@@ -159,12 +159,12 @@ def is_rule_startable(run_dir, lock_name, max_jobs, shell_mode=False):
 	python -c "import sys; sys.path.append('/home1/bin/STARK/0.9.18.4.rnaseq/bin'); import functions; functions.limit_rule_concurrency(args)"
 
 	"""
-	if not os.path.exists(run_dir):
-		raise FileNotFoundError(run_dir)
+	if not os.path.exists(os.path.dirname(lockfile_prefix)):
+		raise FileNotFoundError(os.path.dirname(lockfile_prefix))
 
-	if len(glob.glob(osj(run_dir, "*rule_lock.*"))) < int(max_jobs): #int cast in case of user error
-		lock_file = get_lockfile_path(run_dir, lock_name)
-		open(osj(lock_file, ), 'a').close()
+	if len(glob.glob(osj(lockfile_prefix + "*"))) < int(max_jobs): #int cast in case of user error
+		lock_file = get_lockfile_path(lockfile_prefix, target)
+		open(lock_file, 'a').close()
 		if shell_mode:
 			print("1")
 		return True
@@ -173,17 +173,18 @@ def is_rule_startable(run_dir, lock_name, max_jobs, shell_mode=False):
 			print("0")
 		return False
 
-def rule_finished(run_dir, lock_name):
+def rule_finished(lockfile_prefix, target):
 	"""
 	Inputs: 
 		See is_job_startable
 	Output: 
 		None, cleans run_dir of target lockfile so other jobs can start
 	"""
-	lock_file = get_lockfile_path(run_dir, lock_name)
-	os.remove(lock_file)
+	lock_file = get_lockfile_path(lockfile_prefix, target)
+	if os.path.exists(lock_file):
+		os.remove(lock_file)
 
-def launch_when_possible(cmd, run_dir, lock_name, max_jobs, current_dir, timeout):
+def launch_when_possible(cmd, lockfile_prefix, target, max_jobs, current_dir, timeout):
 	"""
 	current_dir allows to emulate launching commands from the user's current directory, even if this python script is elsewhere.
 	timeout is in hours
@@ -192,14 +193,18 @@ def launch_when_possible(cmd, run_dir, lock_name, max_jobs, current_dir, timeout
 	starting_time = time.time()
 
 	while True:
-		if is_rule_startable(run_dir, lock_name, max_jobs):
-			print("Launching: ", cmd)
-			subprocess.call(cmd, shell=True)
-			rule_finished(run_dir, lock_name)
-			return
+		try:
+			if is_rule_startable(lockfile_prefix, target, max_jobs):
+				print("Launching: ", cmd)
+				subprocess.call(cmd, shell=True)
+				rule_finished(lockfile_prefix, target)
+				return
+		finally:
+			#remove lockfile if script is killed
+			rule_finished(lockfile_prefix, target)
 
 		if time.time() - starting_time > timeout * 3600:
-			raise RuntimeError("Timeout: couldn't create target: " + lock_name)
+			raise RuntimeError("Timeout: couldn't create target: " + target)
 		time.sleep(10)
 
 
@@ -219,8 +224,8 @@ if __name__ == "__main__":
 	parser_launch.add_argument("-c", "--cmd", type=str, required=True)
 
 	for p in (parser_launch, parser_startable, parser_finished):
-		p.add_argument("-r", "--run_dir", type=str, required=True)
-		p.add_argument("-l", "--lock_name", type=str, required=True)
+		p.add_argument("-l", "--lockfile_prefix", type=str, required=True)
+		p.add_argument("-t", "--target", type=str, required=True)
 	
 	for p in (parser_launch, parser_startable):
 		p.add_argument("-m", "--max_jobs", type=int, required=True)
@@ -231,18 +236,21 @@ if __name__ == "__main__":
 
 	args = parser.parse_args()
 
+	if args.max_jobs <= 1:
+		raise ValueError("max_jobs argument should be >= 1")
+
 	if "max_jobs" in args:
 		if "cmd" in args:
 			launch_when_possible(args.cmd,
-								args.run_dir,
-								args.lock_name,
+								args.lockfile_prefix,
+								args.target,
 								args.max_jobs,
 								args.current_dir,
 								args.timeout)
 		else:
-			is_rule_startable(args.run_dir,
-							args.lock_name,
+			is_rule_startable(args.lockfile_prefix,
+							args.target,
 							args.max_jobs,
 							args.shell_mode)
 	else:
-		rule_finished(args.run_dir, args.lock_name)
+		rule_finished(args.lockfile_prefix, args.lock_name)
