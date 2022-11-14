@@ -392,7 +392,7 @@ RUN	echo "#[INFO] System Python packages installation - download from REPO '$REP
 	mkdir -p $TOOLS/python/2/bin && \
 	mkdir -p $SOURCES/$SOURCES_FOLDER/python/2 && \
 	if [ ! -e $SOURCES/$SOURCES_FOLDER/python/2/get-pip.py ]; then \
-		curl https://bootstrap.pypa.io/pip/2/get-pip.py --output $SOURCES/$SOURCES_FOLDER/python/2/get-pip.py; \
+		curl https://bootstrap.pypa.io/pip/2.7/get-pip.py --output $SOURCES/$SOURCES_FOLDER/python/2/get-pip.py; \
 	fi && \
 	if [ -e $SOURCES/$SOURCES_FOLDER/python/2/get-pip.py ]; then \
 		cp $SOURCES/$SOURCES_FOLDER/python/2/get-pip.py $TOOLS/python/2/bin/get-pip.py; \
