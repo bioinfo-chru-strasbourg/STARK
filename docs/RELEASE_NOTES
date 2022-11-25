@@ -14,7 +14,26 @@
 
 ## New
 
-- New release numbering
+- Add fastp additionnal options (useful for special adaptator trimming)
+- Include Q30 on metrics by run
+- Add post merging (VCF) step
+- Add long indel caller rules
+- Add empty BAM aligner (useful for FASTQ only generation)
+- Add healthcheck on STARK services
+- Include docker sock on STARK API
+
+
+## Improvements
+
+- Tools update: samtools/bcftools, bowtie2, fastp, picard, umi_tools, gencore
+- Java update to java11 release
+- Update setup and get databases scripts (add genome.img for GATK4, improve snpEff download)
+- Improve VCF recalibration and filtration (with GATK4), with config params
+
+
+## Fixes
+
+- fix merge multiallelic on final VCF
 
 
 
