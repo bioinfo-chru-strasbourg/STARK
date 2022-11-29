@@ -29,9 +29,11 @@ STAR_FLAGS?=--outSAMtype BAM SortedByCoordinate --chimOutJunctionFormat 1 --outS
 							--outSAMattrRGline $$(cat $@.RG_STAR) $(STAR_FLAGS)" \
 					--lockfile_prefix $$(echo $@ | xargs -0 dirname | xargs -0 dirname)/lockfile. \
 					--target $@ \
-					--max_jobs $(MAX_CONCURRENT_ALIGNMENTS_STAR)
+					--max_jobs $(MAX_CONCURRENT_ALIGNMENTS_STAR);
 	# fix issue with base recalibration and rename output
-	$(JAVA11) $(JAVA_FLAGS) -jar $(PICARD) AddOrReplaceReadGroups $(PICARD_FLAGS) -I $@.Aligned.sortedByCoord.out.bam -O $@ -COMPRESSION_LEVEL 1 -RGSM $(*F);
+	$(JAVA11) $(JAVA_FLAGS) -jar $(PICARD) AddOrReplaceReadGroups $(PICARD_FLAGS) \
+		-I $@.Aligned.sortedByCoord.out.bam \
+		-O $@ -COMPRESSION_LEVEL 1 -RGSM $(*F);
 	-rm -rf $@.Aligned.sortedByCoord.out.bam $@.RG_STAR $@._STARgenome $@._STARpass1
 
 %.bam: %.splitncigar.bam %.splitncigar.bam.bai %.genome

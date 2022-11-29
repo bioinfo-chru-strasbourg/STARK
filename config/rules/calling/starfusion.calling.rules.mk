@@ -7,8 +7,20 @@
 
 %.STARFusion$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.genome %.junction
 	mkdir -p $*.fusion.reports;
-	STAR-Fusion --chimeric_junction $*.junction --genome_lib_dir $$(cat $*.genome | xargs -0 dirname) --output_dir $*.fusion.reports;
-	variantconvert convert -i $*.fusion.reports/star-fusion.fusion_predictions.tsv -o $@ -fi breakpoints -fo vcf -c /STARK/data/variantconvert/configs/config_starfusion_bas.json;
+	STAR-Fusion \
+		--chimeric_junction $*.junction \
+		--genome_lib_dir $$(cat $*.genome | xargs -0 dirname) \
+		--output_dir $*.fusion.reports;
+	# rename ...reports/star-fusion.fusion_predictions.tsv to ...reports/<sample>.star-fusion.tsv
+	mv $*.fusion.reports/star-fusion.fusion_predictions.tsv $*.fusion.reports/$$(echo $(@F) | rev | cut -d"." -f4-  | rev).star-fusion.tsv
+	mv $*.fusion.reports/star-fusion.fusion_predictions.abridged.tsv $*.fusion.reports/$$(echo $(@F) | rev | cut -d"." -f4-  | rev).star-fusion.abridged.tsv
+	# convert to vcf
+	variantconvert convert \
+		-i $*.fusion.reports/$$(echo $(@F) | rev | cut -d"." -f4-  | rev).star-fusion.abridged.tsv \
+		-o $@ \
+		-fi breakpoints \
+		-fo vcf \
+		-c /STARK/data/variantconvert/configs/config_starfusion_bas.json;
 
 # CONFIG/RELEASE
 RELEASE_COMMENT := "\#\# CALLING STARFusion '$(MK_RELEASE)': CTAT Tool to detect fusions based on RNA-Seq data"
