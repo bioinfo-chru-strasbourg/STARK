@@ -32,7 +32,7 @@ MAX_CONCURRENT_ALIGNMENTS_STAR="2"
 export MAX_CONCURRENT_ALIGNMENTS_STAR
 
 POST_ALIGNMENT_STEPS="sorting splitncigar recalibration compress"
-PIPELINES="star.STARFusion.howard star.gatkHC_SOMATIC.howard star_raw.Arriba.howard"
+PIPELINES="star_raw.Arriba.howard star.STARFusion.howard star.gatkHC_SOMATIC.howard star.itdseek.howard"
 POST_CALLING_MERGING_STEPS="sorting"
 
 # COVERAGE CRITERIA (default "1,30")
@@ -75,3 +75,7 @@ METRICS_SNPEFF=0
 
 # Report Sections
 REPORT_SECTIONS="results_summary sequencing_mapping depth coverage variant_stats annex_coverage annex_depth annex_genes_coverage"
+
+# REPOSITORY
+#file patterns to exclude
+REPOSITORY_FILE_SUBFOLDER_PATTERNS='$SAMPLE.*.validation.bam $SAMPLE.*.validation.bam.bai'

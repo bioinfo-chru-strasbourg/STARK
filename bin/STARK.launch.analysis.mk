@@ -159,6 +159,9 @@ endif
 ifneq (,$(findstring gatkHC_SOMATIC,$(PIPELINES)))
 	include $(STARK_FOLDER_RULES)/calling/gatk.calling.rules.mk
 endif
+ifneq (,$(findstring itdseek,$(PIPELINES)))
+	include $(STARK_FOLDER_RULES)/calling/itdseek.calling.rules.mk
+endif
 ifneq (,$(findstring STARFusion,$(PIPELINES)))
 	include $(STARK_FOLDER_RULES)/calling/starfusion.calling.rules.mk
 endif
