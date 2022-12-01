@@ -9,7 +9,9 @@ from __future__ import print_function
 
 import argparse
 import glob
+import math
 import os
+import random
 import re
 import subprocess
 import time
@@ -184,11 +186,27 @@ def rule_finished(lockfile_prefix, target):
 	if os.path.exists(lock_file):
 		os.remove(lock_file)
 
+def randomized_sleep(string):
+	"""
+	Multiple simultaneous executions of launch_when_possible() can result in a number of lockfiles/started processes over the defined maximum.
+	To limit this issue, sleep for a random time based on target filename to spread out the executions.
+	"""
+	# ord gives the unicode point for each char in filename --> converts filename in a "random" number
+	unicode_points_sum = sum([ord(x) for x in string])
+	# we want to avoid that similar filenames lead to similar wait times
+	# but wait times should stay small overall
+	# the random function allows to spread wait times while staying between 1 and 15 seconds max
+	random.seed(unicode_points_sum)
+	wait_time = random.random() * 15 #the arbitrary *15 increases spread
+	time.sleep(wait_time)
+
+
 def launch_when_possible(cmd, lockfile_prefix, target, max_jobs, current_dir, timeout):
 	"""
 	current_dir allows to emulate launching commands from the user's current directory, even if this python script is elsewhere.
 	timeout is in hours
 	"""
+	randomized_sleep(target)
 	cmd = "cd " + current_dir + " && " + cmd
 	starting_time = time.time()
 
