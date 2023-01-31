@@ -382,8 +382,6 @@ function list_include_item {
 
 
 ### STARK Module Management
-
-
 if $(list_include_item "update install check" "$COMMAND"); then
 
 	(($VERBOSE)) && echo ""
@@ -405,7 +403,7 @@ if $(list_include_item "update install check" "$COMMAND"); then
 		git_module_module_submodule=$(basename $git_module)
 		git_module_module=$(basename $(dirname $git_module))
 
-
+		# Check modules
 		if [ "$COMMAND" == "check" ]; then
 			if [ -d $SCRIPT_DIR/$git_module_module/$git_module_module_submodule ]; then
 				echo "#[INFO] STARK Module Management - Module '$git_module_module' SubModule '$git_module_module_submodule' already installed"
@@ -427,15 +425,14 @@ if $(list_include_item "update install check" "$COMMAND"); then
 				elif ( [ -d $SCRIPT_DIR/$git_module_module/$git_module_module_submodule ] && $(list_include_item "update" "$COMMAND") ) \
 					|| ( [ ! -d $SCRIPT_DIR/$git_module_module/$git_module_module_submodule ] && $(list_include_item "install" "$COMMAND") ) ; then
 
-					#(($VERBOSE)) && echo "#[INFO] STARK Module Management - Module '$git_module_module' SubModule '$git_module_module_submodule' - $COMMAND"
 					# Update module main files
 					if [ ! -d $SCRIPT_DIR/$git_module_module ]; then
 						mkdir -p $SCRIPT_DIR/$git_module_module
-						$COMMAND_COPY $git_module/../STARK.* $SCRIPT_DIR/$git_module_module/
+						$COMMAND_COPY --no-r -q $git_module/../* $SCRIPT_DIR/$git_module_module/
 					fi;
 					# Update module/submodule
 					mkdir -p $SCRIPT_DIR/$git_module_module/$git_module_module_submodule
-					$COMMAND_COPY $git_module/* $SCRIPT_DIR/$git_module_module/$git_module_module_submodule/
+					$COMMAND_COPY -q $git_module/* $SCRIPT_DIR/$git_module_module/$git_module_module_submodule/
 					(($VERBOSE)) && echo "#[INFO] STARK Module Management - Module '$git_module_module' SubModule '$git_module_module_submodule' - $COMMAND - done."
 				
 				fi;
@@ -446,156 +443,185 @@ if $(list_include_item "update install check" "$COMMAND"); then
 
 	done;
 
-	exit 0
+### STARK module start/stop
+else
 
-fi;
+	### Find services
+	MODULE_checked=""
 
+	for service_module in \
+		$( if [ ! -z "$MODULE_COMMON" ]; then echo "$MODULE_COMMON" | sed 's#[^ ]* *#'$SCRIPT_DIR'/&#g' | tr " " "\n"; fi ) \
+		$( if [ ! -z "$MODULES" ]; then echo "$MODULES" | sed 's#[^ ]* *#'$SCRIPT_DIR'/&#g' | tr " " "\n"; fi );
+		do
 
-### Find services
-MODULE_checked=""
+		if [ -d $service_module ]; then
 
-for service_module in \
-	$( if [ ! -z "$MODULE_COMMON" ]; then echo "$MODULE_COMMON" | sed 's#[^ ]* *#'$SCRIPT_DIR'/&#g' | tr " " "\n"; fi ) \
-	$( if [ ! -z "$MODULES" ]; then echo "$MODULES" | sed 's#[^ ]* *#'$SCRIPT_DIR'/&#g' | tr " " "\n"; fi );
-	do
+			# Module name
+			module_name=$(basename $service_module | awk '{print tolower($0)}')
+			
+			# Module check
+			if $(list_include_item "$MODULE_checked" "$module_name"); then
+				(($DEBUG)) && echo "#[INFO] STARK Module '$module_name' already checked"
+				continue
+			fi;
+			MODULE_checked=$MODULE_checked" $module_name"
 
-	if [ -d $service_module ]; then
-
-		# Module name
-		module_name=$(basename $service_module | awk '{print tolower($0)}')
+			# Module common test
+			(($VERBOSE)) && echo ""
+			echo "#[INFO] STARK Module '$module_name'"
+			if $(list_include_item "$MODULE_COMMON" "$module_name"); then
+				(($VERBOSE)) && echo "#[INFO] STARK Module '$module_name' is a 'common' module"
+			fi;
 		
-		# Module check
-		if $(list_include_item "$MODULE_checked" "$module_name"); then
-			(($DEBUG)) && echo "#[INFO] STARK Module '$module_name' already checked"
-			continue
-		fi;
-		MODULE_checked=$MODULE_checked" $module_name"
+			# Services list
+			list_services="$MAIN_MODULE_PREFIX"
+			for services_full_path in $(ls $service_module/*/$MAIN_MODULE_PREFIX*.docker-compose.yml 2>/dev/null); do
+				list_services=$list_services" "$(echo $services_full_path | sed 's#'$service_module'/##' | sed 's/.docker-compose.yml$//' )
+			done;
 
-		# Module common test
-		(($VERBOSE)) && echo ""
-		echo "#[INFO] STARK Module '$module_name'"
-		if $(list_include_item "$MODULE_COMMON" "$module_name"); then
-			(($VERBOSE)) && echo "#[INFO] STARK Module '$module_name' is a 'common' module"
-		fi;
-	
-		# Services list
-		list_services="$MAIN_MODULE_PREFIX"
-		for services_full_path in $(ls $service_module/*/$MAIN_MODULE_PREFIX*.docker-compose.yml 2>/dev/null); do
-			list_services=$list_services" "$(echo $services_full_path | sed 's#'$service_module'/##' | sed 's/.docker-compose.yml$//' )
-		done;
-
-	
-		for service_prefix in $list_services; do
+		
+			for service_prefix in $list_services; do
 
 
-			# Service name
-			service_name=$(echo $service_prefix | xargs dirname | sed 's/^'$MAIN_MODULE_PREFIX'//' | sed 's/^\.//')
-			service_folder=$service_name
-			[[ $service_name == "" ]] && service_name="main" && service_folder=""
+				# Service name
+				service_name=$(echo $service_prefix | xargs dirname | sed 's/^'$MAIN_MODULE_PREFIX'//' | sed 's/^\.//')
+				service_folder=$service_name
+				[[ $service_name == "" ]] && service_name="main" && service_folder=""
 
-			if $(list_include_item "$SUBMODULES" "$service_name") || [ "$SUBMODULES" == "" ]; then
+				if $(list_include_item "$SUBMODULES" "$service_name") || [ "$SUBMODULES" == "" ]; then
 
-			# Find YML file
-			service_module_yml="";
-			if [ -e $service_module"/"$service_prefix".docker-compose.yml" ]; then
-				service_module_yml=$service_module"/"$service_prefix".docker-compose.yml";
-			else
-				(($DEBUG)) && echo "#[WARNING] STARK Module '$module_name' folder does not have docker configuration file"
-			fi;
-
-			# Find ENV file
-			service_module_env="";
-			if [ -e $service_module"/"$service_prefix".env" ]; then
-				service_module_env=$service_module"/"$service_prefix".env";
-			else
-				(($DEBUG)) && echo "#[WARNING] STARK Module '$module_name' folder does not have environment file"
-			fi;
-
-
-			# Find MODULE file
-			service_module_module="";
-			if [ -e $service_module"/"$service_prefix".module" ]; then
-				service_module_module=$service_module"/"$service_prefix".module";
-			else
-				(($DEBUG)) && echo "#[WARNING] STARK Module '$module_name' folder does not have module configuration file"
-			fi;
-
-
-			# Find README file
-			service_module_readme="";
-			if [ -e $service_module"/"$service_prefix".README.md" ]; then
-				service_module_readme=$service_module"/"$service_prefix".README.md";
-			else
-				(($DEBUG)) && echo "#[WARNING] STARK Module '$module_name' folder does not have README file"
-			fi;
-
-
-			### LAUNCH modules/services
-			if [ "$service_module_yml" != "" ] && [ "$service_module_env" != "" ] && [ "$service_module_module" != "" ]; then
-
-				### SHOW modules/services
-				if (($MODULES_SHOW)); then
-
-					echo "#[INFO] STARK Module '$module_name' SubModule '$service_name'"
-
+				# Find YML file
+				service_module_yml="";
+				if [ -e $service_module"/"$service_prefix".docker-compose.yml" ]; then
+					service_module_yml=$service_module"/"$service_prefix".docker-compose.yml";
 				else
+					(($DEBUG)) && echo "#[WARNING] STARK Module '$module_name' folder does not have docker configuration file"
+				fi;
 
-					#(($VERBOSE)) && echo "#[INFO] STARK Module '$module_name'"
-					(($VERBOSE)) && echo "#[INFO] STARK Module '$module_name' SubModule '$service_name'"
-					(($DEBUG)) && echo "#[INFO] STARK Module '$module_name' SubModule '$service_name' docker configuration file: '$service_module_yml'"
-					(($DEBUG)) && echo "#[INFO] STARK Module '$module_name' SubModule '$service_name' environment file: '$service_module_env'"
-					(($DEBUG)) && echo "#[INFO] STARK Module '$module_name' SubModule '$service_name' module configuration file: '$service_module_module'"
-					(($DEBUG)) && echo "#[INFO] STARK Module '$module_name' SubModule '$service_name' README file: '$service_module_readme'"
-					(($DEBUG)) && echo "#[INFO] STARK Module '$module_name' SubModule '$service_name' command '$COMMAND'"
+				# Find ENV file
+				service_module_env="";
+				if [ -e $service_module"/"$service_prefix".env" ]; then
+					service_module_env=$service_module"/"$service_prefix".env";
+				else
+					(($DEBUG)) && echo "#[WARNING] STARK Module '$module_name' folder does not have environment file"
+				fi;
 
-					# Alternative ENV
-					(($DEBUG)) && echo "#[INFO] STARK Module '$module_name' - Alternate environment file creation"
-					cat $ENV_LIST 1> $TMP_FOLDER/.env 2>$TMP_FOLDER/.env.err
-					cat $service_module"/"$MAIN_MODULE_PREFIX".env" 1>> $TMP_FOLDER/.env 2>>$TMP_FOLDER/.env.err
-					cat $service_module_env 1>> $TMP_FOLDER/.env 2>>$TMP_FOLDER/.env.err
 
-					# Create folder
-					# services
-					mkdir -p $FOLDER_SERVICES/$module_name/$service_folder
-					chmod o+rwx $FOLDER_SERVICES/$module_name 2>/dev/null
-					chmod o+rwx $FOLDER_SERVICES/$module_name/$service_folder 2>/dev/null
-					# config
-					mkdir -p $FOLDER_CONFIG/$module_name/$service_folder
-					chmod o+rwx $FOLDER_CONFIG/$module_name 2>/dev/null
-					chmod o+rwx $FOLDER_CONFIG/$module_name/$service_folder 2>/dev/null
+				# Find MODULE file
+				service_module_module="";
+				if [ -e $service_module"/"$service_prefix".module" ]; then
+					service_module_module=$service_module"/"$service_prefix".module";
+				else
+					(($DEBUG)) && echo "#[WARNING] STARK Module '$module_name' folder does not have module configuration file"
+				fi;
 
-					# Module configuration file
-					(($DEBUG)) && echo "#[INFO] STARK Module '$module_name' - Module configuration file copy"
-					$COMMAND_COPY $service_module_module $FOLDER_SERVICES/$module_name/$service_folder 2>/dev/null;
 
-					# Readme file
-					(($DEBUG)) && echo "#[INFO] STARK Module '$module_name' - Readme file copy"
-					if [ "$service_module_readme" != "" ]; then
-						$COMMAND_COPY $service_module_readme $FOLDER_SERVICES/$module_name/$service_folder 2>/dev/null;
-					fi;
-					
-					# Files permissions
-					chmod o+rwx -R $FOLDER_SERVICES/$module_name/* 2>/dev/null
+				# Find README file
+				service_module_readme="";
+				if [ -e $service_module"/"$service_prefix".README.md" ]; then
+					service_module_readme=$service_module"/"$service_prefix".README.md";
+				else
+					(($DEBUG)) && echo "#[WARNING] STARK Module '$module_name' folder does not have README file"
+				fi;
 
-					# DEBUG
-					(($DEBUG)) && cat $TMP_FOLDER/.env $TMP_FOLDER/.env.err
-					(($DEBUG)) && echo "    $DOCKER_COMPOSE --file $service_module_yml --env-file $TMP_FOLDER/.env -p $module_name $COMMAND"
-					(($DEBUG)) && $DOCKER_COMPOSE --file $service_module_yml --env-file $TMP_FOLDER/.env -p $module_name config
 
-					# patch for --env-file unavailable
-					if (( $($DOCKER_COMPOSE --help | grep "\-\-env\-file" -c) )); then
+				### LAUNCH modules/services
+				if [ "$service_module_yml" != "" ] && [ "$service_module_env" != "" ] && [ "$service_module_module" != "" ]; then
+
+					### SHOW modules/services
+					if (($MODULES_SHOW)); then
+
+						echo "#[INFO] STARK Module '$module_name' SubModule '$service_name'"
+
+					else
+
+						#(($VERBOSE)) && echo "#[INFO] STARK Module '$module_name'"
+						(($VERBOSE)) && echo "#[INFO] STARK Module '$module_name' SubModule '$service_name'"
+						(($DEBUG)) && echo "#[INFO] STARK Module '$module_name' SubModule '$service_name' docker configuration file: '$service_module_yml'"
+						(($DEBUG)) && echo "#[INFO] STARK Module '$module_name' SubModule '$service_name' environment file: '$service_module_env'"
+						(($DEBUG)) && echo "#[INFO] STARK Module '$module_name' SubModule '$service_name' module configuration file: '$service_module_module'"
+						(($DEBUG)) && echo "#[INFO] STARK Module '$module_name' SubModule '$service_name' README file: '$service_module_readme'"
+						(($DEBUG)) && echo "#[INFO] STARK Module '$module_name' SubModule '$service_name' command '$COMMAND'"
+
+						# Alternative ENV
+						(($DEBUG)) && echo "#[INFO] STARK Module '$module_name' - Alternate environment file creation"
+						cat $ENV_LIST 1> $TMP_FOLDER/.env 2>$TMP_FOLDER/.env.err
+						cat $service_module"/"$MAIN_MODULE_PREFIX".env" 1>> $TMP_FOLDER/.env 2>>$TMP_FOLDER/.env.err
+						cat $service_module_env 1>> $TMP_FOLDER/.env 2>>$TMP_FOLDER/.env.err
+
+						# Create folder
+						# services
+						mkdir -p $FOLDER_SERVICES/$module_name/$service_folder
+						chmod o+rwx $FOLDER_SERVICES/$module_name 2>/dev/null
+						chmod o+rwx $FOLDER_SERVICES/$module_name/$service_folder 2>/dev/null
+						# config
+						mkdir -p $FOLDER_CONFIG/$module_name/$service_folder
+						chmod o+rwx $FOLDER_CONFIG/$module_name 2>/dev/null
+						chmod o+rwx $FOLDER_CONFIG/$module_name/$service_folder 2>/dev/null
+
+						# Module configuration file
+						(($DEBUG)) && echo "#[INFO] STARK Module '$module_name' - Module configuration file copy"
+						$COMMAND_COPY $service_module_module $FOLDER_SERVICES/$module_name/$service_folder 2>/dev/null;
+
+						# Readme file
+						(($DEBUG)) && echo "#[INFO] STARK Module '$module_name' - Readme file copy"
+						if [ "$service_module_readme" != "" ]; then
+							$COMMAND_COPY $service_module_readme $FOLDER_SERVICES/$module_name/$service_folder 2>/dev/null;
+						fi;
 						
-						# Command
-						if $DOCKER_COMPOSE --file $service_module_yml --env-file $TMP_FOLDER/.env -p $module_name config 1>$TMP_FOLDER/docker-compose.log 2>$TMP_FOLDER/docker-compose.err; then
-							> $TMP_FOLDER/docker-compose.err
+						# Files permissions
+						chmod o+rwx -R $FOLDER_SERVICES/$module_name/* 2>/dev/null
 
-							if [ "$(cat $TMP_FOLDER/docker-compose.log)" == "services: {}" ]; then
+						# DEBUG
+						(($DEBUG)) && cat $TMP_FOLDER/.env $TMP_FOLDER/.env.err
+						(($DEBUG)) && echo "    $DOCKER_COMPOSE --file $service_module_yml --env-file $TMP_FOLDER/.env -p $module_name $COMMAND"
+						(($DEBUG)) && $DOCKER_COMPOSE --file $service_module_yml --env-file $TMP_FOLDER/.env -p $module_name config
 
-								echo "#[WARNING] docker-compose 'empty yml'"
+						# patch for --env-file unavailable
+						if (( $($DOCKER_COMPOSE --help | grep "\-\-env\-file" -c) )); then
 							
-							else
+							# Command
+							if $DOCKER_COMPOSE --file $service_module_yml --env-file $TMP_FOLDER/.env -p $module_name config 1>$TMP_FOLDER/docker-compose.log 2>$TMP_FOLDER/docker-compose.err; then
+								> $TMP_FOLDER/docker-compose.err
 
-								if $DOCKER_COMPOSE --file $service_module_yml --env-file $TMP_FOLDER/.env -p $module_name $COMMAND $COMMAND_ARGS $SERVICES 2>>$TMP_FOLDER/docker-compose.err; then
+								if [ "$(cat $TMP_FOLDER/docker-compose.log)" == "services: {}" ]; then
+
+									echo "#[WARNING] docker-compose 'empty yml'"
+								
+								else
+
+									if $DOCKER_COMPOSE --file $service_module_yml --env-file $TMP_FOLDER/.env -p $module_name $COMMAND $COMMAND_ARGS $SERVICES 2>>$TMP_FOLDER/docker-compose.err; then
+										(($VERBOSE)) && cat $TMP_FOLDER/docker-compose.err | grep "Found orphan containers" -v
+									else
+										if (($(cat $TMP_FOLDER/docker-compose.err | grep "no service selected" -c))); then
+											echo "#[WARNING] docker-compose 'no service selected'";
+										fi;
+										if (($(cat $TMP_FOLDER/docker-compose.err | grep " level=warning " -c))); then
+											echo "#[WARNING] docker-compose 'level=warning'";
+										fi;
+										if (($(cat $TMP_FOLDER/docker-compose.err | grep -e "no service selected" -e " level=warning " -vc))); then
+											echo "#[ERROR] docker-compose error1";
+											cat $TMP_FOLDER/docker-compose.err
+											exit 1;
+										fi;
+									fi;
+
+								fi;
+
+							else
+								echo "#[ERROR] docker-compose error - docker compose command error";
+								cat $TMP_FOLDER/docker-compose.log $TMP_FOLDER/docker-compose.err;
+								exit 1;
+							fi;
+							
+						else
+
+							(($VERBOSE)) &&  echo "#[WARNING] STARK Module Docker version does not provide '--env-file' parameter. STARK module is patched to work, but please update your docker version."
+
+							# Command
+							if env $(cat $TMP_FOLDER/.env | grep "#" -v) $DOCKER_COMPOSE --file $service_module_yml -p $module_name config 1>$TMP_FOLDER/docker-compose.log 2>$TMP_FOLDER/docker-compose.err; then
+								> $TMP_FOLDER/docker-compose.err
+								if env $(cat $TMP_FOLDER/.env | grep "#" -v) $DOCKER_COMPOSE --file $service_module_yml -p $module_name $COMMAND $COMMAND_ARGS $SERVICES 2>>$TMP_FOLDER/docker-compose.out ; then
 									(($VERBOSE)) && cat $TMP_FOLDER/docker-compose.err | grep "Found orphan containers" -v
 								else
 									if (($(cat $TMP_FOLDER/docker-compose.err | grep "no service selected" -c))); then
@@ -610,63 +636,34 @@ for service_module in \
 										exit 1;
 									fi;
 								fi;
-
-							fi;
-
-						else
-							echo "#[ERROR] docker-compose error - docker compose command error";
-							cat $TMP_FOLDER/docker-compose.log $TMP_FOLDER/docker-compose.err;
-							exit 1;
-						fi;
-						
-					else
-
-						(($VERBOSE)) &&  echo "#[WARNING] STARK Module Docker version does not provide '--env-file' parameter. STARK module is patched to work, but please update your docker version."
-
-						# Command
-						if env $(cat $TMP_FOLDER/.env | grep "#" -v) $DOCKER_COMPOSE --file $service_module_yml -p $module_name config 1>$TMP_FOLDER/docker-compose.log 2>$TMP_FOLDER/docker-compose.err; then
-							> $TMP_FOLDER/docker-compose.err
-							if env $(cat $TMP_FOLDER/.env | grep "#" -v) $DOCKER_COMPOSE --file $service_module_yml -p $module_name $COMMAND $COMMAND_ARGS $SERVICES 2>>$TMP_FOLDER/docker-compose.out ; then
-								(($VERBOSE)) && cat $TMP_FOLDER/docker-compose.err | grep "Found orphan containers" -v
 							else
-								if (($(cat $TMP_FOLDER/docker-compose.err | grep "no service selected" -c))); then
-									echo "#[WARNING] docker-compose 'no service selected'";
-								fi;
-								if (($(cat $TMP_FOLDER/docker-compose.err | grep " level=warning " -c))); then
-									echo "#[WARNING] docker-compose 'level=warning'";
-								fi;
-								if (($(cat $TMP_FOLDER/docker-compose.err | grep -e "no service selected" -e " level=warning " -vc))); then
-									echo "#[ERROR] docker-compose error1";
-									cat $TMP_FOLDER/docker-compose.err
-									exit 1;
-								fi;
+								echo "#[ERROR] docker-compose error";
+								cat $TMP_FOLDER/docker-compose.log $TMP_FOLDER/docker-compose.err;
+								exit 1;
 							fi;
-						else
-							echo "#[ERROR] docker-compose error";
-							cat $TMP_FOLDER/docker-compose.log $TMP_FOLDER/docker-compose.err;
-							exit 1;
+
 						fi;
 
 					fi;
 
+				else
+					(($VERBOSE)) && echo "#[WARNING] STARK Module '$module_name' is not a docker service module (no STARK*.docker-compose.yml, STARK*.env and STARK*.module)"
 				fi;
 
 			else
-				(($VERBOSE)) && echo "#[WARNING] STARK Module '$module_name' is not a docker service module (no STARK*.docker-compose.yml, STARK*.env and STARK*.module)"
+
+				(($VERBOSE)) && echo "#[INFO] STARK Module '$module_name' SubModule '$service_name' not selected"
+
 			fi;
 
-		else
 
-			(($VERBOSE)) && echo "#[INFO] STARK Module '$module_name' SubModule '$service_name' not selected"
+			done;
 
 		fi;
 
+	done;
 
-		done;
-
-	fi;
-
-done;
+fi;
 
 # TMP
 rm -rf $TMP_FOLDER
