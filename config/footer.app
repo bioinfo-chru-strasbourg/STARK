@@ -165,7 +165,6 @@ mkdir -p $DEMULTIPLEXING_FOLDER $RESULTS_FOLDER $ANALYSIS_FOLDER $TMP_FOLDER_TMP
 export NGS_TOOLS=$FOLDER_TOOLS				# TOOLS
 export DBFOLDER=$FOLDER_DATABASES			# DB
 export NGS_GENOMES=$DBFOLDER/genomes			# GENOMES folder
-export RULES=$STARK_FOLDER_RULES/*.rules.mk		# RULES
 export APPS=$STARK_FOLDER_APPS				# APPS
 export GENOMES=$NGS_GENOMES				# Genomes folder in NGS folder
 export TMP_SYS_FOLDER=/tmp				# TEMPORARY SYSTEM folder (tmpfs)
@@ -330,13 +329,6 @@ done;
 
 # RULES for the project
 [ "$APP_PROJECT" != "" ] && RULES_APP="$RULES_APP $STARK_FOLDER_RULES/$APP_PROJECT/*rules.mk";
-
-
-#export RULES="$RULES $RULES_APP"
-#export RULES=$(ls -N $RULES $RULES_APP)
-export RULES=$(find $RULES $RULES_APP -maxdepth 0 -type f 2>/dev/null | sort -u | tr "\n" " ")
-#export RULES=$(find $RULES $RULES_APP)
-#echo "RULLES: $RULES"
 
 #SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd -P )"
 #echo $SCRIPT_DIR
@@ -1608,3 +1600,21 @@ export REPORT_VARIANTS_FULL
 
 # TEST
 #THREADS=16
+
+#RULES export has to be after PIPELINE is defined and no longer changed, otherwise some rules might not be loaded
+steps_without_rule_file="sorting compress"
+RULES=$(ls $STARK_FOLDER_RULES/*.mk | tr '\n' ' ')
+RULES+=" "$(ls $RULES_APP/*rules.mk 2> /dev/null | tr '\n' ' ')
+for pipe in $(echo $PIPELINES" "$POST_SEQUENCING_STEPS" "$POST_ALIGNMENT_STEPS" "$POST_CALLING_STEPS); do 
+	for tool in $(echo $pipe | tr '.' ' '); do
+		
+		#GATK3.8 callers do not follow standard rule naming
+		if [[ $tool == gatkUG* || $tool == gatkHC* ]]; then
+			RULES+=" "$(ls $STARK_FOLDER_RULES/*/gatk.calling.rules.mk)
+
+		elif [ -z "$(echo $steps_without_rule_file | grep -w $tool)" ]; then
+			RULES+=" "$(ls $STARK_FOLDER_RULES/*/$tool.*rules.mk | tr '\n' ' ')
+		fi;
+	done; 
+done;
+export RULES
