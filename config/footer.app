@@ -1604,7 +1604,7 @@ export REPORT_VARIANTS_FULL
 #RULES export has to be after PIPELINE is defined and no longer changed, otherwise some rules might not be loaded
 steps_without_rule_file="sorting compress"
 RULES=$(ls $STARK_FOLDER_RULES/*.mk | tr '\n' ' ')
-RULES+=" "$(ls $RULES_APP/*rules.mk 2> /dev/null | tr '\n' ' ')
+RULES+=" "$(ls $RULES_APP/*.rules.mk 2> /dev/null | tr '\n' ' ')
 for pipe in $(echo $PIPELINES" "$POST_SEQUENCING_STEPS" "$POST_ALIGNMENT_STEPS" "$POST_CALLING_STEPS); do 
 	for tool in $(echo $pipe | tr '.' ' '); do
 		
