@@ -589,10 +589,10 @@ HOWARD_NOMEN_FIELDS="hgvs"
 # This option create ranking scores in VCF and comment in TXT (after translation).
 # Scores can be used to sort variant in the TXT
 # HOWARD_FILTER_DEFAULT="default" # in env_header.sh
-# Default prioritization with HOWARD
-HOWARD_PRIORITIZATION=$HOWARD_PRIORITIZATION_DEFAULT # "default"
-# Minimal prioritization with HOWARD
-HOWARD_PRIORITIZATION_MINIMAL=$HOWARD_PRIORITIZATION_DEFAULT # "default"
+# Default prioritization with HOWARD (deprecated)
+#HOWARD_PRIORITIZATION=$HOWARD_PRIORITIZATION_DEFAULT # "default"
+# Minimal prioritization with HOWARD (deprecated)
+#HOWARD_PRIORITIZATION_MINIMAL=$HOWARD_PRIORITIZATION_DEFAULT # "default"
 # Default prioritization with HOWARD for Report (full/final VCF)
 HOWARD_PRIORITIZATION_REPORT=$HOWARD_PRIORITIZATION_DEFAULT # "default"
 # Default prioritization with HOWARD for whole analysis (prioritization forced)

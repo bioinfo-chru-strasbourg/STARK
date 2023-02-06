@@ -794,21 +794,25 @@ fi;
 
 if (($PIPELINES_INFOS)); then
 
+	# Header
 	echo ""
 	echo "###################"
 	echo "#### PIPELINES ####"
 	echo "###################"
 	echo ""
-
+	# Files
 	PIPELINES_INFOS=$TMP_FOLDER_TMP/$RANDOM$RANDOM.pipelines
 	MAKEFILE_PARAM=$TMP_FOLDER_TMP/$RANDOM$RANDOM.param
 	touch $PIPELINES_INFOS $MAKEFILE_PARAM
-	#source $ENV;
-	#make -e -f $STARK_FOLDER_BIN/NGSWorkflow.mk PARAM=$MAKEFILE_PARAM PIPELINES_INFOS=$PIPELINES_INFOS $PIPELINES_INFOS 1>/dev/null 2>/dev/null;
+	# All rules if no APP
+	if [ "$APP" == "" ]; then
+		RULES+=" "$(find $STARK_FOLDER_RULES/ -name *.rules.mk | tr '\n' ' ')
+	fi;
+	# Create pipelines file
 	make -e -f $STARK_FOLDER_BIN/STARK.launch.analysis.mk PARAM=$MAKEFILE_PARAM PIPELINES_INFOS=$PIPELINES_INFOS $PIPELINES_INFOS 1>/dev/null 2>/dev/null;
-	sort -k1,2 $PIPELINES_INFOS | cut -d: -f1-3 | column -t -s ':'
-	#make -e -f $STARK_FOLDER_BIN/NGSWorkflow.mk PARAM=$MAKEFILE_PARAM RELEASE_INFOS=$PIPELINES_INFOS $PIPELINES_INFOS 1>/dev/null 2>/dev/null;
-	#cat $PIPELINES_INFOS
+	# Sort and print pipelines
+	sort -k1,2 $PIPELINES_INFOS -u | cut -d: -f1-3 | column -t -s ':'
+	# Clean
 	rm $PIPELINES_INFOS $MAKEFILE_PARAM;
 
 	EXIT=1
