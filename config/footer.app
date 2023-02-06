@@ -1142,35 +1142,42 @@ export HOWARD_NOMEN_FIELDS
 # Scores can be used to sort variant in the TXT
 
 # DEFAULT
-# Default filter to prioritize/rank variant.
-if [ -z "$HOWARD_PRIORITIZATION" ]; then
-	HOWARD_PRIORITIZATION=$HOWARD_PRIORITIZATION_DEFAULT
+if [ -z "$HOWARD_PRIORITIZATION_DEFAULT" ]; then
+	HOWARD_PRIORITIZATION_DEFAULT="null"
 fi;
-if [ ! -z "$APP_NAME" ] && [ ${APP_NAME^^} != "DEFAULT" ]; then
-	HOWARD_PRIORITIZATION="$APP_NAME,$HOWARD_PRIORITIZATION"
-fi;
-# Keep fist as first and sort the rest
-HOWARD_PRIORITIZATION=$(echo $(echo $HOWARD_PRIORITIZATION | tr "," " " | cut -d" " -f1 | tr " " "," && echo $HOWARD_PRIORITIZATION | tr "," " " | tr " " "\n" | sort -u | grep -v "^$(echo $HOWARD_PRIORITIZATION | tr "," " " | cut -d" " -f1)$" | tr "\n" "," | sed s/,$//) | tr " " "," )
-export HOWARD_PRIORITIZATION
+export HOWARD_PRIORITIZATION_DEFAULT
 
 
-# MINIMAL
-# Minimal filter to prioritize/rank variant.
-if [ -z "$HOWARD_PRIORITIZATION_MINIMAL" ]; then
-	HOWARD_PRIORITIZATION_MINIMAL=$HOWARD_PRIORITIZATION
-fi;
-if [ ! -z "$APP_NAME" ] && [ ${APP_NAME^^} != "DEFAULT" ]; then
-	HOWARD_PRIORITIZATION_MINIMAL="$APP_NAME,$HOWARD_PRIORITIZATION_MINIMAL"
-fi;
-# Keep fist as first and sort the rest
-HOWARD_PRIORITIZATION_MINIMAL=$(echo $(echo $HOWARD_PRIORITIZATION_MINIMAL | tr "," " " | cut -d" " -f1 | tr " " "," && echo $HOWARD_PRIORITIZATION_MINIMAL | tr "," " " | tr " " "\n" | sort -u | grep -v "^$(echo $HOWARD_PRIORITIZATION_MINIMAL | tr "," " " | cut -d" " -f1)$" | tr "\n" "," | sed s/,$//) | tr " " "," )
-export HOWARD_PRIORITIZATION_MINIMAL
+# # DEFAULT (deprecated)
+# # Default filter to prioritize/rank variant.
+# if [ -z "$HOWARD_PRIORITIZATION" ]; then
+# 	HOWARD_PRIORITIZATION=$HOWARD_PRIORITIZATION_DEFAULT
+# fi;
+# if [ ! -z "$APP_NAME" ] && [ ${APP_NAME^^} != "DEFAULT" ]; then
+# 	HOWARD_PRIORITIZATION="$APP_NAME,$HOWARD_PRIORITIZATION"
+# fi;
+# # Keep fist as first and sort the rest
+# HOWARD_PRIORITIZATION=$(echo $(echo $HOWARD_PRIORITIZATION | tr "," " " | cut -d" " -f1 | tr " " "," && echo $HOWARD_PRIORITIZATION | tr "," " " | tr " " "\n" | sort -u | grep -v "^$(echo $HOWARD_PRIORITIZATION | tr "," " " | cut -d" " -f1)$" | tr "\n" "," | sed s/,$//) | tr " " "," )
+# export HOWARD_PRIORITIZATION
+
+
+# # MINIMAL (deprecated)
+# # Minimal filter to prioritize/rank variant.
+# if [ -z "$HOWARD_PRIORITIZATION_MINIMAL" ]; then
+# 	HOWARD_PRIORITIZATION_MINIMAL=$HOWARD_PRIORITIZATION
+# fi;
+# if [ ! -z "$APP_NAME" ] && [ ${APP_NAME^^} != "DEFAULT" ]; then
+# 	HOWARD_PRIORITIZATION_MINIMAL="$APP_NAME,$HOWARD_PRIORITIZATION_MINIMAL"
+# fi;
+# # Keep fist as first and sort the rest
+# HOWARD_PRIORITIZATION_MINIMAL=$(echo $(echo $HOWARD_PRIORITIZATION_MINIMAL | tr "," " " | cut -d" " -f1 | tr " " "," && echo $HOWARD_PRIORITIZATION_MINIMAL | tr "," " " | tr " " "\n" | sort -u | grep -v "^$(echo $HOWARD_PRIORITIZATION_MINIMAL | tr "," " " | cut -d" " -f1)$" | tr "\n" "," | sed s/,$//) | tr " " "," )
+# export HOWARD_PRIORITIZATION_MINIMAL
 
 
 # Report
 # Default filter to prioritize/rank variant for Report
 if [ -z "$HOWARD_PRIORITIZATION_REPORT" ]; then
-	HOWARD_PRIORITIZATION_REPORT=$HOWARD_PRIORITIZATION
+	HOWARD_PRIORITIZATION_REPORT=$HOWARD_PRIORITIZATION_DEFAULT
 fi;
 if [ ! -z "$APP_NAME" ] && [ ${APP_NAME^^} != "DEFAULT" ]; then
 	HOWARD_PRIORITIZATION_REPORT="$APP_NAME,$HOWARD_PRIORITIZATION_REPORT"
@@ -1183,7 +1190,7 @@ export HOWARD_PRIORITIZATION_REPORT
 # ANALYSIS
 # Default filter to prioritize/rank variant for whole analysis (calculation forced)
 if [ -z "$HOWARD_PRIORITIZATION_ANALYSIS" ]; then
-	HOWARD_PRIORITIZATION_ANALYSIS=$HOWARD_PRIORITIZATION
+	HOWARD_PRIORITIZATION_ANALYSIS=$HOWARD_PRIORITIZATION_DEFAULT
 fi;
 if [ ! -z "$APP_NAME" ] && [ ${APP_NAME^^} != "DEFAULT" ]; then
 	HOWARD_PRIORITIZATION_ANALYSIS="$APP_NAME,$HOWARD_PRIORITIZATION_ANALYSIS"
@@ -1196,7 +1203,7 @@ export HOWARD_PRIORITIZATION_ANALYSIS
 # VARANK
 # Default prioritization with HOWARD for VaRank score mode
 if [ -z "$HOWARD_PRIORITIZATION_VARANK" ]; then
-	HOWARD_PRIORITIZATION_VARANK=$HOWARD_PRIORITIZATION
+	HOWARD_PRIORITIZATION_VARANK=$HOWARD_PRIORITIZATION_DEFAULT
 fi;
 if [ ! -z "$APP_NAME" ] && [ ${APP_NAME^^} != "DEFAULT" ]; then
 	HOWARD_PRIORITIZATION_VARANK="$APP_NAME,$HOWARD_PRIORITIZATION_VARANK"
@@ -1592,29 +1599,31 @@ export REPORT_SECTIONS
 # Generate variants files from run with full VCF (include all calling information)
 export REPORT_VARIANTS_FULL
 
-# CHECK
-#re='^[0-9]+$'
-#if ! [[ $THREADS =~ $re ]] || [ "$THREADS" == "" ]; then
-#	THREADS=1
-#fi;
 
-# TEST
-#THREADS=16
 
-#RULES export has to be after PIPELINE is defined and no longer changed, otherwise some rules might not be loaded
-steps_without_rule_file="sorting compress"
-RULES=$(ls $STARK_FOLDER_RULES/*.rules.mk | tr '\n' ' ')
-RULES+=" "$(ls $RULES_APP/*.rules.mk 2> /dev/null | tr '\n' ' ')
-for pipe in $(echo $PIPELINES" "$POST_SEQUENCING_STEPS" "$POST_ALIGNMENT_STEPS" "$POST_CALLING_STEPS); do 
-	for tool in $(echo $pipe | tr '.' ' '); do
-		
-		#GATK3.8 callers do not follow standard rule naming
-		if [[ $tool == gatkUG* || $tool == gatkHC* ]]; then
-			RULES+=" "$(ls $STARK_FOLDER_RULES/*/gatk.calling.rules.mk)
+# RULES export has to be after PIPELINE is defined and no longer changed, otherwise some rules might not be loaded
 
-		elif [ -z "$(echo $steps_without_rule_file | grep -w $tool)" ]; then
-			RULES+=" "$(ls $STARK_FOLDER_RULES/*/$tool.*rules.mk | tr '\n' ' ')
-		fi;
-	done; 
+# Main rules
+RULES=$(ls $STARK_FOLDER_RULES/*.rules.mk 2>/dev/null | tr '\n' ' ')
+
+# APP rules
+RULES+=" "$(ls $RULES_APP/*.rules.mk 2>/dev/null | tr '\n' ' ')
+
+# Pipelines rules
+# For developpers:
+#    - beware of similar rules and file names within subfolders pipelines rules
+#    - if a pipeline rule is a common rule (e.g. for vcf filtration which is a rule used in multiple steps), just do not create file, or let it empty
+#    - use "_" to gather rules 
+for rule in $(echo $PIPELINES" "$POST_SEQUENCING_STEPS" "$POST_ALIGNMENT_STEPS" "$POST_CALLING_STEPS" "$POST_ANNOTATION_STEPS" "$POST_CALLING_MERGING_STEPS | tr '.' ' ' | sort -u); do 
+	rule_root=$(echo $rule | cut -d_ -f1)
+	# Add root rule file
+	RULES+=" "$(find $STARK_FOLDER_RULES/*/ -name $rule_root.rules.mk | tr '\n' ' ')
+	# Add rule file
+	RULES+=" "$(find $STARK_FOLDER_RULES/*/ -name $rule.rules.mk | tr '\n' ' ')
 done;
+
+# Uniqify
+RULES=$(echo $RULES | tr " " "\n" | sort -u | tr "\n" " ")
+
+# Export
 export RULES

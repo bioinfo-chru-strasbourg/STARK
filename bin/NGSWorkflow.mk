@@ -169,7 +169,7 @@ $(RELEASE): $(RELEASE).empty.vcf
 	echo "################################" >> $@;
 	echo "# PRIORITIZATION CONFIGURATION #" >> $@;
 	echo "################################" >> $@;
-	$(STARK_FOLDER_BIN)/parse_config_prioritization_ini.pl --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --applications=$(HOWARD_PRIORITIZATION)  --no_header | sort -u -f | sort -k1,2 -f | column -s$$'\t' -t >> $@;
+	$(STARK_FOLDER_BIN)/parse_config_prioritization_ini.pl --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --applications=$(HOWARD_PRIORITIZATION_REPORT)  --no_header | sort -u -f | sort -k1,2 -f | column -s$$'\t' -t >> $@;
 	#$(STARK_FOLDER_BIN)/STARK --applications_infos_all --app="$(ENV)" >> $@
 	echo "" >> $@
 	cat $(RELEASE_INFOS) >> $@
