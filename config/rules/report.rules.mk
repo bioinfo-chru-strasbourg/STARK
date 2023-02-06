@@ -3,7 +3,7 @@
 # Author: Antony Le Bechec
 ############################
 # Release
-MK_RELEASE="0.9.4.1b"
+MK_RELEASE="0.9.5"
 MK_DATE="27/09/2019"
 
 # Release note
@@ -13,6 +13,7 @@ MK_DATE="27/09/2019"
 # 01/02/2018-0.9.3b: Add CALLING_QUALITY for rule generating full.vcf. Change pipeline name (remove sample name and vcf.gz extension)
 # 02/10/2018-0.9.4b: Change Howard annotation, replace VCFTOOLS with BCFTOOLS, merge with multiallele not allowed
 # 27/09/2019-0.9.4.1b: Add HOWARD NOMEN field option
+# 06/02/2023-0.9.5: Add INFO_to_FORMAT, add threads on bcftools and bgzip
 
 INTERSEC?=2
 NB_VARIANTS_TO_SHOW?=20
@@ -39,13 +40,7 @@ REPORT_SECTIONS?=ALL
 
 
 
-# %.config: %.report.header $(RELEASE)
-# 	mkdir -p $(@D)
-# 	cat $^ > $@
-# 	echo "" >> $@
-
-
-%.config: %.report.header $(RELEASE) #%.empty.vcf
+%.config: %.report.header $(RELEASE)
 	mkdir -p $(@D)
 	cat $*.report.header > $@
 	cat $(RELEASE) >> $@
@@ -56,7 +51,7 @@ REPORT_SECTIONS?=ALL
 	cp -p $< $@
 
 
-%.analysis.json: %.archive.cram %.manifest %.bed %.list.genes %.tag #%.config 
+%.analysis.json: %.archive.cram %.manifest %.bed %.list.genes %.tag
 	mkdir -p $(@D)
 	> $@
 	echo "{" >> $@;
@@ -88,7 +83,7 @@ REPORT_SECTIONS?=ALL
 
 
 ## list of vcf
-%.$(ANALYSIS_DATE).final_variants_files_vcf_gz: %.$(ANALYSIS_DATE).vcfgzs.list $(VCF) #%.$(ANALYSIS_DATE).config
+%.$(ANALYSIS_DATE).final_variants_files_vcf_gz: %.$(ANALYSIS_DATE).vcfgzs.list $(VCF)
 	mkdir -p $(@D)
 	# Include all vcf.gz of the sample in the list of all vcf.gz of the analysis
 	cat $< | tr " " "\n" | grep "^$$(dirname $(@D))/" > $@;
@@ -98,7 +93,7 @@ REPORT_SECTIONS?=ALL
 
 
 ## list of vcf
-%.final_variants_files_vcf_gz: %.$(ANALYSIS_DATE).final_variants_files_vcf_gz #$(VCF) %.$(ANALYSIS_DATE).config
+%.final_variants_files_vcf_gz: %.$(ANALYSIS_DATE).final_variants_files_vcf_gz
 	mkdir -p $(@D)
 	# list all vcf.gz from this analysis, ordered
 	cat $< > $@.full_vcf_gz_list.tmp;
@@ -121,9 +116,7 @@ REPORT_SECTIONS?=ALL
 	# Generate pipeline name list
 	cat $< | rev | cut -d/ -f1 | rev | sed s/\.vcf.gz//gi | cut -d. -f2- > $@.pipelines
 	# Merge VCF, noramize and rehead with pipelines names
-	$(BCFTOOLS) merge -l $< --force-samples -m none --info-rules - | $(BCFTOOLS) norm -m- -f $$(cat $*.genome) | $(BCFTOOLS) norm --rm-dup exact | $(BCFTOOLS) +fill-tags -- -t AN,AC,AF,AC_Hemi,AC_Hom,AC_Het,ExcHet,HWE,MAF,NS | $(BCFTOOLS) reheader -s $@.pipelines > $@.tmp.merged.vcf;
-	# | $(BCFTOOLS) view --exclude 'FORMAT/GT="0/0"'
-	# | $(BCFTOOLS) +setGT  -- -t . -n 0 
+	$(BCFTOOLS) merge --threads=$(THREADS_BY_SAMPLE)  -l $< --force-samples -m none --info-rules - | $(BCFTOOLS) norm --threads=$(THREADS_BY_SAMPLE)  -m- -f $$(cat $*.genome) | $(BCFTOOLS) norm --threads=$(THREADS_BY_SAMPLE) --rm-dup exact | $(BCFTOOLS) +fill-tags -- -t AN,AC,AF,AC_Hemi,AC_Hom,AC_Het,ExcHet,HWE,MAF,NS | $(BCFTOOLS) reheader --threads=$(THREADS_BY_SAMPLE)  -s $@.pipelines > $@.tmp.merged.vcf;
 	# header file
 	echo -e '##INFO=<ID=Validation_Depth_Flags,Number=.,Type=String,Description="Depth metrics flag from BAM validation">' > $@.tmp.annotate.Validation_Depth_Flags.hdr;
 	echo -e '##INFO=<ID=Validation_Depth,Number=.,Type=Float,Description="Depth metrics from BAM validation">' > $@.tmp.annotate.Validation_Depth.hdr;
@@ -137,15 +130,15 @@ REPORT_SECTIONS?=ALL
 	if ((1)); then \
 		if (( $$(ls $$(dirname $$(dirname $@))/*bam.metrics/*.validation.flags.Design.bed | wc -l) )) || (( $$(ls $$(dirname $$(dirname $@))/*bam.metrics/*.design.bed.HsMetrics.per_base_coverage.gz | wc -l) )); then \
 			if (( $$(ls $$(dirname $$(dirname $@))/*bam.metrics/*.validation.flags.Design.bed | wc -l) )); then \
-				cat $$(dirname $$(dirname $@))/*bam.metrics/*.validation.flags.Design.bed | sort -k1,1 -k2,2 | $(BEDTOOLS) merge -c 10 -o distinct | $(BGZIP) -c --index --index-name $@.tmp.flags.bed.gz.tbi > $@.tmp.flags.bed.gz; \
-				$(BCFTOOLS) annotate -a $@.tmp.flags.bed.gz -h $@.tmp.annotate.Validation_Depth_Flags.hdr -c CHROM,POS,TO,INFO/Validation_Depth_Flags -l Validation_Depth_Flags:unique $@.tmp.merged.reheaded.vcf > $@.tmp.merged.reheaded.flags.vcf; \
+				cat $$(dirname $$(dirname $@))/*bam.metrics/*.validation.flags.Design.bed | sort -k1,1 -k2,2 | $(BEDTOOLS) merge -c 10 -o distinct | $(BGZIP) --threads=$(THREADS_BY_SAMPLE) -c --index --index-name $@.tmp.flags.bed.gz.tbi > $@.tmp.flags.bed.gz; \
+				$(BCFTOOLS) annotate --threads=$(THREADS_BY_SAMPLE) -a $@.tmp.flags.bed.gz -h $@.tmp.annotate.Validation_Depth_Flags.hdr -c CHROM,POS,TO,INFO/Validation_Depth_Flags -l Validation_Depth_Flags:unique $@.tmp.merged.reheaded.vcf > $@.tmp.merged.reheaded.flags.vcf; \
 			else \
 				cp $@.tmp.merged.reheaded.vcf $@.tmp.merged.reheaded.flags.vcf; \
 			fi; \
 			if (( $$(ls $$(dirname $$(dirname $@))/*bam.metrics/*.design.bed.HsMetrics.per_base_coverage.gz | wc -l) )); then \
 				zcat $$(dirname $$(dirname $@))/*bam.metrics/*.design.bed.HsMetrics.per_base_coverage.gz | cut -f1,2,4 | grep ^chrom -v | sort -k1,1 -k2,2n | bgzip -c > $@.tmp.depth.tab.gz; \
 				tabix -s1 -b2 -e2 $@.tmp.depth.tab.gz; \
-				$(BCFTOOLS) annotate -a $@.tmp.depth.tab.gz -h $@.tmp.annotate.Validation_Depth.hdr -c CHROM,POS,INFO/Validation_Depth -l Validation_Depth:avg $@.tmp.merged.reheaded.flags.vcf > $@; \
+				$(BCFTOOLS) annotate --threads=$(THREADS_BY_SAMPLE) -a $@.tmp.depth.tab.gz -h $@.tmp.annotate.Validation_Depth.hdr -c CHROM,POS,INFO/Validation_Depth -l Validation_Depth:avg $@.tmp.merged.reheaded.flags.vcf > $@; \
 			else \
 				cp $@.tmp.merged.reheaded.flags.vcf $@; \
 			fi; \
@@ -180,7 +173,7 @@ REPORT_SECTIONS?=ALL
 ## rehead full.vcf
 %.$(ANALYSIS_DATE).full.vcf: %.$(ANALYSIS_DATE).final_variants_files_vcf_gz %.full.vcf
 	cat $< | rev | cut -d/ -f1 | rev | sed s/\.vcf.gz//gi | cut -d. -f2- > $@.pipelines
-	$(BCFTOOLS) view -S $@.pipelines $*.full.vcf > $@
+	$(BCFTOOLS) view --threads=$(THREADS_BY_SAMPLE) -S $@.pipelines $*.full.vcf > $@
 	-rm -f $@.tmp* $@.pipelines
 
 
@@ -188,20 +181,25 @@ REPORT_SECTIONS?=ALL
 %.final$(POST_CALLING_MERGING).vcf: %.full.vcf
 	-rm -f $<.tmp.*
 	for S in $$(grep "^#CHROM" $< | cut -f10-); do \
-		$(BCFTOOLS) view -U -s $$S $< | $(BCFTOOLS) view -e 'FORMAT/GT="0/0"' | sed '/^#CHROM/s/'$$S'/'$$(echo $(@F) | cut -d\. -f1)'/' > $<.tmp.$$S; \
-		$(BGZIP) -f $<.tmp.$$S; \
+		$(BCFTOOLS) view --threads=$(THREADS_BY_SAMPLE) -U -s $$S $< | $(BCFTOOLS) view --threads=$(THREADS_BY_SAMPLE) -e 'FORMAT/GT="0/0"' | sed '/^#CHROM/s/'$$S'/'$$(echo $(@F) | cut -d\. -f1)'/' > $<.tmp.$$S; \
+		$(BGZIP) --threads=$(THREADS_BY_SAMPLE) -f $<.tmp.$$S; \
 		$(TABIX) -f $<.tmp.$$S.gz; \
 	done;
-	$(BCFTOOLS) concat $<.tmp.*.gz -a -D > $@
-	rm -f $<.tmp.*.gz*
+	$(BCFTOOLS) concat $<.tmp.*.gz -a -D > $@.tmp;
+	if [ "$(INFO_TO_FORMAT_ANNOTATIONS)" != "" ]; then \
+		$(STARK_FOLDER_BIN)/INFO_to_FORMAT.sh --input=$@.tmp --output=$@ --annotations=$(INFO_TO_FORMAT_ANNOTATIONS) --bcftools=$(BCFTOOLS) --tabix=$(TABIX) --threads=$(THREADS_BY_SAMPLE); \
+	else \
+		mv $@.tmp $@; \
+	fi;
+	rm -f $<.tmp.*.gz* $@.tmp*
 
 
 ## ALL samples VCF RULE
 
-%.variants: $(VCF_REPORT_FILES) %.variants_full #$(REPORT_FILES)
+%.variants: $(VCF_REPORT_FILES) %.variants_full
 	# List of final VCF files
 	echo $^ | tr " " "\n" | tr "\t" "\n" | grep "final.vcf.gz$$" > $@.tmp.vcf_list
-	$(BCFTOOLS) merge -l $@.tmp.vcf_list -m none --force-samples | $(BCFTOOLS) filter -S . -e 'GT=="0/0" | GT=="0|0"' > $@.tmp.merged;
+	$(BCFTOOLS) merge --threads=$(THREADS) -l $@.tmp.vcf_list -m none --force-samples | $(BCFTOOLS) filter --threads=$(THREADS) -S . -e 'GT=="0/0" | GT=="0|0"' > $@.tmp.merged;
 	# Annotation
 	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp.merged --output=$@.tmp.annotated1 --annotation=$(HOWARD_ANNOTATION_ANALYSIS) --threads=$(THREADS);
 	# Annotation dejavu (forced)
@@ -217,7 +215,7 @@ REPORT_SECTIONS?=ALL
 	$(BCFTOOLS) sort -T $@.tmp.calculated.prioritized.SAMTOOLS_PREFIX $@.tmp.calculated.prioritized > $@.tmp.calculated.prioritized.sorted
 	rm -rf $@.tmp.calculated.prioritized.SAMTOOLS_PREFIX
 	# Generate Design VCF
-	$(BGZIP) -c $@.tmp.calculated.prioritized.sorted > $@.tmp.calculated.prioritized.sorted.vcf.gz;
+	$(BGZIP) --threads=$(THREADS) -c $@.tmp.calculated.prioritized.sorted > $@.tmp.calculated.prioritized.sorted.vcf.gz;
 	$(TABIX) $@.tmp.calculated.prioritized.sorted.vcf.gz;
 	cp $@.tmp.calculated.prioritized.sorted.vcf.gz $@.Design.vcf.gz;
 	$(TABIX) $@.Design.vcf.gz; \
@@ -236,12 +234,12 @@ REPORT_SECTIONS?=ALL
 			cat $$(echo $$List_of_genes_files) | $(BEDTOOLS) sort | $(BEDTOOLS) merge > $@.tmp.GENES.$$genes_file; \
 			# Generate VCF Panel from VCF Design (especially $@.tmp.calculated.prioritized.sorted.vcf.gz because tabix) with $$genes_file for List of Samples \
 			if (( $$(grep ^ $@.tmp.GENES.$$genes_file -c) )); then \
-				$(BCFTOOLS) view --samples $$List_of_samples -U --force-samples $@.tmp.calculated.prioritized.sorted.vcf.gz -R $@.tmp.GENES.$$genes_file > $@.Panel.$$genes_file.vcf; \
+				$(BCFTOOLS) view --threads=$(THREADS) --samples $$List_of_samples -U --force-samples $@.tmp.calculated.prioritized.sorted.vcf.gz -R $@.tmp.GENES.$$genes_file > $@.Panel.$$genes_file.vcf; \
 			else \
-				$(BCFTOOLS) view --samples $$List_of_samples -U --force-samples $@.tmp.calculated.prioritized.sorted.vcf.gz > $@.Panel.$$genes_file.vcf; \
+				$(BCFTOOLS) view --threads=$(THREADS) --samples $$List_of_samples -U --force-samples $@.tmp.calculated.prioritized.sorted.vcf.gz > $@.Panel.$$genes_file.vcf; \
 			fi; \
 			# Compress VCF \
-			$(BGZIP) $@.Panel.$$genes_file.vcf; \
+			$(BGZIP) --threads=$(THREADS) $@.Panel.$$genes_file.vcf; \
 			$(TABIX) $@.Panel.$$genes_file.vcf.gz; \
 			# Generate TSV Panel from VCF Panel compressed  \
 			$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.Panel.$$genes_file.vcf.gz --output=$@.Panel.$$genes_file.tsv --translation=TSV --fields="$(HOWARD_FIELDS)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)" --pzfields="PZScore,PZFlag,PZComment,PZInfos" --force --threads=$(THREADS); \
@@ -252,12 +250,12 @@ REPORT_SECTIONS?=ALL
 
 
 
-%.variants_full: $(VCF_REPORT_FILES) #$(REPORT_FILES)
+%.variants_full: $(VCF_REPORT_FILES)
 	+if (($(REPORT_VARIANTS_FULL))); then \
 		# List of full VCF files \
 		echo $^ | tr " " "\n" | tr "\t" "\n" | grep "full.vcf.gz$$" > $@.tmp.vcf_list; \
-		for f in $$(cat $@.tmp.vcf_list); do $(BCFTOOLS) view -h $$f | grep "^#CHROM" | cut -f10- | sed  "s/^/$$(basename $$f | cut -d. -f1)./g;s/\t/\t$$(basename $$f | cut -d. -f1)./g";  done | tr "\t" "\n" > $@.tmp.vcf_list.pipelines; \
-		$(BCFTOOLS) merge -l $@.tmp.vcf_list -m none --force-samples | $(BCFTOOLS) filter -S . -e 'GT=="0/0" | GT=="0|0"' | $(BCFTOOLS) reheader -s $@.tmp.vcf_list.pipelines > $@.tmp.merged; \
+		for f in $$(cat $@.tmp.vcf_list); do $(BCFTOOLS) view --threads=$(THREADS) -h $$f | grep "^#CHROM" | cut -f10- | sed  "s/^/$$(basename $$f | cut -d. -f1)./g;s/\t/\t$$(basename $$f | cut -d. -f1)./g";  done | tr "\t" "\n" > $@.tmp.vcf_list.pipelines; \
+		$(BCFTOOLS) merge --threads=$(THREADS) -l $@.tmp.vcf_list -m none --force-samples | $(BCFTOOLS) filter --threads=$(THREADS) -S . -e 'GT=="0/0" | GT=="0|0"' | $(BCFTOOLS) reheader --threads=$(THREADS) -s $@.tmp.vcf_list.pipelines > $@.tmp.merged; \
 		# Annotation; \
 		$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp.merged --output=$@.tmp.annotated0 --annotation=$(HOWARD_ANNOTATION_ANALYSIS) --norm=$$(cat $*.genome) --threads=$(THREADS); \
 		# Annotation dejavu (forced); \
@@ -273,7 +271,7 @@ REPORT_SECTIONS?=ALL
 		$(BCFTOOLS) sort -T $@.tmp.calculated.prioritized.SAMTOOLS_PREFIX $@.tmp.calculated.prioritized > $@.tmp.calculated.prioritized.sorted; \
 		rm -rf $@.tmp.calculated.prioritized.SAMTOOLS_PREFIX; \
 		# Generate Design VCF; \
-		$(BGZIP) -c $@.tmp.calculated.prioritized.sorted > $@.tmp.calculated.prioritized.sorted.vcf.gz; \
+		$(BGZIP) --threads=$(THREADS) -c $@.tmp.calculated.prioritized.sorted > $@.tmp.calculated.prioritized.sorted.vcf.gz; \
 		$(TABIX) $@.tmp.calculated.prioritized.sorted.vcf.gz; \
 		cp $@.tmp.calculated.prioritized.sorted.vcf.gz $@.Design.vcf.gz; \
 		$(TABIX) $@.Design.vcf.gz; \
@@ -292,12 +290,12 @@ REPORT_SECTIONS?=ALL
 				cat $$(echo $$List_of_genes_files) | $(BEDTOOLS) sort | $(BEDTOOLS) merge > $@.tmp.GENES.$$genes_file; \
 				# Generate VCF Panel from VCF Design (especially $@.tmp.calculated.prioritized.sorted.vcf.gz because tabix) with $$genes_file for List of Samples \
 				if (( $$(grep ^ $@.tmp.GENES.$$genes_file -c) )); then \
-					$(BCFTOOLS) view --force-samples -U $@.tmp.calculated.prioritized.sorted.vcf.gz -R $@.tmp.GENES.$$genes_file > $@.Panel.$$genes_file.vcf; \
+					$(BCFTOOLS) view --threads=$(THREADS)  --force-samples -U $@.tmp.calculated.prioritized.sorted.vcf.gz -R $@.tmp.GENES.$$genes_file > $@.Panel.$$genes_file.vcf; \
 				else \
-					$(BCFTOOLS) view --force-samples -U $@.tmp.calculated.prioritized.sorted.vcf.gz > $@.Panel.$$genes_file.vcf; \
+					$(BCFTOOLS) view --threads=$(THREADS)  --force-samples -U $@.tmp.calculated.prioritized.sorted.vcf.gz > $@.Panel.$$genes_file.vcf; \
 				fi; \
 				# Compress VCF \
-				$(BGZIP) $@.Panel.$$genes_file.vcf; \
+				$(BGZIP) --threads=$(THREADS)  $@.Panel.$$genes_file.vcf; \
 				$(TABIX) $@.Panel.$$genes_file.vcf.gz; \
 				# Generate TSV Panel from VCF Panel compressed  \
 				$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.Panel.$$genes_file.vcf.gz --output=$@.Panel.$$genes_file.tsv --translation=TSV --fields="$(HOWARD_FIELDS)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)" --pzfields="PZScore,PZFlag,PZComment,PZInfos" --force --threads=$(THREADS); \
@@ -307,8 +305,3 @@ REPORT_SECTIONS?=ALL
 		echo "#[INFO] All variants files on Design and Panel(s) from full VCF are named $$(basename $@).*" > $@; \
 	fi;
 
-# for f in $(cat list); do bcftools view -h $f | grep "^#CHROM" | cut -f10- | sed  "s/^/$(basename $f | cut -d. -f1)./g;s/\t/\t$(basename $f | cut -d. -f1)./g";  done | tr "\t" "\n" > list.pipelines
-# bcftools merge -l list --force-samples | bcftools reheader -s list.pipelines
-
-
-#

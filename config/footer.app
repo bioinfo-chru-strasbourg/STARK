@@ -1273,6 +1273,15 @@ export HOWARD_ORDER_BY_REPORT
 
 
 
+# INFO to FORMAT
+# Transfers INFO annotation to FORMAT annotation
+# Useful for annotations on full VCF to final VCF on each sample
+if [ -z $INFO_TO_FORMAT_ANNOTATIONS ]; then
+	INFO_TO_FORMAT_ANNOTATIONS=""
+fi;
+export INFO_TO_FORMAT_ANNOTATIONS
+
+
 # Recalibration and Filtration
 ################################
 
