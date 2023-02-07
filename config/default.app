@@ -621,6 +621,10 @@ HOWARD_SORT_BY_REPORT="PZFlag,PZScore"
 HOWARD_ORDER_BY_REPORT="DESC,DESC"
 
 
+# INFO to FORMAT
+# Transfers INFO annotation to FORMAT annotation
+# Useful for annotations on full VCF to final VCF on each sample
+INFO_TO_FORMAT_ANNOTATIONS=""
 
 
 # GATK4 Recalibrator and Filtration
