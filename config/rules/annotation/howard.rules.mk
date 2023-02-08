@@ -31,15 +31,18 @@ HOWARD_NOMEN_FIELDS?="hgvs"
 
 # HOWARD ANNOTATION
 %.howard$(POST_ANNOTATION).vcf: %.vcf %.empty.vcf %.transcripts %.genome
-	# Annotation step DEJAVU
+	# Prevent comma in description in vcf header;
+	$(STARK_FOLDER_BIN)/fix_vcf_header.sh $< $@.tmp0 "$(THREADS_BY_CALLER)" "$(BCFTOOLS)" "$(FIX_VCF_HEADER_REFORMAT)"
+	# Annotation step DEJAVU (deprecated)
 	# +if [ "$(HOWARD_DEJAVU_ANNOTATION)" != "" ]; then \
-	# 	$(HOWARD) $(HOWARD_DEJAVU_CONFIG_OPTIONS) --input=$< --output=$@.tmp0 --annotation=$(HOWARD_DEJAVU_ANNOTATION) --norm=$$(cat $*.genome); \
-	# else \
-	# 	mv $< $@.tmp0; \
+	# 	$(HOWARD) $(HOWARD_DEJAVU_CONFIG_OPTIONS) --input=$@.tmp0 --output=$@.tmp1 --annotation=$(HOWARD_DEJAVU_ANNOTATION) --norm=$$(cat $*.genome); \
+	#	$(STARK_FOLDER_BIN)/fix_vcf_header.sh $@.tmp1 "$(THREADS_BY_CALLER)" "$(BCFTOOLS)"; \
+	#	mv $@.tmp1 $@.tmp0; \
 	# fi;
 	# Annotation calculation step HOWARD
-	#+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp0 --output=$@.tmp --annotation=$(HOWARD_ANNOTATION) --calculation=$(HOWARD_CALCULATION) --transcripts=$*.transcripts --nomen_fields=$(HOWARD_NOMEN_FIELDS) --norm=$$(cat $*.genome);
-	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$< --output=$@ --annotation=$(HOWARD_ANNOTATION) --calculation=$(HOWARD_CALCULATION) --transcripts=$*.transcripts --nomen_fields=$(HOWARD_NOMEN_FIELDS) --norm=$$(cat $*.genome);
+	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp0 --output=$@ --annotation=$(HOWARD_ANNOTATION) --calculation=$(HOWARD_CALCULATION) --transcripts=$*.transcripts --nomen_fields=$(HOWARD_NOMEN_FIELDS) --norm=$$(cat $*.genome);
+	# Prevent comma in description in vcf header
+	$(STARK_FOLDER_BIN)/fix_vcf_header.sh $@ $@ "$(THREADS_BY_CALLER)" "$(BCFTOOLS)" "$(FIX_VCF_HEADER_REFORMAT)"
 	# Clear
 	-if [ ! -e $@ ]; then cp $*.empty.vcf $@; fi;
 	# Downgrading VCF format 4.2 to 4.1
