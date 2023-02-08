@@ -39,6 +39,7 @@ OUTPUT_TMP=$VCF.tmp.$RANDOM
 
 # Header with comma in Description
 $BCFTOOLS view --threads=$THREADS -h $VCF | awk '
+# Remove comma in tags description
 BEGIN {
     sep=""    # alternative separator 
 }
@@ -48,6 +49,34 @@ BEGIN {
         match($0, /^(.*)(Description=\".*\")(.*)$/, arr);
         gsub(",",sep,arr[2]);
         print arr[1] arr[2] arr[3]
+    # other lines
+    } else {
+        print $0
+    }
+}' | awk '
+# Reorder tags infos as Number, Type, Description
+BEGIN {
+    order["Number"]=2
+    order["Type"]=3
+    order["Description"]=4
+}
+{
+    # header INFO order tag infos
+    if ( $0 ~ /^##INFO=/ ) {
+        # init
+        for (i in arr) delete arr[i]
+        for (i in res) delete res[i]
+        # match lne
+        match($0, /^##INFO=<ID=([^,]*),(.*=.*),(.*=.*),(.*=.*)>$/, arr);
+        # parse tag infos
+        for (x = 2; x <= 4; x++) {
+            # split tag info
+            match(arr[x], /^([^=]*)=(.*)$/, split_arr);
+            # order tag info
+            res[order[split_arr[1]]]=split_arr[1]"="split_arr[2]
+        }
+        # print line with tag info ordered
+        print "##INFO=<ID=" arr[1] "," res[2] "," res[3] "," res[4] ">"
     # other lines
     } else {
         print $0
