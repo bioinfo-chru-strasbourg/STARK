@@ -16,6 +16,7 @@
 
 - STARK Module Management, for check, install and update additionnal modules/services
 - Additionnal pipeline step moving info annotation for genotype
+- Additionnal VCF header conformity script
 
 
 ## Improvements
