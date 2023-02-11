@@ -8,6 +8,42 @@
 #######################################
 
 #######################################
+# Release: 0.9.18.5                   #
+# Date: 20230211                      #
+#######################################
+
+## New
+
+- STARK Module Management, for check, install and update additionnal modules/services
+- Additionnal pipeline step moving info annotation for genotype
+- Additionnal VCF header conformity script
+
+
+## Improvements
+
+- STARK module services automatically detect docker compose command
+- Pipelines rules refactoring, loading files depending on pipelines
+- Docs in MarkDown
+
+
+## Fixes
+
+- fix STARK module case in services
+- HOWARD prioritization for each pipeline vcf deprecated (only at report)
+- Deprecated callers: OutLyser caller with Python2, MuTect2 with GATKv3
+
+
+
+#######################################
+# STARK                               #
+# Stellar Tools for variants          #
+#    Analysis and RanKing             #
+# Author: Antony Le Bechec            #
+# Copyright: HUS                      #
+# License: GNU GPLA V3                #
+#######################################
+
+#######################################
 # Release: 0.9.18.4                   #
 # Date: 20220720                      #
 #######################################
