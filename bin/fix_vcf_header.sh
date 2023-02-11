@@ -33,9 +33,20 @@ fi;
 # Extension
 EXTENSION="${VCF_OUTPUT##*.}"
 
-
 # tmp
 OUTPUT_TMP=$VCF.tmp.$RANDOM
+
+
+# BREAK SCRIPT !!!
+if ((1)); then
+    echo "#[INFO] Fix header script skipped !!!"
+    if [ "$VCF" != "$VCF_OUTPUT" ]; then
+        cp $VCF $VCF_OUTPUT
+    fi;
+    exit 0;
+fi;
+
+
 
 # Header with comma in Description
 $BCFTOOLS view --threads=$THREADS -h $VCF | awk '
