@@ -39,7 +39,7 @@
 
 FROM centos:7
 LABEL Software="STARK" \
-	Version="0.9.18.4" \
+	Version="0.9.18.5" \
 	Website="https://gitlab.bioinfo-diag.fr/Strasbourg/STARK" \
 	maintainer="Antony Le Bechec <antony.lebechec@gmail.com>" \
 	Description="STARK" \
@@ -1159,7 +1159,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 # TOOL INFO
 ENV TOOL_NAME="stark"
-ENV TOOL_VERSION="0.9.18.4"
+ENV TOOL_VERSION="0.9.18.5"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
 ENV TOOL="/tool"
