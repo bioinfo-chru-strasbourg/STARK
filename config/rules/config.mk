@@ -101,6 +101,9 @@ PHASE1_1000G?=$(DBFOLDER)/1000G_phase1.snps.high_confidence.hg19.sites.vcf
 HOWARD_CONFIG_OPTIONS?=--config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --java=$(JAVA11)
 HOWARD_DEJAVU_CONFIG_OPTIONS?=--config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_DEJAVU_ANNOTATION) --annovar_folder=$(ANNOVAR) --annovar_databases=$(DEJAVU_ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --java=$(JAVA11)
 
+# FIX_VCF_HEADER_REFORMAT
+FIX_VCF_HEADER_REFORMAT_option?=$(shell if (( $(FIX_VCF_HEADER_REFORMAT) )); then echo "--reformat"; fi;)
+
 # BAM Check option
 BAM_CHECK_STEPS?=1
 
