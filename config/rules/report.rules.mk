@@ -157,23 +157,23 @@ REPORT_SECTIONS?=ALL
 %.full.vcf: %.merge.vcf %.transcripts %.genome
 	cp $< $@.tmp0
 	# Prevent comma in description in vcf header
-	$(STARK_FOLDER_BIN)/fix_vcf_header.sh $@.tmp0 $@.tmp0  "$(THREADS_BY_SAMPLE)" "$(BCFTOOLS)" "$(FIX_VCF_HEADER_REFORMAT)"
+	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp0 --output=$@.tmp0 --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
 	# HOWARD annotation
 	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp0 --output=$@.tmp1 --annotation=$(HOWARD_ANNOTATION_REPORT) --norm=$$(cat $*.genome);
 	# HOWARD annotation dejavu (forced)
 	# Prevent comma in description in vcf header
-	$(STARK_FOLDER_BIN)/fix_vcf_header.sh $@.tmp1 $@.tmp1 "$(THREADS_BY_SAMPLE)" "$(BCFTOOLS)" "$(FIX_VCF_HEADER_REFORMAT)"
+	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp1 --output=$@.tmp1 --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
 	+if [ "$(HOWARD_DEJAVU_ANNOTATION)" != "" ]; then \
 		$(HOWARD) $(HOWARD_DEJAVU_CONFIG_OPTIONS) --input=$@.tmp1 --output=$@.tmp2 --annotation=$(HOWARD_DEJAVU_ANNOTATION) --norm=$$(cat $*.genome) --force; \
 	else \
 		mv $@.tmp1 $@.tmp2; \
 	fi;
 	# Prevent comma in description in vcf header
-	$(STARK_FOLDER_BIN)/fix_vcf_header.sh $@.tmp2 $@.tmp2 "$(THREADS_BY_SAMPLE)" "$(BCFTOOLS)" "$(FIX_VCF_HEADER_REFORMAT)"
+	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp2 --output=$@.tmp2 --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
 	# HOWARD calculation and prioritization
 	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp2 --output=$@.tmp3 --calculation=$(HOWARD_CALCULATION_REPORT) --nomen_fields=$(HOWARD_NOMEN_FIELDS) --prioritization=$(HOWARD_PRIORITIZATION_REPORT) --transcripts=$*.transcripts --force --norm=$$(cat $*.genome);
 	# Prevent comma in description in vcf header
-	$(STARK_FOLDER_BIN)/fix_vcf_header.sh $@.tmp3 $@.tmp3 "$(THREADS_BY_SAMPLE)" "$(BCFTOOLS)" "$(FIX_VCF_HEADER_REFORMAT)"
+	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp3 --output=$@.tmp3 --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
 	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp3 --output=$@ --prioritization=$(HOWARD_PRIORITIZATION_VARANK) --force --norm=$$(cat $*.genome);
 	# cleaning
 	rm -rf $@.tmp*
@@ -210,11 +210,11 @@ REPORT_SECTIONS?=ALL
 	echo $^ | tr " " "\n" | tr "\t" "\n" | grep "final.vcf.gz$$" > $@.tmp.vcf_list
 	$(BCFTOOLS) merge --threads=$(THREADS) -l $@.tmp.vcf_list -m none --force-samples | $(BCFTOOLS) filter --threads=$(THREADS) -S . -e 'GT=="0/0" | GT=="0|0"' > $@.tmp.merged;
 	# Prevent comma in description in vcf header
-	$(STARK_FOLDER_BIN)/fix_vcf_header.sh $@.tmp.merged $@.tmp.merged "$(THREADS_BY_SAMPLE)" "$(BCFTOOLS)" "$(FIX_VCF_HEADER_REFORMAT)";
+	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp.merged --output=$@.tmp.merged --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
 	# Annotation
 	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp.merged --output=$@.tmp.annotated1 --annotation=$(HOWARD_ANNOTATION_ANALYSIS) --threads=$(THREADS);
 	# Prevent comma in description in vcf header
-	$(STARK_FOLDER_BIN)/fix_vcf_header.sh $@.tmp.annotated1 $@.tmp.annotated1 "$(THREADS_BY_SAMPLE)" "$(BCFTOOLS)" "$(FIX_VCF_HEADER_REFORMAT)";
+	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp.annotated1 --output=$@.tmp.annotated1 --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
 	# Annotation dejavu (forced)
 	+if [ "$(HOWARD_DEJAVU_ANNOTATION)" != "" ]; then \
 		$(HOWARD) $(HOWARD_DEJAVU_CONFIG_OPTIONS) --input=$@.tmp.annotated1 --output=$@.tmp.annotated2 --annotation=$(HOWARD_DEJAVU_ANNOTATION) --norm=$$(cat $*.genome) --threads=$(THREADS) --force; \
@@ -222,11 +222,11 @@ REPORT_SECTIONS?=ALL
 		mv $@.tmp.annotated1 $@.tmp.annotated2; \
 	fi;
 	# Prevent comma in description in vcf header
-	$(STARK_FOLDER_BIN)/fix_vcf_header.sh $@.tmp.annotated2 $@.tmp.annotated2 "$(THREADS_BY_SAMPLE)" "$(BCFTOOLS)" "$(FIX_VCF_HEADER_REFORMAT)";
+	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp.annotated2 --output=$@.tmp.annotated2 --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
 	# Calculation and prioritization (forced)
 	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp.annotated2 --output=$@.tmp.calculated.prioritized --calculation=$(HOWARD_CALCULATION_ANALYSIS) --prioritization=$(HOWARD_PRIORITIZATION_ANALYSIS) --nomen_fields=$(HOWARD_NOMEN_FIELDS) --force --threads=$(THREADS);
 	# Prevent comma in description in vcf header
-	$(STARK_FOLDER_BIN)/fix_vcf_header.sh $@.tmp.calculated.prioritized $@.tmp.calculated.prioritized "$(THREADS_BY_SAMPLE)" "$(BCFTOOLS)" "$(FIX_VCF_HEADER_REFORMAT)";
+	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp.calculated.prioritized --output=$@.tmp.calculated.prioritized --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
 	# Sort VCF
 	mkdir -p $@.tmp.calculated.prioritized.SAMTOOLS_PREFIX
 	$(BCFTOOLS) sort -T $@.tmp.calculated.prioritized.SAMTOOLS_PREFIX $@.tmp.calculated.prioritized > $@.tmp.calculated.prioritized.sorted
@@ -274,11 +274,11 @@ REPORT_SECTIONS?=ALL
 		for f in $$(cat $@.tmp.vcf_list); do $(BCFTOOLS) view --threads=$(THREADS) -h $$f | grep "^#CHROM" | cut -f10- | sed  "s/^/$$(basename $$f | cut -d. -f1)./g;s/\t/\t$$(basename $$f | cut -d. -f1)./g";  done | tr "\t" "\n" > $@.tmp.vcf_list.pipelines; \
 		$(BCFTOOLS) merge --threads=$(THREADS) -l $@.tmp.vcf_list -m none --force-samples | $(BCFTOOLS) filter --threads=$(THREADS) -S . -e 'GT=="0/0" | GT=="0|0"' | $(BCFTOOLS) reheader --threads=$(THREADS) -s $@.tmp.vcf_list.pipelines > $@.tmp.merged; \
 		# Prevent comma in description in vcf header \
-		$(STARK_FOLDER_BIN)/fix_vcf_header.sh $@.tmp.merged $@.tmp.merged "$(THREADS_BY_SAMPLE)" "$(BCFTOOLS)" "$(FIX_VCF_HEADER_REFORMAT)"; \
+		$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp.merged --output=$@.tmp.merged --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option); \
 		# Annotation; \
 		$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp.merged --output=$@.tmp.annotated0 --annotation=$(HOWARD_ANNOTATION_ANALYSIS) --norm=$$(cat $*.genome) --threads=$(THREADS); \
 		# Prevent comma in description in vcf header \
-		$(STARK_FOLDER_BIN)/fix_vcf_header.sh $@.tmp.annotated0 $@.tmp.annotated0 "$(THREADS_BY_SAMPLE)" "$(BCFTOOLS)" "$(FIX_VCF_HEADER_REFORMAT)"; \
+		$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp.annotated0 --output=$@.tmp.annotated0 --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option); \
 		# Annotation dejavu (forced); \
 		if [ "$(HOWARD_DEJAVU_ANNOTATION)" != "" ]; then \
 			$(HOWARD) $(HOWARD_DEJAVU_CONFIG_OPTIONS) --input=$@.tmp.annotated0 --output=$@.tmp.annotated1 --annotation=$(HOWARD_DEJAVU_ANNOTATION) --norm=$$(cat $*.genome) --threads=$(THREADS) --force; \
@@ -286,11 +286,11 @@ REPORT_SECTIONS?=ALL
 			mv @.tmp.annotated0 $@.tmp.annotated1; \
 		fi; \
 		# Prevent comma in description in vcf header \
-		$(STARK_FOLDER_BIN)/fix_vcf_header.sh $@.tmp.annotated1 $@.tmp.annotated1 "$(THREADS_BY_SAMPLE)" "$(BCFTOOLS)" "$(FIX_VCF_HEADER_REFORMAT)"; \
+		$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp.annotated1 --output=$@.tmp.annotated1 --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option); \
 		# Calculation and prioritization (forced); \
 		$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp.annotated1 --output=$@.tmp.calculated.prioritized --calculation=$(HOWARD_CALCULATION_ANALYSIS) --prioritization=$(HOWARD_PRIORITIZATION_ANALYSIS) --nomen_fields=$(HOWARD_NOMEN_FIELDS) --force --threads=$(THREADS); \
 		# Prevent comma in description in vcf header \
-		$(STARK_FOLDER_BIN)/fix_vcf_header.sh $@.tmp.calculated.prioritized $@.tmp.calculated.prioritized "$(THREADS_BY_SAMPLE)" "$(BCFTOOLS)" "$(FIX_VCF_HEADER_REFORMAT)"; \
+		$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp.calculated.prioritized --output=$@.tmp.calculated.prioritized --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option); \
 		# Sort VCF; \
 		mkdir -p $@.tmp.calculated.prioritized.SAMTOOLS_PREFIX; \
 		$(BCFTOOLS) sort -T $@.tmp.calculated.prioritized.SAMTOOLS_PREFIX $@.tmp.calculated.prioritized > $@.tmp.calculated.prioritized.sorted; \
