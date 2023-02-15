@@ -7,9 +7,16 @@ Author: Samuel Nicaise (2019)
 from __future__ import division
 from __future__ import print_function
 
+import argparse
+import glob
+import math
 import os
+import random
 import re
 import subprocess
+import time
+
+from os.path import join as osj
 
 def assert_file_exists_and_is_readable(filePath):
 	assert os.path.isfile(filePath) and os.access(filePath, os.R_OK), \
@@ -126,3 +133,142 @@ def tags_and_types_to_lists(tags, tagTypes="", associator="#", separator="!"):
 			tagTypesList.append(tags.split(associator)[0])
 
 	return (tagValuesList, tagTypesList)
+
+def get_lockfile_path(lockfile_prefix, target):
+	return lockfile_prefix + os.path.basename(target)
+
+def is_rule_startable(lockfile_prefix, target, max_jobs, shell_mode=False):
+	"""
+	Input:
+		run_dir: run directory, used because it is a common path accessible for all rules
+		target: targeted file, used to create the lockfile suffix
+		max_jobs: maximum number of instances of the rule that can be executed at once
+	
+	Output:
+		print stating if the rule instance invoking this function can be allowed to start
+			1 if yes
+			0 if no
+
+	Usage:
+		Invoke from a make function with a format such as:
+		while <target> does not exist:
+			if limit_rule_concurrency == True:
+				create target
+			else:
+				sleep 10
+
+	Python functions can be invoked from make with a syntax such as:
+	python -c "import sys; sys.path.append('/home1/bin/STARK/0.9.18.4.rnaseq/bin'); import functions; functions.limit_rule_concurrency(args)"
+
+	"""
+	if not os.path.exists(os.path.dirname(lockfile_prefix)):
+		raise FileNotFoundError(os.path.dirname(lockfile_prefix))
+
+	if len(glob.glob(osj(lockfile_prefix + "*"))) < int(max_jobs): #int cast in case of user error
+		lock_file = get_lockfile_path(lockfile_prefix, target)
+		open(lock_file, 'a').close()
+		if shell_mode:
+			print("1")
+		return True
+	else:
+		if shell_mode:
+			print("0")
+		return False
+
+def rule_finished(lockfile_prefix, target):
+	"""
+	Inputs: 
+		See is_job_startable
+	Output: 
+		None, cleans run_dir of target lockfile so other jobs can start
+	"""
+	lock_file = get_lockfile_path(lockfile_prefix, target)
+	if os.path.exists(lock_file):
+		os.remove(lock_file)
+
+def randomized_sleep(string):
+	"""
+	Multiple simultaneous executions of launch_when_possible() can result in a number of lockfiles/started processes over the defined maximum.
+	To limit this issue, sleep for a random time based on target filename to spread out the executions.
+	"""
+	# ord gives the unicode point for each char in filename --> converts filename in a "random" number
+	unicode_points_sum = sum([ord(x) for x in string])
+	# we want to avoid that similar filenames lead to similar wait times
+	# but wait times should stay small overall
+	# the random function allows to spread wait times while staying between 1 and 15 seconds max
+	random.seed(unicode_points_sum)
+	wait_time = random.random() * 15 #the arbitrary *15 increases spread
+	time.sleep(wait_time)
+
+
+def launch_when_possible(cmd, lockfile_prefix, target, max_jobs, current_dir, timeout):
+	"""
+	current_dir allows to emulate launching commands from the user's current directory, even if this python script is elsewhere.
+	timeout is in hours
+	"""
+	randomized_sleep(target)
+	cmd = "cd " + current_dir + " && " + cmd
+	starting_time = time.time()
+
+	while True:
+		try:
+			if is_rule_startable(lockfile_prefix, target, max_jobs):
+				print("Launching: ", cmd)
+				subprocess.call(cmd, shell=True)
+				rule_finished(lockfile_prefix, target)
+				return
+		finally:
+			#remove lockfile if script is killed
+			rule_finished(lockfile_prefix, target)
+
+		if time.time() - starting_time > timeout * 3600:
+			raise RuntimeError("Timeout: couldn't create target: " + target)
+		time.sleep(10)
+
+
+if __name__ == "__main__":
+	parser = argparse.ArgumentParser()
+	subparsers = parser.add_subparsers(help="sub-command help")
+	parser_launch = subparsers.add_parser(
+		"launch", help="launch command, ensuring rule is not started more than X times at once"
+	)
+	parser_startable = subparsers.add_parser(
+		"is_rule_startable", help="returns 1 if rule is startable, 0 otherwise"
+	)
+	parser_finished = subparsers.add_parser(
+		"rule_finished", help="signals that rule is finished so others can start"
+	)
+
+	parser_launch.add_argument("-c", "--cmd", type=str, required=True)
+
+	for p in (parser_launch, parser_startable, parser_finished):
+		p.add_argument("-l", "--lockfile_prefix", type=str, required=True)
+		p.add_argument("-t", "--target", type=str, required=True)
+	
+	for p in (parser_launch, parser_startable):
+		p.add_argument("-m", "--max_jobs", type=int, required=True)
+		p.add_argument("--shell_mode", action='store_true', default=False)
+
+	parser_launch.add_argument("-d", "--current_dir", type=str, default=os.path.abspath("."))
+	parser_launch.add_argument("-z", "--timeout", type=int, default=48)
+
+	args = parser.parse_args()
+
+	if args.max_jobs < 1:
+		raise ValueError("max_jobs argument should be >= 1")
+
+	if "max_jobs" in args:
+		if "cmd" in args:
+			launch_when_possible(args.cmd,
+								args.lockfile_prefix,
+								args.target,
+								args.max_jobs,
+								args.current_dir,
+								args.timeout)
+		else:
+			is_rule_startable(args.lockfile_prefix,
+							args.target,
+							args.max_jobs,
+							args.shell_mode)
+	else:
+		rule_finished(args.lockfile_prefix, args.lock_name)

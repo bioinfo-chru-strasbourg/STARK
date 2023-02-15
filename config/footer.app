@@ -1566,6 +1566,7 @@ if ((1)); then
 
 fi;
 
+
 # JAVA FLAGS
 ##############
 export JAVA_MEMORY_BY_SAMPLE
@@ -1586,6 +1587,32 @@ export JAVA_FLAGS;
 #	JAVA_FLAGS_BY_SAMPLE=" -Xmx"$JAVA_MEMORY_BY_SAMPLE"g $JAVA_FLAGS_OTHER_PARAM $JAVA_FLAGS_TMP_FOLDER";
 #fi;
 #export JAVA_FLAGS_BY_SAMPLE;
+
+
+# RESOURCES MANAGMENT
+#######################
+
+### Picard CollectHsMetrics
+# If validation bam is small enough (lower than MAX_VALIDATION_BAM_SIZE Kb), launch CollectHsMetrics the classic way
+# Otherwise increase RAM to MAX_CONCURRENT_HSMETRICS_RAM and limit command to MAX_CONCURRENT_HSMETRICS concurrent launches
+# default: MAX_VALIDATION_BAM_SIZE=1000000000 (exageratly big to switch off)
+# example:
+# - MAX_VALIDATION_BAM_SIZE=2097152		# 2Go
+# - MAX_CONCURRENT_HSMETRICS=1 			# No concurrence, only 1 HsMetrics at once
+# - MAX_CONCURRENT_HSMETRICS_RAM=16g 	# 16Go of RAM to Collect HsMetrics
+if [ "$MAX_VALIDATION_BAM_SIZE" == "" ]; then
+	MAX_VALIDATION_BAM_SIZE=1000000000;
+fi;
+export MAX_VALIDATION_BAM_SIZE
+if [ "$MAX_CONCURRENT_HSMETRICS" == "" ]; then
+	MAX_CONCURRENT_HSMETRICS=1;
+fi;
+export MAX_CONCURRENT_HSMETRICS
+if [ "$MAX_CONCURRENT_HSMETRICS_RAM" == "" ]; then
+	MAX_CONCURRENT_HSMETRICS_RAM=16g;
+fi;
+export MAX_CONCURRENT_HSMETRICS_RAM
+
 
 
 
