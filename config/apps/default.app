@@ -531,6 +531,22 @@ THREADS=AUTO
 #JAVA_MEMORY=
 
 
+# RESOURCES MANAGMENT
+#######################
+
+### Picard CollectHsMetrics
+# If validation bam is small enough (lower than MAX_VALIDATION_BAM_SIZE Kb), launch CollectHsMetrics the classic way
+# Otherwise increase RAM to MAX_CONCURRENT_HSMETRICS_RAM and limit command to MAX_CONCURRENT_HSMETRICS concurrent launches
+# default: MAX_VALIDATION_BAM_SIZE=1000000000 (exageratly big to switch off)
+# example:
+# - MAX_VALIDATION_BAM_SIZE=2097152		# 2Go
+# - MAX_CONCURRENT_HSMETRICS=1 			# No concurrence, only 1 HsMetrics at once
+# - MAX_CONCURRENT_HSMETRICS_RAM=16g 	# 16Go of RAM to Collect HsMetrics
+MAX_VALIDATION_BAM_SIZE=1000000000
+MAX_CONCURRENT_HSMETRICS=1
+MAX_CONCURRENT_HSMETRICS_RAM=16g
+
+
 
 # HOWARD ANNOTATION/PRIOTITIZATION/TRANSLATION CONFIGURATION
 
