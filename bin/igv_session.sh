@@ -7,15 +7,16 @@
 
 SCRIPT_NAME="IGVSession"
 SCRIPT_DESCRIPTION="Create igv_session.xml from files"
-SCRIPT_RELEASE="0.9.0.0"
-SCRIPT_DATE="17/11/2021"
+SCRIPT_RELEASE="0.9.1"
+SCRIPT_DATE="16/02/2023"
 SCRIPT_AUTHOR="Antony Le Bechec"
-SCRIPT_COPYRIGHT="IRC"
-SCRIPT_LICENCE="GNU-AGPL"
+SCRIPT_COPYRIGHT="HUS"
+SCRIPT_LICENCE="GNU AGPLv3"
 
 # Release note
 #RELEASE_NOTES="#\n"
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.0.0-17/11/2021: Create script\n";
+RELEASE_NOTES=$RELEASE_NOTES"# 0.9.1-16/02/2023: Add display mode\n";
 
 # Script folder
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -54,6 +55,15 @@ function usage {
 	echo "# --folder_maxdepth=<INTEGER>             Path min depth for folder for files for igv session";
 	echo "#                                         Default: 1";
 	echo "# --patterns=<STRING,STRING...>           Patterns for files for igv session";
+	echo "# --displaymode_bam=<STRING>    			IGV Display mode for files in BAM/CRAM format";
+	echo "#                                         Options: 'COLLAPSED', 'SQUISHED', 'EXPANDED'";
+	echo "#                                         Default: 'SQUISHED'";
+	echo "# --displaymode_vcf=<STRING>    			IGV Display mode for files in VCF format";
+	echo "#                                         Options: 'COLLAPSED', 'SQUISHED', 'EXPANDED'";
+	echo "#                                         Default: 'SQUISHED'";
+	echo "# --displaymode_bed=<STRING>    			IGV Display mode for files in BED format";
+	echo "#                                         Options: 'COLLAPSED', 'SQUISHED', 'EXPANDED'";
+	echo "#                                         Default: 'SQUISHED'";
 	echo "# --ressources=<STRING>                   Ressources to add to igv session";
 	echo "# --datapanel=<STRING>                    Data panel tracks to add to igv session";
 	echo "# --featurepanel=<STRING>                 Feature panel tracks to add to igv session";
@@ -78,7 +88,7 @@ header;
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
-ARGS=$(getopt -o "e:f:o:vdnh" --long "env:,app:,application:,files:,folder:,folder_mindepth:,folder_maxdepth:,patterns:,ressources:,datapanel:,featurepanel:,output:,igv_session:,igv_session_xml:,igv_session_json:,gmt:,das_url:,json_tracks_additional:,verbose,debug,release,help" -- "$@" 2> /dev/null)
+ARGS=$(getopt -o "e:f:o:vdnh" --long "env:,app:,application:,files:,folder:,folder_mindepth:,folder_maxdepth:,patterns:,displaymode_bam:,displaymode_vcf:,displaymode_bed:,ressources:,datapanel:,featurepanel:,output:,igv_session:,igv_session_xml:,igv_session_json:,gmt:,das_url:,json_tracks_additional:,verbose,debug,release,help" -- "$@" 2> /dev/null)
 [ $? -ne 0 ] && \
 	echo "#[ERROR] Error in the argument list." "Use -h or --help to display the help." >&2 && usage && \
 	exit 1
@@ -116,6 +126,18 @@ do
 		--patterns)
 			PATTERNS="$2"
 			PATTERNS=$(echo $PATTERNS | tr "," " ")
+			shift 2
+			;;
+		--displaymode_bam)
+			DISPLAYMODE_BAM="$2"
+			shift 2
+			;;
+		--displaymode_vcf)
+			DISPLAYMODE_VCF="$2"
+			shift 2
+			;;
+		--displaymode_bed)
+			DISPLAYMODE_BED="$2"
 			shift 2
 			;;
 		--ressources)
@@ -230,23 +252,46 @@ fi;
 
 
 ### FOLDER PATTERNS
-
 if [ ! -z "$FOLDER" ] && [ ! -z "$PATTERNS" ]; then
 	PATTERNS_PARAM='-name '$(echo $PATTERNS | sed "s/ / -or -name /gi")
-	#echo $PATTERNS_PARAM
-	#PATTERNS_PARAM=$(echo $PATTERNS_PARAM | sed 's/$SAMPLE/'$S'/gi')
 	FILES=$(find $FOLDER -mindepth $FOLDER_MINDEPTH -maxdepth $FOLDER_MAXDEPTH $PATTERNS_PARAM | tac | sed "s#$FOLDER/\(.*\)#\1:$FOLDER/\1#gi" | tr "\n" " ")
-
 fi;
 
 ### FILES
-
+if (($VERBOSE)); then
+	echo "#[INFO] List of files found:"
+	for f in $FILES; do
+		echo "#[INFO]    $f"
+	done;
+fi;
 
 ### IGV_SESSION
 if [ -z "$IGV_SESSION" ]; then
 	IGV_SESSION="igv_session.xml"
 fi;
+if (($VERBOSE)); then
+	echo "#[INFO] IGV session XML:    $IGV_SESSION"
+	echo "#[INFO] IGV session JSON:   $IGV_SESSION_JSON"
+fi;
 
+
+### Display Mode
+DISPLAYMODE_ARRAY="SQUISHED COLLAPSED EXPANDED"
+if [ -z "$DISPLAYMODE_BAM" ] || ! in_array $DISPLAYMODE_BAM $DISPLAYMODE_ARRAY; then
+	DISPLAYMODE_BAM="SQUISHED"
+fi;
+if [ -z "$DISPLAYMODE_VCF" ] || ! in_array $DISPLAYMODE_VCF $DISPLAYMODE_ARRAY; then
+	DISPLAYMODE_VCF="COLLAPSED"
+fi;
+if [ -z "$DISPLAYMODE_BED" ] || ! in_array $DISPLAYMODE_BED $DISPLAYMODE_ARRAY; then
+	DISPLAYMODE_BED="COLLAPSED"
+fi;
+
+if (($VERBOSE)); then
+	echo "#[INFO] Display Mode [BAM]: $DISPLAYMODE_BAM"
+	echo "#[INFO] Display Mode [VCF]: $DISPLAYMODE_VCF"
+	echo "#[INFO] Display Mode [BED]: $DISPLAYMODE_BED"
+fi;
 
 
 if (($DEBUG)); then
@@ -272,6 +317,9 @@ JSON_TRACKS_ALIGNMENT=""
 JSON_TRACKS_VARIANTS=""
 JSON_TRACKS_BED=""
 
+if (($VERBOSE)); then
+	echo ""
+fi;
 
 for file_infos in $FILES; do
 
@@ -290,7 +338,7 @@ for file_infos in $FILES; do
 		elif [ "$FORMAT" == "cram" ]; then
 			INDEX="crai";
 		fi;
-		(($VERBOSE)) && echo "#[INFO] file type: 'Alignment' [$FORMAT]"
+		(($VERBOSE)) && echo "#[INFO] type 'Alignment' [$FORMAT]"
 		(($DEBUG)) && echo "#[INFO] $file_path.bai "$(basename $file)" $Ressources_basename"
 		if ! in_array $(basename $file) $Ressources_basename; then
 			if [ -e $file_path.$INDEX ]; then
@@ -305,11 +353,11 @@ for file_infos in $FILES; do
 						<DataRange baseline="0.0" drawBaseline="true" flipAxis="false" type="LINEAR"/>
 					</Track>
 					<Track attributeKey="'$file' Junctions" clazz="org.broad.igv.sam.SpliceJunctionTrack" fontSize="10" groupByStrand="false" height="60" id="'$file'_junctions" name="'$file' Junctions" visible="false"/>
-					<Track attributeKey="'$file'" clazz="org.broad.igv.sam.AlignmentTrack" displayMode="SQUISHED" experimentType="OTHER" fontSize="10" id="'$file'" name="'$file'" visible="true">
+					<Track attributeKey="'$file'" clazz="org.broad.igv.sam.AlignmentTrack" displayMode="'$DISPLAYMODE_BAM'" experimentType="OTHER" fontSize="10" id="'$file'" name="'$file'" visible="true">
 						<RenderOptions showAllBases="false"/>
 					</Track>
 				</Panel>'
-				(($VERBOSE)) && echo "#[INFO] file XML '$FORMAT' processed"
+				(($DEBUG)) && echo "#[INFO] file '$FORMAT' processed"
 				# JSON
 				if [ "$IGV_SESSION_JSON" != "" ] && [ "$DAS_URL" != "" ]; then
 					# TODO
@@ -320,7 +368,7 @@ for file_infos in $FILES; do
 						"name": "'$file'",
 						"sourceType": "file",
 						"format": "'$INDEX'",
-						"displayMode": "SQUISHED",
+						"displayMode": "'$DISPLAYMODE_BAM'",
 						"type": "alignment"
 					}'
 				else
@@ -335,7 +383,7 @@ for file_infos in $FILES; do
 
 	elif (($(echo "$file" | grep ".vcf.gz$" -c))); then
 		FORMAT="vcf";
-		(($VERBOSE)) && echo "#[INFO] file type: 'Variant'"
+		(($VERBOSE)) && echo "#[INFO] type 'Variant' [$FORMAT]"
 		if ! in_array $(basename $file) $Ressources_basename; then
 			INDEX="tbi"
 			file_index_attr=''
@@ -343,12 +391,12 @@ for file_infos in $FILES; do
 				file_index_attr='index="'$file'.'$INDEX'"'
 			fi;
 			file_index_attr='' # bug
-			if (("$($BCFTOOLS view $file_path | grep '^#' -vc)")); then
+			if (("$($BCFTOOLS view $file_path 2>/dev/null | grep '^#' -vc)")); then
 				# XML
 				Ressources=$Ressources' <Resource '$file_index_attr' path="'$file'" type="'$FORMAT'"/>'
 				Ressources_basename=$Ressources_basename" "$(basename $file)
-				DataPanel=$DataPanel' <Track attributeKey="'$file'" clazz="org.broad.igv.variant.VariantTrack" displayMode="COLLAPSED" fontSize="10" groupByStrand="false" id="'$file'" name="'$file'" siteColorMode="ALLELE_FREQUENCY" squishedHeight="1" visible="true"/>'
-				(($VERBOSE)) && echo "#[INFO] file '$FORMAT' processed"
+				DataPanel=$DataPanel' <Track attributeKey="'$file'" clazz="org.broad.igv.variant.VariantTrack" displayMode="'$DISPLAYMODE_VCF'" fontSize="10" groupByStrand="false" id="'$file'" name="'$file'" siteColorMode="ALLELE_FREQUENCY" squishedHeight="1" visible="true"/>'
+				(($DEBUG)) && echo "#[INFO] file '$FORMAT' processed"
 				# JSON
 				if [ "$IGV_SESSION_JSON" != "" ] && [ "$DAS_URL" != "" ] && [ -e $file_path.$INDEX ]; then
 					# TODO
@@ -359,7 +407,7 @@ for file_infos in $FILES; do
 						"name": "'$file'",
 						"sourceType": "file",
 						"format": "vcf",
-						"displayMode": "COLLAPSED",
+						"displayMode": "'$DISPLAYMODE_VCF'",
 						"height": "40",
 						"type": "variant"
 					}'
@@ -375,23 +423,23 @@ for file_infos in $FILES; do
 		fi;
 	elif (($(echo "$file" | grep ".bed$" -c))); then
 		FORMAT="bed";
-		(($VERBOSE)) && echo "#[INFO] file type: 'Region'"
+		(($VERBOSE)) && echo "#[INFO] type 'Region' [$FORMAT]"
 		if ! in_array $(basename $file) $Ressources_basename; then
 			# XML
 			Ressources=$Ressources' <Resource path="'$file'" type="'$FORMAT'"/>'
 			Ressources_basename=$Ressources_basename" "$(basename $file)
-			FeaturePanel=$FeaturePanel' <Track attributeKey="'$file'" clazz="org.broad.igv.track.FeatureTrack" colorScale="ContinuousColorScale;0.0;58.0;255,255,255;0,0,178" fontSize="10" displayMode="COLLAPSED" groupByStrand="false" id="'$file'" name="'$file'" visible="true"/>'
-			(($VERBOSE)) && echo "#[INFO] file '$FORMAT' processed"
+			FeaturePanel=$FeaturePanel' <Track attributeKey="'$file'" clazz="org.broad.igv.track.FeatureTrack" colorScale="ContinuousColorScale;0.0;58.0;255,255,255;0,0,178" fontSize="10" displayMode="'$DISPLAYMODE_BED'" groupByStrand="false" id="'$file'" name="'$file'" visible="true"/>'
+			(($DEBUG)) && echo "#[INFO] file '$FORMAT' processed"
 			# regions
 			cat $file_path | awk '{print "<Region chromosome=\""$1"\" description=\""$4"\" start=\""$2"\" end=\""$3"\"/>"}' >> $IGV_SESSION.regions
-			(($VERBOSE)) && echo "#[INFO] file '$FORMAT' regions processed"
+			(($DEBUG)) && echo "#[INFO] file '$FORMAT' regions processed"
 			# GMT
 			if [ "$GMT" != "" ]; then
 				#Regions=$Regions$"\n"$(cat $file_path | awk '{print "<Region chromosome=\""$1"\" description=\""$4"\" start=\""$2"\" end=\""$3"\"/>'$"\n"'"}')
 				echo -e "$file		"$(cat $file_path | cut -f4 | sort -u | tr "\n" "\t") >> $GMT
-				(($VERBOSE)) && echo "#[INFO] file '$FORMAT' GMT processed"
+				(($DEBUG)) && echo "#[INFO] file '$FORMAT' GMT processed"
 			else
-				(($VERBOSE)) && echo "#[INFO] file '$FORMAT' GMT not processed"
+				(($DEBUG)) && echo "#[INFO] file '$FORMAT' GMT not processed"
 			fi;
 			# JSON
 			if [ "$IGV_SESSION_JSON" != "" ] && [ "$DAS_URL" != "" ]; then
@@ -402,7 +450,7 @@ for file_infos in $FILES; do
 					"name": "'$file'",
 					"sourceType": "file",
 					"format": "",
-					"displayMode": "COLLAPSED",
+					"displayMode": "'$DISPLAYMODE_BED'",
 					"height": "40",
 					"type": "annotation"
 				}'
@@ -416,6 +464,8 @@ for file_infos in $FILES; do
 		FORMAT="unknown";
 		(($VERBOSE)) && echo "#[WARN] file '$FORMAT' not processed!"
 	fi;
+
+	(($VERBOSE)) && echo ""
 
 done;
 
@@ -438,16 +488,20 @@ if [ "$JSON_TRACKS_ADDITIONAL" != "" ]; then
 fi;
 
 
-# https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_38/gencode.v38.annotation.gtf.gz
-
-
 if (($DEBUG)); then
+	echo "#[INFO] Sections generated:"
+	echo "#[INFO]    Resources:"
 	echo $Ressources
+	echo "#[INFO]    DataPanel:"
 	echo $DataPanel
+	echo "#[INFO]    AlignmentPanel:"
 	echo $AlignmentPanel
+	echo "#[INFO]    FeaturePanel:"
 	echo $FeaturePanel
+	echo "#[INFO]    Regions:"
 	echo $Regions
-	cat $GMT
+	echo "#[INFO]    GMT:"
+	[ "$GMT" != "" ] && cat $GMT
 fi;
 
 
