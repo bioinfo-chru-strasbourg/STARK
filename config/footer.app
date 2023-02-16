@@ -255,6 +255,26 @@ export FAVORITES_RUN_IGV_SESSION_MINDEPTH
 export FAVORITES_RUN_IGV_SESSION_MAXDEPTH
 
 
+# IGV Display Mode
+# IGV Display mode for files found in patterns
+# Depend on file format: either BEM, VCF or BED formats
+# There are 3 different options for viewing the feature track.  These allow you to display overlapping features, such as different transcripts of a gene, on one line or multiple lines
+# Dislpay mode options available in IGV: SQUISHED, COLLAPSED and EXPANDED
+DISPLAYMODE_ARRAY="SQUISHED COLLAPSED EXPANDED"
+if [ -z "$DISPLAYMODE_BAM" ] || ! in_array $DISPLAYMODE_BAM $DISPLAYMODE_ARRAY; then
+	DISPLAYMODE_BAM="SQUISHED"
+fi;
+export DISPLAYMODE_BAM
+if [ -z "$DISPLAYMODE_VCF" ] || ! in_array $DISPLAYMODE_VCF $DISPLAYMODE_ARRAY; then
+	DISPLAYMODE_VCF="COLLAPSED"
+fi;
+export DISPLAYMODE_VCF
+if [ -z "$DISPLAYMODE_BED" ] || ! in_array $DISPLAYMODE_BED $DISPLAYMODE_ARRAY; then
+	DISPLAYMODE_BED="COLLAPSED"
+fi;
+export DISPLAYMODE_BED
+
+
 # IGV SESSION DB
 # Additionnal databases for IGV session (see IGV doc)
 # Example:
