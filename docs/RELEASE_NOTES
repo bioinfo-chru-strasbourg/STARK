@@ -23,6 +23,8 @@
 
 - STARK module services automatically detect docker compose command
 - Pipelines rules refactoring, loading files depending on pipelines
+- Improve IGV sessions (add display mode)
+- Improve analysis log (include input file, copy files and igv session log)
 - Docs in MarkDown
 
 

@@ -36,7 +36,7 @@
 
 # Introduction
 
-STARK is a sequencing data analysis environment designed for health data (ANPGM/INCa recommendations) following international and national recommendations, the main objective of which is to help interpret results for a clinical diagnosis. Flexible and adapted to the needs of biologists, efficient in terms of resource consumption, its “application” approach allows stability, monitoring and control of analyses.
+STARK is a sequencing data analysis environment designed for health data following international (GATK) and french national recommendations (ANPGM/INCa), the main objective of which is to help interpret results for a clinical diagnosis. Flexible and adapted to the needs of biologists, efficient in terms of resource consumption, its “application” approach allows stability, monitoring and control of analyses.
 
 STARK consists of a main structure (STARK-Core), defining the general configuration of the analysis environment, and a set of additional modules (STARK-Modules), available and administered independently. Based on Docker containerization technology, each STARK module is a set of Docker services for performing analyzes or providing interfaces. The main STARK module is made up of Docker services allowing you to launch analyzes from the command line (CLI service), via an application programming interface (API service), or automatically by detecting a run (listener service), also allows you to make the data available (DAS service).
 
@@ -66,7 +66,7 @@ OS: All systems allowing the installation of the Docker service (tested on CentO
 
 CPU: At least 2 CPUs are required and ideally 8 CPUs are recommended.
 
-RAM: At least 8GB of RAM per CPU and ideally 64GB of RAM. The application is particularly memory-intensive when aligning sequences with BWA and annotating variants with SnpEff, due to genome caching and annotation databases.
+RAM: At least 8GB of RAM per CPU and ideally 64GB of RAM. The application is particularly memory-intensive when aligning sequences with BWA and annotating variants with SnpEff, due to genome loading and annotation databases.
 
 STORAGE: At least 500GB of space is required to store the tools and databases, to create a temporary space for analysis, and to accommodate a minimum of raw data and result data.
 
@@ -76,11 +76,11 @@ exomes, genomes, etc.).
 - External assemblies are possible, in particular for the areas of raw data and results and archiving data which
 will increase as the activity progresses.
 
-#Quick start
+# Quick start
 
-In order to facilitate its deployment, the STARK environment is available in Docker, containing the tools (binaries) and an automatic installation of the databases necessary for its operation.
+In order to facilitate deployment, STARK environment is available in Docker, containing required tools (binaries) and an automatic installation of mandatory databases.
 
-The scripts allowing to build the STARK environment as well as a more detailed description of the installation and the configuration are available on the GitLab of the BioInfoDiag association. The STARK environment consists of a main structure (STARK-Core) and a set of additional modules (STARK-Modules). A STARK module is a set of Docker services.
+The scripts allowing to build the STARK environment as well as a more detailed description of the installation and the configuration are available on GitHub (https://github.com/bioinfo-chru-strasbourg/STARK). The STARK environment consists of a main structure (STARK-Core) and a set of additional modules (STARK-Modules). A STARK module is a set of Docker services.
 
 Some tools are licensed (eg GATK, ANNOVAR).
 
@@ -89,10 +89,10 @@ Some tools are licensed (eg GATK, ANNOVAR).
 The simplified installation allows you to download the STARK scripts, install STARK-Core (build Docker images, configure the directory structure and download databases), and start the Docker services of the main STARK module, by following command:
 
 ```
-$ mkdir -p ${HOME}/STARK && cd ${HOME}/STARK && curl https://gitlab.bioinfo-diag.fr/Strasbourg/STARK/raw/master/setup.sh | bash
+$ mkdir -p ${HOME}/STARK && cd ${HOME}/STARK && curl https://github.com/bioinfo-chru-strasbourg/STARK/raw/master/setup.sh | bash
 ```
 
-Detailed step-by-step installation is detailed in the Detailed Installation section.
+Step-by-step installation is detailed in the Detailed Installation section.
 
 ## Use
 
@@ -120,7 +120,7 @@ Creating a STARK-bin installation directory and downloading STARK scripts:
 ```
 $ mkdir -p ${HOME}/STARK-bin
 $ cd ${HOME}/STARK-bin
-$ git clone https://gitlab.bioinfo-diag.fr/Strasbourg/STARK.git.
+$ git clone https://github.com/bioinfo-chru-strasbourg/STARK.git.
 ```
 
 ## Setup
@@ -420,7 +420,7 @@ Sample STARK Analysis Report Header
 <img src="images/STARK.report.png" width="600">
 
 
-# Parameters of an analysis
+# Analysis parameters
 
 ## Tags
 
@@ -852,5 +852,7 @@ Directory containing all the configuration files allowing the STARK analyzes and
 # Configuring STARK-Core and STARK-Modules
 
 The organization of the directories is according to the modules. Naturally, each sub-directory corresponds to a module, possibly containing sub-directories by service (eg STRUCTURALVARIATION/CANOES and STRUCTURALVARIATION/DECoN).
+
+STARK modules are available on GitHub (https://github.com/bioinfo-chru-strasbourg/STARK-modules).
 
 The _howard_ and _myapps_ directories are common to STARK analyzes and modules/services.
