@@ -80,7 +80,7 @@ augmenterons au fur et à mesure de l’activité.
 
 Afin de faciliter son déploiement, l’environnement STARK est disponible en Docker, contenant les outils (binaires) et une installation automatique des bases de données nécessaires à son fonctionnement.
 
-Les scripts permettant de construire l’environnement STARK ainsi qu’une description plus détaillée de l’installation et de la configuration sont disponibles sur le GitLab de l’association BioInfoDiag. L’environnement STARK est constitué d’une structure principale (STARK-Core) et d’un ensemble de modules additionnels (STARK-Modules). Un module STARK est un ensemble de services Docker.
+Les scripts permettant de construire l’environnement STARK ainsi qu’une description plus détaillée de l’installation et de la configuration sont disponibles sur GitHub (https://github.com/bioinfo-chru-strasbourg/STARK). L’environnement STARK est constitué d’une structure principale (STARK-Core) et d’un ensemble de modules additionnels (STARK-Modules). Un module STARK est un ensemble de services Docker.
 
 Certains outils sont sous licence (e.g. GATK, ANNOVAR).
 
@@ -89,7 +89,7 @@ Certains outils sont sous licence (e.g. GATK, ANNOVAR).
 L’installation simplifiée permet de télécharger les scripts de STARK, d’installer STARK-Core (construction des images Docker, configuration de la structure des répertoires et téléchargement des bases de données), et démarrer les services Docker du module principal STARK, par la commande suivante :
 
 ```
-$ mkdir -p ${HOME}/STARK && cd ${HOME}/STARK && curl https://gitlab.bioinfo-diag.fr/Strasbourg/STARK/raw/master/setup.sh | bash
+$ mkdir -p ${HOME}/STARK && cd ${HOME}/STARK && curl https://github.com/bioinfo-chru-strasbourg/STARK/raw/master/setup.sh | bash
 ```
 
 L’installation détaillée par étapes est détaillée en dans la section Installation détaillée.
@@ -120,7 +120,7 @@ Création d’un répertoire d’installation STARK-bin et téléchargement des 
 ```
 $ mkdir -p ${HOME}/STARK-bin
 $ cd ${HOME}/STARK-bin
-$ git clone https://gitlab.bioinfo-diag.fr/Strasbourg/STARK.git.
+$ git clone https://github.com/bioinfo-chru-strasbourg/STARK.git.
 ```
 
 ## Configuration
@@ -851,6 +851,8 @@ Répertoire contenant l'ensemble des fichiers de configuration permettant les an
 # Configuration de STARK-Core et STARK-Modules
 
 L'organisation des répertoires est en fonction des modules. Naturellement, chaque sous-répertoire correspond à un modules, contenant éventuellement des sous-répertoires par service (e.g. STRUCTURALVARIATION/CANOES et STRUCTURALVARIATION/DECoN).
+
+Les modules de STARK sont disponibles sur GitHub (https://github.com/bioinfo-chru-strasbourg/STARK-modules).
 
 Les répertoires _howard_ et _myapps_ sont communs aux analyses STARK et aux modules/services.
 
