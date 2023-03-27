@@ -205,8 +205,8 @@ ANNOT_annotate=""
 for ANNOT in $(echo $ANNOT_LIST | tr "," " "); do
     if (($($BCFTOOLS view --threads $THREADS -h $VCF 2>/dev/null | grep "##INFO=<ID=$ANNOT," -c))); then
         (($DEBUG)) && echo "#[INFO] Annotation '$ANNOT' in '$VCF'"
-        ANNOT_query=$ANNOT_query"\t%$ANNOT"
-        ANNOT_annotate=$ANNOT_annotate",FORMAT/$ANNOT"
+        ANNOT_query=$ANNOT_query"\t%"$ANNOT
+        ANNOT_annotate=$ANNOT_annotate",FORMAT/"$ANNOT
     else
         (($VERBOSE)) && echo "#[WARNING] Annotation '$ANNOT' NOT in '$VCF'"
     fi;
