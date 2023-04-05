@@ -39,6 +39,10 @@ VARIANTRECALIBRATOR_INDEL_OPTIONS?=$(VARIANTRECALIBRATION_INDEL_RESOURCES_OPTION
 		-R $$(cat $*.genome) \
 		-V $< \
 		--select-type-to-include SNP \
+		--select-type-to-include MIXED \
+		--select-type-to-include MNP \
+		--select-type-to-include SYMBOLIC \
+		--select-type-to-include NO_VARIATION \
 		-O $@.tmp.SNP.vcf;
 	-if (($(VARIANTRECALIBRATION_CHECK))); then \
 		if ! $(JAVA11) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
