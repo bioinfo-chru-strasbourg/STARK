@@ -230,16 +230,20 @@ else
 fi;
 
 # Docker Compose command
-if docker compose 1>/dev/null 2>/dev/null; then
-	DOCKER_COMPOSE="docker compose"
-	DOCKER_COMPOSE_VERSION=$(docker --version 2>/dev/null)
-elif docker-compose 2>/dev/null; then
-	DOCKER_COMPOSE="docker-compose"
-	DOCKER_COMPOSE_VERSION=$(docker-compose --version 2>/dev/null)
-else
-	echo "#[ERROR] Docker Compose not installed"
-	exit 1
-fi;
+DOCKER_COMPOSE="docker-compose"
+
+# Docker Compose command
+# !!! docker compose as command failed due to env variables !!!
+# if docker compose 1>/dev/null 2>/dev/null; then
+# 	DOCKER_COMPOSE="docker compose"
+# 	DOCKER_COMPOSE_VERSION=$(docker --version 2>/dev/null)
+# elif docker-compose 2>/dev/null; then
+# 	DOCKER_COMPOSE="docker-compose"
+# 	DOCKER_COMPOSE_VERSION=$(docker-compose --version 2>/dev/null)
+# else
+# 	echo "#[ERROR] Docker Compose not installed"
+# 	exit 1
+# fi;
 
 # Docker version
 (($VERBOSE)) && echo "#[INFO] STARK Module Docker version '$DOCKER_VERSION'"

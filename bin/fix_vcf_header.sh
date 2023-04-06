@@ -191,7 +191,6 @@ $BCFTOOLS view --threads=$THREADS -h $VCF 2>$OUTPUT_TMP.input.header.err | awk '
         Number = arr_Number[2]
         match($0, /^##([^=]*)=.*[,<]Type=([^,]*).*[,>]$/, arr_Type);
         Type = arr_Type[2]
-        #match($0, /^##([^=]*)=.*[,<]Description=(".*").*[,>]$/, arr_Description);
         match($0, /^##([^=]*)=.*[,<]Description=("[^"]*"|[^,]*).*[,>]$/, arr_Description);
         Description = arr_Description[2]
         match($0, /^##([^=]*)=.*[,<]Source=("[^"]*"|[^,]*).*[,>]$/, arr_Source);

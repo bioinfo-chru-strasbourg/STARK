@@ -35,6 +35,10 @@ VARIANTFILTRATION_INVALIDATE_PREVIOUS_FILTERS_OPTION?=$(shell if (( $(VARIANTFIL
 		-R $$(cat $*.genome) \
 		-V $< \
 		--select-type-to-include SNP \
+		--select-type-to-include MIXED \
+		--select-type-to-include MNP \
+		--select-type-to-include SYMBOLIC \
+		--select-type-to-include NO_VARIATION \
 		-O $@.tmp.SNP.vcf;
 	$(JAVA11) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
 		VariantFiltration \
