@@ -3,7 +3,21 @@
 ## STARK environment
 #################################
 
+# FUNCTIONS
+#############
 
+# function in_array
+# input: $element $array
+in_array () 
+{ 
+	param=$1;
+	shift;
+	for elem in "$@";
+	do
+		[[ "$param" = "$elem" ]] && return 0;
+	done;
+	return 1
+}
 
 # APPLICATION INFOS
 ############
