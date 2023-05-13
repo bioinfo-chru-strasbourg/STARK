@@ -1081,16 +1081,11 @@ if [ "$ANALYSIS" != "" ]; then
 			PARAM_ANALYSIS=$(echo "$PARAM " | sed "s/--analysis=[^ |$]*//gi" | sed "s/-w [^ |$]*//gi")
 
 			PARAM_STARK_TEST=0
-			#PARAM_STARK="$($PYTHON2 $STARK_FOLDER_BIN/json_to_options.py $J)" && PARAM_STARK_TEST=1
-			PARAM_STARK="$($PYTHON2 $STARK_FOLDER_BIN/json_to_options.py $J)" && PARAM_STARK_TEST=1
+			PARAM_STARK="$($PYTHON $STARK_FOLDER_BIN/json_to_options.py $J)" && PARAM_STARK_TEST=1
 
 			! (($PARAM_STARK_TEST)) && echo "#[ERROR] Config file '$J' malformed " && cat $J && exit 1;
 
-			#(($DEBUG)) && echo "#[INFO] PARAM_STARK=$PARAM_STARK" && exit 0;
-
-			#ANALYSIS_DIR=$(dirname $J)
 			ANALYSIS_DIR=$(cd "$( dirname $J )" && pwd)
-			#PARAM_STARK=" --analysis_dir=$ANALYSIS_DIR $PARAM_STARK"
 			PARAM_STARK_ANALYSIS_DIR=" --analysis_dir=$ANALYSIS_DIR"
 			if [ $? -eq 0 ]; then
 			    (($DEBUG)) && echo "#[INFO] PARAM_STARK=$PARAM_STARK"
@@ -1101,26 +1096,12 @@ if [ "$ANALYSIS" != "" ]; then
 			    exit 1;
 			fi
 
-			#CMD=$(echo $0" "$PARAM_STARK" $PARAM_ANALYSIS")
-			#CMD="$0 $PARAM_ANALYSIS $PARAM_STARK --no_header "
-			#CMD="$0 $PARAM_STARK $PARAM_ANALYSIS --no_header "
 			CMD=$(echo "$0 $PARAM_STARK $PARAM_ANALYSIS $PARAM_STARK_ANALYSIS_DIR --no_header " | tr "\n" " ")
 			(($VERBOSE)) && echo "#[INFO] CMD=$CMD"
 			(($VERBOSE)) && echo ""
 
-			#echo "the CMD=$CMD"; exit 0;
-
 			(($EXEC)) && eval $CMD || exit 1;
 
-			# if (($EXEC)); then
-			# 	if $CMD; then
-			# 		(($VERBOSE)) && echo "#[INFO] CMD OK"
-			# 	else
-			# 		exit 1
-			# 	fi;
-			# fi;
-
-			#exit 0
 			EXIT=1
 
 		elif [ "$J" != "" ]; then
@@ -1161,19 +1142,11 @@ if [ ! -z "$FASTQ" ]; then # && [ -e "$FASTQ" ]; then
 
 	# Launch FASTQs analmysis if all FASTQs exist
 	if (($FASTQ_EXISTS)); then
-		#echo -e "#\n# Launch SAMPLE Analysis '$FASTQ'\n#"; # $PARAM
 		echo "#[INFO] Start Samples Analysis"
 		echo ""
-		#echo "$PARAM"
-		#CMD="$STARK_FOLDER_BIN/launch.sample.sh $PARAM"
 		CMD="$STARK_FOLDER_BIN/STARK.launch $PARAM"
 		(($VERBOSE)) && echo "#[INFO] $CMD"
 		eval $CMD || exit 1
-		# if $CMD; then
-		# 	(($VERBOSE)) && echo "#[INFO] CMD OK"
-		# else
-		# 	exit 1
-		# fi;
 		echo ""
 		EXIT=1
 	else
@@ -1194,29 +1167,21 @@ fi;
 # RUN (if no FASTQ files)
 ##############################
 
-#FOLDER_RUN="/STARK/data/DATA/RAW/RUNS,/STARK/runs"
-#FOLDER_RUN="/STARK/data/DATA/RAW/RUNS,/STARK/runs"
+
 (($DEBUG)) && echo "#[INFO] RUN folders: $FOLDER_RUN"
 
 if [ ! -z "$RUNS" ]; then
 
 	echo "#[INFO] Test Runs Analysis"
 
-	#RUNS_NAME_ARRAY=($RUNS_NAME)
-	#RUN_INDEX=0
 
 	# Check RUN folders
 	RUNS_TO_LAUNCH=""
 	for RI in $(echo $RUNS | tr "," " "); do
-		# echo "R: "$RI
-		# echo "RNUM: "$RUN_INDEX
-		# echo "RNAME: "${RUNS_NAME_ARRAY[$RUN_INDEX]}
 		R=$(echo $RI | awk -F: '{print $1}')
 		RUN_NAME=$(echo $RI | awk -F: '{print $2}')
 		[ "$RUN_NAME" == "" ] && RUN_NAME=$(basename $R)
-		#echo "R=$R RUN_NAME=$RUN_NAME"; #continue;
 
-		#RUN_NAME=${RUNS_NAME_ARRAY[$RUN_INDEX]}
 		RUN_PATH=""
 		if [ "$R" != "" ]; then
 			# test if RUN full PATH
@@ -1782,7 +1747,8 @@ if [ ! -z "$RUNS" ]; then
 					echo "}" >> $RUN_CONFIG_FILE
 
 					(($DEBUG)) && echo "#[INFO] " && cat $RUN_CONFIG_FILE
-					(($DEBUG)) && echo "#[INFO] " && $PYTHON2 $STARK_FOLDER_BIN/json_to_options.py $RUN_CONFIG_FILE
+					#(($DEBUG)) && echo "#[INFO] " && $PYTHON2 $STARK_FOLDER_BIN/json_to_options.py $RUN_CONFIG_FILE
+					(($DEBUG)) && echo "#[INFO] " && $PYTHON $STARK_FOLDER_BIN/json_to_options.py $RUN_CONFIG_FILE
 
 					ANALYSIS_FILES="$ANALYSIS_FILES,$RUN_CONFIG_FILE"
 

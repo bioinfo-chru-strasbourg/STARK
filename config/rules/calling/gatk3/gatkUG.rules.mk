@@ -53,7 +53,7 @@ GATKUG_FLAGS= -nct $(THREADS_GATKUG) -glm BOTH \
 		-allowPotentiallyMisencodedQuals
 
 %.gatkUG$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.genome %.design.bed.interval_list
-	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKUG_FLAGS) \
+	$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) $(GATKUG_FLAGS) \
 		-T UnifiedGenotyper \
 		-R `cat $*.genome` \
 		$$(if [ "`grep ^ -c $*.design.bed.interval_list`" == "0" ]; then echo ""; else echo "-L $*.design.bed.interval_list"; fi;) \
@@ -68,7 +68,7 @@ GATKUG_FLAGS= -nct $(THREADS_GATKUG) -glm BOTH \
 
 
 
-RELEASE_COMMENT := "\#\# CALLING GATK Unified Genotyper '$(MK_RELEASE)': GATK Unified Genotyper tool identify variants from aligned BAM with shared parameters: GATK='$(GATK)'"
+RELEASE_COMMENT := "\#\# CALLING GATK Unified Genotyper '$(MK_RELEASE)': GATK Unified Genotyper tool identify variants from aligned BAM with shared parameters: GATK='$(GATK3)'"
 RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
 RELEASE_COMMENT := "\#\# CALLING GATKUG identify variants and generate *.gatkUG.vcf files with parameters: GATKUG_FLAGS='$(GATKUG_FLAGS)', INTERVAL_PADDING='$(INTERVAL_PADDING)', DPMIN='$(DPMIN_UG)'"

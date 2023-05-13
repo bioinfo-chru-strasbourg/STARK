@@ -24,7 +24,7 @@ THREADS_OUTLYZER?=$(THREADS_BY_CALLER)
 		# Normalize OutLyzer output VCF ; \
 		cat $@.outlyser_tmp/*.vcf | awk -f $(STARK_FOLDER_BIN)/outlyzer_norm.awk > $@.tmp.vcf ; \
 		# sort and contig ; \
-		$(JAVA11) -jar $(PICARD) SortVcf -I $@.tmp.vcf -O $@.tmp2.vcf -SD $$(cat $*.dict) ; \
+		$(JAVA) -jar $(PICARD) SortVcf -I $@.tmp.vcf -O $@.tmp2.vcf -SD $$(cat $*.dict) ; \
 		$(BCFTOOLS) view  -i 'FORMAT/DP>=$(DPMIN_OUTLYZER)' $@.tmp2.vcf > $@; \
 	else \
 		cp $*.empty.vcf $@ ; \

@@ -67,7 +67,7 @@ REMOVE_INTERMEDIATE_SAM?=1
 	# If no VCF or empty file, create an empty VCF
 	-if [ ! -s $< ]; then cp $*.empty.vcf $<; fi;
 	# Indexing with IGVTOOLS
-	-$(JAVA11) -Xmx1g -jar $(IGVTOOLS) index $<
+	-$(IGVTOOLS) index $<
 	# Empty index if fail
 	if [ ! -e $@ ]; then touch $@; fi;
 	# remove files
@@ -141,7 +141,7 @@ REMOVE_INTERMEDIATE_SAM?=1
 
 # MERGE SNP and InDel VCF
 %.vcf: %.SNP.vcf %.InDel.vcf
-	$(JAVA11) $(JAVA_FLAGS_GATK4) -jar $(GATK4) \
+	$(JAVA) $(JAVA_FLAGS_GATK4) -jar $(GATK4) \
 		MergeVcfs \
 		-I $*.SNP.vcf \
 		-I $*.InDel.vcf \
@@ -150,7 +150,7 @@ REMOVE_INTERMEDIATE_SAM?=1
 
 # MERGE SNP and InDel VCF for Post calling steps. Because of loop in rules
 %.vcf: %.POST_CALLING_SNP.vcf %.POST_CALLING_InDel.vcf
-	$(JAVA11) $(JAVA_FLAGS_GATK4) -jar $(GATK4) \
+	$(JAVA) $(JAVA_FLAGS_GATK4) -jar $(GATK4) \
 		MergeVcfs \
 		-I $*.POST_CALLING_SNP.vcf \
 		-I $*.POST_CALLING_InDel.vcf \
@@ -243,13 +243,13 @@ REMOVE_INTERMEDIATE_SAM?=1
 
 # FASTQ(s) from BAM
 %.R1.fastq %.R2.fastq: %.bam
-	$(JAVA11) -jar $(PICARD) SamToFastq -INPUT $< -FASTQ $*.R1.fastq -SECOND_END_FASTQ $*.R2.fastq
+	$(JAVA) -jar $(PICARD) SamToFastq -INPUT $< -FASTQ $*.R1.fastq -SECOND_END_FASTQ $*.R2.fastq
 
 
 # BAM reduction
 GATKRR_FLAGS=
 %.reduced.bam: %.bam %.bam.bai %.genome
-	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKRR_FLAGS) -T ReduceReads -R `cat $*.genome` -I $< -o $@
+	$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) $(GATKRR_FLAGS) -T ReduceReads -R `cat $*.genome` -I $< -o $@
 
 
 
@@ -443,7 +443,7 @@ GATKRR_FLAGS=
 		echo "[INFO] Generate $@ from $@.bed with PICARD BedToIntervalList" ; \
 		#awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$5}' $@.bed > $@.bed.4fields ; \
 		awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$4}' $@.bed > $@.bed.4fields ; \
-		$(JAVA11) -jar $(PICARD) BedToIntervalList -I $@.bed.4fields -O $@ -SD $$(cat $*.dict) ; \
+		$(JAVA) -jar $(PICARD) BedToIntervalList -I $@.bed.4fields -O $@ -SD $$(cat $*.dict) ; \
 		rm $@.bed.4fields ; \
 	fi;
 	# If error, try intervals with GREP/SED/AWK
@@ -456,7 +456,7 @@ GATKRR_FLAGS=
 	# clean
 
 
-#$(JAVA11) -jar $(PICARD) BedToIntervalList I=$@.bed.4fields O=$@ SD=$$(cat $*.dict) ;
+#$(JAVA) -jar $(PICARD) BedToIntervalList I=$@.bed.4fields O=$@ SD=$$(cat $*.dict) ;
 
 
 # Interval from BED
@@ -466,7 +466,7 @@ GATKRR_FLAGS=
 	if [ -s $< ]; then \
 		#cut $< -f1-3,5 > $@.4fields ; \
 		awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$4}' $< > $@.4fields ; \
-		$(JAVA11) -jar $(PICARD) BedToIntervalList -I $@.4fields -O $@ -SD $$(cat $*.dict) ; \
+		$(JAVA) -jar $(PICARD) BedToIntervalList -I $@.4fields -O $@ -SD $$(cat $*.dict) ; \
 		rm $@.4fields ; \
 	fi;
 	# If error, try intervals with GREP/SED/AWK
@@ -475,7 +475,7 @@ GATKRR_FLAGS=
 	fi;
 	if [ ! -e $@ ]; then touch $@; fi;
 
-#$(JAVA11) -jar $(PICARD) BedToIntervalList INPUT=$@.4fields OUTPUT=$@ SEQUENCE_DICTIONARY=$$(cat $*.dict) ;
+#$(JAVA) -jar $(PICARD) BedToIntervalList INPUT=$@.4fields OUTPUT=$@ SEQUENCE_DICTIONARY=$$(cat $*.dict) ;
 
 %.intervals: %.interval_list
 	touch $@

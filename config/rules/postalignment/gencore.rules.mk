@@ -30,7 +30,7 @@ MK_DATE=12/09/2021
 		ln -s $@.tmp.gencore.bam $@.tmp.reformatted.bam; \
 	fi;
 	# Sort SAM by coordinate with Picard if gencore unsorted them during deduplication (Message in gencore log : WARNING: The output will be unordered)
-	$(JAVA11) $(JAVA_FLAGS) -jar $(PICARD) SortSam -I $@.tmp.reformatted.bam -O $@ -SORT_ORDER coordinate;
+	$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) SortSam -I $@.tmp.reformatted.bam -O $@ -SORT_ORDER coordinate;
 	# Delete tempory files
 	-rm $< $@.tmp.* ;
 

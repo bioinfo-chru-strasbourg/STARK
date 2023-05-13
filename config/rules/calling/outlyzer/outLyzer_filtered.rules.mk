@@ -24,7 +24,7 @@ DPMIN_OUTLYZER_FILTERED?=30
 		# Normalize OutLyzer output VCF ; \
 		cat $@.outlyser_tmp/*.vcf | awk -f $(STARK_FOLDER_BIN)/outlyzer_norm.awk > $@.tmp.normalized.vcf ; \
 		# sort and contig ; \
-		$(JAVA11) -jar $(PICARD) SortVcf -I $@.tmp.normalized.vcf -O $@.tmp.normalized.sorted.vcf -SD $$(cat $*.dict) ; \
+		$(JAVA) -jar $(PICARD) SortVcf -I $@.tmp.normalized.vcf -O $@.tmp.normalized.sorted.vcf -SD $$(cat $*.dict) ; \
 		# filtration by bcftools \
 		$(BCFTOOLS) view -i 'FORMAT/DP>=$(DPMIN_OUTLYZER_FILTERED) && FORMAT/VAF>=$(VAF_OUTLYZER_FILTERED)' $@.tmp.normalized.sorted.vcf > $@; \
 	else \

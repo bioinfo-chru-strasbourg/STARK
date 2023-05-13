@@ -20,6 +20,7 @@
 # 0.9.4.7-28/06/2021: Homogenize VARSCAN thresholds 
 # 0.9.4.8-29/07/2022: Homogenize VARSCAN rules path 
 # 0.9.5-03/02/2023: Extract VarScan rules SOLIDTUMOR
+# 0.9.6-12/05/2023: Remove VariantFiltration of GATK
 
 
 
@@ -34,48 +35,34 @@ VARSCAN_SOLIDTUMOR_PVAL=1e-3
 VARSCAN_SOLIDTUMOR_BOTH_OPTIONS= --min-var-freq $(VARSCAN_SOLIDTUMOR_VAF) --min-reads2 $(VARSCAN_SOLIDTUMOR_ALT) --min-coverage $(VARSCAN_SOLIDTUMOR_DP) --p-value $(VARSCAN_SOLIDTUMOR_PVAL)
 VARSCAN_SOLIDTUMOR_SNP_OPTIONS= $(VARSCAN_SOLIDTUMOR_BOTH_OPTIONS) --min-avg-qual 30
 VARSCAN_SOLIDTUMOR_INDEL_OPTIONS= $(VARSCAN_SOLIDTUMOR_BOTH_OPTIONS) --min-avg-qual 10
-VARSCAN_SOLIDTUMOR_FILTERS=--genotypeFilterExpression 'GQ < 20.0' --genotypeFilterName 'LowGQ'
-VARSCAN_SOLIDTUMOR_SNP_FILTERS=$(VARSCAN_SOLIDTUMOR_FILTERS)
-VARSCAN_SOLIDTUMOR_INDEL_FILTERS=$(VARSCAN_SOLIDTUMOR_FILTERS)
+
 
 %.VarScan_SOLIDTUMOR$(POST_CALLING).SNP.vcf: %.bam.mpileup %.empty.vcf %.genome
-	-if [ -s $< ]; then \
+	if [ -s $< ]; then \
 		sample=`basename $* | cut -d"." -f1`; \
 		echo $$sample > $*.SNP.sample.txt; \
-		cat $< | $(JAVA11) -jar $(VARSCAN) mpileup2snp --output-vcf 1 $(VARSCAN_SOLIDTUMOR_SNP_OPTIONS) --vcf-sample-list $*.SNP.sample.txt > $@.unfiltered.vcf; \
+		cat $< | $(JAVA) -jar $(VARSCAN) mpileup2snp --output-vcf 1 $(VARSCAN_SOLIDTUMOR_SNP_OPTIONS) --vcf-sample-list $*.SNP.sample.txt > $@; \
 		rm -f $*.SNP.sample.txt; \
 	fi;
-	-if [ ! -s $@.unfiltered.vcf ]; then cp $*.empty.vcf $@.unfiltered.vcf; fi;
-	-$(JAVA11) -jar $(IGVTOOLS) index $@.unfiltered.vcf;
-	-$(JAVA) $(JAVA_FLAGS) -jar $(GATK) -T VariantFiltration -R `cat $*.genome` --variant $@.unfiltered.vcf -o $@ $(VARSCAN_SOLIDTUMOR_SNP_FILTERS);
-	-if [ ! -s $@ ]; then cp $*.empty.vcf $@; fi;
-	-if [ ! -s $@ ]; then touch $@; fi;
+	if [ ! -s $@ ]; then cp $*.empty.vcf $@; fi;
 	# Remove intermediate files
-	-rm $@.unfiltered.vcf*
-	# Remove IDX
-	-rm $@.idx
+	rm -f $@.idx $@.unfiltered.vcf*
+
 
 %.VarScan_SOLIDTUMOR$(POST_CALLING).InDel.vcf: %.bam.mpileup %.empty.vcf %.genome
-	-if [ -s $< ]; then \
+	if [ -s $< ]; then \
 		sample=`basename $* | cut -d"." -f1`; \
 		echo $$sample > $*.InDel.sample.txt; \
-		cat $< | $(JAVA11) -jar $(VARSCAN) mpileup2indel --output-vcf 1 $(VARSCAN_SOLIDTUMOR_INDEL_OPTIONS) --vcf-sample-list $*.InDel.sample.txt > $@.unfiltered.vcf; \
+		cat $< | $(JAVA) -jar $(VARSCAN) mpileup2indel --output-vcf 1 $(VARSCAN_SOLIDTUMOR_INDEL_OPTIONS) --vcf-sample-list $*.InDel.sample.txt > $@; \
 		rm -f $*.InDel.sample.txt; \
 	fi;
-	-if [ ! -s $@.unfiltered.vcf ]; then cp $*.empty.vcf $@.unfiltered.vcf; fi;
-	-$(JAVA11) -jar $(IGVTOOLS) index $@.unfiltered.vcf;
-	-$(JAVA) $(JAVA_FLAGS) -jar $(GATK) -T VariantFiltration -R `cat $*.genome` --variant $@.unfiltered.vcf -o $@ $(VARSCAN_SOLIDTUMOR_INDEL_FILTERS);
-	-if [ ! -s $@ ]; then cp $*.empty.vcf $@; fi;
-	-if [ ! -s $@ ]; then touch $@; fi;
+	if [ ! -s $@ ]; then cp $*.empty.vcf $@; fi;
 	# Remove intermediate files
-	-rm $@.unfiltered.vcf*
-	# Remove IDX
-	-rm $@.idx
-
+	rm -f $@.idx $@.unfiltered.vcf*
 
 
 # CONFIG/RELEASE
-RELEASE_CMD := $(shell echo "\#\# VARSCAN SOLIDTUMOR: identify variants and generate *.VarScan_SOLIDTUMOR.vcf files with parameters SAMTOOLS mpileup and VARSCAN SOLIDTUMOR application 'VARSCAN_SOLIDTUMOR_SNP_OPTIONS: $(VARSCAN_SOLIDTUMOR_SNP_OPTIONS)' 'VARSCAN_SOLIDTUMOR_INDEL_OPTIONS: $(VARSCAN_SOLIDTUMOR_INDEL_OPTIONS)' and GATK VariantFiltration SOLIDTUMOR application 'VARSCAN_SOLIDTUMOR_SNP_FILTERS: $(VARSCAN_SOLIDTUMOR_SNP_FILTERS)' 'VARSCAN_SOLIDTUMOR_INDEL_FILTERS: $(VARSCAN_SOLIDTUMOR_INDEL_FILTERS)' " >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "\#\# VARSCAN SOLIDTUMOR: identify variants and generate *.VarScan_SOLIDTUMOR.vcf files with parameters SAMTOOLS mpileup and VARSCAN SOLIDTUMOR application 'VARSCAN_SOLIDTUMOR_SNP_OPTIONS: $(VARSCAN_SOLIDTUMOR_SNP_OPTIONS)' 'VARSCAN_SOLIDTUMOR_INDEL_OPTIONS: $(VARSCAN_SOLIDTUMOR_INDEL_OPTIONS)' " >> $(RELEASE_INFOS) )
 
-PIPELINES_COMMENT := "CALLER:VarScan_SOLIDTUMOR:SAMTOOLS/VARSCAN - design for SOLIDTUMOR mutation, VAF\>$(VARSCAN_SOLIDTUMOR_VAF) ALT\>$(VARSCAN_SOLIDTUMOR_ALT) DP\>$(VARSCAN_SOLIDTUMOR_DP) p-value\<$(VARSCAN_SOLIDTUMOR_PVAL):VARSCAN_SOLIDTUMOR_SNP_OPTIONS='$(VARSCAN_SOLIDTUMOR_SNP_OPTIONS)', VARSCAN_SOLIDTUMOR_INDEL_OPTIONS='$(VARSCAN_SOLIDTUMOR_INDEL_OPTIONS)', VARSCAN_SOLIDTUMOR_SNP_FILTERS=$(VARSCAN_SOLIDTUMOR_SNP_FILTERS), VARSCAN_SOLIDTUMOR_INDEL_FILTERS=$(VARSCAN_SOLIDTUMOR_INDEL_FILTERS)"
+PIPELINES_COMMENT := "CALLER:VarScan_SOLIDTUMOR:SAMTOOLS/VARSCAN - design for SOLIDTUMOR mutation, VAF\>$(VARSCAN_SOLIDTUMOR_VAF) ALT\>$(VARSCAN_SOLIDTUMOR_ALT) DP\>$(VARSCAN_SOLIDTUMOR_DP) p-value\<$(VARSCAN_SOLIDTUMOR_PVAL):VARSCAN_SOLIDTUMOR_SNP_OPTIONS='$(VARSCAN_SOLIDTUMOR_SNP_OPTIONS)', VARSCAN_SOLIDTUMOR_INDEL_OPTIONS='$(VARSCAN_SOLIDTUMOR_INDEL_OPTIONS)'"
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )

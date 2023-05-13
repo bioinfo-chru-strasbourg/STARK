@@ -37,7 +37,7 @@ GATKHC_ONCOGENET_FLAGS= -nct $(THREADS_GATKHC_ONCOGENET) -stand_call_conf 10 -df
 
 %.gatkHC_ONCOGENET$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.genome %.design.bed.interval_list
 	#
-	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKHC_ONCOGENET_FLAGS) \
+	$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) $(GATKHC_ONCOGENET_FLAGS) \
 		-T HaplotypeCaller \
 		-R `cat $*.genome` \
 		$$(if [ "`grep ^ -c $*.design.bed.interval_list`" == "0" ]; then echo ""; else echo "-L $*.design.bed.interval_list"; fi;) \

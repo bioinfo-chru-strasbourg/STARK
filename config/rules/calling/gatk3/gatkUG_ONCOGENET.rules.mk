@@ -45,7 +45,7 @@ GATKUG_ONCOGENET_FLAGS= -nct $(GATKUG_THREADS_ONCOGENET) -glm BOTH \
 		-stand_call_conf $(STAND_CALL_CONF_ONCOGENET) -dfrac $(DFRAC_UG_ONCOGENET) --dbsnp $(VCFDBSNP) -mbq $(MBQ_UG_ONCOGENET) -rf BadCigar -dt NONE
 
 %.gatkUG_ONCOGENET$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.genome %.design.bed.interval_list
-	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKUG_ONCOGENET_FLAGS) \
+	$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) $(GATKUG_ONCOGENET_FLAGS) \
 		-T UnifiedGenotyper \
 		-R `cat $*.genome` \
 		$$(if [ "`grep ^ -c $*.design.bed.interval_list`" == "0" ]; then echo ""; else echo "-L $*.design.bed.interval_list"; fi;) \

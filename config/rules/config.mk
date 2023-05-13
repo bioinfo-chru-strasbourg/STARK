@@ -55,7 +55,7 @@ SAMTOOLS?=samtools
 GZ?=gzip
 GUNZIP?=gzip -d
 GATK?=GenomeAnalysisTK.jar
-IGVTOOLS?=igvtools.jar
+IGVTOOLS?=igvtools
 JAVA?=java
 TABIX?=tabix
 FASTQC?=fastqc
@@ -98,8 +98,8 @@ OMNI?=$(DBFOLDER)/1000G_omni2.5.hg19.vcf
 PHASE1_1000G?=$(DBFOLDER)/1000G_phase1.snps.high_confidence.hg19.sites.vcf
 
 # HOWARD
-HOWARD_CONFIG_OPTIONS?=--config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --java=$(JAVA11)
-HOWARD_DEJAVU_CONFIG_OPTIONS?=--config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_DEJAVU_ANNOTATION) --annovar_folder=$(ANNOVAR) --annovar_databases=$(DEJAVU_ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --java=$(JAVA11)
+HOWARD_CONFIG_OPTIONS?=--config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --java=$(JAVA)
+HOWARD_DEJAVU_CONFIG_OPTIONS?=--config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_DEJAVU_ANNOTATION) --annovar_folder=$(ANNOVAR) --annovar_databases=$(DEJAVU_ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --java=$(JAVA)
 
 # FIX_VCF_HEADER_REFORMAT
 FIX_VCF_HEADER_REFORMAT_option?=$(shell if (( $(FIX_VCF_HEADER_REFORMAT) )); then echo "--reformat"; fi;)
