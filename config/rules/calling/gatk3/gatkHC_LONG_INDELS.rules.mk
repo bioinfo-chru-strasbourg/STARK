@@ -38,7 +38,7 @@ GATKHC_INDEL_SIZE_LONG_INDELS?=20
 
 %.gatkHC_LONG_INDELS$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.genome %.design.bed.interval_list
 	#
-	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKHC_FLAGS_LONG_INDELS) \
+	$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) $(GATKHC_FLAGS_LONG_INDELS) \
 		-T HaplotypeCaller \
 		-R `cat $*.genome` \
 		$$(if [ "`grep ^ -c $*.design.bed.interval_list`" == "0" ]; then echo ""; else echo "-L $*.design.bed.interval_list"; fi;) \

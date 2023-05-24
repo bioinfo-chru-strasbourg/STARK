@@ -20,6 +20,7 @@
 # 0.9.4.7-28/06/2021: Homogenize VARSCAN thresholds 
 # 0.9.4.8-29/07/2022: Homogenize VARSCAN rules path 
 # 0.9.5-03/02/2023: Extract VarScan rules SOMATIC
+# 0.9.6-12/05/2023: Remove VariantFiltration of GATK
 
 
 
@@ -34,48 +35,35 @@ VARSCAN_SOMATIC_PVAL=1e-3
 VARSCAN_SOMATIC_BOTH_OPTIONS= --min-var-freq $(VARSCAN_SOMATIC_VAF) --min-reads2 $(VARSCAN_SOMATIC_ALT) --min-coverage $(VARSCAN_SOMATIC_DP) --p-value $(VARSCAN_SOMATIC_PVAL)
 VARSCAN_SOMATIC_SNP_OPTIONS= $(VARSCAN_SOMATIC_BOTH_OPTIONS) --min-avg-qual 30
 VARSCAN_SOMATIC_INDEL_OPTIONS= $(VARSCAN_SOMATIC_BOTH_OPTIONS) --min-avg-qual 10
-VARSCAN_SOMATIC_FILTERS=--genotypeFilterExpression 'GQ < 20.0' --genotypeFilterName 'LowGQ'
-VARSCAN_SOMATIC_SNP_FILTERS=$(VARSCAN_SOMATIC_FILTERS)
-VARSCAN_SOMATIC_INDEL_FILTERS=$(VARSCAN_SOMATIC_FILTERS)
+
 
 %.VarScan_SOMATIC$(POST_CALLING).SNP.vcf: %.bam.mpileup %.empty.vcf %.genome
-	-if [ -s $< ]; then \
+	if [ -s $< ]; then \
 		sample=`basename $* | cut -d"." -f1`; \
 		echo $$sample > $*.SNP.sample.txt; \
-		cat $< | $(JAVA11) -jar $(VARSCAN) mpileup2snp --output-vcf 1 $(VARSCAN_SOMATIC_SNP_OPTIONS) --vcf-sample-list $*.SNP.sample.txt > $@.unfiltered.vcf; \
+		cat $< | $(JAVA) -jar $(VARSCAN) mpileup2snp --output-vcf 1 $(VARSCAN_SOMATIC_SNP_OPTIONS) --vcf-sample-list $*.SNP.sample.txt > $@; \
 		rm -f $*.SNP.sample.txt; \
 	fi;
-	-if [ ! -s $@.unfiltered.vcf ]; then cp $*.empty.vcf $@.unfiltered.vcf; fi;
-	-$(JAVA11) -jar $(IGVTOOLS) index $@.unfiltered.vcf;
-	-$(JAVA) $(JAVA_FLAGS) -jar $(GATK) -T VariantFiltration -R `cat $*.genome` --variant $@.unfiltered.vcf -o $@ $(VARSCAN_SOMATIC_SNP_FILTERS);
-	-if [ ! -s $@ ]; then cp $*.empty.vcf $@; fi;
-	-if [ ! -s $@ ]; then touch $@; fi;
+	if [ ! -s $@ ]; then cp $*.empty.vcf $@; fi;
 	# Remove intermediate files
-	-rm $@.unfiltered.vcf*
-	# Remove IDX
-	-rm $@.idx
+	rm -f $@.idx $@.unfiltered.vcf*
+
 
 %.VarScan_SOMATIC$(POST_CALLING).InDel.vcf: %.bam.mpileup %.empty.vcf %.genome
-	-if [ -s $< ]; then \
+	if [ -s $< ]; then \
 		sample=`basename $* | cut -d"." -f1`; \
 		echo $$sample > $*.InDel.sample.txt; \
-		cat $< | $(JAVA11) -jar $(VARSCAN) mpileup2indel --output-vcf 1 $(VARSCAN_SOMATIC_INDEL_OPTIONS) --vcf-sample-list $*.InDel.sample.txt > $@.unfiltered.vcf; \
+		cat $< | $(JAVA) -jar $(VARSCAN) mpileup2indel --output-vcf 1 $(VARSCAN_SOMATIC_INDEL_OPTIONS) --vcf-sample-list $*.InDel.sample.txt > $@; \
 		rm -f $*.InDel.sample.txt; \
 	fi;
-	-if [ ! -s $@.unfiltered.vcf ]; then cp $*.empty.vcf $@.unfiltered.vcf; fi;
-	-$(JAVA11) -jar $(IGVTOOLS) index $@.unfiltered.vcf;
-	-$(JAVA) $(JAVA_FLAGS) -jar $(GATK) -T VariantFiltration -R `cat $*.genome` --variant $@.unfiltered.vcf -o $@ $(VARSCAN_SOMATIC_INDEL_FILTERS);
-	-if [ ! -s $@ ]; then cp $*.empty.vcf $@; fi;
-	-if [ ! -s $@ ]; then touch $@; fi;
+	if [ ! -s $@ ]; then cp $*.empty.vcf $@; fi;
 	# Remove intermediate files
-	-rm $@.unfiltered.vcf*
-	# Remove IDX
-	-rm $@.idx
+	rm -f $@.idx $@.unfiltered.vcf*
 
 
 
 # CONFIG/RELEASE
-RELEASE_CMD := $(shell echo "\#\# VARSCAN SOMATIC: identify variants and generate *.VarScan_SOMATIC.vcf files with parameters SAMTOOLS mpileup and VARSCAN standard application 'VARSCAN_SOMATIC_SNP_OPTIONS: $(VARSCAN_SOMATIC_SNP_OPTIONS)' 'VARSCAN_SOMATIC_INDEL_OPTIONS: $(VARSCAN_SOMATIC_INDEL_OPTIONS)' and GATK VariantFiltration standard application 'VARSCAN_SOMATIC_SNP_FILTERS: $(VARSCAN_SOMATIC_SNP_FILTERS)' 'VARSCAN_SOMATIC_INDEL_FILTERS: $(VARSCAN_SOMATIC_INDEL_FILTERS)' " >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "\#\# VARSCAN SOMATIC: identify variants and generate *.VarScan_SOMATIC.vcf files with parameters SAMTOOLS mpileup and VARSCAN standard application 'VARSCAN_SOMATIC_SNP_OPTIONS: $(VARSCAN_SOMATIC_SNP_OPTIONS)' 'VARSCAN_SOMATIC_INDEL_OPTIONS: $(VARSCAN_SOMATIC_INDEL_OPTIONS)' " >> $(RELEASE_INFOS) )
 
-PIPELINES_COMMENT := "CALLER:VarScan_SOMATIC:SAMTOOLS/VARSCAN - design for SOMATIC mutation, VAF\>$(VARSCAN_SOMATIC_VAF) ALT\>$(VARSCAN_SOMATIC_ALT) DP\>$(VARSCAN_SOMATIC_DP) p-value\<$(VARSCAN_SOMATIC_PVAL):VARSCAN_SOMATIC_SNP_OPTIONS='$(VARSCAN_SOMATIC_SNP_OPTIONS)', VARSCAN_SOMATIC_INDEL_OPTIONS=$(VARSCAN_SOMATIC_INDEL_OPTIONS), VARSCAN_SOMATIC_SNP_FILTERS=$(VARSCAN_SOMATIC_SNP_FILTERS)"
+PIPELINES_COMMENT := "CALLER:VarScan_SOMATIC:SAMTOOLS/VARSCAN - design for SOMATIC mutation, VAF\>$(VARSCAN_SOMATIC_VAF) ALT\>$(VARSCAN_SOMATIC_ALT) DP\>$(VARSCAN_SOMATIC_DP) p-value\<$(VARSCAN_SOMATIC_PVAL):VARSCAN_SOMATIC_SNP_OPTIONS='$(VARSCAN_SOMATIC_SNP_OPTIONS)'"
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )

@@ -45,7 +45,7 @@ GATKUG_EXOME_SOMATIC_FLAGS= -nct $(GATKUG_THREADS_EXOME_SOMATIC) -glm BOTH \
 		-stand_call_conf $(STAND_CALL_CONF_UG_EXOME_SOMATIC) -dfrac $(DFRAC_UG_EXOME_SOMATIC) --dbsnp $(VCFDBSNP) -mbq $(MBQ_UG_EXOME_SOMATIC) -rf BadCigar -dt NONE
 
 %.gatkUG_EXOME_SOMATIC$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.genome %.design.bed.interval_list
-	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKUG_EXOME_SOMATIC_FLAGS) \
+	$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) $(GATKUG_EXOME_SOMATIC_FLAGS) \
 		-T UnifiedGenotyper \
 		-R `cat $*.genome` \
 		$$(if [ "`grep ^ -c $*.design.bed.interval_list`" == "0" ]; then echo ""; else echo "-L $*.design.bed.interval_list"; fi;) \

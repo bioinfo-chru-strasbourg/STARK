@@ -154,27 +154,34 @@ REPORT_SECTIONS?=ALL
 
 
 ## FULL VCF: ANNOTATION OF A MERGE FILE
+# %.full.vcf: %.merge.vcf %.transcripts %.genome
+# 	cp $< $@.tmp0
+# 	# Prevent comma in description in vcf header
+# 	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp0 --output=$@.tmp0 --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
+# 	# HOWARD annotation
+# 	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp0 --output=$@.tmp1 --annotation=$(HOWARD_ANNOTATION_REPORT) --norm=$$(cat $*.genome);
+# 	# HOWARD annotation dejavu (forced)
+# 	# Prevent comma in description in vcf header
+# 	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp1 --output=$@.tmp1 --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
+# 	+if [ "$(HOWARD_DEJAVU_ANNOTATION)" != "" ]; then \
+# 		$(HOWARD) $(HOWARD_DEJAVU_CONFIG_OPTIONS) --input=$@.tmp1 --output=$@.tmp2 --annotation=$(HOWARD_DEJAVU_ANNOTATION) --norm=$$(cat $*.genome) --force; \
+# 	else \
+# 		mv $@.tmp1 $@.tmp2; \
+# 	fi;
+# 	# Prevent comma in description in vcf header
+# 	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp2 --output=$@.tmp2 --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
+# 	# HOWARD calculation and prioritization
+# 	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp2 --output=$@.tmp3 --calculation=$(HOWARD_CALCULATION_REPORT) --nomen_fields=$(HOWARD_NOMEN_FIELDS) --prioritization=$(HOWARD_PRIORITIZATION_REPORT) --transcripts=$*.transcripts --force --norm=$$(cat $*.genome);
+# 	# Prevent comma in description in vcf header
+# 	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp3 --output=$@.tmp3 --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
+# 	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp3 --output=$@ --prioritization=$(HOWARD_PRIORITIZATION_VARANK) --force --norm=$$(cat $*.genome);
+# 	# cleaning
+# 	rm -rf $@.tmp*
+
 %.full.vcf: %.merge.vcf %.transcripts %.genome
 	cp $< $@.tmp0
 	# Prevent comma in description in vcf header
-	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp0 --output=$@.tmp0 --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
-	# HOWARD annotation
-	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp0 --output=$@.tmp1 --annotation=$(HOWARD_ANNOTATION_REPORT) --norm=$$(cat $*.genome);
-	# HOWARD annotation dejavu (forced)
-	# Prevent comma in description in vcf header
-	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp1 --output=$@.tmp1 --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
-	+if [ "$(HOWARD_DEJAVU_ANNOTATION)" != "" ]; then \
-		$(HOWARD) $(HOWARD_DEJAVU_CONFIG_OPTIONS) --input=$@.tmp1 --output=$@.tmp2 --annotation=$(HOWARD_DEJAVU_ANNOTATION) --norm=$$(cat $*.genome) --force; \
-	else \
-		mv $@.tmp1 $@.tmp2; \
-	fi;
-	# Prevent comma in description in vcf header
-	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp2 --output=$@.tmp2 --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
-	# HOWARD calculation and prioritization
-	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp2 --output=$@.tmp3 --calculation=$(HOWARD_CALCULATION_REPORT) --nomen_fields=$(HOWARD_NOMEN_FIELDS) --prioritization=$(HOWARD_PRIORITIZATION_REPORT) --transcripts=$*.transcripts --force --norm=$$(cat $*.genome);
-	# Prevent comma in description in vcf header
-	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp3 --output=$@.tmp3 --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
-	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp3 --output=$@ --prioritization=$(HOWARD_PRIORITIZATION_VARANK) --force --norm=$$(cat $*.genome);
+	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp0 --output=$@ --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
 	# cleaning
 	rm -rf $@.tmp*
 
@@ -205,39 +212,148 @@ REPORT_SECTIONS?=ALL
 
 ## ALL samples VCF RULE
 
+# %.variants: $(VCF_REPORT_FILES) %.variants_full
+# 	# List of final VCF files
+# 	echo $^ | tr " " "\n" | tr "\t" "\n" | grep "final.vcf.gz$$" > $@.tmp.vcf_list
+# 	$(BCFTOOLS) merge --threads=$(THREADS) -l $@.tmp.vcf_list -m none --force-samples | $(BCFTOOLS) filter --threads=$(THREADS) -S . -e 'GT=="0/0" | GT=="0|0"' > $@.tmp.merged;
+# 	# Prevent comma in description in vcf header
+# 	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp.merged --output=$@.tmp.merged --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
+# 	# Annotation
+# 	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp.merged --output=$@.tmp.annotated1 --annotation=$(HOWARD_ANNOTATION_ANALYSIS) --threads=$(THREADS);
+# 	# Prevent comma in description in vcf header
+# 	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp.annotated1 --output=$@.tmp.annotated1 --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
+# 	# Annotation dejavu (forced)
+# 	+if [ "$(HOWARD_DEJAVU_ANNOTATION)" != "" ]; then \
+# 		$(HOWARD) $(HOWARD_DEJAVU_CONFIG_OPTIONS) --input=$@.tmp.annotated1 --output=$@.tmp.annotated2 --annotation=$(HOWARD_DEJAVU_ANNOTATION) --norm=$$(cat $*.genome) --threads=$(THREADS) --force; \
+# 	else \
+# 		mv $@.tmp.annotated1 $@.tmp.annotated2; \
+# 	fi;
+# 	# Prevent comma in description in vcf header
+# 	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp.annotated2 --output=$@.tmp.annotated2 --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
+# 	# Calculation and prioritization (forced)
+# 	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp.annotated2 --output=$@.tmp.calculated.prioritized --calculation=$(HOWARD_CALCULATION_ANALYSIS) --prioritization=$(HOWARD_PRIORITIZATION_ANALYSIS) --nomen_fields=$(HOWARD_NOMEN_FIELDS) --force --threads=$(THREADS);
+# 	# Prevent comma in description in vcf header
+# 	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp.calculated.prioritized --output=$@.tmp.calculated.prioritized --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
+# 	# Sort VCF
+# 	mkdir -p $@.tmp.calculated.prioritized.SAMTOOLS_PREFIX
+# 	$(BCFTOOLS) sort -T $@.tmp.calculated.prioritized.SAMTOOLS_PREFIX $@.tmp.calculated.prioritized > $@.tmp.calculated.prioritized.sorted
+# 	rm -rf $@.tmp.calculated.prioritized.SAMTOOLS_PREFIX
+# 	# Generate Design VCF
+# 	$(BGZIP) --threads=$(THREADS) -c $@.tmp.calculated.prioritized.sorted > $@.tmp.calculated.prioritized.sorted.vcf.gz;
+# 	$(TABIX) $@.tmp.calculated.prioritized.sorted.vcf.gz;
+# 	cp $@.tmp.calculated.prioritized.sorted.vcf.gz $@.Design.vcf.gz;
+# 	$(TABIX) $@.Design.vcf.gz; \
+# 	# Generate Design TSV
+# 	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.Design.vcf.gz --output=$@.Design.tsv --translation=TSV --fields="$(HOWARD_FIELDS)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)" --pzfields="PZScore,PZFlag,PZComment,PZInfos" --force --threads=$(THREADS);
+# 	# Generate Panel(s) VCF and TSV from Design VCF ($@.Design.vcf.gz)
+# 	+for genes_file in $$(cat $$(cat $@.tmp.vcf_list | xargs dirname | sed s/reports$$/list.genes/) | cut -d. -f2- | sort -u); do \
+# 		# List of Samples with $$genes_file panel \
+# 		echo "genes_file for variants is: "$$genes_file; \
+# 		List_of_samples=$$(ls $(@D)/[^.]*/[^.]*.$$genes_file | xargs -l basename | cut -d. -f1 | sort -u | tr "\n" "," | sed s/,$$// 2>/dev/null) ; \
+# 		echo "List_of_samples is: "$$List_of_samples; \
+# 		if [ "$$List_of_samples" != "" ] || ((1)); then \
+# 			# List of $$genes_file within Samples folders \
+# 			List_of_genes_files=$$(ls $$(for L in $$(echo $$List_of_samples | tr "," "\n"); do echo $(@D)/$$L/$$L.$$genes_file; done;)) ; \
+# 			# Merge all $$genes_file found into uniq BED file (but supposed to be the same) \
+# 			cat $$(echo $$List_of_genes_files) | $(BEDTOOLS) sort | $(BEDTOOLS) merge > $@.tmp.GENES.$$genes_file; \
+# 			# Generate VCF Panel from VCF Design (especially $@.tmp.calculated.prioritized.sorted.vcf.gz because tabix) with $$genes_file for List of Samples \
+# 			if (( $$(grep ^ $@.tmp.GENES.$$genes_file -c) )); then \
+# 				$(BCFTOOLS) view --threads=$(THREADS) --samples $$List_of_samples -U --force-samples $@.tmp.calculated.prioritized.sorted.vcf.gz -R $@.tmp.GENES.$$genes_file > $@.Panel.$$genes_file.vcf; \
+# 			else \
+# 				$(BCFTOOLS) view --threads=$(THREADS) --samples $$List_of_samples -U --force-samples $@.tmp.calculated.prioritized.sorted.vcf.gz > $@.Panel.$$genes_file.vcf; \
+# 			fi; \
+# 			# Compress VCF \
+# 			$(BGZIP) --threads=$(THREADS) $@.Panel.$$genes_file.vcf; \
+# 			$(TABIX) $@.Panel.$$genes_file.vcf.gz; \
+# 			# Generate TSV Panel from VCF Panel compressed  \
+# 			$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.Panel.$$genes_file.vcf.gz --output=$@.Panel.$$genes_file.tsv --translation=TSV --fields="$(HOWARD_FIELDS)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)" --pzfields="PZScore,PZFlag,PZComment,PZInfos" --force --threads=$(THREADS); \
+# 		fi; \
+# 	done;
+# 	-rm -f $@.tmp.*
+# 	echo "#[INFO] All variants files on Design and Panel(s) are named $$(basename $@).*" > $@;
+
+
+
+# %.variants_full: $(VCF_REPORT_FILES)
+# 	+if (($(REPORT_VARIANTS_FULL))); then \
+# 		# List of full VCF files \
+# 		echo $^ | tr " " "\n" | tr "\t" "\n" | grep "full.vcf.gz$$" > $@.tmp.vcf_list; \
+# 		for f in $$(cat $@.tmp.vcf_list); do $(BCFTOOLS) view --threads=$(THREADS) -h $$f | grep "^#CHROM" | cut -f10- | sed  "s/^/$$(basename $$f | cut -d. -f1)./g;s/\t/\t$$(basename $$f | cut -d. -f1)./g";  done | tr "\t" "\n" > $@.tmp.vcf_list.pipelines; \
+# 		$(BCFTOOLS) merge --threads=$(THREADS) -l $@.tmp.vcf_list -m none --force-samples | $(BCFTOOLS) filter --threads=$(THREADS) -S . -e 'GT=="0/0" | GT=="0|0"' | $(BCFTOOLS) reheader --threads=$(THREADS) -s $@.tmp.vcf_list.pipelines > $@.tmp.merged; \
+# 		# Prevent comma in description in vcf header \
+# 		$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp.merged --output=$@.tmp.merged --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option); \
+# 		# Annotation; \
+# 		$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp.merged --output=$@.tmp.annotated0 --annotation=$(HOWARD_ANNOTATION_ANALYSIS) --norm=$$(cat $*.genome) --threads=$(THREADS); \
+# 		# Prevent comma in description in vcf header \
+# 		$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp.annotated0 --output=$@.tmp.annotated0 --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option); \
+# 		# Annotation dejavu (forced); \
+# 		if [ "$(HOWARD_DEJAVU_ANNOTATION)" != "" ]; then \
+# 			$(HOWARD) $(HOWARD_DEJAVU_CONFIG_OPTIONS) --input=$@.tmp.annotated0 --output=$@.tmp.annotated1 --annotation=$(HOWARD_DEJAVU_ANNOTATION) --norm=$$(cat $*.genome) --threads=$(THREADS) --force; \
+# 		else \
+# 			mv @.tmp.annotated0 $@.tmp.annotated1; \
+# 		fi; \
+# 		# Prevent comma in description in vcf header \
+# 		$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp.annotated1 --output=$@.tmp.annotated1 --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option); \
+# 		# Calculation and prioritization (forced); \
+# 		$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp.annotated1 --output=$@.tmp.calculated.prioritized --calculation=$(HOWARD_CALCULATION_ANALYSIS) --prioritization=$(HOWARD_PRIORITIZATION_ANALYSIS) --nomen_fields=$(HOWARD_NOMEN_FIELDS) --force --threads=$(THREADS); \
+# 		# Prevent comma in description in vcf header \
+# 		$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp.calculated.prioritized --output=$@.tmp.calculated.prioritized --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option); \
+# 		# Sort VCF; \
+# 		mkdir -p $@.tmp.calculated.prioritized.SAMTOOLS_PREFIX; \
+# 		$(BCFTOOLS) sort -T $@.tmp.calculated.prioritized.SAMTOOLS_PREFIX $@.tmp.calculated.prioritized > $@.tmp.calculated.prioritized.sorted; \
+# 		rm -rf $@.tmp.calculated.prioritized.SAMTOOLS_PREFIX; \
+# 		# Generate Design VCF; \
+# 		$(BGZIP) --threads=$(THREADS) -c $@.tmp.calculated.prioritized.sorted > $@.tmp.calculated.prioritized.sorted.vcf.gz; \
+# 		$(TABIX) $@.tmp.calculated.prioritized.sorted.vcf.gz; \
+# 		cp $@.tmp.calculated.prioritized.sorted.vcf.gz $@.Design.vcf.gz; \
+# 		$(TABIX) $@.Design.vcf.gz; \
+# 		# Generate Design TSV; \
+# 		$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.Design.vcf.gz --output=$@.Design.tsv --translation=TSV --fields="$(HOWARD_FIELDS)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)" --pzfields="PZScore,PZFlag,PZComment,PZInfos" --force --threads=$(THREADS); \
+# 		# Generate Panel(s) VCF and TSV from Design VCF ($@.Design.vcf.gz); \
+# 		for genes_file in $$(cat $$(cat $@.tmp.vcf_list | xargs dirname | sed s/reports$$/list.genes/) | cut -d. -f2- | sort -u); do \
+# 			# List of Samples with $$genes_file panel \
+# 			echo "genes_file for variants is: "$$genes_file; \
+# 			List_of_samples=$$(ls $(@D)/[^.]*/[^.]*.$$genes_file | xargs -l basename | cut -d. -f1 | sort -u | tr "\n" "," | sed s/,$$// 2>/dev/null) ; \
+# 			echo "List_of_samples is: "$$List_of_samples; \
+# 			if [ "$$List_of_samples" != "" ] || ((1)); then \
+# 				# List of $$genes_file within Samples folders \
+# 				List_of_genes_files=$$(ls $$(for L in $$(echo $$List_of_samples | tr "," "\n"); do echo $(@D)/$$L/$$L.$$genes_file; done;)) ; \
+# 				# Merge all $$genes_file found into uniq BED file (but supposed to be the same) \
+# 				cat $$(echo $$List_of_genes_files) | $(BEDTOOLS) sort | $(BEDTOOLS) merge > $@.tmp.GENES.$$genes_file; \
+# 				# Generate VCF Panel from VCF Design (especially $@.tmp.calculated.prioritized.sorted.vcf.gz because tabix) with $$genes_file for List of Samples \
+# 				if (( $$(grep ^ $@.tmp.GENES.$$genes_file -c) )); then \
+# 					$(BCFTOOLS) view --threads=$(THREADS)  --force-samples -U $@.tmp.calculated.prioritized.sorted.vcf.gz -R $@.tmp.GENES.$$genes_file > $@.Panel.$$genes_file.vcf; \
+# 				else \
+# 					$(BCFTOOLS) view --threads=$(THREADS)  --force-samples -U $@.tmp.calculated.prioritized.sorted.vcf.gz > $@.Panel.$$genes_file.vcf; \
+# 				fi; \
+# 				# Compress VCF \
+# 				$(BGZIP) --threads=$(THREADS)  $@.Panel.$$genes_file.vcf; \
+# 				$(TABIX) $@.Panel.$$genes_file.vcf.gz; \
+# 				# Generate TSV Panel from VCF Panel compressed  \
+# 				$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.Panel.$$genes_file.vcf.gz --output=$@.Panel.$$genes_file.tsv --translation=TSV --fields="$(HOWARD_FIELDS)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)" --pzfields="PZScore,PZFlag,PZComment,PZInfos" --force --threads=$(THREADS); \
+# 			fi; \
+# 		done; \
+# 		rm -f $@.tmp.*; \
+# 		echo "#[INFO] All variants files on Design and Panel(s) from full VCF are named $$(basename $@).*" > $@; \
+# 	fi;
+
+
+
 %.variants: $(VCF_REPORT_FILES) %.variants_full
 	# List of final VCF files
 	echo $^ | tr " " "\n" | tr "\t" "\n" | grep "final.vcf.gz$$" > $@.tmp.vcf_list
 	$(BCFTOOLS) merge --threads=$(THREADS) -l $@.tmp.vcf_list -m none --force-samples | $(BCFTOOLS) filter --threads=$(THREADS) -S . -e 'GT=="0/0" | GT=="0|0"' > $@.tmp.merged;
 	# Prevent comma in description in vcf header
 	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp.merged --output=$@.tmp.merged --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
-	# Annotation
-	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp.merged --output=$@.tmp.annotated1 --annotation=$(HOWARD_ANNOTATION_ANALYSIS) --threads=$(THREADS);
-	# Prevent comma in description in vcf header
-	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp.annotated1 --output=$@.tmp.annotated1 --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
-	# Annotation dejavu (forced)
-	+if [ "$(HOWARD_DEJAVU_ANNOTATION)" != "" ]; then \
-		$(HOWARD) $(HOWARD_DEJAVU_CONFIG_OPTIONS) --input=$@.tmp.annotated1 --output=$@.tmp.annotated2 --annotation=$(HOWARD_DEJAVU_ANNOTATION) --norm=$$(cat $*.genome) --threads=$(THREADS) --force; \
-	else \
-		mv $@.tmp.annotated1 $@.tmp.annotated2; \
-	fi;
-	# Prevent comma in description in vcf header
-	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp.annotated2 --output=$@.tmp.annotated2 --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
-	# Calculation and prioritization (forced)
-	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp.annotated2 --output=$@.tmp.calculated.prioritized --calculation=$(HOWARD_CALCULATION_ANALYSIS) --prioritization=$(HOWARD_PRIORITIZATION_ANALYSIS) --nomen_fields=$(HOWARD_NOMEN_FIELDS) --force --threads=$(THREADS);
-	# Prevent comma in description in vcf header
-	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp.calculated.prioritized --output=$@.tmp.calculated.prioritized --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
 	# Sort VCF
-	mkdir -p $@.tmp.calculated.prioritized.SAMTOOLS_PREFIX
-	$(BCFTOOLS) sort -T $@.tmp.calculated.prioritized.SAMTOOLS_PREFIX $@.tmp.calculated.prioritized > $@.tmp.calculated.prioritized.sorted
-	rm -rf $@.tmp.calculated.prioritized.SAMTOOLS_PREFIX
+	mkdir -p $@.tmp.merged.SAMTOOLS_PREFIX
+	$(BCFTOOLS) sort -T $@.tmp.merged.SAMTOOLS_PREFIX $@.tmp.merged > $@.tmp.calculated.prioritized.sorted
+	rm -rf $@.tmp.merged.SAMTOOLS_PREFIX
 	# Generate Design VCF
 	$(BGZIP) --threads=$(THREADS) -c $@.tmp.calculated.prioritized.sorted > $@.tmp.calculated.prioritized.sorted.vcf.gz;
 	$(TABIX) $@.tmp.calculated.prioritized.sorted.vcf.gz;
 	cp $@.tmp.calculated.prioritized.sorted.vcf.gz $@.Design.vcf.gz;
 	$(TABIX) $@.Design.vcf.gz; \
-	# Generate Design TSV
-	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.Design.vcf.gz --output=$@.Design.tsv --translation=TSV --fields="$(HOWARD_FIELDS)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)" --pzfields="PZScore,PZFlag,PZComment,PZInfos" --force --threads=$(THREADS);
 	# Generate Panel(s) VCF and TSV from Design VCF ($@.Design.vcf.gz)
 	+for genes_file in $$(cat $$(cat $@.tmp.vcf_list | xargs dirname | sed s/reports$$/list.genes/) | cut -d. -f2- | sort -u); do \
 		# List of Samples with $$genes_file panel \
@@ -258,8 +374,6 @@ REPORT_SECTIONS?=ALL
 			# Compress VCF \
 			$(BGZIP) --threads=$(THREADS) $@.Panel.$$genes_file.vcf; \
 			$(TABIX) $@.Panel.$$genes_file.vcf.gz; \
-			# Generate TSV Panel from VCF Panel compressed  \
-			$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.Panel.$$genes_file.vcf.gz --output=$@.Panel.$$genes_file.tsv --translation=TSV --fields="$(HOWARD_FIELDS)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)" --pzfields="PZScore,PZFlag,PZComment,PZInfos" --force --threads=$(THREADS); \
 		fi; \
 	done;
 	-rm -f $@.tmp.*
@@ -275,33 +389,15 @@ REPORT_SECTIONS?=ALL
 		$(BCFTOOLS) merge --threads=$(THREADS) -l $@.tmp.vcf_list -m none --force-samples | $(BCFTOOLS) filter --threads=$(THREADS) -S . -e 'GT=="0/0" | GT=="0|0"' | $(BCFTOOLS) reheader --threads=$(THREADS) -s $@.tmp.vcf_list.pipelines > $@.tmp.merged; \
 		# Prevent comma in description in vcf header \
 		$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp.merged --output=$@.tmp.merged --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option); \
-		# Annotation; \
-		$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp.merged --output=$@.tmp.annotated0 --annotation=$(HOWARD_ANNOTATION_ANALYSIS) --norm=$$(cat $*.genome) --threads=$(THREADS); \
-		# Prevent comma in description in vcf header \
-		$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp.annotated0 --output=$@.tmp.annotated0 --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option); \
-		# Annotation dejavu (forced); \
-		if [ "$(HOWARD_DEJAVU_ANNOTATION)" != "" ]; then \
-			$(HOWARD) $(HOWARD_DEJAVU_CONFIG_OPTIONS) --input=$@.tmp.annotated0 --output=$@.tmp.annotated1 --annotation=$(HOWARD_DEJAVU_ANNOTATION) --norm=$$(cat $*.genome) --threads=$(THREADS) --force; \
-		else \
-			mv @.tmp.annotated0 $@.tmp.annotated1; \
-		fi; \
-		# Prevent comma in description in vcf header \
-		$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp.annotated1 --output=$@.tmp.annotated1 --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option); \
-		# Calculation and prioritization (forced); \
-		$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp.annotated1 --output=$@.tmp.calculated.prioritized --calculation=$(HOWARD_CALCULATION_ANALYSIS) --prioritization=$(HOWARD_PRIORITIZATION_ANALYSIS) --nomen_fields=$(HOWARD_NOMEN_FIELDS) --force --threads=$(THREADS); \
-		# Prevent comma in description in vcf header \
-		$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp.calculated.prioritized --output=$@.tmp.calculated.prioritized --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option); \
 		# Sort VCF; \
-		mkdir -p $@.tmp.calculated.prioritized.SAMTOOLS_PREFIX; \
-		$(BCFTOOLS) sort -T $@.tmp.calculated.prioritized.SAMTOOLS_PREFIX $@.tmp.calculated.prioritized > $@.tmp.calculated.prioritized.sorted; \
-		rm -rf $@.tmp.calculated.prioritized.SAMTOOLS_PREFIX; \
+		mkdir -p $@.tmp.merged.SAMTOOLS_PREFIX; \
+		$(BCFTOOLS) sort -T $@.tmp.merged.SAMTOOLS_PREFIX $@.tmp.merged > $@.tmp.calculated.prioritized.sorted; \
+		rm -rf $@.tmp.merged.SAMTOOLS_PREFIX; \
 		# Generate Design VCF; \
 		$(BGZIP) --threads=$(THREADS) -c $@.tmp.calculated.prioritized.sorted > $@.tmp.calculated.prioritized.sorted.vcf.gz; \
 		$(TABIX) $@.tmp.calculated.prioritized.sorted.vcf.gz; \
 		cp $@.tmp.calculated.prioritized.sorted.vcf.gz $@.Design.vcf.gz; \
 		$(TABIX) $@.Design.vcf.gz; \
-		# Generate Design TSV; \
-		$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.Design.vcf.gz --output=$@.Design.tsv --translation=TSV --fields="$(HOWARD_FIELDS)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)" --pzfields="PZScore,PZFlag,PZComment,PZInfos" --force --threads=$(THREADS); \
 		# Generate Panel(s) VCF and TSV from Design VCF ($@.Design.vcf.gz); \
 		for genes_file in $$(cat $$(cat $@.tmp.vcf_list | xargs dirname | sed s/reports$$/list.genes/) | cut -d. -f2- | sort -u); do \
 			# List of Samples with $$genes_file panel \
@@ -322,8 +418,6 @@ REPORT_SECTIONS?=ALL
 				# Compress VCF \
 				$(BGZIP) --threads=$(THREADS)  $@.Panel.$$genes_file.vcf; \
 				$(TABIX) $@.Panel.$$genes_file.vcf.gz; \
-				# Generate TSV Panel from VCF Panel compressed  \
-				$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.Panel.$$genes_file.vcf.gz --output=$@.Panel.$$genes_file.tsv --translation=TSV --fields="$(HOWARD_FIELDS)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)" --pzfields="PZScore,PZFlag,PZComment,PZInfos" --force --threads=$(THREADS); \
 			fi; \
 		done; \
 		rm -f $@.tmp.*; \

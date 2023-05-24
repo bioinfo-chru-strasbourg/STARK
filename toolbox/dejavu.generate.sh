@@ -1050,7 +1050,7 @@ for GP_FOLDER in $GP_LIST_UNIQ; do
 			if (($DEJAVU_VCFSTATS )) && [ "$VCFSTATS" != "" ]; then
 				echo "$TMP/$GROUP/$PROJECT/dejavu.stats.vcfstats.tar.gz: $TMP/$GROUP/$PROJECT/dejavu.annotated.vcf.gz $TMP/$GROUP/$PROJECT/dejavu.annotated.vcf.gz.tbi
 					mkdir -p $TMP/$GROUP/$PROJECT/dejavu.stats.vcfstats
-					java -jar $VCFSTATS --inputFile $TMP/$GROUP/$PROJECT/dejavu.annotated.vcf.gz --outputDir $TMP/$GROUP/$PROJECT/dejavu.stats.vcfstats --referenceFile $GENOMES/current/$ASSEMBLY.fa -t $THREADS \$\$($BGZIP -dc $TMP/$GROUP/$PROJECT/dejavu.annotated.vcf.gz |  perl -ne 'print \"\$\$1\n\" if /##INFO=<ID=(.*?),/' | awk '{print \"--infoTag \"\$\$1\":All\"}')
+					$JAVA -jar $VCFSTATS --inputFile $TMP/$GROUP/$PROJECT/dejavu.annotated.vcf.gz --outputDir $TMP/$GROUP/$PROJECT/dejavu.stats.vcfstats --referenceFile $GENOMES/current/$ASSEMBLY.fa -t $THREADS \$\$($BGZIP -dc $TMP/$GROUP/$PROJECT/dejavu.annotated.vcf.gz |  perl -ne 'print \"\$\$1\n\" if /##INFO=<ID=(.*?),/' | awk '{print \"--infoTag \"\$\$1\":All\"}')
 					tar -zvcf $TMP/$GROUP/$PROJECT/dejavu.stats.vcfstats.tar.gz $TMP/$GROUP/$PROJECT/dejavu.stats.vcfstats
 					rm -rf $TMP/$GROUP/$PROJECT/dejavu.stats.vcfstats
 				" >> $MK
