@@ -30,6 +30,30 @@ HOWARD_NOMEN_FIELDS?="hgvs"
 
 
 # HOWARD ANNOTATION
+# %.howard$(POST_ANNOTATION).vcf: %.vcf %.empty.vcf %.transcripts %.genome
+# 	# Prevent comma in description in vcf header;
+# 	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$< --output=$@.tmp0 --threads=$(THREADS_BY_CALLER) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
+# 	# Annotation step DEJAVU (deprecated)
+# 	# +if [ "$(HOWARD_DEJAVU_ANNOTATION)" != "" ]; then \
+# 	# 	$(HOWARD) $(HOWARD_DEJAVU_CONFIG_OPTIONS) --input=$@.tmp0 --output=$@.tmp1 --annotation=$(HOWARD_DEJAVU_ANNOTATION) --norm=$$(cat $*.genome); \
+# 	#	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp1 --output=$@.tmp1 --threads=$(THREADS_BY_CALLER) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option); \
+# 	#	mv $@.tmp1 $@.tmp0; \
+# 	# fi;
+# 	# Annotation calculation step HOWARD
+# 	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp0 --output=$@ --annotation=$(HOWARD_ANNOTATION) --calculation=$(HOWARD_CALCULATION) --transcripts=$*.transcripts --nomen_fields=$(HOWARD_NOMEN_FIELDS) --norm=$$(cat $*.genome);
+# 	# Prevent comma in description in vcf header
+# 	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@ --output=$@ --threads=$(THREADS_BY_CALLER) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
+# 	# Clear
+# 	-if [ ! -e $@ ]; then cp $*.empty.vcf $@; fi;
+# 	# Downgrading VCF format 4.2 to 4.1
+# 	-cat $@ | sed "s/##fileformat=VCFv4.2/##fileformat=VCFv4.1/" > $@.dowgrade.4.2.to.4.1.tmp;
+# 	-rm -f $@;
+# 	-mv $@.dowgrade.4.2.to.4.1.tmp $@;
+# 	# clean
+# 	rm -rf $@.tmp*
+
+
+# HOWARD ANNOTATION
 %.howard$(POST_ANNOTATION).vcf: %.vcf %.empty.vcf %.transcripts %.genome
 	# Prevent comma in description in vcf header;
 	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$< --output=$@.tmp0 --threads=$(THREADS_BY_CALLER) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
@@ -40,7 +64,8 @@ HOWARD_NOMEN_FIELDS?="hgvs"
 	#	mv $@.tmp1 $@.tmp0; \
 	# fi;
 	# Annotation calculation step HOWARD
-	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp0 --output=$@ --annotation=$(HOWARD_ANNOTATION) --calculation=$(HOWARD_CALCULATION) --transcripts=$*.transcripts --nomen_fields=$(HOWARD_NOMEN_FIELDS) --norm=$$(cat $*.genome);
+	#+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp0 --output=$@ --annotation=$(HOWARD_ANNOTATION) --calculation=$(HOWARD_CALCULATION) --transcripts=$*.transcripts --nomen_fields=$(HOWARD_NOMEN_FIELDS) --norm=$$(cat $*.genome);
+	cp $@.tmp0 $@
 	# Prevent comma in description in vcf header
 	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@ --output=$@ --threads=$(THREADS_BY_CALLER) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
 	# Clear

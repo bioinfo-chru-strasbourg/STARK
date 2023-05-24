@@ -140,21 +140,23 @@ REMOVE_INTERMEDIATE_SAM?=1
 # 	#-rm -f $*.idx
 
 # MERGE SNP and InDel VCF
-%.vcf: %.SNP.vcf %.InDel.vcf
+%.vcf: %.SNP.vcf %.InDel.vcf %.dict
 	$(JAVA) $(JAVA_FLAGS_GATK4) -jar $(GATK4) \
 		MergeVcfs \
 		-I $*.SNP.vcf \
 		-I $*.InDel.vcf \
 		--CREATE_INDEX false \
+		--SEQUENCE_DICTIONARY $$(cat $*.dict) \
 		-O $@;
 
 # MERGE SNP and InDel VCF for Post calling steps. Because of loop in rules
-%.vcf: %.POST_CALLING_SNP.vcf %.POST_CALLING_InDel.vcf
+%.vcf: %.POST_CALLING_SNP.vcf %.POST_CALLING_InDel.vcf %.dict
 	$(JAVA) $(JAVA_FLAGS_GATK4) -jar $(GATK4) \
 		MergeVcfs \
 		-I $*.POST_CALLING_SNP.vcf \
 		-I $*.POST_CALLING_InDel.vcf \
 		--CREATE_INDEX false \
+		--SEQUENCE_DICTIONARY $$(cat $*.dict) \
 		-O $@;
 
 
@@ -166,13 +168,20 @@ REMOVE_INTERMEDIATE_SAM?=1
 
 
 # VCF to tab delimiter
+# %.tsv: %.vcf
+# 	# translation step
+# 	$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$< --output=$@ --translation=TSV --fields="$(HOWARD_FIELDS)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)" --force;
+# 	# Touch
+# 	if [ ! -e $@ ]; then touch $@; fi;
+# 	# Cleaning
+
 %.tsv: %.vcf
 	# translation step
-	$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$< --output=$@ --translation=TSV --fields="$(HOWARD_FIELDS)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)" --force;
+	#$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$< --output=$@ --translation=TSV --fields="$(HOWARD_FIELDS)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)" --force;
+	touch $@
 	# Touch
 	if [ ! -e $@ ]; then touch $@; fi;
 	# Cleaning
-
 
 
 ## BAM/FASTQ Files
