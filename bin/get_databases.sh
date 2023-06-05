@@ -568,6 +568,25 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 
 	fi;
 
+	## BWA2 index
+
+	if [ ! -e $DB_TARGET.bwt.2bit.64 ]; then
+
+		if [ "$BWA2" != "" ]; then
+
+		    (($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME' release '$DB_RELEASE' for '$DB_TARGET_RELEASE' BWA Index"
+		    
+			# MK
+		    echo "$DB_TARGET.bwt.2bit.64: $DB_TARGET
+				$BWA2 index $DB_TARGET;
+		    " >> $MK
+
+			MK_ALL="$MK_ALL $DB_TARGET.bwt.2bit.64"
+
+		fi;
+
+	fi;
+
 	## SAMTOOLS index
 
 	if [ ! -e $DB_TARGET.fai ]; then
@@ -618,7 +637,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 
 			# MK
 		    echo "$DB_TARGET.img: $REF
-				$JAVA11 -XX:+UseParallelGC -XX:ParallelGCThreads=$THREADS -jar $GATK4 BwaMemIndexImageCreator \
+				$JAVA -XX:+UseParallelGC -XX:ParallelGCThreads=$THREADS -jar $GATK4 BwaMemIndexImageCreator \
 					--input $REF \
 					--output $DB_TARGET.img;
 		    " >> $MK
@@ -1288,7 +1307,7 @@ DATABASE_DESCRIPTION="Genetic variant annotation and functional effect predictio
 if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
 
 
-	SNPEFF_TOOL_VERSION=$($JAVA11 -jar $SNPEFF -version | cut -f2)
+	SNPEFF_TOOL_VERSION=$($JAVA -jar $SNPEFF -version | cut -f2)
 	[ ! -d "$DBFOLDER/snpeff/$SNPEFF_TOOL_VERSION" ] && UPDATE_SNPEFF=1 || UPDATE_SNPEFF=0
 
 	# DB TARGET
@@ -1342,27 +1361,12 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 
 			SNPEFF_DATABASES_FOLDER=$DB_TMP/databases
 
-			
-
-			#SNPEFF_CMD="$JAVA $JAVA_FLAGS -jar $SNPEFF download $DB_ASSEMBLY -dataDir $SNPEFF_DATABASES_FOLDER 1>$SNPEFF_DATABASES_FOLDER/STARK.SNPEFF.download.log 2>$SNPEFF_DATABASES_FOLDER/STARK.SNPEFF.download.err";
-			#SNPEFF_CMD_ALT="if ((\$\$(grep 'ERROR while connecting to' $SNPEFF_DATABASES_FOLDER/STARK.SNPEFF.download.err -c))); then wget --no-verbose -O $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip \$\$(grep 'ERROR while connecting to' $SNPEFF_DATABASES_FOLDER/STARK.SNPEFF.download.err | cut -f2 | cut -d' ' -f5); unzip $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip -d $SNPEFF_DATABASES_FOLDER/; mv $SNPEFF_DATABASES_FOLDER/data/* $SNPEFF_DATABASES_FOLDER/; fi"
-			# https://snpeff.blob.core.windows.net/databases/v5_0
-			# wget --progress=bar -O ${DOCKER_HOWARD_SETUP_SNPEFF_DATABASES}/snpEff_v5_0_${DOCKER_HOWARD_SETUP_ASSEMBLY}.zip https://snpeff.blob.core.windows.net/databases/v5_0/snpEff_v5_0_${DOCKER_HOWARD_SETUP_ASSEMBLY}.zip ; unzip -o ${DOCKER_HOWARD_SETUP_SNPEFF_DATABASES}/snpEff_v5_0_${DOCKER_HOWARD_SETUP_ASSEMBLY}.zip -d ${DOCKER_HOWARD_SETUP_SNPEFF_DATABASES}/
-
-			#SNPEFF_CMD="echo 'ERROR while connecting to' > $SNPEFF_DATABASES_FOLDER/STARK.SNPEFF.download.err"
-			#SNPEFF_CMD="echo ''"
-			#SNPEFF_CMD="wget --no-verbose -O $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip \$\$($JAVA11 -jar $SNPEFF databases | grep '^$ASSEMBLY ' | grep -Po 'http[^, ]*zip' | head -n1) || wget --no-verbose -O $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip \$\$($JAVA11 -jar $SNPEFF databases | grep '^$ASSEMBLY ' | grep -Po 'http[^, ]*zip' | head -n1); unzip $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip -d $SNPEFF_DATABASES_FOLDER/; mv $SNPEFF_DATABASES_FOLDER/data/* $SNPEFF_DATABASES_FOLDER/;"
-			SNPEFF_CMD="wget --no-verbose -O $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip \$\$($JAVA11 -jar $SNPEFF databases | grep '^$ASSEMBLY ' | grep -Po 'http[^, ]*zip' | head -n1) || wget --no-verbose -O $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip \$\$($JAVA11 -jar $SNPEFF databases | grep '^$ASSEMBLY ' | grep -Po 'http[^, ]*zip' | tail -n1); unzip $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip -d $SNPEFF_DATABASES_FOLDER/; mv $SNPEFF_DATABASES_FOLDER/data/* $SNPEFF_DATABASES_FOLDER/;"
-			#SNPEFF_CMD_ALT="if ((\$\$(grep 'ERROR while connecting to' $SNPEFF_DATABASES_FOLDER/STARK.SNPEFF.download.err -c))); then wget --no-verbose -O $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip \$\$($JAVA -jar $SNPEFF databases | grep '^hg19 ' | awk -F' ' 'NF>1{print $NF}'); unzip $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip -d $SNPEFF_DATABASES_FOLDER/; mv $SNPEFF_DATABASES_FOLDER/data/* $SNPEFF_DATABASES_FOLDER/; fi"
+			SNPEFF_CMD="wget --no-verbose -O $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip \$\$($JAVA -jar $SNPEFF databases | grep '^$ASSEMBLY ' | grep -Po 'http[^, ]*zip' | head -n1) || wget --no-verbose -O $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip \$\$($JAVA -jar $SNPEFF databases | grep '^$ASSEMBLY ' | grep -Po 'http[^, ]*zip' | tail -n1); unzip $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip -d $SNPEFF_DATABASES_FOLDER/; mv $SNPEFF_DATABASES_FOLDER/data/* $SNPEFF_DATABASES_FOLDER/;"
 
 			(($DEBUG)) && echo "#[INFO] SNPEFF CMD = $SNPEFF_CMD"
 			(($DEBUG)) && echo "#[INFO] SNPEFF CMD ALT = $SNPEFF_CMD_ALT"
-			#(($VERBOSE)) && echo "#["
-			#echo "$DB_TARGET_RELEASE != $DB_RELEASE"
-			#echo "test"; exit 0
 
 			# RELEASE
-			#SNPEFF_TOOL_VERSION=$(java -jar $SNPEFF -version | cut -f2)
 			DB_RELEASE_FROM_DOWNLOAD=$DB_TARGET_RELEASE
 			if [ ! -z SNPEFF_VERSION ]; then
 				DB_RELEASE_FROM_DOWNLOAD=$SNPEFF_VERSION;

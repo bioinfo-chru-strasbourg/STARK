@@ -3,7 +3,21 @@
 ## STARK environment
 #################################
 
+# FUNCTIONS
+#############
 
+# function in_array
+# input: $element $array
+in_array () 
+{ 
+	param=$1;
+	shift;
+	for elem in "$@";
+	do
+		[[ "$param" = "$elem" ]] && return 0;
+	done;
+	return 1
+}
 
 # APPLICATION INFOS
 ############
@@ -165,7 +179,6 @@ mkdir -p $DEMULTIPLEXING_FOLDER $RESULTS_FOLDER $ANALYSIS_FOLDER $TMP_FOLDER_TMP
 export NGS_TOOLS=$FOLDER_TOOLS				# TOOLS
 export DBFOLDER=$FOLDER_DATABASES			# DB
 export NGS_GENOMES=$DBFOLDER/genomes			# GENOMES folder
-export RULES=$STARK_FOLDER_RULES/*.rules.mk		# RULES
 export APPS=$STARK_FOLDER_APPS				# APPS
 export GENOMES=$NGS_GENOMES				# Genomes folder in NGS folder
 export TMP_SYS_FOLDER=/tmp				# TEMPORARY SYSTEM folder (tmpfs)
@@ -256,6 +269,26 @@ export FAVORITES_RUN_IGV_SESSION_MINDEPTH
 export FAVORITES_RUN_IGV_SESSION_MAXDEPTH
 
 
+# IGV Display Mode
+# IGV Display mode for files found in patterns
+# Depend on file format: either BEM, VCF or BED formats
+# There are 3 different options for viewing the feature track.  These allow you to display overlapping features, such as different transcripts of a gene, on one line or multiple lines
+# Dislpay mode options available in IGV: SQUISHED, COLLAPSED and EXPANDED
+DISPLAYMODE_ARRAY="SQUISHED COLLAPSED EXPANDED"
+if [ -z "$DISPLAYMODE_BAM" ] || ! in_array $DISPLAYMODE_BAM $DISPLAYMODE_ARRAY; then
+	DISPLAYMODE_BAM="SQUISHED"
+fi;
+export DISPLAYMODE_BAM
+if [ -z "$DISPLAYMODE_VCF" ] || ! in_array $DISPLAYMODE_VCF $DISPLAYMODE_ARRAY; then
+	DISPLAYMODE_VCF="COLLAPSED"
+fi;
+export DISPLAYMODE_VCF
+if [ -z "$DISPLAYMODE_BED" ] || ! in_array $DISPLAYMODE_BED $DISPLAYMODE_ARRAY; then
+	DISPLAYMODE_BED="COLLAPSED"
+fi;
+export DISPLAYMODE_BED
+
+
 # IGV SESSION DB
 # Additionnal databases for IGV session (see IGV doc)
 # Example:
@@ -330,13 +363,6 @@ done;
 
 # RULES for the project
 [ "$APP_PROJECT" != "" ] && RULES_APP="$RULES_APP $STARK_FOLDER_RULES/$APP_PROJECT/*rules.mk";
-
-
-#export RULES="$RULES $RULES_APP"
-#export RULES=$(ls -N $RULES $RULES_APP)
-export RULES=$(find $RULES $RULES_APP -maxdepth 0 -type f 2>/dev/null | sort -u | tr "\n" " ")
-#export RULES=$(find $RULES $RULES_APP)
-#echo "RULLES: $RULES"
 
 #SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd -P )"
 #echo $SCRIPT_DIR
@@ -1154,35 +1180,42 @@ export HOWARD_NOMEN_FIELDS
 # Scores can be used to sort variant in the TXT
 
 # DEFAULT
-# Default filter to prioritize/rank variant.
-if [ -z "$HOWARD_PRIORITIZATION" ]; then
-	HOWARD_PRIORITIZATION=$HOWARD_PRIORITIZATION_DEFAULT
+if [ -z "$HOWARD_PRIORITIZATION_DEFAULT" ]; then
+	HOWARD_PRIORITIZATION_DEFAULT="null"
 fi;
-if [ ! -z "$APP_NAME" ] && [ ${APP_NAME^^} != "DEFAULT" ]; then
-	HOWARD_PRIORITIZATION="$APP_NAME,$HOWARD_PRIORITIZATION"
-fi;
-# Keep fist as first and sort the rest
-HOWARD_PRIORITIZATION=$(echo $(echo $HOWARD_PRIORITIZATION | tr "," " " | cut -d" " -f1 | tr " " "," && echo $HOWARD_PRIORITIZATION | tr "," " " | tr " " "\n" | sort -u | grep -v "^$(echo $HOWARD_PRIORITIZATION | tr "," " " | cut -d" " -f1)$" | tr "\n" "," | sed s/,$//) | tr " " "," )
-export HOWARD_PRIORITIZATION
+export HOWARD_PRIORITIZATION_DEFAULT
 
 
-# MINIMAL
-# Minimal filter to prioritize/rank variant.
-if [ -z "$HOWARD_PRIORITIZATION_MINIMAL" ]; then
-	HOWARD_PRIORITIZATION_MINIMAL=$HOWARD_PRIORITIZATION
-fi;
-if [ ! -z "$APP_NAME" ] && [ ${APP_NAME^^} != "DEFAULT" ]; then
-	HOWARD_PRIORITIZATION_MINIMAL="$APP_NAME,$HOWARD_PRIORITIZATION_MINIMAL"
-fi;
-# Keep fist as first and sort the rest
-HOWARD_PRIORITIZATION_MINIMAL=$(echo $(echo $HOWARD_PRIORITIZATION_MINIMAL | tr "," " " | cut -d" " -f1 | tr " " "," && echo $HOWARD_PRIORITIZATION_MINIMAL | tr "," " " | tr " " "\n" | sort -u | grep -v "^$(echo $HOWARD_PRIORITIZATION_MINIMAL | tr "," " " | cut -d" " -f1)$" | tr "\n" "," | sed s/,$//) | tr " " "," )
-export HOWARD_PRIORITIZATION_MINIMAL
+# # DEFAULT (deprecated)
+# # Default filter to prioritize/rank variant.
+# if [ -z "$HOWARD_PRIORITIZATION" ]; then
+# 	HOWARD_PRIORITIZATION=$HOWARD_PRIORITIZATION_DEFAULT
+# fi;
+# if [ ! -z "$APP_NAME" ] && [ ${APP_NAME^^} != "DEFAULT" ]; then
+# 	HOWARD_PRIORITIZATION="$APP_NAME,$HOWARD_PRIORITIZATION"
+# fi;
+# # Keep fist as first and sort the rest
+# HOWARD_PRIORITIZATION=$(echo $(echo $HOWARD_PRIORITIZATION | tr "," " " | cut -d" " -f1 | tr " " "," && echo $HOWARD_PRIORITIZATION | tr "," " " | tr " " "\n" | sort -u | grep -v "^$(echo $HOWARD_PRIORITIZATION | tr "," " " | cut -d" " -f1)$" | tr "\n" "," | sed s/,$//) | tr " " "," )
+# export HOWARD_PRIORITIZATION
+
+
+# # MINIMAL (deprecated)
+# # Minimal filter to prioritize/rank variant.
+# if [ -z "$HOWARD_PRIORITIZATION_MINIMAL" ]; then
+# 	HOWARD_PRIORITIZATION_MINIMAL=$HOWARD_PRIORITIZATION
+# fi;
+# if [ ! -z "$APP_NAME" ] && [ ${APP_NAME^^} != "DEFAULT" ]; then
+# 	HOWARD_PRIORITIZATION_MINIMAL="$APP_NAME,$HOWARD_PRIORITIZATION_MINIMAL"
+# fi;
+# # Keep fist as first and sort the rest
+# HOWARD_PRIORITIZATION_MINIMAL=$(echo $(echo $HOWARD_PRIORITIZATION_MINIMAL | tr "," " " | cut -d" " -f1 | tr " " "," && echo $HOWARD_PRIORITIZATION_MINIMAL | tr "," " " | tr " " "\n" | sort -u | grep -v "^$(echo $HOWARD_PRIORITIZATION_MINIMAL | tr "," " " | cut -d" " -f1)$" | tr "\n" "," | sed s/,$//) | tr " " "," )
+# export HOWARD_PRIORITIZATION_MINIMAL
 
 
 # Report
 # Default filter to prioritize/rank variant for Report
 if [ -z "$HOWARD_PRIORITIZATION_REPORT" ]; then
-	HOWARD_PRIORITIZATION_REPORT=$HOWARD_PRIORITIZATION
+	HOWARD_PRIORITIZATION_REPORT=$HOWARD_PRIORITIZATION_DEFAULT
 fi;
 if [ ! -z "$APP_NAME" ] && [ ${APP_NAME^^} != "DEFAULT" ]; then
 	HOWARD_PRIORITIZATION_REPORT="$APP_NAME,$HOWARD_PRIORITIZATION_REPORT"
@@ -1195,7 +1228,7 @@ export HOWARD_PRIORITIZATION_REPORT
 # ANALYSIS
 # Default filter to prioritize/rank variant for whole analysis (calculation forced)
 if [ -z "$HOWARD_PRIORITIZATION_ANALYSIS" ]; then
-	HOWARD_PRIORITIZATION_ANALYSIS=$HOWARD_PRIORITIZATION
+	HOWARD_PRIORITIZATION_ANALYSIS=$HOWARD_PRIORITIZATION_DEFAULT
 fi;
 if [ ! -z "$APP_NAME" ] && [ ${APP_NAME^^} != "DEFAULT" ]; then
 	HOWARD_PRIORITIZATION_ANALYSIS="$APP_NAME,$HOWARD_PRIORITIZATION_ANALYSIS"
@@ -1208,7 +1241,7 @@ export HOWARD_PRIORITIZATION_ANALYSIS
 # VARANK
 # Default prioritization with HOWARD for VaRank score mode
 if [ -z "$HOWARD_PRIORITIZATION_VARANK" ]; then
-	HOWARD_PRIORITIZATION_VARANK=$HOWARD_PRIORITIZATION
+	HOWARD_PRIORITIZATION_VARANK=$HOWARD_PRIORITIZATION_DEFAULT
 fi;
 if [ ! -z "$APP_NAME" ] && [ ${APP_NAME^^} != "DEFAULT" ]; then
 	HOWARD_PRIORITIZATION_VARANK="$APP_NAME,$HOWARD_PRIORITIZATION_VARANK"
@@ -1276,6 +1309,15 @@ if [ -z $HOWARD_ORDER_BY_REPORT ]; then
 fi;
 export HOWARD_ORDER_BY_REPORT
 
+
+
+# INFO to FORMAT
+# Transfers INFO annotation to FORMAT annotation
+# Useful for annotations on full VCF to final VCF on each sample
+if [ -z $INFO_TO_FORMAT_ANNOTATIONS ]; then
+	INFO_TO_FORMAT_ANNOTATIONS=""
+fi;
+export INFO_TO_FORMAT_ANNOTATIONS
 
 
 # Recalibration and Filtration
@@ -1562,6 +1604,7 @@ if ((1)); then
 
 fi;
 
+
 # JAVA FLAGS
 ##############
 export JAVA_MEMORY_BY_SAMPLE
@@ -1584,6 +1627,32 @@ export JAVA_FLAGS;
 #export JAVA_FLAGS_BY_SAMPLE;
 
 
+# RESOURCES MANAGMENT
+#######################
+
+### Picard CollectHsMetrics
+# If validation bam is small enough (lower than MAX_VALIDATION_BAM_SIZE Kb), launch CollectHsMetrics the classic way
+# Otherwise increase RAM to MAX_CONCURRENT_HSMETRICS_RAM and limit command to MAX_CONCURRENT_HSMETRICS concurrent launches
+# default: MAX_VALIDATION_BAM_SIZE=1000000000 (exageratly big to switch off)
+# example:
+# - MAX_VALIDATION_BAM_SIZE=2097152		# 2Go
+# - MAX_CONCURRENT_HSMETRICS=1 			# No concurrence, only 1 HsMetrics at once
+# - MAX_CONCURRENT_HSMETRICS_RAM=16g 	# 16Go of RAM to Collect HsMetrics
+if [ "$MAX_VALIDATION_BAM_SIZE" == "" ]; then
+	MAX_VALIDATION_BAM_SIZE=1000000000;
+fi;
+export MAX_VALIDATION_BAM_SIZE
+if [ "$MAX_CONCURRENT_HSMETRICS" == "" ]; then
+	MAX_CONCURRENT_HSMETRICS=1;
+fi;
+export MAX_CONCURRENT_HSMETRICS
+if [ "$MAX_CONCURRENT_HSMETRICS_RAM" == "" ]; then
+	MAX_CONCURRENT_HSMETRICS_RAM=16g;
+fi;
+export MAX_CONCURRENT_HSMETRICS_RAM
+
+
+
 
 # REPORT
 # Report variables
@@ -1604,11 +1673,31 @@ export REPORT_SECTIONS
 # Generate variants files from run with full VCF (include all calling information)
 export REPORT_VARIANTS_FULL
 
-# CHECK
-#re='^[0-9]+$'
-#if ! [[ $THREADS =~ $re ]] || [ "$THREADS" == "" ]; then
-#	THREADS=1
-#fi;
 
-# TEST
-#THREADS=16
+
+# RULES export has to be after PIPELINE is defined and no longer changed, otherwise some rules might not be loaded
+
+# Main rules
+RULES=$(ls $STARK_FOLDER_RULES/*.rules.mk 2>/dev/null | tr '\n' ' ')
+
+# APP rules
+RULES+=" "$(ls $RULES_APP/*.rules.mk 2>/dev/null | tr '\n' ' ')
+
+# Pipelines rules
+# For developpers:
+#    - beware of similar rules and file names within subfolders pipelines rules
+#    - if a pipeline rule is a common rule (e.g. for vcf filtration which is a rule used in multiple steps), just do not create file, or let it empty
+#    - use "_" to gather rules 
+for rule in $(echo $PIPELINES" "$POST_SEQUENCING_STEPS" "$POST_ALIGNMENT_STEPS" "$POST_CALLING_STEPS" "$POST_ANNOTATION_STEPS" "$POST_CALLING_MERGING_STEPS | tr '.' ' ' | sort -u); do 
+	rule_root=$(echo $rule | cut -d_ -f1)
+	# Add root rule file
+	RULES+=" "$(find $STARK_FOLDER_RULES/*/ -name $rule_root.rules.mk | tr '\n' ' ')
+	# Add rule file
+	RULES+=" "$(find $STARK_FOLDER_RULES/*/ -name $rule.rules.mk | tr '\n' ' ')
+done;
+
+# Uniqify
+RULES=$(echo $RULES | tr " " "\n" | sort -u | tr "\n" " ")
+
+# Export
+export RULES

@@ -25,7 +25,7 @@ MK_DATE="29/09/2016"
 		mv $@.aligned.sam $@; \
 	else \
 		echo "# BAM $@.aligned.sam without read group"; \
-		$(JAVA11) $(JAVA_FLAGS) -jar $(PICARD) AddOrReplaceReadGroups $(PICARD_FLAGS) -I $@.aligned.sam -O $@ -COMPRESSION_LEVEL 1 -RGSM $(*F); \
+		$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) AddOrReplaceReadGroups $(PICARD_FLAGS) -I $@.aligned.sam -O $@ -COMPRESSION_LEVEL 1 -RGSM $(*F); \
 	fi;
 	-rm -f $@.aligned.sam
 

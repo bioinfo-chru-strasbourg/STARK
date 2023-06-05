@@ -7,10 +7,10 @@
 
 SCRIPT_NAME="LaunchSample"
 SCRIPT_DESCRIPTION="Launch a Sample Analysis"
-SCRIPT_RELEASE="0.9.7.2"
-SCRIPT_DATE="11/11/2021"
+SCRIPT_RELEASE="0.9.8"
+SCRIPT_DATE="16/02/2023"
 SCRIPT_AUTHOR="Antony Le Bechec"
-SCRIPT_COPYRIGHT="IRC"
+SCRIPT_COPYRIGHT="HUS"
 SCRIPT_LICENCE="GNU-AGPL"
 
 # Release note
@@ -24,6 +24,7 @@ RELEASE_NOTES=$RELEASE_NOTES"# 0.9.6.1b-19/03/2019: Minor change on FASTQ/BAM/CR
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.7.0-06/09/2021: Include UMI treatment, rebuild FASTQ input treatment\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.7.1-15/10/2021: Include Favorites folder.\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.7.2-11/11/2021: Add subfolder files patterns.\n";
+RELEASE_NOTES=$RELEASE_NOTES"# 0.9.8-16/02/2023: Fix analysis.log, improve IGV sessions.\n";
 
 # Script folder
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -323,7 +324,6 @@ fi
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 
-#COMMAND_COPY="rsync -aucqpAXoghi --no-links --no-perms --no-owner --no-group" # "cp -auv" or "rsync -auv" # auvpAXog
 COMMAND_COPY="rsync -auczqAXhi --no-links --no-perms --no-owner --no-group "
 COMMAND_COPY_NO_COMPRESS="rsync -aucqAXhi --no-links --no-perms --no-owner --no-group "
 COMMAND_LINK="ln " # "cp -auv" or "rsync -auv" # auvpAXog
@@ -358,11 +358,9 @@ source_app "$APP" "$STARK_FOLDER_APPS" 1
 
 
 
-
 # FASTQ_R1
 FASTQ_R1_RELOCATED=""
 if [ "$FASTQ" != "" ]; then
-	#for F_INPUT in $(echo $FASTQ | tr "+" " "); do
 	for FS_INPUT in $FASTQ; do
 		FS_INPUT_RELOC=""
 		for F_INPUT in $(echo $FS_INPUT | tr "+" " "); do
@@ -383,7 +381,7 @@ if [ "$FASTQ" != "" ]; then
 		# Relocation
 		FASTQ_R1_RELOCATED="$FASTQ_R1_RELOCATED "$(echo $FS_INPUT_RELOC | sed s/^+//)
 	done;
-	FASTQ=$FASTQ_R1_RELOCATED #$(echo $FASTQ_R1_RELOCATED | tr " " "+")
+	FASTQ=$FASTQ_R1_RELOCATED
 fi;
 
 
@@ -410,7 +408,7 @@ if [ "$FASTQ_R2" != "" ]; then
 		# Relocation
 		FASTQ_R2_RELOCATED="$FASTQ_R2_RELOCATED "$(echo $FS_INPUT_RELOC | sed s/^+//)
 	done;
-	FASTQ_R2=$FASTQ_R2_RELOCATED # "$(echo $FS_INPUT_RELOC | sed s/^+//) #$(echo $FASTQ_R2_RELOCATED | tr " " "+")
+	FASTQ_R2=$FASTQ_R2_RELOCATED
 fi;
 
 
@@ -469,7 +467,6 @@ fi;
 # OTHER_FILES
 OTHER_FILES_RELOCATED=""
 if [ "$OTHER_FILES" != "" ]; then
-	#for OFCF in $(echo $(ls $OTHER_FILES 2>/dev/null | xargs realpath 2>/dev/null) $(cd $ANALYSIS_DIR && ls $OTHER_FILES 2>/dev/null | xargs realpath 2>/dev/null) | tr " " "\n" | sort -u); do
 	for OFCF in $OTHER_FILES; do
 		(($DEBUG)) && echo "OFCF=$OFCF"
 		OTHER_FILES_RELOCATED_ONE=""
@@ -520,7 +517,7 @@ if [ "$BED_INPUT" != "" ]; then
 
 fi;
 BED_INPUT=$BED_RELOCATED
-BED_DEFAULT=$(echo $BED_INPUT | cut -d" " -f1) #`date '+%Y%m%d-%H%M%S'`
+BED_DEFAULT=$(echo $BED_INPUT | cut -d" " -f1)
 
 
 # BEDFILE_GENES
@@ -552,7 +549,7 @@ if [ "$BEDFILE_GENES" != "" ]; then
 	done;
 fi;
 BEDFILE_GENES=$BEDFILE_GENES_RELOCATED
-BEDFILE_GENES_DEFAULT=$(echo $BEDFILE_GENES | cut -d" " -f1) #`date '+%Y%m%d-%H%M%S'`
+BEDFILE_GENES_DEFAULT=$(echo $BEDFILE_GENES | cut -d" " -f1)
 
 
 # TRANSCRIPTS
@@ -585,7 +582,7 @@ if [ "$TRANSCRIPTS" != "" ]; then
 
 fi;
 TRANSCRIPTS=$TRANSCRIPTS_RELOCATED
-TRANSCRIPTS_DEFAULT=$(echo $TRANSCRIPTS | cut -d" " -f1) #`date '+%Y%m%d-%H%M%S'`
+TRANSCRIPTS_DEFAULT=$(echo $TRANSCRIPTS | cut -d" " -f1)
 
 
 # PEDIGREE
@@ -618,13 +615,13 @@ if [ "$PEDIGREE" != "" ]; then
 
 fi;
 PEDIGREE=$PEDIGREE_RELOCATED
-PEDIGREE_DEFAULT=$(echo $PEDIGREE | cut -d" " -f1) #`date '+%Y%m%d-%H%M%S'`
+PEDIGREE_DEFAULT=$(echo $PEDIGREE | cut -d" " -f1)
 
 
 # RUN
 RUN_DEFAULT=`date '+%Y%m%d'`
 if [ "$RUN" != "" ]; then
-	RUN_DEFAULT=$(echo $RUN | cut -d" " -f1) #`date '+%Y%m%d-%H%M%S'`
+	RUN_DEFAULT=$(echo $RUN | cut -d" " -f1)
 fi;
 
 
@@ -827,7 +824,7 @@ if [ "$PIPELINES" == "" ]; then
 fi;
 
 
-#DATE
+# DATE
 DATE_DAY=`date '+%Y%m%d'`
 DATE_MIN=`date '+%Y%m%d-%H%M%S'`
 ANALYSIS_REF=$DATE_MIN
@@ -866,7 +863,6 @@ done
 # DEFAULT RESULTS
 # RESULTS is 1/ the RESULTS folder in option, OR 2/ FOLDER_RESULT in ENV, OR 3/ folder of the first FASTQ by default
 if [ -z "$RESULTS" ]; then
-	#RESULTS=$FOLDER_RESULTS
 	RESULTS=$RESULTS_FOLDER
 fi;
 if [ -z "$RESULTS" ]; then
@@ -876,13 +872,8 @@ fi;
 # DEFAULT RESULTS
 # RESULTS is 1/ the RESULTS folder in option, OR 2/ FOLDER_RESULT in ENV, OR 3/ folder of the first FASTQ by default
 if [ -z "$DEMULTIPLEXING" ]; then
-	#RESULTS=$FOLDER_RESULTS
 	DEMULTIPLEXING=$FOLDER_DEMULTIPLEXING
 fi;
-# if [ -z "$RESULTS" ]; then
-# 	RESULTS=$INPUT
-# fi;
-
 
 
 # CREATE RESULTS if necessary
@@ -917,7 +908,6 @@ if (($DEBUG)); then
 	echo "#[INFO] REPOSITORY_FILE_PATTERNS=$REPOSITORY_FILE_PATTERNS"
 	echo "#[INFO] ARCHIVES_FILE_PATTERNS=$ARCHIVES_FILE_PATTERNS"
 	echo "#[INFO] FAVORITES_FILE_PATTERNS=$FAVORITES_FILE_PATTERNS"
-	#exit 0
 fi;
 
 
@@ -975,7 +965,6 @@ for RUU in $RUN_UNIQ; do
 	# MKDIR & TOUCH
 	mkdir -p $RESULTS/$RUU
 	touch $MAKEFILE_ANALYSIS_RUN
-	#touch $SHELL_ANALYSIS_RUN
 
 	### Results log
 	touch $LOGFILE_RES_RUN
@@ -987,28 +976,15 @@ for RUU in $RUN_UNIQ; do
 	if [ -e $DEMULTIPLEXING/$RUU/demultiplexing.configuration.log ]; then
 		cp -pf $DEMULTIPLEXING/$RUU/demultiplexing.configuration.log $LOGFILE_DEM_RUN
 	fi;
-	
-
-	# # FASTQ
-	# > $FASTQ_MK
-	# FASTQ_MK_ALL=""
-
-	# # FASTP
-	# > $FASTP_MK
-	# FASTP_MK_ALL=""
 
 	# INPUT
 	> $INPUT_MK
 	INPUT_MK_ALL=""
 
-
 	NB_SAMPLE=$(echo $FASTQ | wc -w)
-
 
 	# THREADS
 	############
-
-	#NB_SAMPLE=1;
 
 	PIPELINES=$(echo $PIPELINES | tr "," "\n" | tr " " "\n" | awk '!x[$0]++' | tr "\n" " ")
 	NB_PIPELINES=$(echo $PIPELINES | wc -w)
@@ -1016,27 +992,26 @@ for RUU in $RUN_UNIQ; do
 	NB_CALLERS=$(echo -e $(for P in $PIPELINES; do echo $P | cut -d. -f2; done) | tr " " "\n" | awk '!x[$0]++' | tr "\n" " " | wc -w)
 
 	# ADJUSTING threads parameters
-	#ROUND="FLOOR" # CEIL or FLOOR;
 	ROUND="CEIL" # CEIL or FLOOR;
 	if [ "$ROUND" == "CEIL" ]; then
-		THREADS_BY_SAMPLE=$( printf "%.0f" $(echo "scale=2;$THREADS/$NB_SAMPLE" | bc))			# Number of threads by sample
+		THREADS_BY_SAMPLE=$( printf "%.0f" $(echo "scale=2;$THREADS/$NB_SAMPLE" | bc))					# Number of threads by sample
 		THREADS_BY_PIPELINE=$( printf "%.0f" $(echo "scale=2;$THREADS_BY_SAMPLE/$NB_PIPELINES" | bc))	# Number of threads for a pipeline's command
-		THREADS_BY_ALIGNER=$( printf "%.0f" $(echo "scale=2;$THREADS_BY_SAMPLE/$NB_ALIGNERS" | bc))	# Number of threads for a aligner's command
-		THREADS_BY_CALLER=$( printf "%.0f" $(echo "scale=2;$THREADS_BY_SAMPLE/$NB_CALLERS" | bc))	# Number of threads for a caller's command
-		THREADS_BWA=$THREADS_BY_ALIGNER									# NB of threads for BWA command
-		THREADS_RTC=$THREADS_BY_ALIGNER									# NB of threads for GATK RealignerTargetCreator
+		THREADS_BY_ALIGNER=$( printf "%.0f" $(echo "scale=2;$THREADS_BY_SAMPLE/$NB_ALIGNERS" | bc))		# Number of threads for a aligner's command
+		THREADS_BY_CALLER=$( printf "%.0f" $(echo "scale=2;$THREADS_BY_SAMPLE/$NB_CALLERS" | bc))		# Number of threads for a caller's command
+		THREADS_BWA=$THREADS_BY_ALIGNER																	# NB of threads for BWA command
+		THREADS_RTC=$THREADS_BY_ALIGNER																	# NB of threads for GATK RealignerTargetCreator
 	elif  [ "$ROUND" == "FLOOR" ]; then
-		THREADS_BY_SAMPLE=$(($THREADS/$NB_SAMPLE))			# Number of threads by sample
+		THREADS_BY_SAMPLE=$(($THREADS/$NB_SAMPLE))					# Number of threads by sample
 		THREADS_BY_PIPELINE=$(($THREADS_BY_SAMPLE/$NB_PIPELINES))	# Number of threads for a pipeline's command
 		THREADS_BY_ALIGNER=$(($THREADS_BY_SAMPLE/$NB_ALIGNERS))		# Number of threads for a aligner's command
 		THREADS_BY_CALLER=$(($THREADS_BY_SAMPLE/$NB_CALLERS))		# Number of threads for a caller's command
-		THREADS_BWA=$THREADS_BY_ALIGNER					# NB of threads for BWA command
-		THREADS_RTC=$THREADS_BY_ALIGNER					# NB of threads for GATK RealignerTargetCreator
+		THREADS_BWA=$THREADS_BY_ALIGNER								# NB of threads for BWA command
+		THREADS_RTC=$THREADS_BY_ALIGNER								# NB of threads for GATK RealignerTargetCreator
 	else
-		THREADS_BY_SAMPLE=1			# Number of threads by sample
-		THREADS_BY_PIPELINE=1			# Number of threads for a pipeline's command
-		THREADS_BY_ALIGNER=1			# Number of threads for a aligner's command
-		THREADS_BY_CALLER=1			# Number of threads for a caller's command
+		THREADS_BY_SAMPLE=1					# Number of threads by sample
+		THREADS_BY_PIPELINE=1				# Number of threads for a pipeline's command
+		THREADS_BY_ALIGNER=1				# Number of threads for a aligner's command
+		THREADS_BY_CALLER=1					# Number of threads for a caller's command
 		THREADS_BWA=$THREADS_BY_ALIGNER		# NB of threads for BWA command
 		THREADS_RTC=$THREADS_BY_ALIGNER		# NB of threads for GATK RealignerTargetCreator
 	fi;
@@ -1065,7 +1040,7 @@ for RUU in $RUN_UNIQ; do
 	JAVA_MEMORY_BY_CALLER=$JAVA_MEMORY
 
 	# Calcul
-	JAVA_MEMORY_BY_SAMPLE=$(($MEMTOTAL/$NB_SAMPLE/1024/1024))				# Number of threads by sample
+	JAVA_MEMORY_BY_SAMPLE=$(($MEMTOTAL/$NB_SAMPLE/1024/1024))					# Number of threads by sample
 	JAVA_MEMORY_BY_PIPELINE=$(($JAVA_MEMORY_BY_SAMPLE/$NB_PIPELINES/1024/1024))	# Number of threads for a pipeline's command
 	JAVA_MEMORY_BY_ALIGNER=$(($JAVA_MEMORY_BY_SAMPLE/$NB_ALIGNERS/1024/1024))	# Number of threads for a aligner's command
 	JAVA_MEMORY_BY_CALLER=$(($JAVA_MEMORY_BY_SAMPLE/$NB_CALLERS/1024/1024))		# Number of threads for a caller's command
@@ -1075,12 +1050,6 @@ for RUU in $RUN_UNIQ; do
 	if [ "$JAVA_MEMORY_BY_PIPELINE" == "" ] || [ $JAVA_MEMORY_BY_PIPELINE -lt 1 ]; then JAVA_MEMORY_BY_PIPELINE=1; fi;
 	if [ "$JAVA_MEMORY_BY_ALIGNER" == "" ] || [ $JAVA_MEMORY_BY_ALIGNER -lt 1 ]; then JAVA_MEMORY_BY_ALIGNER=1; fi;
 	if [ "$JAVA_MEMORY_BY_CALLER" == "" ] || [ $JAVA_MEMORY_BY_CALLER -lt 1 ]; then JAVA_MEMORY_BY_CALLER=1; fi;
-
-	# export
-	# export JAVA_MEMORY_BY_SAMPLE
-	# export JAVA_MEMORY_BY_PIPELINE
-	# export JAVA_MEMORY_BY_ALIGNER
-	# export JAVA_MEMORY_BY_CALLER
 
 	# JAVA_MEMORY_PARAMETERS
 	JAVA_MEMORY_PARAMETERS=""
@@ -1095,7 +1064,6 @@ for RUU in $RUN_UNIQ; do
 
 	(($VERBOSE)) && echo "#[INFO] RUN '$RUU'"
 	echo "## ANALYSIS" > $MAKEFILE_ANALYSIS_RUN
-	#echo "## ANALYSIS" > $SHELL_ANALYSIS_RUN
 	RUNS_SAMPLES="";
 
 	F_LIST=""
@@ -1108,7 +1076,6 @@ for RUU in $RUN_UNIQ; do
 	G_LIST=""
 	T_LIST=""
 	TAG_LIST=""
-	#ATAG_LIST=""
 
 
 	I=0;
@@ -1148,7 +1115,6 @@ for RUU in $RUN_UNIQ; do
 		# INFOS
 		(($VERBOSE)) && echo "#[INFO] RUN '$RUU' - SAMPLE '$S'"
 		(($VERBOSE)) && echo "#[INFO] SAMPLE '$RU/$S' from file(s):"
-		#(($VERBOSE)) && echo "#[INFO] $F $F_R2 $I1 $I2 $OFCF $B $G $T $P "
 		(($VERBOSE)) && echo "#[INFO]    Read1:         $F"
 		(($VERBOSE)) && echo "#[INFO]    Read2:         $F_R2"
 		(($VERBOSE)) && echo "#[INFO]    Index1:        $I1"
@@ -1189,7 +1155,6 @@ for RUU in $RUN_UNIQ; do
 				INPUT_MK_ALL=$INPUT_MK_ALL" $RUN_SAMPLE_DIR/$S.R1.fastq.gz"
 
 				# READ 2
-				#if [ -s "$F_R2" ]; then
 				if [ -s "$F_R2" ] || (( $(zcat $(echo $F_R2 | tr "+" " ") 2>/dev/null | head -n1 | wc -l ) )); then
 					echo "$RUN_SAMPLE_DIR/$S.R2.fastq.gz: $(echo $F_R2 | tr "+" " ")
 						#ln -s $F_R2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz
@@ -1209,7 +1174,6 @@ for RUU in $RUN_UNIQ; do
 				fi;
 
 				# INDEX1
-				#if [ -s "$I1" ]; then
 				if [ -s "$I1" ] || (( $(zcat $(echo $I1 | tr "+" " ") 2>/dev/null | head -n1 | wc -l ) )); then
 					echo "$RUN_SAMPLE_DIR/$S.I1.fastq.gz: $(echo $I1 | tr "+" " ")
 						#ln -s $I1 $RUN_SAMPLE_DIR/$S.I1.fastq.gz
@@ -1229,7 +1193,6 @@ for RUU in $RUN_UNIQ; do
 				fi;
 
 				# INDEX2
-				#if [ -s "$I2" ]; then
 				if [ -s "$I2" ] || (( $(zcat $(echo $I2 | tr "+" " ") 2>/dev/null | head -n1 | wc -l ) )); then
 					echo "$RUN_SAMPLE_DIR/$S.I2.fastq.gz: $(echo $I2 | tr "+" " ")
 						#ln -s $I2 $RUN_SAMPLE_DIR/$S.I2.fastq.gz
@@ -1255,9 +1218,6 @@ for RUU in $RUN_UNIQ; do
 				# Generate FASTQ from BAM/SAM/CRAM
 				if ((1)); then
 					(($VERBOSE)) && echo "#[INFO] Create Input data from BAM/CRAM/SAM file"
-
-					#echo "PIPELINES: $PIPELINES"
-					#exit 0
 
 					# Sort and FASTQ generation
 					TMP_INPUT_BAM=$TMP_FOLDER_TMP/INPUT_BAM_$RANDOM
@@ -1344,27 +1304,6 @@ for RUU in $RUN_UNIQ; do
 				# UMI_LOC
 
 				UMI_RELOC=$UMI_LOC
-				if ((0)); then
-					R1_RELOC=""
-					R2_RELOC=""
-					case $UMI_LOC in
-						"index1")
-							R1_RELOC="I1"
-							R2_RELOC=""
-							UMI_RELOC="read1"
-							;;
-						"index2")
-							R1_RELOC=""
-							R2_RELOC="I2"
-							UMI_RELOC="read2"
-							;;
-						"per_index")
-							R1_RELOC="I1"
-							R2_RELOC="I2"
-							UMI_RELOC="per_read"
-							;;
-					esac
-				fi;
 
 				# UMI_BARCODE_PATTERN
 				UMI_BARCODE_PATTERN_1=$(echo $UMI_BARCODE_PATTERN | awk -F'-' '{print $1}')
@@ -1375,7 +1314,6 @@ for RUU in $RUN_UNIQ; do
 				UMI_BARCODE_PATTERN_1_LENGTH=${#UMI_BARCODE_PATTERN_1}
 				UMI_BARCODE_PATTERN_2_LENGTH=${#UMI_BARCODE_PATTERN_2}
 				UMI_BARCODE_PATTERN_LENGTH=$(echo $UMI_BARCODE_PATTERN_1_LENGTH + $UMI_BARCODE_PATTERN_2_LENGTH  | bc)
-				#UMI_BARCODE_PATTERN_LENGTH=${#UMI_BARCODE_PATTERN}
 				
 
 				FASTQ_PROCESSED_STEPS_DEFAULT=".fastq_reheader.sort.fastp.fastq_clean_header.compress"
@@ -1387,7 +1325,6 @@ for RUU in $RUN_UNIQ; do
 				##################
 
 				mkdir -p $RUN_SAMPLE_DIR_SEQUENCING;
-				#echo "init log" > $RUN_SAMPLE_DIR_SEQUENCING/$S.log;
 
 
 				echo $(echo $F | tr "+" " ") $(echo $F_R2 | tr "+" " ") $(echo $I1 | tr "+" " ") $(echo $I2 | tr "+" " ") > $RUN_SAMPLE_DIR_SEQUENCING/fastq.list
@@ -1472,14 +1409,11 @@ for RUU in $RUN_UNIQ; do
 				CF=$(echo $OFCF_ONE | awk -F: '{print $2}')
 				[ "$CF" == "" ] && CF=$(basename $OF)
 				(($DEBUG)) && echo "#[INFO] Copy OTHER FILES '$OF' to '$CF'."
-				#cp $OF_ONE $RUN_SAMPLE_DIR/$(basename $OF_ONE)
 				if [ -d $OF ]; then
 					mkdir -p $RUN_SAMPLE_DIR/$CF
-					#cp -Rf $OF/* $RUN_SAMPLE_DIR/$CF/
 					$COMMAND_COPY $OF/* $RUN_SAMPLE_DIR/$CF/
 				else
 					mkdir -p $RUN_SAMPLE_DIR/$(dirname $CF)
-					#cp $OF $RUN_SAMPLE_DIR/$CF
 					if ! $COMMAND_COPY $OF/* $RUN_SAMPLE_DIR/$CF/ 2>/dev/null; then
 						(($VERBOSE)) && echo "#[WARNING] Copy OTHER FILES '$OF' to '$CF' failed!"
 					fi;
@@ -1513,18 +1447,14 @@ for RUU in $RUN_UNIQ; do
 							touch $RUN_SAMPLE_DIR/$S.metrics.bed -r $B;
 							echo -e $(basename $B)"\tfrom option - bed" > $RUN_SAMPLE_DIR/$S.bed_name
 							echo -e $(basename $B)"\tfrom option - bed" > $RUN_SAMPLE_DIR/$S.manifest_name
-							#export BED=$RUN_SAMPLE_DIR/$S.bed
 						fi;
 					else
 						if [ -e $B ] && [ "$B" != "" ] && [ ! -e $RUN_SAMPLE_DIR/$S.manifest ]; then
 							(($VERBOSE)) && echo "#[INFO] Copy Manifest file."
-							#cp -p $B $RUN_SAMPLE_DIR/$S.manifest;
 							$COMMAND_COPY -p $B $RUN_SAMPLE_DIR/$S.manifest;
 							touch $RUN_SAMPLE_DIR/$S.manifest -r $B;
-							#echo -e "\tfrom manifest file" > $RUN_SAMPLE_DIR/$S.bed_name
 							echo -e $(basename $B)"\tfrom option - manifest" > $RUN_SAMPLE_DIR/$S.bed_name
 							echo -e $(basename $B)"\tfrom option - manifest" > $RUN_SAMPLE_DIR/$S.manifest_name
-							#export MANIFEST=$RUN_SAMPLE_DIR/$S.manifest;
 						fi;
 					fi;
 				fi;
@@ -1540,13 +1470,11 @@ for RUU in $RUN_UNIQ; do
 				# Add Genes
 				if [ "$G" != "" ]; then
 					(($VERBOSE)) && echo "#[INFO] Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' and copy Panel .genes files."
-					#> $RUN_SAMPLE_DIR/$S.list.genes;
 					for G_ONE in $(echo $G | tr "+" " "); do
 						# add '.genes' extension if not exists
 						[ "${G_ONE##*.}" != "genes" ] && G_ONE_TARGET=$(basename $G_ONE)".genes" || G_ONE_TARGET=$(basename $G_ONE);
 						# remove Sample name (mainly in case of relauch)
 						G_ONE_TARGET=$(echo $G_ONE_TARGET | sed "s/$S\.//gi")
-						#$COMMAND_COPY $G_ONE $RUN_SAMPLE_DIR/$S.$G_ONE_TARGET;
 						if $BEDTOOLS sort -i $G_ONE | $STARK_BED_NORMALIZATION > $RUN_SAMPLE_DIR/$S.$G_ONE_TARGET; then
 							(($VERBOSE)) && echo "#[INFO] Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' and copy Panel .genes files - Panel '$G_ONE' found "
 						elif $BEDTOOLS sort -i $G_ONE | $STARK_BED_NORMALIZATION > $RUN_SAMPLE_DIR/$S.$G_ONE_TARGET; then
@@ -1560,7 +1488,6 @@ for RUU in $RUN_UNIQ; do
 				# Design is not empty
 				elif [ -s $B ] && [ "$B" != "" ]; then
 					# Generate BEDFILE_GENES from design
-					#if [ -s $B ]; then
 					(($VERBOSE)) && echo "#[INFO] Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' from Design file '$B'."
 					# Generate intermediate bed from Design (BED or manifest)
 					BEDFILE_GENES_INTERMEDIATE=$RUN_SAMPLE_DIR/$S.genes.tmp
@@ -1586,7 +1513,6 @@ for RUU in $RUN_UNIQ; do
 
 					if [ -s $BEDFILE_GENES_INTERMEDIATE ] ; then
 						(($VERBOSE)) && echo "#[INFO] Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' with intersection between Design file '$B' and RefSeq '$REFSEQ_GENES'."
-						#echo "MANIFEST.bed to bedfile_genes_list : $bedfile_genes_list";
 						$BEDTOOLS intersect -wb -a $BEDFILE_GENES_INTERMEDIATE -b $REFSEQ_GENES | cut -f7 | sort -u > $BEDFILE_GENES_INTERMEDIATE.intersect;
 						sort -k4 $REFSEQ_GENES > $BEDFILE_GENES_INTERMEDIATE.refseq;
 						# Join
@@ -1606,13 +1532,6 @@ for RUU in $RUN_UNIQ; do
 					G=$BEDFILE_GENES_ONE
 				# No Panel and no Design 
 				else 
-					# # Generate BEDFILE_GENES from design
-					# (($VERBOSE)) && echo "#[WARN] Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' with empty Panel (no Panel and no Design found)."
-					# # Generate intermediate bed from Design (BED or manifest)
-					# BEDFILE_GENES_ONE=$RUN_SAMPLE_DIR/$S.empty_design.genes
-					# touch $BEDFILE_GENES_ONE
-					# echo $(basename $BEDFILE_GENES_ONE) > $BEDFILE_GENES_LIST_ONE;
-
 					(($VERBOSE)) && echo "#[WARN] NOT Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' (no Panel and no Design found). Panel will be autodetected."
 				fi;
 
@@ -1654,8 +1573,6 @@ for RUU in $RUN_UNIQ; do
 				echo "" >> $RUN_SAMPLE_DIR/$S.pedigree.tmp;
 			done
 			cat $RUN_SAMPLE_DIR/$S.pedigree.tmp | grep -v "^$" > $RUN_SAMPLE_DIR/$S.pedigree.tmp.clean
-			#> $RUN_SAMPLE_DIR/$S.pedigree.tmp.header
-			#> $RUN_SAMPLE_DIR/$S.pedigree.tmp.samples
 			grep "^#" $RUN_SAMPLE_DIR/$S.pedigree.tmp.clean > $RUN_SAMPLE_DIR/$S.pedigree.tmp.header
 			grep "^#" -v $RUN_SAMPLE_DIR/$S.pedigree.tmp.clean | sort -u > $RUN_SAMPLE_DIR/$S.pedigree.tmp.samples
 			cat $RUN_SAMPLE_DIR/$S.pedigree.tmp.header $RUN_SAMPLE_DIR/$S.pedigree.tmp.samples > $RUN_SAMPLE_DIR/$S.ped
@@ -1687,7 +1604,6 @@ for RUU in $RUN_UNIQ; do
 		if ((1)); then
 		if [ ! -e $RUN_SAMPLE_DIR/$S.SampleSheet.csv ]; then
 			(($VERBOSE)) && echo "#[INFO] Copy SampleSheet."
-			#[ -f "$SAMPLESHEET_INPUT" ] && cp $SAMPLESHEET_INPUT $RUN_SAMPLE_DIR/$S.SampleSheet.csv
 			[ -f "$SAMPLESHEET_INPUT" ] && $COMMAND_COPY $SAMPLESHEET_INPUT $RUN_SAMPLE_DIR/$S.SampleSheet.csv
 			touch $RUN_SAMPLE_DIR/$S.SampleSheet.csv;
 			if [ -e $RUN_SAMPLE_DIR/$S.manifest ]; then
@@ -1720,11 +1636,6 @@ for RUU in $RUN_UNIQ; do
 
 	echo "RUNS_SAMPLES=$RUNS_SAMPLES" >> $MAKEFILE_ANALYSIS_RUN
 	echo "PIPELINES=$PIPELINES" >> $MAKEFILE_ANALYSIS_RUN
-	#echo "INTERSEC=2" >> $MAKEFILE_ANALYSIS_RUN
-
-	#echo "RUNS_SAMPLES=\"$RUNS_SAMPLES\"" >> $SHELL_ANALYSIS_RUN
-	#echo "PIPELINES=\"$PIPELINES\"" >> $SHELL_ANALYSIS_RUN
-	#echo "INTERSEC=2" >> $SHELL_ANALYSIS_RUN
 
 
 	# RESULTS
@@ -1762,7 +1673,6 @@ for RUU in $RUN_UNIQ; do
 	echo "#[INFO] FAVORITES                 $FAVORITES"
 	(($VERBOSE)) && echo "#[INFO] RELEASE INFOS             $RELEASE_RUN"
 	(($VERBOSE)) && echo "#[INFO] MAKEFILE CONFIGURATION    $MAKEFILE_ANALYSIS_RUN"
-	#(($VERBOSE)) && echo "#[INFO] SHELL CONFIGURATION       $SHELL_ANALYSIS_RUN"
 	(($VERBOSE)) && echo "#[INFO] LOGFILE                   $LOGFILE_RES_RUN"
 	(($VERBOSE)) && echo "#[INFO] THREADS                   $THREADS"
 	(($VERBOSE)) && echo "#[INFO] THREADS_BY_SAMPLE         $THREADS_BY_SAMPLE"
@@ -1787,24 +1697,31 @@ for RUU in $RUN_UNIQ; do
 
 	echo "#[INFO] *** Process"
 
+	echo "["$(date '+%Y%m%d-%H%M%S')"] STARK Analysis '$RELEASE_RUN' START" >>$LOGFILE_RES_RUN
+
 	# FASTQ && FASTP process
 
 	echo "#[INFO] STARK Input Processing..."
 
+	echo "["$(date '+%Y%m%d-%H%M%S')"] STARK Input Processing '$RELEASE_RUN' START" >>$LOGFILE_RES_RUN
+
 	if [ -s $INPUT_MK ]; then
 		(($VERBOSE)) && echo "#[INFO] Process Input data from FASTQ file(s) - multithreading mode [$THREADS]"
-		#if make -j $THREADS -e FASTP_THREADS_BY_SAMPLE=$THREADS_BY_SAMPLE -f $INPUT_MK -f $INPUT_MK -f $SCRIPT_DIR/STARK.launch.input.mk $INPUT_MK_ALL $INPUT_MK_ALL 1>$INPUT_MK.log 2>$INPUT_MK.err; then
 		if make -j $THREADS -f $INPUT_MK -f $SCRIPT_DIR/STARK.launch.input.mk $INPUT_MK_ALL $INPUT_MK_ALL 1>$INPUT_MK.log 2>$INPUT_MK.err; then
-		#if make -j $THREADS -f $INPUT_MK -f $INPUT_MK $INPUT_MK_ALL $INPUT_MK_ALL 1>$INPUT_MK.log 2>$INPUT_MK.err; then
+			cat $INPUT_MK.log $INPUT_MK.err >>$LOGFILE_RES_RUN
 			(($VERBOSE)) && echo "#[INFO] STARK Input Processing done."
+			echo "["$(date '+%Y%m%d-%H%M%S')"] STARK Input Processing '$RELEASE_RUN' END" >>$LOGFILE_RES_RUN
 		else
 			echo "#[ERROR] STARK Input Processing failed"
+			cat $INPUT_MK.log $INPUT_MK.err >>$LOGFILE_RES_RUN
+			echo "["$(date '+%Y%m%d-%H%M%S')"] STARK Input Processing '$RELEASE_RUN' END" >>$LOGFILE_RES_RUN
 			cat $INPUT_MK.err
 			exit 1
 		fi;
+	else
+		echo "["$(date '+%Y%m%d-%H%M%S')"] STARK Input Processing '$RELEASE_RUN' already done." >>$LOGFILE_RES_RUN
 	fi;
-	#cat $INPUT_MK;
-	#exit 0; # DEV
+
 	! (($DEBUG)) && rm -f $INPUT_MK $INPUT_MK.log $INPUT_MK.err
 
 
@@ -1817,15 +1734,6 @@ for RUU in $RUN_UNIQ; do
 
 	export KEEP_ALIGNMENT
 
-	# for BAM in $RESULTS/$RU/*/*bam; do
-
-	# 	touch $BAM
-
-	# done;
-	#exit 0
-	#-touch $$(ls $(@D)/../*bam 2>/dev/null)
-
-	#if ! make -k -j $THREADS -e ENV="$ENV" PARAM=$MAKEFILE_ANALYSIS_RUN $PARAMETERS $THREAD_PARAMETERS JAVA_MEMORY=$JAVA_MEMORY SNAPSHOT=0 VALIDATION=1 INPUT=$INPUT OUTDIR=$RESULTS RELEASE=$RELEASE_RUN FINAL_REPORT=$FINAL_REPORT_RUN ANALYSIS_REF=$ANALYSIS_REF -f $NGS_SCRIPTS/NGSWorkflow.mk 1>>$LOGFILE_RES_RUN 2>>$LOGFILE_RES_RUN; then
 	if ! make -k -j $THREADS -e ENV="$ENV" PARAM=$MAKEFILE_ANALYSIS_RUN $PARAMETERS $THREAD_PARAMETERS $JAVA_MEMORY_PARAMETERS SNAPSHOT=0 VALIDATION=1 INPUT=$INPUT OUTDIR=$RESULTS RELEASE=$RELEASE_RUN FINAL_REPORT=$FINAL_REPORT_RUN ANALYSIS_REF=$ANALYSIS_REF -f $NGS_SCRIPTS/STARK.launch.analysis.mk 1>>$LOGFILE_RES_RUN 2>>$LOGFILE_RES_RUN; then
 		MAKE_ERROR=1
 	fi;
@@ -1853,7 +1761,6 @@ for RUU in $RUN_UNIQ; do
 			for RESULTS_FOLDER_COPY_FOLDER in $(echo $REPOSITORY | tr "," " " | tr " " "\n" | sort -u ); do #
 				if [ -d $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT/$RU ] || \
 					mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT/$RU; then
-					#echo "Copy $LOGFILE_RES_RUN $LOGFILE_DEM_RUN in $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT/$RU/ "
 					cp -pf $LOGFILE_RES_RUN $LOGFILE_DEM_RUN $CONFIG_RES_RUN $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT/$RU/;
 				fi;
 			done;
@@ -1863,7 +1770,6 @@ for RUU in $RUN_UNIQ; do
 			for RESULTS_FOLDER_COPY_FOLDER in $(echo $ARCHIVES | tr "," " " | tr " " "\n" | sort -u ); do #
 				if [ -d $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT/$RU ] || \
 					mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT/$RU; then
-					#echo "Copy $LOGFILE_RES_RUN $LOGFILE_DEM_RUN in $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT/$RU/ "
 					cp -pf $LOGFILE_RES_RUN $LOGFILE_DEM_RUN $CONFIG_RES_RUN $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT/$RU/;
 				fi;
 			done;
@@ -1873,7 +1779,6 @@ for RUU in $RUN_UNIQ; do
 			for RESULTS_FOLDER_COPY_FOLDER in $(echo $FAVORITES | tr "," " " | tr " " "\n" | sort -u ); do #
 				if [ -d $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT/$RU ] || \
 					mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT/$RU; then
-					#echo "Copy $LOGFILE_RES_RUN $LOGFILE_DEM_RUN in $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT/$RU/ "
 					cp -pf $LOGFILE_RES_RUN $LOGFILE_DEM_RUN $CONFIG_RES_RUN $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT/$RU/;
 				fi;
 			done;
@@ -1891,8 +1796,7 @@ for RUU in $RUN_UNIQ; do
 		STOP_ANALYSIS=$(date +%s)
 		ANALYSIS_TIME=$(convertsecs $((STOP_ANALYSIS - START_ANALYSIS)))
 		echo "#[INFO] Main Analysis Process for Analysis '$RELEASE_RUN' finished with ERRORS [`date`] - $ANALYSIS_TIME"
-		#if (($VERBOSE)); then grep ""make: \*\*\*" $LOGFILE_RES_RUN; fi;
-		(($VERBOSE)) && grep "make: \*\*\*" $LOGFILE_RES_RUN -B10 | awk '{print "#[ERROR] LOG: "$0}';
+		(($VERBOSE)) && grep "\*\*\*" $LOGFILE_RES_RUN -B10 | awk '{print "#[ERROR] LOG: "$0}';
 		# RUNNING stop
 		
 		# EXIT
@@ -1905,21 +1809,17 @@ for RUU in $RUN_UNIQ; do
 		echo "#["`date '+%Y%m%d-%H%M%S'`"] RUN $RUN analyzed by STARK ($STARK_VERSION)" >> $STARK_COMPLETE_FILE
 
 		# STARK RUNNING stop
-		#rm -f $STARK_RUNNING_FILE
-
 
 		# STARK Copy Reports Files
-		#if ((1)); then
 
 		echo "#[INFO] STARK Copy Processing...";
 
 		I=0
 		RESULTS_FOLDER_COPY_FOLDER_RUU_STARKCopyComplete_list=""
+		RESULTS_FOLDER_COPY_FOLDER_RUU_STARKAnalysisLog_list=""
 
 		> $RES_MK
 		RES_MK_ALL=""
-
-		#RES_MK_RSYNC_PARAM=" --temp-dir=$TMP_FOLDER_TMP/rsync_$RANDOM "
 
 		# List of folders
 		RESULTS_FOLDER_COPY_ALL=""
@@ -1970,11 +1870,7 @@ for RUU in $RUN_UNIQ; do
 
 
 				# COPY of run/sample
-				
-
-
 				RES_MK_ALL_RUU_S=""
-				#RES_MK_REP_COMPLETE=""
 
 				# Copy
 				if [ "$RESULTS_FOLDER_COPY_ALL" != "$RESULTS" ] && [ "$RESULTS_FOLDER_COPY_ALL" != "" ] ; then
@@ -2008,12 +1904,10 @@ for RUU in $RUN_UNIQ; do
 						fi;
 
 
-						#echo "#[INFO] Copying '$RUU/$S' files from '$RESULTS' to '$RESULTS_FOLDER_COPY_FOLDER' [$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE]..."
 						(($VERBOSE)) && echo "#[INFO] STARK Copy '$RUU/$S' Process... from '$RESULTS' to '$RESULTS_FOLDER_COPY_FOLDER' [$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE]"
 						 
 
 						# Copy RUN files
-						# TODO use --exclude 
 						if ! in_array $RESULTS_FOLDER_COPY_FOLDER/$RUU $RES_MK_ALL; then
 							echo "$RESULTS_FOLDER_COPY_FOLDER/$RUU:
 								#[INFO] Copying '$RUU'
@@ -2135,13 +2029,10 @@ for RUU in $RUN_UNIQ; do
 							# MK
 							echo "$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$S.igv_session.xml: $RES_MK_ALL_RUU_S
 								touch $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$S.igv_session.xml
-								-$STARK_FOLDER_BIN/igv_session.sh --folder=$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S --folder_mindepth=$IGV_SESSION_MINDEPTH --folder_maxdepth=$IGV_SESSION_MAXDEPTH --patterns='$IGV_SESSION_PATTERNS_PARAM' --ressources='$(echo $IGV_SESSION_RESSOURCES)' --datapanel='$(echo $IGV_SESSION_DATAPANEL)' --featurepanel='$(echo $IGV_SESSION_FEATUREPANEL)' --igv_session_xml=$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$S.igv_session.xml --igv_session_json=$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$S.igv_session.json --das_url='$IGV_SESSION_DAS_URL' --json_tracks_additional='$(echo $IGV_SESSION_JSON_TRACKS_ADDITIONAL)'
+								-$STARK_FOLDER_BIN/igv_session.sh --folder=$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S --folder_mindepth=$IGV_SESSION_MINDEPTH --folder_maxdepth=$IGV_SESSION_MAXDEPTH --patterns='$IGV_SESSION_PATTERNS_PARAM' --ressources='$(echo $IGV_SESSION_RESSOURCES)' --datapanel='$(echo $IGV_SESSION_DATAPANEL)' --featurepanel='$(echo $IGV_SESSION_FEATUREPANEL)' --igv_session_xml=$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$S.igv_session.xml --igv_session_json=$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$S.igv_session.json --das_url='$IGV_SESSION_DAS_URL' --json_tracks_additional='$(echo $IGV_SESSION_JSON_TRACKS_ADDITIONAL)' --verbose
 								-chmod $PERMS $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$S.igv_session*
-								#(($VERBOSE)) && echo '#[INFO] STARK IGV Session $RUU/$S Complete'
 							" >> $RES_MK
 							RES_MK_ALL=$RES_MK_ALL" $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$S.igv_session.xml"
-
-							# --gmt=$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$S.igv_session.gmt
 
 						fi;
 
@@ -2152,10 +2043,11 @@ for RUU in $RUN_UNIQ; do
 							echo "["\$\$(date '+%Y%m%d-%H%M%S')"] Copy complete" >> $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/STARKCopyComplete.txt
 							chmod $PERMS $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/STARKCopyComplete.txt
 						" >> $RES_MK
-						#RES_MK_REP_COMPLETE=$RES_MK_REP_COMPLETE" $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/STARKCopyComplete.txt"
 						RES_MK_ALL=$RES_MK_ALL" $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/STARKCopyComplete.txt"
 						# CopyComplete file for RUN
 						RESULTS_FOLDER_COPY_FOLDER_RUU_STARKCopyComplete_list="$RESULTS_FOLDER_COPY_FOLDER_RUU_STARKCopyComplete_list $RESULTS_FOLDER_COPY_FOLDER/$RUU"
+						RESULTS_FOLDER_COPY_FOLDER_RUU_STARKAnalysisLog_list="$RESULTS_FOLDER_COPY_FOLDER_RUU_STARKAnalysisLog_list $RESULTS_FOLDER_COPY_FOLDER/$RUU"
+
 
 					done;
 
@@ -2202,17 +2094,13 @@ for RUU in $RUN_UNIQ; do
 					IGV_SESSION_PATTERNS_PARAM=$(echo $IGV_SESSION_PATTERNS | sed 's/$SAMPLE/'$S'/gi' | tr ' ' ',')
 
 					# MK
-					#echo "$STARK_FOLDER_BIN/igv_session.sh --folder=$RESULTS_FOLDER_COPY_FOLDER/$RUU --folder_mindepth=$IGV_SESSION_MINDEPTH --folder_maxdepth=$IGV_SESSION_MAXDEPTH --patterns='$IGV_SESSION_PATTERNS_PARAM' --ressources='$(echo $IGV_SESSION_RESSOURCES)' --datapanel='$(echo $IGV_SESSION_DATAPANEL)' --featurepanel='$(echo $IGV_SESSION_FEATUREPANEL)' --igv_session_xml=$RESULTS_FOLDER_COPY_FOLDER/$RUU/$ANALYSIS_PREFIX.variants.igv_session.xml --igv_session_json=$RESULTS_FOLDER_COPY_FOLDER/$RUU/$ANALYSIS_PREFIX.variants.igv_session.json --das_url='$IGV_SESSION_DAS_URL' --json_tracks_additional='$(echo $IGV_SESSION_JSON_TRACKS_ADDITIONAL)'"
 					echo "$RESULTS_FOLDER_COPY_FOLDER/$RUU/$ANALYSIS_PREFIX.variants.igv_session.xml: $RES_MK_ALL
 						touch $RESULTS_FOLDER_COPY_FOLDER/$RUU/$ANALYSIS_PREFIX.variants.igv_session.xml
-						-$STARK_FOLDER_BIN/igv_session.sh --folder=$RESULTS_FOLDER_COPY_FOLDER/$RUU --folder_mindepth=$IGV_SESSION_MINDEPTH --folder_maxdepth=$IGV_SESSION_MAXDEPTH --patterns='$IGV_SESSION_PATTERNS_PARAM' --ressources='$(echo $IGV_SESSION_RESSOURCES)' --datapanel='$(echo $IGV_SESSION_DATAPANEL)' --featurepanel='$(echo $IGV_SESSION_FEATUREPANEL)' --igv_session_xml=$RESULTS_FOLDER_COPY_FOLDER/$RUU/$ANALYSIS_PREFIX.variants.igv_session.xml --igv_session_json=$RESULTS_FOLDER_COPY_FOLDER/$RUU/$ANALYSIS_PREFIX.variants.igv_session.json --das_url='$IGV_SESSION_DAS_URL' --json_tracks_additional='$(echo $IGV_SESSION_JSON_TRACKS_ADDITIONAL)'
+						-$STARK_FOLDER_BIN/igv_session.sh --folder=$RESULTS_FOLDER_COPY_FOLDER/$RUU --folder_mindepth=$IGV_SESSION_MINDEPTH --folder_maxdepth=$IGV_SESSION_MAXDEPTH --patterns='$IGV_SESSION_PATTERNS_PARAM' --ressources='$(echo $IGV_SESSION_RESSOURCES)' --datapanel='$(echo $IGV_SESSION_DATAPANEL)' --featurepanel='$(echo $IGV_SESSION_FEATUREPANEL)' --igv_session_xml=$RESULTS_FOLDER_COPY_FOLDER/$RUU/$ANALYSIS_PREFIX.variants.igv_session.xml --igv_session_json=$RESULTS_FOLDER_COPY_FOLDER/$RUU/$ANALYSIS_PREFIX.variants.igv_session.json --das_url='$IGV_SESSION_DAS_URL' --json_tracks_additional='$(echo $IGV_SESSION_JSON_TRACKS_ADDITIONAL)' --verbose
 						-chmod $PERMS $RESULTS_FOLDER_COPY_FOLDER/$RUU/$ANALYSIS_PREFIX.variants.igv_session*
-						#(($VERBOSE)) && echo '#[INFO] STARK IGV Session $RUU/$S Complete'
 					" >> $RES_MK
 					RES_MK_ALL=$RES_MK_ALL" $RESULTS_FOLDER_COPY_FOLDER/$RUU/$ANALYSIS_PREFIX.variants.igv_session.xml"
 					RES_MK_ALL_RUU=$RES_MK_ALL_RUU" $RESULTS_FOLDER_COPY_FOLDER/$RUU/$ANALYSIS_PREFIX.variants.igv_session.xml"
-
-					# --gmt=$RESULTS_FOLDER_COPY_FOLDER/$RUU/$ANALYSIS_PREFIX.variants.igv_session.gmt
 
 				done;
 
@@ -2225,23 +2113,42 @@ for RUU in $RUN_UNIQ; do
 		" >> $RES_MK
 
 
-		#if make -j $THREADS --always-make -f $RES_MK all 1>$RES_MK.log 2>$RES_MK.err; then
 		if [ -s $RES_MK ]; then
 			(($VERBOSE)) && echo "#[INFO] Process Copy - multithreading mode [$THREADS_COPY]"
+			echo "["$(date '+%Y%m%d-%H%M%S')"] Process Copy - multithreading mode [$THREADS_COPY] '$RELEASE_RUN' START" >>$LOGFILE_RES_RUN
 			if make -j $THREADS_COPY --always-make -f $RES_MK all 1>$RES_MK.log 2>$RES_MK.err; then
+				cat $RES_MK.log $RES_MK.err >>$LOGFILE_RES_RUN
+				echo "["$(date '+%Y%m%d-%H%M%S')"] Process Copy - multithreading mode [$THREADS_COPY] '$RELEASE_RUN' END" >>$LOGFILE_RES_RUN
 				(($VERBOSE)) && echo "#[INFO] STARK Copy Complete"
+
 			else
 				echo "#[ERROR] STARK Copy NOT Complete"
+				cat $RES_MK.log $RES_MK.err >>$LOGFILE_RES_RUN
+				echo "["$(date '+%Y%m%d-%H%M%S')"] Process Copy - multithreading mode [$THREADS_COPY] '$RELEASE_RUN' END" >>$LOGFILE_RES_RUN
 				cat $RES_MK.err;
 				exit 1
 			fi
 		fi;
 		! (($DEBUG)) && rm -f $RES_MK $RES_MK.log $RES_MK.err
 
+		# Stop Analysis
+		STOP_ANALYSIS=$(date +%s)
+		ANALYSIS_TIME=$(convertsecs $((STOP_ANALYSIS - START_ANALYSIS)))
+
+		echo "["$(date '+%Y%m%d-%H%M%S')"] STARK Analysis Execution time: $ANALYSIS_TIME" >>$LOGFILE_RES_RUN
+		echo "["$(date '+%Y%m%d-%H%M%S')"] STARK Analysis '$RELEASE_RUN' END" >>$LOGFILE_RES_RUN
+
+		# Copy Analysis Log file
+		RESULTS_FOLDER_COPY_FOLDER_RUU_STARKAnalysisLog_list=$(echo $RESULTS_FOLDER_COPY_FOLDER_RUU_STARKAnalysisLog_list | tr " " "\n" |  sort -u)
+		for RESULTS_FOLDER_COPY_FOLDER_RUU_STARKAnalysisLog in $RESULTS_FOLDER_COPY_FOLDER_RUU_STARKAnalysisLog_list; do
+			$COMMAND_COPY $LOGFILE_RES_RUN $RESULTS_FOLDER_COPY_FOLDER_RUU_STARKAnalysisLog/$(basename $LOGFILE_RES_RUN)
+			chmod $PERMS $RESULTS_FOLDER_COPY_FOLDER_RUU_STARKAnalysisLog/$(basename $LOGFILE_RES_RUN) 1>/dev/null 2>/dev/null
+		done;
 	
 		# CREATE CopyComplete file
+		RESULTS_FOLDER_COPY_FOLDER_RUU_STARKCopyComplete_list=$(echo $RESULTS_FOLDER_COPY_FOLDER_RUU_STARKCopyComplete_list | tr " " "\n" |  sort -u)
 		for RESULTS_FOLDER_COPY_FOLDER_RUU_STARKCopyComplete in $RESULTS_FOLDER_COPY_FOLDER_RUU_STARKCopyComplete_list; do
-			echo "["$(date '+%Y%m%d-%H%M%S')"] Copy complete" >> $RESULTS_FOLDER_COPY_FOLDER_RUU_STARKCopyComplete/STARKCopyComplete.txt
+			echo "["$(date '+%Y%m%d-%H%M%S')"] Copy complete in $ANALYSIS_TIME" >> $RESULTS_FOLDER_COPY_FOLDER_RUU_STARKCopyComplete/STARKCopyComplete.txt
 			chmod $PERMS $RESULTS_FOLDER_COPY_FOLDER_RUU_STARKCopyComplete/STARKCopyComplete.txt 1>/dev/null 2>/dev/null
 		done;
 

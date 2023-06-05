@@ -388,7 +388,6 @@ POST_ALIGNMENT_STEPS="sorting markduplicates realignment recalibration compress"
 #    " " to avoid at this pipeline step (see POST_CALLING_MERGING_STEPS)
 #    "normalization variantfiltration" for gene panel
 #    "normalization variantrecalibration" for exome or genome
-#POST_CALLING_STEPS="normalization variantfiltration"
 POST_CALLING_STEPS=" "
 
 
@@ -532,6 +531,22 @@ THREADS=AUTO
 #JAVA_MEMORY=
 
 
+# RESOURCES MANAGMENT
+#######################
+
+### Picard CollectHsMetrics
+# If validation bam is small enough (lower than MAX_VALIDATION_BAM_SIZE Kb), launch CollectHsMetrics the classic way
+# Otherwise increase RAM to MAX_CONCURRENT_HSMETRICS_RAM and limit command to MAX_CONCURRENT_HSMETRICS concurrent launches
+# default: MAX_VALIDATION_BAM_SIZE=1000000000 (exageratly big to switch off)
+# example:
+# - MAX_VALIDATION_BAM_SIZE=2097152		# 2Go
+# - MAX_CONCURRENT_HSMETRICS=1 			# No concurrence, only 1 HsMetrics at once
+# - MAX_CONCURRENT_HSMETRICS_RAM=16g 	# 16Go of RAM to Collect HsMetrics
+MAX_VALIDATION_BAM_SIZE=1000000000
+MAX_CONCURRENT_HSMETRICS=1
+MAX_CONCURRENT_HSMETRICS_RAM=16g
+
+
 
 # HOWARD ANNOTATION/PRIOTITIZATION/TRANSLATION CONFIGURATION
 
@@ -590,10 +605,10 @@ HOWARD_NOMEN_FIELDS="hgvs"
 # This option create ranking scores in VCF and comment in TXT (after translation).
 # Scores can be used to sort variant in the TXT
 # HOWARD_FILTER_DEFAULT="default" # in env_header.sh
-# Default prioritization with HOWARD
-HOWARD_PRIORITIZATION=$HOWARD_PRIORITIZATION_DEFAULT # "default"
-# Minimal prioritization with HOWARD
-HOWARD_PRIORITIZATION_MINIMAL=$HOWARD_PRIORITIZATION_DEFAULT # "default"
+# Default prioritization with HOWARD (deprecated)
+#HOWARD_PRIORITIZATION=$HOWARD_PRIORITIZATION_DEFAULT # "default"
+# Minimal prioritization with HOWARD (deprecated)
+#HOWARD_PRIORITIZATION_MINIMAL=$HOWARD_PRIORITIZATION_DEFAULT # "default"
 # Default prioritization with HOWARD for Report (full/final VCF)
 HOWARD_PRIORITIZATION_REPORT=$HOWARD_PRIORITIZATION_DEFAULT # "default"
 # Default prioritization with HOWARD for whole analysis (prioritization forced)
@@ -622,6 +637,10 @@ HOWARD_SORT_BY_REPORT="PZFlag,PZScore"
 HOWARD_ORDER_BY_REPORT="DESC,DESC"
 
 
+# INFO to FORMAT
+# Transfers INFO annotation to FORMAT annotation
+# Useful for annotations on full VCF to final VCF on each sample
+INFO_TO_FORMAT_ANNOTATIONS=""
 
 
 # GATK4 Recalibrator and Filtration
@@ -777,7 +796,6 @@ REPOSITORY_SAMPLE_IGV_SESSION_PATTERNS=$IGV_SESSION_PATTERNS_SAMPLE_DEFAULT_APP
 REPOSITORY_SAMPLE_IGV_SESSION_MINDEPTH=$IGV_SESSION_MINDEPTH_SAMPLE_DEFAULT_APP
 REPOSITORY_SAMPLE_IGV_SESSION_MAXDEPTH=$IGV_SESSION_MAXDEPTH_SAMPLE_DEFAULT_APP
 
-
 ARCHIVES_SAMPLE_IGV_SESSION_PATTERNS=$IGV_SESSION_PATTERNS_SAMPLE_DEFAULT_APP
 ARCHIVES_SAMPLE_IGV_SESSION_MINDEPTH=$IGV_SESSION_MINDEPTH_SAMPLE_DEFAULT_APP
 ARCHIVES_SAMPLE_IGV_SESSION_MAXDEPTH=$IGV_SESSION_MAXDEPTH_SAMPLE_DEFAULT_APP
@@ -802,6 +820,16 @@ ARCHIVES_RUN_IGV_SESSION_MAXDEPTH=$IGV_SESSION_MAXDEPTH_RUN_DEFAULT_APP
 FAVORITES_RUN_IGV_SESSION_PATTERNS=$IGV_SESSION_PATTERNS_RUN_DEFAULT_APP
 FAVORITES_RUN_IGV_SESSION_MINDEPTH=$IGV_SESSION_MINDEPTH_RUN_DEFAULT_APP
 FAVORITES_RUN_IGV_SESSION_MAXDEPTH=$IGV_SESSION_MAXDEPTH_RUN_DEFAULT_APP
+
+
+# IGV Display Mode
+# IGV Display mode for files found in patterns
+# Depend on file format: either BEM, VCF or BED formats
+# There are 3 different options for viewing the feature track.  These allow you to display overlapping features, such as different transcripts of a gene, on one line or multiple lines
+# Dislpay mode options available in IGV: SQUISHED, COLLAPSED and EXPANDED
+DISPLAYMODE_BAM="SQUISHED"
+DISPLAYMODE_VCF="COLLAPSED"
+DISPLAYMODE_BED="COLLAPSED"
 
 
 # IGV SESSION DB

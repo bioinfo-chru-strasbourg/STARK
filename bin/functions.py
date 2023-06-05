@@ -254,7 +254,7 @@ if __name__ == "__main__":
 
 	args = parser.parse_args()
 
-	if args.max_jobs <= 1:
+	if args.max_jobs < 1:
 		raise ValueError("max_jobs argument should be >= 1")
 
 	if "max_jobs" in args:

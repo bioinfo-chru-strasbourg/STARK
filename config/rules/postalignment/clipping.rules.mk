@@ -13,9 +13,9 @@ MK_DATE="27/09/2019"
 # 16/06/2015: Add option CLIPPING to skip clipping step
 # 29/09/2016: New clipping script including multithreading
 # 27/08/2019: Changing FATBAM to CAP tool
+# 03/02/2023: Extract clipping rule
 
 # TOOLS & OPTION
-CAP_SOFTCLIPTOQ0?=$(CAP_FOLDER)/CAP.SoftClipToQ0.pl
 CAP_THREADS?=$(THREADS)
 CAP_OPTIONS?=--verbose # Default options + verbose
 CAP_TMP_FOLDER?=$(TMP_FOLDER_TMP) # TMP_SYS_FOLDER ???
@@ -30,18 +30,8 @@ CAP_TMP_FOLDER?=$(TMP_FOLDER_TMP) # TMP_SYS_FOLDER ???
 
 
 
-# Change SoftClip to Quality 0
-%.softclippedtoq0.sam: %.bam %.bam.bai %.manifest %.genome
-	# Clipping
-	$(SAMTOOLS) view $< -h | perl $(CAP_SOFTCLIPTOQ0) -v1 > $@
-
-
-
 # CONFIG/RELEASE
 RELEASE_COMMENT := "\#\# CLIPPING: CAP tool removes primers described in BED file from a BAM file. It parallelizes over chromosomes. Options: CAP='$(CAP)', CAP_THREADS=$(CAP_THREADS), CAP_OPTIONS='$(CAP_OPTIONS)'"
-RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
-
-RELEASE_COMMENT := "\#\# SOFTCLIPPEDTOQ0: CAP tool change softclipped base quality to 0."
 RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
 
