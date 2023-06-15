@@ -1,7 +1,7 @@
 ############################
 # Main Rules
-# Release: 0.9.5.2
-# Date: 28/07/2022
+# Release: 0.9.5.3
+# Date: 25/05/2023
 # Author: Antony Le Bechec
 ############################
 
@@ -17,7 +17,7 @@
 # 02/10/2018-0.9.5b: Change HOWARD translation, prioritization and hard filtering. Change Manifest/bed link generation
 # 27/09/2019-0.9.5.1b: Change FATBAM to CAP tool
 # 28/07/2022-0.9.5.2: Change SNP and InDel merge, 2 rules for POST_CALLING and Callers (such as VarScan)
-
+# 25/05/2023-0.9.5.3: Cleaning
 
 
 # HOWARD Prioritization
@@ -25,10 +25,8 @@ HOWARD_FILTER?="default"
 HOWARD_CONFIG?="config.ini"
 HOWARD_CONFIG_PRIORITIZATION?="config.prioritization.ini"
 HOWARD_CONFIG_ANNOTATION?="config.annotation.ini"
-#HOWARD_CONFIG_FILTER?=$(HOWARD_CONFIG_PRIORITIZATION)
 
 # HOWARD Translation
-#HOWARD_FIELDS?="PZScore,PZFlag,PZComment,Symbol,hgvs,location,outcome,AlleleFrequency,AD,dbSNP,dbSNPNonFlagged,popfreq,ALL"
 HOWARD_FIELDS?="NOMEN,PZFlag,PZScore,PZComment,CNOMEN,PNOMEN,location,outcome,VAF_average,dbSNP,dbSNPNonFlagged,popfreq,ALL"
 HOWARD_SORT?="PZFlag::DESC,PZScore:n:DESC"
 HOWARD_SORT_BY?="PZFlag,PZScore"
@@ -55,12 +53,14 @@ REMOVE_INTERMEDIATE_SAM?=1
 	# remove files
 	-rm -f $*.empty.vcf*
 
+
 # VCF Indexing with TABIX
 %.vcf.gz.tbi: %.vcf.gz
 	# Remove index if exists
 	-rm -f $@
 	# Indexing with TABIX
 	$(TABIX) -f -p vcf $<
+
 
 # VCF Indexing with IGVTOOLS
 %.vcf.idx: %.vcf %.empty.vcf
@@ -72,6 +72,7 @@ REMOVE_INTERMEDIATE_SAM?=1
 	if [ ! -e $@ ]; then touch $@; fi;
 	# remove files
 	-rm -f $*.empty.vcf*
+
 
 # EMPTY VCF
 %.empty.vcf:
@@ -93,51 +94,8 @@ REMOVE_INTERMEDIATE_SAM?=1
 
 # VCF NORMALIZATION with BCFTOOLS
 %.vcf: %.normalization.vcf %.genome
-	#$(BCFTOOLS) norm -m- -f `cat $*.genome` $< | $(BCFTOOLS) norm --rm-dup exact > $@
 	$(BCFTOOLS) norm -m- -f $$(cat $*.genome) $< | $(BCFTOOLS) norm --rm-dup exact | $(BCFTOOLS) annotate -x INFO/DP | $(BCFTOOLS) +setGT -- -t . -n 0 | $(BCFTOOLS) +fixploidy -- | $(BCFTOOLS) +fill-tags -- -t all > $@
 
-#bcftools view $VCF | bcftools norm -m- -f $GENOME | bcftools norm --rm-dup exact | bcftools annotate -x INFO/DP | bcftools +setGT  -- -t . -n 0 | bcftools +fill-tags -- -t all 
-
-
-#| $BCFTOOLS +setGT  -- -t . -n 0 | $BCFTOOLS +fill-tags -- -t AN,AC,AF
-
-
-# MERGE SNP and InDel VCF
-# %.vcf: %.SNP.vcf.gz %.InDel.vcf.gz %.SNP.vcf.gz.tbi %.InDel.vcf.gz.tbi
-# 	# CONCAT
-# 	$(BCFTOOLS) concat -a $*.SNP.vcf.gz $*.InDel.vcf.gz > $@.tmp
-# 	# Sorting
-# 	grep "^#" $@.tmp > $@
-# 	mkdir -p $@.tmp"_VCF_sort"
-# 	grep -v "^#" $@.tmp | sort -k1,1V -k2,2n -T $@.tmp"_VCF_sort" >> $@
-# 	rm -rf $@.tmp*
-# 	# Cleaning
-# 	-rm -f $*.SNP.vcf.gz $*.InDel.vcf.gz
-# 	-rm -f $*.SNP.vcf.gz.tbi $*.InDel.vcf.gz.tbi
-# 	-rm -f $*.SNP.vcf.idx $*.InDel.vcf.idx
-# 	-rm -f $*.idx
-
-# MERGE SNP and InDel VCF
-# Use internal ngzip and idexation because of generic rules not found, probably due to complexe/loop tree resolution
-# %.vcf: %.SNP.vcf %.InDel.vcf
-# 	# BGZIP TABIX
-# 	$(BCFTOOLS) sort -T $*.SNP.vcf.tmp.SAMTOOLS_PREFIX $< > $*.SNP.vcf.tmp.sorted
-# 	$(BCFTOOLS) sort -T $*.InDel.vcf.tmp.SAMTOOLS_PREFIX $< > $*.InDel.vcf.tmp.sorted
-# 	$(BGZIP) -f $*.SNP.vcf.tmp.sorted -c > $*.SNP.vcf.tmp.sorted.gz
-# 	$(BGZIP) -f $*.InDel.vcf.tmp.sorted -c > $*.InDel.vcf.tmp.sorted.gz
-# 	$(TABIX) $*.SNP.vcf.tmp.sorted.gz
-# 	$(TABIX) $*.InDel.vcf.tmp.sorted.gz
-# 	# CONCAT
-# 	$(BCFTOOLS) concat -a $*.SNP.vcf.tmp.sorted.gz $*.InDel.vcf.tmp.sorted.gz > $@.tmp
-# 	# Sorting
-# 	grep "^#" $@.tmp > $@
-# 	mkdir -p $@.tmp"_VCF_sort"
-# 	grep -v "^#" $@.tmp | sort -k1,1V -k2,2n -T $@.tmp"_VCF_sort" >> $@
-# 	# Cleaning
-# 	-rm -rf $@.tmp* $*.SNP.vcf.tmp* $*.InDel.vcf.tmp*
-# 	#-rm -f $*.SNP.vcf.gz.tbi $*.InDel.vcf.gz.tbi
-# 	#-rm -f $*.SNP.vcf.idx $*.InDel.vcf.idx
-# 	#-rm -f $*.idx
 
 # MERGE SNP and InDel VCF
 %.vcf: %.SNP.vcf %.InDel.vcf %.dict
@@ -148,6 +106,7 @@ REMOVE_INTERMEDIATE_SAM?=1
 		--CREATE_INDEX false \
 		--SEQUENCE_DICTIONARY $$(cat $*.dict) \
 		-O $@;
+
 
 # MERGE SNP and InDel VCF for Post calling steps. Because of loop in rules
 %.vcf: %.POST_CALLING_SNP.vcf %.POST_CALLING_InDel.vcf %.dict
@@ -161,20 +120,12 @@ REMOVE_INTERMEDIATE_SAM?=1
 
 
 
-
-# HOWARD
+# VCF translation
 #####################
-# Translation, prioritiazzation, hard filtering
+# Translation to TSV
 
 
 # VCF to tab delimiter
-# %.tsv: %.vcf
-# 	# translation step
-# 	$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$< --output=$@ --translation=TSV --fields="$(HOWARD_FIELDS)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)" --force;
-# 	# Touch
-# 	if [ ! -e $@ ]; then touch $@; fi;
-# 	# Cleaning
-
 %.tsv: %.vcf
 	# translation step
 	#$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$< --output=$@ --translation=TSV --fields="$(HOWARD_FIELDS)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)" --force;
@@ -184,17 +135,13 @@ REMOVE_INTERMEDIATE_SAM?=1
 	# Cleaning
 
 
+
 ## BAM/FASTQ Files
 ####################
 
 # BAM Indexing - BAI-format
 %.bam.bai: %.bam
 	$(SAMTOOLS) index $< -@ $(THREADS_SAMTOOLS)
-
-
-# BAM Indexing - CSI-format
-#%.bam.csi: %.bam
-#	$(SAMTOOLS) index $< -c -@ $(THREADS_SAMTOOLS)
 
 
 # BAM from SAM
@@ -206,13 +153,9 @@ REMOVE_INTERMEDIATE_SAM?=1
 		$(SAMTOOLS) view -o $@ -b -1 -S -T `cat $*.genome` $< -@ $(THREADS_SAMTOOLS); \
 	fi;
 	-if [ $(REMOVE_INTERMEDIATE_SAM) -eq 1 ]; then rm -f $<; fi;
-	#rm -f $<
 
 
-# CRAM from SAM
-# sorting sam file by coordinate and output a bam file
-# BAM from CRAM
-# sorting sam file by coordinate and output a bam file
+# CRAM from BAM
 %.cram: %.bam %.genome
 	echo "test BAM to CRAM: $^"
 	$(SAMTOOLS) view -o $@ -O CRAM -S -T `cat $*.genome` $*.bam -@ $(THREADS_SAMTOOLS);
@@ -225,17 +168,13 @@ REMOVE_INTERMEDIATE_SAM?=1
 	$(SAMTOOLS) index $<
 
 
-
-# BAM Sorting
-#%.bam: %.uncompressed.bam
-#	$(SAMTOOLS) sort $< -o $@ -l $(BAM_COMPRESSION) -@ $(THREADS_SAMTOOLS);
-
-# BAM Sorting
+# BAM Compress
 %.bam: %.compress.bam
 	$(SAMTOOLS) sort $< -o $@ -l $(BAM_COMPRESSION) -T $<.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS);
 	rm -rf $*.compress.bai
 
 
+# BAM Sorting
 %.bam : %.sorting.bam
 	if ((! $$($(SAMTOOLS) view -H $< | grep "^@HD.*VN:.*SO:" | wc -l))) || (($$($(SAMTOOLS) view -H $< | grep "^@HD.*VN:.*SO:unsorted" | wc -l))) ; then \
 		$(SAMTOOLS) sort $< -o $@ -T $<.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS); \
@@ -261,7 +200,6 @@ GATKRR_FLAGS=
 	$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) $(GATKRR_FLAGS) -T ReduceReads -R `cat $*.genome` -I $< -o $@
 
 
-
 # SampleSheet Copy
 %.SampleSheet.csv:
 	-mkdir -p $(@D)
@@ -272,14 +210,13 @@ GATKRR_FLAGS=
 # BED / INTERVALS
 ###################
 
-
+# Manifest from SampleSheet to Manifest
 %.manifest: %.manifest_from_samplesheet
 	-mkdir -p $(@D)
 	# Create MANIFEST file
 	# 1. test if main manifest file (SAMPLE.manifest) exists (use for Sample analysis)
 	# 2. test if a manifest is found on SampleSheet (use for Run analysis)
 	# 3. test if a manifest is defined in the APP (as an environment variable)
-	#
 	-if [ -e $(@D)/`echo $$(basename $(@D))`.manifest ]; then \
 		echo "# MANIFEST for the sample '$(@D)/`echo $$(basename $(@D))`.manifest' exists" ; \
 		if  [ "$(@D)/`echo $$(basename $(@D))`.manifest" != "$@" ]; then \
@@ -300,12 +237,12 @@ GATKRR_FLAGS=
 	# Clean
 
 
+# Manifest from SampleSheet name to Manifest
 %.manifest_name: %.manifest_from_samplesheet_name
 	-mkdir -p $(@D)
 	# Create MANIFEST file
 	# 1. test if main manifest name file (SAMPLE.manifest_name) exists (use for Sample analysis)
 	# 2. test if a manifest name is found on SampleSheet (use for Run analysis)
-	#
 	-if [ -e $(@D)/`echo $$(basename $(@D))`.manifest_name ]; then \
 		echo "# MANIFEST name for the sample '$(@D)/`echo $$(basename $(@D))`.manifest_name' exists" ; \
 		if  [ "$(@D)/`echo $$(basename $(@D))`.manifest_name" != "$@" ]; then \
@@ -333,8 +270,8 @@ GATKRR_FLAGS=
 	# Clean
 
 
-
-%.manifest_from_samplesheet: %.SampleSheet.csv #%.manifests_list.txt
+# SampleSheet to Manifest from SampleSheet
+%.manifest_from_samplesheet: %.SampleSheet.csv
 	# 1. Create the sample Manifest
 	# Find the index of Manifest field
 	# Find the Manifest index (A,B...)
@@ -352,16 +289,13 @@ GATKRR_FLAGS=
 		touch $*.manifests_list.txt; \
 	fi;
 	if [ ! -e $@ ]; then touch $*.manifests_list.txt; fi;
-	#
 	# Column number of sample manifest
 	-grep -i ^Sample_ID $< | tr -d '\r\n' | sed -e 's/,/\n/g' | grep -i -n Manifest | cut -d \: -f 1 > $(@D)/$(*F).INDEX_SAMPLEMANIFEST_I;
 	-if [ ! -s $(@D)/$(*F).INDEX_SAMPLEMANIFEST_I ]; then echo "1" > $(@D)/$(*F).INDEX_SAMPLEMANIFEST_I; fi;
 	# Manifest letter for the index
 	-grep -e ^$$(basename $(@D)), $< | tail -n 1 | tr -d '\r\n' | cut -d \, -f `cat $(@D)/$(*F).INDEX_SAMPLEMANIFEST_I` > $(@D)/$(*F).SAMPLE_MANIFEST_I;
-	#
 	# Manifest name for the sample
 	-grep ^`cat $(@D)/$(*F).SAMPLE_MANIFEST_I`, $*.manifests_list.txt | cut -d \, -f 2 > $(@D)/$(*F).SAMPLE_MANIFEST;
-
 	# Found manifest, or Default manifest is the first in the list
 	if [ "`cat $(@D)/$(*F).SAMPLE_MANIFEST`" != "" ] && [ -e "$(MANIFEST_FOLDER)/`cat $(@D)/$(*F).SAMPLE_MANIFEST`" ]; then \
 		echo "# TEST Found Manifest '"`cat $(@D)/$(*F).SAMPLE_MANIFEST`"' in '$(MANIFEST_FOLDER)' for sample `echo $$(basename $$(dirname $(@D)))`/$(*F)"; \
@@ -389,6 +323,7 @@ GATKRR_FLAGS=
 	-rm -f $(@D)/$(*F).INDEX_SAMPLEMANIFEST_I $(@D)/$(*F).SAMPLE_MANIFEST_I $(@D)/$(*F).SAMPLE_MANIFEST;
 
 
+# SampleSheet to Manifest from SampleSheet Name
 %.manifest_from_samplesheet_name: %.SampleSheet.csv
 	# 1. Create the sample Manifest
 	# Find the index of Manifest field
@@ -407,30 +342,24 @@ GATKRR_FLAGS=
 		touch $*.manifests_list_name.txt; \
 	fi;
 	if [ ! -e $@ ]; then touch $*.manifests_list_name.txt; fi;
-	#
 	# Column number of sample manifest
 	-grep -i ^Sample_ID $< | tr -d '\r\n' | sed -e 's/,/\n/g' | grep -i -n Manifest | cut -d \: -f 1 > $(@D)/$(*F).INDEX_SAMPLEMANIFEST_I_name;
 	-if [ ! -s $(@D)/$(*F).INDEX_SAMPLEMANIFEST_I_name ]; then echo "1" > $(@D)/$(*F).INDEX_SAMPLEMANIFEST_I_name; fi;
 	# Manifest letter for the index
 	-grep -e ^$$(basename $(@D)), $< | tail -n 1 | tr -d '\r\n' | cut -d \, -f `cat $(@D)/$(*F).INDEX_SAMPLEMANIFEST_I_name` > $(@D)/$(*F).SAMPLE_MANIFEST_I_name;
-	#
 	# Manifest name for the sample
 	-grep ^`cat $(@D)/$(*F).SAMPLE_MANIFEST_I_name`, $*.manifests_list_name.txt | cut -d \, -f 2 > $(@D)/$(*F).SAMPLE_MANIFEST_name;
-	#
 	-if [ ! -s $(@D)/$(*F).SAMPLE_MANIFEST_name ]; then \
 		> $@; \
 	else \
 		echo -e $$(cat $(@D)/$(*F).SAMPLE_MANIFEST_name)"\tfrom SampleSheet" > $@; \
 	fi;
-	#
 	# Empty manifest if failed!
 	if [ ! -e $@ ]; then touch $@; fi;
-	#
 	# Clean
 	-rm -f $*.manifests_list_name.txt
 	# Remove intermediate files
 	-rm -f $(@D)/$(*F).INDEX_SAMPLEMANIFEST_I_name $(@D)/$(*F).SAMPLE_MANIFEST_I_name $(@D)/$(*F).SAMPLE_MANIFEST_name;
-
 
 
 # Interval from bed from manifest?
@@ -446,7 +375,6 @@ GATKRR_FLAGS=
 	else \
 		echo "[ERROR] No intervals generated '$@'" ; \
 	fi;
-	#
 	# INTERVAL WITH PICARD
 	if [ -s $@.bed ]; then \
 		echo "[INFO] Generate $@ from $@.bed with PICARD BedToIntervalList" ; \
@@ -465,9 +393,6 @@ GATKRR_FLAGS=
 	# clean
 
 
-#$(JAVA) -jar $(PICARD) BedToIntervalList I=$@.bed.4fields O=$@ SD=$$(cat $*.dict) ;
-
-
 # Interval from BED
 %.bed.interval_list: %.bed %.dict
 	# BED to Intervals (not needed?)
@@ -484,8 +409,8 @@ GATKRR_FLAGS=
 	fi;
 	if [ ! -e $@ ]; then touch $@; fi;
 
-#$(JAVA) -jar $(PICARD) BedToIntervalList INPUT=$@.4fields OUTPUT=$@ SEQUENCE_DICTIONARY=$$(cat $*.dict) ;
 
+# interval_list to intervals
 %.intervals: %.interval_list
 	touch $@
 	-grep -v ^@ $< > $@
@@ -503,13 +428,13 @@ GATKRR_FLAGS=
 	fi;
 	if [ ! -e $@ ]; then touch $@; fi;
 
+
 # BED file from a Manifest
 %.bed: %.manifest
 	# Create BED file
 	# 1. test if main bed file (SAMPLE.bed) exists (use for Sample analysis)
 	# 2. test if a bed can be generated from the manifest
 	# 3. test if a manifest is defined in the APP (as an environment variable)
-	#
 	-rm -f $@
 	-if [ -e $(@D)/`echo $$(basename $(@D))`.bed ]; then \
 		echo "# BED for the sample '$(@D)/`echo $$(basename $(@D))`.bed' exists" ; \
@@ -522,11 +447,8 @@ GATKRR_FLAGS=
 		echo "# BED for the sample generated from the manifest '$<'" ; \
 		rm -f $@.tmp $@.sorted.tmp; \
 		$(CAP_ManifestToBED) --input=$< --output=$@.tmp --output_type=region_clipped; \
-		#$(BEDTOOLS) sort -i $@.tmp | $(BEDTOOLS) merge -c 5 -o collapse  | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t+\t"$$4}' > $@; \
-		#$(BEDTOOLS) sort -i $@.tmp | $(BEDTOOLS) merge -c 4,5 -o first,collapse  | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$4"\t"$$5}' > $@; \
 		if (( $$(grep ^ $@.tmp -c) )); then \
 			echo "region_clipped in Manifest is NOT empty "; \
-			cat $@.tmp; \
 			$(BEDTOOLS) sort -i $@.tmp | $(BEDTOOLS) merge -c 4,5 -o first,distinct  | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$5"\t0\t+"}' > $@; \
 		else \
 			echo "region_clipped in Manifest is empty "; \
@@ -539,7 +461,6 @@ GATKRR_FLAGS=
 	else \
 		touch $@; \
 	fi;
-	#
 	if [ ! -e $@ ]; then touch $@; fi;
 	# Clean
 
@@ -572,7 +493,6 @@ GATKRR_FLAGS=
 	else \
 		touch $@; \
 	fi;
-	#
 	if [ ! -e $@ ]; then touch $@; fi;
 	# Clean
 
@@ -618,10 +538,8 @@ GATKRR_FLAGS=
 		echo "# Region Clipped BED for the sample generated from the manifest '$<'" ; \
 		rm -f $@.tmp $@.sorted.tmp; \
 		$(CAP_ManifestToBED) --input=$< --output=$@.tmp --output_type=region_clipped; \
-		#$(BEDTOOLS) sort -i $@.tmp | $(BEDTOOLS) merge -c 4,5 -o first,collapse  | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$4"\t"$$5}' > $@; \
 		if (( $$(grep ^ $@.tmp -c) )); then \
 			echo "region_clipped in Manifest is NOT empty "; \
-			cat $@.tmp; \
 			$(BEDTOOLS) sort -i $@.tmp | $(BEDTOOLS) merge -c 4,5 -o first,distinct | awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$5"\t0\t"$$4}' > $@; \
 		else \
 			echo "region_clipped in Manifest is empty "; \
@@ -636,7 +554,6 @@ GATKRR_FLAGS=
 		cp $*.bed $@; \
 	fi;
 	if [ ! -e $@ ]; then touch $@; fi;
-
 
 
 
@@ -655,11 +572,6 @@ PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
 PIPELINES_COMMENT := "POST_CALLING:normalization:VCF Normalization."
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
 
-#PIPELINES_COMMENT := "POST_ANNOTATION:normalization:VCF Normalization."
-#PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
-
-#PIPELINES_COMMENT := "POST_CALLING:sorting:VCF Sorting."
-#PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
 
 PIPELINES_COMMENT := "POST_ANNOTATION:sorting:VCF Sorting."
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
