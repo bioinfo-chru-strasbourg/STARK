@@ -851,8 +851,8 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 # TOOL INFO
 ENV TOOL_NAME="outlyzer"
-ENV TOOL_VERSION="3"
-ENV TOOL_TARBALL="outLyzer.py"
+ENV TOOL_VERSION="3.2"
+ENV TOOL_TARBALL="outLyzer_V3.2.py"
 ENV TOOL_SOURCE_EXTERNAL="https://raw.githubusercontent.com/EtieM/outLyzer/master/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
