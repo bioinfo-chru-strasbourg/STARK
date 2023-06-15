@@ -235,7 +235,7 @@ RUN echo "#[INFO] SYSTEM YUM installation - and download" && \
 	fi && \
 	# Install packages locally \
 	echo "#[INFO] System packages installation locally" && \
-	yum $YUM_PARAM localinstall -y --nogpgcheck $SOURCES/$SOURCES_FOLDER/system/wget-*.rpm $SOURCES/$SOURCES_FOLDER/system/rsync-*.rpm && \
+	yum $YUM_PARAM localinstall -y --allowerasing --nogpgcheck $SOURCES/$SOURCES_FOLDER/system/wget-*.rpm $SOURCES/$SOURCES_FOLDER/system/rsync-*.rpm && \
 	# Test WGET installation \
 	if ! command -v wget 1>/dev/null 2>/dev/null; then \
 		echo "#[ERROR] System wget package not installed (Please open Internet connexion or provide WGET rpm in sources/system folder)"; \
