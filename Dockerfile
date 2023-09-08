@@ -1,9 +1,9 @@
 
 ##############################################################
-# Dockerfile Version:   1.2
+# Dockerfile Version:   1.3
 # Software:             STARK
 # Software Version:     3
-# Software Website:     https://gitlab.bioinfo-diag.fr/Strasbourg/STARK
+# Software Website:     https://github.com/bioinfo-chru-strasbourg/STARK
 # Licence:              GNU Affero General Public License (AGPL)
 # Description:          STARK 1.8.4.rnaseq
 # Usage:                docker run -ti [-v [DATA FOLDER]:/data -v [DATABASE_FOLDER]:/databases] stark:version
@@ -37,9 +37,9 @@
 # FROM #
 ########
 
-FROM centos:7
+FROM almalinux:8
 LABEL Software="STARK" \
-	Version="0.9.18.4" \
+	Version="19.0.0-devel" \
 	Website="https://gitlab.bioinfo-diag.fr/Strasbourg/STARK" \
 	maintainer="Antony Le Bechec <antony.lebechec@gmail.com>" \
 	Description="STARK" \
@@ -127,31 +127,21 @@ RUN echo "#[INFO] STARK installation configuration" && \
 ##################
 # This will install system packages, python packages and scripts to install tools
 
-
-ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git lzma lzma-devel make ncurses-devel perl perl-Data-Dumper perl-Digest-MD5 perl-Switch perl-Tk tbb-devel unzip rsync wget which xz xz-devel zlib zlib-devel zlib2 zlib2-devel docker java-1.7.0 java-1.8.0 java-11 python2 python2-pip python3 python3-pip python3-devel curl-devel openssl-devel htslib perl-devel perl-PerlIO-gzip perl-DB_File perl-URI perl-Carp-Assert perl-JSON-XS perl-Archive-Tar perl-List-MoreUtils perl-Digest-MD5"
-#ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git lzma lzma-devel make ncurses-devel perl perl-Data-Dumper perl-Digest-MD5 perl-Switch perl-devel perl-Tk tbb-devel unzip rsync wget which xz xz-devel zlib zlib-devel zlib2 zlib2-devel docker java-1.7.0 java-1.8.0 python2 python2-pip python3 python3-pip python3-devel curl-devel openssl-devel R-core R-core-devel libcurl libcurl-devel libcurl-openssl-devel htslib htslib-devel libxml2-devel"
-#ENV YUM_INSTALL_MORE=" R-devel libcurl libcurl-devel libcurl-openssl-devel htslib htslib-devel libxml2-devel perl-Archive-Tar perl-List-MoreUtils"
-#ENV YUM_INSTALL_MORE=" R-core R-core-devel libcurl libcurl-devel libcurl-openssl-devel htslib htslib-devel libxml2-devel"
-#ENV YUM_INSTALL_MORE=" wget rsync python2 python2-pip python3 python3-pip"
-ENV YUM_REMOVE="autoconf automake bzip2-devel lzma-devel ncurses-devel tbb-devel xz-devel zlib-devel zlib2-devel python3-devel curl-devel openssl-devel"
-#ENV YUM_REMOVE="autoconf automake bzip2-devel lzma-devel ncurses-devel perl-devel tbb-devel xz-devel zlib-devel zlib2-devel python3-devel curl-devel openssl-devel R-core-devel libcurl-devel libcurl-openssl-devel htslib-devel libxml2-devel"
-ENV PYTHON_MODULE=""
-ENV PYTHON2_MODULE=$PYTHON_MODULE" pathos numpy scipy argparse multiprocess" 
-ENV PYTHON3_MODULE=$PYTHON_MODULE" pathos numpy scipy argparse"
-
+ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git make ncurses-devel tbb-devel unzip rsync wget which xz xz-devel zlib zlib-devel docker java-17 java-1.8.0 curl-devel openssl-devel diffutils"
+ENV YUM_REMOVE="autoconf automake bzip2-devel lzma-devel ncurses-devel perl-devel tbb-devel xz-devel zlib-devel zlib2-devel curl-devel openssl-devel"
+ENV PYTHON_MODULE=" pathos numpy scipy argparse"
+ENV PERL_INSTALL=" perl perl-Switch perl-Time-HiRes perl-Data-Dumper perl-Digest-MD5 perl-Tk perl-devel "
 
 ENV REPO_SYSTEM_GIT="$REPO/sources.system.tar.gz?path=sources/system"
 ENV REPO_SYSTEM_HTTP="$REPO/sources/system/"
-ENV REPO_PYTHON_GIT="$REPO/sources.python.tar.gz?path=sources/python"
-ENV REPO_PYTHON_HTTP="$REPO/sources/python/"
 
 ENV GET_TOOL_SOURCE=$SOURCES/$SOURCES_FOLDER/get_tool_source.sh
 ENV TOOL_INIT=$SOURCES/$SOURCES_FOLDER/tool_init.sh
 ENV TOOL_CHECK=$SOURCES/$SOURCES_FOLDER/tool_check.sh
 
-
-
-RUN echo "#[INFO] Sources scripts" && \
+RUN yum -y update
+RUN yum -y install epel-release
+RUN echo "#[INFO] SYSTEM Sources scripts" && \
 	if [ -e $GET_TOOL_SOURCE ]; then \
 	echo "#[INFO] GET TOOL SOURCE script exists" ; \
 	elif $(wget --no-cache --progress=bar:force -nv --quiet "$REPO/$SOURCES_FOLDER/$(basename $GET_TOOL_SOURCE)" -O $GET_TOOL_SOURCE); then \
@@ -225,49 +215,49 @@ RUN echo "#[INFO] Sources scripts" && \
 
 
 # System isntallation
-RUN echo "#[INFO] System YUM installation - and download" && \
+RUN echo "#[INFO] SYSTEM YUM installation - and download" && \
 	# Create system repository \
 	mkdir -p $SOURCES/$SOURCES_FOLDER/system && \
-	# INSTALL WGET \
-	echo "#[INFO] System install wget package" && \
-	#ls $SOURCES/$SOURCES_FOLDER/system/*.rpm && \
-	if ! ls $SOURCES/$SOURCES_FOLDER/system/wget-*.rpm 1> /dev/null 2>&1; then \
-	echo "#[INFO] System wget package not locally available"; \
-	yum $YUM_PARAM install -y --nogpgcheck --downloadonly --downloaddir=$SOURCES/$SOURCES_FOLDER/system/ wget; \
-	echo "#[INFO] System wget package downloaded from YUM Repository"; \
-	fi && \
-	echo "#[INFO] System install rsync package" && \
-	if ! ls $SOURCES/$SOURCES_FOLDER/system/rsync-*.rpm 1> /dev/null 2>&1; then \
-	echo "#[INFO] System rsync package not locally available"; \
-	yum $YUM_PARAM install -y --nogpgcheck --downloadonly --downloaddir=$SOURCES/$SOURCES_FOLDER/system/ rsync; \
-	echo "#[INFO] System rsync package downloaded from YUM Repository"; \
-	fi && \
-	# Install packages locally \
-	echo "#[INFO] System packages installation locally" && \
-	yum $YUM_PARAM localinstall -y --nogpgcheck $SOURCES/$SOURCES_FOLDER/system/wget-*.rpm $SOURCES/$SOURCES_FOLDER/system/rsync-*.rpm && \
-	# Test WGET installation \
-	if ! command -v wget 1>/dev/null 2>/dev/null; then \
-	echo "#[ERROR] System wget package not installed (Please open Internet connexion or provide WGET rpm in sources/system folder)"; \
-	exit 1; \
-	fi && \
-	if ! command -v rsync 1>/dev/null 2>/dev/null; then \
-	echo "#[ERROR] System rsync package not installed (Please open Internet connexion or provide RSYNC rpm in sources/system folder)"; \
-	exit 1; \
-	fi && \
+	# # INSTALL WGET \
+	# echo "#[INFO] System install wget package" && \
+	# #ls $SOURCES/$SOURCES_FOLDER/system/*.rpm && \
+	# if ! ls $SOURCES/$SOURCES_FOLDER/system/wget-*.rpm 1> /dev/null 2>&1; then \
+	# echo "#[INFO] System wget package not locally available"; \
+	# yum $YUM_PARAM install -y --nogpgcheck --downloadonly --downloaddir=$SOURCES/$SOURCES_FOLDER/system/ wget; \
+	# echo "#[INFO] System wget package downloaded from YUM Repository"; \
+	# fi && \
+	# echo "#[INFO] System install rsync package" && \
+	# if ! ls $SOURCES/$SOURCES_FOLDER/system/rsync-*.rpm 1> /dev/null 2>&1; then \
+	# echo "#[INFO] System rsync package not locally available"; \
+	# yum $YUM_PARAM install -y --nogpgcheck --downloadonly --downloaddir=$SOURCES/$SOURCES_FOLDER/system/ rsync; \
+	# echo "#[INFO] System rsync package downloaded from YUM Repository"; \
+	# fi && \
+	# # Install packages locally \
+	# echo "#[INFO] System packages installation locally" && \
+	# yum $YUM_PARAM localinstall -y --nogpgcheck $SOURCES/$SOURCES_FOLDER/system/wget-*.rpm $SOURCES/$SOURCES_FOLDER/system/rsync-*.rpm && \
+	# # Test WGET installation \
+	# if ! command -v wget 1>/dev/null 2>/dev/null; then \
+	# echo "#[ERROR] System wget package not installed (Please open Internet connexion or provide WGET rpm in sources/system folder)"; \
+	# exit 1; \
+	# fi && \
+	# if ! command -v rsync 1>/dev/null 2>/dev/null; then \
+	# echo "#[ERROR] System rsync package not installed (Please open Internet connexion or provide RSYNC rpm in sources/system folder)"; \
+	# exit 1; \
+	# fi && \
 	# DOWNLOAD packages from repository \
 	echo "#[INFO] System packages download from REPO '$REPO'"; \
 	mkdir -p $SOURCES/$SOURCES_FOLDER/system/build && \
 	# in GIT mode
 	if wget -q --progress=bar:force --tries=3 $REPO_SYSTEM_GIT -O $SOURCES/$SOURCES_FOLDER/system/build/STARK-repo.sources.system.tar.gz; then \
 	if tar xf $SOURCES/$SOURCES_FOLDER/system/build/STARK-repo.sources.system.tar.gz -C $SOURCES/$SOURCES_FOLDER/system/build/; then \
-	rsync -auczqAXhi --no-links --no-perms --no-owner --no-group $SOURCES/$SOURCES_FOLDER/system/build/STARK-repo.sources.system*/sources/system/*rpm $SOURCES/$SOURCES_FOLDER/system/; \
+	rsync -auczqAXhi --no-links --no-perms --no-owner --no-group --ignore-missing-args $SOURCES/$SOURCES_FOLDER/system/build/STARK-repo.sources.system*/sources/system/*rpm $SOURCES/$SOURCES_FOLDER/system/; \
 	echo "#[INFO] System packages downloaded from REPO '$REPO' (GIT)"; \
 	else \
 	echo "#[WARNING] System fail to uncompress packages from REPO '$REPO'"; \
 	fi; \
 	# in HTTP mode
 	elif wget -q --progress=bar:force --tries=3 -r --no-parent $REPO_SYSTEM_HTTP -x --directory-prefix=$SOURCES/$SOURCES_FOLDER/system/build/STARK-repo.sources.system/; then \
-	rsync -auczqAXhi --no-links --no-perms --no-owner --no-group $SOURCES/$SOURCES_FOLDER/system/build/STARK-repo.sources.system/*/sources/system/*rpm $SOURCES/$SOURCES_FOLDER/system/; \
+	rsync -auczqAXhi --no-links --no-perms --no-owner --no-group --ignore-missing-args $SOURCES/$SOURCES_FOLDER/system/build/STARK-repo.sources.system/*/sources/system/*rpm $SOURCES/$SOURCES_FOLDER/system/; \
 	echo "#[INFO] System packages downloaded from REPO '$REPO' (FTP/HTTP)"; \
 	else \
 	echo "#[WARNING] System fail packages download from REPO '$REPO'"; \
@@ -292,16 +282,14 @@ RUN echo "#[INFO] System YUM installation - and download" && \
 	echo "#[INFO] System packages update from YUM Repository" && \
 	mkdir -p $SOURCES/$SOURCES_FOLDER/system/build/update && \
 	yum $YUM_PARAM update -y --downloadonly --downloaddir=$SOURCES/$SOURCES_FOLDER/system/build/update && \
-	yum $YUM_PARAM update -y && \
-	#yum $YUM_PARAM localinstall -y --nogpgcheck $SOURCES/$SOURCES_FOLDER/system/build/update/*.rpm && \
-	rsync -auczqAXhi --no-links --no-perms --no-owner --no-group $SOURCES/$SOURCES_FOLDER/system/build/update/*rpm $SOURCES/$SOURCES_FOLDER/system/ && \
-	echo "#[INFO] System packages downloaded & updated from YUM Repository"; \
+	yum $YUM_PARAM localinstall -y --nogpgcheck $SOURCES/$SOURCES_FOLDER/system/build/update/*.rpm && \
+	rsync -auczqAXhi --no-links --no-perms --no-owner --no-group --ignore-missing-args $SOURCES/$SOURCES_FOLDER/system/build/update/*rpm $SOURCES/$SOURCES_FOLDER/system/ && \
+	echo "#[INFO] System packages downloaded & updated from YUM Repository" && \
 	echo "#[INFO] System packages install from YUM Repository" && \
 	mkdir -p $SOURCES/$SOURCES_FOLDER/system/build/install && \
 	yum $YUM_PARAM install -y --downloadonly --downloaddir=$SOURCES/$SOURCES_FOLDER/system/build/install/ $YUM_INSTALL && \
-	yum $YUM_PARAM install -y $YUM_INSTALL && \
-	#yum $YUM_PARAM localinstall -y --nogpgcheck $SOURCES/$SOURCES_FOLDER/system/build/install/*.rpm && \
-	rsync -auczqAXhi --no-links --no-perms --no-owner --no-group $SOURCES/$SOURCES_FOLDER/system/build/install/*rpm $SOURCES/$SOURCES_FOLDER/system/ && \
+	yum $YUM_PARAM localinstall -y --nogpgcheck $SOURCES/$SOURCES_FOLDER/system/build/install/*.rpm && \
+	rsync -auczqAXhi --no-links --no-perms --no-owner --no-group --ignore-missing-args $SOURCES/$SOURCES_FOLDER/system/build/install/*rpm $SOURCES/$SOURCES_FOLDER/system/ && \
 	echo "#[INFO] System packages downloaded & installed from YUM Repository" && \
 	rm -rf $SOURCES/$SOURCES_FOLDER/system/build && \
 	yum clean -y all && \
@@ -309,107 +297,6 @@ RUN echo "#[INFO] System YUM installation - and download" && \
 	echo "#[INFO] System Clean" && \
 	echo "#";
 
-
-# PYTHON installation
-RUN	echo "#[INFO] System Python packages installation - download from REPO '$REPO'"; \
-	mkdir -p $SOURCES/$SOURCES_FOLDER/python/build && \
-	# in GIT mode
-	if wget --progress=bar:force --tries=3 $REPO_PYTHON_GIT -O $SOURCES/$SOURCES_FOLDER/python/build/STARK-repo.sources.python.tar.gz; then \
-	if tar xf $SOURCES/$SOURCES_FOLDER/python/build/STARK-repo.sources.python.tar.gz -C $SOURCES/$SOURCES_FOLDER/python/build/; then \
-	rsync -auczqAXhi --no-links --no-perms --no-owner --no-group $SOURCES/$SOURCES_FOLDER/python/build/STARK-repo.sources.python*/sources/system/* $SOURCES/$SOURCES_FOLDER/python/; \
-	echo "#[INFO] System Python packages downloaded from REPO '$REPO' (GIT)"; \
-	else \
-	echo "#[WARNING] System fail to uncompress Python packages from REPO '$REPO'"; \
-	fi; \
-	# in HTTP mode
-	elif wget --progress=bar:force --tries=3 -r --no-parent $REPO_PYTHON_HTTP -x --directory-prefix=$SOURCES/$SOURCES_FOLDER/python/build/STARK-repo.sources.system/; then \
-	rsync -auczqAXhi --no-links --no-perms --no-owner --no-group $SOURCES/$SOURCES_FOLDER/system/build/STARK-repo.sources.system*/sources/python/* $SOURCES/$SOURCES_FOLDER/python/; \
-	echo "#[INFO] System Python packages downloaded from REPO '$REPO' (FTP/HTTP)"; \
-	else \
-	echo "#[WARNING] System fail Python packages download from REPO '$REPO'"; \
-	fi && \
-	rm -rf $SOURCES/$SOURCES_FOLDER/python/build && \
-	# Install Python packages locally \
-	echo "#[INFO] System Python packages installation locally" && \
-	if ls $SOURCES/$SOURCES_FOLDER/python/2/*whl 1> /dev/null 2>&1; then \
-	pip2 --no-cache-dir install $SOURCES/$SOURCES_FOLDER/python/2/*whl ; \
-	fi && \
-	if ls $SOURCES/$SOURCES_FOLDER/python/3/*whl 1> /dev/null 2>&1; then \
-	pip3 --no-cache-dir install $SOURCES/$SOURCES_FOLDER/python/3/*whl ; \
-	fi && \
-	# Update PIP \
-	echo "#[INFO] System Python packages update from PIP Repository" && \
-	echo "#[INFO] System Python packages update from PIP Repository - Python2" && \
-	mkdir -p $TOOLS/python/2/bin && \
-	mkdir -p $SOURCES/$SOURCES_FOLDER/python/2 && \
-	if [ ! -e $SOURCES/$SOURCES_FOLDER/python/2/get-pip.py ]; then \
-	curl https://bootstrap.pypa.io/pip/2/get-pip.py --output $SOURCES/$SOURCES_FOLDER/python/2/get-pip.py; \
-	fi && \
-	if [ -e $SOURCES/$SOURCES_FOLDER/python/2/get-pip.py ]; then \
-	cp $SOURCES/$SOURCES_FOLDER/python/2/get-pip.py $TOOLS/python/2/bin/get-pip.py; \
-	chmod u+x $TOOLS/python/2/bin/get-pip.py; \
-	else \
-	echo "#[ERROR] No Python2 get-pip.py"; \
-	exit 1; \
-	fi && \
-	$TOOLS/python/2/bin/get-pip.py && \
-	python2 -m pip --no-cache-dir install --upgrade pip && \
-	echo "#[INFO] System Python packages update from PIP Repository - Python3" && \
-	python3 -m pip  --no-cache-dir install --upgrade pip && \
-	echo "#[INFO] System Python packages downloaded & updated from PIP Repository" && \
-	echo "#[INFO] System Python packages install from PIP Repository" && \
-	echo "#[INFO] System Python packages install from PIP Repository - Python2" && \
-	if (( $(echo $PYTHON2_MODULE | wc -w | tr -d " ") )); then \
-	python2 -m pip --no-cache-dir download $PYTHON2_MODULE --dest $SOURCES/$SOURCES_FOLDER/python/2/ ; \
-	python2 -m pip --no-cache-dir install $SOURCES/$SOURCES_FOLDER/python/2/*whl ; \
-	fi && \
-	echo "#[INFO] System Python packages install from PIP Repository - Python3" && \
-	if (( $(echo $PYTHON3_MODULE | wc -w | tr -d " ") )); then \
-	python3 -m pip --no-cache-dir download $PYTHON3_MODULE --dest $SOURCES/$SOURCES_FOLDER/python/3/ ; \
-	python3 -m pip --no-cache-dir install $SOURCES/$SOURCES_FOLDER/python/3/*whl ; \
-	fi && \
-	echo "#[INFO] System Python packages downloaded & installed from PIP Repository" && \
-	# CLEAN
-	echo "#[INFO] System Cleaning" && \
-	if (($REMOVE_SOURCES)); then \
-	rm -rf $SOURCES/$SOURCES_FOLDER/system $SOURCES/$SOURCES_FOLDER/python  ; \
-	echo "#[INFO] System Remove Sources" ; \
-	fi && \
-	echo "#[INFO] System Clean" && \
-	echo "#";
-
-
-##############
-# Python 3.x #
-##############
-
-WORKDIR $WORKDIR
-# 3.10 need openSSL > 1.1.1
-ENV PYTHON_VERSION="3.9.9"
-
-RUN wget https://www.python.org/ftp/python/$PYTHON_VERSION/Python-$PYTHON_VERSION.tgz && tar xvf Python-$PYTHON_VERSION.tgz ;
-RUN cd Python-$PYTHON_VERSION && ./configure --enable-optimizations && make altinstall ;
-RUN pip3.9 install numpy requests igv-reports;
-RUN pip3.9 install Biopython && pip3.9 install pandas ;
-
-# Export LANG
-RUN export LANG="en_US.UTF-8" ;
-RUN export LC_ALL="en_US.UTF-8" ;
-
-###################
-# GDAL 2.x needed #
-###################
-
-RUN yum-builddep -y gdal ;
-RUN wget http://download.osgeo.org/gdal/2.4.0/gdal-2.4.0.tar.gz && \
-	tar xf gdal-2.4.0.tar.gz && \
-	cd gdal-2.4.0/ && \
-	./configure && \
-	make -j4 && \
-	make install ;
-# make sure the library can be found
-RUN echo /usr/local/lib | tee -a /etc/ld.so.conf.d/local.conf && \ 
-	ldconfig ;
 
 #########
 # HMMER #
@@ -431,49 +318,22 @@ RUN wget https://dfam.org/releases/Dfam_3.1/infrastructure/dfamscan.pl.gz && \
 	chmod 755 /tmp/dfamscan.pl && \
 	mv /tmp/dfamscan.pl /usr/local/bin/ ;
 
-#####
-# R #
-#####
 
-# R-core or R-core-devel
-# https://cdn.rstudio.com/r/centos-7/pkgs/R-4.1.2-1-1.x86_64.rpm
+########
+# PERL #
+########
 
-# Choose R version and distribution
-ENV R_VERSION="4.1.3"
-# Run download and install
-RUN curl -O https://cdn.rstudio.com/r/centos-7/pkgs/R-${R_VERSION}-1-1.x86_64.rpm ;
-RUN yum install -y R-${R_VERSION}-1-1.x86_64.rpm ;
-# Verify installation
-RUN /opt/R/${R_VERSION}/bin/R --version ;
-# Create symlink to R
-RUN ln -s /opt/R/${R_VERSION}/bin/R /usr/local/bin/R ;
-RUN ln -s /opt/R/${R_VERSION}/bin/Rscript /usr/local/bin/Rscript ;
-
-## Install R packages for Arriba DrawR tool
-RUN R -e "install.packages(c('circlize', 'BiocManager', 'tidyverse', 'RColorBrewer', 'ggplot2', 'pheatmap', 'ggrepel', 'dplyr', 'shiny'), dependencies=TRUE, repos = 'http://cran.r-project.org')"
-RUN R -e 'BiocManager::install(ask = F)' && R -e 'BiocManager::install(c("GenomicAlignments", "GenomicRanges", ask = F))'
-
-# For STAR-Fusion (R 3.6.3 ?)
-RUN R -e 'BiocManager::install(c("argparse", "cowplot", "ranger", ask = F))'
-
-# For DESeq2 analysis
-RUN R -e 'BiocManager::install(ask = F)' && R -e 'BiocManager::install(c("DESeq2", "DEGreport", "tximport", "IHW", "ReportingTools", "regionReport", "genefilter"), ask = F)'
-
-###########
-# GFFREAD #
-###########
-
-# https://github.com/gpertea/gffread/releases/download/v0.12.7/gffread-0.12.7.Linux_x86_64.tar.gz
-
-# gffread-0.12.7.Linux_x86_64
-
-# TOOL INFO
-#ENV TOOL_NAME="gffread"
-#ENV TOOL_VERSION="0.12.7"
-#ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.Linux_x86_64.tar.gz"
-#ENV TOOL_SOURCE_EXTERNAL="https://github.com/gpertea/gffread/releases/download/v0.12.7/v$TOOL_VERSION/$TOOL_TARBALL"
-#ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-# TOOL PARAMETERS
+# PERL installation
+RUN	echo "#[INFO] SYSTEM Perl packages installation - download from yum" && \
+	mkdir -p $SOURCES/$SOURCES_FOLDER/perl/build/install && \
+	yum $YUM_PARAM install -y --downloadonly --downloaddir=$SOURCES/$SOURCES_FOLDER/perl/build/install --enablerepo=powertools $PERL_INSTALL && \
+	yum $YUM_PARAM localinstall -y --nogpgcheck $SOURCES/$SOURCES_FOLDER/perl/build/install/*.rpm && \
+	rsync -auczqAXhi --no-links --no-perms --no-owner --no-group --ignore-missing-args $SOURCES/$SOURCES_FOLDER/perl/build/install/*rpm $SOURCES/$SOURCES_FOLDER/system/ && \
+	rm -rf $SOURCES/$SOURCES_FOLDER/perl/build && \
+	yum clean -y all && \
+	rm -rf /var/cache/yum && \
+	echo "#[INFO] System Clean" && \
+	echo "#";
 
 # TOOL INSTALLATION
 #RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
@@ -527,75 +387,29 @@ RUN R -e 'BiocManager::install(ask = F)' && R -e 'BiocManager::install(c("DESeq2
 ################
 
 
-
-#########
-# JAVA7 #
-#########
-
-ENV TOOL_NAME="java"
-ENV TOOL_VERSION="1.7.0"
-RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-	mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
-	ln -s /usr/lib/jvm/jre-1.7.0/bin/java $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/java ;
-
-
-
-##########
-# JAVA11 #
-##########
-
-ENV TOOL_NAME="java"
-ENV TOOL_VERSION="11"
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-	mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
-	ln -s /usr/lib/jvm/jre-11/bin/java $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/java ;
-
-
-
-#########
-# JAVA8 #
-#########
+# ##########
+# # JAVA8 #
+# ##########
 
 ENV TOOL_NAME="java"
 ENV TOOL_VERSION="1.8.0"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
-	ln -s /usr/lib/jvm/jre-1.8.0/bin/java $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/java && \
-	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
+	ln -s /usr/lib/jvm/jre-1.8.0/bin/java $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/java ;
 
 
 
-###########
-# PYTHON2 #
-###########
+########
+# JAVA #
+########
 
-ENV TOOL_NAME="python"
-ENV TOOL_VERSION="2"
+ENV TOOL_NAME="java"
+ENV TOOL_VERSION="17"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
-	ln -s /usr/bin/python2 $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python2 && \
-	ln -s python2 $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python && \
-	ln -s /usr/bin/pip2 $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/pip2 && \
-	ln -s pip2 $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/pip ;
-
-
-
-###########
-# PYTHON3 #
-###########
-
-ENV TOOL_NAME="python"
-ENV TOOL_VERSION="3"
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-	mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
-	ln -s /usr/bin/python3 $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python3 && \
-	ln -s python3 $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python && \
-	ln -s /usr/bin/pip3 $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/pip3 && \
-	ln -s pip3 $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/pip && \
+	ln -s /usr/lib/jvm/jre-17/bin/java $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/java && \
 	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
 
 
@@ -604,34 +418,6 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 # TOOLS EXTERN #
 ################
 
-
-
-##########
-# PATHOS #
-##########
-
-# # TOOL INFO
-# ENV TOOL_NAME="pathos"
-# ENV TOOL_VERSION="master"
-# ENV TOOL_TARBALL="$TOOL_VERSION.tar.gz"
-# ENV TOOL_SOURCE_EXTERNAL="https://github.com/uqfoundation/pathos/archive/$TOOL_TARBALL"
-# ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-# # TOOL PARAMETERS
-# ENV TOOL_TARBALL_FOLDER="$TOOL_NAME-$TOOL_VERSION"
-
-# # TOOL INSTALLATION
-# RUN source $TOOL_INIT && \
-# 	echo "#[INFO] TOOL installation" && \
-# 	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
-# 	echo "#[INFO] TOOL installation - python2 setup.py build" && \
-# 	(cd $TOOL_SOURCE_BUILD/$TOOL_TARBALL_FOLDER/; python2 setup.py build) && \
-# 	echo "#[INFO] TOOL installation - python2 setup.py install" && \
-# 	(cd $TOOL_SOURCE_BUILD/$TOOL_TARBALL_FOLDER/; python2 setup.py install) && \
-#     $TOOL_CHECK ;
-
-
-#echo "#[INFO] TOOL installation - pip2 install" && \
-#	pip2 install pathos==0.2.6 && \
 
 
 
@@ -663,77 +449,6 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	$TOOL_CHECK ;
 
 
-
-#############
-# BLAST+    #
-#############
-
-# https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/ncbi-blast-2.12.0+-1.x86_64.rpm
-# https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/ncbi-blast-2.12.0+-x64-linux.tar.gz
-# blastn, blastp, blastx, and makeblastdb
-
-
-# # TOOL INFO
-# ENV TOOL_NAME="ncbi-blast"
-# ENV TOOL_VERSION="2.12.0"
-# ENV TOOL_TARBALL=$TOOL_NAME-$TOOL_VERSION"+-x64-linux.tar.gz"
-# ENV TOOL_SOURCE_EXTERNAL="https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/$TOOL_TARBALL"
-# ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-# # TOOL PARAMETERS
-
-
-# # TOOL INSTALLATION
-# RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-# 	source $TOOL_INIT && \
-# 	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
-# 	cp -R $TOOL_SOURCE_BUILD/*/* $TOOL_DEST/ && \
-# 	chmod a+x $TOOL_DEST/bin/* && \
-#     $TOOL_CHECK ;
-
-
-
-##########
-# HTSLIB #
-##########
-
-# TOOL INFO
-ENV TOOL_NAME="htslib"
-ENV TOOL_VERSION="1.15.1"
-ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.tar.bz2"
-ENV TOOL_SOURCE_EXTERNAL="https://github.com/samtools/$TOOL_NAME/releases/download/$TOOL_VERSION/$TOOL_TARBALL"
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-# TOOL PARAMETERS
-
-# TOOL INSTALLATION
-RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-	source $TOOL_INIT && \
-	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
-	make install --quiet -j $THREADS -C $(ls -d $TOOL_SOURCE_BUILD/*) prefix=$TOOL_DEST && \
-	$TOOL_CHECK ;
-
-
-
-############
-# BCFTOOLS #
-############
-
-# TOOL INFO
-ENV TOOL_NAME="bcftools"
-ENV TOOL_VERSION="1.15.1"
-ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.tar.bz2"
-ENV TOOL_SOURCE_EXTERNAL="https://github.com/samtools/$TOOL_NAME/releases/download/$TOOL_VERSION/$TOOL_TARBALL"
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-# TOOL PARAMETERS
-
-# TOOL INSTALLATION
-RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-	source $TOOL_INIT && \
-	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
-	make install --quiet -j $THREADS -C $(ls -d $TOOL_SOURCE_BUILD/*) prefix=$TOOL_DEST && \
-	$TOOL_CHECK ;
-
-
-
 #############
 # BCL2FASTQ #
 #############
@@ -752,93 +467,6 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
 	rpm -ih $TOOL_SOURCE_BUILD/*.rpm --excludedocs --prefix=$TOOL_DEST && \
 	$TOOL_CHECK ;
-
-
-
-############
-# BEDTOOLS #
-############
-
-# TOOL INFO
-ENV TOOL_NAME="bedtools"
-ENV TOOL_VERSION="2.30.0"
-ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.tar.gz"
-ENV TOOL_SOURCE_EXTERNAL="https://github.com/arq5x/bedtools2/releases/download/v$TOOL_VERSION/$TOOL_TARBALL"
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-# TOOL PARAMETERS
-
-# TOOL INSTALLATION
-RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-	source $TOOL_INIT && \
-	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
-	make install --quiet -j $THREADS -C $(ls -d $TOOL_SOURCE_BUILD/*) prefix=$TOOL_DEST && \
-	$TOOL_CHECK ;
-
-
-
-############
-# BOWTIE2 #
-############
-
-# TOOL INFO
-ENV TOOL_NAME="bowtie2"
-ENV TOOL_VERSION="2.4.5"
-ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION-linux-x86_64.zip"
-ENV TOOL_SOURCE_EXTERNAL="https://github.com/BenLangmead/bowtie2/releases/download/v$TOOL_VERSION/$TOOL_TARBALL"
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-# TOOL PARAMETERS
-
-# TOOL INSTALLATION
-RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-	source $TOOL_INIT && \
-	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
-	cp $TOOL_SOURCE_BUILD/*/bowtie2* $TOOL_DEST/bin/ && \
-	rm -f $TOOL_DEST/bin/*debug && \
-	$TOOL_CHECK ;
-
-
-
-#######
-# BWA #
-#######
-
-# TOOL INFO
-ENV TOOL_NAME="bwa"
-ENV TOOL_VERSION="0.7.17"
-ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.tar.bz2"
-ENV TOOL_SOURCE_EXTERNAL="https://sourceforge.net/projects/bio-bwa/files/$TOOL_NAME-$TOOL_VERSION.tar.bz2/download"
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-# TOOL PARAMETERS
-
-# TOOL INSTALLATION
-RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-	source $TOOL_INIT && \
-	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
-	make --quiet -j $THREADS -C $(ls -d $TOOL_SOURCE_BUILD/*) && \
-	cp $TOOL_SOURCE_BUILD/*/bwa $TOOL_DEST/bin/ && \
-	$TOOL_CHECK ;
-
-
-
-#########
-# FASTP #
-#########
-
-# TOOL INFO
-ENV TOOL_NAME="fastp"
-ENV TOOL_VERSION="0.23.2"
-ENV TOOL_TARBALL="$TOOL_NAME"
-ENV TOOL_SOURCE_EXTERNAL="http://opengene.org/$TOOL_NAME/$TOOL_NAME.$TOOL_VERSION"
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-# TOOL PARAMETERS
-
-# TOOL INSTALLATION
-RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-	source $TOOL_INIT && \
-	cp $TOOL_SOURCE $TOOL_DEST/bin/ && \
-	chmod a+x $TOOL_DEST/bin/* && \
-	$TOOL_CHECK ;
-
 
 
 #######
@@ -862,6 +490,77 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	$TOOL_CHECK ;
 
 
+##########
+# PYTHON #
+##########
+
+RUN curl -L -O "https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-$(uname)-$(uname -m).sh"
+RUN bash Mambaforge-$(uname)-$(uname -m).sh -b
+ENV MAMBA="/root/mambaforge/bin/mamba"
+ENV PIP="/root/mambaforge/bin/pip"
+RUN $MAMBA init
+RUN $PIP install $PYTHON_MODULE
+
+
+##########
+# HTSLIB #
+##########
+
+RUN $MAMBA install -y -c bioconda htslib~=1.17.0
+
+############
+# BCFTOOLS #
+############
+
+RUN $MAMBA install -y -c bioconda bcftools~=1.17.0
+
+
+
+############
+# BEDTOOLS #
+############
+
+RUN $MAMBA install -y -c bioconda bedtools~=2.31.0
+
+
+############
+# BOWTIE2 #
+############
+
+# TOOL INFO
+ENV TOOL_NAME="bowtie2"
+ENV TOOL_VERSION="2.5.1"
+RUN $MAMBA install -y -c bioconda bowtie2~=2.5.1
+
+#######
+# BWA #
+#######
+
+# TOOL INFO
+ENV TOOL_NAME="bwa"
+ENV TOOL_VERSION="0.7.17"
+RUN $MAMBA install -y -c bioconda bwa~=0.7.17
+
+
+########
+# BWA2 #
+########
+
+# TOOL INFO
+ENV TOOL_NAME="bwa"
+ENV TOOL_VERSION="2.2.1"
+RUN $MAMBA install -y -c bioconda bwa-mem2~=2.2.1
+
+
+#########
+# FASTP #
+#########
+
+# TOOL INFO
+ENV TOOL_NAME="fastp"
+ENV TOOL_VERSION="0.23.2"
+RUN $MAMBA install -y -c bioconda fastp~=0.23.4
+
 
 #########
 # GATK4 #
@@ -869,8 +568,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 # TOOL INFO
 ENV TOOL_NAME="gatk"
-#ENV TOOL_VERSION="4.1.9.0"
-ENV TOOL_VERSION="4.2.6.1"
+ENV TOOL_VERSION="4.4.0.0"
 ENV TOOL_TARBALL="gatk-$TOOL_VERSION.zip"
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/broadinstitute/gatk/releases/download/$TOOL_VERSION/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
@@ -895,7 +593,6 @@ ENV TOOL_NAME="gatk"
 ENV TOOL_VERSION="3.8-1-0"
 ENV TOOL_TARBALL="GenomeAnalysisTK-$TOOL_VERSION.tar.bz2"
 ENV TOOL_SOURCE_EXTERNAL="https://software.broadinstitute.org/gatk/download/auth?package=GATK-archive&version=$TOOL_VERSION-gf15c1c3ef"
-#ENV TOOL_SOURCE_EXTERNAL="https://storage.googleapis.com/gatk-software/package-archive/gatk/GenomeAnalysisTK-$TOOL_VERSION-gf15c1c3ef.tar.bz2"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
 ENV TOOL_JAR=GenomeAnalysisTK.jar
@@ -943,10 +640,10 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 # TOOL INFO
 ENV TOOL_NAME="igvtools"
-ENV TOOL_VERSION="2.4.19"
-ENV TOOL_TARBALL="igvtools_$TOOL_VERSION.zip"
-ENV TOOL_VERSION_MAIN="2.4"
-ENV TOOL_SOURCE_EXTERNAL="http://data.broadinstitute.org/igv/projects/downloads/$TOOL_VERSION_MAIN/$TOOL_TARBALL"
+ENV TOOL_VERSION="2.16.1"
+ENV TOOL_TARBALL="IGV_$TOOL_VERSION.zip"
+ENV TOOL_VERSION_MAIN="2.16"
+ENV TOOL_SOURCE_EXTERNAL="https://data.broadinstitute.org/igv/projects/downloads/$TOOL_VERSION_MAIN/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
 
@@ -1030,7 +727,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 # TOOL INFO
 ENV TOOL_NAME="picard"
-ENV TOOL_VERSION="2.27.4"
+ENV TOOL_VERSION="3.0.0"
 ENV TOOL_TARBALL="picard.jar"
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/broadinstitute/picard/releases/download/$TOOL_VERSION/picard.jar"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
@@ -1050,18 +747,8 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 # TOOL INFO
 ENV TOOL_NAME="samtools"
-ENV TOOL_VERSION="1.15.1"
-ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.tar.bz2"
-ENV TOOL_SOURCE_EXTERNAL="https://github.com/samtools/$TOOL_NAME/releases/download/$TOOL_VERSION/$TOOL_TARBALL"
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-# TOOL PARAMETERS
-
-# TOOL INSTALLATION
-RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-	source $TOOL_INIT && \
-	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
-	make install --quiet -j $THREADS -C $(ls -d $TOOL_SOURCE_BUILD/*) prefix=$TOOL_DEST && \
-	$TOOL_CHECK ;
+ENV TOOL_VERSION="1.17"
+RUN $MAMBA install -y -c bioconda samtools~=1.17.0
 
 
 
@@ -1073,7 +760,8 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 # Beware of TARBALL release
 ENV TOOL_NAME="snpeff"
 ENV TOOL_VERSION="5.1d"
-ENV TOOL_TARBALL="snpEff_latest_core.zip"
+#ENV TOOL_TARBALL="snpEff_latest_core.zip"
+ENV TOOL_TARBALL="snpEff_v5_1d_core.zip"
 ENV TOOL_SOURCE_EXTERNAL="https://snpeff.blob.core.windows.net/versions/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
@@ -1091,29 +779,6 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	$TOOL_CHECK ;
 
 
-
-##########
-# FGBIO #
-##########
-# https://github.com/fulcrumgenomics/fgbio/releases/download/1.3.0/fgbio-1.3.0.jar
-
-# # TOOL INFO
-# ENV TOOL_NAME="fgbio"
-# ENV TOOL_VERSION="2.0.2"
-# ENV TOOL_TARBALL="fgbio.jar"
-# ENV TOOL_SOURCE_EXTERNAL="https://github.com/fulcrumgenomics/fgbio/releases/download/$TOOL_VERSION/fgbio-$TOOL_VERSION.jar"
-# ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-# # TOOL PARAMETERS
-
-# # TOOL INSTALLATION
-# RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-# 	source $TOOL_INIT && \
-# 	cp $TOOL_SOURCE $TOOL_DEST/bin/ && \
-# 	chmod a+x $TOOL_DEST/bin/* && \
-# 	$TOOL_CHECK ;
-
-
-
 #############
 # UMI_TOOLS #
 #############
@@ -1122,20 +787,8 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 # TOOL INFO
 ENV TOOL_NAME="umi_tools"
-ENV TOOL_VERSION="1.1.2"
-ENV TOOL_TARBALL="$TOOL_VERSION.zip"
-ENV TOOL_SOURCE_EXTERNAL="https://github.com/CGATOxford/UMI-tools/archive/$TOOL_VERSION.zip"
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-# TOOL PARAMETERS
-
-# TOOL INSTALLATION
-RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-	source $TOOL_INIT && \
-	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
-	pip3 install umi_tools==$TOOL_VERSION && \
-	ln -s /usr/local/bin/umi_tools $TOOL_DEST/bin/umi_tools && \
-	chmod a+x $TOOL_DEST/bin/* && \
-	$TOOL_CHECK ;
+ENV TOOL_VERSION="1.1.4"
+RUN $MAMBA install -y -c bioconda umi_tools~=1.1.4
 
 
 
@@ -1160,14 +813,13 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	$TOOL_CHECK ;
 
 
-
 ###########
 # VARSCAN #
 ###########
 
 # TOOL INFO
 ENV TOOL_NAME="varscan"
-ENV TOOL_VERSION="2.4.4"
+ENV TOOL_VERSION="2.4.6"
 ENV TOOL_TARBALL="VarScan.v$TOOL_VERSION.jar"
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/dkoboldt/varscan/raw/master/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
@@ -1189,7 +841,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 # TOOL INFO
 ENV TOOL_NAME="stark"
-ENV TOOL_VERSION="0.9.18.4"
+ENV TOOL_VERSION="19.0.0-devel"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
 ENV TOOL="/tool"
@@ -1225,29 +877,6 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	ln -sf $CONFIG_HOWARD_FOLDER $TOOLS/$TOOL_NAME/$TOOL_VERSION/config/howard ;
 
 
-##########
-# SALMON #
-##########
-
-# https://github.com/COMBINE-lab/salmon/releases/download/v1.8.0/salmon-1.8.0_linux_x86_64.tar.gz
-# TOOL INFO
-ENV TOOL_NAME="salmon"
-ENV TOOL_VERSION="1.8.0"
-ENV TOOL_TARBALL=$TOOL_NAME-$TOOL_VERSION"_linux_x86_64.tar.gz"
-ENV TOOL_SOURCE_EXTERNAL="https://github.com/COMBINE-lab/$TOOL_NAME/releases/download/v$TOOL_VERSION/$TOOL_TARBALL"
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-# TOOL PARAMETERS
-# TOOL INSTALLATION
-RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-	source $TOOL_INIT && \
-	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
-	cp $TOOL_SOURCE_BUILD/$TOOL_NAME-$TOOL_VERSION"_linux_x86_64"/bin/* $TOOL_DEST/bin/ && \
-	chmod a+x $TOOL_DEST/bin/* && \
-	mkdir $TOOL_DEST/lib/ && \
-	cp $TOOL_SOURCE_BUILD/$TOOL_NAME-$TOOL_VERSION"_linux_x86_64"/lib/* $TOOL_DEST/lib/ && \
-	$TOOL_CHECK ;
-
-
 ########
 # STAR #
 ########
@@ -1257,21 +886,48 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 ENV TOOL_NAME="STAR"
 #ENV TOOL_VERSION="2.7.10a"
 ENV TOOL_VERSION="2.7.8a"
-ENV TOOL_TARBALL="$TOOL_VERSION.zip"
-ENV TOOL_SOURCE_EXTERNAL="https://github.com/alexdobin/$TOOL_NAME/archive/refs/tags/$TOOL_TARBALL"
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-# TOOL PARAMETERS
-# TOOL INSTALLATION
-RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-	source $TOOL_INIT && \
-	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
-	ls && \
-	cd $TOOL_SOURCE_BUILD/$TOOL_NAME-$TOOL_VERSION/source && \
-	make STAR && \
-	cp STAR $TOOL_DEST/bin/ && \
-	#mkdir $TOOL_DEST/scripts/ && \
-	#cp -R $TOOL_SOURCE_BUILD/$TOOL_NAME-$TOOL_VERSION/extras/scripts/ $TOOL_DEST/scripts/ && \
-	$TOOL_CHECK ;
+RUN $MAMBA install -y -c bioconda star=2.7.8a
+RUN ln -s /root/mambaforge/bin/STAR /usr/local/bin/STAR ;
+# ENV TOOL_TARBALL="$TOOL_VERSION.zip"
+# ENV TOOL_SOURCE_EXTERNAL="https://github.com/alexdobin/$TOOL_NAME/archive/refs/tags/$TOOL_TARBALL"
+# ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+# # TOOL PARAMETERS
+# # TOOL INSTALLATION
+# RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+# 	source $TOOL_INIT && \
+# 	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
+# 	ls && \
+# 	cd $TOOL_SOURCE_BUILD/$TOOL_NAME-$TOOL_VERSION/source && \
+# 	make -s STAR && \
+# 	cp STAR $TOOL_DEST/bin/ && \
+# 	#mkdir $TOOL_DEST/scripts/ && \
+# 	#cp -R $TOOL_SOURCE_BUILD/$TOOL_NAME-$TOOL_VERSION/extras/scripts/ $TOOL_DEST/scripts/ && \
+# 	$TOOL_CHECK ;
+
+#####
+# R #
+#####
+# powertools is required to find openblas-devel on Centos 8 https://stackoverflow.com/a/69788102
+# RUN yum config-manager --set-enabled powertools
+# RUN yum -y install 
+# # R-core or R-core-devel
+# # https://cdn.rstudio.com/r/centos-7/pkgs/R-4.1.2-1-1.x86_64.rpm
+
+# # Choose R version and distribution
+# ENV R_VERSION="4.1.3"
+# # Run download and install
+# RUN curl -O https://cdn.rstudio.com/r/centos-7/pkgs/R-${R_VERSION}-1-1.x86_64.rpm ;
+# RUN yum install -y R-${R_VERSION}-1-1.x86_64.rpm ;
+# # Verify installation
+# RUN /opt/R/${R_VERSION}/bin/R --version ;
+# # Create symlink to R
+RUN $MAMBA install -y R
+RUN ln -s /root/mambaforge/bin/R /usr/local/bin/R ;
+RUN ln -s /root/mambaforge/bin/Rscript /usr/local/bin/Rscript ;
+# For STAR-Fusion (R 3.6.3 ?)
+RUN $MAMBA install -y -c conda-forge r-biocmanager r-cowplot r-argparse r-ranger r-tidyverse
+# RUN R -e 'BiocManager::install(c("argparse", "cowplot", "ranger", ask = F))'
+
 
 ###############
 # STAR FUSION #
@@ -1326,6 +982,8 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	cp $TOOL_SOURCE_BUILD/$TOOL_NAME"_v"$TOOL_VERSION/*.{sh,R} $TOOL_DEST/scripts/ && \
 	chmod a+x $TOOL_DEST/scripts/*.sh && \
 	$TOOL_CHECK ;
+
+RUN $MAMBA clean -a
 
 
 ######################
