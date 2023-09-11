@@ -5,7 +5,7 @@
 # Software Version:     3
 # Software Website:     https://github.com/bioinfo-chru-strasbourg/STARK
 # Licence:              GNU Affero General Public License (AGPL)
-# Description:          STARK 1.8.4.rnaseq
+# Description:          STARK
 # Usage:                docker run -ti [-v [DATA FOLDER]:/data -v [DATABASE_FOLDER]:/databases] stark:version
 ##############################################################
 
@@ -127,15 +127,20 @@ RUN echo "#[INFO] STARK installation configuration" && \
 ##################
 # This will install system packages, python packages and scripts to install tools
 
+<<<<<<< HEAD
 ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git make ncurses-devel tbb-devel unzip rsync wget which xz xz-devel zlib zlib-devel docker java-17 java-1.8.0 python3 python3-pip python3-devel curl-devel openssl-devel htslib diffutils"
 ENV YUM_REMOVE="autoconf automake bzip2-devel lzma-devel ncurses-devel perl-devel tbb-devel xz-devel zlib-devel zlib2-devel python3-devel curl-devel openssl-devel"
 ENV PYTHON_MODULE=" pathos numpy scipy argparse"
 ENV PERL_INSTALL=" perl perl-Switch perl-Time-HiRes perl-Data-Dumper perl-Digest-MD5 perl-Tk perl-devel perl-PerlIO-gzip perl-DB_File perl-URI perl-Carp-Assert perl-JSON-XS perl-Archive-Tar perl-List-MoreUtils "
+=======
+ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git make ncurses-devel tbb-devel unzip rsync wget which xz xz-devel zlib zlib-devel docker java-17 java-1.8.0 curl-devel openssl-devel htslib diffutils"
+ENV YUM_REMOVE="autoconf automake bzip2-devel lzma-devel ncurses-devel perl-devel tbb-devel xz-devel zlib-devel zlib2-devel python3-devel curl-devel openssl-devel"
+ENV PYTHON_MODULE=" pathos numpy scipy argparse"
+ENV PERL_INSTALL=" perl perl-Switch perl-Time-HiRes perl-Data-Dumper perl-Digest-MD5 perl-Tk perl-devel "
+>>>>>>> new_dockerfile
 
 ENV REPO_SYSTEM_GIT="$REPO/sources.system.tar.gz?path=sources/system"
 ENV REPO_SYSTEM_HTTP="$REPO/sources/system/"
-ENV REPO_PYTHON_GIT="$REPO/sources.python.tar.gz?path=sources/python"
-ENV REPO_PYTHON_HTTP="$REPO/sources/python/"
 
 ENV GET_TOOL_SOURCE=$SOURCES/$SOURCES_FOLDER/get_tool_source.sh
 ENV TOOL_INIT=$SOURCES/$SOURCES_FOLDER/tool_init.sh
@@ -235,7 +240,7 @@ RUN echo "#[INFO] SYSTEM YUM installation - and download" && \
 	fi && \
 	# Install packages locally \
 	echo "#[INFO] System packages installation locally" && \
-	yum $YUM_PARAM localinstall -y --nogpgcheck $SOURCES/$SOURCES_FOLDER/system/wget-*.rpm $SOURCES/$SOURCES_FOLDER/system/rsync-*.rpm && \
+	yum $YUM_PARAM localinstall -y --allowerasing --nogpgcheck $SOURCES/$SOURCES_FOLDER/system/wget-*.rpm $SOURCES/$SOURCES_FOLDER/system/rsync-*.rpm && \
 	# Test WGET installation \
 	if ! command -v wget 1>/dev/null 2>/dev/null; then \
 	echo "#[ERROR] System wget package not installed (Please open Internet connexion or provide WGET rpm in sources/system folder)"; \
@@ -250,6 +255,7 @@ RUN echo "#[INFO] SYSTEM YUM installation - and download" && \
 	mkdir -p $SOURCES/$SOURCES_FOLDER/system/build && \
 	# in GIT mode
 	if wget -q --progress=bar:force --tries=3 $REPO_SYSTEM_GIT -O $SOURCES/$SOURCES_FOLDER/system/build/STARK-repo.sources.system.tar.gz; then \
+<<<<<<< HEAD
 		if tar xf $SOURCES/$SOURCES_FOLDER/system/build/STARK-repo.sources.system.tar.gz -C $SOURCES/$SOURCES_FOLDER/system/build/; then \
 			rsync -auczqAXhi --no-links --no-perms --no-owner --no-group --ignore-missing-args $SOURCES/$SOURCES_FOLDER/system/build/STARK-repo.sources.system*/sources/system/*rpm $SOURCES/$SOURCES_FOLDER/system/; \
 			echo "#[INFO] System packages downloaded from REPO '$REPO' (GIT)"; \
@@ -260,6 +266,18 @@ RUN echo "#[INFO] SYSTEM YUM installation - and download" && \
 	elif wget -q --progress=bar:force --tries=3 -r --no-parent $REPO_SYSTEM_HTTP -x --directory-prefix=$SOURCES/$SOURCES_FOLDER/system/build/STARK-repo.sources.system/; then \
 		rsync -auczqAXhi --no-links --no-perms --no-owner --no-group --ignore-missing-args $SOURCES/$SOURCES_FOLDER/system/build/STARK-repo.sources.system/*/sources/system/*rpm $SOURCES/$SOURCES_FOLDER/system/; \
 		echo "#[INFO] System packages downloaded from REPO '$REPO' (FTP/HTTP)"; \
+=======
+	if tar xf $SOURCES/$SOURCES_FOLDER/system/build/STARK-repo.sources.system.tar.gz -C $SOURCES/$SOURCES_FOLDER/system/build/; then \
+	rsync -auczqAXhi --no-links --no-perms --no-owner --no-group --ignore-missing-args $SOURCES/$SOURCES_FOLDER/system/build/STARK-repo.sources.system*/sources/system/*rpm $SOURCES/$SOURCES_FOLDER/system/; \
+	echo "#[INFO] System packages downloaded from REPO '$REPO' (GIT)"; \
+	else \
+	echo "#[WARNING] System fail to uncompress packages from REPO '$REPO'"; \
+	fi; \
+	# in HTTP mode
+	elif wget -q --progress=bar:force --tries=3 -r --no-parent $REPO_SYSTEM_HTTP -x --directory-prefix=$SOURCES/$SOURCES_FOLDER/system/build/STARK-repo.sources.system/; then \
+	rsync -auczqAXhi --no-links --no-perms --no-owner --no-group --ignore-missing-args $SOURCES/$SOURCES_FOLDER/system/build/STARK-repo.sources.system/*/sources/system/*rpm $SOURCES/$SOURCES_FOLDER/system/; \
+	echo "#[INFO] System packages downloaded from REPO '$REPO' (FTP/HTTP)"; \
+>>>>>>> new_dockerfile
 	else \
 	echo "#[WARNING] System fail packages download from REPO '$REPO'"; \
 	fi && \
@@ -299,6 +317,7 @@ RUN echo "#[INFO] SYSTEM YUM installation - and download" && \
 	echo "#";
 
 
+<<<<<<< HEAD
 
 ##########
 # PYTHON #
@@ -353,53 +372,35 @@ RUN	echo "#[INFO] SYSTEM Python packages installation - download from REPO '$REP
 	fi && \
 	echo "#[INFO] System Clean" && \
 	echo "#";
+=======
+>>>>>>> new_dockerfile
+
+##########
+# PYTHON #
+##########
 
 
-##############
-# Python 3.x #
-##############
+RUN curl -L -O "https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-$(uname)-$(uname -m).sh"
+RUN bash Mambaforge-$(uname)-$(uname -m).sh -b
+RUN rm -f Mambaforge-$(uname)-$(uname -m).sh
+ENV MAMBA="/root/mambaforge/bin/mamba"
+ENV PIP="/root/mambaforge/bin/pip"
+RUN $MAMBA init
+RUN $PIP install $PYTHON_MODULE  && $PIP cache purge
+RUN $MAMBA install -y -c bioconda -c conda-forge R r-biocmanager r-cowplot r-argparse r-ranger r-tidyverse umi_tools~=1.1.4 && $MAMBA clean -afy
+RUN ln -s /root/mambaforge/bin/python /usr/local/bin/python ;
+RUN ln -s /root/mambaforge/bin/python3 /usr/local/bin/python3 ;
+RUN ln -s /root/mambaforge/bin/pip /usr/local/bin/pip ;
+RUN ln -s /root/mambaforge/bin/pip3 /usr/local/bin/pip3 ;
+RUN ln -s /root/mambaforge/bin/R /usr/local/bin/R ;
+RUN ln -s /root/mambaforge/bin/Rscript /usr/local/bin/Rscript ;
 
-WORKDIR $WORKDIR
-# 3.10 need openSSL > 1.1.1
-ENV PYTHON_VERSION="3.9.9"
-
-RUN wget https://www.python.org/ftp/python/$PYTHON_VERSION/Python-$PYTHON_VERSION.tgz && tar xvf Python-$PYTHON_VERSION.tgz ;
-RUN cd Python-$PYTHON_VERSION && ./configure --enable-optimizations && make altinstall ;
-RUN pip3.9 install numpy requests igv-reports;
-RUN pip3.9 install Biopython && pip3.9 install pandas ;
-
-# Export LANG
-RUN export LANG="en_US.UTF-8" ;
-RUN export LC_ALL="en_US.UTF-8" ;
-
-###################
-# GDAL 2.x needed #
-###################
-
-RUN yum-builddep -y gdal ;
-RUN wget http://download.osgeo.org/gdal/2.4.0/gdal-2.4.0.tar.gz && \
-	tar xf gdal-2.4.0.tar.gz && \
-	cd gdal-2.4.0/ && \
-	./configure && \
-	make -j4 && \
-	make install ;
-# make sure the library can be found
-RUN echo /usr/local/lib | tee -a /etc/ld.so.conf.d/local.conf && \ 
-	ldconfig ;
-
-#########
-# HMMER #
-#########
-
-WORKDIR $WORKDIR
-RUN wget http://eddylab.org/software/hmmer3/3.1b2/hmmer-3.1b2-linux-intel-x86_64.tar.gz && \
-	tar xf hmmer-3.1b2-linux-intel-x86_64.tar.gz && \
-	cp /tmp/hmmer-3.1b2-linux-intel-x86_64/binaries/* /usr/local/bin/ ;
 
 ########
-# DFAM #
+# PERL #
 ########
 
+<<<<<<< HEAD
 # last version is 3.5
 WORKDIR $WORKDIR
 RUN wget https://dfam.org/releases/Dfam_3.1/infrastructure/dfamscan.pl.gz && \
@@ -426,6 +427,8 @@ RUN wget https://dfam.org/releases/Dfam_3.1/infrastructure/dfamscan.pl.gz && \
 # PERL #
 ########
 
+=======
+>>>>>>> new_dockerfile
 # PERL installation
 RUN	echo "#[INFO] SYSTEM Perl packages installation - download from yum" && \
 	mkdir -p $SOURCES/$SOURCES_FOLDER/perl/build/install && \
@@ -438,13 +441,6 @@ RUN	echo "#[INFO] SYSTEM Perl packages installation - download from yum" && \
 	echo "#[INFO] System Clean" && \
 	echo "#";
 
-# TOOL INSTALLATION
-#RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-#	source $TOOL_INIT && \
-#	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
-#	cp $TOOL_SOURCE_BUILD/$TOOL_NAME-$TOOL_VERSION"_Linux_x86_64"/* $TOOL_DEST/bin/ && \
-#	chmod a+x $TOOL_DEST/bin/* && \
-#	$TOOL_CHECK ;
 
 
 
@@ -514,6 +510,7 @@ ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
 	ln -s /usr/lib/jvm/jre-1.8.0/bin/java $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/java ;
+<<<<<<< HEAD
 
 
 
@@ -535,18 +532,22 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 ##########
 # PYTHON #
 ##########
+=======
 
-ENV TOOL_NAME="python"
-ENV TOOL_VERSION="3"
+
+
+########
+# JAVA #
+########
+>>>>>>> new_dockerfile
+
+ENV TOOL_NAME="java"
+ENV TOOL_VERSION="17"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
-	ln -s /usr/bin/python3 $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python3 && \
-	ln -s python3 $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python && \
-	ln -s /usr/bin/pip3 $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/pip3 && \
-	ln -s pip3 $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/pip && \
+	ln -s /usr/lib/jvm/jre-17/bin/java $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/java && \
 	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
-
 
 
 ################
@@ -732,7 +733,11 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	source $TOOL_INIT && \
 	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
 	cp $TOOL_SOURCE_BUILD/*/bwa-mem2 $TOOL_DEST/bin/ && \
+<<<<<<< HEAD
     $TOOL_CHECK ;
+=======
+	$TOOL_CHECK ;
+>>>>>>> new_dockerfile
 
 
 
@@ -923,9 +928,9 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 # TOOL INFO
 ENV TOOL_NAME="outlyzer"
-ENV TOOL_VERSION="3"
-ENV TOOL_TARBALL="outLyzer.py"
-ENV TOOL_SOURCE_EXTERNAL="https://raw.githubusercontent.com/EtieM/outLyzer/master/$TOOL_TARBALL"
+ENV TOOL_VERSION="3.2"
+ENV TOOL_TARBALL="outLyzer_V$TOOL_VERSION.py"
+ENV TOOL_SOURCE_EXTERNAL="https://github.com/EtieM/outLyzer/releases/download/$TOOL_VERSION/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
 
@@ -1006,6 +1011,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	$TOOL_CHECK ;
 
 
+<<<<<<< HEAD
 
 ##########
 # FGBIO #
@@ -1054,6 +1060,8 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 
 
+=======
+>>>>>>> new_dockerfile
 #############
 # GENCORE   #
 #############
@@ -1102,6 +1110,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 # STARK #
 #########
 
+
 # TOOL INFO
 ENV TOOL_NAME="stark"
 ENV TOOL_VERSION="19.0.0-devel"
@@ -1140,108 +1149,6 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	ln -sf $CONFIG_HOWARD_FOLDER $TOOLS/$TOOL_NAME/$TOOL_VERSION/config/howard ;
 
 
-##########
-# SALMON #
-##########
-
-# https://github.com/COMBINE-lab/salmon/releases/download/v1.8.0/salmon-1.8.0_linux_x86_64.tar.gz
-# TOOL INFO
-ENV TOOL_NAME="salmon"
-ENV TOOL_VERSION="1.8.0"
-ENV TOOL_TARBALL=$TOOL_NAME-$TOOL_VERSION"_linux_x86_64.tar.gz"
-ENV TOOL_SOURCE_EXTERNAL="https://github.com/COMBINE-lab/$TOOL_NAME/releases/download/v$TOOL_VERSION/$TOOL_TARBALL"
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-# TOOL PARAMETERS
-# TOOL INSTALLATION
-RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-	source $TOOL_INIT && \
-	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
-	cp $TOOL_SOURCE_BUILD/$TOOL_NAME-$TOOL_VERSION"_linux_x86_64"/bin/* $TOOL_DEST/bin/ && \
-	chmod a+x $TOOL_DEST/bin/* && \
-	mkdir $TOOL_DEST/lib/ && \
-	cp $TOOL_SOURCE_BUILD/$TOOL_NAME-$TOOL_VERSION"_linux_x86_64"/lib/* $TOOL_DEST/lib/ && \
-	$TOOL_CHECK ;
-
-
-########
-# STAR #
-########
-
-# https://github.com/alexdobin/STAR/archive/refs/tags/2.7.8a.zip
-# TOOL INFO
-ENV TOOL_NAME="STAR"
-#ENV TOOL_VERSION="2.7.10a"
-ENV TOOL_VERSION="2.7.8a"
-ENV TOOL_TARBALL="$TOOL_VERSION.zip"
-ENV TOOL_SOURCE_EXTERNAL="https://github.com/alexdobin/$TOOL_NAME/archive/refs/tags/$TOOL_TARBALL"
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-# TOOL PARAMETERS
-# TOOL INSTALLATION
-RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-	source $TOOL_INIT && \
-	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
-	ls && \
-	cd $TOOL_SOURCE_BUILD/$TOOL_NAME-$TOOL_VERSION/source && \
-	make STAR && \
-	cp STAR $TOOL_DEST/bin/ && \
-	#mkdir $TOOL_DEST/scripts/ && \
-	#cp -R $TOOL_SOURCE_BUILD/$TOOL_NAME-$TOOL_VERSION/extras/scripts/ $TOOL_DEST/scripts/ && \
-	$TOOL_CHECK ;
-
-###############
-# STAR FUSION #
-###############
-
-# https://github.com/STAR-Fusion/STAR-Fusion/releases/download/STAR-Fusion-v1.10.1/STAR-Fusion.v1.10.1.tar.gz
-# Compatibility with STAR v2.7.8a
-
-# TOOL INFO
-ENV TOOL_NAME="STAR-Fusion"
-ENV TOOL_VERSION="1.10.1"
-ENV TOOL_TARBALL="$TOOL_NAME.v$TOOL_VERSION.tar.gz"
-ENV TOOL_SOURCE_EXTERNAL="https://github.com/$TOOL_NAME/$TOOL_NAME/releases/download/$TOOL_NAME-v$TOOL_VERSION/$TOOL_TARBALL"
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-# TOOL PARAMETERS
-# TOOL INSTALLATION
-RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-	source $TOOL_INIT && \
-	tar xvf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
-	cd  $TOOL_SOURCE_BUILD/$TOOL_NAME.v$TOOL_VERSION/ && \
-	make && \
-	cp -r * $TOOL_DEST/bin/ && \
-	$TOOL_CHECK ;
-
-## FusionInspector now included with STAR-Fusion
-## Interval Tree is included with STAR-Fusion
-
-
-##########
-# ARRIBA #
-##########
-
-# https://github.com/suhrig/arriba/releases/download/v2.1.0/arriba_v2.1.0.tar.gz
-
-# TOOL INFO
-ENV TOOL_NAME="arriba"
-ENV TOOL_VERSION="2.2.1"
-ENV TOOL_TARBALL=$TOOL_NAME"_v"$TOOL_VERSION".tar.gz"  
-ENV TOOL_SOURCE_EXTERNAL="https://github.com/suhrig/$TOOL_NAME/releases/download/v$TOOL_VERSION/$TOOL_TARBALL"
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-# TOOL PARAMETERS
-
-# TOOL INSTALLATION
-RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-	source $TOOL_INIT && \
-	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
-	mkdir -p $TOOL_DEST/database/ && \
-	cp $TOOL_SOURCE_BUILD/$TOOL_NAME"_v"$TOOL_VERSION/database/* $TOOL_DEST/database/ && \
-	cp $TOOL_SOURCE_BUILD/$TOOL_NAME"_v"$TOOL_VERSION/$TOOL_NAME $TOOL_DEST/bin/ && \
-	chmod a+x $TOOL_DEST/bin/* && \
-	mkdir -p $TOOL_DEST/scripts/ && \
-	cp $TOOL_SOURCE_BUILD/$TOOL_NAME"_v"$TOOL_VERSION/*.{sh,R} $TOOL_DEST/scripts/ && \
-	chmod a+x $TOOL_DEST/scripts/*.sh && \
-	$TOOL_CHECK ;
-
 
 ######################
 # YUM REMOVE & CLEAR #
@@ -1254,6 +1161,7 @@ RUN echo "#[INFO] Cleaning" && \
 	rm -rf $WORKDIR/* && \
 	rm -rf /tmp/* && \
 	if (($REMOVE_SOURCES)); then rm -rf $SOURCES; fi;
+
 
 
 ##############################
