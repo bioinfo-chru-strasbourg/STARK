@@ -127,17 +127,10 @@ RUN echo "#[INFO] STARK installation configuration" && \
 ##################
 # This will install system packages, python packages and scripts to install tools
 
-<<<<<<< HEAD
-ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git make ncurses-devel tbb-devel unzip rsync wget which xz xz-devel zlib zlib-devel docker java-17 java-1.8.0 python3 python3-pip python3-devel curl-devel openssl-devel htslib diffutils"
-ENV YUM_REMOVE="autoconf automake bzip2-devel lzma-devel ncurses-devel perl-devel tbb-devel xz-devel zlib-devel zlib2-devel python3-devel curl-devel openssl-devel"
-ENV PYTHON_MODULE=" pathos numpy scipy argparse"
-ENV PERL_INSTALL=" perl perl-Switch perl-Time-HiRes perl-Data-Dumper perl-Digest-MD5 perl-Tk perl-devel perl-PerlIO-gzip perl-DB_File perl-URI perl-Carp-Assert perl-JSON-XS perl-Archive-Tar perl-List-MoreUtils "
-=======
 ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git make ncurses-devel tbb-devel unzip rsync wget which xz xz-devel zlib zlib-devel docker java-17 java-1.8.0 curl-devel openssl-devel htslib diffutils"
 ENV YUM_REMOVE="autoconf automake bzip2-devel lzma-devel ncurses-devel perl-devel tbb-devel xz-devel zlib-devel zlib2-devel python3-devel curl-devel openssl-devel"
 ENV PYTHON_MODULE=" pathos numpy scipy argparse"
 ENV PERL_INSTALL=" perl perl-Switch perl-Time-HiRes perl-Data-Dumper perl-Digest-MD5 perl-Tk perl-devel "
->>>>>>> new_dockerfile
 
 ENV REPO_SYSTEM_GIT="$REPO/sources.system.tar.gz?path=sources/system"
 ENV REPO_SYSTEM_HTTP="$REPO/sources/system/"
@@ -255,18 +248,6 @@ RUN echo "#[INFO] SYSTEM YUM installation - and download" && \
 	mkdir -p $SOURCES/$SOURCES_FOLDER/system/build && \
 	# in GIT mode
 	if wget -q --progress=bar:force --tries=3 $REPO_SYSTEM_GIT -O $SOURCES/$SOURCES_FOLDER/system/build/STARK-repo.sources.system.tar.gz; then \
-<<<<<<< HEAD
-		if tar xf $SOURCES/$SOURCES_FOLDER/system/build/STARK-repo.sources.system.tar.gz -C $SOURCES/$SOURCES_FOLDER/system/build/; then \
-			rsync -auczqAXhi --no-links --no-perms --no-owner --no-group --ignore-missing-args $SOURCES/$SOURCES_FOLDER/system/build/STARK-repo.sources.system*/sources/system/*rpm $SOURCES/$SOURCES_FOLDER/system/; \
-			echo "#[INFO] System packages downloaded from REPO '$REPO' (GIT)"; \
-		else \
-			echo "#[WARNING] System fail to uncompress packages from REPO '$REPO'"; \
-		fi; \
-	# in HTTP mode
-	elif wget -q --progress=bar:force --tries=3 -r --no-parent $REPO_SYSTEM_HTTP -x --directory-prefix=$SOURCES/$SOURCES_FOLDER/system/build/STARK-repo.sources.system/; then \
-		rsync -auczqAXhi --no-links --no-perms --no-owner --no-group --ignore-missing-args $SOURCES/$SOURCES_FOLDER/system/build/STARK-repo.sources.system/*/sources/system/*rpm $SOURCES/$SOURCES_FOLDER/system/; \
-		echo "#[INFO] System packages downloaded from REPO '$REPO' (FTP/HTTP)"; \
-=======
 	if tar xf $SOURCES/$SOURCES_FOLDER/system/build/STARK-repo.sources.system.tar.gz -C $SOURCES/$SOURCES_FOLDER/system/build/; then \
 	rsync -auczqAXhi --no-links --no-perms --no-owner --no-group --ignore-missing-args $SOURCES/$SOURCES_FOLDER/system/build/STARK-repo.sources.system*/sources/system/*rpm $SOURCES/$SOURCES_FOLDER/system/; \
 	echo "#[INFO] System packages downloaded from REPO '$REPO' (GIT)"; \
@@ -277,7 +258,6 @@ RUN echo "#[INFO] SYSTEM YUM installation - and download" && \
 	elif wget -q --progress=bar:force --tries=3 -r --no-parent $REPO_SYSTEM_HTTP -x --directory-prefix=$SOURCES/$SOURCES_FOLDER/system/build/STARK-repo.sources.system/; then \
 	rsync -auczqAXhi --no-links --no-perms --no-owner --no-group --ignore-missing-args $SOURCES/$SOURCES_FOLDER/system/build/STARK-repo.sources.system/*/sources/system/*rpm $SOURCES/$SOURCES_FOLDER/system/; \
 	echo "#[INFO] System packages downloaded from REPO '$REPO' (FTP/HTTP)"; \
->>>>>>> new_dockerfile
 	else \
 	echo "#[WARNING] System fail packages download from REPO '$REPO'"; \
 	fi && \
@@ -317,63 +297,6 @@ RUN echo "#[INFO] SYSTEM YUM installation - and download" && \
 	echo "#";
 
 
-<<<<<<< HEAD
-
-##########
-# PYTHON #
-##########
-
-
-# PYTHON installation
-RUN	echo "#[INFO] SYSTEM Python packages installation - download from REPO '$REPO'" && \
-	# Python release
-	ln -s /usr/bin/python3 /usr/bin/python && \
-	# Create Python packages folder
-	mkdir -p $SOURCES/$SOURCES_FOLDER/python/build && \
-	# in GIT mode
-	if wget --progress=bar:force --tries=3 $REPO_PYTHON_GIT -O $SOURCES/$SOURCES_FOLDER/python/build/STARK-repo.sources.python.tar.gz; then \
-	if tar xf $SOURCES/$SOURCES_FOLDER/python/build/STARK-repo.sources.python.tar.gz -C $SOURCES/$SOURCES_FOLDER/python/build/; then \
-	rsync -auczqAXhi --no-links --no-perms --no-owner --no-group $SOURCES/$SOURCES_FOLDER/python/build/STARK-repo.sources.python*/sources/system/* $SOURCES/$SOURCES_FOLDER/python/; \
-	echo "#[INFO] System Python packages downloaded from REPO '$REPO' (GIT)"; \
-	else \
-	echo "#[WARNING] System fail to uncompress Python packages from REPO '$REPO'"; \
-	fi; \
-	# in HTTP mode
-	elif wget --progress=bar:force --tries=3 -r --no-parent $REPO_PYTHON_HTTP -x --directory-prefix=$SOURCES/$SOURCES_FOLDER/python/build/STARK-repo.sources.system/; then \
-	rsync -auczqAXhi --no-links --no-perms --no-owner --no-group $SOURCES/$SOURCES_FOLDER/system/build/STARK-repo.sources.system*/sources/python/* $SOURCES/$SOURCES_FOLDER/python/; \
-	echo "#[INFO] System Python packages downloaded from REPO '$REPO' (FTP/HTTP)"; \
-	else \
-	echo "#[WARNING] System fail Python packages download from REPO '$REPO'"; \
-	fi && \
-	rm -rf $SOURCES/$SOURCES_FOLDER/python/build && \
-	# Install Python packages locally \
-	echo "#[INFO] System Python packages installation locally" && \
-	if ls $SOURCES/$SOURCES_FOLDER/python/2/*whl 1> /dev/null 2>&1; then \
-	pip2 --no-cache-dir install $SOURCES/$SOURCES_FOLDER/python/2/*whl ; \
-	fi && \
-	if ls $SOURCES/$SOURCES_FOLDER/python/3/*whl 1> /dev/null 2>&1; then \
-	pip3 --no-cache-dir install $SOURCES/$SOURCES_FOLDER/python/3/*whl ; \
-	fi && \
-	# Update PIP \
-	echo "#[INFO] System Python packages update from PIP Repository" && \
-	python -m pip  --no-cache-dir install --upgrade pip && \
-	echo "#[INFO] System Python packages downloaded & updated from PIP Repository" && \
-	echo "#[INFO] System Python packages install from PIP Repository" && \
-	if (( $(echo $PYTHON_MODULE | wc -w | tr -d " ") )); then \
-		python -m pip --no-cache-dir download $PYTHON_MODULE --dest $SOURCES/$SOURCES_FOLDER/python/3/ ; \
-		python -m pip --no-cache-dir install $SOURCES/$SOURCES_FOLDER/python/3/*whl ; \
-	fi && \
-	echo "#[INFO] System Python packages downloaded & installed from PIP Repository" && \
-	# CLEAN
-	echo "#[INFO] System Cleaning" && \
-	if (($REMOVE_SOURCES)); then \
-	rm -rf $SOURCES/$SOURCES_FOLDER/system $SOURCES/$SOURCES_FOLDER/python  ; \
-	echo "#[INFO] System Remove Sources" ; \
-	fi && \
-	echo "#[INFO] System Clean" && \
-	echo "#";
-=======
->>>>>>> new_dockerfile
 
 ##########
 # PYTHON #
@@ -400,35 +323,6 @@ RUN ln -s /root/mambaforge/bin/Rscript /usr/local/bin/Rscript ;
 # PERL #
 ########
 
-<<<<<<< HEAD
-# last version is 3.5
-WORKDIR $WORKDIR
-RUN wget https://dfam.org/releases/Dfam_3.1/infrastructure/dfamscan.pl.gz && \
-	gzip -d dfamscan.pl.gz && \
-	chmod 755 /tmp/dfamscan.pl && \
-	mv /tmp/dfamscan.pl /usr/local/bin/ ;
-
-###########
-# GFFREAD #
-###########
-
-# https://github.com/gpertea/gffread/releases/download/v0.12.7/gffread-0.12.7.Linux_x86_64.tar.gz
-
-# gffread-0.12.7.Linux_x86_64
-
-# TOOL INFO
-#ENV TOOL_NAME="gffread"
-#ENV TOOL_VERSION="0.12.7"
-#ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.Linux_x86_64.tar.gz"
-#ENV TOOL_SOURCE_EXTERNAL="https://github.com/gpertea/gffread/releases/download/v0.12.7/v$TOOL_VERSION/$TOOL_TARBALL"
-#ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-# TOOL PARAMETERS
-########
-# PERL #
-########
-
-=======
->>>>>>> new_dockerfile
 # PERL installation
 RUN	echo "#[INFO] SYSTEM Perl packages installation - download from yum" && \
 	mkdir -p $SOURCES/$SOURCES_FOLDER/perl/build/install && \
@@ -510,36 +404,12 @@ ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
 	ln -s /usr/lib/jvm/jre-1.8.0/bin/java $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/java ;
-<<<<<<< HEAD
 
 
 
 ########
 # JAVA #
 ########
-
-ENV TOOL_NAME="java"
-ENV TOOL_VERSION="17"
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-	mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
-	ln -s /usr/lib/jvm/jre-17/bin/java $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/java && \
-	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
-
-
-
-
-##########
-# PYTHON #
-##########
-=======
-
-
-
-########
-# JAVA #
-########
->>>>>>> new_dockerfile
 
 ENV TOOL_NAME="java"
 ENV TOOL_VERSION="17"
@@ -733,11 +603,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	source $TOOL_INIT && \
 	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
 	cp $TOOL_SOURCE_BUILD/*/bwa-mem2 $TOOL_DEST/bin/ && \
-<<<<<<< HEAD
-    $TOOL_CHECK ;
-=======
 	$TOOL_CHECK ;
->>>>>>> new_dockerfile
 
 
 
@@ -1011,57 +877,6 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	$TOOL_CHECK ;
 
 
-<<<<<<< HEAD
-
-##########
-# FGBIO #
-##########
-# https://github.com/fulcrumgenomics/fgbio/releases/download/1.3.0/fgbio-1.3.0.jar
-
-# # TOOL INFO
-# ENV TOOL_NAME="fgbio"
-# ENV TOOL_VERSION="2.0.2"
-# ENV TOOL_TARBALL="fgbio.jar"
-# ENV TOOL_SOURCE_EXTERNAL="https://github.com/fulcrumgenomics/fgbio/releases/download/$TOOL_VERSION/fgbio-$TOOL_VERSION.jar"
-# ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-# # TOOL PARAMETERS
-
-# # TOOL INSTALLATION
-# RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-# 	source $TOOL_INIT && \
-# 	cp $TOOL_SOURCE $TOOL_DEST/bin/ && \
-# 	chmod a+x $TOOL_DEST/bin/* && \
-# 	$TOOL_CHECK ;
-
-
-
-#############
-# UMI_TOOLS #
-#############
-# pip install umi_tools
-# https://github.com/CGATOxford/UMI-tools/archive/1.1.2.zip
-
-# TOOL INFO
-ENV TOOL_NAME="umi_tools"
-ENV TOOL_VERSION="1.1.4"
-ENV TOOL_TARBALL="$TOOL_VERSION.zip"
-ENV TOOL_SOURCE_EXTERNAL="https://github.com/CGATOxford/UMI-tools/archive/$TOOL_VERSION.zip"
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-# TOOL PARAMETERS
-
-# TOOL INSTALLATION
-RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-	source $TOOL_INIT && \
-	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
-	pip3 install umi_tools==$TOOL_VERSION && \
-	ln -s /usr/local/bin/umi_tools $TOOL_DEST/bin/umi_tools && \
-	chmod a+x $TOOL_DEST/bin/* && \
-	$TOOL_CHECK ;
-
-
-
-=======
->>>>>>> new_dockerfile
 #############
 # GENCORE   #
 #############
