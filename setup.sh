@@ -247,7 +247,7 @@ echo "#[INFO] STARK Docker Compose Setup "
 
 # Folder creation
 echo "#[INFO] STARK Docker Compose Setup - Folders creation..."
-if docker-compose --project-name STARK up stark-setup >> $DOCKER_STARK_SETUP_LOG 2>> $DOCKER_STARK_SETUP_LOG; then
+if docker-compose --project-name stark up stark-setup >> $DOCKER_STARK_SETUP_LOG 2>> $DOCKER_STARK_SETUP_LOG; then
 	echo "#[INFO] STARK Docker Compose Setup - Folders creation done."
 else
 	echo "#[ERROR] STARK Docker Compose Setup - Folders creation failed!"
@@ -256,7 +256,7 @@ fi;
 
 # Databases download
 echo "#[INFO] STARK Docker Compose Setup - Databases Download..."
-if docker-compose --project-name STARK up stark-databases >> $DOCKER_STARK_SETUP_LOG 2>> $DOCKER_STARK_SETUP_LOG; then
+if docker-compose --project-name stark up stark-databases >> $DOCKER_STARK_SETUP_LOG 2>> $DOCKER_STARK_SETUP_LOG; then
 	echo "#[INFO] STARK Docker Compose Setup - Databases Download done."
 else
 	echo "#[ERROR] STARK Docker Compose Setup - Databases Download failed!"
@@ -265,7 +265,7 @@ fi;
 
 # Sources archives
 echo "#[INFO] STARK Docker Compose Setup - Sources Archives..."
-if docker-compose --project-name STARK up stark-sources-archives >> $DOCKER_STARK_SETUP_LOG 2>> $DOCKER_STARK_SETUP_LOG; then
+if docker-compose --project-name stark up stark-sources-archives >> $DOCKER_STARK_SETUP_LOG 2>> $DOCKER_STARK_SETUP_LOG; then
 	echo "#[INFO] STARK Docker Compose Setup - Sources Archives done."
 else
 	echo "#[ERROR] STARK Docker Compose Setup - Sources Archives failed!"
