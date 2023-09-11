@@ -5,7 +5,7 @@
 # Software Version:     3
 # Software Website:     https://github.com/bioinfo-chru-strasbourg/STARK
 # Licence:              GNU Affero General Public License (AGPL)
-# Description:          STARK 1.8.4.rnaseq
+# Description:          STARK
 # Usage:                docker run -ti [-v [DATA FOLDER]:/data -v [DATABASE_FOLDER]:/databases] stark:version
 ##############################################################
 
@@ -127,8 +127,8 @@ RUN echo "#[INFO] STARK installation configuration" && \
 ##################
 # This will install system packages, python packages and scripts to install tools
 
-ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git make ncurses-devel tbb-devel unzip rsync wget which xz xz-devel zlib zlib-devel docker java-17 java-1.8.0 curl-devel openssl-devel diffutils"
-ENV YUM_REMOVE="autoconf automake bzip2-devel lzma-devel ncurses-devel perl-devel tbb-devel xz-devel zlib-devel zlib2-devel curl-devel openssl-devel"
+ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git make ncurses-devel tbb-devel unzip rsync wget which xz xz-devel zlib zlib-devel docker java-17 java-1.8.0 curl-devel openssl-devel htslib diffutils"
+ENV YUM_REMOVE="autoconf automake bzip2-devel lzma-devel ncurses-devel perl-devel tbb-devel xz-devel zlib-devel zlib2-devel python3-devel curl-devel openssl-devel"
 ENV PYTHON_MODULE=" pathos numpy scipy argparse"
 ENV PERL_INSTALL=" perl perl-Switch perl-Time-HiRes perl-Data-Dumper perl-Digest-MD5 perl-Tk perl-devel "
 
@@ -139,8 +139,7 @@ ENV GET_TOOL_SOURCE=$SOURCES/$SOURCES_FOLDER/get_tool_source.sh
 ENV TOOL_INIT=$SOURCES/$SOURCES_FOLDER/tool_init.sh
 ENV TOOL_CHECK=$SOURCES/$SOURCES_FOLDER/tool_check.sh
 
-RUN yum -y update
-RUN yum -y install epel-release
+
 RUN echo "#[INFO] SYSTEM Sources scripts" && \
 	if [ -e $GET_TOOL_SOURCE ]; then \
 	echo "#[INFO] GET TOOL SOURCE script exists" ; \
@@ -218,32 +217,32 @@ RUN echo "#[INFO] SYSTEM Sources scripts" && \
 RUN echo "#[INFO] SYSTEM YUM installation - and download" && \
 	# Create system repository \
 	mkdir -p $SOURCES/$SOURCES_FOLDER/system && \
-	# # INSTALL WGET \
-	# echo "#[INFO] System install wget package" && \
-	# #ls $SOURCES/$SOURCES_FOLDER/system/*.rpm && \
-	# if ! ls $SOURCES/$SOURCES_FOLDER/system/wget-*.rpm 1> /dev/null 2>&1; then \
-	# echo "#[INFO] System wget package not locally available"; \
-	# yum $YUM_PARAM install -y --nogpgcheck --downloadonly --downloaddir=$SOURCES/$SOURCES_FOLDER/system/ wget; \
-	# echo "#[INFO] System wget package downloaded from YUM Repository"; \
-	# fi && \
-	# echo "#[INFO] System install rsync package" && \
-	# if ! ls $SOURCES/$SOURCES_FOLDER/system/rsync-*.rpm 1> /dev/null 2>&1; then \
-	# echo "#[INFO] System rsync package not locally available"; \
-	# yum $YUM_PARAM install -y --nogpgcheck --downloadonly --downloaddir=$SOURCES/$SOURCES_FOLDER/system/ rsync; \
-	# echo "#[INFO] System rsync package downloaded from YUM Repository"; \
-	# fi && \
-	# # Install packages locally \
-	# echo "#[INFO] System packages installation locally" && \
-	# yum $YUM_PARAM localinstall -y --nogpgcheck $SOURCES/$SOURCES_FOLDER/system/wget-*.rpm $SOURCES/$SOURCES_FOLDER/system/rsync-*.rpm && \
-	# # Test WGET installation \
-	# if ! command -v wget 1>/dev/null 2>/dev/null; then \
-	# echo "#[ERROR] System wget package not installed (Please open Internet connexion or provide WGET rpm in sources/system folder)"; \
-	# exit 1; \
-	# fi && \
-	# if ! command -v rsync 1>/dev/null 2>/dev/null; then \
-	# echo "#[ERROR] System rsync package not installed (Please open Internet connexion or provide RSYNC rpm in sources/system folder)"; \
-	# exit 1; \
-	# fi && \
+	# INSTALL WGET \
+	echo "#[INFO] System install wget package" && \
+	#ls $SOURCES/$SOURCES_FOLDER/system/*.rpm && \
+	if ! ls $SOURCES/$SOURCES_FOLDER/system/wget-*.rpm 1> /dev/null 2>&1; then \
+	echo "#[INFO] System wget package not locally available"; \
+	yum $YUM_PARAM install -y --nogpgcheck --downloadonly --downloaddir=$SOURCES/$SOURCES_FOLDER/system/ wget; \
+	echo "#[INFO] System wget package downloaded from YUM Repository"; \
+	fi && \
+	echo "#[INFO] System install rsync package" && \
+	if ! ls $SOURCES/$SOURCES_FOLDER/system/rsync-*.rpm 1> /dev/null 2>&1; then \
+	echo "#[INFO] System rsync package not locally available"; \
+	yum $YUM_PARAM install -y --nogpgcheck --downloadonly --downloaddir=$SOURCES/$SOURCES_FOLDER/system/ rsync; \
+	echo "#[INFO] System rsync package downloaded from YUM Repository"; \
+	fi && \
+	# Install packages locally \
+	echo "#[INFO] System packages installation locally" && \
+	yum $YUM_PARAM localinstall -y --allowerasing --nogpgcheck $SOURCES/$SOURCES_FOLDER/system/wget-*.rpm $SOURCES/$SOURCES_FOLDER/system/rsync-*.rpm && \
+	# Test WGET installation \
+	if ! command -v wget 1>/dev/null 2>/dev/null; then \
+	echo "#[ERROR] System wget package not installed (Please open Internet connexion or provide WGET rpm in sources/system folder)"; \
+	exit 1; \
+	fi && \
+	if ! command -v rsync 1>/dev/null 2>/dev/null; then \
+	echo "#[ERROR] System rsync package not installed (Please open Internet connexion or provide RSYNC rpm in sources/system folder)"; \
+	exit 1; \
+	fi && \
 	# DOWNLOAD packages from repository \
 	echo "#[INFO] System packages download from REPO '$REPO'"; \
 	mkdir -p $SOURCES/$SOURCES_FOLDER/system/build && \
@@ -298,25 +297,26 @@ RUN echo "#[INFO] SYSTEM YUM installation - and download" && \
 	echo "#";
 
 
-#########
-# HMMER #
-#########
 
-WORKDIR $WORKDIR
-RUN wget http://eddylab.org/software/hmmer3/3.1b2/hmmer-3.1b2-linux-intel-x86_64.tar.gz && \
-	tar xf hmmer-3.1b2-linux-intel-x86_64.tar.gz && \
-	cp /tmp/hmmer-3.1b2-linux-intel-x86_64/binaries/* /usr/local/bin/ ;
+##########
+# PYTHON #
+##########
 
-########
-# DFAM #
-########
 
-# last version is 3.5
-WORKDIR $WORKDIR
-RUN wget https://dfam.org/releases/Dfam_3.1/infrastructure/dfamscan.pl.gz && \
-	gzip -d dfamscan.pl.gz && \
-	chmod 755 /tmp/dfamscan.pl && \
-	mv /tmp/dfamscan.pl /usr/local/bin/ ;
+RUN curl -L -O "https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-$(uname)-$(uname -m).sh"
+RUN bash Mambaforge-$(uname)-$(uname -m).sh -b
+RUN rm -f Mambaforge-$(uname)-$(uname -m).sh
+ENV MAMBA="/root/mambaforge/bin/mamba"
+ENV PIP="/root/mambaforge/bin/pip"
+RUN $MAMBA init
+RUN $PIP install $PYTHON_MODULE  && $PIP cache purge
+RUN $MAMBA install -y -c bioconda -c conda-forge R r-biocmanager r-cowplot r-argparse r-ranger r-tidyverse umi_tools~=1.1.4 && $MAMBA clean -afy
+RUN ln -s /root/mambaforge/bin/python /usr/local/bin/python ;
+RUN ln -s /root/mambaforge/bin/python3 /usr/local/bin/python3 ;
+RUN ln -s /root/mambaforge/bin/pip /usr/local/bin/pip ;
+RUN ln -s /root/mambaforge/bin/pip3 /usr/local/bin/pip3 ;
+RUN ln -s /root/mambaforge/bin/R /usr/local/bin/R ;
+RUN ln -s /root/mambaforge/bin/Rscript /usr/local/bin/Rscript ;
 
 
 ########
@@ -335,13 +335,6 @@ RUN	echo "#[INFO] SYSTEM Perl packages installation - download from yum" && \
 	echo "#[INFO] System Clean" && \
 	echo "#";
 
-# TOOL INSTALLATION
-#RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-#	source $TOOL_INIT && \
-#	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
-#	cp $TOOL_SOURCE_BUILD/$TOOL_NAME-$TOOL_VERSION"_Linux_x86_64"/* $TOOL_DEST/bin/ && \
-#	chmod a+x $TOOL_DEST/bin/* && \
-#	$TOOL_CHECK ;
 
 
 
@@ -387,6 +380,20 @@ RUN	echo "#[INFO] SYSTEM Perl packages installation - download from yum" && \
 ################
 
 
+
+##########
+# JAVA11 #
+##########
+
+# ENV TOOL_NAME="java"
+# ENV TOOL_VERSION="11"
+# ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+# RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+# 	mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
+# 	ln -s /usr/lib/jvm/jre-11/bin/java $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/java ;
+
+
+
 # ##########
 # # JAVA8 #
 # ##########
@@ -411,7 +418,6 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
 	ln -s /usr/lib/jvm/jre-17/bin/java $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/java && \
 	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
-
 
 
 ################
@@ -449,6 +455,50 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	$TOOL_CHECK ;
 
 
+
+
+##########
+# HTSLIB #
+##########
+
+# TOOL INFO
+ENV TOOL_NAME="htslib"
+ENV TOOL_VERSION="1.17"
+ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.tar.bz2"
+ENV TOOL_SOURCE_EXTERNAL="https://github.com/samtools/$TOOL_NAME/releases/download/$TOOL_VERSION/$TOOL_TARBALL"
+ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+# TOOL PARAMETERS
+
+# TOOL INSTALLATION
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
+	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
+	make install --quiet -j $THREADS -C $(ls -d $TOOL_SOURCE_BUILD/*) prefix=$TOOL_DEST && \
+	$TOOL_CHECK ;
+
+
+
+############
+# BCFTOOLS #
+############
+
+# TOOL INFO
+ENV TOOL_NAME="bcftools"
+ENV TOOL_VERSION="1.17"
+ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.tar.bz2"
+ENV TOOL_SOURCE_EXTERNAL="https://github.com/samtools/$TOOL_NAME/releases/download/$TOOL_VERSION/$TOOL_TARBALL"
+ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+# TOOL PARAMETERS
+
+# TOOL INSTALLATION
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
+	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
+	make install --quiet -j $THREADS -C $(ls -d $TOOL_SOURCE_BUILD/*) prefix=$TOOL_DEST && \
+	$TOOL_CHECK ;
+
+
+
 #############
 # BCL2FASTQ #
 #############
@@ -467,6 +517,115 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
 	rpm -ih $TOOL_SOURCE_BUILD/*.rpm --excludedocs --prefix=$TOOL_DEST && \
 	$TOOL_CHECK ;
+
+
+
+############
+# BEDTOOLS #
+############
+
+# TOOL INFO
+ENV TOOL_NAME="bedtools"
+ENV TOOL_VERSION="2.30.0"
+ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.tar.gz"
+ENV TOOL_SOURCE_EXTERNAL="https://github.com/arq5x/bedtools2/releases/download/v$TOOL_VERSION/$TOOL_TARBALL"
+ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+# TOOL PARAMETERS
+
+# TOOL INSTALLATION
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
+	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
+	make install --quiet -j $THREADS -C $(ls -d $TOOL_SOURCE_BUILD/*) prefix=$TOOL_DEST && \
+	$TOOL_CHECK ;
+
+
+
+############
+# BOWTIE2 #
+############
+
+# TOOL INFO
+ENV TOOL_NAME="bowtie2"
+ENV TOOL_VERSION="2.5.1"
+ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION-linux-x86_64.zip"
+ENV TOOL_SOURCE_EXTERNAL="https://github.com/BenLangmead/bowtie2/releases/download/v$TOOL_VERSION/$TOOL_TARBALL"
+ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+# TOOL PARAMETERS
+
+# TOOL INSTALLATION
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
+	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
+	cp $TOOL_SOURCE_BUILD/*/bowtie2* $TOOL_DEST/bin/ && \
+	rm -f $TOOL_DEST/bin/*debug && \
+	$TOOL_CHECK ;
+
+
+
+#######
+# BWA #
+#######
+
+# TOOL INFO
+ENV TOOL_NAME="bwa"
+ENV TOOL_VERSION="0.7.17"
+ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.tar.bz2"
+#ENV TOOL_SOURCE_EXTERNAL="https://sourceforge.net/projects/bio-bwa/files/$TOOL_NAME-$TOOL_VERSION.tar.bz2/download"
+ENV TOOL_SOURCE_EXTERNAL="https://github.com/lh3/bwa/releases/download/v$TOOL_VERSION/bwa-$TOOL_VERSION.tar.bz2"
+ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+# TOOL PARAMETERS
+
+# TOOL INSTALLATION
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
+	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
+	make --quiet -j $THREADS -C $(ls -d $TOOL_SOURCE_BUILD/*) && \
+	cp $TOOL_SOURCE_BUILD/*/bwa $TOOL_DEST/bin/ && \
+	$TOOL_CHECK ;
+
+
+
+########
+# BWA2 #
+########
+
+# TOOL INFO
+ENV TOOL_NAME="bwa"
+ENV TOOL_VERSION="2.2.1"
+ENV TOOL_TARBALL=$TOOL_NAME"-mem2-"$TOOL_VERSION"_x64-linux.tar.bz2"
+ENV TOOL_SOURCE_EXTERNAL="https://github.com/bwa-mem2/bwa-mem2/releases/download/v$TOOL_VERSION/$TOOL_TARBALL"
+ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+# TOOL PARAMETERS
+
+# TOOL INSTALLATION
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
+	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
+	cp $TOOL_SOURCE_BUILD/*/bwa-mem2 $TOOL_DEST/bin/ && \
+	$TOOL_CHECK ;
+
+
+
+#########
+# FASTP #
+#########
+
+# TOOL INFO
+ENV TOOL_NAME="fastp"
+ENV TOOL_VERSION="0.23.2"
+ENV TOOL_TARBALL="$TOOL_NAME"
+ENV TOOL_SOURCE_EXTERNAL="http://opengene.org/$TOOL_NAME/$TOOL_NAME.$TOOL_VERSION"
+ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+# TOOL PARAMETERS
+
+# TOOL INSTALLATION
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
+	cp $TOOL_SOURCE $TOOL_DEST/bin/ && \
+	chmod a+x $TOOL_DEST/bin/* && \
+	$TOOL_CHECK ;
+
 
 
 #######
@@ -489,77 +648,6 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	chmod a+x $TOOL_DEST/bin/* && \
 	$TOOL_CHECK ;
 
-
-##########
-# PYTHON #
-##########
-
-RUN curl -L -O "https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-$(uname)-$(uname -m).sh"
-RUN bash Mambaforge-$(uname)-$(uname -m).sh -b
-ENV MAMBA="/root/mambaforge/bin/mamba"
-ENV PIP="/root/mambaforge/bin/pip"
-RUN $MAMBA init
-RUN $PIP install $PYTHON_MODULE
-
-
-##########
-# HTSLIB #
-##########
-
-RUN $MAMBA install -y -c bioconda htslib~=1.17.0
-
-############
-# BCFTOOLS #
-############
-
-RUN $MAMBA install -y -c bioconda bcftools~=1.17.0
-
-
-
-############
-# BEDTOOLS #
-############
-
-RUN $MAMBA install -y -c bioconda bedtools~=2.31.0
-
-
-############
-# BOWTIE2 #
-############
-
-# TOOL INFO
-ENV TOOL_NAME="bowtie2"
-ENV TOOL_VERSION="2.5.1"
-RUN $MAMBA install -y -c bioconda bowtie2~=2.5.1
-
-#######
-# BWA #
-#######
-
-# TOOL INFO
-ENV TOOL_NAME="bwa"
-ENV TOOL_VERSION="0.7.17"
-RUN $MAMBA install -y -c bioconda bwa~=0.7.17
-
-
-########
-# BWA2 #
-########
-
-# TOOL INFO
-ENV TOOL_NAME="bwa"
-ENV TOOL_VERSION="2.2.1"
-RUN $MAMBA install -y -c bioconda bwa-mem2~=2.2.1
-
-
-#########
-# FASTP #
-#########
-
-# TOOL INFO
-ENV TOOL_NAME="fastp"
-ENV TOOL_VERSION="0.23.2"
-RUN $MAMBA install -y -c bioconda fastp~=0.23.4
 
 
 #########
@@ -706,9 +794,9 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 # TOOL INFO
 ENV TOOL_NAME="outlyzer"
-ENV TOOL_VERSION="3"
-ENV TOOL_TARBALL="outLyzer.py"
-ENV TOOL_SOURCE_EXTERNAL="https://raw.githubusercontent.com/EtieM/outLyzer/master/$TOOL_TARBALL"
+ENV TOOL_VERSION="3.2"
+ENV TOOL_TARBALL="outLyzer_V$TOOL_VERSION.py"
+ENV TOOL_SOURCE_EXTERNAL="https://github.com/EtieM/outLyzer/releases/download/$TOOL_VERSION/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
 
@@ -748,7 +836,17 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 # TOOL INFO
 ENV TOOL_NAME="samtools"
 ENV TOOL_VERSION="1.17"
-RUN $MAMBA install -y -c bioconda samtools~=1.17.0
+ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.tar.bz2"
+ENV TOOL_SOURCE_EXTERNAL="https://github.com/samtools/$TOOL_NAME/releases/download/$TOOL_VERSION/$TOOL_TARBALL"
+ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+# TOOL PARAMETERS
+
+# TOOL INSTALLATION
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
+	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
+	make install --quiet -j $THREADS -C $(ls -d $TOOL_SOURCE_BUILD/*) prefix=$TOOL_DEST && \
+	$TOOL_CHECK ;
 
 
 
@@ -780,19 +878,6 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 
 #############
-# UMI_TOOLS #
-#############
-# pip install umi_tools
-# https://github.com/CGATOxford/UMI-tools/archive/1.1.2.zip
-
-# TOOL INFO
-ENV TOOL_NAME="umi_tools"
-ENV TOOL_VERSION="1.1.4"
-RUN $MAMBA install -y -c bioconda umi_tools~=1.1.4
-
-
-
-#############
 # GENCORE   #
 #############
 # https://github.com/OpenGene/gencore
@@ -811,6 +896,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	cp $TOOL_SOURCE $TOOL_DEST/bin/ && \
 	chmod a+x $TOOL_DEST/bin/* && \
 	$TOOL_CHECK ;
+
 
 
 ###########
@@ -838,6 +924,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 #########
 # STARK #
 #########
+
 
 # TOOL INFO
 ENV TOOL_NAME="stark"
@@ -877,114 +964,6 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	ln -sf $CONFIG_HOWARD_FOLDER $TOOLS/$TOOL_NAME/$TOOL_VERSION/config/howard ;
 
 
-########
-# STAR #
-########
-
-# https://github.com/alexdobin/STAR/archive/refs/tags/2.7.8a.zip
-# TOOL INFO
-ENV TOOL_NAME="STAR"
-#ENV TOOL_VERSION="2.7.10a"
-ENV TOOL_VERSION="2.7.8a"
-RUN $MAMBA install -y -c bioconda star=2.7.8a
-RUN ln -s /root/mambaforge/bin/STAR /usr/local/bin/STAR ;
-# ENV TOOL_TARBALL="$TOOL_VERSION.zip"
-# ENV TOOL_SOURCE_EXTERNAL="https://github.com/alexdobin/$TOOL_NAME/archive/refs/tags/$TOOL_TARBALL"
-# ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-# # TOOL PARAMETERS
-# # TOOL INSTALLATION
-# RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-# 	source $TOOL_INIT && \
-# 	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
-# 	ls && \
-# 	cd $TOOL_SOURCE_BUILD/$TOOL_NAME-$TOOL_VERSION/source && \
-# 	make -s STAR && \
-# 	cp STAR $TOOL_DEST/bin/ && \
-# 	#mkdir $TOOL_DEST/scripts/ && \
-# 	#cp -R $TOOL_SOURCE_BUILD/$TOOL_NAME-$TOOL_VERSION/extras/scripts/ $TOOL_DEST/scripts/ && \
-# 	$TOOL_CHECK ;
-
-#####
-# R #
-#####
-# powertools is required to find openblas-devel on Centos 8 https://stackoverflow.com/a/69788102
-# RUN yum config-manager --set-enabled powertools
-# RUN yum -y install 
-# # R-core or R-core-devel
-# # https://cdn.rstudio.com/r/centos-7/pkgs/R-4.1.2-1-1.x86_64.rpm
-
-# # Choose R version and distribution
-# ENV R_VERSION="4.1.3"
-# # Run download and install
-# RUN curl -O https://cdn.rstudio.com/r/centos-7/pkgs/R-${R_VERSION}-1-1.x86_64.rpm ;
-# RUN yum install -y R-${R_VERSION}-1-1.x86_64.rpm ;
-# # Verify installation
-# RUN /opt/R/${R_VERSION}/bin/R --version ;
-# # Create symlink to R
-RUN $MAMBA install -y R
-RUN ln -s /root/mambaforge/bin/R /usr/local/bin/R ;
-RUN ln -s /root/mambaforge/bin/Rscript /usr/local/bin/Rscript ;
-# For STAR-Fusion (R 3.6.3 ?)
-RUN $MAMBA install -y -c conda-forge r-biocmanager r-cowplot r-argparse r-ranger r-tidyverse
-# RUN R -e 'BiocManager::install(c("argparse", "cowplot", "ranger", ask = F))'
-
-
-###############
-# STAR FUSION #
-###############
-
-# https://github.com/STAR-Fusion/STAR-Fusion/releases/download/STAR-Fusion-v1.10.1/STAR-Fusion.v1.10.1.tar.gz
-# Compatibility with STAR v2.7.8a
-
-# TOOL INFO
-ENV TOOL_NAME="STAR-Fusion"
-ENV TOOL_VERSION="1.10.1"
-ENV TOOL_TARBALL="$TOOL_NAME.v$TOOL_VERSION.tar.gz"
-ENV TOOL_SOURCE_EXTERNAL="https://github.com/$TOOL_NAME/$TOOL_NAME/releases/download/$TOOL_NAME-v$TOOL_VERSION/$TOOL_TARBALL"
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-# TOOL PARAMETERS
-# TOOL INSTALLATION
-RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-	source $TOOL_INIT && \
-	tar xvf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
-	cd  $TOOL_SOURCE_BUILD/$TOOL_NAME.v$TOOL_VERSION/ && \
-	make && \
-	cp -r * $TOOL_DEST/bin/ && \
-	$TOOL_CHECK ;
-
-## FusionInspector now included with STAR-Fusion
-## Interval Tree is included with STAR-Fusion
-
-
-##########
-# ARRIBA #
-##########
-
-# https://github.com/suhrig/arriba/releases/download/v2.1.0/arriba_v2.1.0.tar.gz
-
-# TOOL INFO
-ENV TOOL_NAME="arriba"
-ENV TOOL_VERSION="2.2.1"
-ENV TOOL_TARBALL=$TOOL_NAME"_v"$TOOL_VERSION".tar.gz"  
-ENV TOOL_SOURCE_EXTERNAL="https://github.com/suhrig/$TOOL_NAME/releases/download/v$TOOL_VERSION/$TOOL_TARBALL"
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-# TOOL PARAMETERS
-
-# TOOL INSTALLATION
-RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-	source $TOOL_INIT && \
-	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
-	mkdir -p $TOOL_DEST/database/ && \
-	cp $TOOL_SOURCE_BUILD/$TOOL_NAME"_v"$TOOL_VERSION/database/* $TOOL_DEST/database/ && \
-	cp $TOOL_SOURCE_BUILD/$TOOL_NAME"_v"$TOOL_VERSION/$TOOL_NAME $TOOL_DEST/bin/ && \
-	chmod a+x $TOOL_DEST/bin/* && \
-	mkdir -p $TOOL_DEST/scripts/ && \
-	cp $TOOL_SOURCE_BUILD/$TOOL_NAME"_v"$TOOL_VERSION/*.{sh,R} $TOOL_DEST/scripts/ && \
-	chmod a+x $TOOL_DEST/scripts/*.sh && \
-	$TOOL_CHECK ;
-
-RUN $MAMBA clean -a
-
 
 ######################
 # YUM REMOVE & CLEAR #
@@ -997,6 +976,7 @@ RUN echo "#[INFO] Cleaning" && \
 	rm -rf $WORKDIR/* && \
 	rm -rf /tmp/* && \
 	if (($REMOVE_SOURCES)); then rm -rf $SOURCES; fi;
+
 
 
 ##############################
