@@ -301,10 +301,9 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 # PICARD Metrics
 ##################
 
-
-MAX_VALIDATION_BAM_SIZE?=1000000000 # 2Go
-MAX_CONCURRENT_HSMETRICS?=1
-MAX_CONCURRENT_HSMETRICS_RAM?=16g
+MAX_VALIDATION_BAM_SIZE?=3145728
+MAX_CONCURRENT_HSMETRICS?=4
+MAX_CONCURRENT_HSMETRICS_RAM?=24g
 
 %.bam.metrics/metrics.picard: %.validation.bam %.validation.bam.bai %.empty.HsMetrics %.genome %.list.genes %.design.bed %.dict
 	# Create directory

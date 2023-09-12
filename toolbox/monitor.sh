@@ -529,8 +529,8 @@ do
 					tail -n$TAIL $LOG | tr "\t" " " | cut -c 1-$(tput cols) ;
 					echo -n "$COLOR_NULL"
 				
-					#NB_ERRORS=$(grep "\*\*\*" $LOG -c)
-					ERRORS=$(grep "\*\*\*" $LOG | tail -n$TAIL  | tr "\t" " ")
+					#NB_ERRORS=$(grep "make: \*\*\*" $LOG -c)
+					ERRORS=$(grep "make: \*\*\*" $LOG | tail -n$TAIL  | tr "\t" " ")
 					if (($NB_ERROR > 0)); then 
 						echo "# $COLOR_KO$NB_ERROR ERRORS"
 						#echo -ne $ERRORS

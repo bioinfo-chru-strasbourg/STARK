@@ -373,23 +373,27 @@ done;
 
 # ASSEMBLY & REF
 ################
-
 # default Assembly
 if [ -z $ASSEMBLY ] || [ "$ASSEMBLY" == "" ]; then
 	ASSEMBLY=hg19
 fi;
 export ASSEMBLY
 
-# default REF
-if [ -s $GENOMES/$ASSEMBLY/$ASSEMBLY.fa ]; then
-	REF=$GENOMES/$ASSEMBLY/$ASSEMBLY.fa
-elif [ -s $GENOMES/current/$ASSEMBLY.fa ]; then
-	REF=$GENOMES/current/$ASSEMBLY.fa
+echo "@DEBUG@@@@REF="$REF
+if [ "$REF" == "" ]; then
+	# default REF
+	if [ -s $GENOMES/$ASSEMBLY/$ASSEMBLY.fa ]; then
+		REF=$GENOMES/$ASSEMBLY/$ASSEMBLY.fa
+	elif [ -s $GENOMES/current/$ASSEMBLY.fa ]; then
+		REF=$GENOMES/current/$ASSEMBLY.fa
+	fi;
+	if [ ! -s $REF ] || [ "$REF" == "" ]; then
+		REF=$GENOMES/current/$ASSEMBLY.fa
+	fi;
+	export REF
 fi;
-if [ ! -s $REF ] || [ "$REF" == "" ]; then
-	REF=$GENOMES/current/$ASSEMBLY.fa
-fi;
-export REF
+echo "@DEBUG@@@@REF="$REF
+
 
 # REF_CACHE_FOLDER and REF_CACHE and REF_PATH
 

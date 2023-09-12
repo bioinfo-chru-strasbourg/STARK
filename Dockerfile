@@ -127,15 +127,13 @@ RUN echo "#[INFO] STARK installation configuration" && \
 ##################
 # This will install system packages, python packages and scripts to install tools
 
-ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git make ncurses-devel tbb-devel unzip rsync wget which xz xz-devel zlib zlib-devel docker java-17 java-1.8.0 python3 python3-pip python3-devel curl-devel openssl-devel htslib diffutils"
+ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git make ncurses-devel tbb-devel unzip rsync wget which xz xz-devel zlib zlib-devel docker java-17 java-1.8.0 curl-devel openssl-devel htslib diffutils"
 ENV YUM_REMOVE="autoconf automake bzip2-devel lzma-devel ncurses-devel perl-devel tbb-devel xz-devel zlib-devel zlib2-devel python3-devel curl-devel openssl-devel"
 ENV PYTHON_MODULE=" pathos numpy scipy argparse"
 ENV PERL_INSTALL=" perl perl-Switch perl-Time-HiRes perl-Data-Dumper perl-Digest-MD5 perl-Tk perl-devel "
 
 ENV REPO_SYSTEM_GIT="$REPO/sources.system.tar.gz?path=sources/system"
 ENV REPO_SYSTEM_HTTP="$REPO/sources/system/"
-ENV REPO_PYTHON_GIT="$REPO/sources.python.tar.gz?path=sources/python"
-ENV REPO_PYTHON_HTTP="$REPO/sources/python/"
 
 ENV GET_TOOL_SOURCE=$SOURCES/$SOURCES_FOLDER/get_tool_source.sh
 ENV TOOL_INIT=$SOURCES/$SOURCES_FOLDER/tool_init.sh
@@ -223,45 +221,45 @@ RUN echo "#[INFO] SYSTEM YUM installation - and download" && \
 	echo "#[INFO] System install wget package" && \
 	#ls $SOURCES/$SOURCES_FOLDER/system/*.rpm && \
 	if ! ls $SOURCES/$SOURCES_FOLDER/system/wget-*.rpm 1> /dev/null 2>&1; then \
-		echo "#[INFO] System wget package not locally available"; \
-		yum $YUM_PARAM install -y --nogpgcheck --downloadonly --downloaddir=$SOURCES/$SOURCES_FOLDER/system/ wget; \
-		echo "#[INFO] System wget package downloaded from YUM Repository"; \
+	echo "#[INFO] System wget package not locally available"; \
+	yum $YUM_PARAM install -y --nogpgcheck --downloadonly --downloaddir=$SOURCES/$SOURCES_FOLDER/system/ wget; \
+	echo "#[INFO] System wget package downloaded from YUM Repository"; \
 	fi && \
 	echo "#[INFO] System install rsync package" && \
 	if ! ls $SOURCES/$SOURCES_FOLDER/system/rsync-*.rpm 1> /dev/null 2>&1; then \
-		echo "#[INFO] System rsync package not locally available"; \
-		yum $YUM_PARAM install -y --nogpgcheck --downloadonly --downloaddir=$SOURCES/$SOURCES_FOLDER/system/ rsync; \
-		echo "#[INFO] System rsync package downloaded from YUM Repository"; \
+	echo "#[INFO] System rsync package not locally available"; \
+	yum $YUM_PARAM install -y --nogpgcheck --downloadonly --downloaddir=$SOURCES/$SOURCES_FOLDER/system/ rsync; \
+	echo "#[INFO] System rsync package downloaded from YUM Repository"; \
 	fi && \
 	# Install packages locally \
 	echo "#[INFO] System packages installation locally" && \
 	yum $YUM_PARAM localinstall -y --allowerasing --nogpgcheck $SOURCES/$SOURCES_FOLDER/system/wget-*.rpm $SOURCES/$SOURCES_FOLDER/system/rsync-*.rpm && \
 	# Test WGET installation \
 	if ! command -v wget 1>/dev/null 2>/dev/null; then \
-		echo "#[ERROR] System wget package not installed (Please open Internet connexion or provide WGET rpm in sources/system folder)"; \
-		exit 1; \
+	echo "#[ERROR] System wget package not installed (Please open Internet connexion or provide WGET rpm in sources/system folder)"; \
+	exit 1; \
 	fi && \
 	if ! command -v rsync 1>/dev/null 2>/dev/null; then \
-		echo "#[ERROR] System rsync package not installed (Please open Internet connexion or provide RSYNC rpm in sources/system folder)"; \
-		exit 1; \
+	echo "#[ERROR] System rsync package not installed (Please open Internet connexion or provide RSYNC rpm in sources/system folder)"; \
+	exit 1; \
 	fi && \
 	# DOWNLOAD packages from repository \
 	echo "#[INFO] System packages download from REPO '$REPO'"; \
 	mkdir -p $SOURCES/$SOURCES_FOLDER/system/build && \
 	# in GIT mode
 	if wget -q --progress=bar:force --tries=3 $REPO_SYSTEM_GIT -O $SOURCES/$SOURCES_FOLDER/system/build/STARK-repo.sources.system.tar.gz; then \
-		if tar xf $SOURCES/$SOURCES_FOLDER/system/build/STARK-repo.sources.system.tar.gz -C $SOURCES/$SOURCES_FOLDER/system/build/; then \
-			rsync -auczqAXhi --no-links --no-perms --no-owner --no-group --ignore-missing-args $SOURCES/$SOURCES_FOLDER/system/build/STARK-repo.sources.system*/sources/system/*rpm $SOURCES/$SOURCES_FOLDER/system/; \
-			echo "#[INFO] System packages downloaded from REPO '$REPO' (GIT)"; \
-		else \
-			echo "#[WARNING] System fail to uncompress packages from REPO '$REPO'"; \
-		fi; \
+	if tar xf $SOURCES/$SOURCES_FOLDER/system/build/STARK-repo.sources.system.tar.gz -C $SOURCES/$SOURCES_FOLDER/system/build/; then \
+	rsync -auczqAXhi --no-links --no-perms --no-owner --no-group --ignore-missing-args $SOURCES/$SOURCES_FOLDER/system/build/STARK-repo.sources.system*/sources/system/*rpm $SOURCES/$SOURCES_FOLDER/system/; \
+	echo "#[INFO] System packages downloaded from REPO '$REPO' (GIT)"; \
+	else \
+	echo "#[WARNING] System fail to uncompress packages from REPO '$REPO'"; \
+	fi; \
 	# in HTTP mode
 	elif wget -q --progress=bar:force --tries=3 -r --no-parent $REPO_SYSTEM_HTTP -x --directory-prefix=$SOURCES/$SOURCES_FOLDER/system/build/STARK-repo.sources.system/; then \
-		rsync -auczqAXhi --no-links --no-perms --no-owner --no-group --ignore-missing-args $SOURCES/$SOURCES_FOLDER/system/build/STARK-repo.sources.system/*/sources/system/*rpm $SOURCES/$SOURCES_FOLDER/system/; \
-		echo "#[INFO] System packages downloaded from REPO '$REPO' (FTP/HTTP)"; \
+	rsync -auczqAXhi --no-links --no-perms --no-owner --no-group --ignore-missing-args $SOURCES/$SOURCES_FOLDER/system/build/STARK-repo.sources.system/*/sources/system/*rpm $SOURCES/$SOURCES_FOLDER/system/; \
+	echo "#[INFO] System packages downloaded from REPO '$REPO' (FTP/HTTP)"; \
 	else \
-		echo "#[WARNING] System fail packages download from REPO '$REPO'"; \
+	echo "#[WARNING] System fail packages download from REPO '$REPO'"; \
 	fi && \
 	rm -rf $SOURCES/$SOURCES_FOLDER/system/build && \
 	# Install packages locally \
@@ -270,14 +268,14 @@ RUN echo "#[INFO] SYSTEM YUM installation - and download" && \
 	# Install EPEL Repository \
 	echo "#[INFO] System EPEL Repository package" && \
 	if ! ls $SOURCES/$SOURCES_FOLDER/system/epel-release-*.rpm 1> /dev/null 2>&1; then \
-		yum $YUM_PARAM install -y --nogpgcheck --downloadonly --downloaddir=$SOURCES/$SOURCES_FOLDER/system/ epel-release; \
-		echo "#[INFO] System EPEL Repository package downloaded from YUM repository"; \
+	yum $YUM_PARAM install -y --nogpgcheck --downloadonly --downloaddir=$SOURCES/$SOURCES_FOLDER/system/ epel-release; \
+	echo "#[INFO] System EPEL Repository package downloaded from YUM repository"; \
 	fi && \
 	if ls $SOURCES/$SOURCES_FOLDER/system/epel-release-*.rpm 1> /dev/null 2>&1; then \
-		yum $YUM_PARAM localinstall -y --nogpgcheck $SOURCES/$SOURCES_FOLDER/system/epel-release-*.rpm; \
-		echo "#[INFO] System EPEL Repository package enabled"; \
+	yum $YUM_PARAM localinstall -y --nogpgcheck $SOURCES/$SOURCES_FOLDER/system/epel-release-*.rpm; \
+	echo "#[INFO] System EPEL Repository package enabled"; \
 	else \
-		echo "#[WARNING] System fail enable EPEL Repository"; \
+	echo "#[WARNING] System fail enable EPEL Repository"; \
 	fi && \
 	# Update YUM \
 	echo "#[INFO] System packages update from YUM Repository" && \
@@ -305,55 +303,20 @@ RUN echo "#[INFO] SYSTEM YUM installation - and download" && \
 ##########
 
 
-# PYTHON installation
-RUN	echo "#[INFO] SYSTEM Python packages installation - download from REPO '$REPO'" && \
-	# Python release
-	ln -s /usr/bin/python3 /usr/bin/python && \
-	# Create Python packages folder
-	mkdir -p $SOURCES/$SOURCES_FOLDER/python/build && \
-	# in GIT mode
-	if wget --progress=bar:force --tries=3 $REPO_PYTHON_GIT -O $SOURCES/$SOURCES_FOLDER/python/build/STARK-repo.sources.python.tar.gz; then \
-		if tar xf $SOURCES/$SOURCES_FOLDER/python/build/STARK-repo.sources.python.tar.gz -C $SOURCES/$SOURCES_FOLDER/python/build/; then \
-			rsync -auczqAXhi --no-links --no-perms --no-owner --no-group $SOURCES/$SOURCES_FOLDER/python/build/STARK-repo.sources.python*/sources/system/* $SOURCES/$SOURCES_FOLDER/python/; \
-			echo "#[INFO] System Python packages downloaded from REPO '$REPO' (GIT)"; \
-		else \
-			echo "#[WARNING] System fail to uncompress Python packages from REPO '$REPO'"; \
-		fi; \
-	# in HTTP mode
-	elif wget --progress=bar:force --tries=3 -r --no-parent $REPO_PYTHON_HTTP -x --directory-prefix=$SOURCES/$SOURCES_FOLDER/python/build/STARK-repo.sources.system/; then \
-		rsync -auczqAXhi --no-links --no-perms --no-owner --no-group $SOURCES/$SOURCES_FOLDER/system/build/STARK-repo.sources.system*/sources/python/* $SOURCES/$SOURCES_FOLDER/python/; \
-		echo "#[INFO] System Python packages downloaded from REPO '$REPO' (FTP/HTTP)"; \
-	else \
-		echo "#[WARNING] System fail Python packages download from REPO '$REPO'"; \
-	fi && \
-	rm -rf $SOURCES/$SOURCES_FOLDER/python/build && \
-	# Install Python packages locally \
-	echo "#[INFO] System Python packages installation locally" && \
-	if ls $SOURCES/$SOURCES_FOLDER/python/2/*whl 1> /dev/null 2>&1; then \
-		pip2 --no-cache-dir install $SOURCES/$SOURCES_FOLDER/python/2/*whl ; \
-	fi && \
-	if ls $SOURCES/$SOURCES_FOLDER/python/3/*whl 1> /dev/null 2>&1; then \
-		pip3 --no-cache-dir install $SOURCES/$SOURCES_FOLDER/python/3/*whl ; \
-	fi && \
-	# Update PIP \
-	echo "#[INFO] System Python packages update from PIP Repository" && \
-	python -m pip  --no-cache-dir install --upgrade pip && \
-	echo "#[INFO] System Python packages downloaded & updated from PIP Repository" && \
-	echo "#[INFO] System Python packages install from PIP Repository" && \
-	if (( $(echo $PYTHON_MODULE | wc -w | tr -d " ") )); then \
-		python -m pip --no-cache-dir download $PYTHON_MODULE --dest $SOURCES/$SOURCES_FOLDER/python/3/ ; \
-		python -m pip --no-cache-dir install $SOURCES/$SOURCES_FOLDER/python/3/*whl ; \
-	fi && \
-	echo "#[INFO] System Python packages downloaded & installed from PIP Repository" && \
-	# CLEAN
-	echo "#[INFO] System Cleaning" && \
-	if (($REMOVE_SOURCES)); then \
-		rm -rf $SOURCES/$SOURCES_FOLDER/system $SOURCES/$SOURCES_FOLDER/python  ; \
-		echo "#[INFO] System Remove Sources" ; \
-	fi && \
-	echo "#[INFO] System Clean" && \
-	echo "#";
-
+RUN curl -L -O "https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-$(uname)-$(uname -m).sh"
+RUN bash Mambaforge-$(uname)-$(uname -m).sh -b
+RUN rm -f Mambaforge-$(uname)-$(uname -m).sh
+ENV MAMBA="/root/mambaforge/bin/mamba"
+ENV PIP="/root/mambaforge/bin/pip"
+RUN $MAMBA init
+RUN $PIP install $PYTHON_MODULE  && $PIP cache purge
+RUN $MAMBA install -y -c bioconda -c conda-forge R r-biocmanager r-cowplot r-argparse r-ranger r-tidyverse umi_tools~=1.1.4 && $MAMBA clean -afy
+RUN ln -s /root/mambaforge/bin/python /usr/local/bin/python ;
+RUN ln -s /root/mambaforge/bin/python3 /usr/local/bin/python3 ;
+RUN ln -s /root/mambaforge/bin/pip /usr/local/bin/pip ;
+RUN ln -s /root/mambaforge/bin/pip3 /usr/local/bin/pip3 ;
+RUN ln -s /root/mambaforge/bin/R /usr/local/bin/R ;
+RUN ln -s /root/mambaforge/bin/Rscript /usr/local/bin/Rscript ;
 
 
 ########
@@ -457,26 +420,6 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
 
 
-
-
-##########
-# PYTHON #
-##########
-
-ENV TOOL_NAME="python"
-ENV TOOL_VERSION="3"
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-	mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
-	ln -s /usr/bin/python3 $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python3 && \
-	ln -s python3 $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python && \
-	ln -s /usr/bin/pip3 $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/pip3 && \
-	ln -s pip3 $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/pip && \
-	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
-
-
-
-
 ################
 # TOOLS EXTERN #
 ################
@@ -504,12 +447,12 @@ ENV TOOL_PARAM_DATABASE_FOLDER=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/databases/
 RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	source $TOOL_INIT && \
 	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
-    cp $TOOL_SOURCE_BUILD/*/*.pl $TOOL_DEST/bin/ -R && \
+	cp $TOOL_SOURCE_BUILD/*/*.pl $TOOL_DEST/bin/ -R && \
 	echo "#[INFO] TOOL databases configuration" && \
 	mkdir -p $TOOL_PARAM_DATABASE_FOLDER_LINK && \
 	mkdir -p $TOOL_PARAM_DATABASE_FOLDER && \
 	ln -s $TOOL_PARAM_DATABASE_FOLDER_LINK $TOOL_PARAM_DATABASE_FOLDER && \
-    $TOOL_CHECK ;
+	$TOOL_CHECK ;
 
 
 
@@ -533,7 +476,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	make install --quiet -j $THREADS -C $(ls -d $TOOL_SOURCE_BUILD/*) prefix=$TOOL_DEST && \
 	$TOOL_CHECK ;
 
-    
+
 
 ############
 # BCFTOOLS #
@@ -572,8 +515,8 @@ ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	source $TOOL_INIT && \
 	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
-    rpm -ih $TOOL_SOURCE_BUILD/*.rpm --excludedocs --prefix=$TOOL_DEST && \
-    $TOOL_CHECK ;
+	rpm -ih $TOOL_SOURCE_BUILD/*.rpm --excludedocs --prefix=$TOOL_DEST && \
+	$TOOL_CHECK ;
 
 
 
@@ -594,7 +537,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	source $TOOL_INIT && \
 	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
 	make install --quiet -j $THREADS -C $(ls -d $TOOL_SOURCE_BUILD/*) prefix=$TOOL_DEST && \
-    $TOOL_CHECK ;
+	$TOOL_CHECK ;
 
 
 
@@ -616,7 +559,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
 	cp $TOOL_SOURCE_BUILD/*/bowtie2* $TOOL_DEST/bin/ && \
 	rm -f $TOOL_DEST/bin/*debug && \
-    $TOOL_CHECK ;
+	$TOOL_CHECK ;
 
 
 
@@ -639,7 +582,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
 	make --quiet -j $THREADS -C $(ls -d $TOOL_SOURCE_BUILD/*) && \
 	cp $TOOL_SOURCE_BUILD/*/bwa $TOOL_DEST/bin/ && \
-    $TOOL_CHECK ;
+	$TOOL_CHECK ;
 
 
 
@@ -660,7 +603,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	source $TOOL_INIT && \
 	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
 	cp $TOOL_SOURCE_BUILD/*/bwa-mem2 $TOOL_DEST/bin/ && \
-    $TOOL_CHECK ;
+	$TOOL_CHECK ;
 
 
 
@@ -681,7 +624,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	source $TOOL_INIT && \
 	cp $TOOL_SOURCE $TOOL_DEST/bin/ && \
 	chmod a+x $TOOL_DEST/bin/* && \
-    $TOOL_CHECK ;
+	$TOOL_CHECK ;
 
 
 
@@ -703,7 +646,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
 	cp -R $TOOL_SOURCE_BUILD/*/* $TOOL_DEST/ && \
 	chmod a+x $TOOL_DEST/bin/* && \
-    $TOOL_CHECK ;
+	$TOOL_CHECK ;
 
 
 
@@ -725,7 +668,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	source $TOOL_INIT && \
 	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
 	cp -R $TOOL_SOURCE_BUILD/gatk-$TOOL_VERSION/* $TOOL_DEST/bin/ && \
-    $TOOL_CHECK ;
+	$TOOL_CHECK ;
 
 
 
@@ -747,7 +690,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	source $TOOL_INIT && \
 	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
 	cp -R $TOOL_SOURCE_BUILD/*/$TOOL_JAR $TOOL_DEST/bin/ && \
-    $TOOL_CHECK ;
+	$TOOL_CHECK ;
 
 
 
@@ -775,7 +718,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	mkdir -p $TOOL_PARAM_DATABASE_FOLDER_LINK && \
 	mkdir -p $TOOL_PARAM_DATABASE_FOLDER && \
 	ln -s $DATABASES $TOOL_DATABASE_FOLDER && \
-    $TOOL_CHECK ;
+	$TOOL_CHECK ;
 
 
 
@@ -797,7 +740,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	source $TOOL_INIT && \
 	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
 	cp -R $TOOL_SOURCE_BUILD/*/* $TOOL_DEST/bin/ && \
-    $TOOL_CHECK ;
+	$TOOL_CHECK ;
 
 
 
@@ -818,7 +761,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	source $TOOL_INIT && \
 	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
 	cp -R $TOOL_SOURCE_BUILD/*/* $TOOL_DEST/bin/ && \
-    $TOOL_CHECK ;
+	$TOOL_CHECK ;
 
 
 
@@ -841,7 +784,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	source $TOOL_INIT && \
 	unzip -q $TOOL_SOURCE -d $TOOL_DEST/bin/ && \
 	mv $TOOL_DEST/bin/$TARBALL_JAR $TOOL_DEST/bin/$TOOL_JAR && \
-    $TOOL_CHECK ;
+	$TOOL_CHECK ;
 
 
 
@@ -862,7 +805,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	source $TOOL_INIT && \
 	cp $TOOL_SOURCE -d $TOOL_DEST/bin/ && \
 	chmod a+x $TOOL_DEST/bin/*.py && \
-    $TOOL_CHECK ;
+	$TOOL_CHECK ;
 
 
 
@@ -882,7 +825,7 @@ ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	source $TOOL_INIT && \
 	cp $TOOL_SOURCE $TOOL_DEST/bin/ && \
-    $TOOL_CHECK ;
+	$TOOL_CHECK ;
 
 
 
@@ -931,55 +874,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	cp $TOOL_SOURCE_BUILD/*/*config $TOOL_DEST/bin/ && \
 	mkdir -p $TOOL_PARAM_DATABASE_FOLDER_LINK && \
 	ln -snf $TOOL_PARAM_DATABASE_FOLDER_LINK/ $TOOL_PARAM_DATABASE_FOLDER && \
-    $TOOL_CHECK ;
-
-
-
-##########
-# FGBIO #
-##########
-# https://github.com/fulcrumgenomics/fgbio/releases/download/1.3.0/fgbio-1.3.0.jar
-
-# # TOOL INFO
-# ENV TOOL_NAME="fgbio"
-# ENV TOOL_VERSION="2.0.2"
-# ENV TOOL_TARBALL="fgbio.jar"
-# ENV TOOL_SOURCE_EXTERNAL="https://github.com/fulcrumgenomics/fgbio/releases/download/$TOOL_VERSION/fgbio-$TOOL_VERSION.jar"
-# ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-# # TOOL PARAMETERS
-
-# # TOOL INSTALLATION
-# RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-# 	source $TOOL_INIT && \
-# 	cp $TOOL_SOURCE $TOOL_DEST/bin/ && \
-# 	chmod a+x $TOOL_DEST/bin/* && \
-# 	$TOOL_CHECK ;
-
-
-
-#############
-# UMI_TOOLS #
-#############
-# pip install umi_tools
-# https://github.com/CGATOxford/UMI-tools/archive/1.1.2.zip
-
-# TOOL INFO
-ENV TOOL_NAME="umi_tools"
-ENV TOOL_VERSION="1.1.4"
-ENV TOOL_TARBALL="$TOOL_VERSION.zip"
-ENV TOOL_SOURCE_EXTERNAL="https://github.com/CGATOxford/UMI-tools/archive/$TOOL_VERSION.zip"
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-# TOOL PARAMETERS
-
-# TOOL INSTALLATION
-RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-	source $TOOL_INIT && \
-	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
-	pip3 install umi_tools==$TOOL_VERSION && \
-	ln -s /usr/local/bin/umi_tools $TOOL_DEST/bin/umi_tools && \
-	chmod a+x $TOOL_DEST/bin/* && \
 	$TOOL_CHECK ;
-
 
 
 #############
@@ -1022,7 +917,24 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	source $TOOL_INIT && \
 	cp $TOOL_SOURCE $TOOL_DEST/bin/ && \
 	ln -s $(basename $TOOL_SOURCE) $TOOL_DEST/bin/$TOOL_PARAM_JAR_NAME && \
-    $TOOL_CHECK ;
+	$TOOL_CHECK ;
+
+
+
+##################
+# variantconvert #
+##################
+
+# INFO
+ENV TOOL_NAME="variantconvert"
+ENV TOOL_VERSION="pypi"
+# INSTALLATION
+ENV INSTALL_DIR=/usr/lib
+WORKDIR $INSTALL_DIR
+RUN git clone https://github.com/SamuelNicaise/variantconvert.git && cd $TOOL_NAME && git fetch && git checkout $TOOL_VERSION && $PIP install -e . && $PIP cache purge
+RUN python $INSTALL_DIR/$TOOL_NAME/src/$TOOL_NAME/__main__.py init
+RUN python $INSTALL_DIR/$TOOL_NAME/src/$TOOL_NAME/__main__.py config --set GENOME.path=/STARK/databases/genomes/current/hg19.fa --configFiles hg19/*.json
+WORKDIR $WORKDIR
 
 
 
@@ -1077,7 +989,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 RUN echo "#[INFO] Cleaning" && \
 	yum erase -y $YUM_REMOVE && \
 	yum clean all && \
-    rm -rf /var/cache/yum && \
+	rm -rf /var/cache/yum && \
 	rm -rf $WORKDIR/* && \
 	rm -rf /tmp/* && \
 	if (($REMOVE_SOURCES)); then rm -rf $SOURCES; fi;

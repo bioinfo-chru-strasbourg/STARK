@@ -115,8 +115,21 @@ REPORT_SECTIONS?=ALL
 %.merge.vcf: %.final_variants_files_vcf_gz $(BAM) %.genome
 	# Generate pipeline name list
 	cat $< | rev | cut -d/ -f1 | rev | sed s/\.vcf.gz//gi | cut -d. -f2- > $@.pipelines
-	# Merge VCF, noramize and rehead with pipelines names
-	$(BCFTOOLS) merge --threads=$(THREADS_BY_SAMPLE)  -l $< --force-samples -m none --info-rules - | $(BCFTOOLS) norm --threads=$(THREADS_BY_SAMPLE)  -m- -f $$(cat $*.genome) | $(BCFTOOLS) norm --threads=$(THREADS_BY_SAMPLE) --rm-dup exact | $(BCFTOOLS) +fill-tags -- -t AN,AC,AF,AC_Hemi,AC_Hom,AC_Het,ExcHet,HWE,MAF,NS | $(BCFTOOLS) reheader --threads=$(THREADS_BY_SAMPLE)  -s $@.pipelines > $@.tmp.merged.vcf;
+	# Merge VCF, normalize and rehead with pipelines names
+	# bcftools norm -f <ref> <vcf> is not compatible with breakends. Do that treatment separately.
+	# merge | keep only breakends
+	$(BCFTOOLS) merge --threads=$(THREADS_BY_SAMPLE) -l $< --force-samples -m none --info-rules - | $(BCFTOOLS) view -i 'INFO/SVTYPE="BND"' > $@.bnd_only.tmp.vcf
+	$(BGZIP) $@.bnd_only.tmp.vcf
+	$(TABIX) $@.bnd_only.tmp.vcf.gz
+	# merge | exclude breakends | do the bcftools norm that crashes on breakends
+	$(BCFTOOLS) merge --threads=$(THREADS_BY_SAMPLE) -l $< --force-samples -m none --info-rules - | $(BCFTOOLS) view -e 'INFO/SVTYPE="BND"' | $(BCFTOOLS) norm --threads=$(THREADS_BY_SAMPLE) -m- -f $$(cat $*.genome) > $@.all_except_bnd.tmp.vcf
+	$(BGZIP) $@.all_except_bnd.tmp.vcf
+	$(TABIX) $@.all_except_bnd.tmp.vcf.gz
+	# merge the two above | rest of normalization
+	$(BCFTOOLS) concat $@.bnd_only.tmp.vcf.gz $@.all_except_bnd.tmp.vcf.gz -a | $(BCFTOOLS) sort | $(BCFTOOLS) norm --threads=$(THREADS_BY_SAMPLE) --rm-dup exact | $(BCFTOOLS) +fill-tags -- -t AN,AC,AF,AC_Hemi,AC_Hom,AC_Het,ExcHet,HWE,MAF,NS | $(BCFTOOLS) reheader --threads=$(THREADS_BY_SAMPLE) -s $@.pipelines > $@.tmp.merged.vcf; 
+	rm -f $@.bnd_only.tmp.vcf $@.all_except_bnd.tmp.vcf
+	# | $(BCFTOOLS) view --exclude 'FORMAT/GT="0/0"'
+	# | $(BCFTOOLS) +setGT  -- -t . -n 0 
 	# header file
 	echo -e '##INFO=<ID=Validation_Depth_Flags,Number=.,Type=String,Description="Depth metrics flag from BAM validation">' > $@.tmp.annotate.Validation_Depth_Flags.hdr;
 	echo -e '##INFO=<ID=Validation_Depth,Number=.,Type=Float,Description="Depth metrics from BAM validation">' > $@.tmp.annotate.Validation_Depth.hdr;
@@ -130,7 +143,7 @@ REPORT_SECTIONS?=ALL
 	if ((1)); then \
 		if (( $$(ls $$(dirname $$(dirname $@))/*bam.metrics/*.validation.flags.Design.bed | wc -l) )) || (( $$(ls $$(dirname $$(dirname $@))/*bam.metrics/*.design.bed.HsMetrics.per_base_coverage.gz | wc -l) )); then \
 			if (( $$(ls $$(dirname $$(dirname $@))/*bam.metrics/*.validation.flags.Design.bed | wc -l) )); then \
-				cat $$(dirname $$(dirname $@))/*bam.metrics/*.validation.flags.Design.bed | sort -k1,1 -k2,2 | $(BEDTOOLS) merge -c 10 -o distinct | $(BGZIP) --threads=$(THREADS_BY_SAMPLE) -c --index --index-name $@.tmp.flags.bed.gz.tbi > $@.tmp.flags.bed.gz; \
+				cat $$(dirname $$(dirname $@))/*bam.metrics/*.validation.flags.Design.bed | sort -k1,1 -k2,2 | $(BEDTOOLS) merge --threads=$(THREADS_BY_SAMPLE) -c 10 -o distinct | $(BGZIP) --threads=$(THREADS_BY_SAMPLE) -c --index --index-name $@.tmp.flags.bed.gz.tbi > $@.tmp.flags.bed.gz; \
 				$(BCFTOOLS) annotate --threads=$(THREADS_BY_SAMPLE) -a $@.tmp.flags.bed.gz -h $@.tmp.annotate.Validation_Depth_Flags.hdr -c CHROM,POS,TO,INFO/Validation_Depth_Flags -l Validation_Depth_Flags:unique $@.tmp.merged.reheaded.vcf > $@.tmp.merged.reheaded.flags.vcf; \
 			else \
 				cp $@.tmp.merged.reheaded.vcf $@.tmp.merged.reheaded.flags.vcf; \

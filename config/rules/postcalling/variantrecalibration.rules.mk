@@ -66,7 +66,7 @@ VARIANTRECALIBRATOR_INDEL_OPTIONS?=$(VARIANTRECALIBRATION_INDEL_RESOURCES_OPTION
 			-O $@ \
 			--recal-file $@.tmp.SNP.recal.vcf \
 			--tranches-file $@.tmp.SNP.tranches \
-			--truth-sensitivity-filter-level 0.0 \
+			--truth-sensitivity-filter-level 99.0 \
 			--mode SNP; \
 	else \
 		echo "[WARNING] No ApplyVQRS on SNP due to resources error or lack of variant in the input callset"; \
@@ -123,7 +123,7 @@ VARIANTRECALIBRATOR_INDEL_OPTIONS?=$(VARIANTRECALIBRATION_INDEL_RESOURCES_OPTION
 			-O $@ \
 			--recal-file $@.tmp.InDel.recal.vcf \
 			--tranches-file $@.tmp.InDel.tranches \
-			--truth-sensitivity-filter-level 0.0 \
+			--truth-sensitivity-filter-level 99.0 \
 			--mode INDEL; \
 	else \
 		echo "[WARNING] No ApplyVQRS on INDEL due to resources error or lack of variant in the input callset"; \
