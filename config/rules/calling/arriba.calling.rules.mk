@@ -25,7 +25,7 @@
 		-o $@ \
 		-fi breakpoints \
 		-fo vcf \
-		-c /STARK/data/variantconvert/configs/HUS/arriba.json
+		-c $(ASSEMBLY)/arriba.json
 
 # CONFIG/RELEASE
 RELEASE_COMMENT := "\#\# CALLING Arriba '$(MK_RELEASE)': Tool to detect fusions based on RNA-Seq data"

@@ -20,7 +20,7 @@
 		-o $@ \
 		-fi breakpoints \
 		-fo vcf \
-		-c /STARK/data/variantconvert/configs/HUS/starfusion.json;
+		-c $(ASSEMBLY)/starfusion.json;
 
 # CONFIG/RELEASE
 RELEASE_COMMENT := "\#\# CALLING STARFusion '$(MK_RELEASE)': CTAT Tool to detect fusions based on RNA-Seq data"

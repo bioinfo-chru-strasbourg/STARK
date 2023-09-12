@@ -921,6 +921,23 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 
 
+##################
+# variantconvert #
+##################
+
+# INFO
+ENV TOOL_NAME="variantconvert"
+ENV TOOL_VERSION="pypi"
+# INSTALLATION
+ENV INSTALL_DIR=/usr/lib
+WORKDIR $INSTALL_DIR
+RUN git clone https://github.com/SamuelNicaise/variantconvert.git && cd $TOOL_NAME && git fetch && git checkout $TOOL_VERSION && $PIP install -e . && $PIP cache purge
+RUN python $INSTALL_DIR/$TOOL_NAME/src/$TOOL_NAME/__main__.py init
+RUN python $INSTALL_DIR/$TOOL_NAME/src/$TOOL_NAME/__main__.py config --set GENOME.path=/STARK/databases/genomes/current/hg19.fa --configFiles hg19/*.json
+WORKDIR $WORKDIR
+
+
+
 #########
 # STARK #
 #########
