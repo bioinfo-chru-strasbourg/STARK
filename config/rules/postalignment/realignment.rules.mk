@@ -91,7 +91,7 @@ GATKIndelRealignerOptions= -known $(VCFDBSNP) --LODThresholdForCleaning 2.0 -com
 #%.bam: %.realignment.bam %.realignment.bam.bai %.realignment.from_manifest.intervals %.genome
 %.bam: %.realignment.bam %.realignment.bam.bai %.realignment.design.bed %.genome
 	# RealignerTargetCreator 
-	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKRealignerTargetCreatorFLAGS) $(GATKRealignerTargetCreatorOptions) \
+	$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) $(GATKRealignerTargetCreatorFLAGS) $(GATKRealignerTargetCreatorOptions) \
 			-T RealignerTargetCreator \
 			-R $$(cat $*.genome) \
 			-I $< \
@@ -106,7 +106,7 @@ GATKIndelRealignerOptions= -known $(VCFDBSNP) --LODThresholdForCleaning 2.0 -com
 		for chr in $$($(SAMTOOLS) idxstats $< | grep -v "\*" | awk '{ if ($$3+$$4>0) print $$1 }'); do \
 			#echo $$chr  >> $*.realignment.mk; \
 			echo "$*.for_realignment.$$chr.bam: $*.realignment.bam" >> $*.realignment1.mk; \
-			echo "	$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKIndelRealignerFLAGS) -T IndelRealigner -R $$(cat $*.genome) -I $*.realignment.bam -o $*.for_realignment.$$chr.bam -targetIntervals $*.for_realignment.RealignerTargetCreator.intervals $(GATKIndelRealignerOptions) -L $$chr" >> $*.realignment1.mk; \
+			echo "	$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) $(GATKIndelRealignerFLAGS) -T IndelRealigner -R $$(cat $*.genome) -I $*.realignment.bam -o $*.for_realignment.$$chr.bam -targetIntervals $*.for_realignment.RealignerTargetCreator.intervals $(GATKIndelRealignerOptions) -L $$chr" >> $*.realignment1.mk; \
 			echo -n " $*.for_realignment.$$chr.bam " >> $*.realignment2.mk; \
 		done; \
 		echo -n "$@: " | cat - $*.realignment2.mk > $*.realignment3.mk; \

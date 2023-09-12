@@ -920,6 +920,88 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	$TOOL_CHECK ;
 
 
+########
+# STAR #
+########
+
+# https://github.com/alexdobin/STAR/archive/refs/tags/2.7.8a.zip
+# TOOL INFO
+ENV TOOL_NAME="STAR"
+#ENV TOOL_VERSION="2.7.10a"
+ENV TOOL_VERSION="2.7.8a"
+ENV TOOL_TARBALL="$TOOL_VERSION.zip"
+ENV TOOL_SOURCE_EXTERNAL="https://github.com/alexdobin/$TOOL_NAME/archive/refs/tags/$TOOL_TARBALL"
+ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+# TOOL PARAMETERS
+# TOOL INSTALLATION
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
+	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
+	ls && \
+	cd $TOOL_SOURCE_BUILD/$TOOL_NAME-$TOOL_VERSION/source && \
+	make STAR && \
+	cp STAR $TOOL_DEST/bin/ && \
+	#mkdir $TOOL_DEST/scripts/ && \
+	#cp -R $TOOL_SOURCE_BUILD/$TOOL_NAME-$TOOL_VERSION/extras/scripts/ $TOOL_DEST/scripts/ && \
+	$TOOL_CHECK ;
+
+###############
+# STAR FUSION #
+###############
+
+# https://github.com/STAR-Fusion/STAR-Fusion/releases/download/STAR-Fusion-v1.10.1/STAR-Fusion.v1.10.1.tar.gz
+# Compatibility with STAR v2.7.8a
+
+# TOOL INFO
+ENV TOOL_NAME="STAR-Fusion"
+ENV TOOL_VERSION="1.10.1"
+ENV TOOL_TARBALL="$TOOL_NAME.v$TOOL_VERSION.tar.gz"
+ENV TOOL_SOURCE_EXTERNAL="https://github.com/$TOOL_NAME/$TOOL_NAME/releases/download/$TOOL_NAME-v$TOOL_VERSION/$TOOL_TARBALL"
+ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+# TOOL PARAMETERS
+# TOOL INSTALLATION
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
+	tar xvf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
+	cd  $TOOL_SOURCE_BUILD/$TOOL_NAME.v$TOOL_VERSION/ && \
+	make && \
+	cp -r * $TOOL_DEST/bin/ && \
+	$TOOL_CHECK ;
+
+## FusionInspector now included with STAR-Fusion
+## Interval Tree is included with STAR-Fusion
+
+
+##########
+# ARRIBA #
+##########
+
+# https://github.com/suhrig/arriba/releases/download/v2.1.0/arriba_v2.1.0.tar.gz
+
+# TOOL INFO
+ENV TOOL_NAME="arriba"
+ENV TOOL_VERSION="2.2.1"
+ENV TOOL_TARBALL=$TOOL_NAME"_v"$TOOL_VERSION".tar.gz"  
+ENV TOOL_SOURCE_EXTERNAL="https://github.com/suhrig/$TOOL_NAME/releases/download/v$TOOL_VERSION/$TOOL_TARBALL"
+ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+# TOOL PARAMETERS
+
+# TOOL INSTALLATION
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
+	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
+	mkdir -p $TOOL_DEST/database/ && \
+	cp $TOOL_SOURCE_BUILD/$TOOL_NAME"_v"$TOOL_VERSION/database/* $TOOL_DEST/database/ && \
+	cp $TOOL_SOURCE_BUILD/$TOOL_NAME"_v"$TOOL_VERSION/$TOOL_NAME $TOOL_DEST/bin/ && \
+	chmod a+x $TOOL_DEST/bin/* && \
+	mkdir -p $TOOL_DEST/scripts/ && \
+	cp $TOOL_SOURCE_BUILD/$TOOL_NAME"_v"$TOOL_VERSION/*.{sh,R} $TOOL_DEST/scripts/ && \
+	chmod a+x $TOOL_DEST/scripts/*.sh && \
+	$TOOL_CHECK ;
+
+
+
+
 
 ##################
 # variantconvert #

@@ -43,18 +43,16 @@ TOOLS_LIST=$TOOLS_LIST" JAVA17"
 
 
 # PYTHON
-export PYTHON=$NGS_TOOLS/python/current/bin/python	# BIN
-export PYTHON_PATH==$NGS_TOOLS/python/current/bin	# FOLDER
-export PYTHON_VERSION=current						# VER
+export PYTHON=python	# BIN
+export PYTHON_VERSION=$(python --version)						# VER
 export PYTHON_DESCRIPTION="Python is a programming language that lets you work quickly and integrate systems more efficiently"
 export PYTHON_REF="http://python.com"
 TOOLS_LIST=$TOOLS_LIST" PYTHON"
 
 
 # PYTHON3
-export PYTHON3=$NGS_TOOLS/python/3/bin/python3		# BIN
-export PYTHON3_PATH==$NGS_TOOLS/python/3/bin		# FOLDER
-export PYTHON3_VERSION=current						# VER
+export PYTHON3=python		# BIN
+export PYTHON3_VERSION=$(python --version)						# VER
 export PYTHON3_DESCRIPTION="Python is a programming language that lets you work quickly and integrate systems more efficiently"
 export PYTHON3_REF="http://python.com"
 TOOLS_LIST=$TOOLS_LIST" PYTHON3"
