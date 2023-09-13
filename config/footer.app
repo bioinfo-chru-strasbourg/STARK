@@ -379,7 +379,6 @@ if [ -z $ASSEMBLY ] || [ "$ASSEMBLY" == "" ]; then
 fi;
 export ASSEMBLY
 
-echo "@DEBUG@@@@REF="$REF
 if [ "$REF" == "" ]; then
 	# default REF
 	if [ -s $GENOMES/$ASSEMBLY/$ASSEMBLY.fa ]; then
@@ -392,7 +391,6 @@ if [ "$REF" == "" ]; then
 	fi;
 	export REF
 fi;
-echo "@DEBUG@@@@REF="$REF
 
 
 # REF_CACHE_FOLDER and REF_CACHE and REF_PATH
