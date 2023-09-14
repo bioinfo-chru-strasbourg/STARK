@@ -130,7 +130,7 @@ RUN echo "#[INFO] STARK installation configuration" && \
 ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git make ncurses-devel tbb-devel unzip rsync wget which xz xz-devel zlib zlib-devel docker java-17 java-1.8.0 curl-devel openssl-devel htslib diffutils"
 ENV YUM_REMOVE="autoconf automake bzip2-devel lzma-devel ncurses-devel perl-devel tbb-devel xz-devel zlib-devel zlib2-devel python3-devel curl-devel openssl-devel"
 ENV PYTHON_MODULE=" pathos numpy scipy argparse"
-ENV PERL_INSTALL=" perl perl-Switch perl-Time-HiRes perl-Data-Dumper perl-Digest-MD5 perl-Tk perl-devel "
+ENV PERL_INSTALL=" perl perl-Switch perl-Time-HiRes perl-Data-Dumper perl-Digest-MD5 perl-Tk perl-devel perl-PerlIO-gzip perl-DB_File perl-URI perl-Carp-Assert perl-Archive-Tar perl-Digest-MD5"
 
 ENV REPO_SYSTEM_GIT="$REPO/sources.system.tar.gz?path=sources/system"
 ENV REPO_SYSTEM_HTTP="$REPO/sources/system/"
@@ -334,7 +334,9 @@ RUN	echo "#[INFO] SYSTEM Perl packages installation - download from yum" && \
 	rm -rf /var/cache/yum && \
 	echo "#[INFO] System Clean" && \
 	echo "#";
-
+# JSON-XS isn't found with yum, install with CPAN
+# PERL_MM_USE_DEFAULT makes perl automatically answer "yes" when CPAN asks for configuration
+RUN PERL_MM_USE_DEFAULT=1 && cpan JSON-XS
 
 
 

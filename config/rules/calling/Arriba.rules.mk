@@ -11,9 +11,9 @@
 		-x $< \
 		-a $$(cat $*.genome) \
 		-g $$(cat $*.genome | xargs -0 dirname)/ref_annot.gtf \
-		-k /STARK/tools/arriba/current/database/known_fusions_hg19_hs37d5_GRCh37_v2.2.1.tsv.gz \
-		-b /STARK/tools/arriba/current/database/blacklist_hg19_hs37d5_GRCh37_v2.2.1.tsv.gz \
-		-p /STARK/tools/arriba/current/database/protein_domains_hg19_hs37d5_GRCh37_v2.2.1.gff3 \
+		-k $$(ls $(ARRIBA_DATABASES)/known_fusions_$(ASSEMBLY)_*.tsv.gz) \
+		-b $$(ls $(ARRIBA_DATABASES)/blacklist_$(ASSEMBLY)_*.tsv.gz) \
+		-p $$(ls $(ARRIBA_DATABASES)/protein_domains_$(ASSEMBLY)_*.gff3) \
 		-o $*.arriba.reports/arriba.fusions.tsv \
 		-O $*.arriba.reports/arriba.fusions.discarded.tsv;
 	# rename ...reports/arriba.fusions.tsv to ...reports/<sample>.arriba.fusions.tsv

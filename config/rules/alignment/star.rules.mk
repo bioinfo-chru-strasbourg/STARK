@@ -21,7 +21,7 @@ STAR_FLAGS?=--outSAMtype BAM SortedByCoordinate --chimOutJunctionFormat 1 --outS
 %.star_raw.bam: %.R1$(POST_SEQUENCING).fastq.gz %.R2$(POST_SEQUENCING).fastq.gz %.genome
 	echo "ID:1\tPL:ILLUMINA\tPU:PU\tLB:001\tSM:$(*F)" > $@.RG_STAR
 	$(PYTHON3) $(STARK_FOLDER_BIN)/functions.py launch \
-					--cmd "STAR --genomeDir $$(cat $*.genome | xargs -0 dirname)/ref_genome.fa.star.idx/ \
+					--cmd "STAR --genomeDir $$CTAT_DATABASES/ref_genome.fa.star.idx/ \
 							--runThreadN 14 \
 							--readFilesIn $*.R1$(POST_SEQUENCING).fastq.gz $*.R2$(POST_SEQUENCING).fastq.gz \
 							--readFilesCommand zcat \
@@ -31,13 +31,13 @@ STAR_FLAGS?=--outSAMtype BAM SortedByCoordinate --chimOutJunctionFormat 1 --outS
 					--target $@ \
 					--max_jobs $(MAX_CONCURRENT_ALIGNMENTS_STAR);
 	# fix issue with base recalibration and rename output
-	$(JAVA11) $(JAVA_FLAGS) -jar $(PICARD) AddOrReplaceReadGroups $(PICARD_FLAGS) \
+	$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) AddOrReplaceReadGroups $(PICARD_FLAGS) \
 		-I $@.Aligned.sortedByCoord.out.bam \
 		-O $@ -COMPRESSION_LEVEL 1 -RGSM $(*F);
 	-rm -rf $@.Aligned.sortedByCoord.out.bam $@.RG_STAR $@._STARgenome $@._STARpass1
 
 %.bam: %.splitncigar.bam %.splitncigar.bam.bai %.genome
-	$(JAVA11) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) SplitNCigarReads -R $$(cat $*.genome) -I $< -O $@
+	$(JAVA) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) SplitNCigarReads -R $$(cat $*.genome) -I $< -O $@
 
 %.star.junction: %.star_raw.bam
 	mv $<.Chimeric.out.junction $@
