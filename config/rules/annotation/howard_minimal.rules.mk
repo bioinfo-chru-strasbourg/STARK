@@ -45,7 +45,7 @@ HOWARD_NOMEN_FIELDS?="hgvs"
 	# Prevent comma in description in vcf header
 	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$< --output=$@.tmp --threads=$(THREADS_BY_CALLER) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
 	# Annotation step
-	#+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp --output=$@ --annotation=$(HOWARD_ANNOTATION_MINIMAL) --calculation=$(HOWARD_CALCULATION_MINIMAL) --transcripts=$*.transcripts --nomen_fields=$(HOWARD_NOMEN_FIELDS)  --norm=$$(cat $*.genome);
+	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp --output=$@ --annotation=$(HOWARD_ANNOTATION_MINIMAL) --calculation=$(HOWARD_CALCULATION_MINIMAL) --transcripts=$*.transcripts --nomen_fields=$(HOWARD_NOMEN_FIELDS)  --norm=$$(cat $*.genome);
 	cp $@.tmp $@
 	-if [ ! -e $@ ]; then cp $*.empty.vcf $@; fi;
 	# Downgrading VCF format 4.2 to 4.1
