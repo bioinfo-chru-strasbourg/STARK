@@ -17,11 +17,12 @@ MK_DATE="24/08/2022"
 
 MAX_CONCURRENT_ALIGNMENTS_STAR?=1
 STAR_FLAGS?=--outSAMtype BAM SortedByCoordinate --chimOutJunctionFormat 1 --outSAMunmapped Within --outBAMcompression 0 --outFilterMultimapNmax 50 --peOverlapNbasesMin 10 --alignSplicedMateMapLminOverLmate 0.5 --alignSJstitchMismatchNmax 5 -1 5 5 --chimSegmentMin 10 --chimOutType Junctions WithinBAM --chimJunctionOverhangMin 10 --chimScoreDropMax 30 --chimScoreJunctionNonGTAG 0 --chimScoreSeparation 1 --chimSegmentReadGapMax 3 --chimMultimapNmax 50 --twopassMode Basic --quantMode TranscriptomeSAM GeneCounts --quantTranscriptomeBan Singleend
+# CTAT_DATABASES=$DBFOLDER/CTAT_LIB/current
 
-%.star_raw.bam: %.R1$(POST_SEQUENCING).fastq.gz %.R2$(POST_SEQUENCING).fastq.gz %.genome
+%.star_raw.bam: %.R1$(POST_SEQUENCING).fastq.gz %.R2$(POST_SEQUENCING).fastq.gz
 	echo "ID:1\tPL:ILLUMINA\tPU:PU\tLB:001\tSM:$(*F)" > $@.RG_STAR
 	$(PYTHON3) $(STARK_FOLDER_BIN)/functions.py launch \
-					--cmd "STAR --genomeDir $$CTAT_DATABASES/ref_genome.fa.star.idx/ \
+					--cmd "STAR --genomeDir $$CTAT_DATABASES/$ASSEMBLY/$(dirname $GENOME).star.idx/ \
 							--runThreadN 14 \
 							--readFilesIn $*.R1$(POST_SEQUENCING).fastq.gz $*.R2$(POST_SEQUENCING).fastq.gz \
 							--readFilesCommand zcat \
@@ -36,8 +37,8 @@ STAR_FLAGS?=--outSAMtype BAM SortedByCoordinate --chimOutJunctionFormat 1 --outS
 		-O $@ -COMPRESSION_LEVEL 1 -RGSM $(*F);
 	-rm -rf $@.Aligned.sortedByCoord.out.bam $@.RG_STAR $@._STARgenome $@._STARpass1
 
-%.bam: %.splitncigar.bam %.splitncigar.bam.bai %.genome
-	$(JAVA) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) SplitNCigarReads -R $$(cat $*.genome) -I $< -O $@
+%.bam: %.splitncigar.bam %.splitncigar.bam.bai
+	$(JAVA) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) SplitNCigarReads -R $(GENOME) -I $< -O $@
 
 %.star.junction: %.star_raw.bam
 	mv $<.Chimeric.out.junction $@

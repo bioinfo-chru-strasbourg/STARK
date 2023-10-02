@@ -29,10 +29,10 @@ VARIANTFILTRATION_INVALIDATE_PREVIOUS_FILTERS_OPTION?=$(shell if (( $(VARIANTFIL
 ######################
 
 # SNP
-%.POST_CALLING_SNP.vcf: %.variantfiltration.vcf %.genome
+%.POST_CALLING_SNP.vcf: %.variantfiltration.vcf
 	$(JAVA) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
 		SelectVariants \
-		-R $$(cat $*.genome) \
+		-R $(GENOME) \
 		-V $< \
 		--select-type-to-include SNP \
 		--select-type-to-include MIXED \
@@ -42,7 +42,7 @@ VARIANTFILTRATION_INVALIDATE_PREVIOUS_FILTERS_OPTION?=$(shell if (( $(VARIANTFIL
 		-O $@.tmp.SNP.vcf;
 	$(JAVA) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
 		VariantFiltration \
-		-R $$(cat $*.genome) \
+		-R $(GENOME) \
 		-V $@.tmp.SNP.vcf \
 		-O $@.tmp.SNP.invalidate.vcf \
 		$(VARIANTFILTRATION_INVALIDATE_PREVIOUS_FILTERS_OPTION) \
@@ -50,7 +50,7 @@ VARIANTFILTRATION_INVALIDATE_PREVIOUS_FILTERS_OPTION?=$(shell if (( $(VARIANTFIL
 	if [ ! -z '$(VARIANTFILTRATION_SNP_FILTER_OPTION)' ] && [ ! -z '$(VARIANTFILTRATION_SNP_FILTER_EXPRESSION_OPTION)' ]; then \
 		$(JAVA) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
 			VariantFiltration \
-			-R $$(cat $*.genome) \
+			-R $(GENOME) \
 			-V $@.tmp.SNP.invalidate.vcf \
 			-O $@ \
 			--create-output-variant-index false \
@@ -64,16 +64,16 @@ VARIANTFILTRATION_INVALIDATE_PREVIOUS_FILTERS_OPTION?=$(shell if (( $(VARIANTFIL
 
 
 # INDEL
-%.POST_CALLING_InDel.vcf: %.variantfiltration.vcf %.genome
+%.POST_CALLING_InDel.vcf: %.variantfiltration.vcf
 	$(JAVA) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
 		SelectVariants \
-		-R $$(cat $*.genome) \
+		-R $(GENOME) \
 		-V $< \
 		--select-type-to-include INDEL \
 		-O $@.tmp.INDEL.vcf;
 	$(JAVA) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
 		VariantFiltration \
-		-R $$(cat $*.genome) \
+		-R $(GENOME) \
 		-V $@.tmp.INDEL.vcf \
 		-O $@.tmp.INDEL.invalidate.vcf \
 		$(VARIANTFILTRATION_INVALIDATE_PREVIOUS_FILTERS_OPTION) \
@@ -81,7 +81,7 @@ VARIANTFILTRATION_INVALIDATE_PREVIOUS_FILTERS_OPTION?=$(shell if (( $(VARIANTFIL
 	if [ ! -z '$(VARIANTFILTRATION_INDEL_FILTER_OPTION)' ] && [ ! -z '$(VARIANTFILTRATION_INDEL_FILTER_EXPRESSION_OPTION)' ]; then \
 		$(JAVA) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
 			VariantFiltration \
-			-R $$(cat $*.genome) \
+			-R $(GENOME) \
 			-V $@.tmp.INDEL.invalidate.vcf \
 			-O $@ \
 			--create-output-variant-index false \

@@ -318,7 +318,7 @@ fi;
 if [ "$REF_INPUT" != "" ] && [ -e $REF_INPUT ]; then
 	REF="$REF_INPUT"
 fi;
-(($VERBOSE)) && echo "#[INFO] REF '$REF'"
+(($VERBOSE)) && echo "#[INFO] REF '$GENOME'"
 
 
 
@@ -491,7 +491,7 @@ if [ ! -z "$BAM" ]; then
 			(($VERBOSE)) && echo "#[INFO] BAM '$bam_name'"
 			if (($BAM_READ_integrity_checksum)) || [ "$STATS" != "" ]; then
 				(($VERBOSE)) && echo "#[INFO] BAM '$bam_name' BAM READS integrity checksum..."
-				BAM_checksum=$(checksum "$SAMTOOLS fastq -@ $THREADS -O -n --reference $REF $bam 2>/dev/null")
+				BAM_checksum=$(checksum "$SAMTOOLS fastq -@ $THREADS -O -n --reference $GENOME $bam 2>/dev/null")
 				(($VERBOSE)) && echo "#[INFO] BAM '$bam_name' BAM READS integrity checksum '$BAM_checksum'"
 			fi;
 			if [ "$BAM_checksum" == "$FASTQ_checksum" ] || ! (($BAM_READ_integrity_checksum)); then
@@ -501,21 +501,21 @@ if [ ! -z "$BAM" ]; then
 				BAM_FOR_SAMTOOLS=$bam;
 				PRE_SAMTOOLS="";
 				if [ "$REMOVE_TAGS" != "" ]; then
-					PRE_SAMTOOLS=" $SAMTOOLS view -h -@ $THREADS --reference $REF $bam | ";
+					PRE_SAMTOOLS=" $SAMTOOLS view -h -@ $THREADS --reference $GENOME $bam | ";
 					BAM_FOR_SAMTOOLS=" ";
 					#sed 's/\tOQ\:Z\:[^\t]*//'
 					for TAG in $REMOVE_TAGS; do
 						PRE_SAMTOOLS="$PRE_SAMTOOLS sed 's/\t$TAG\:Z\:[^\t]*//' | ";
 					done;
 				fi;
-				SAMTOOLS_CRAM_COMMAND_OPTIONS=" -O CRAM,$CRAM_OPTIONS -@ $THREADS $BAM_FOR_SAMTOOLS --reference $REF $SAMTOOLS_CRAM_INDEX -o $CRAM.cram "
+				SAMTOOLS_CRAM_COMMAND_OPTIONS=" -O CRAM,$CRAM_OPTIONS -@ $THREADS $BAM_FOR_SAMTOOLS --reference $GENOME $SAMTOOLS_CRAM_INDEX -o $CRAM.cram "
 				[ "$SAMTOOLS_CRAM_COMMAND" == "sort" ] && SAMTOOLS_CRAM_COMMAND_OPTIONS=$SAMTOOLS_CRAM_COMMAND_OPTIONS" -T $bam.SAMTOOLS_PREFIX$RANDOM "
 				[ "$SAMTOOLS_CRAM_COMMAND" == "view" ] && SAMTOOLS_CRAM_COMMAND_OPTIONS=$SAMTOOLS_CRAM_COMMAND_OPTIONS" -h "
 				
 				COMMAND="$PRE_SAMTOOLS $SAMTOOLS $SAMTOOLS_CRAM_COMMAND $SAMTOOLS_CRAM_COMMAND_OPTIONS"
 				(($DEBUG)) && echo "#[INFO] COMMAND: $COMMAND "
 				time_start=$(date +%s%3N)
-				#if ! $SAMTOOLS $SAMTOOLS_CRAM_COMMAND -h -O CRAM,$CRAM_OPTIONS -@ $THREADS -T $bam.SAMTOOLS_PREFIX$RANDOM $bam --reference $REF $SAMTOOLS_CRAM_INDEX -o $CRAM.cram 2>/dev/null; then
+				#if ! $SAMTOOLS $SAMTOOLS_CRAM_COMMAND -h -O CRAM,$CRAM_OPTIONS -@ $THREADS -T $bam.SAMTOOLS_PREFIX$RANDOM $bam --reference $GENOME $SAMTOOLS_CRAM_INDEX -o $CRAM.cram 2>/dev/null; then
 				#if ! $SAMTOOLS $SAMTOOLS_CRAM_COMMAND $SAMTOOLS_CRAM_COMMAND_OPTIONS 2>/dev/null ; then
 				if ! eval $COMMAND 2>/dev/null ; then
 					(($VERBOSE)) && echo "#[WARNING] BAM '$bam_name' CRAM generation failed!"
@@ -526,7 +526,7 @@ if [ ! -z "$BAM" ]; then
 				(($VERBOSE)) && echo "#[INFO] BAM '$bam_name' STATS TIME Encode '$CRAM_encode_time'"
 				if (($CRAM_READ_integrity_checksum)) || [ "$STATS" != "" ]; then
 					(($VERBOSE)) && echo "#[INFO] BAM '$bam_name' CRAM READS integrity checksum..."
-					CRAM_checksum=$(checksum "$SAMTOOLS fastq -@ $THREADS -O -n --reference $REF $CRAM.cram 2>/dev/null")
+					CRAM_checksum=$(checksum "$SAMTOOLS fastq -@ $THREADS -O -n --reference $GENOME $CRAM.cram 2>/dev/null")
 					(($VERBOSE)) && echo "#[INFO] BAM '$bam_name' CRAM READS integrity checksum '$CRAM_checksum'"
 				fi;
 				if [ "$CRAM_checksum" == "$FASTQ_checksum" ] || ! (($CRAM_READ_integrity_checksum)); then
@@ -584,7 +584,7 @@ if [ ! -z "$FASTQ" ]; then
 				(($VERBOSE)) && echo "#[INFO] FASTQ '$FASTQ_names' CRAM generation..."
 				[ "$SAMPLE" == "" ] && SAMPLE="unknown"
 				# Options
-				SAMTOOLS_CRAM_COMMAND_OPTIONS=" -O CRAM,$CRAM_OPTIONS -@ $THREADS $CRAM.sam --reference $REF $SAMTOOLS_CRAM_INDEX -o $CRAM.cram "
+				SAMTOOLS_CRAM_COMMAND_OPTIONS=" -O CRAM,$CRAM_OPTIONS -@ $THREADS $CRAM.sam --reference $GENOME $SAMTOOLS_CRAM_INDEX -o $CRAM.cram "
 				[ "$SAMTOOLS_CRAM_COMMAND" == "sort" ] && SAMTOOLS_CRAM_COMMAND_OPTIONS=$SAMTOOLS_CRAM_COMMAND_OPTIONS" -T $CRAM.SAMTOOLS_PREFIX$RANDOM "
 				[ "$SAMTOOLS_CRAM_COMMAND" == "view" ] && SAMTOOLS_CRAM_COMMAND_OPTIONS=$SAMTOOLS_CRAM_COMMAND_OPTIONS" -h "
 				(($DEBUG)) && echo "#[INFO] COMMAND: $SAMTOOLS $SAMTOOLS_CRAM_COMMAND $SAMTOOLS_CRAM_COMMAND_OPTIONS "
@@ -605,7 +605,7 @@ if [ ! -z "$FASTQ" ]; then
 				done;
 				(($VERBOSE)) && echo "#[INFO] FASTQ '$FASTQ_names' CRAM generation..."
 				# Options
-				SAMTOOLS_CRAM_COMMAND_OPTIONS=" -O CRAM,$CRAM_OPTIONS -@ $THREADS --reference $REF $SAMTOOLS_CRAM_INDEX -o $CRAM.cram "
+				SAMTOOLS_CRAM_COMMAND_OPTIONS=" -O CRAM,$CRAM_OPTIONS -@ $THREADS --reference $GENOME $SAMTOOLS_CRAM_INDEX -o $CRAM.cram "
 				[ "$SAMTOOLS_CRAM_COMMAND" == "sort" ] && SAMTOOLS_CRAM_COMMAND_OPTIONS=$SAMTOOLS_CRAM_COMMAND_OPTIONS" -T $CRAM.SAMTOOLS_PREFIX$RANDOM "
 				[ "$SAMTOOLS_CRAM_COMMAND" == "view" ] && SAMTOOLS_CRAM_COMMAND_OPTIONS=$SAMTOOLS_CRAM_COMMAND_OPTIONS" -h "
 				# COMMAND
@@ -622,7 +622,7 @@ if [ ! -z "$FASTQ" ]; then
 			(($VERBOSE)) && echo "#[INFO] FASTQ '$FASTQ_names' STATS TIME Encode '$CRAM_encode_time'"
 			if (($CRAM_READ_integrity_checksum)) || [ "$STATS" != "" ]; then
 				(($VERBOSE)) && echo "#[INFO] FASTQ '$FASTQ_names' CRAM READS integrity checksum..."
-				CRAM_checksum=$(checksum "$SAMTOOLS fastq -@ $THREADS -O -n --reference $REF $CRAM.cram 2>/dev/null")
+				CRAM_checksum=$(checksum "$SAMTOOLS fastq -@ $THREADS -O -n --reference $GENOME $CRAM.cram 2>/dev/null")
 				(($VERBOSE)) && echo "#[INFO] FASTQ '$FASTQ_names' CRAM READS integrity checksum '$CRAM_checksum'"
 			fi;
 			if [ "$CRAM_checksum" == "$FASTQ_checksum" ] || ! (($CRAM_READ_integrity_checksum)); then
@@ -665,7 +665,7 @@ if (($REHEADER)); then
 	if [ "$CRAM_cram_source" != "" ] && [ -e "$CRAM_cram_source" ]; then
 
 		CRAM_cram_source_name=$(basename $CRAM_cram_source)
-		REF_name=$(basename $REF)
+		REF_name=$(basename $GENOME)
 
 		(($VERBOSE)) && echo "" && echo "#[INFO] ### CRAM rehead"
 
@@ -678,7 +678,7 @@ if (($REHEADER)); then
 			#$SAMTOOLS reheader -Pi -c "$SAMTOOLS view -H $CRAM_cram_source | $SAMTOOLS view -O CRAM -@ $THREADS --reference=$REF | samtools view -H " $CRAM_cram_source > $CRAM_cram_source.reheaded.cram
 			#mv -f $CRAM_cram_source.reheaded.cram $CRAM_cram_source
 
-			if $SAMTOOLS reheader -P -c "$SAMTOOLS view -H $CRAM_cram_source | $SAMTOOLS view -O CRAM -@ $THREADS --reference=$REF | $SAMTOOLS view -H " $CRAM_cram_source > $CRAM_cram_source.reheaded.cram; then
+			if $SAMTOOLS reheader -P -c "$SAMTOOLS view -H $CRAM_cram_source | $SAMTOOLS view -O CRAM -@ $THREADS --reference=$GENOME | $SAMTOOLS view -H " $CRAM_cram_source > $CRAM_cram_source.reheaded.cram; then
 				mv -f $CRAM_cram_source.reheaded.cram $CRAM_cram_source
 				(($VERBOSE)) && echo "#[INFO] CRAM rehead with genome reference '$REF_name' done."
 			else
@@ -732,7 +732,7 @@ if [ "$STATS" != "" ]; then
 		# Size
 		(($VERBOSE)) && echo "#[INFO] CRAM STATS READS Number..."
 		time_start=$(date +%s%3N)
-		CRAM_nbreads=$($SAMTOOLS view -@ $THREADS --reference $REF $CRAM_cram_source -c)
+		CRAM_nbreads=$($SAMTOOLS view -@ $THREADS --reference $GENOME $CRAM_cram_source -c)
 		time_end=$(date +%s%3N)
 		(($VERBOSE)) && echo "#[INFO] CRAM STATS READS Number '$CRAM_nbreads'"
 

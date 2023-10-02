@@ -33,10 +33,10 @@ VARIANTRECALIBRATOR_INDEL_OPTIONS?=$(VARIANTRECALIBRATION_INDEL_RESOURCES_OPTION
 ########################
 
 # SNP
-%.POST_CALLING_SNP.vcf: %.variantrecalibration.vcf %.genome
+%.POST_CALLING_SNP.vcf: %.variantrecalibration.vcf
 	$(JAVA) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
 		SelectVariants \
-		-R $$(cat $*.genome) \
+		-R $(GENOME) \
 		-V $< \
 		--select-type-to-include SNP \
 		--select-type-to-include MIXED \
@@ -49,7 +49,7 @@ VARIANTRECALIBRATOR_INDEL_OPTIONS?=$(VARIANTRECALIBRATION_INDEL_RESOURCES_OPTION
 			VariantRecalibrator \
 			$(VARIANTRECALIBRATOR_OPTIONS) \
 			$(VARIANTRECALIBRATOR_SNP_OPTIONS) \
-			-R $$(cat $*.genome) \
+			-R $(GENOME) \
 			-V $@.tmp.SNP.vcf \
 			--mode SNP \
 			--output $@.tmp.SNP.recal.vcf \
@@ -61,7 +61,7 @@ VARIANTRECALIBRATOR_INDEL_OPTIONS?=$(VARIANTRECALIBRATION_INDEL_RESOURCES_OPTION
 	if (($$(grep '^#' -vc $@.tmp.SNP.recal.vcf))) && (($(VARIANTRECALIBRATION_CHECK))); then \
 		$(JAVA) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
 			ApplyVQSR \
-			-R $$(cat $*.genome) \
+			-R $(GENOME) \
 			-V $@.tmp.SNP.vcf \
 			-O $@ \
 			--recal-file $@.tmp.SNP.recal.vcf \
@@ -72,7 +72,7 @@ VARIANTRECALIBRATOR_INDEL_OPTIONS?=$(VARIANTRECALIBRATION_INDEL_RESOURCES_OPTION
 		echo "[WARNING] No ApplyVQRS on SNP due to resources error or lack of variant in the input callset"; \
 		$(JAVA) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
 			VariantFiltration \
-			-R $$(cat $*.genome) \
+			-R $(GENOME) \
 			-V $@.tmp.SNP.vcf \
 			-O $@.tmp.SNP.invalidate.vcf \
 			$(VARIANTFILTRATION_INVALIDATE_PREVIOUS_FILTERS_OPTION) \
@@ -80,7 +80,7 @@ VARIANTRECALIBRATOR_INDEL_OPTIONS?=$(VARIANTRECALIBRATION_INDEL_RESOURCES_OPTION
 		if [ ! -z '$(VARIANTRECALIBRATOR_VARIANTFILTRATION_SNP_FILTER_OPTION)' ] && [ ! -z '$(VARIANTRECALIBRATOR_VARIANTFILTRATION_SNP_FILTER_EXPRESSION_OPTION)' ]; then \
 			$(JAVA) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
 				VariantFiltration \
-				-R $$(cat $*.genome) \
+				-R $(GENOME) \
 				-V $@.tmp.SNP.invalidate.vcf \
 				-O $@ \
 				--create-output-variant-index false \
@@ -94,10 +94,10 @@ VARIANTRECALIBRATOR_INDEL_OPTIONS?=$(VARIANTRECALIBRATION_INDEL_RESOURCES_OPTION
 
 
 # INDEL
-%.POST_CALLING_InDel.vcf: %.variantrecalibration.vcf %.genome
+%.POST_CALLING_InDel.vcf: %.variantrecalibration.vcf
 	$(JAVA) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
 		SelectVariants \
-		-R $$(cat $*.genome) \
+		-R $(GENOME) \
 		-V $< \
 		--select-type-to-include INDEL \
 		-O $@.tmp.InDel.vcf;
@@ -106,7 +106,7 @@ VARIANTRECALIBRATOR_INDEL_OPTIONS?=$(VARIANTRECALIBRATION_INDEL_RESOURCES_OPTION
 			VariantRecalibrator \
 			$(VARIANTRECALIBRATOR_OPTIONS) \
 			$(VARIANTRECALIBRATOR_INDEL_OPTIONS) \
-			-R $$(cat $*.genome) \
+			-R $(GENOME) \
 			-V $@.tmp.InDel.vcf \
 			--mode INDEL \
 			--output $@.tmp.InDel.recal.vcf \
@@ -118,7 +118,7 @@ VARIANTRECALIBRATOR_INDEL_OPTIONS?=$(VARIANTRECALIBRATION_INDEL_RESOURCES_OPTION
 	if (($$(grep '^#' -vc $@.tmp.InDel.recal.vcf))) && (($(VARIANTRECALIBRATION_CHECK))); then \
 		$(JAVA) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
 			ApplyVQSR \
-			-R $$(cat $*.genome) \
+			-R $(GENOME) \
 			-V $@.tmp.InDel.vcf \
 			-O $@ \
 			--recal-file $@.tmp.InDel.recal.vcf \
@@ -129,7 +129,7 @@ VARIANTRECALIBRATOR_INDEL_OPTIONS?=$(VARIANTRECALIBRATION_INDEL_RESOURCES_OPTION
 		echo "[WARNING] No ApplyVQRS on INDEL due to resources error or lack of variant in the input callset"; \
 		$(JAVA) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
 			VariantFiltration \
-			-R $$(cat $*.genome) \
+			-R $(GENOME) \
 			-V $@.tmp.InDel.vcf \
 			-O $@.tmp.InDel.invalidate.vcf \
 			$(VARIANTFILTRATION_INVALIDATE_PREVIOUS_FILTERS_OPTION) \
@@ -137,7 +137,7 @@ VARIANTRECALIBRATOR_INDEL_OPTIONS?=$(VARIANTRECALIBRATION_INDEL_RESOURCES_OPTION
 		if [ ! -z '$(VARIANTRECALIBRATOR_VARIANTFILTRATION_INDEL_FILTER_OPTION)' ] && [ ! -z '$(VARIANTRECALIBRATOR_VARIANTFILTRATION_INDEL_FILTER_EXPRESSION_OPTION)' ]; then \
 			$(JAVA) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
 				VariantFiltration \
-				-R $$(cat $*.genome) \
+				-R $(GENOME) \
 				-V $@.tmp.InDel.invalidate.vcf \
 				-O $@ \
 				--create-output-variant-index false \

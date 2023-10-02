@@ -1223,11 +1223,11 @@ for RUU in $RUN_UNIQ; do
 					TMP_INPUT_BAM=$TMP_FOLDER_TMP/INPUT_BAM_$RANDOM
 
 					echo "$RUN_SAMPLE_DIR/$S.R1.fastq.gz: $F
-						#$SAMTOOLS sort -n --reference $REF -@ $THREADS $F -T $TMP_INPUT_BAM -O SAM 2>/dev/null | $SAMTOOLS bam2fq - -1 $RUN_SAMPLE_DIR/$S.R1.fastq.gz -2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz -O -@ $THREADS -c 1 -T BC,RX 2>/dev/null | $GZ -c 1> $RUN_SAMPLE_DIR/$S.R0.fastq.gz 2>/dev/null;
-						#$SAMTOOLS sort -n --reference $REF -@ $THREADS $F -T $TMP_INPUT_BAM -O SAM 2>/dev/null | $SAMTOOLS bam2fq - -1 $RUN_SAMPLE_DIR/$S.R1.fastq.gz -2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz -O -@ $THREADS -c 1 -T BC,RX 2>/dev/null | $GZ -c 1> $RUN_SAMPLE_DIR/$S.R0.fastq.gz 2>/dev/null;
-						#$SAMTOOLS bam2fq $F --reference $REF -1 $RUN_SAMPLE_DIR/$S.R1.fastq.gz -2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz -O -@ $THREADS_BY_SAMPLE -c 1 -T BC,RX | gzip -1 -c > $RUN_SAMPLE_DIR/$S.R0.fastq.gz
-						#$SAMTOOLS fastq $F --reference $REF -1 $RUN_SAMPLE_DIR/$S.R1.fastq.gz -2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz -O -@ $THREADS_BY_SAMPLE -c 1 -n -t -T RX | gzip -1 -c > $RUN_SAMPLE_DIR/$S.R0.fastq.gz
-						$SAMTOOLS fastq $F --reference $REF -1 $RUN_SAMPLE_DIR/$S.R1.fastq.gz -2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz -O -@ $THREADS_BY_SAMPLE -c 1 -n -T BC,RX | gzip -1 -c > $RUN_SAMPLE_DIR/$S.R0.fastq.gz
+						#$SAMTOOLS sort -n --reference $GENOME -@ $THREADS $F -T $TMP_INPUT_BAM -O SAM 2>/dev/null | $SAMTOOLS bam2fq - -1 $RUN_SAMPLE_DIR/$S.R1.fastq.gz -2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz -O -@ $THREADS -c 1 -T BC,RX 2>/dev/null | $GZ -c 1> $RUN_SAMPLE_DIR/$S.R0.fastq.gz 2>/dev/null;
+						#$SAMTOOLS sort -n --reference $GENOME -@ $THREADS $F -T $TMP_INPUT_BAM -O SAM 2>/dev/null | $SAMTOOLS bam2fq - -1 $RUN_SAMPLE_DIR/$S.R1.fastq.gz -2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz -O -@ $THREADS -c 1 -T BC,RX 2>/dev/null | $GZ -c 1> $RUN_SAMPLE_DIR/$S.R0.fastq.gz 2>/dev/null;
+						#$SAMTOOLS bam2fq $F --reference $GENOME -1 $RUN_SAMPLE_DIR/$S.R1.fastq.gz -2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz -O -@ $THREADS_BY_SAMPLE -c 1 -T BC,RX | gzip -1 -c > $RUN_SAMPLE_DIR/$S.R0.fastq.gz
+						#$SAMTOOLS fastq $F --reference $GENOME -1 $RUN_SAMPLE_DIR/$S.R1.fastq.gz -2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz -O -@ $THREADS_BY_SAMPLE -c 1 -n -t -T RX | gzip -1 -c > $RUN_SAMPLE_DIR/$S.R0.fastq.gz
+						$SAMTOOLS fastq $F --reference $GENOME -1 $RUN_SAMPLE_DIR/$S.R1.fastq.gz -2 $RUN_SAMPLE_DIR/$S.R2.fastq.gz -O -@ $THREADS_BY_SAMPLE -c 1 -n -T BC,RX | gzip -1 -c > $RUN_SAMPLE_DIR/$S.R0.fastq.gz
 						#cp -p $RUN_SAMPLE_DIR/$S.R1.fastq.gz $RUN_SAMPLE_DIR/$S.R1.test.fastq.gz;
 						#cp -p $RUN_SAMPLE_DIR/$S.R2.fastq.gz $RUN_SAMPLE_DIR/$S.R2.test.fastq.gz;
 						#cp -p $RUN_SAMPLE_DIR/$S.R0.fastq.gz $RUN_SAMPLE_DIR/$S.R0.test.fastq.gz;
@@ -1269,9 +1269,9 @@ for RUU in $RUN_UNIQ; do
 							echo "$RUN_SAMPLE_DIR/$S.$AL.bam: $F 
 								if ((\$\$($SAMTOOLS flagstat -@ $THREADS_BY_SAMPLE $F | grep '[0-9]* + [0-9]* mapped (' | awk 'BEGIN {total=0} {total=total+\$\$1+\$\$3} END {print total}'))); then \
 									if [ ! -e $RUN_SAMPLE_DIR/$S.genome ]; then \
-										[ -e '$REF' ] && echo $REF > $RUN_SAMPLE_DIR/$S.genome; \
+										[ -e '$GENOME' ] && echo $GENOME > $RUN_SAMPLE_DIR/$S.genome; \
 									fi; \
-									$SAMTOOLS sort --reference $REF -@ $THREADS_BY_SAMPLE $F -T $TMP_INPUT_BAM -O BAM 2>/dev/null > $RUN_SAMPLE_DIR/$S.$AL.bam; \
+									$SAMTOOLS sort -@ $THREADS_BY_SAMPLE $F -T $TMP_INPUT_BAM -O BAM 2>/dev/null > $RUN_SAMPLE_DIR/$S.$AL.bam; \
 									$SAMTOOLS index -@ $THREADS_BY_SAMPLE $RUN_SAMPLE_DIR/$S.$AL.bam; \
 								fi;
 							" >> $INPUT_MK
@@ -1393,7 +1393,7 @@ for RUU in $RUN_UNIQ; do
 		if ((0)); then
 			if [ ! -e $RUN_SAMPLE_DIR/$S.genome ]; then
 				(($VERBOSE)) && echo "#[INFO] Create genome."
-				[ -e "$REF" ] && echo $REF > $RUN_SAMPLE_DIR/$S.genome
+				[ -e "$GENOME" ] && echo $GENOME > $RUN_SAMPLE_DIR/$S.genome
 			fi;
 		fi;
 

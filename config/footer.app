@@ -371,7 +371,7 @@ done;
 #echo $APP_PROJECT
 
 
-# ASSEMBLY & REF
+# ASSEMBLY & GENOME
 ################
 # default Assembly
 if [ -z $ASSEMBLY ] || [ "$ASSEMBLY" == "" ]; then
@@ -379,18 +379,11 @@ if [ -z $ASSEMBLY ] || [ "$ASSEMBLY" == "" ]; then
 fi;
 export ASSEMBLY
 
-if [ "$REF" == "" ]; then
-	# default REF
-	if [ -s $GENOMES/$ASSEMBLY/$ASSEMBLY.fa ]; then
-		REF=$GENOMES/$ASSEMBLY/$ASSEMBLY.fa
-	elif [ -s $GENOMES/current/$ASSEMBLY.fa ]; then
-		REF=$GENOMES/current/$ASSEMBLY.fa
-	fi;
-	if [ ! -s $REF ] || [ "$REF" == "" ]; then
-		REF=$GENOMES/current/$ASSEMBLY.fa
-	fi;
-	export REF
+# default Genome
+if [ -z $GENOME ] || [ "$GENOME" == "" ]; then
+	GENOME=$DATABASES"/genomes/current/"$ASSEMBLY".fa"
 fi;
+export GENOME
 
 
 # REF_CACHE_FOLDER and REF_CACHE and REF_PATH
@@ -400,10 +393,10 @@ if [ -z $REF_PATH ] || [ "$REF_PATH" == "" ]; then
 fi;
 
 if [ -z $REF_CACHE_FOLDER ] || [ "$REF_CACHE_FOLDER" == "" ] || [ ! -d $REF_CACHE_FOLDER ]; then
-	if [ -d $REF.hts-ref ] && [ "$(ls -A $REF.hts-ref 2>/dev/null)" ]; then
-		REF_CACHE_FOLDER=$REF.hts-ref
-	elif mkdir -p $REF.hts-ref 2>/dev/null; then
-		REF_CACHE_FOLDER=$REF.hts-ref
+	if [ -d $(basename $GENOME).hts-ref ] && [ "$(ls -A $(basename $GENOME.hts-ref) 2>/dev/null)" ]; then
+		REF_CACHE_FOLDER=$(basename $GENOME.hts-ref)
+	elif mkdir -p $(basename $GENOME.hts-ref) 2>/dev/null; then
+		REF_CACHE_FOLDER=$(basename $GENOME.hts-ref)
 	else
 		REF_CACHE_FOLDER=$HOME/.cache/hts-ref
 		mkdir -p $REF_CACHE_FOLDER
@@ -413,7 +406,7 @@ else
 fi;
 
 if [ ! "$(ls -A $REF_CACHE_FOLDER 2>/dev/null)" ] && [ -w $REF_CACHE_FOLDER ] && [ "$(whereis samtools | cut -d' ' -f2)" ]; then \
-	perl $(dirname $(whereis samtools | cut -d' ' -f2))/seq_cache_populate.pl -root $REF_CACHE_FOLDER $REF ; \
+	perl $(dirname $(whereis samtools | cut -d' ' -f2))/seq_cache_populate.pl -root $REF_CACHE_FOLDER $GENOME ; \
 fi;
 
 export REF_CACHE_FOLDER

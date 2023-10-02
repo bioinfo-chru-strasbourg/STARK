@@ -37,7 +37,7 @@ VARSCAN_EXOME_SOMATIC_SNP_OPTIONS= $(VARSCAN_EXOME_SOMATIC_BOTH_OPTIONS) --min-a
 VARSCAN_EXOME_SOMATIC_INDEL_OPTIONS= $(VARSCAN_EXOME_SOMATIC_BOTH_OPTIONS) --min-avg-qual 10
 
 
-%.VarScan_EXOME_SOMATIC$(POST_CALLING).SNP.vcf: %.bam.mpileup %.empty.vcf %.genome #
+%.VarScan_EXOME_SOMATIC$(POST_CALLING).SNP.vcf: %.bam.mpileup %.empty.vcf #
 	if [ -s $< ]; then \
 		sample=`basename $* | cut -d"." -f1`; \
 		echo $$sample > $*.SNP.sample.txt; \
@@ -49,7 +49,7 @@ VARSCAN_EXOME_SOMATIC_INDEL_OPTIONS= $(VARSCAN_EXOME_SOMATIC_BOTH_OPTIONS) --min
 	rm -f $@.idx $@.unfiltered.vcf*
 
 
-%.VarScan_EXOME_SOMATIC$(POST_CALLING).InDel.vcf: %.bam.mpileup %.empty.vcf %.genome
+%.VarScan_EXOME_SOMATIC$(POST_CALLING).InDel.vcf: %.bam.mpileup %.empty.vcf
 	if [ -s $< ]; then \
 		sample=`basename $* | cut -d"." -f1`; \
 		echo $$sample > $*.InDel.sample.txt; \

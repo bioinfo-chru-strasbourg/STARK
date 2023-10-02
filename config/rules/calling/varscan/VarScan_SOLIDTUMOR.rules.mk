@@ -37,7 +37,7 @@ VARSCAN_SOLIDTUMOR_SNP_OPTIONS= $(VARSCAN_SOLIDTUMOR_BOTH_OPTIONS) --min-avg-qua
 VARSCAN_SOLIDTUMOR_INDEL_OPTIONS= $(VARSCAN_SOLIDTUMOR_BOTH_OPTIONS) --min-avg-qual 10
 
 
-%.VarScan_SOLIDTUMOR$(POST_CALLING).SNP.vcf: %.bam.mpileup %.empty.vcf %.genome
+%.VarScan_SOLIDTUMOR$(POST_CALLING).SNP.vcf: %.bam.mpileup %.empty.vcf
 	if [ -s $< ]; then \
 		sample=`basename $* | cut -d"." -f1`; \
 		echo $$sample > $*.SNP.sample.txt; \
@@ -49,7 +49,7 @@ VARSCAN_SOLIDTUMOR_INDEL_OPTIONS= $(VARSCAN_SOLIDTUMOR_BOTH_OPTIONS) --min-avg-q
 	rm -f $@.idx $@.unfiltered.vcf*
 
 
-%.VarScan_SOLIDTUMOR$(POST_CALLING).InDel.vcf: %.bam.mpileup %.empty.vcf %.genome
+%.VarScan_SOLIDTUMOR$(POST_CALLING).InDel.vcf: %.bam.mpileup %.empty.vcf
 	if [ -s $< ]; then \
 		sample=`basename $* | cut -d"." -f1`; \
 		echo $$sample > $*.InDel.sample.txt; \

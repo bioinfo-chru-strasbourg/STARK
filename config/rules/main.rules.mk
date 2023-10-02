@@ -93,8 +93,8 @@ REMOVE_INTERMEDIATE_SAM?=1
 
 
 # VCF NORMALIZATION with BCFTOOLS
-%.vcf: %.normalization.vcf %.genome
-	$(BCFTOOLS) norm -m- -f $$(cat $*.genome) $< | $(BCFTOOLS) norm --rm-dup exact | $(BCFTOOLS) annotate -x INFO/DP | $(BCFTOOLS) +setGT -- -t . -n 0 | $(BCFTOOLS) +fixploidy -- | $(BCFTOOLS) +fill-tags -- -t all > $@
+%.vcf: %.normalization.vcf
+	$(BCFTOOLS) norm -m- -f $(GENOME)) $< | $(BCFTOOLS) norm --rm-dup exact | $(BCFTOOLS) annotate -x INFO/DP | $(BCFTOOLS) +setGT -- -t . -n 0 | $(BCFTOOLS) +fixploidy -- | $(BCFTOOLS) +fill-tags -- -t all > $@
 
 
 # MERGE SNP and InDel VCF
@@ -146,19 +146,19 @@ REMOVE_INTERMEDIATE_SAM?=1
 
 # BAM from SAM
 # sorting sam file by coordinate and output a bam file
-%.bam : %.sam %.genome
+%.bam : %.sam
 	if ((! $$($(SAMTOOLS) view -H $< | grep "^@HD.*VN:.*SO:" | wc -l))) || (($$($(SAMTOOLS) view -H $< | grep "^@HD.*VN:.*SO:unsorted" | wc -l))) ; then \
 		$(SAMTOOLS) sort $< -o $@ -O BAM -l 1 -T $<.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS); \
 	else \
-		$(SAMTOOLS) view -o $@ -b -1 -S -T `cat $*.genome` $< -@ $(THREADS_SAMTOOLS); \
+		$(SAMTOOLS) view -o $@ -b -1 -S -T $(GENOME) $< -@ $(THREADS_SAMTOOLS); \
 	fi;
 	-if [ $(REMOVE_INTERMEDIATE_SAM) -eq 1 ]; then rm -f $<; fi;
 
 
 # CRAM from BAM
-%.cram: %.bam %.genome
+%.cram: %.bam
 	echo "test BAM to CRAM: $^"
-	$(SAMTOOLS) view -o $@ -O CRAM -S -T `cat $*.genome` $*.bam -@ $(THREADS_SAMTOOLS);
+	$(SAMTOOLS) view -o $@ -O CRAM -S -T $(GENOME) $*.bam -@ $(THREADS_SAMTOOLS);
 	# test Empty output file
 	# Remove intermediate SAM file
 
@@ -196,8 +196,8 @@ REMOVE_INTERMEDIATE_SAM?=1
 
 # BAM reduction
 GATKRR_FLAGS=
-%.reduced.bam: %.bam %.bam.bai %.genome
-	$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) $(GATKRR_FLAGS) -T ReduceReads -R `cat $*.genome` -I $< -o $@
+%.reduced.bam: %.bam %.bam.bai
+	$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) $(GATKRR_FLAGS) -T ReduceReads -R $(GENOME) -I $< -o $@
 
 
 # SampleSheet Copy

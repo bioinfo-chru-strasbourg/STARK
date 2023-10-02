@@ -5,15 +5,17 @@
 # Author: Samuel Nicaise, Thomas Lavaux
 ############################
 
-%.Arriba$(POST_CALLING).vcf: %.bam %.empty.vcf %.genome
+# ARRIBA_DATABASES=$DBFOLDER/arriba/current
+
+%.Arriba$(POST_CALLING).vcf: %.bam %.empty.vcf
 	mkdir -p $*.arriba.reports;
 	arriba \
 		-x $< \
-		-a $$(cat $*.genome) \
-		-g $$(cat $*.genome | xargs -0 dirname)/ref_annot.gtf \
-		-k $$(ls $(ARRIBA_DATABASES)/known_fusions_$(ASSEMBLY)_*.tsv.gz) \
-		-b $$(ls $(ARRIBA_DATABASES)/blacklist_$(ASSEMBLY)_*.tsv.gz) \
-		-p $$(ls $(ARRIBA_DATABASES)/protein_domains_$(ASSEMBLY)_*.gff3) \
+		-a $(GENOME) \
+		-g $(CTAT_DATABASES)/$ASSEMBLY/ref_annot.gtf \
+		-k $$(ls $(ARRIBA_DATABASES)/$ASSEMBLY/known_fusions_$(ASSEMBLY)_*.tsv.gz) \
+		-b $$(ls $(ARRIBA_DATABASES)/$ASSEMBLY/blacklist_$(ASSEMBLY)_*.tsv.gz) \
+		-p $$(ls $(ARRIBA_DATABASES)/$ASSEMBLY/protein_domains_$(ASSEMBLY)_*.gff3) \
 		-o $*.arriba.reports/arriba.fusions.tsv \
 		-O $*.arriba.reports/arriba.fusions.discarded.tsv;
 	# rename ...reports/arriba.fusions.tsv to ...reports/<sample>.arriba.fusions.tsv

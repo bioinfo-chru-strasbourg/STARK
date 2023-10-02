@@ -15,12 +15,12 @@ DPMIN_OUTLYZER?=30
 THREADS_OUTLYZER?=$(THREADS_BY_CALLER)
 
 
-%.outLyzer$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.genome %.dict %.design.bed
+%.outLyzer$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.dict %.design.bed
 	# create tmp Directory
 	mkdir -p $@.outlyser_tmp
 	# Generate VCF with OutLyser
 	if [ -s $*.design.bed ]; then \
-		$(PYTHON) $(OUTLYZER) calling -pythonPath=$(PYTHON) -samtools=$(SAMTOOLS) -bed $*.design.bed -bam $< -ref $$(cat $*.genome) -output $@.outlyser_tmp/ -core $(THREADS_OUTLYZER) -verbose 1; \
+		$(PYTHON) $(OUTLYZER) calling -pythonPath=$(PYTHON) -samtools=$(SAMTOOLS) -bed $*.design.bed -bam $< -ref $(GENOME) -output $@.outlyser_tmp/ -core $(THREADS_OUTLYZER) -verbose 1; \
 		# Normalize OutLyzer output VCF ; \
 		cat $@.outlyser_tmp/*.vcf | awk -f $(STARK_FOLDER_BIN)/outlyzer_norm.awk > $@.tmp.vcf ; \
 		# sort and contig ; \

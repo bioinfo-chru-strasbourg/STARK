@@ -15,7 +15,7 @@
 # NO_ALIGNMENT #
 ################
 
-%.no_alignment.bam: %.R1.fastq.gz %.R2.fastq.gz %.genome %.bed %.dict
+%.no_alignment.bam: %.R1.fastq.gz %.R2.fastq.gz %.bed %.dict
 	# Generate dict
 	# 4fields file
 	awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$4}' $*.bed > $@.tmp.4fields.tmp;
@@ -41,7 +41,7 @@
 # EMPTY_ALIGNMENT #
 ###################
 
-%.empty_alignment.bam: %.R1.fastq.gz %.R2.fastq.gz %.genome %.bed %.dict
+%.empty_alignment.bam: %.R1.fastq.gz %.R2.fastq.gz %.bed %.dict
 	# Generate dict
 	# 4fields file
 	awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$4}' $*.bed > $@.tmp.4fields.tmp;
@@ -61,7 +61,7 @@
 # NO_CALLING #
 ##############
 
-%.no_calling.vcf: %.bam %.bam.bai %.empty.vcf %.genome
+%.no_calling.vcf: %.bam %.bam.bai %.empty.vcf
 	# Calling - Empty VCF
 	cp $*.empty.vcf $@
 	

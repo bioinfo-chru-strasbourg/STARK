@@ -36,11 +36,11 @@ maxReadsInRegionPerSample_LONG_INDELS=250
 GATKHC_FLAGS_LONG_INDELS= -nct $(THREADS_GATKHC_LONG_INDELS) -stand_call_conf 10 -dfrac $(DFRAC_LONG_INDELS) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample_LONG_INDELS) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC_LONG_INDELS) -minPruning $(MINPRUNING_LONG_INDELS) --baq OFF --read_filter BadCigar --allow_potentially_misencoded_quality_scores
 GATKHC_INDEL_SIZE_LONG_INDELS?=20
 
-%.gatkHC_LONG_INDELS$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.genome %.design.bed.interval_list
+%.gatkHC_LONG_INDELS$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed.interval_list
 	#
 	$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) $(GATKHC_FLAGS_LONG_INDELS) \
 		-T HaplotypeCaller \
-		-R `cat $*.genome` \
+		-R $(GENOME) \
 		$$(if [ "`grep ^ -c $*.design.bed.interval_list`" == "0" ]; then echo ""; else echo "-L $*.design.bed.interval_list"; fi;) \
 		-I $< \
 		-ip $(INTERVAL_PADDING) \

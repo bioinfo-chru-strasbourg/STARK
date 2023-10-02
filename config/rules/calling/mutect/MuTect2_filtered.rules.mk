@@ -20,7 +20,7 @@ VAF_MUTECT2_FILTERED_HOM?=0.80
 
 GATK4_MUTECT2_FILTERED_FLAGS_SHARED?=--disable-read-filter MateOnSameContigOrNoMappedMateReadFilter --max-reads-per-alignment-start $(MAXREADS_GATK4_MUTECT2_FILTERED) --dont-use-soft-clipped-bases true --min-pruning $(MINPRUNING_GATK4_MUTECT2_FILTERED) --callable-depth $(DPMIN_MUTECT2_FILTERED) --verbosity ERROR --native-pair-hmm-threads $(THREADS_GATK4_MUTECT2_FILTERED)
 
-# %.MuTect2_filtered$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.genome %.dict %.design.bed.interval_list
+# %.MuTect2_filtered$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.dict %.design.bed.interval_list
 # 	# Calling by MuTect2
 # 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK4) Mutect2 $(GATK4_MUTECT2_FILTERED_FLAGS_SHARED) \
 # 		-R $$(cat $*.genome) \
@@ -50,10 +50,10 @@ GATK4_MUTECT2_FILTERED_FLAGS_SHARED?=--disable-read-filter MateOnSameContigOrNoM
 # 	rm -f $@.tmp* $@.idx
 
 
-%.MuTect2_filtered$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.genome %.dict %.design.bed.interval_list
+%.MuTect2_filtered$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.dict %.design.bed.interval_list
 	# Calling by MuTect2
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK4) Mutect2 $(GATK4_MUTECT2_FILTERED_FLAGS_SHARED) \
-		-R $$(cat $*.genome) \
+		-R $(GENOME) \
 		-I $< \
 		-tumor $$(basename $< | cut -d"." -f1) \
 		$$(if [ "`grep ^ -c $*.design.bed.interval_list`" == "0" ]; then echo ""; else echo "-L $*.design.bed.interval_list"; fi;) \

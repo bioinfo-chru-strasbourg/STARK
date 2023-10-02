@@ -21,13 +21,9 @@ RELEASE_NOTES=$RELEASE_NOTES"# 0.9.3b-31/05/2019: Add APP configuration\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.4b-17/06/2020: Clarify code, organisation DB/RELEASE, add STARK.description\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.5.0-11/04/2021: Change snpEff download, some bugs fixed, option --current, remove option --rebuild\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.6.0-28/07/2022: Change snpEff download, add GATK databases, some bugs fixed\n";
+RELEASE_NOTES=$RELEASE_NOTES"# STARK 19: \n";
 
-# Script folder
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-# Configuration
-ENV_CONFIG=$(find -L $SCRIPT_DIR/.. -name config.app)
-source $ENV_CONFIG 1>/dev/null 2>/dev/null
 
 # Header
 function header () {
@@ -54,45 +50,30 @@ function usage {
 	echo "# --databases_list=<STRING>                List of Databases to consider";
 	echo "#                                          Format: 'database1,database2,...'";
 	echo "#                                          Default: 'ALL' for all available databases";
-	echo "#                                          Available databases: 'genomes,refGene,dbsnp,annovar,snpeff'";
-	echo "# --additional_annotations=<STRING>        Additional HOWARD annotations";
-	echo "#                                          Will download ANNOVAR and SNPEFF additional databases (beyond originally defined application)";
-	echo "#                                          Format: 'annotation1,annotation2,...'";
+	echo "#                                          Available databases: 'dbsnp'";
 	echo "# --current                                Make new databases as current.";
 	echo "# --build                                  Build all databases.";
-	#echo "# --rebuild                                Force Rebuild all databases.";
-	echo "# --update                                 Update databases (latest dbSNP and HOWARD-ANNOVAR-snpEff databases) and build if needed.";
+	echo "# --update                                 Update databases (latest dbSNP databases) and build if needed.";
 	echo "# --threads                                Number of threads (depend on system/proxy...).";
-
 	echo "# --verbose                                VERBOSE option";
 	echo "# --debug                                  DEBUG option";
 	echo "# --release                                RELEASE option";
 	echo "# --help                                   HELP option";
 	echo "#";
-
 }
 
-# header
 header;
 
 ####################################################################################################################################
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
-ARGS=$(getopt -o "e:bcfut:vdnh" --long "env:,app:,application:,databases:,databases_list:,additional_annotations:,current,build,rebuild,update,threads:,verbose,debug,release,help" -- "$@" 2> /dev/null)
-# || [ -z $@ ]
-
+ARGS=$(getopt -o "e:cbut:vdnh" --long "env:,app:,application:,databases:,databases_list:,current,build,update,threads:,verbose,debug,release,help" -- "$@" 2> /dev/null)
 PARAM=$@
-#PARAM=$(echo $@ | tr "\n" " ")
-#echo $PARAM;
-#PARAM=$(echo $ARGS | sed s/--//gi);
-#exit 0;
 
 eval set -- "$ARGS"
 while true
 do
-	#echo "$1=$2"
-	#echo "Eval opts";
 	case "$1" in
 		-e|--env|--app|--application)
 			APP="$2"
@@ -106,10 +87,6 @@ do
 			DATABASES_LIST_INPUT=$(echo "$2" | tr "," " ")
 			shift 2
 			;;
-		--additional_annotations)
-			ADDITIONAL_ANNOTATIONS="$2"
-			shift 2
-			;;
 		-v|--verbose)
 			VERBOSE=1
 			shift 1
@@ -120,10 +97,6 @@ do
 			;;
 		-b|--build)
 			BUILD=1
-			shift 1
-			;;
-		-r|--rebuild)
-			REBUILD=1
 			shift 1
 			;;
 		-u|--update)
@@ -156,13 +129,16 @@ do
 	esac
 done
 
+# Script folder
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
+# Configuration
+ENV_CONFIG=$(find -L $SCRIPT_DIR/.. -name config.app)
+source $ENV_CONFIG 1>/dev/null 2>/dev/null
 
 # FUNCTIONS
 #############
-
 # function in_array
-# input: $element $array
 in_array () 
 { 
     param=$1;
@@ -173,57 +149,30 @@ in_array ()
     done;
     return 1
 }
-
-
-
-
 # ACTION
-##########
-
 ACTION=0
-[ $BUILD ] || [ $REBUILD ] || [ $UPDATE ] && ACTION=1;
-
-
+[ $BUILD ] || [ $UPDATE ] && ACTION=1;
 
 # DATABASES FOLDER
-####################
-
 [ ! -z $DATABASES ] && [ ! -d $DATABASES ] && mkdir -p $DATABASES && echo "#[INFO] Create databases folder '$DATABASES' "
 
-
-
 # DATABASES LIST
-####################
-
 [ "$DATABASES_LIST_INPUT" == "" ] && DATABASES_LIST_INPUT="ALL"
 echo "#[INFO] Databases list: '$DATABASES_LIST_INPUT' "
 
-
-
 # ENV
-#########
-
-#echo "APP=$APP"; exit;
 (($VERBOSE)) && [ ! -z "$APP" ] && echo "#[INFO] Search Application '$APP'"
-
 ENV=$(find_app "$APP" "$STARK_FOLDER_APPS")
 source_app "$APP" "$STARK_FOLDER_APPS" 1
 APP_NAME=$(name_app "$APP" "$STARK_FOLDER_APPS");
-
 export ENV
 export APP
-
 (($VERBOSE)) && [ -z "$APP" ] && [ -z "$ENV" ] && echo "#[INFO] No Application provided. STARK default parameters will be used."
 (($VERBOSE)) && [ ! -z "$APP" ] && [ ! -z "$ENV" ] && echo "#[INFO] Application '$APP' found ('$ENV')"
 (($VERBOSE)) && [ ! -z "$APP" ] && [ -z "$ENV" ] && echo "#[INFO] Application '$APP' NOT found"
 
-
-
 # CORES
-##########
-
 re='^[0-9]+$'
-#CORES=$(ls -d /sys/devices/system/cpu/cpu[[:digit:]]* | wc -w)
 CORES=$(nproc)
 if ! [[ $THREADS =~ $re ]] || [ -z "$THREADS" ] || [ "$THREADS" == "" ] || [ $THREADS -gt $CORES ] ; then
 	CORES_FREE=0
@@ -234,11 +183,7 @@ if [[ $THREADS_INPUT =~ $re ]] && [ "$THREADS_INPUT" != "" ]; then
 	THREADS=$THREADS_INPUT;
 fi;
 
-
-
 # TMP FOLDER_RUN
-##################
-
 TMP_DATABASES_DOWNLOAD_FOLDER=$TMP_FOLDER_TMP/$RANDOM$RANDOM
 mkdir -p $TMP_DATABASES_DOWNLOAD_FOLDER
 TMP_DATABASES_DOWNLOAD_RAM="$(mktemp -d -p /dev/shm/)"
@@ -246,191 +191,131 @@ if [ "$TMP_DATABASES_DOWNLOAD_RAM" == "" ]; then
 	TMP_DATABASES_DOWNLOAD_RAM=$TMP_DATABASES_DOWNLOAD_FOLDER;
 fi;
 
-
-
-# DATE
-########
-
 DATE=$(date '+%Y%m%d-%H%M%S')
 
-
-
-# COPY MODE
-############
-#COPY_MODE_DEFAULT="rsync -rtvu"
-COPY_MODE_DEFAULT="rsync -ar"
-
-
-# PROXY
-#########
-
-
-#Automaticly import system proxy settings
-if [ -n "$http_proxy" ] ; then
-    #secho $http_proxy | grep "@"
-    if [ $(echo $http_proxy | grep "@" -c) -eq 0 ]; then # If variable has username and password, its parse method different
-    PROXY_HOST=$(echo $http_proxy | sed 's/http:\/\/.*@\(.*\):.*/\1/')
-    PROXY_PORT=$(echo $http_proxy | sed 's/http:\/\/.*@.*:\(.*\)/\1/' | tr -d "/")
-    USERNAME=$(echo $http_proxy | sed 's/http:\/\/\(.*\)@.*/\1/'|awk -F: '{print $1}')
-    PASSWORD=$(echo $http_proxy | sed 's/http:\/\/\(.*\)@.*/\1/'|awk -F: '{print $2}')
-    else # If it doesn't have username and password, its parse method this
-    PROXY_HOST=$(echo $http_proxy | sed 's/http:\/\/\(.*\):.*/\1/')
-    PROXY_PORT=$(echo $http_proxy | sed 's/http:\/\/.*:\(.*\)/\1/' | tr -d "/")
-    fi
-fi
-
-
-
-# JAVA FLAGS
-###############
-
-mkdir -p $TMP_DATABASES_DOWNLOAD_FOLDER/JAVA_FLAGS
-JAVA_FLAGS=" -Djava.io.tmpdir=$TMP_DATABASES_DOWNLOAD_FOLDER/JAVA_FLAGS "
-if [ -n "$PROXY_HOST"   -a  -n "$PROXY_PORT" ] ; then
-    JAVA_FLAGS=" -Dhttp.proxyHost=$PROXY_HOST -Dhttp.proxyPort=$PROXY_PORT"
-    if [ -n "$USERNAME" -a -n "$PASSWORD" ]; then
-    JAVA_FLAGS="$JAVA_FLAGS -Dhttp.proxyUser=$USERNAME -Dhttp.proxyPassword=$PASSWORD"
-    fi
-fi
-
-
-# DATABASES RELEASE
-#####################
-
-DATABASES_RELEASE=$DATE
-
-
-
-# variables
-#############
-
-#ASSEMBLY=hg38
-#REF=/home1/TOOLS/db/genomes/hg38/hg38.fa
-#VCFDBSNP=/home1/TOOLS/db/dbsnp/dbsnp.hg38.vcf.gz
-#THREADS=3
-
-
 # output
-##########
-
 echo ""
-echo "#[INFO] DATABASES_RELEASE=$DATABASES_RELEASE"
+echo "#[INFO] DB_RELEASE=$DATE"
 echo "#[INFO] ASSEMBLY=$ASSEMBLY"
-echo "#[INFO] REF=$REF"
-echo "#[INFO] REFSEQ_GENES=$REFSEQ_GENES"
-echo "#[INFO] VCFDBSNP=$VCFDBSNP"
-echo "#[INFO] ANNOVAR_DATABASES=$ANNOVAR_DATABASES"
-echo "#[INFO] SNPEFF_DATABASES=$SNPEFF_DATABASES"
 echo "#[INFO] THREADS=$THREADS"
-#echo ""
 
-if (($REBUILD)); then
-	echo ""
-	echo "# REBUILD Databases"
-	#echo "#"
-fi;
-
-# MK parameters
 MK=$TMP_DATABASES_DOWNLOAD_FOLDER/mk
 MK_LOG=$TMP_DATABASES_DOWNLOAD_FOLDER/mk.log
 MK_ERR=$TMP_DATABASES_DOWNLOAD_FOLDER/mk.err
 MK_ALL=""
-
 > $MK
 
-# DBFOLDER
-############
+# INFOS
+DOWNLOAD_METHOD="STARK Databases downloading script [$SCRIPT_RELEASE-$SCRIPT_DATE]"
 
-if (($REBUILD)); then
-	mv -f $REBUILD.V$DATE;
+##########
+# ARRIBA #
+##########
+DATABASE="arriba"
+DATABASE_NAME="arriba"
+DATABASE_FULLNAME="arriba"
+DATABASE_WEBSITE="https://github.com/suhrig/arriba/"
+DATABASE_DESCRIPTION="Arriba is a command-line tool for the detection of gene fusions from RNA-Seq data"
+
+if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
+	DBFOLDER_ARRIBA=$(dirname $ARRIBA_DATABASES)
+
+	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DATE
+	mkdir -p $DB_TMP
+	chmod 0775 $DB_TMP
+
+
+	if [ ! -e $DBFOLDER_ARRIBA ] || (($UPDATE)); then
+		(($VERBOSE)) && echo ""
+		(($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME' release '$DATE' for ' [$ASSEMBLY]"
+
+		ARRIBA_CURRENT="https://github.com/suhrig/arriba/releases/download/v2.4.0/arriba_v2.4.0.tar.gz";
+
+		if (($UPDATE)); then
+			if [ -e $DBFOLDER_ARRIBA ]; then mv -f $DBFOLDER_ARRIBA $DBFOLDER_ARRIBA.V$DATE; fi;
+		fi;
+		
+		DB_INFOS_JSON='
+		{
+			"code": "'$DATABASE'",
+			"name": "'$DATABASE_NAME'",
+			"fullname": "'$DATABASE_FULLNAME'",
+			"website": "'$DATABASE_WEBSITE'",
+			"description": "'$DATABASE_DESCRIPTION'"
+		}
+		';
+		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
+
+		DB_RELEASE_INFOS_JSON='
+		{
+			"release": "'$DATE'",
+			"date": "'$DATE'",
+			"files": [ "'$DBFOLDER_ARRIBA'" ],
+			"assembly": [ "'$ASSEMBLY'" ],
+			"download": {
+				"methode": "'$DOWNLOAD_METHOD'",
+				"URL": "'$(dirname $ARRIBA_CURRENT)'",
+				"file": "'$(basename $ARRIBA_CURRENT)'",
+				"date": "'2023-02-08'"
+			}
+		}
+		';
+		echo "$DB_RELEASE_INFOS_JSON" > $DB_TMP/STARK.database.release
+
+		(($VERBOSE)) && echo "#[INFO] ARRIBA URL=$ARRIBA_CURRENT"
+		(($VERBOSE)) && echo "#[INFO] ARRIBA RELEASE=$DBFOLDER_ARRIBA/$DATE/$ASSEMBLY"
+
+		echo "$DBFOLDER_ARRIBA: $DBFOLDER
+			wget --progress=bar:force:noscroll $ARRIBA_CURRENT -P $DB_TMP
+			mkdir -p $DBFOLDER_ARRIBA/$DATE/$ASSEMBLY
+			chmod 0775 $DBFOLDER_ARRIBA/$DATE/$ASSEMBLY
+			tar -xzf  $DB_TMP/$(basename $ARRIBA_CURRENT) -C $DB_TMP --strip-components=1
+			mv $DB_TMP/database/blacklist_$ASSEMBLY* $DBFOLDER_ARRIBA/$DATE/$ASSEMBLY
+			mv $DB_TMP/database/cytobands_$ASSEMBLY* $DBFOLDER_ARRIBA/$DATE/$ASSEMBLY
+			mv $DB_TMP/database/known_fusions_$ASSEMBLY* $DBFOLDER_ARRIBA/$DATE/$ASSEMBLY
+			mv $DB_TMP/database/protein_domains_$ASSEMBLY* $DBFOLDER_ARRIBA/$DATE/$ASSEMBLY
+
+			-[ ! -s $DBFOLDER_ARRIBA/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_ARRIBA/STARK.database && chmod o+r $DBFOLDER_ARRIBA/STARK.database 
+			-[ ! -s $DBFOLDER_ARRIBA/$DATE/$ASSEMBLY/STARK.database.release ] && cp $DB_TMP/STARK.database.release $DBFOLDER_ARRIBA/$DATE/$ASSEMBLY/STARK.database.release && chmod o+r $DBFOLDER_ARRIBA/$DATE/$ASSEMBLY/STARK.database.release
+			
+			[ ! -e $DBFOLDER_ARRIBA/current ] || unlink $DBFOLDER_ARRIBA/current
+			ln -snf $DBFOLDER_ARRIBA/$DATE $DBFOLDER_ARRIBA/current
+			rm -rf $DB_TMP;
+		" >> $MK
+		MK_ALL="$MK_ALL $DBFOLDER_ARRIBA"
+	fi;
 fi;
 
-
-# INFOS
-#########
-
-DOWNLOAD_METHOD="STARK Databases download script [$SCRIPT_RELEASE-$SCRIPT_DATE]"
-
-
-##########
-# GENOME #
-##########
-
-#if ((1)); then
-
-# DB
-DATABASE="genomes"
-DATABASE_NAME="Genomes"
-DATABASE_FULLNAME="Reference Genome Sequences Assembly"
-DATABASE_WEBSITE="https://genome.ucsc.edu/"
-DATABASE_DESCRIPTION="Reference sequence was produced by the Genome Reference Consortium, and is composed of genomic sequence, primarily finished clones that were sequenced as part of the Human Genome Project"
-
+########
+# CTAT #
+########
+DATABASE="ctat"
+DATABASE_NAME="ctat"
+DATABASE_FULLNAME=" CTAT Genome Lib"
+DATABASE_WEBSITE="https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/"
+DATABASE_DESCRIPTION=" CTAT Genome Lib is a resource collection used by the Trinity Cancer Transcriptome Analysis Toolkit (CTAT). This CTAT-genome-lib-builder system is leveraged for preparing a target genome and annotation set for use with Trinity CTAT tools, including fusion transcript detection and cancer mutation discovery"
 
 if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
 
+	DBFOLDER_CTAT=$(dirname $CTAT_DATABASES)
 
-	# DB TARGET
-	DB_TARGET=$REF;												# /STARK/databases/genomes/current/hg19.fa
-	DB_ASSEMBLY=$ASSEMBLY; 										# hg19
-	DB_TARGET_FILE=$(basename $DB_TARGET);						# hg19.fa
-	DB_TARGET_FOLDER=$(dirname $DB_TARGET);						# /STARK/databases/genomes/current
-	#DB_TARGET_RELEASE=$(basename $DB_TARGET_FOLDER);			# current
-	DB_TARGET_RELEASE=$DB_ASSEMBLY;								# hg19
-	DB_TARGET_DB_FOLDER=$(dirname $DB_TARGET_FOLDER);			# /STARK/databases/genomes
-
-	# DB RELEASE
-	DB_RELEASE=$DATABASES_RELEASE;								# DATE
-	#[ -s $DB_TARGET_FOLDER ] && DB_RELEASE=$DB_TARGET_RELEASE	# if /STARK/databases/genomes/hg19 exists then keep release
-	DB_RELEASE_DATE=$DATABASES_RELEASE;							# DATE
-	DB_RELEASE_FILE=$DB_TARGET_FILE;							# hg19.fa
-	DB_RELEASE_FOLDER=$DB_TARGET_DB_FOLDER/$DB_RELEASE;			# /STARK/databases/genomes/DATE
-	DB_RELEASE_FILE_PATH="$DB_RELEASE_FOLDER/$DB_RELEASE_FILE";	# /STARK/databases/genomes/DATE/hg19.fa
-
-	# TMP files and folders
-	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DB_RELEASE
+	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DATE
 	mkdir -p $DB_TMP
+	chmod 0775 $DB_TMP;
 
-
-	## Reference genome
-	###################
-
-	if [ ! -e $REF ]; then
-
-		# VERBOSE
+	if [ ! -e $DBFOLDER_CTAT ] || (($UPDATE)); then
 		(($VERBOSE)) && echo ""
-		(($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME' release '$DB_RELEASE' for '$DB_TARGET_RELEASE' [$DB_ASSEMBLY]"
-		
-		# DEBUG
-		#(($DEBUG)) && echo "#[INFO] DATABASE '$DATABASE_NAME' release '$DB_RELEASE' for '$DB_TARGET_RELEASE' ";
+		(($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME' release '$DATE' for [$ASSEMBLY]"
 
-		# Retrieve chromosomes
-		UCSC_GENOME_URL="ftp://hgdownload.soe.ucsc.edu/goldenPath/$DB_ASSEMBLY/chromosomes/"
-		UCSC_GENOME_URL_FILE="md5sum.txt";
+	if [ $ASSEMBLY == "hg19" ] ; then CTAT_CURRENT="https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/GRCh37_gencode_v19_CTAT_lib_Mar012021.plug-n-play.tar.gz"; fi;
+	if [ $ASSEMBLY == "hg38" ] ; then CTAT_CURRENT="https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/GRCh38_gencode_v37_CTAT_lib_Mar012021.plug-n-play.tar.gz"; fi;
+		CTAT_DATE=$(curl -s -I $CTAT_CURRENT | grep "Last-Modified: " | sed "s/Last-Modified: //g" | sed "s/\r$//g");
+		CTAT_DATE_RELEASE=$(date -d "$CTAT_DATE");
 
-		(($VERBOSE)) && echo "#[INFO] Check chromosomes files on '$UCSC_GENOME_URL'..."
-		CHRS=""
-		CHRS=$(curl $UCSC_GENOME_URL/chr*.fa.gz --list-only -s | grep fa.gz$ | grep -v "_" | sort -u -k1,1 -V)
-		if [ "$CHRS" == "" ]; then
-			CHRS=$(curl -s $UCSC_GENOME_URL | awk -F".fa.gz\">" '{print $2}' | awk -F"</A>" '{print $1}' | grep fa.gz* | grep -v "_" | sort -u -k1,1 -V)
+		if (($UPDATE)); then
+			if [ -e $DBFOLDER_CTAT ]; then mv -f $DBFOLDER_CTAT $DBFOLDER_CTAT.V$DATE; fi;
 		fi;
-		CHRS_LIST=$(echo $CHRS | tr "\n" " ")
-		(($VERBOSE)) && echo "#[INFO] Chromosomes files: '$CHRS_LIST'"
-
-		UCSC_GENOME_URL_FILE_DATE=$(curl -s -I $UCSC_GENOME_URL/$UCSC_GENOME_URL_FILE | grep "Last-Modified: " | sed "s/Last-Modified: //g" | sed "s/\r$//g")
-
-		# RELEASE
-		DB_RELEASE_FROM_DOWNLOAD=$(date -d "$UCSC_GENOME_URL_FILE_DATE")
-
-		# Check chromosomes files
-		CHROM_FILES_CURL=""
-		CHROM_FILES_WGET=""
-		for CHROM_FILE in $CHRS; do
-			CHROM_FILES=$CHROM_FILES" $DB_TMP/$CHROM_FILE"
-			CHROM_FILES_CURL=$CHROM_FILES_CURL" && curl -s -R $UCSC_GENOME_URL/$CHROM_FILE -o $DB_TMP/$CHROM_FILE"
-			CHROM_FILES_WGET=$CHROM_FILES_WGET" && wget --no-verbose -S -c -O $DB_TMP/$CHROM_FILE $UCSC_GENOME_URL/$CHROM_FILE "
-		done;
-
-		# DATABASE Infos
+		
 		DB_INFOS_JSON='
 		{
 			"code": "'$DATABASE'",
@@ -445,1187 +330,227 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		# DATABASE Release Infos
 		DB_RELEASE_INFOS_JSON='
 		{
-			"release": "'$DB_RELEASE_FROM_DOWNLOAD'",
-			"date": "'$DB_RELEASE_DATE'",
-			"files": [ "'$DB_TARGET_FILE'" ],
-			"assembly": [ "'$DB_ASSEMBLY'" ],
+			"release": "'$CTAT_DATE'",
+			"date": "'$CTAT_DATE_RELEASE'",
+			"files": [ "'$CTAT_CURRENT'" ],
+			"assembly": [ "'$ASSEMBLY'" ],
 			"download": {
 				"methode": "'$DOWNLOAD_METHOD'",
-				"URL": "'$UCSC_GENOME_URL'",
-				"file": "'$UCSC_GENOME_URL_FILE'",
-				"date": "'$UCSC_GENOME_URL_FILE_DATE'",
-				"chromosomes": "'$CHRS_LIST'"
+				"URL": "'$(dirname $CTAT_CURRENT)'",
+				"file": "'$(basename $CTAT_CURRENT)'",
+				"date": "'$CTAT_DATE_RELEASE'"
 			}
 		}
 		';
 		echo "$DB_RELEASE_INFOS_JSON" > $DB_TMP/STARK.database.release
 
-		# Chromosomes tmp folder
-		echo "$DB_TMP:
-				mkdir -p $DB_TMP/
-		    " >> $MK
+		(($VERBOSE)) && echo "#[INFO] CTAT URL=$CTAT_CURRENT"
+		(($VERBOSE)) && echo "#[INFO] CTAT RELEASE=$DATE"
 
-		# Chromosomes
-		echo "$DB_TMP/$DB_RELEASE_FILE: $DB_TMP
-				curl $UCSC_GENOME_URL/README.txt -s -R -o $DB_TMP/README.txt
-				curl $UCSC_GENOME_URL/md5sum.txt -s -R -o $DB_TMP/md5sum.txt
-				#((1)) $CHROM_FILES_CURL
-				((1)) $CHROM_FILES_WGET
-				$GZ -dc $CHROM_FILES > $DB_TMP/$DB_RELEASE_FILE
-		    " >> $MK
+		# MK
+		echo "$DBFOLDER_CTAT: $DBFOLDER
+			wget --progress=bar:force:noscroll $CTAT_CURRENT -P $DB_TMP;
+			mkdir -p $DBFOLDER_CTAT/$DATE/$ASSEMBLY
+			chmod 0775 $DBFOLDER_CTAT/$DATE/$ASSEMBLY
+			tar -xzf  $DB_TMP/$(basename $CTAT_CURRENT) -C  $DB_TMP --strip-components=1
+			cp -R $DB_TMP/ctat_genome_lib_build_dir/* $DBFOLDER_CTAT/$DATE/$ASSEMBLY
+			-[ ! -s $DBFOLDER_CTAT/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_CTAT/STARK.database && chmod o+r $DBFOLDER_CTAT/STARK.database 
+			-[ ! -s $DBFOLDER_CTAT/$DATE/$ASSEMBLY/STARK.database.release ] && cp $DB_TMP/STARK.database.release $DBFOLDER_CTAT/$DATE/$ASSEMBLY/STARK.database.release && chmod o+r $DBFOLDER_CTAT/$DATE/$ASSEMBLY/STARK.database.release
 
-		# Final
-		echo "$DB_TARGET: $DB_TMP/$DB_RELEASE_FILE
-			# Folder creation
-			mkdir -p $DB_RELEASE_FOLDER
-			chmod 0775 $DB_RELEASE_FOLDER
-			# Copy Files
-			cp -p $DB_TMP/$DB_RELEASE_FILE $DB_RELEASE_FILE_PATH
-			cp -p $DB_TMP/README.txt $DB_RELEASE_FOLDER/README.txt
-			cp -p $DB_TMP/md5sum.txt $DB_RELEASE_FOLDER/md5sum.txt
-			# date 
-			touch $DB_RELEASE_FILE_PATH -r $DB_RELEASE_FOLDER/md5sum.txt
-			# database release info
-			-[ ! -s $DB_TARGET_DB_FOLDER/STARK.database ] && cp $DB_TMP/STARK.database $DB_TARGET_DB_FOLDER/STARK.database
-			cp $DB_TMP/STARK.database.release $DB_RELEASE_FOLDER
-			chmod o+r $DB_TARGET_DB_FOLDER/STARK.database $DB_RELEASE_FOLDER/STARK.database.release
-			# links
-			-[ $DB_TARGET_RELEASE != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_FOLDER
-			-[ latest != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_DB_FOLDER/latest
-			-(($CURRENT)) && [ -e $DB_TARGET_DB_FOLDER/current ] && mv $DB_TARGET_DB_FOLDER/current $DB_TARGET_DB_FOLDER/current.$DATE
-			-(($CURRENT)) && [ current != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_DB_FOLDER/current
-			# Clear
+			[ ! -e $DBFOLDER_CTAT/current ] || unlink $DBFOLDER_CTAT/current
+			ln -snf $DBFOLDER_CTAT/$DATE $DBFOLDER_CTAT/current
+
 			rm -rf $DB_TMP;
 		" >> $MK
-
-		# Add to MK
-		MK_ALL="$MK_ALL $DB_TARGET"
-
+		MK_ALL="$MK_ALL $DBFOLDER_CTAT"
 	fi;
+fi;
 
+
+###########
+# GENCODE #
+###########
+DATABASE="gencode"
+DATABASE_NAME="gencode"
+DATABASE_FULLNAME="GENCODE"
+DATABASE_WEBSITE="https://www.gencodegenes.org/"
+DATABASE_DESCRIPTION=" The goal of the GENCODE project is to identify and classify all gene features in the human and mouse genomes with high accuracy based on biological evidence, and to release these annotations for the benefit of biomedical research and genome interpretation"
+
+if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
+
+	DBFOLDER_GENCODE=$(dirname $GENCODE_DATABASES)
+
+	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DATE
+	mkdir -p $DB_TMP
+	chmod 0775 $DB_TMP;
+
+	if [ ! -e $DBFOLDER_GENCODE ] || (($UPDATE)); then
+		(($VERBOSE)) && echo ""
+		(($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME' release '$DATE' for [$ASSEMBLY]"
+	# for hg19 the last gencode version is v19
+	if [ $ASSEMBLY == "hg19" ] ; then GENCODE_CURRENT="https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_19/gencode.v19.annotation.gtf.gz"; fi;
+	# for hg38 the first gencode version is v20 ; current version (10/2023) is v44
+	if [ $ASSEMBLY == "hg38" ] ; then GENCODE_CURRENT="https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_44/gencode.v44.primary_assembly.annotation.gtf.gz"; fi;
+		GENCODE_DATE=$(curl -s -I $GENCODE_CURRENT | grep "Last-Modified: " | sed "s/Last-Modified: //g" | sed "s/\r$//g");
+		GENCODE_DATE_RELEASE=$(date -d "$GENCODE_DATE");
+
+		if (($UPDATE)); then
+			if [ -e $DBFOLDER_GENCODE ]; then mv -f $DBFOLDER_GENCODE $DBFOLDER_GENCODE.V$DATE; fi;
+		fi;
+		
+		DB_INFOS_JSON='
+		{
+			"code": "'$DATABASE'",
+			"name": "'$DATABASE_NAME'",
+			"fullname": "'$DATABASE_FULLNAME'",
+			"website": "'$DATABASE_WEBSITE'",
+			"description": "'$DATABASE_DESCRIPTION'"
+		}
+		';
+		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
+
+		# DATABASE Release Infos
+		DB_RELEASE_INFOS_JSON='
+		{
+			"release": "'$GENCODE_DATE'",
+			"date": "'$GENCODE_DATE_RELEASE'",
+			"files": [ "'$(basename $GENCODE_CURRENT)'" ],
+			"assembly": [ "'$ASSEMBLY'" ],
+			"download": {
+				"methode": "'$DOWNLOAD_METHOD'",
+				"URL": "'$(dirname $GENCODE_CURRENT)'",
+				"file": "'$(basename $GENCODE_CURRENT)'",
+				"date": "'$GENCODE_DATE_RELEASE'"
+			}
+		}
+		';
+		echo "$DB_RELEASE_INFOS_JSON" > $DB_TMP/STARK.database.release
+
+		(($VERBOSE)) && echo "#[INFO] CTAT URL=$GENCODE_CURRENT"
+		(($VERBOSE)) && echo "#[INFO] CTAT RELEASE=$DATE"
+
+		# MK
+		echo "$DBFOLDER_GENCODE: $DBFOLDER
+			mkdir -p $DBFOLDER_GENCODE/$DATE/$ASSEMBLY
+			chmod 0775 $DBFOLDER_GENCODE/$DATE/$ASSEMBLY
+			wget --progress=bar:force:noscroll $GENCODE_CURRENT -P $DB_TMP
+			tar -xzf  $DB_TMP/$(basename $CTAT_CURRENT) -C  $DBFOLDER_GENCODE/$DATE/$ASSEMBLY --strip-components=1
+			-[ ! -s $DBFOLDER_GENCODE/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_GENCODE/STARK.database && chmod o+r $DBFOLDER_GENCODE/STARK.database 
+			-[ ! -s $DBFOLDER_GENCODE/$DATE/$ASSEMBLY/STARK.database.release ] && cp $DB_TMP/STARK.database.release $DBFOLDER_GENCODE/$DATE/$ASSEMBLY/STARK.database.release && chmod o+r $DBFOLDER_GENCODE/$DATE/$ASSEMBLY/STARK.database.release
+
+			[ ! -e $DBFOLDER_GENCODE/current ] || unlink $DBFOLDER_GENCODE/current
+			ln -snf $DBFOLDER_GENCODE/$DATE $DBFOLDER_GENCODE/current
+
+			rm -rf $DB_TMP;
+		" >> $MK
+		MK_ALL="$MK_ALL $DBFOLDER_GENCODE"
+	fi;
+fi;
+
+# default Genome
+if [ -e $GENOME ] ; then
 
 	# Genome index
-	##############
-
-	## REF CACHE
-
-
-	if [ ! -d $REF.hts-ref ] || [ ! "$(ls -A $REF.hts-ref)" ]; then
-
+	if [ ! -d $GENOME.hts-ref ] || [ ! "$(ls -A $GENOME.hts-ref)" ]; then
 		if [ "$SAMTOOLS" != "" ]; then
-
-		    (($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME' release '$DB_RELEASE' for '$DB_TARGET_RELEASE' REF CACHE "
-
-		    # MK
-		    echo "$REF.hts-ref/done: $REF
-				mkdir -p $REF.hts-ref;
-				perl $(dirname $SAMTOOLS)/seq_cache_populate.pl -root $REF.hts-ref $REF 1>/dev/null 2>/dev/null;
+		    echo "$GENOME.hts-ref/done: $GENOME				mkdir -p $GENOME.hts-ref;
+				perl $(dirname $SAMTOOLS)/seq_cache_populate.pl -root $GENOME.hts-ref $GENOME 1>/dev/null 2>/dev/null;
 				echo 'done.' > $REF.hts-ref/done;
 		    " >> $MK
-
-			MK_ALL="$MK_ALL $REF.hts-ref/done"
-
+			MK_ALL="$MK_ALL $GENOME.hts-ref/done"
 		fi;
-
 	fi;
 
 	## BOWTIE index
-
-	if [ ! -e $DB_TARGET_FOLDER/$ASSEMBLY.rev.1.bt2 ]; then
-
+	if [ ! -e $(dirname $GENOME)/$ASSEMBLY.rev.1.bt2 ]; then
 		if [ "$BOWTIE" != "" ]; then
-
-		    (($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME' release '$DB_RELEASE' for '$DB_TARGET_RELEASE' BOWTIE Index"
-
-		    # MK
-		    echo "$DB_TARGET_FOLDER/$ASSEMBLY.rev.1.bt2: $REF
-				$(dirname $BOWTIE)/bowtie2-build --threads $THREADS --packed $REF $DB_TARGET_FOLDER/$ASSEMBLY ;
+		    echo " $(dirname $GENOME)/$ASSEMBLY.rev.1.bt2: $GENOME
+				$(dirname $BOWTIE)/bowtie2-build --threads $THREADS --packed $GENOME $ASSEMBLY.rev.1.bt2 ;
 		    " >> $MK
-
-			MK_ALL="$MK_ALL $DB_TARGET_FOLDER/$ASSEMBLY.rev.1.bt2"
-
+			MK_ALL="$MK_ALL $(dirname $GENOME)/$ASSEMBLY.rev.1.bt2"
 		fi;
-
 	fi;
 
-
 	## BWA index
-
-	if [ ! -e $DB_TARGET.bwt ]; then
-
+	if [ ! -e $GENOME.bwt ]; then
 		if [ "$BWA" != "" ]; then
-
-		    (($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME' release '$DB_RELEASE' for '$DB_TARGET_RELEASE' BWA Index"
-		    
-			# MK
-		    echo "$DB_TARGET.bwt: $DB_TARGET
-				$BWA index -a bwtsw $DB_TARGET;
+		    echo "$GENOME.bwt: $GENOME
+				$BWA index -a bwtsw $GENOME;
 		    " >> $MK
-
-			MK_ALL="$MK_ALL $DB_TARGET.bwt"
-
+			MK_ALL="$MK_ALL $GENOME.bwt"
 		fi;
-
 	fi;
 
 	## BWA2 index
-
-	if [ ! -e $DB_TARGET.bwt.2bit.64 ]; then
-
+	if [ ! -e $GENOME.bwt.2bit.64 ]; then
 		if [ "$BWA2" != "" ]; then
-
-		    (($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME' release '$DB_RELEASE' for '$DB_TARGET_RELEASE' BWA Index"
-		    
-			# MK
-		    echo "$DB_TARGET.bwt.2bit.64: $DB_TARGET
-				$BWA2 index $DB_TARGET;
+		    echo "$GENOME.bwt.2bit.64: $GENOME
+				$BWA2 index $GENOME;
 		    " >> $MK
-
-			MK_ALL="$MK_ALL $DB_TARGET.bwt.2bit.64"
-
+			MK_ALL="$MK_ALL $GENOME.bwt.2bit.64"
 		fi;
-
 	fi;
 
 	## SAMTOOLS index
-
-	if [ ! -e $DB_TARGET.fai ]; then
-
+	if [ ! -e $GENOME.fai ]; then
 		if [ "$SAMTOOLS" != "" ]; then
-
-		    (($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME' release '$DB_RELEASE' for '$DB_TARGET_RELEASE' SAMTOOLS Index"
-
-			# MK
-		    echo "$DB_TARGET.fai: $DB_TARGET
-				$SAMTOOLS faidx $DB_TARGET;
+		    echo "$GENOME.fai: $GENOME
+				$SAMTOOLS faidx $GENOME;
 		    " >> $MK
-
-			MK_ALL="$MK_ALL $DB_TARGET.fai"
-
+			MK_ALL="$MK_ALL $GENOME.fai"
 		fi;
-
 	fi;
 
 	## PICARD index
-
-	if [ ! -e $DB_TARGET_FOLDER/$ASSEMBLY.dict ]; then
-
+	if [ ! -e $(dirname $GENOME)/$ASSEMBLY.dict ]; then
 		if [ "$PICARD" != "" ]; then
-
-		    (($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME' release '$DB_RELEASE' for '$DB_TARGET_RELEASE' PICARD Index"
-
-			# MK
-		    echo "$DB_TARGET_FOLDER/$ASSEMBLY.dict: $REF
+		    echo "$(dirname $GENOME)/$ASSEMBLY.dict: $REF
 				$JAVA -jar $PICARD CreateSequenceDictionary \
-					-REFERENCE $REF \
-					-OUTPUT $DB_TARGET_FOLDER/$ASSEMBLY.dict ;
+					-REFERENCE $GENOME \
+					-OUTPUT $(dirname $GENOME)/$ASSEMBLY.dict ;
 		    " >> $MK
-
-			MK_ALL="$MK_ALL $DB_TARGET_FOLDER/$ASSEMBLY.dict"
-
+			MK_ALL="$MK_ALL $(dirname $GENOME)/$ASSEMBLY.dict"
 		fi;
-
 	fi;
 
 	## GATK IMG 
-
-	if [ ! -e $DB_TARGET.img ]; then
-
+	if [ ! -e $GENOME.img ]; then
 		if [ "$PICARD" != "" ]; then
-
-		    (($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME' release '$DB_RELEASE' for '$DB_TARGET_RELEASE' GATK Index Image"
-
-			# MK
-		    echo "$DB_TARGET.img: $REF
+		    echo "$GENOME.img: $GENOME
 				$JAVA -XX:+UseParallelGC -XX:ParallelGCThreads=$THREADS -jar $GATK4 BwaMemIndexImageCreator \
-					--input $REF \
-					--output $DB_TARGET.img;
+					--input $GENOME \
+					--output $GENOME.img;
 		    " >> $MK
-
-			MK_ALL="$MK_ALL $DB_TARGET.img"
-
-		fi;
-
+			MK_ALL="$MK_ALL $GENOME.img"
+		fi;	
 	fi;
 
-fi;
-
-
-
-##############################
-# GATK VARIANT RECALIBRATION #
-##############################
-
-#if ((1)); then
-
-# DB
-DATABASE="gatk"
-DATABASE_NAME="GATK"
-DATABASE_FULLNAME="GATK Databases"
-DATABASE_WEBSITE="https://www.broadinstitute.org//"
-DATABASE_DESCRIPTION="Databases for GATK Variant Recalibration"
-
-
-if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
-
-	DBFOLDER_GATK_URL_FULL_COPY=0
-	GATK_RESOURCE_NB=0
-	MK_DBFOLDER_GATK_ALL=""
-	COPY_MODE_DBFOLDER_GATK=$COPY_MODE_DEFAULT
-	> $MK.existing_gatk_db
-
-	for GATK_RESOURCE in $GATK_DATABASES_LIST; do
-		#echo $DBFOLDER_GATK/current/$ASSEMBLY/$(echo $GATK_RESOURCE | cut -d: -f2)
-
-		# DB TARGET
-		DB_TARGET=$DBFOLDER_GATK/current/$(echo $GATK_RESOURCE | cut -d: -f2);	# /STARK/databases/gatk/current/1000G_omni2.5.b37.vcf.gz
-		DB_ASSEMBLY=$ASSEMBLY; 													# hg19
-		DB_TARGET_FILE=$(basename $DB_TARGET);									# 1000G_omni2.5.b37.vcf.gz
-		DB_TARGET_FOLDER=$(dirname $DB_TARGET);									# /STARK/databases/gatk/current
-		DB_TARGET_RELEASE=$(basename $DB_TARGET_FOLDER);						# current
-		#DB_TARGET_RELEASE=$DATABASES_RELEASE;									# DATE
-		DB_TARGET_DB_FOLDER=$(dirname $DB_TARGET_FOLDER);						# /STARK/databases/gatk
-
-		# DB RELEASE
-		DB_RELEASE=$DATABASES_RELEASE;								# DATE
-		#[ -s $DB_TARGET_FOLDER ] && DB_RELEASE=$DB_TARGET_RELEASE	# if /STARK/databases/gatk/current exists then keep release
-		DB_RELEASE_DATE=$DATABASES_RELEASE;							# DATE
-		DB_RELEASE_FILE=$DB_TARGET_FILE;							# 1000G_omni2.5.b37.vcf.gz
-		DB_RELEASE_FOLDER=$DB_TARGET_DB_FOLDER/$DB_RELEASE;			# /STARK/databases/gatk/DATE
-		DB_RELEASE_FILE_PATH="$DB_RELEASE_FOLDER/$DB_RELEASE_FILE";	# /STARK/databases/gatk/DATE/1000G_omni2.5.b37.vcf.gz
-
-		# TMP files and folders
-		DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DB_RELEASE
-		mkdir -p $DB_TMP
-
-		# Update
-		if (($UPDATE)); then
-			if [ -e $DB_TARGET ]; then mv -f $DB_TARGET $DB_TARGET.V$DATE; fi;
+	## STAR index 
+	if [ ! -e $(dirname $GENOME)/$(basename $GENOME).star.idx ]; then
+		if [ "$STAR" != "" ]; then
+		    echo "$(dirname $GENOME)/$(basename $GENOME).star.idx: $GENOME
+			STAR --runThreadN $THREADS --runMode genomeGenerate --genomeDir $(dirname $GENOME)/$(basename $GENOME).star.idx --genomeFastaFiles $GENOME --sjdbGTFfile $DBFOLDER_GENCODE/current/*annotation.gtf* ;
+		    " >> $MK
+			MK_ALL="$MK_ALL $(dirname $GENOME)/$(basename $GENOME).star.idx"
 		fi;
-
-		#if [ ! -e $DBFOLDER_GATK/current/$(echo $GATK_RESOURCE | cut -d: -f2) ]; then
-		#if [ ! -e $DB_TARGET_FOLDER/$(echo $GATK_RESOURCE | cut -d: -f2) ]; then
-		if [ -e $DB_TARGET_FOLDER/$(echo $GATK_RESOURCE | cut -d: -f2) ]; then
-
-			echo "$DB_RELEASE_FILE_PATH: $DBFOLDER $REF
-				mkdir -p $DB_RELEASE_FOLDER
-				$COPY_MODE_DBFOLDER_GATK $DB_TARGET_FOLDER/$(echo $GATK_RESOURCE | cut -d: -f2) $DB_RELEASE_FILE_PATH
-				$COPY_MODE_DBFOLDER_GATK $DB_TARGET_FOLDER/$(echo $GATK_RESOURCE | cut -d: -f2).tbi $DB_RELEASE_FILE_PATH.tbi
-			" >> $MK.existing_gatk_db
-
-			MK_DBFOLDER_GATK_ALL_existing_gatk_db="$MK_DBFOLDER_GATK_ALL_existing_gatk_db $DB_RELEASE_FILE_PATH"
-			MK_ALL_existing_gatk_db="$MK_ALL_existing_gatk_db $DB_RELEASE_FILE_PATH" 
-
-		else
-
-			((GATK_RESOURCE_NB++))
-
-			# VERBOSE
-			(($VERBOSE)) && echo ""
-			(($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME/$GATK_RESOURCE' release '$DB_RELEASE' for '$DB_TARGET_RELEASE' [$DB_ASSEMBLY]"
-
-			if [ $DB_ASSEMBLY == "hg38" ]; then
-				DBFOLDER_GATK_URL="https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0"
-			elif [ $DB_ASSEMBLY == "hg19" ]; then
-				DBFOLDER_GATK_URL="https://data.broadinstitute.org/snowman/hg19/variant_calling/vqsr_resources/Exome/v2"
-			else
-				DBFOLDER_GATK_URL="https://data.broadinstitute.org/snowman/$DB_ASSEMBLY/variant_calling/vqsr_resources/Exome/v2"
-			fi;
-			DBFOLDER_GATK_URL_FILE="$DB_TARGET_FILE"
-			
-			DB_TARGET_FILE_LIST="$DB_TARGET_FILE_LIST $DB_TARGET_FILE"
-
-			DBFOLDER_GATK_URL_FILE_DATE=$(curl -s -I $DBFOLDER_GATK_URL/$DBFOLDER_GATK_URL_FILE | grep "Last-Modified: " | sed "s/Last-Modified: //g" | sed "s/\r$//g")
-
-			# RELEASE
-			DB_RELEASE_FROM_DOWNLOAD=$(date -d "$DBFOLDER_GATK_URL_FILE_DATE")
-			
-			# REFSEQ_GENE folder
-			DB_RELEASE_FILE=$(basename $DB_RELEASE_FILE_PATH)
-
-			# OUTPUT
-			(($VERBOSE)) && echo "#[INFO] GATK Resource URL   = $DBFOLDER_GATK_URL"
-			(($VERBOSE)) && echo "#[INFO] GATK Resource File  = $DBFOLDER_GATK_URL_FILE"
-
-
-			DBFOLDER_GATK_DOWNLOAD_MULTITHREAD=1
-
-			# Get gatk txt file
-			if ! (($DBFOLDER_GATK_URL_FULL_COPY)); then
-				DBFOLDER_GATK_URL_PATH=$(echo $DBFOLDER_GATK_URL | sed 's#^https://##gi'  | sed 's#^http://##gi')
-				
-				if (($DBFOLDER_GATK_DOWNLOAD_MULTITHREAD)); then
-					echo "$DB_TMP/original/chr_name_conv.txt: $DBFOLDER $REF
-						mkdir -p $DB_TMP/original
-						cat $REF.fai | awk '{a=\$\$1; gsub(\"^chr\",\"\",a); print a\" \"\$\$1}' > $DB_TMP/original/chr_name_conv.txt
-				
-					" >> $MK
-				else
-					echo "$DB_TMP/original/chr_name_conv.txt: $DBFOLDER $REF
-						mkdir -p $DB_TMP
-						wget -q -r --no-parent $DBFOLDER_GATK_URL --directory-prefix=$DB_TMP/original
-						mv $DB_TMP/original/$DBFOLDER_GATK_URL_PATH/*vcf.gz* $DB_TMP/original/
-						cat $REF.fai | awk '{a=\$\$1; gsub(\"^chr\",\"\",a); print a\" \"\$\$1}' > $DB_TMP/original/chr_name_conv.txt
-					" >> $MK
-				fi;
-				DBFOLDER_GATK_URL_FULL_COPY=1
-			fi;
-
-			echo "$DB_TMP/$DB_RELEASE_FILE: $DBFOLDER $REF $DB_TMP/original/chr_name_conv.txt
-				mkdir -p $DB_TMP/original
-				if (($DBFOLDER_GATK_DOWNLOAD_MULTITHREAD)); then \
-					curl $DBFOLDER_GATK_URL/$DBFOLDER_GATK_URL_FILE -s -R -o $DB_TMP/original/$DBFOLDER_GATK_URL_FILE; \
-				else \
-					$COPY_MODE_DBFOLDER_GATK $DB_TMP/original/$DBFOLDER_GATK_URL_FILE $DB_TMP/$DBFOLDER_GATK_URL_FILE; \
-				fi;
-				$BGZIP -dc -@$THREADS $DB_TMP/original/$DBFOLDER_GATK_URL_FILE | sed 's/\\t\$\$//gi' | $BGZIP -l1 -@$THREADS -c > $DB_TMP/$DBFOLDER_GATK_URL_FILE.tmp.vcf.gz
-				$TABIX $DB_TMP/$DBFOLDER_GATK_URL_FILE.tmp.vcf.gz
-				$BCFTOOLS reheader --fai $REF.fai --threads $THREADS $DB_TMP/$DBFOLDER_GATK_URL_FILE.tmp.vcf.gz > $DB_TMP/$DBFOLDER_GATK_URL_FILE.tmp2.vcf.gz
-				$TABIX $DB_TMP/$DBFOLDER_GATK_URL_FILE.tmp2.vcf.gz
-				$BCFTOOLS annotate --rename-chrs $DB_TMP/original/chr_name_conv.txt --threads $THREADS $DB_TMP/$DBFOLDER_GATK_URL_FILE.tmp2.vcf.gz | grep -v '^##contig=<ID=[^,]*>' | $BGZIP -l1 -@$THREADS > $DB_TMP/$DB_RELEASE_FILE.tmp3.vcf.gz
-				$TABIX $DB_TMP/$DBFOLDER_GATK_URL_FILE.tmp3.vcf.gz
-				$BCFTOOLS view --threads $THREADS -r \$\$(cat $DB_TMP/original/chr_name_conv.txt | cut -d' ' -f2 | tr '\\n' ',') $DB_TMP/$DB_RELEASE_FILE.tmp3.vcf.gz | $BGZIP -@$THREADS > $DB_TMP/$DB_RELEASE_FILE 
-				$TABIX $DB_TMP/$DBFOLDER_GATK_URL_FILE
-				rm -f $DB_TMP/$DBFOLDER_GATK_URL_FILE.tmp*
-				mkdir -p $DB_RELEASE_FOLDER
-				chmod 0775 $DB_RELEASE_FOLDER
-
-			" >> $MK
-			# Copy in database folder
-			echo "$DB_RELEASE_FILE_PATH: $DB_TMP/$DB_RELEASE_FILE
-				mkdir -p $DB_RELEASE_FOLDER/original
-				$COPY_MODE_DBFOLDER_GATK $DB_TMP/original/$DBFOLDER_GATK_URL_FILE $DB_RELEASE_FOLDER/original/
-				$COPY_MODE_DBFOLDER_GATK $DB_TMP/$DB_RELEASE_FILE $DB_RELEASE_FILE_PATH
-				$COPY_MODE_DBFOLDER_GATK $DB_TMP/$DB_RELEASE_FILE.tbi $DB_RELEASE_FILE_PATH.tbi
-			" >> $MK
-
-			MK_DBFOLDER_GATK_ALL="$MK_DBFOLDER_GATK_ALL $DB_RELEASE_FILE_PATH"
-			MK_ALL="$MK_ALL $DB_RELEASE_FILE_PATH" 
-
-		fi;
-
-
-
-	done;
-
-
-
-	# DATABASE Infos
-	DB_INFOS_JSON='
-	{
-		"code": "'$DATABASE'",
-		"name": "'$DATABASE_NAME'",
-		"fullname": "'$DATABASE_FULLNAME'",
-		"website": "'$DATABASE_WEBSITE'",
-		"description": "'$DATABASE_DESCRIPTION'"
-	}
-	';
-	#echo "$DB_INFOS_JSON" 
-	echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
-
-	# DATABASE Release Infos
-	DB_RELEASE_INFOS_JSON='
-	{
-		"release": "'$DB_RELEASE_FROM_DOWNLOAD'",
-		"date": "'$DB_RELEASE_DATE'",
-		"files": [ "'$(echo $DB_TARGET_FILE_LIST | sed 's/ /", "/gi')'" ],
-		"assembly": [ "'$DB_ASSEMBLY'" ],
-		"download": {
-			"methode": "'$DOWNLOAD_METHOD'",
-			"URL": "'$DBFOLDER_GATK_URL'",
-			"file": "'$(echo $DB_TARGET_FILE_LIST | sed 's/ /,/gi')'",
-			"date": "'$DBFOLDER_GATK_URL_FILE_DATE'"
-		}
-	}
-	';
-	#echo "$DB_RELEASE_INFOS_JSON"
-	echo "$DB_RELEASE_INFOS_JSON" > $DB_TMP/STARK.database.release
-
-	if (($GATK_RESOURCE_NB)); then
-
-		cat $MK.existing_gatk_db >> $MK
-
-		MK_DBFOLDER_GATK_ALL="$MK_DBFOLDER_GATK_ALL $MK_DBFOLDER_GATK_ALL_existing_gatk_db"
-		MK_ALL="$MK_ALL $MK_ALL_existing_gatk_db" 
-
-		echo "$DB_TARGET_FOLDER: $MK_DBFOLDER_GATK_ALL
-			# folder
-			mkdir -p $DB_RELEASE_FOLDER/original
-			chmod 0775 $DB_RELEASE_FOLDER -R
-			# database release info
-			-[ ! -s $DB_TARGET_DB_FOLDER/STARK.database ] && cp $DB_TMP/STARK.database $DB_TARGET_DB_FOLDER/STARK.database
-			cp $DB_TMP/STARK.database.release $DB_RELEASE_FOLDER/
-			chmod o+r $DB_TARGET_DB_FOLDER/STARK.database $DB_RELEASE_FOLDER/STARK.database.release
-			# links
-			-[ $DB_TARGET_RELEASE != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_FOLDER
-			-[ latest != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_DB_FOLDER/latest
-			-(($CURRENT)) && [ current != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_DB_FOLDER/current
-			# Clear
-			rm -rf $DB_TMP;
-		" >> $MK
-
-		MK_ALL="$MK_ALL $DB_TARGET_FOLDER" 
-
 	fi;
-
 fi;
-
-
-
-################
-# REFSEQ GENES #
-################
-
-#if ((1)); then
-
-# DB
-DATABASE="refGene"
-DATABASE_NAME="RefGene"
-DATABASE_FULLNAME="Reference Genes"
-DATABASE_WEBSITE="https://genome.ucsc.edu/"
-#DATABASE_FULLNAME="Human Variation Sets in VCF Format" # dbsnp
-DATABASE_DESCRIPTION="Known human protein-coding and non-protein-coding genes taken from the NCBI RNA reference sequences collection (RefSeq)"
-
-
-if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
-
-
-	# DB TARGET
-	DB_TARGET=$REFSEQ_GENES;									# /STARK/databases/refGene/current/refGene.hg19.bed
-	DB_ASSEMBLY=$ASSEMBLY; 										# hg19
-	DB_TARGET_FILE=$(basename $DB_TARGET);						# refGene.hg19.bed
-	DB_TARGET_FOLDER=$(dirname $DB_TARGET);						# /STARK/databases/refGene/current
-	DB_TARGET_RELEASE=$(basename $DB_TARGET_FOLDER);			# current
-	#DB_TARGET_RELEASE=$DATABASES_RELEASE;						# DATE
-	DB_TARGET_DB_FOLDER=$(dirname $DB_TARGET_FOLDER);			# /STARK/databases/refGene
-
-	# DB RELEASE
-	DB_RELEASE=$DATABASES_RELEASE;								# DATE
-	#[ -s $DB_TARGET_FOLDER ] && DB_RELEASE=$DB_TARGET_RELEASE	# if /STARK/databases/refGene/current exists then keep release
-	DB_RELEASE_DATE=$DATABASES_RELEASE;							# DATE
-	DB_RELEASE_FILE=$DB_TARGET_FILE;							# refGene.hg19.bed
-	DB_RELEASE_FOLDER=$DB_TARGET_DB_FOLDER/$DB_RELEASE;			# /STARK/databases/refGene/DATE
-	DB_RELEASE_FILE_PATH="$DB_RELEASE_FOLDER/$DB_RELEASE_FILE";	# /STARK/databases/refGene/DATE/refGene.hg19.bed
-
-	# TMP files and folders
-	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DB_RELEASE
-	mkdir -p $DB_TMP
-
-
-	if [ ! -e $DB_TARGET ] || (($UPDATE)); then
-
-		# VERBOSE
-		(($VERBOSE)) && echo ""
-		(($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME' release '$DB_RELEASE' for '$DB_TARGET_RELEASE' [$DB_ASSEMBLY]"
-
-
-		# RefGenes TXT file
-		REFSEQ_GENES_URL="ftp://hgdownload.soe.ucsc.edu/goldenPath/$DB_ASSEMBLY/database"
-		REFSEQ_GENES_URL_FILE="refGene.txt.gz"
-		
-		REFSEQ_GENES_URL_FILE_DATE=$(curl -s -I $REFSEQ_GENES_URL/$REFSEQ_GENES_URL_FILE | grep "Last-Modified: " | sed "s/Last-Modified: //g" | sed "s/\r$//g")
-
-		# RELEASE
-		DB_RELEASE_FROM_DOWNLOAD=$(date -d "$REFSEQ_GENES_URL_FILE_DATE")
-
-		DB_TARGET_TXT=$(echo $DB_TARGET | sed 's/bed$/txt/g')
-		DB_TARGET_GENES=$(echo $DB_TARGET | sed 's/bed$/genes/g')
-		DB_RELEASE_FILE_PATH_TXT=$(echo $DB_RELEASE_FILE_PATH | sed 's/bed$/txt/g')
-		DB_RELEASE_FILE_PATH_GENES=$(echo $DB_RELEASE_FILE_PATH | sed 's/bed$/genes/g')
-		
-		# REFSEQ_GENE folder
-		#REFSEQ_GENES_FOLDER=$(dirname $REFSEQ_GENES)
-		#REFSEQ_GENES_TXT_FILE=$(basename $REFSEQ_GENES_TXT)
-		DB_RELEASE_FILE_TXT=$(basename $DB_RELEASE_FILE_PATH_TXT)
-		#REFSEQ_GENES_GENES_FILE=$(basename $REFSEQ_GENES_GENES)
-		DB_RELEASE_FILE_GENES=$(basename $DB_RELEASE_FILE_PATH_GENES)
-		#REFSEQ_GENES_FILE=$(basename $REFSEQ_GENES)
-
-
-		# Other DB
-		# geneReviews.txt.gz
-		# geneReviewsDetail.txt.gz
-		# gtexGene.txt.gz ???
-		# gwasCatalog.txt.gz
-
-
-		# Update
-		if (($UPDATE)); then
-			if [ -e $DB_TARGET_TXT ]; then mv -f $DB_TARGET_TXT $DB_TARGET_TXT.V$DATE; fi;
-			if [ -e $DB_TARGET_GENES ]; then mv -f $DB_TARGET_GENES $DB_TARGET_GENES.V$DATE; fi;
-			if [ -e $DB_TARGET ]; then mv -f $DB_TARGET $DB_TARGET.V$DATE; fi;
-		fi;
-		COPY_MODE_REFSEQ_GENES=$COPY_MODE_DEFAULT
-
-		# DATABASE Infos
-		DB_INFOS_JSON='
-		{
-			"code": "'$DATABASE'",
-			"name": "'$DATABASE_NAME'",
-			"fullname": "'$DATABASE_FULLNAME'",
-			"website": "'$DATABASE_WEBSITE'",
-			"description": "'$DATABASE_DESCRIPTION'"
-		}
-		';
-		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
-
-		# DATABASE Release Infos
-		DB_RELEASE_INFOS_JSON='
-		{
-			"release": "'$DB_RELEASE_FROM_DOWNLOAD'",
-			"date": "'$DB_RELEASE_DATE'",
-			"files": [ "'$DB_TARGET_FILE'" ],
-			"assembly": [ "'$DB_ASSEMBLY'" ],
-			"download": {
-				"methode": "'$DOWNLOAD_METHOD'",
-				"URL": "'$REFSEQ_GENES_URL'",
-				"file": "'$REFSEQ_GENES_URL_FILE'",
-				"date": "'$REFSEQ_GENES_URL_FILE_DATE'"
-			}
-		}
-		';
-		echo "$DB_RELEASE_INFOS_JSON" > $DB_TMP/STARK.database.release
-
-		# OUTPUT
-		(($VERBOSE)) && echo "#[INFO] REFSEQ GENES URL   = $REFSEQ_GENES_URL"
-		(($VERBOSE)) && echo "#[INFO] REFSEQ GENES TXT   = $DB_RELEASE_FILE_TXT"
-		(($VERBOSE)) && echo "#[INFO] REFSEQ GENES BED   = $DB_RELEASE_FILE"
-		(($VERBOSE)) && echo "#[INFO] REFSEQ GENES GENES = $DB_RELEASE_FILE_GENES"
-
-		# Get refGene txt file
-		echo "$DB_TMP/$DB_RELEASE_FILE_TXT: $DBFOLDER
-			mkdir -p $DB_TMP/
-			#wget --no-verbose -S -c -O $DB_TMP/$REFSEQ_GENES_URL_FILE $REFSEQ_GENES_URL/$REFSEQ_GENES_URL_FILE ;
-			curl $REFSEQ_GENES_URL/$REFSEQ_GENES_URL_FILE -s -R -o $DB_TMP/$REFSEQ_GENES_URL_FILE;
-			mkdir -p $DB_RELEASE_FOLDER
-			chmod 0775 $DB_RELEASE_FOLDER
-			#$GZ -dc  $DB_TMP/$REFSEQ_GENES_URL_FILE > $DB_TMP/$DB_RELEASE_FILE_TXT
-			$GZ -N -d $DB_TMP/$REFSEQ_GENES_URL_FILE 
-			if [ '$DB_TMP/refGene.txt' != '$DB_TMP/$DB_RELEASE_FILE_TXT' ]; then \
-				cp -a $DB_TMP/refGene.txt $DB_TMP/$DB_RELEASE_FILE_TXT; \
-				rm $DB_TMP/refGene.txt; \
-			fi;
-		" >> $MK
-		# Copy in database folder
-		echo "$DB_RELEASE_FILE_PATH_TXT: $DB_TMP/$DB_RELEASE_FILE_TXT
-			$COPY_MODE_REFSEQ_GENES $DB_TMP/$DB_RELEASE_FILE_TXT $DB_RELEASE_FILE_PATH_TXT
-		" >> $MK
-
-		# Translate to refGene bed file
-		echo "$DB_TMP/$DB_RELEASE_FILE: $DBFOLDER $DB_TMP/$DB_RELEASE_FILE_TXT
-			mkdir -p $DB_TMP
-			cat $DB_TMP/$DB_RELEASE_FILE_TXT | while IFS='' read -r line; do \
-				CHROM=\$\$(echo \$\$line | awk '{print \$\$3}' | cut -d\"_\" -f1); \
-				NM=\$\$(echo \$\$line | awk '{print \$\$2}'); \
-				GENE=\$\$(echo \$\$line | awk '{print \$\$13}'); \
-				STRAND=\$\$(echo \$\$line | awk '{print \$\$4}'); \
-				echo \$\$line | awk '{print \$\$10}' | tr \",\" \"\\n\" | grep -v '^\$\$' > $TMP_DATABASES_DOWNLOAD_RAM/refGene.unsorted.bed.NM1 ; \
-				echo \$\$line | awk '{print \$\$11}' | tr \",\" \"\\n\" | grep -v '^\$\$' > $TMP_DATABASES_DOWNLOAD_RAM/refGene.unsorted.bed.NM2; \
-				paste $TMP_DATABASES_DOWNLOAD_RAM/refGene.unsorted.bed.NM1 $TMP_DATABASES_DOWNLOAD_RAM/refGene.unsorted.bed.NM2 | while read SS ; do \
-					echo -e \"\$\$CHROM\t\$\$SS\t\$\$GENE\t\$\$NM\t\$\$STRAND\" >> $DB_TMP/refGene.unsorted.bed; \
-				done; \
-			done
-			cat $DB_TMP/refGene.unsorted.bed | sort -k1,1V -k2,2n -k3,3n > $DB_TMP/$DB_RELEASE_FILE
-			#rm -f $DB_RELEASE_FILE_PATH_TXT.NM1 $DB_RELEASE_FILE_PATH_TXT.NM2;
-		" >> $MK
-
-		# echo -e \"\$\$CHROM\t\$\$SS\t\$\$STRAND\t\$\$GENE\t\$\$NM\" >> $DB_TMP/refGene.unsorted.bed; \
-
-		# Generates refGene genes file from bed file
-		echo "$DB_RELEASE_FILE_PATH: $DBFOLDER $DB_TMP/$DB_RELEASE_FILE
-			$COPY_MODE_REFSEQ_GENES $DB_TMP/$DB_RELEASE_FILE $DB_RELEASE_FILE_PATH
-		" >> $MK
-		
-		if false; then
-
-			# Generates refGene genes file from bed file
-			echo "$DB_TMP/$DB_RELEASE_FILE_GENES: $DBFOLDER $DB_TMP/$DB_RELEASE_FILE "$(dirname $REF)/$ASSEMBLY.dict"
-				mkdir -p $DB_TMP
-				awk -F'\t' 'substr(\$\$6,1,2)==\"NM\" {print \$\$0}' $DB_TMP/$DB_RELEASE_FILE | grep \$\$(grep \"@SQ\" "$(dirname $REF)/$ASSEMBLY.dict" | cut -f2 | cut -d: -f2 | tr '\n' ' ' | sed 's/chr/ -e ^chr/gi') > $DB_TMP/$DB_RELEASE_FILE_GENES
-			" >> $MK
-
-			# Generates refGene genes file from bed file
-			echo "$DB_RELEASE_FILE_PATH_GENES: $DBFOLDER $DB_TMP/$DB_RELEASE_FILE_GENES
-				$COPY_MODE_REFSEQ_GENES $DB_TMP/$DB_RELEASE_FILE_GENES $DB_RELEASE_FILE_PATH_GENES
-			" >> $MK
-
-		fi;
-
-		# Copy in database folder
-		echo "$DB_TARGET: $DB_RELEASE_FILE_PATH $DB_RELEASE_FILE_PATH_TXT #$DB_RELEASE_FILE_PATH_GENES
-			# folder
-			mkdir -p $DB_RELEASE_FOLDER
-			chmod 0775 $DB_RELEASE_FOLDER
-			# database release info
-			-[ ! -s $DB_TARGET_DB_FOLDER/STARK.database ] && cp $DB_TMP/STARK.database $DB_TARGET_DB_FOLDER/STARK.database
-			cp $DB_TMP/STARK.database.release $DB_RELEASE_FOLDER/
-			chmod o+r $DB_TARGET_DB_FOLDER/STARK.database $DB_RELEASE_FOLDER/STARK.database.release
-			# links
-			-[ $DB_TARGET_RELEASE != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_FOLDER
-			-[ latest != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_DB_FOLDER/latest
-			-(($CURRENT)) && [ current != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_DB_FOLDER/current
-			# Clear
-			rm -rf $DB_TMP;
-		" >> $MK
-
-		MK_ALL="$MK_ALL $DB_TARGET $DB_RELEASE_FILE_PATH $DB_RELEASE_FILE_PATH_TXT" #$DB_RELEASE_FILE_PATH_GENES
-
-	fi;
-
-fi;
-
-
-#########
-# DBSNP #
-#########
-
-#if ((1)); then
-
-# DB
-DATABASE="dbsnp"
-DATABASE_NAME="dbSNP"
-DATABASE_FULLNAME="Single-nucleotide polymorphism Database"
-DATABASE_WEBSITE="https://www.ncbi.nlm.nih.gov/snp/"
-DATABASE_DESCRIPTION="Human single nucleotide variations, microsatellites, and small-scale insertions and deletions along with publication, population frequency, molecular consequence, and genomic and RefSeq mapping information for both common variations and clinical mutations"
-
-
-if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
-
-
-	# DB TARGET
-	DB_TARGET=$VCFDBSNP;										# /STARK/databases/dbsnp/current/dbsnp.hg19.vcf.gz
-	DB_ASSEMBLY=$ASSEMBLY; 										# hg19
-	DB_TARGET_FILE=$(basename $DB_TARGET);						# dbsnp.hg19.vcf.gz
-	DB_TARGET_FOLDER=$(dirname $DB_TARGET);						# /STARK/databases/dbsnp/current
-	DB_TARGET_RELEASE=$(basename $DB_TARGET_FOLDER);			# current
-	DB_TARGET_DB_FOLDER=$(dirname $DB_TARGET_FOLDER);			# /STARK/databases/dbsnp
-
-	# DB RELEASE
-	DB_RELEASE=$DATABASES_RELEASE;								# DATE
-	#[ -s $DB_TARGET_FOLDER ] && DB_RELEASE=$DB_TARGET_RELEASE	# if /STARK/databases/dbsnp/current exists then keep release
-	DB_RELEASE_DATE=$DATABASES_RELEASE;							# DATE
-	DB_RELEASE_FILE=$DB_TARGET_FILE;							# dbsnp.hg19.vcf.gz
-	DB_RELEASE_FOLDER=$DB_TARGET_DB_FOLDER/$DB_RELEASE;			# /STARK/databases/dbsnp/DATE
-	DB_RELEASE_FILE_PATH="$DB_RELEASE_FOLDER/$DB_RELEASE_FILE";	# /STARK/databases/dbsnp/DATE/dbsnp.hg19.vcf.gz
-
-	# TMP files and folders
-	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DB_RELEASE
-	mkdir -p $DB_TMP
-
-	# $VCFDBSNP > $DB_TARGET
-	#echo $DB_TARGET 
-
-	if [ ! -e $DB_TARGET ] || (($UPDATE)); then
-
-		# VERBOSE
-		(($VERBOSE)) && echo ""
-		(($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME' release '$DB_RELEASE' for '$DB_TARGET_RELEASE' [$DB_ASSEMBLY]"
-
-		# DBSNP folder
-		#VCFDBSNP_FOLDER=$(dirname $VCFDBSNP) # DB_RELEASE_FOLDER
-		VCFDBSNP_FILE=$(basename $DB_TARGET) # DB_RELEASE_FILE
-
-		# Update
-		if (($UPDATE)); then
-			if [ -e $DB_TARGET ]; then mv -f $DB_TARGET $DB_TARGET.V$DATE; fi;
-			if [ -e $DB_TARGET.tbi ]; then mv -f $DB_TARGET.tbi $DB_TARGET.tbi.V$DATE; fi;
-		fi;
-		#COPY_MODE_VCFDBSNP=$COPY_MODE_DEFAULT
-		COPY_MODE_VCFDBSNP="cp -a "
-
-		# NCBI Assembly translation
-		if [ "$ASSEMBLY" == "hg38" ]; then
-			ASSEMBLY_NCBI="GRCh38p7";
-			SPECIES_NCBI="human_9606";
-			NUM_NCBI="38";
-		elif [ "$ASSEMBLY" == "hg19" ]; then
-			ASSEMBLY_NCBI="GRCh37p13";
-		  	SPECIES_NCBI="human_9606";
-		  	NUM_NCBI="25";
-		else
-		  	ASSEMBLY_NCBI="GRCh37p13";
-		  	SPECIES_NCBI="human_9606";
-		  	NUM_NCBI="25";
-		fi;
-		(($VERBOSE)) && echo "#[INFO] NCBI SPECIES=$SPECIES_NCBI"
-		(($VERBOSE)) && echo "#[INFO] NCBI ASSEMBLY=$ASSEMBLY_NCBI"
-
-		# DB release
-		DBSNP_RELEASE="pre_build152" # "pre_build152" or "2.0"
-
-		if [ "$DBSNP_RELEASE" == "2.0" ]; then
-
-			# Find latest dbsnp file
-			DBSNP_URL="ftp://ftp.ncbi.nlm.nih.gov/snp/latest_release/VCF"
-			(($VERBOSE)) && echo "#[INFO] Check last DBSNP on '$DBSNP_URL'..."
-			DBSNP_LATEST=$(curl -s $DBSNP_URL | awk '{print $9}' | grep "$NUM_NCBI.bgz$" | sort -k1,1 | tail -n 1)
-			if [ "$DBSNP_LATEST" == "" ]; then
-				DBSNP_LATEST=$(curl -s $DBSNP_URL | awk -F"\">" '{print $2}' | awk -F"</A>" '{print $1}' | grep "$NUM_NCBI.bgz$" | sort -k1,1 | tail -n 1)
-			fi;
-
-			DBSNP_LATEST_FILE="$DBSNP_URL/$DBSNP_LATEST"
-			#echo "# DBSNP URL=$DBSNP_URL"
-			#echo "# DBSNP LATEST=$DBSNP_LATEST"
-			#echo "# DBSNP LATEST FILE=$DBSNP_LATEST_FILE"
-
-		else
-
-			# Find latest dbsnp file
-			if ((1)); then
-
-				# ftp://ftp.ncbi.nlm.nih.gov/snp/latest_release/VCF/GCF_000001405.25.gz
-				DBSNP_URL="ftp://ftp.ncbi.nlm.nih.gov/snp/pre_build152/organisms/"
-				DBSNP_SPECIES_ASSEMBLY="$SPECIES_NCBI/$ASSEMBLY_NCBI"
-				(($VERBOSE)) && echo "#[INFO] Check last DBSNP on '$DBSNP_URL'..."
-				DBSNP_LATEST=$(curl -s $DBSNP_URL | awk '{print $9}' | grep $SPECIES_NCBI.*$ASSEMBLY_NCBI | sort -k1,1 | tail -n 1)
-				if [ "$DBSNP_LATEST" == "" ]; then
-					DBSNP_LATEST=$(curl -s $DBSNP_URL | awk -F"\">" '{print $2}' | awk -F"</A>" '{print $1}' | grep $SPECIES_NCBI.*$ASSEMBLY_NCBI | sort -k1,1 | tail -n 1)
-				fi;
-				#curl -s $DBSNP_URL -l  #| awk '{print $9}'
-				DBSNP_LATEST_FILE=$DBSNP_URL$DBSNP_LATEST"/VCF/00-common_all.vcf.gz" # 00-All.vcf.gz
-			
-			else
-
-				# from lastest release
-				DBSNP_URL="ftp://ftp.ncbi.nlm.nih.gov/snp/latest_release/VCF/"
-				DBSNP_SPECIES_ASSEMBLY="$SPECIES_NCBI/$ASSEMBLY_NCBI/$NUM_NCBI"
-				DBSNP_LATEST="GCF_000001405.$NUM_NCBI.gz"
-				DBSNP_URL_FILE=$DBSNP_LATEST
-				DBSNP_LATEST_FILE="$DBSNP_URL/$DBSNP_URL_FILE" # 00-All.vcf.gz
-
-			fi;
-
-		fi;
-
-		DBSNP_LATEST_FILE_BASENAME=$(basename $DBSNP_LATEST_FILE)
-
-		DBSNP_URL=$(dirname $DBSNP_LATEST_FILE)
-		DBSNP_URL_FILE=$(basename $DBSNP_LATEST_FILE)
-		DBSNP_URL_FILE_DATE=$(curl -s -I $DBSNP_URL/$DBSNP_URL_FILE | grep "Last-Modified: " | sed "s/Last-Modified: //g" | sed "s/\r$//g")
-
-		# RELEASE
-		DB_RELEASE_FROM_DOWNLOAD=$(date -d "$DBSNP_URL_FILE_DATE")
-
-
-		# DATABASE Infos
-		DB_INFOS_JSON='
-		{
-			"code": "'$DATABASE'",
-			"name": "'$DATABASE_NAME'",
-			"fullname": "'$DATABASE_FULLNAME'",
-			"website": "'$DATABASE_WEBSITE'",
-			"description": "'$DATABASE_DESCRIPTION'"
-		}
-		';
-		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
-
-		# DATABASE Release Infos
-		DB_RELEASE_INFOS_JSON='
-		{
-			"release": "'$DB_RELEASE_FROM_DOWNLOAD'",
-			"date": "'$DB_RELEASE_DATE'",
-			"files": [ "'$DB_TARGET_FILE'" ],
-			"assembly": [ "'$DB_ASSEMBLY'" ],
-			"download": {
-				"methode": "'$DOWNLOAD_METHOD'",
-				"URL": "'$DBSNP_URL'",
-				"file": "'$DBSNP_URL_FILE'",
-				"date": "'$DBSNP_URL_FILE_DATE'"
-			}
-		}
-		';
-		echo "$DB_RELEASE_INFOS_JSON" > $DB_TMP/STARK.database.release
-
-
-		(($VERBOSE)) && echo "#[INFO] DBSNP URL=$DBSNP_URL"
-		(($VERBOSE)) && echo "#[INFO] DBSNP RELEASE=$DBSNP_RELEASE"
-		(($VERBOSE)) && echo "#[INFO] DBSNP SPECIES/ASSEMBLY=$DBSNP_SPECIES_ASSEMBLY"
-		(($VERBOSE)) && echo "#[INFO] DBSNP NUM=$NUM_NCBI"
-		(($VERBOSE)) && echo "#[INFO] DBSNP LATEST=$DBSNP_LATEST"
-		(($VERBOSE)) && echo "#[INFO] DBSNP LATEST FILE=$DBSNP_LATEST_FILE"
-		(($VERBOSE)) && echo "#[INFO] DBSNP LATEST FILE BASENAME=$DBSNP_LATEST_FILE_BASENAME"
-
-		# MK
-		echo "$DB_TARGET: $DBFOLDER
-			# Download
-			mkdir -p $DB_TMP;
-			chmod 0775 $DB_TMP;
-			wget --no-verbose -S -c -O $DB_TMP/$DBSNP_LATEST.tbi $DBSNP_LATEST_FILE.tbi;
-			wget --no-verbose -S -c -O $DB_TMP/$DBSNP_LATEST $DBSNP_LATEST_FILE;
-			#curl -s -R -o $DB_TMP/$DBSNP_LATEST.tbi $DBSNP_LATEST_FILE.tbi;
-			#curl -s -R -o $DB_TMP/$DBSNP_LATEST $DBSNP_LATEST_FILE;
-			# Sources
-			mkdir -p $DB_RELEASE_FOLDER/sources
-			chmod 0775 $DB_RELEASE_FOLDER/sources
-			$COPY_MODE_VCFDBSNP $DB_TMP/$DBSNP_LATEST $DB_RELEASE_FOLDER/sources/$DBSNP_LATEST_FILE_BASENAME;
-			$COPY_MODE_VCFDBSNP $DB_TMP/$DBSNP_LATEST.tbi $DB_RELEASE_FOLDER/sources/$DBSNP_LATEST_FILE_BASENAME.tbi;
-			# Add contig
-			$BCFTOOLS view $DB_TMP/$DBSNP_LATEST | $SCRIPT_DIR/contig_NC_to_chr.sh > $DB_TMP/$DB_RELEASE_FILE.vcf
-			touch $DB_TMP/$DB_RELEASE_FILE.vcf -r $DB_RELEASE_FOLDER/sources/$DBSNP_LATEST_FILE_BASENAME
-			# BGZip & Tabix
-			$BGZIP -c $DB_TMP/$DB_RELEASE_FILE.vcf > $DB_TMP/$DB_RELEASE_FILE
-			$TABIX $DB_TMP/$DB_RELEASE_FILE
-			# Copy
-			mkdir -p $DB_RELEASE_FOLDER
-			chmod 0775 $DB_RELEASE_FOLDER
-			$COPY_MODE_VCFDBSNP $DB_TMP/$DB_RELEASE_FILE.tbi $DB_RELEASE_FILE_PATH.tbi;
-			$COPY_MODE_VCFDBSNP $DB_TMP/$DB_RELEASE_FILE $DB_RELEASE_FILE_PATH;
-			# database release info
-			-[ ! -s $DB_TARGET_DB_FOLDER/STARK.database ] && cp $DB_TMP/STARK.database $DB_TARGET_DB_FOLDER/STARK.database
-			cp $DB_TMP/STARK.database.release $DB_RELEASE_FOLDER
-			chmod o+r $DB_TARGET_DB_FOLDER/STARK.database $DB_RELEASE_FOLDER/STARK.database.release
-			# Links
-			-[ $DB_TARGET_RELEASE != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_FOLDER
-			-[ latest != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_DB_FOLDER/latest
-			-(($CURRENT)) && [ current != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_DB_FOLDER/current
-			# Clear
-			rm -rf $DB_TMP;
-		" >> $MK
-
-		MK_ALL="$MK_ALL $DB_TARGET"
-
-	fi;
-
-fi;
-
-
-
-###########
-# SNPEFF  #
-###########
-
-#if ((1)); then
-
-# DB
-DATABASE="snpeff"
-DATABASE_NAME="SnpEff"
-DATABASE_FULLNAME="SnpEff Annotations"
-DATABASE_WEBSITE="http://snpeff.sourceforge.net/"
-DATABASE_DESCRIPTION="Genetic variant annotation and functional effect prediction toolbox"
-
-
-if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
-
-
-	SNPEFF_TOOL_VERSION=$($JAVA -jar $SNPEFF -version | cut -f2)
-	[ ! -d "$DBFOLDER/snpeff/$SNPEFF_TOOL_VERSION" ] && UPDATE_SNPEFF=1 || UPDATE_SNPEFF=0
-
-	# DB TARGET
-	DB_TARGET=$SNPEFF_DATABASES;								# /STARK/databases/snpeff/4.3t
-	DB_ASSEMBLY=$ASSEMBLY; 										# hg19
-	DB_TARGET_FILE=$(basename $DB_TARGET);						# 4.3t
-	DB_TARGET_FOLDER=$DB_TARGET;								# /STARK/databases/snpeff/4.3t
-	DB_TARGET_RELEASE=$(basename $DB_TARGET_FOLDER);			# 4.3t
-	#[ ! -z SNPEFF_VERSION ] && DB_TARGET_RELEASE=$SNPEFF_VERSION	# 4.3t
-	DB_TARGET_DB_FOLDER=$(dirname $DB_TARGET_FOLDER);			# /STARK/databases/snpeff
-
-	# DB RELEASE
-	DB_RELEASE=$DATABASES_RELEASE;								# DATE
-	#[ -s $DB_TARGET_FOLDER ] && DB_RELEASE=$DB_TARGET_RELEASE	# if /STARK/databases/snpeff/4.3t exists then keep release
-	DB_RELEASE_DATE=$DATABASES_RELEASE;							# DATE
-	DB_RELEASE_FILE=$DB_TARGET_FILE;							# 4.3t
-	DB_RELEASE_FOLDER=$DB_TARGET_DB_FOLDER/$DB_RELEASE;			# /STARK/databases/snpeff/DATE
-	DB_RELEASE_FILE_PATH="$DB_RELEASE_FOLDER/$DB_RELEASE_FILE";	# /STARK/databases/snpeff/DATE
-
-	# TMP files and folders
-	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DB_RELEASE
-	mkdir -p $DB_TMP
-
-	
-	#if [ ! -d $DB_TARGET ] || [ -z "$(ls -A $DB_TARGET)" ] || (($UPDATE)); then
-	#if [ ! -e $DB_TARGET ] || [ -z "$(ls -A $DB_TARGET)" ] || (($UPDATE)); then # || (($UPDATE_SNPEFF))
-	if [ ! -e $DB_TARGET ] || [ -z "$(ls -A $DB_TARGET)" ] || (($UPDATE)) || (($UPDATE_SNPEFF)); then # 
-
-		# VERBOSE
-		(($VERBOSE)) && echo ""
-		(($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME' release '$DB_RELEASE' for '$DB_TARGET_RELEASE' [$DB_ASSEMBLY]"
-		(($VERBOSE)) && (($UPDATE_SNPEFF)) && echo "#[INFO] DATABASE '$DATABASE_NAME' release '$SNPEFF_TOOL_VERSION' will be downloaded because of tool release decrependy"
-
-
-		# DB folder exists
-		if (($BUILD)) || (($REBUILD)) || (($UPDATE)) || (($UPDATE_SNPEFF)); then
-			if [ -d $DB_TARGET ] && [ -z "$(ls -A $DB_TARGET)" ]; then
-				rm -rf $DB_TARGET 
-				(($DEBUG)) && echo "#[INFO] folder $DB_TARGET removed because empty"
-			elif [ -d $DB_TARGET ] && ! [ -z "$(ls -A $DB_TARGET)" ]; then
-				mv $DB_TARGET $DB_TARGET.$DB_RELEASE
-				(($DEBUG)) && echo "#[INFO] folder $DB_TARGET moved to $DB_TARGET.$DB_RELEASE because not empty"
-			fi;
-		fi;
-
-
-		# COPY mode
-		COPY_MODE_SNPEFF=$COPY_MODE_DEFAULT #"cp -rf"
-
-		if [ "$SNPEFF" != "" ]; then
-
-			SNPEFF_DATABASES_FOLDER=$DB_TMP/databases
-
-			SNPEFF_CMD="wget --no-verbose -O $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip \$\$($JAVA -jar $SNPEFF databases | grep '^$ASSEMBLY ' | grep -Po 'http[^, ]*zip' | head -n1) || wget --no-verbose -O $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip \$\$($JAVA -jar $SNPEFF databases | grep '^$ASSEMBLY ' | grep -Po 'http[^, ]*zip' | tail -n1); unzip $DB_TMP/snpEff.$SNPEFF_VERSION.$ASSEMBLY.zip -d $SNPEFF_DATABASES_FOLDER/; mv $SNPEFF_DATABASES_FOLDER/data/* $SNPEFF_DATABASES_FOLDER/;"
-
-			(($DEBUG)) && echo "#[INFO] SNPEFF CMD = $SNPEFF_CMD"
-			(($DEBUG)) && echo "#[INFO] SNPEFF CMD ALT = $SNPEFF_CMD_ALT"
-
-			# RELEASE
-			DB_RELEASE_FROM_DOWNLOAD=$DB_TARGET_RELEASE
-			if [ ! -z SNPEFF_VERSION ]; then
-				DB_RELEASE_FROM_DOWNLOAD=$SNPEFF_VERSION;
-			elif [ ! -z SNPEFF_VERSION ]; then
-				DB_RELEASE_FROM_DOWNLOAD=$SNPEFF_TOOL_VERSION;
-			fi;
-			
-			# DATABASE Infos
-			DB_INFOS_JSON='
-			{
-				"code": "'$DATABASE'",
-				"name": "'$DATABASE_NAME'",
-				"fullname": "'$DATABASE_FULLNAME'",
-				"website": "'$DATABASE_WEBSITE'",
-				"description": "'$DATABASE_DESCRIPTION'"
-			}
-			';
-			echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
-
-			# DATABASE Release Infos
-			DB_RELEASE_INFOS_JSON='
-			{
-				"release": "'$DB_RELEASE_FROM_DOWNLOAD'",
-				"date": "'$DB_RELEASE_DATE'",
-				"assembly": [ "'$DB_ASSEMBLY'" ],
-				"download": {
-					"methode": "'$DOWNLOAD_METHOD'",
-					"info": "From SnpEff binary"
-				}
-			}
-			';
-			echo "$DB_RELEASE_INFOS_JSON" > $DB_TMP/STARK.database.release
-
-
-			# MK
-			echo "$DB_TARGET/STARK.SNPEFF.download.complete: $DBFOLDER
-				mkdir -p $SNPEFF_DATABASES_FOLDER;
-				chmod 0775 $SNPEFF_DATABASES_FOLDER;
-				#-$SNPEFF_CMD
-				#$SNPEFF_CMD_ALT
-				$SNPEFF_CMD
-				mkdir -p $DB_RELEASE_FOLDER
-				$COPY_MODE_SNPEFF $SNPEFF_DATABASES_FOLDER/* $DB_RELEASE_FOLDER/;
-				echo '#[INFO] STARK DATABASE '$DATABASE_NAME' release '$DB_RELEASE' for '$DB_TARGET_RELEASE' [$DB_ASSEMBLY] download complete'  > $DB_RELEASE_FOLDER/STARK.SNPEFF.download.complete
-				# database release info
-				-[ ! -s $DB_TARGET_DB_FOLDER/STARK.database ] && cp $DB_TMP/STARK.database $DB_TARGET_DB_FOLDER/STARK.database
-				cp $DB_TMP/STARK.database.release $DB_RELEASE_FOLDER
-				chmod o+r $DB_TARGET_DB_FOLDER/STARK.database $DB_RELEASE_FOLDER/STARK.database.release
-				# Links
-				-[ '$SNPEFF_TOOL_VERSION' != '$DB_RELEASE' ] && ln -snf $DB_RELEASE/ $DB_TARGET_DB_FOLDER/$SNPEFF_TOOL_VERSION
-				-[ $DB_TARGET_RELEASE != $SNPEFF_TOOL_VERSION ] && ln -snf $SNPEFF_TOOL_VERSION/ $DB_TARGET_FOLDER
-				-[ latest != $SNPEFF_TOOL_VERSION ] && ln -snf $SNPEFF_TOOL_VERSION/ $DB_TARGET_DB_FOLDER/latest
-				-(($CURRENT)) && [ current != $SNPEFF_TOOL_VERSION ] && ln -snf $SNPEFF_TOOL_VERSION/ $DB_TARGET_DB_FOLDER/current
-				# Clear
-				rm -rf $DB_TMP;
-			" >> $MK
-
-			MK_ALL="$MK_ALL $DB_TARGET/STARK.SNPEFF.download.complete"
-
-
-		fi;
-
-	fi;
-
-fi;
-
-
-
-###########
-# ANNOVAR #
-###########
-
-
-#if ((1)); then
-
-# DB
-DATABASE="annovar"
-DATABASE_NAME="ANNOVAR"
-DATABASE_FULLNAME="ANNOVAR Annotations"
-DATABASE_WEBSITE="https://doc-openbio.readthedocs.io/projects/annovar/"
-DATABASE_DESCRIPTION="ANNOVAR is an efficient software tool to utilize update-to-date information to functionally annotate genetic variants detected from diverse genomes"
-
-
-if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
-
-
-	# DB TARGET
-	DB_TARGET=$ANNOVAR_DATABASES;								# /STARK/databases/annovar/current
-	DB_ASSEMBLY=$ASSEMBLY; 										# hg19
-	DB_TARGET_FILE=$(basename $DB_TARGET);						# current
-	DB_TARGET_FOLDER=$DB_TARGET;								# /STARK/databases/annovar/current
-	DB_TARGET_RELEASE=$(basename $DB_TARGET_FOLDER);			# current
-	DB_TARGET_DB_FOLDER=$(dirname $DB_TARGET_FOLDER);			# /STARK/databases/annovar
-
-	# DB RELEASE
-	DB_RELEASE=$DATABASES_RELEASE;								# DATE
-	DB_RELEASE_DATE=$DATABASES_RELEASE;							# DATE
-	DB_RELEASE_FILE=$DB_TARGET_FILE;							# current
-	DB_RELEASE_FOLDER=$DB_TARGET_DB_FOLDER/$DB_RELEASE;			# /STARK/databases/current/DATE
-	DB_RELEASE_FILE_PATH="$DB_RELEASE_FOLDER/$DB_RELEASE_FILE";	# /STARK/databases/current/DATE
-
-	# TMP files and folders
-	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DB_RELEASE
-	mkdir -p $DB_TMP
-
-	
-	#if [ ! -d $DB_TARGET ] || [ -z "$(ls -A $DB_TARGET)" ] || (($UPDATE)); then
-	if [ ! -e $DB_TARGET ] || [ -z "$(ls -A $DB_TARGET)" ] || (($UPDATE)); then
-	
-		# VERBOSE
-		(($VERBOSE)) && echo ""
-		(($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME' release '$DB_RELEASE' for '$DB_TARGET_RELEASE' [$DB_ASSEMBLY]"
-
-		# DB folder exists
-		if [ -d $DB_TARGET ] && [ -z "$(ls -A $DB_TARGET)" ]; then
-			rm -rf $DB_TARGET 
-			(($DEBUG)) && echo "#[INFO] folder $DB_TARGET removed because empty"
-		elif [ -d $DB_TARGET ] && ! [ -z "$(ls -A $DB_TARGET)" ]; then
-			mv $DB_TARGET $DB_TARGET.$DB_RELEASE
-			(($DEBUG)) && echo "#[INFO] folder $DB_TARGET moved to $DB_TARGET.$DB_RELEASE because not empty"
-		fi;
-
-
-		# COPY mode
-		COPY_MODE_ANNOVAR=$COPY_MODE_DEFAULT #"cp -rf"
-		#COPY_MODE_ANNOVAR="mv "
-
-		HOWARD_DB="$HOWARD_ANNOTATION,$HOWARD_ANNOTATION_REPORT,$HOWARD_ANNOTATION_MINIMAL,$ADDITIONAL_ANNOTATIONS" # ALL, CORE, snpeff $HOWARD_ANNOTATION
-
-		# remove snpeff
-		HOWARD_DB=$(echo $HOWARD_DB | tr "," "\n" | grep "snpeff" -v | tr "\n" ",") 
-
-		if [ ! -e "$HOWARD_CONFIG_ANNOTATION" ]; then
-			HOWARD_CONFIG_ANNOTATION=$HOWARDDIR/config.annotation.ini
-		fi;
-		HOWARD_CONFIG_ANNOTATION_FILE=$(basename $HOWARD_CONFIG_ANNOTATION)
-		(($VERBOSE)) && echo "#[INFO] Annotations: $HOWARD_DB"
-
-
-		if [ "$HOWARD" != "" ]; then
-
-			# VCF
-			if [ -e $HOWARD_FOLDER_DOCS/example.vcf ]; then
-				INPUT_VCF=$HOWARD_FOLDER_DOCS/example.vcf;
-			elif [ -e $HOWARD_FOLDER/docs/example.vcf ]; then
-				INPUT_VCF=$HOWARD_FOLDER/docs/example.vcf
-			elif [ -e $(dirname $HOWARD_FOLDER_BIN)/docs/example.vcf ]; then
-				INPUT_VCF=$(dirname $HOWARD_FOLDER_BIN)/docs/example.vcf
-			elif [ -e $(dirname $HOWARDDIR)/docs/example.vcf ]; then
-				INPUT_VCF=$(dirname $HOWARDDIR)/docs/example.vcf
-			elif [ -e $HOWARDDIR/docs/example.vcf ]; then
-				INPUT_VCF=$HOWARDDIR/docs/example.vcf
-			fi;
-
-			# validation folder
-			HOWARD_VALIDATION_FOLDER=$DB_TMP/example.annotation.validation
-			HOWARD_DATABASES_FOLDER=$DB_TMP/databases
-			HOWARD_SNPEFF_FOLDER=$DB_TMP/snpeff
-			mkdir -p $DB_TMP/databases $DB_TMP/snpeff 
-
-
-			#INPUT_VCF=$HOWARDDIR/docs/example.vcf
-			HOWARD_CMD="$HOWARD --input=$INPUT_VCF --output=$HOWARD_VALIDATION_FOLDER/HOWARD.download.vcf --env=$CONFIG_TOOLS --annotation=$HOWARD_DB --annovar_folder=$ANNOVAR --annovar_databases=$HOWARD_DATABASES_FOLDER --config_annotation=$HOWARD_CONFIG_ANNOTATION --snpeff_jar=$SNPEFF --snpeff_databases=$HOWARD_SNPEFF_FOLDER --snpeff_threads=$THREADS --tmp=$HOWARD_VALIDATION_FOLDER --assembly=$ASSEMBLY --java=$JAVA --java_flags='\"$JAVA_FLAGS\"' --threads=1 --verbose >$HOWARD_DATABASES_FOLDER/HOWARD.download.log 2>$HOWARD_DATABASES_FOLDER/HOWARD.download.err;"
-			(($DEBUG)) && echo "#[INFO] CMD= $HOWARD_CMD"
-			#echo "#"
-
-			# DATABASE Infos
-			DB_INFOS_JSON='
-			{
-				"code": "'$DATABASE'",
-				"name": "'$DATABASE_NAME'",
-				"fullname": "'$DATABASE_FULLNAME'",
-				"website": "'$DATABASE_WEBSITE'",
-				"description": "'$DATABASE_DESCRIPTION'"
-			}
-			';
-			echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
-
-			# DATABASE Release Infos
-			DB_RELEASE_INFOS_JSON='
-			{
-				"release": "'$DB_RELEASE_DATE'",
-				"date": "'$DB_RELEASE_DATE'",
-				"files": [ "'$HOWARD_CONFIG_ANNOTATION_FILE'" ],
-				"assembly": [ "'$DB_ASSEMBLY'" ],
-				"download": {
-					"methode": "'$DOWNLOAD_METHOD'",
-					"info": "From ANNOVAR binary",
-					"databases": "'$HOWARD_DB'",
-					"configuration": "'$HOWARD_CONFIG_ANNOTATION_FILE'"
-				}
-			}
-			';
-			echo "$DB_RELEASE_INFOS_JSON" > $DB_TMP/STARK.database.release
-
-
-			# MK
-			echo "$DB_TARGET/STARK.ANNOVAR.download.complete: $DBFOLDER
-				# Folders
-				mkdir -p $HOWARD_DATABASES_FOLDER;
-				mkdir -p $HOWARD_VALIDATION_FOLDER;
-				mkdir -p $DB_RELEASE_FOLDER;
-				chmod 0775 $HOWARD_DATABASES_FOLDER;
-				chmod 0775 $HOWARD_VALIDATION_FOLDER;
-				chmod 0775 $DB_RELEASE_FOLDER;
-				# Download command
-				$HOWARD_CMD
-				# Copy files
-				$COPY_MODE_ANNOVAR $HOWARD_DATABASES_FOLDER/* $DB_RELEASE_FOLDER/;
-				$COPY_MODE_ANNOVAR $HOWARD_CONFIG_ANNOTATION $DB_RELEASE_FOLDER/;
-				# Download Complete file
-				echo '#[INFO] STARK DATABASE '$DATABASE_NAME' release '$DB_RELEASE' for '$DB_TARGET_RELEASE' [$DB_ASSEMBLY] download complete'  > $DB_RELEASE_FOLDER/STARK.ANNOVAR.download.complete
-				# Database release info
-				-[ ! -s $DB_TARGET_DB_FOLDER/STARK.database ] && cp $DB_TMP/STARK.database $DB_TARGET_DB_FOLDER/STARK.database
-				cp $DB_TMP/STARK.database.release $DB_RELEASE_FOLDER
-				chmod o+r $DB_TARGET_DB_FOLDER/STARK.database $DB_RELEASE_FOLDER/STARK.database.release
-				# Links
-				-[ $DB_TARGET_RELEASE != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_FOLDER
-				-[ latest != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_DB_FOLDER/latest
-				-(($CURRENT)) && [ current != $DB_RELEASE ] && ln -snf $DB_RELEASE/ $DB_TARGET_DB_FOLDER/current
-				# Clear
-				rm -rf $DB_TMP;
-			" >> $MK
-
-			MK_ALL="$MK_ALL $DB_TARGET/STARK.ANNOVAR.download.complete"
-
-
-		fi;
-
-	fi;
-
-fi;
-
-
-
-
-# ALL
-######
 
 if [ ! -z "$MK_ALL" ]; then
-
-	# Create DBFOLDER
 	echo "$DBFOLDER:
 		mkdir -p $DBFOLDER
 		chmod 0775 $DBFOLDER
 	" >> $MK
 
-	# Create ALL
 	echo "all: $MK_ALL
-		echo '#[INFO] Build release: $DATABASES_RELEASE' >> $DATABASES/STARK.download.releases
+		echo '#[INFO] Build release: $DATE' >> $DATABASES/STARK.download.releases
 	" >> $MK
 
-
 	# DATABASES INIT
-	(($VERBOSE)) && echo ""
-	#(($VERBOSE)) && echo "#[INFO] DATABASES INIT..."
+	(($VERBOSE)) && echo "DATABASE INIT"
 
 	if ((1)); then
-		if (($BUILD)) || (($REBUILD)) || (($UPDATE)); then
+		if (($BUILD)) || (($UPDATE)); then
 			echo "#[INFO] DATABASES DOWNLOADING..."
 			if (($VERBOSE)) || (($DEBUG)); then
 				if (($DEBUG)); then
@@ -1642,15 +567,12 @@ if [ ! -z "$MK_ALL" ]; then
 			fi;
 			echo "#[INFO] DATABASES DOWNLOADED"
 		else
-			echo "## use --build, --rebuild or --update to download databases"
+			echo "## use --build or --update to download databases"
 		fi;
 	fi;
-
 else
-
 	(($VERBOSE)) && echo ""
 	(($VERBOSE)) && echo "#[INFO] Nothing to download"
-
 fi;
 
 if (($DEBUG)); then
@@ -1660,18 +582,12 @@ if (($DEBUG)); then
 	echo "# MK=$MK"
 	echo "# LOG=$MK_LOG"
 	echo ""
-	cat -n $MK;
-	#(($DEBUG)) && cat -n $MK_LOG;
-	#(($DEBUG)) && cat -n $MK_ERR;
+	cat -n $MK
 fi;
-
-
-## Release
 
 if ((0)); then
 	echo ""
 	(($VERBOSE)) && echo "#[INFO] RELEASES CHECK"
-
 	(($DEBUG)) && ls -l $DATABASES
 
 	if ((1)); then
@@ -1679,14 +595,11 @@ if ((0)); then
 		(($VERBOSE)) && echo "#[INFO] DOWNLOAD GENOME $ASSEMBLY"
 		(($VERBOSE)) && echo "#"
 	fi;
-
 fi;
 
-
-# CLEAN
 if ((0)); then
-rm -Rf $TMP_DATABASES_DOWNLOAD_FOLDER
-rm -Rf $TMP_DATABASES_DOWNLOAD_RAM
+	rm -Rf $TMP_DATABASES_DOWNLOAD_FOLDER
+	rm -Rf $TMP_DATABASES_DOWNLOAD_RAM
 fi;
 
 exit 0;

@@ -40,10 +40,10 @@ GATKUG_HEMATOLOGY_FLAGS= -nct $(THREADS_GATKUG_HEMATOLOGY) -glm BOTH \
 		-stand_call_conf 10 -dfrac $(DFRAC_UG_HEMATOLOGY) --dbsnp $(VCFDBSNP) -mbq $(MBQ_UG_HEMATOLOGY) -rf BadCigar -dt NONE \
 		-allowPotentiallyMisencodedQuals
 
-%.gatkUG_HEMATOLOGY$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.genome %.design.bed.interval_list
+%.gatkUG_HEMATOLOGY$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed.interval_list
 	$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) $(GATKUG_HEMATOLOGY_FLAGS) \
 		-T UnifiedGenotyper \
-		-R `cat $*.genome` \
+		-R $(GENOME) \
 		$$(if [ "`grep ^ -c $*.design.bed.interval_list`" == "0" ]; then echo ""; else echo "-L $*.design.bed.interval_list"; fi;) \
 		-I $< \
 		-ip $(INTERVAL_PADDING) \

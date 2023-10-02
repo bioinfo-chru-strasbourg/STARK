@@ -11,7 +11,7 @@ MK_DATE=12/09/2021
 # 0.1.0.0-12/12/2020 : DEV version
 # 0.2.0.0-12/09/2021 : Pre-Prod version
 
-%.bam: %.gencore.bam %.gencore.bam.bai %.genome %.gencore.design.bed 
+%.bam: %.gencore.bam %.gencore.bam.bai %.gencore.design.bed 
 	# gencore is a tool for fast and powerful deduplication for paired-end next-generation sequencing
 	mkdir -p $<.metrics;
 	cp -p $< $@;
@@ -22,7 +22,7 @@ MK_DATE=12/09/2021
 		ln -s $< $@.tmp.preformatted.bam; \
 	fi;
 	# gencore -i input.sorted.bam -o output.bam -r hg19.fasta -b test.bed
-	$(GENCORE) -i $@.tmp.preformatted.bam -o $@.tmp.gencore.bam -r $$(cat $*.genome) -b $*.gencore.design.bed -j $<.metrics/$(*F).gencore.metrics.json -h $<.metrics/$(*F).gencore.metrics.html $(GENCORE_SUP_READS) $(GENCORE_SCORE_THREESHOLD) $(GENCORE_DIFF_THREESHOLD) $(GENCORE_RATIO_THREESHOLD) $(GENCORE_QUAL_THREESHOLD) $(GENCORE_QUAL_THREESHOLD);
+	$(GENCORE) -i $@.tmp.preformatted.bam -o $@.tmp.gencore.bam -r $(GENOME) -b $*.gencore.design.bed -j $<.metrics/$(*F).gencore.metrics.json -h $<.metrics/$(*F).gencore.metrics.html $(GENCORE_SUP_READS) $(GENCORE_SCORE_THREESHOLD) $(GENCORE_DIFF_THREESHOLD) $(GENCORE_RATIO_THREESHOLD) $(GENCORE_QUAL_THREESHOLD) $(GENCORE_QUAL_THREESHOLD);
 	# reformat BAM TODO
 	if [ "$$($(SAMTOOLS) view $@.tmp.gencore.bam | head -n1)" != "$$($(SAMTOOLS) view $@.tmp.gencore.bam | head -n1 | awk -v INPUT_FORMAT=BAM -v UMI_REFORMAT=1 -v UMI_TAG=1 -v UMI_SEP=- -f $(FASTQ_CLEAN_HEADER))" ]; then \
 		$(SAMTOOLS) view -h $@.tmp.gencore.bam | awk -v INPUT_FORMAT=BAM -v UMI_REFORMAT=1 -v UMI_TAG=1 -v UMI_SEP=- -f $(FASTQ_CLEAN_HEADER) | $(SAMTOOLS) view --bam --fast > $@.tmp.reformatted.bam; \

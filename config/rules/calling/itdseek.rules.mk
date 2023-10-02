@@ -15,10 +15,10 @@
 DPMIN_ITDSEEK=20
 VAFMIN_ITDSEEK=0.00
 
-%.itdseek$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.genome
+%.itdseek$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf 
 	#
 	# Generate VCF with ITDSeek
-	-$(ITDSEEK) $< $$(cat $*.genome) $(SAMTOOLS) > $@.tmp;
+	-$(ITDSEEK) $< $(GENOME) $(SAMTOOLS) > $@.tmp;
 	if (( $$(grep -c ^ERROR $@.tmp) )); then \
 		echo "[ERROR] ITDSeek failed: "; \
 		grep ^ERROR $@.tmp; \
@@ -32,7 +32,7 @@ VAFMIN_ITDSEEK=0.00
 		echo '##FORMAT=<ID=VAF,Number=.,Type=Float,Description="VAF Variant Frequency, from ITD allele fraction">' >> $@.tmp2; \
 		#Add contig \
 		echo '##contig=<ID=chr13,assembly=hg19,length=115169878>' >> $@.tmp2; \
-		echo '##reference=file://'`cat $*.genome` >> $@.tmp2; \
+		echo '##reference=file://'$(GENOME) >> $@.tmp2; \
 		# Add sample columns FORMAT and $SAMPLE \
 		grep "^#CHROM" $@.tmp | sed "s/INFO$$/INFO\tFORMAT\t"`echo $$(basename $$(dirname $@))`"/" >> $@.tmp2; \
 		mkdir -p $@.tmp"_VCF_sort"; \

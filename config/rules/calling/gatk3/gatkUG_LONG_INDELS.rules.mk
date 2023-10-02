@@ -42,10 +42,10 @@ GATKUG_LONG_INDELS_FLAGS= -nct $(THREADS_GATKUG_LONG_INDELS) -glm INDEL \
 		-stand_call_conf 10 -dfrac $(DFRAC_UG_LONG_INDELS) --dbsnp $(VCFDBSNP) -mbq $(MBQ_UG_LONG_INDELS) -rf BadCigar -dt NONE \
 		-allowPotentiallyMisencodedQuals
 
-%.gatkUG_LONG_INDELS$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.genome %.design.bed.interval_list
+%.gatkUG_LONG_INDELS$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed.interval_list
 	$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) $(GATKUG_LONG_INDELS_FLAGS) \
 		-T UnifiedGenotyper \
-		-R `cat $*.genome` \
+		-R $(GENOME) \
 		$$(if [ "`grep ^ -c $*.design.bed.interval_list`" == "0" ]; then echo ""; else echo "-L $*.design.bed.interval_list"; fi;) \
 		-I $< \
 		-ip $(INTERVAL_PADDING) \

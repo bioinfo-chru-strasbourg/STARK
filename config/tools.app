@@ -239,6 +239,12 @@ export BWA_DESCRIPTION=$BWA1_DESCRIPTION
 export BWA_REF=$BWA1_REF
 TOOLS_LIST=$TOOLS_LIST" BWA"
 
+# STAR
+export STAR=$NGS_TOOLS/STAR/2.7.8a/STAR		# BIN
+export STAR_VERSION=2.7.8a					# VER
+export STAR_DESCRIPTION="Spliced Transcripts Alignment to a Reference"
+export STAR_REF="https://github.com/alexdobin/STAR"
+TOOLS_LIST=$TOOLS_LIST" STAR"
 
 # BOWTIE2
 export BOWTIE=$NGS_TOOLS/bowtie2/current/bin/bowtie2			# BIN

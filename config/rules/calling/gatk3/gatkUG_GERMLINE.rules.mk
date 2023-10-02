@@ -44,10 +44,10 @@ GATKUG_GERMLINE_FLAGS= -nct $(GATKUG_THREADS_GERMLINE) -glm BOTH \
 		-baq OFF \
 		-stand_call_conf $(STAND_CALL_CONF_UG_GERMLINE) -dfrac $(DFRAC_UG_GERMLINE) --dbsnp $(VCFDBSNP) -mbq $(MBQ_UG_GERMLINE) -rf BadCigar -dt NONE
 
-%.gatkUG_GERMLINE$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.genome %.design.bed.interval_list
+%.gatkUG_GERMLINE$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed.interval_list
 	$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) $(GATKUG_GERMLINE_FLAGS) \
 		-T UnifiedGenotyper \
-		-R `cat $*.genome` \
+		-R $(GENOME) \
 		$$(if [ "`grep ^ -c $*.design.bed.interval_list`" == "0" ]; then echo ""; else echo "-L $*.design.bed.interval_list"; fi;) \
 		-I $< \
 		-ip $(INTERVAL_PADDING) \

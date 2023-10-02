@@ -25,17 +25,17 @@ MK_DATE="12/05/2023"
 # Options
 BWAMEM2_FLAGS?= mem -C -M -t $(THREADS_BWA)
 
-%.bwamem2$(POST_ALIGNMENT).bam: %.R1$(POST_SEQUENCING).fastq.gz %.R2$(POST_SEQUENCING).fastq.gz %.genome
+%.bwamem2$(POST_ALIGNMENT).bam: %.R1$(POST_SEQUENCING).fastq.gz %.R2$(POST_SEQUENCING).fastq.gz
 	# Read group
 	echo "@RG\tID:1\tPL:ILLUMINA\tPU:PU\tLB:001\tSM:$(*F)" > $@.RG
 	if [ "`cat $@.RG`" != "" ]; then echo " -R "`cat $@.RG` > $@.RG; fi;
 	# Alignment
 	if (($$(zcat $*.R2.fastq.gz | head -n 1 | wc -l))); then \
 		echo "BWA MEM Paired-End"; \
-		$(BWA2) $(BWAMEM2_FLAGS) $$(cat $@.RG) $$(cat $*.genome) $*.R1$(POST_SEQUENCING).fastq.gz $*.R2$(POST_SEQUENCING).fastq.gz | $(SAMTOOLS) sort - -l 1 -O BAM -o $@.tmp -T $@.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS); \
+		$(BWA2) $(BWAMEM2_FLAGS) $$(cat $@.RG) $(GENOME) $*.R1$(POST_SEQUENCING).fastq.gz $*.R2$(POST_SEQUENCING).fastq.gz | $(SAMTOOLS) sort - -l 1 -O BAM -o $@.tmp -T $@.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS); \
 	else \
 		echo "BWA MEM Single-End"; \
-		$(BWA2) $(BWAMEM2_FLAGS) $$(cat $@.RG) $$(cat $*.genome) $*.R1$(POST_SEQUENCING).fastq.gz | $(SAMTOOLS) sort - -l 1 -O BAM -o $@.tmp -T $@.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS); \
+		$(BWA2) $(BWAMEM2_FLAGS) $$(cat $@.RG) $(GENOME) $*.R1$(POST_SEQUENCING).fastq.gz | $(SAMTOOLS) sort - -l 1 -O BAM -o $@.tmp -T $@.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS); \
 	fi;
 	# AddOrReplaceReadGroups
 	if (($$($(SAMTOOLS) view $@.tmp -H | grep "^@RG" -c))); then \

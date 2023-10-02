@@ -28,7 +28,7 @@ GATKIndelRealignerOptions= -known $(VCFDBSNP) --LODThresholdForCleaning 2.0 -com
 
 # Create a .intervals file from the RealignerTargetCreator tool
 # for IndelRealigner (detect suspicious small indels regions)
-# %.intervals: %.bam %.bam.bai %.genome %.from_manifest.intervals #$(KNOWN_ALLELES) $(KNOWN_ALLELES).idx %.genome
+# %.intervals: %.bam %.bam.bai %.from_manifest.intervals #$(KNOWN_ALLELES) $(KNOWN_ALLELES).idx %.genome
 # 	if [ "`grep ^ -c $*.from_manifest.intervals`" == "0" ]; then \
 # 		$(JAVA) $(JAVA_FLAGS) -jar $(GATK) $(GATKRealignerTargetCreatorFLAGS) $(GATKRealignerTargetCreatorOptions) \
 # 		-T RealignerTargetCreator \
@@ -89,11 +89,11 @@ GATKIndelRealignerOptions= -known $(VCFDBSNP) --LODThresholdForCleaning 2.0 -com
 # (.bed, .list, .picard, .interval_list, or .intervals)
 #%.bam: %.realignment.bam %.realignment.bam.bai %.realignment.intervals %.genome
 #%.bam: %.realignment.bam %.realignment.bam.bai %.realignment.from_manifest.intervals %.genome
-%.bam: %.realignment.bam %.realignment.bam.bai %.realignment.design.bed %.genome
+%.bam: %.realignment.bam %.realignment.bam.bai %.realignment.design.bed
 	# RealignerTargetCreator 
 	$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) $(GATKRealignerTargetCreatorFLAGS) $(GATKRealignerTargetCreatorOptions) \
 			-T RealignerTargetCreator \
-			-R $$(cat $*.genome) \
+			-R $(GENOME) \
 			-I $< \
 			-o $*.for_realignment.RealignerTargetCreator.intervals \
 			$$(if (($$(grep ^ -c $*.realignment.design.bed))); then echo "-L $*.realignment.design.bed"; fi;);
@@ -106,7 +106,7 @@ GATKIndelRealignerOptions= -known $(VCFDBSNP) --LODThresholdForCleaning 2.0 -com
 		for chr in $$($(SAMTOOLS) idxstats $< | grep -v "\*" | awk '{ if ($$3+$$4>0) print $$1 }'); do \
 			#echo $$chr  >> $*.realignment.mk; \
 			echo "$*.for_realignment.$$chr.bam: $*.realignment.bam" >> $*.realignment1.mk; \
-			echo "	$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) $(GATKIndelRealignerFLAGS) -T IndelRealigner -R $$(cat $*.genome) -I $*.realignment.bam -o $*.for_realignment.$$chr.bam -targetIntervals $*.for_realignment.RealignerTargetCreator.intervals $(GATKIndelRealignerOptions) -L $$chr" >> $*.realignment1.mk; \
+			echo "	$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) $(GATKIndelRealignerFLAGS) -T IndelRealigner -R $(GENOME) -I $*.realignment.bam -o $*.for_realignment.$$chr.bam -targetIntervals $*.for_realignment.RealignerTargetCreator.intervals $(GATKIndelRealignerOptions) -L $$chr" >> $*.realignment1.mk; \
 			echo -n " $*.for_realignment.$$chr.bam " >> $*.realignment2.mk; \
 		done; \
 		echo -n "$@: " | cat - $*.realignment2.mk > $*.realignment3.mk; \

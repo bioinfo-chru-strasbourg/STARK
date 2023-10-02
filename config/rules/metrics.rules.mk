@@ -245,10 +245,10 @@ BAM_VALIDATION_COMPRESSION?=4
 ####################
 # From CAP
 
-#%.bam.metrics/metrics.amplicon_coverage: %.bam %.bam.bai %.manifest %.genome
-%.bam.metrics/metrics.per_amplicon_coverage: %.validation.bam %.validation.bam.bai %.manifest %.genome
+#%.bam.metrics/metrics.amplicon_coverage: %.bam %.bam.bai %.manifest
+%.bam.metrics/metrics.per_amplicon_coverage: %.validation.bam %.validation.bam.bai %.manifest
 	mkdir -p $(@D) ;
-	+$(CAP) --function=coverage --env=$(CONFIG_TOOLS) --ref=$$(cat $*.genome) --bam=$< --output=$(@D)/$(*F).HsMetrics.per_amplicon_coverage.tmp --manifest=$*.manifest --threads=$(THREADS) $(CAP_METRICS_OPTIONS) --bedtools=$(BEDTOOLS) --samtools=$(SAMTOOLS) --picard=$(PICARD) --verbose --tmp=$(CAP_TMP_FOLDER) 1>$(@D)/$(*F).HsMetrics.per_amplicon_coverage.log 2>$(@D)/$(*F).HsMetrics.per_amplicon_coverage.err;
+	+$(CAP) --function=coverage --env=$(CONFIG_TOOLS) --ref=$(GENOME) --bam=$< --output=$(@D)/$(*F).HsMetrics.per_amplicon_coverage.tmp --manifest=$*.manifest --threads=$(THREADS) $(CAP_METRICS_OPTIONS) --bedtools=$(BEDTOOLS) --samtools=$(SAMTOOLS) --picard=$(PICARD) --verbose --tmp=$(CAP_TMP_FOLDER) 1>$(@D)/$(*F).HsMetrics.per_amplicon_coverage.log 2>$(@D)/$(*F).HsMetrics.per_amplicon_coverage.err;
 	awk -f $(STARK_FOLDER_BIN)/per_target_coverage_flag.awk -F"\t" -v EXPECTED_DEPTH=$(EXPECTED_DEPTH) -v MINIMUM_DEPTH=$(MINIMUM_DEPTH) $(@D)/$(*F).HsMetrics.per_amplicon_coverage.tmp > $(@D)/$(*F).HsMetrics.per_amplicon_coverage.flags; \
 	rm -f $(@D)/$(*F).HsMetrics.per_amplicon_coverage.tmp; \
 	#cat $(@D)/$(*F).amplicon_coverage.log $(@D)/$(*F).HsMetrics.per_amplicon_coverage.err;
@@ -261,7 +261,7 @@ BAM_VALIDATION_COMPRESSION?=4
 ################
 
 GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
-%.bam.metrics/metrics.gatk: %.validation.bam %.bam.bai %.genome %.for_metrics_bed %.3fields.for_metrics_bed
+%.bam.metrics/metrics.gatk: %.validation.bam %.bam.bai %.for_metrics_bed %.3fields.for_metrics_bed
 	# TODO: speed up ! Too loog for exome/genome...
 	# use split algorithm with makefile and $(SAMTOOLS) view $< -b $$chr | $(BEDTOOLS)/genomeCoverageBed -ibam stdin -bg
 	# see rule %.bam.bed
@@ -273,7 +273,7 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 		if [ ! -e $(@D)/$(*F) ]; then \
 			$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) $(GATKDOC_FLAGS) \
 				-T DepthOfCoverage \
-				-R $$(cat $*.genome) \
+				-R $(GENOME) \
 				-o $(@D)/$(*F) \
 				-I $< \
 				-L $*.withoutheader.for_metrics_bed.gatk.bed; \
@@ -305,7 +305,7 @@ MAX_VALIDATION_BAM_SIZE?=3145728
 MAX_CONCURRENT_HSMETRICS?=4
 MAX_CONCURRENT_HSMETRICS_RAM?=24g
 
-%.bam.metrics/metrics.picard: %.validation.bam %.validation.bam.bai %.empty.HsMetrics %.genome %.list.genes %.design.bed %.dict
+%.bam.metrics/metrics.picard: %.validation.bam %.validation.bam.bai %.empty.HsMetrics %.list.genes %.design.bed %.dict
 	# Create directory
 	mkdir -p $(@D)
 	touch $@
@@ -326,10 +326,10 @@ MAX_CONCURRENT_HSMETRICS_RAM?=24g
 			# Otherwise increase RAM to MAX_CONCURRENT_HSMETRICS_RAM and limit command to MAX_CONCURRENT_HSMETRICS concurrent launches \
 			# \
 			if [ $$(du $*.validation.bam | cut -f1) -lt $(MAX_VALIDATION_BAM_SIZE) ] ; then \
-				$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) CollectHsMetrics -INPUT $*.validation.bam -OUTPUT $(@D)/$(*F).$$(basename $$one_bed).HsMetrics -R $$(cat $*.genome) -BAIT_INTERVALS $(@D)/$(*F).$$(basename $$one_bed).interval -TARGET_INTERVALS $(@D)/$(*F).$$(basename $$one_bed).interval -PER_TARGET_COVERAGE $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_target_coverage.tmp -PER_BASE_COVERAGE $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp $(PICARD_CollectHsMetrics_PARAM) -VALIDATION_STRINGENCY SILENT 2>$(@D)/$(*F).$$(basename $$one_bed).HsMetrics.err ; \
+				$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) CollectHsMetrics -INPUT $*.validation.bam -OUTPUT $(@D)/$(*F).$$(basename $$one_bed).HsMetrics -R $(GENOME) -BAIT_INTERVALS $(@D)/$(*F).$$(basename $$one_bed).interval -TARGET_INTERVALS $(@D)/$(*F).$$(basename $$one_bed).interval -PER_TARGET_COVERAGE $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_target_coverage.tmp -PER_BASE_COVERAGE $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp $(PICARD_CollectHsMetrics_PARAM) -VALIDATION_STRINGENCY SILENT 2>$(@D)/$(*F).$$(basename $$one_bed).HsMetrics.err ; \
 			else \
 				$(PYTHON3) $(STARK_FOLDER_BIN)/functions.py launch \
-					--cmd "$(JAVA) $$(echo $(JAVA_FLAGS) | sed -e 's/-Xmx[0-9]*[a-zA-Z]/-Xmx$(MAX_CONCURRENT_HSMETRICS_RAM)/') -jar $(PICARD) CollectHsMetrics -INPUT $*.validation.bam -OUTPUT $(@D)/$(*F).$$(basename $$one_bed).HsMetrics -R $$(cat $*.genome) -BAIT_INTERVALS $(@D)/$(*F).$$(basename $$one_bed).interval -TARGET_INTERVALS $(@D)/$(*F).$$(basename $$one_bed).interval -PER_TARGET_COVERAGE $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_target_coverage.tmp -PER_BASE_COVERAGE $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp $(PICARD_CollectHsMetrics_PARAM) -VALIDATION_STRINGENCY SILENT 2>$(@D)/$(*F).$$(basename $$one_bed).HsMetrics.err" \
+					--cmd "$(JAVA) $$(echo $(JAVA_FLAGS) | sed -e 's/-Xmx[0-9]*[a-zA-Z]/-Xmx$(MAX_CONCURRENT_HSMETRICS_RAM)/') -jar $(PICARD) CollectHsMetrics -INPUT $*.validation.bam -OUTPUT $(@D)/$(*F).$$(basename $$one_bed).HsMetrics -R $(GENOME) -BAIT_INTERVALS $(@D)/$(*F).$$(basename $$one_bed).interval -TARGET_INTERVALS $(@D)/$(*F).$$(basename $$one_bed).interval -PER_TARGET_COVERAGE $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_target_coverage.tmp -PER_BASE_COVERAGE $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp $(PICARD_CollectHsMetrics_PARAM) -VALIDATION_STRINGENCY SILENT 2>$(@D)/$(*F).$$(basename $$one_bed).HsMetrics.err" \
 					--lockfile_prefix $$(echo $*.validation.bam | xargs -0 dirname | xargs -0 dirname)/lockfile_HsMetrics. \
 					--target $(@D)/$(*F).$$(basename $$one_bed).HsMetrics \
 					--max_jobs $(MAX_CONCURRENT_HSMETRICS);\

@@ -20,7 +20,7 @@ CAP_SOFTCLIPTOQ0?=$(CAP_FOLDER)/CAP.SoftClipToQ0.pl
 
 
 # Change SoftClip to Quality 0
-%.softclippedtoq0.sam: %.bam %.bam.bai %.manifest %.genome
+%.softclippedtoq0.sam: %.bam %.bam.bai %.manifest
 	# Clipping
 	$(SAMTOOLS) view $< -h | perl $(CAP_SOFTCLIPTOQ0) -v1 > $@
 

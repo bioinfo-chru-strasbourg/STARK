@@ -37,7 +37,7 @@ VARSCAN_SNP_OPTIONS= $(VARSCAN_BOTH_OPTIONS) --min-avg-qual 30
 VARSCAN_INDEL_OPTIONS= $(VARSCAN_BOTH_OPTIONS) --min-avg-qual 10
 
 
-%.VarScan$(POST_CALLING).SNP.vcf: %.bam.mpileup %.empty.vcf %.genome
+%.VarScan$(POST_CALLING).SNP.vcf: %.bam.mpileup %.empty.vcf
 	if [ -s $< ]; then \
 		sample=`basename $* | cut -d"." -f1`; \
 		echo $$sample > $*.SNP.sample.txt; \
@@ -49,7 +49,7 @@ VARSCAN_INDEL_OPTIONS= $(VARSCAN_BOTH_OPTIONS) --min-avg-qual 10
 	rm -f $@.idx $@.unfiltered.vcf*
 
 
-%.VarScan$(POST_CALLING).InDel.vcf: %.bam.mpileup %.empty.vcf %.genome
+%.VarScan$(POST_CALLING).InDel.vcf: %.bam.mpileup %.empty.vcf
 	if [ -s $< ]; then \
 		sample=`basename $* | cut -d"." -f1`; \
 		echo $$sample > $*.InDel.sample.txt; \

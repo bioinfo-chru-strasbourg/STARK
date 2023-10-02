@@ -16,7 +16,7 @@ STARK_ARCHIVE_OPTIONS?=$(shell if ! (( $(KEEP_ALIGNMENT) )); then echo "--cram_r
 
 ## FASTQ from ILLUMINA ##
 
-%.archive.cram: %.bams.list %.genome %.R1.fastq.gz %.R2.fastq.gz $(REF_CACHE_FOLDER)
+%.archive.cram: %.bams.list %.R1.fastq.gz %.R2.fastq.gz $(REF_CACHE_FOLDER)
 	# Archive aligned BAM only if all original reads present. otherwise, FASTQ compressed 
 	# KEEP_ALIGNMENT: $(KEEP_ALIGNMENT)
 	mkdir -p $@.metrics;

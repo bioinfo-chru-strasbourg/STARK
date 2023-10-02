@@ -5,11 +5,13 @@
 # Author: Samuel Nicaise, Thomas Lavaux
 ############################
 
-%.STARFusion$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.genome %.junction
+# CTAT_DATABASES=$DBFOLDER/CTAT_LIB/current
+
+%.STARFusion$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.junction
 	mkdir -p $*.fusion.reports;
 	STAR-Fusion \
 		--chimeric_junction $*.junction \
-		--genome_lib_dir $$CTAT_DATABASES \
+		--genome_lib_dir $$CTAT_DATABASES/$ASSEMBLY/ \
 		--output_dir $*.fusion.reports;
 	# rename ...reports/star-fusion.fusion_predictions.tsv to ...reports/<sample>.star-fusion.tsv
 	mv $*.fusion.reports/star-fusion.fusion_predictions.tsv $*.fusion.reports/$$(echo $(@F) | rev | cut -d"." -f4-  | rev).star-fusion.tsv
