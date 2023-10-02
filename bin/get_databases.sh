@@ -531,7 +531,7 @@ if [ -e $GENOME ] ; then
 	if [ ! -e $(dirname $GENOME)/$(basename $GENOME).star.idx ]; then
 		if [ "$STAR" != "" ]; then
 		    echo "$(dirname $GENOME)/$(basename $GENOME).star.idx: $GENOME
-			STAR --runThreadN $THREADS --runMode genomeGenerate --genomeDir $(dirname $GENOME)/$(basename $GENOME).star.idx --genomeFastaFiles $GENOME --sjdbGTFfile $DBFOLDER_GENCODE/current/*annotation.gtf* ;
+			STAR --runThreadN $THREADS --runMode genomeGenerate --genomeDir $(dirname $GENOME)/$(basename $GENOME).star.idx --genomeFastaFiles $GENOME --sjdbGTFfile $DBFOLDER_GENCODE/current/$ASSEMBLY/gencode.*.annotation.gtf ;
 		    " >> $MK
 			MK_ALL="$MK_ALL $(dirname $GENOME)/$(basename $GENOME).star.idx"
 		fi;
