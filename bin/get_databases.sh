@@ -134,7 +134,8 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Configuration
 ENV_CONFIG=$(find -L $SCRIPT_DIR/.. -name config.app)
-source $ENV_CONFIG 1>/dev/null 2>/dev/null
+source $ENV_CONFIG 
+# 1>/dev/null 2>/dev/null
 
 # FUNCTIONS
 #############
@@ -434,7 +435,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 			mkdir -p $DBFOLDER_GENCODE/$DATE/$ASSEMBLY
 			chmod 0775 $DBFOLDER_GENCODE/$DATE/$ASSEMBLY
 			wget --progress=bar:force:noscroll $GENCODE_CURRENT -P $DB_TMP
-			tar -xzf  $DB_TMP/$(basename $CTAT_CURRENT) -C  $DBFOLDER_GENCODE/$DATE/$ASSEMBLY --strip-components=1
+			unzip  $DB_TMP/$(basename $GENCODE_CURRENT) -d  $DBFOLDER_GENCODE/$DATE/$ASSEMBLY 
 			-[ ! -s $DBFOLDER_GENCODE/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_GENCODE/STARK.database && chmod o+r $DBFOLDER_GENCODE/STARK.database 
 			-[ ! -s $DBFOLDER_GENCODE/$DATE/$ASSEMBLY/STARK.database.release ] && cp $DB_TMP/STARK.database.release $DBFOLDER_GENCODE/$DATE/$ASSEMBLY/STARK.database.release && chmod o+r $DBFOLDER_GENCODE/$DATE/$ASSEMBLY/STARK.database.release
 

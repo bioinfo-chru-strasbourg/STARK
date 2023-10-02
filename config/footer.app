@@ -381,7 +381,7 @@ export ASSEMBLY
 
 # default Genome
 if [ -z $GENOME ] || [ "$GENOME" == "" ]; then
-	GENOME=$DATABASES"/genomes/current/"$ASSEMBLY".fa"
+	GENOME=$DATABASES/genomes/current/$ASSEMBLY/$ASSEMBLY.fa
 fi;
 export GENOME
 
