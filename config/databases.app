@@ -135,8 +135,8 @@ fi;
 export SNPEFF_DATABASES
 DATABASES_CONFIG_LIST=$DATABASES_CONFIG_LIST" SNPEFF_DATABASES"
 
-# Arriba STAR Fusion Databases  Configuration
-#############################################
+# Arriba STAR Fusion Gencode Databases Configuration
+####################################################
 
 # Arriba
 if [ ! -z $FOLDER_DATABASES_ARRIBA ] && [ "$FOLDER_DATABASES_ARRIBA" != "" ]; then
@@ -146,7 +146,6 @@ else
 fi;
 export ARRIBA_DATABASES
 DATABASES_CONFIG_LIST=$DATABASES_CONFIG_LIST" ARRIBA_DATABASES"
-
 
 # CTAT genome lib
 if [ ! -z $FOLDER_DATABASES_CTAT ] && [ "$FOLDER_DATABASES_CTAT" != "" ]; then

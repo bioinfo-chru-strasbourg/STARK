@@ -719,7 +719,33 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	ln -s $DATABASES $TOOL_DATABASE_FOLDER && \
 	$TOOL_CHECK ;
 
+############
+# HOWARD 2 #
+############
 
+# https://github.com/bioinfo-chru-strasbourg/howard/archive/refs/heads/devel.zip
+
+# TOOL INFO
+ENV TOOL_NAME="howard"
+ENV TOOL_VERSION="devel"
+ENV TOOL_TARBALL="$TOOL_VERSION.zip"
+ENV TOOL_SOURCE_EXTERNAL="https://github.com/bioinfo-chru-strasbourg/howard/archive/refs/heads/$TOOL_TARBALL"
+ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+# TOOL PARAMETERS
+ENV TOOL_PARAM_DATABASE_FOLDER_LINK=$DATABASES
+ENV TOOL_PARAM_DATABASE_FOLDER=/databases
+
+
+# TOOL INSTALLATION
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
+	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
+	cp -R $TOOL_SOURCE_BUILD/*/* $TOOL_DEST/ && \
+	chmod a+x $TOOL_DEST/* -R && \
+	mkdir -p $TOOL_PARAM_DATABASE_FOLDER_LINK && \
+	mkdir -p $TOOL_PARAM_DATABASE_FOLDER && \
+	ln -s $DATABASES $TOOL_DATABASE_FOLDER && \
+    $TOOL_CHECK ;
 
 ############
 # IGVTOOLS #

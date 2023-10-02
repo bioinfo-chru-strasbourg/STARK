@@ -483,7 +483,7 @@ if [ -e $GENOME ] ; then
 		fi;
 	fi;
 
-	## BWA2 index
+	## BWA2 index TODO make it optional
 	if [ ! -e $GENOME.bwt.2bit.64 ]; then
 		if [ "$BWA2" != "" ]; then
 		    echo "$GENOME.bwt.2bit.64: $GENOME
