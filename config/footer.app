@@ -370,22 +370,6 @@ done;
 #echo $APP_GROUP
 #echo $APP_PROJECT
 
-
-# ASSEMBLY & GENOME
-################
-# default Assembly
-if [ -z $ASSEMBLY ] || [ "$ASSEMBLY" == "" ]; then
-	ASSEMBLY=hg19
-fi;
-export ASSEMBLY
-
-# default Genome
-if [ -z $GENOME ] || [ "$GENOME" == "" ]; then
-	GENOME=$DATABASES/genomes/current/$ASSEMBLY/$ASSEMBLY.fa
-fi;
-export GENOME
-
-
 # REF_CACHE_FOLDER and REF_CACHE and REF_PATH
 
 if [ -z $REF_PATH ] || [ "$REF_PATH" == "" ]; then
@@ -412,8 +396,6 @@ fi;
 export REF_CACHE_FOLDER
 export REF_PATH
 export REF_CACHE="$REF_CACHE_FOLDER/%2s/%2s/%s"
-
-
 
 # TOOLS
 #########

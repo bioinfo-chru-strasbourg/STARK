@@ -7,11 +7,25 @@
 DATABASES_LIST=""
 DATABASES_CONFIG_LIST=""
 
+# ASSEMBLY & GENOME
+################
+# default Assembly
+if [ -z $ASSEMBLY ] || [ "$ASSEMBLY" == "" ]; then
+	ASSEMBLY=hg19
+fi;
+export ASSEMBLY
 
-# refGene
-############
+# default Genome
+if [ -z $GENOME ] || [ "$GENOME" == "" ]; then
+	GENOME=$DATABASES/genomes/current/$ASSEMBLY/$ASSEMBLY.fa
+fi;
+export GENOME
+
+# refGene/RefSeq
+#################
 DBFOLDER_REFGENE=$DBFOLDER/refGene
 export REFSEQ_GENES=$DBFOLDER_REFGENE/current/refGene.$ASSEMBLY.bed
+
 # dbSNP and other variant sets
 #################################
 # Mandatory DB (for calling with GATK variant recalibration)

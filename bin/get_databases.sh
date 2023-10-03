@@ -209,6 +209,257 @@ MK_ALL=""
 # INFOS
 DOWNLOAD_METHOD="STARK Databases downloading script [$SCRIPT_RELEASE-$SCRIPT_DATE]"
 
+##############################
+# GATK VARIANT RECALIBRATION #
+##############################
+
+DATABASE="gatk"
+DATABASE_NAME="GATK"
+DATABASE_FULLNAME="GATK Databases"
+DATABASE_WEBSITE="https://www.broadinstitute.org//"
+DATABASE_DESCRIPTION="Databases for GATK Variant Recalibration"
+
+if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
+
+	DBFOLDER_GATK_URL_FULL_COPY=0
+	GATK_RESOURCE_NB=0
+	MK_DBFOLDER_GATK_ALL=""
+	> $MK.existing_gatk_db
+
+	for GATK_RESOURCE in $GATK_DATABASES_LIST; do
+		DB_TARGET=$DBFOLDER_GATK/current/$(echo $GATK_RESOURCE | cut -d: -f2);	# /STARK/databases/gatk/current/1000G_omni2.5.b37.vcf.gz
+		DB_TARGET_FILE=$(basename $DB_TARGET);									# 1000G_omni2.5.b37.vcf.gz
+		DB_TARGET_FOLDER=$(dirname $DB_TARGET);									# /STARK/databases/gatk/current
+		DB_RELEASE=$DATE;
+		DB_RELEASE_FILE=$DB_TARGET_FILE;										# 1000G_omni2.5.b37.vcf.gz
+		DB_RELEASE_FOLDER=$DBFOLDER_GATK/$DATE;									# /STARK/databases/gatk/DATE
+		DB_RELEASE_FILE_PATH="$DB_RELEASE_FOLDER/$DB_RELEASE_FILE";				# /STARK/databases/gatk/DATE/1000G_omni2.5.b37.vcf.gz
+
+		DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DATE
+		mkdir -p $DB_TMP
+
+		if (($UPDATE)); then
+			if [ -e $DB_TARGET ]; then mv -f $DB_TARGET $DB_TARGET.V$DATE; fi;
+		fi;
+
+		if [ -e $DB_TARGET_FOLDER/$(echo $GATK_RESOURCE | cut -d: -f2) ]; then
+			echo "$DB_RELEASE_FILE_PATH: $DBFOLDER $GENOME
+				mkdir -p $DB_RELEASE_FOLDER
+				rsync -ar $DB_TARGET_FOLDER/$(echo $GATK_RESOURCE | cut -d: -f2) $DB_RELEASE_FILE_PATH
+				rsync -ar $DB_TARGET_FOLDER/$(echo $GATK_RESOURCE | cut -d: -f2).tbi $DB_RELEASE_FILE_PATH.tbi
+			" >> $MK.existing_gatk_db
+			MK_DBFOLDER_GATK_ALL_existing_gatk_db="$MK_DBFOLDER_GATK_ALL_existing_gatk_db $DB_RELEASE_FILE_PATH"
+			MK_ALL_existing_gatk_db="$MK_ALL_existing_gatk_db $DB_RELEASE_FILE_PATH" 
+
+		else
+			((GATK_RESOURCE_NB++))
+			(($VERBOSE)) && echo ""
+			(($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME/$GATK_RESOURCE' release '$DATE' for '$ASSEMBLY'"
+
+			if [ $ASSEMBLY == "hg38" ]; then
+				DBFOLDER_GATK_URL="https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0"
+			elif [ $ASSEMBLY == "hg19" ]; then
+				DBFOLDER_GATK_URL="https://data.broadinstitute.org/snowman/hg19/variant_calling/vqsr_resources/Exome/v2"
+			else
+				DBFOLDER_GATK_URL="https://data.broadinstitute.org/snowman/$ASSEMBLY/variant_calling/vqsr_resources/Exome/v2"
+			fi;
+
+			DBFOLDER_GATK_URL_FILE="$DB_TARGET_FILE"
+			DB_TARGET_FILE_LIST="$DB_TARGET_FILE_LIST $DB_TARGET_FILE"
+			DBFOLDER_GATK_URL_FILE_DATE=$(curl -s -I $DBFOLDER_GATK_URL/$DBFOLDER_GATK_URL_FILE | grep "Last-Modified: " | sed "s/Last-Modified: //g" | sed "s/\r$//g")
+			DB_RELEASE_FROM_DOWNLOAD=$(date -d "$DBFOLDER_GATK_URL_FILE_DATE")
+			DB_RELEASE_FILE=$(basename $DB_RELEASE_FILE_PATH)
+
+			(($VERBOSE)) && echo "#[INFO] GATK Resource URL   = $DBFOLDER_GATK_URL"
+			(($VERBOSE)) && echo "#[INFO] GATK Resource File  = $DBFOLDER_GATK_URL_FILE"
+			DBFOLDER_GATK_DOWNLOAD_MULTITHREAD=1
+
+			if ! (($DBFOLDER_GATK_URL_FULL_COPY)); then
+				DBFOLDER_GATK_URL_PATH=$(echo $DBFOLDER_GATK_URL | sed 's#^https://##gi'  | sed 's#^http://##gi')
+				if (($DBFOLDER_GATK_DOWNLOAD_MULTITHREAD)); then
+					echo "$DB_TMP/original/chr_name_conv.txt: $GENOME
+						mkdir -p $DB_TMP/original
+						cat $GENOME.fai | awk '{a=\$\$1; gsub(\"^chr\",\"\",a); print a\" \"\$\$1}' > $DB_TMP/original/chr_name_conv.txt
+				
+					" >> $MK
+				else
+					echo "$DB_TMP/original/chr_name_conv.txt: $GENOME
+						mkdir -p $DB_TMP
+						wget -q -r --no-parent $DBFOLDER_GATK_URL --directory-prefix=$DB_TMP/original
+						mv $DB_TMP/original/$DBFOLDER_GATK_URL_PATH/*vcf.gz* $DB_TMP/original/
+						cat $GENOME.fai | awk '{a=\$\$1; gsub(\"^chr\",\"\",a); print a\" \"\$\$1}' > $DB_TMP/original/chr_name_conv.txt
+					" >> $MK
+				fi;
+				DBFOLDER_GATK_URL_FULL_COPY=1
+			fi;
+
+			echo "$DB_TMP/$DB_RELEASE_FILE: $GENOME $DB_TMP/original/chr_name_conv.txt
+				mkdir -p $DB_TMP/original
+				if (($DBFOLDER_GATK_DOWNLOAD_MULTITHREAD)); then \
+					curl $DBFOLDER_GATK_URL/$DBFOLDER_GATK_URL_FILE -s -R -o $DB_TMP/original/$DBFOLDER_GATK_URL_FILE; \
+				else \
+					rsync -ar $DB_TMP/original/$DBFOLDER_GATK_URL_FILE $DB_TMP/$DBFOLDER_GATK_URL_FILE; \
+				fi;
+				$BGZIP -dc -@$THREADS $DB_TMP/original/$DBFOLDER_GATK_URL_FILE | sed 's/\\t\$\$//gi' | $BGZIP -l1 -@$THREADS -c > $DB_TMP/$DBFOLDER_GATK_URL_FILE.tmp.vcf.gz
+				$TABIX $DB_TMP/$DBFOLDER_GATK_URL_FILE.tmp.vcf.gz
+				$BCFTOOLS reheader --fai $GENOME.fai --threads $THREADS $DB_TMP/$DBFOLDER_GATK_URL_FILE.tmp.vcf.gz > $DB_TMP/$DBFOLDER_GATK_URL_FILE.tmp2.vcf.gz
+				$TABIX $DB_TMP/$DBFOLDER_GATK_URL_FILE.tmp2.vcf.gz
+				$BCFTOOLS annotate --rename-chrs $DB_TMP/original/chr_name_conv.txt --threads $THREADS $DB_TMP/$DBFOLDER_GATK_URL_FILE.tmp2.vcf.gz | grep -v '^##contig=<ID=[^,]*>' | $BGZIP -l1 -@$THREADS > $DB_TMP/$DB_RELEASE_FILE.tmp3.vcf.gz
+				$TABIX $DB_TMP/$DBFOLDER_GATK_URL_FILE.tmp3.vcf.gz
+				$BCFTOOLS view --threads $THREADS -r \$\$(cat $DB_TMP/original/chr_name_conv.txt | cut -d' ' -f2 | tr '\\n' ',') $DB_TMP/$DB_RELEASE_FILE.tmp3.vcf.gz | $BGZIP -@$THREADS > $DB_TMP/$DB_RELEASE_FILE 
+				$TABIX $DB_TMP/$DBFOLDER_GATK_URL_FILE
+				rm -f $DB_TMP/$DBFOLDER_GATK_URL_FILE.tmp*
+				mkdir -p $DB_RELEASE_FOLDER
+				chmod 0775 $DB_RELEASE_FOLDER
+			" >> $MK
+
+			echo "$DB_RELEASE_FILE_PATH: $DB_TMP/$DB_RELEASE_FILE
+				mkdir -p $DB_RELEASE_FOLDER/original
+				rsync -ar $DB_TMP/original/$DBFOLDER_GATK_URL_FILE $DB_RELEASE_FOLDER/original/
+				rsync -ar $DB_TMP/$DB_RELEASE_FILE $DB_RELEASE_FILE_PATH
+				rsync -ar $DB_TMP/$DB_RELEASE_FILE.tbi $DB_RELEASE_FILE_PATH.tbi
+			" >> $MK
+			MK_DBFOLDER_GATK_ALL="$MK_DBFOLDER_GATK_ALL $DB_RELEASE_FILE_PATH"
+			MK_ALL="$MK_ALL $DB_RELEASE_FILE_PATH" 
+		fi;
+	done;
+
+	DB_INFOS_JSON='
+	{
+		"code": "'$DATABASE'",
+		"name": "'$DATABASE_NAME'",
+		"fullname": "'$DATABASE_FULLNAME'",
+		"website": "'$DATABASE_WEBSITE'",
+		"description": "'$DATABASE_DESCRIPTION'"
+	}
+	';
+	echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
+
+	DB_RELEASE_INFOS_JSON='
+	{
+		"release": "'$DB_RELEASE_FROM_DOWNLOAD'",
+		"date": "'$$DATE'",
+		"files": [ "'$(echo $DB_TARGET_FILE_LIST | sed 's/ /", "/gi')'" ],
+		"assembly": [ "'$DB_ASSEMBLY'" ],
+		"download": {
+			"methode": "'$DOWNLOAD_METHOD'",
+			"URL": "'$DBFOLDER_GATK_URL'",
+			"file": "'$(echo $DB_TARGET_FILE_LIST | sed 's/ /,/gi')'",
+			"date": "'$DBFOLDER_GATK_URL_FILE_DATE'"
+		}
+	}
+	';
+	echo "$DB_RELEASE_INFOS_JSON" > $DB_TMP/STARK.database.release
+
+	if (($GATK_RESOURCE_NB)); then
+
+		cat $MK.existing_gatk_db >> $MK
+
+		MK_DBFOLDER_GATK_ALL="$MK_DBFOLDER_GATK_ALL $MK_DBFOLDER_GATK_ALL_existing_gatk_db"
+		MK_ALL="$MK_ALL $MK_ALL_existing_gatk_db" 
+
+		echo "$DB_TARGET_FOLDER: $MK_DBFOLDER_GATK_ALL
+			# folder
+			mkdir -p $DB_RELEASE_FOLDER/original
+			chmod 0775 $DB_RELEASE_FOLDER -R
+			# database release info
+			-[ ! -s $DB_TARGET_DB_FOLDER/STARK.database ] && cp $DB_TMP/STARK.database $DB_TARGET_DB_FOLDER/STARK.database
+			cp $DB_TMP/STARK.database.release $DB_RELEASE_FOLDER/
+			chmod o+r $DB_TARGET_DB_FOLDER/STARK.database $DB_RELEASE_FOLDER/STARK.database.release
+			# links
+			-[ $DB_TARGET_RELEASE != $DATE ] && ln -snf $DATE/ $DB_TARGET_FOLDER
+			-[ latest != $DATE ] && ln -snf $DATE/ $DB_TARGET_DB_FOLDER/latest
+			-(($CURRENT)) && [ current != $DATE ] && ln -snf $DATE/ $DB_TARGET_DB_FOLDER/current
+			# Clear
+			rm -rf $DB_TMP;
+		" >> $MK
+
+		MK_ALL="$MK_ALL $DB_TARGET_FOLDER" 
+
+	fi;
+
+fi;
+
+
+#############################
+# ANNOVAR & SNPEFF & REFSEQ #
+#############################
+
+# Install with HOWARD v2
+
+
+if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
+	DBFOLDER_SNPEFF=$(dirname $SNPEFF_DATABASES)
+
+	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DATE
+	mkdir -p $DB_TMP
+	chmod 0775 $DB_TMP;
+
+	if [ ! -e $DBFOLDER_SNPEFF ] || (($UPDATE)); then
+		if (($UPDATE)); then
+			if [ -e $DBFOLDER_SNPEFF ]; then mv -f $DBFOLDER_SNPEFF $DBFOLDER_SNPEFF.V$DATE; fi;
+		fi;
+		
+		echo "$DBFOLDER_SNPEFF: $DBFOLDER
+			howard databases --assembly='$ASSEMBLY' --download-snpeff=$DBFOLDER_SNPEFF/$DATE
+			
+			[ ! -e $DBFOLDER_SNPEFF/current ] || unlink $DBFOLDER_SNPEFF/current
+			ln -snf $DBFOLDER_SNPEFF/$DATE $DBFOLDER_SNPEFF/current
+
+			rm -rf $DB_TMP;
+		" >> $MK
+		MK_ALL="$MK_ALL $DBFOLDER_SNPEFF"
+	fi;
+fi;
+
+
+if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
+	DBFOLDER_ANNOVAR=$(dirname $ANNOVAR_DATABASES)
+
+	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DATE
+	mkdir -p $DB_TMP
+	chmod 0775 $DB_TMP;
+
+	if [ ! -e $DBFOLDER_ANNOVAR ] || (($UPDATE)); then
+		if (($UPDATE)); then
+			if [ -e $DBFOLDER_ANNOVAR ]; then mv -f $DBFOLDER_ANNOVAR $DBFOLDER_ANNOVAR.V$DATE; fi;
+		fi;
+		
+		echo "$DBFOLDER_ANNOVAR: $DBFOLDER
+			howard databases --assembly='$ASSEMBLY' --download-annovar=$DBFOLDER_ANNOVAR/$DATE --download-annovar-files='refGene,gnomad_exome,dbnsfp42a,cosmic70,clinvar_202*,nci60'
+			
+			[ ! -e $DBFOLDER_ANNOVAR/current ] || unlink $DBFOLDER_ANNOVAR/current
+			ln -snf $DBFOLDER_ANNOVAR/$DATE $DBFOLDER_ANNOVAR/current
+
+			rm -rf $DB_TMP;
+		" >> $MK
+		MK_ALL="$MK_ALL $DBFOLDER_ANNOVAR"
+	fi;
+fi;
+
+if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
+	# DBFOLDER_REFGENE=$DBFOLDER/refGene
+	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DATE
+	mkdir -p $DB_TMP
+	chmod 0775 $DB_TMP;
+
+	if [ ! -e $DBFOLDER_REFGENE ] || (($UPDATE)); then
+		if (($UPDATE)); then
+			if [ -e $DBFOLDER_REFGENE ]; then mv -f $DBFOLDER_REFGENE $DBFOLDER_REFGENE.V$DATE; fi;
+		fi;
+		
+		echo "$DBFOLDER_REFGENE: $DBFOLDER
+			howard databases --assembly='$ASSEMBLY' --download-refseq=$DBFOLDER_REFGENE/$DATE
+			
+			[ ! -e $DBFOLDER_REFGENE/current ] || unlink $DBFOLDER_REFGENE/current
+			ln -snf $DBFOLDER_REFGENE/$DATE $DBFOLDER_REFGENE/current
+
+			rm -rf $DB_TMP;
+		" >> $MK
+		MK_ALL="$MK_ALL $DBFOLDER_REFGENE"
+	fi;
+fi;
+
 ##########
 # ARRIBA #
 ##########
@@ -297,7 +548,6 @@ DATABASE_WEBSITE="https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/"
 DATABASE_DESCRIPTION=" CTAT Genome Lib is a resource collection used by the Trinity Cancer Transcriptome Analysis Toolkit (CTAT). This CTAT-genome-lib-builder system is leveraged for preparing a target genome and annotation set for use with Trinity CTAT tools, including fusion transcript detection and cancer mutation discovery"
 
 if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
-
 	DBFOLDER_CTAT=$(dirname $CTAT_DATABASES)
 
 	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DATE
@@ -449,25 +699,52 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 	fi;
 fi;
 
-# default Genome
+
+if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
+	# GENOME=$DATABASES/genomes/current/$ASSEMBLY/$ASSEMBLY.fa
+	DBFOLDER_GENOME=$DATABASES/genomes
+
+	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DATE
+	mkdir -p $DB_TMP
+	chmod 0775 $DB_TMP;
+
+	if [ ! -e $DBFOLDER_GENOME ] || (($UPDATE)); then
+		if (($UPDATE)); then
+			if [ -e $DBFOLDER_GENOME ]; then mv -f $DBFOLDER_GENOME $DBFOLDER_GENOME.V$DATE; fi;
+		fi;
+		
+		echo "$DBFOLDER_GENOME: $DBFOLDER
+			howard databases --assembly='$ASSEMBLY' --download-genomes=$DBFOLDER_GENOME/$DATE
+			
+			[ ! -e $DBFOLDER_GENOME/current ] || unlink $DBFOLDER_GENOME/current
+			ln -snf $DBFOLDER_GENOME/$DATE $DBFOLDER_GENOME/current
+
+			rm -rf $DB_TMP;
+		" >> $MK
+		MK_ALL="$MK_ALL $DBFOLDER_GENOME"
+	fi;
+fi;
+
+
 if [ -e $GENOME ] ; then
 
-	# Genome index
-	if [ ! -d $GENOME.hts-ref ] || [ ! "$(ls -A $GENOME.hts-ref)" ]; then
+	# Samtools genome index
+	if [ ! -d $GENOME.hts-ref ] ; then
 		if [ "$SAMTOOLS" != "" ]; then
-		    echo "$GENOME.hts-ref/done: $GENOME				mkdir -p $GENOME.hts-ref;
-				perl $(dirname $SAMTOOLS)/seq_cache_populate.pl -root $GENOME.hts-ref $GENOME 1>/dev/null 2>/dev/null;
-				echo 'done.' > $REF.hts-ref/done;
+		    echo "$GENOME.hts-ref: $GENOME
+				mkdir -p $GENOME.hts-ref;
+				perl $(dirname $SAMTOOLS)/seq_cache_populate.pl -root $GENOME.hts-ref $GENOME;
+				echo 'done.' > $GENOME.hts-ref;
 		    " >> $MK
-			MK_ALL="$MK_ALL $GENOME.hts-ref/done"
+			MK_ALL="$MK_ALL $GENOME.hts-ref"
 		fi;
 	fi;
 
 	## BOWTIE index
 	if [ ! -e $(dirname $GENOME)/$ASSEMBLY.rev.1.bt2 ]; then
 		if [ "$BOWTIE" != "" ]; then
-		    echo " $(dirname $GENOME)/$ASSEMBLY.rev.1.bt2: $GENOME
-				$(dirname $BOWTIE)/bowtie2-build --threads $THREADS --packed $GENOME $ASSEMBLY.rev.1.bt2 ;
+		    echo "$(dirname $GENOME)/$ASSEMBLY.rev.1.bt2: $GENOME
+				$(dirname $BOWTIE)/bowtie2-build --threads $THREADS --packed $GENOME $(dirname $GENOME)/$ASSEMBLY.rev ;
 		    " >> $MK
 			MK_ALL="$MK_ALL $(dirname $GENOME)/$ASSEMBLY.rev.1.bt2"
 		fi;
@@ -506,7 +783,7 @@ if [ -e $GENOME ] ; then
 	## PICARD index
 	if [ ! -e $(dirname $GENOME)/$ASSEMBLY.dict ]; then
 		if [ "$PICARD" != "" ]; then
-		    echo "$(dirname $GENOME)/$ASSEMBLY.dict: $REF
+		    echo "$(dirname $GENOME)/$ASSEMBLY.dict: $GENOME
 				$JAVA -jar $PICARD CreateSequenceDictionary \
 					-REFERENCE $GENOME \
 					-OUTPUT $(dirname $GENOME)/$ASSEMBLY.dict ;
@@ -515,7 +792,7 @@ if [ -e $GENOME ] ; then
 		fi;
 	fi;
 
-	## GATK IMG 
+	## GATK IMG
 	if [ ! -e $GENOME.img ]; then
 		if [ "$PICARD" != "" ]; then
 		    echo "$GENOME.img: $GENOME

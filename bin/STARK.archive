@@ -675,7 +675,7 @@ if (($REHEADER)); then
 			(($VERBOSE)) && echo "#[INFO] CRAM rehead with genome reference '$REF_name'..."
 
 			# reheader
-			#$SAMTOOLS reheader -Pi -c "$SAMTOOLS view -H $CRAM_cram_source | $SAMTOOLS view -O CRAM -@ $THREADS --reference=$REF | samtools view -H " $CRAM_cram_source > $CRAM_cram_source.reheaded.cram
+			#$SAMTOOLS reheader -Pi -c "$SAMTOOLS view -H $CRAM_cram_source | $SAMTOOLS view -O CRAM -@ $THREADS --reference=$GENOME | samtools view -H " $CRAM_cram_source > $CRAM_cram_source.reheaded.cram
 			#mv -f $CRAM_cram_source.reheaded.cram $CRAM_cram_source
 
 			if $SAMTOOLS reheader -P -c "$SAMTOOLS view -H $CRAM_cram_source | $SAMTOOLS view -O CRAM -@ $THREADS --reference=$GENOME | $SAMTOOLS view -H " $CRAM_cram_source > $CRAM_cram_source.reheaded.cram; then
