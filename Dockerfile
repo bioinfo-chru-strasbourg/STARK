@@ -739,8 +739,8 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	source $TOOL_INIT && \
 	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
 	cp -R $TOOL_SOURCE_BUILD/*/* $TOOL_DEST/ && \
-	cd $TOOL_DEST/ \
-	$PIP install -e . \
+	cd $TOOL_DEST/ && \
+	$PIP install -e . && \
     $TOOL_CHECK ;
 
 ############
