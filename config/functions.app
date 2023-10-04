@@ -215,8 +215,8 @@ find_app () {
 		# APP is a app file
 		[ -f $APP ] && echo $APP && return 0
 
-		local APP_DIRNAME=$(dirname $APP 2>/dev/null | tr -d ".")
-		local APP_BASENAME=$(basename $APP 2>/dev/null)
+		local APP_DIRNAME=$(dirname $APP  | tr -d ".")
+		local APP_BASENAME=$(basename $APP )
 
 		if [ "$FOLDER_APPS" == "" ] && [ "$APP_DIRNAME" == "" ]; then FOLDER_APPS=".."; fi
 
@@ -231,7 +231,7 @@ find_app () {
 
 		for APP_TEST in $(find -L $FOLDER_APPS -name *.app -or -name *.plugapp); do
 
-			local APP_NAME=$(source $APP_TEST 2>/dev/null; echo $APP_NAME);
+			local APP_NAME=$(source $APP_TEST ; echo $APP_NAME);
 			[[ $APP = $APP_NAME ]] && echo $APP_TEST && return 0
 			[[ $APP_tr = $APP_NAME ]] && echo $APP_TEST && return 0
 			[[ $APP_BASENAME = $APP_NAME ]] && echo $APP_TEST && return 0

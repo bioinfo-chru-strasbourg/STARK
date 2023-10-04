@@ -310,13 +310,14 @@ ENV MAMBA="/root/mambaforge/bin/mamba"
 ENV PIP="/root/mambaforge/bin/pip"
 RUN $MAMBA init
 RUN $PIP install $PYTHON_MODULE  && $PIP cache purge
-RUN $MAMBA install -y -c bioconda -c conda-forge R r-biocmanager r-cowplot r-argparse r-ranger r-tidyverse umi_tools~=1.1.4 && $MAMBA clean -afy
-RUN ln -s /root/mambaforge/bin/python /usr/local/bin/python ;
-RUN ln -s /root/mambaforge/bin/python3 /usr/local/bin/python3 ;
-RUN ln -s /root/mambaforge/bin/pip /usr/local/bin/pip ;
-RUN ln -s /root/mambaforge/bin/pip3 /usr/local/bin/pip3 ;
-RUN ln -s /root/mambaforge/bin/R /usr/local/bin/R ;
-RUN ln -s /root/mambaforge/bin/Rscript /usr/local/bin/Rscript ;
+RUN $MAMBA install -y -c bioconda -c conda-forge umi_tools~=1.1.4 bbmap~=39.01 R r-biocmanager r-cowplot r-argparse r-ranger r-tidyverse && $MAMBA clean -afy && \
+	ln -s /root/mambaforge/bin/python /usr/local/bin/python && \
+	ln -s /root/mambaforge/bin/python3 /usr/local/bin/python3 && \
+	ln -s /root/mambaforge/bin/pip /usr/local/bin/pip && \
+	ln -s /root/mambaforge/bin/pip3 /usr/local/bin/pip3 && \
+	ln -s /root/mambaforge/bin/R /usr/local/bin/R && \
+	ln -s /root/mambaforge/bin/Rscript /usr/local/bin/Rscript ;
+
 
 
 ########
@@ -940,6 +941,44 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	source $TOOL_INIT && \
 	cp $TOOL_SOURCE $TOOL_DEST/bin/ && \
 	ln -s $(basename $TOOL_SOURCE) $TOOL_DEST/bin/$TOOL_PARAM_JAR_NAME && \
+	$TOOL_CHECK ;
+
+##########
+# FGBIO #
+##########
+
+# # TOOL INFO
+ ENV TOOL_NAME="fgbio"
+ ENV TOOL_VERSION="2.1.0"
+ ENV TOOL_TARBALL="fgbio.jar"
+ ENV TOOL_SOURCE_EXTERNAL="https://github.com/fulcrumgenomics/fgbio/releases/download/$TOOL_VERSION/fgbio-$TOOL_VERSION.jar"
+ ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+# # TOOL PARAMETERS
+
+# # TOOL INSTALLATION
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+ 	source $TOOL_INIT && \
+ 	cp $TOOL_SOURCE $TOOL_DEST/bin/ && \
+ 	chmod a+x $TOOL_DEST/bin/* && \
+ 	$TOOL_CHECK ;
+
+################
+# FLT3_ITD_ext #
+################
+
+# TOOL INFO
+ENV TOOL_NAME="FLT3_ITD_ext"
+ENV TOOL_VERSION="1.1"
+ENV TOOL_TARBALL="$TOOL_NAME"
+ENV TOOL_SOURCE_EXTERNAL="https://github.com/ht50/FLT3_ITD_ext/zip/refs/heads/master.zip"
+ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+# TOOL PARAMETERS
+
+# TOOL INSTALLATION
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
+	cp $TOOL_SOURCE $TOOL_DEST/bin/ && \
+	#chmod a+x $TOOL_DEST/bin/* && \
 	$TOOL_CHECK ;
 
 

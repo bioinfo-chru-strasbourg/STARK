@@ -21,6 +21,15 @@ if [ -z $GENOME ] || [ "$GENOME" == "" ]; then
 fi;
 export GENOME
 
+# REF_CACHE_FOLDER and REF_CACHE and REF_PATH
+#if [ -z $REF_PATH ] || [ "$REF_PATH" == "" ]; then
+#	REF_PATH="http://www.ebi.ac.uk/ena/cram/md5/%s"
+#	export REF_PATH
+#fi;
+
+export REF_CACHE_FOLDER=$GENOME.hts-ref;
+export REF_CACHE="$REF_CACHE_FOLDER/%2s/%2s/%s";
+
 # refGene/RefSeq
 #################
 DBFOLDER_REFGENE=$DBFOLDER/refGene
@@ -30,12 +39,15 @@ export REFSEQ_GENES=$DBFOLDER_REFGENE/current/refGene.$ASSEMBLY.bed
 #################################
 # Mandatory DB (for calling with GATK variant recalibration)
 DBFOLDER_DBSNP=$DBFOLDER/dbsnp
-# BDSNP DB (used for calling, espacially with GATK)
-export VCFDBSNP=$DBFOLDER_DBSNP/current/dbsnp.$ASSEMBLY.vcf.gz	#snp138.vcf.gz
+# BDSNP DB (used for calling, especially with GATK)
+export VCFDBSNP=$DBFOLDER_DBSNP/current/$ASSEMBLY/dbsnp.$ASSEMBLY.vcf.gz	#snp138.vcf.gz
+
 if [ ! -e $VCFDBSNP ]; then
 	echo "#[WARNING] No VCFDBSNP '$VCFDBSNP' in the database. Calling step impossible. Please check '$DBFOLDER' folder or configuration file" >>/dev/stderr
 fi;
-#DATABASES_LIST=$DATABASES_LIST" VCFDBSNP"
+
+DATABASES_LIST=$DATABASES_LIST" VCFDBSNP"
+
 # GATK DATABASES
 ##################
 # Gatk resources folder

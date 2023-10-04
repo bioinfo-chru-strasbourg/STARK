@@ -130,13 +130,18 @@ do
 done
 
 # Script folder
+echo "# SEARCHING SCRIPTS"
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+echo "# DONE"
 
 # Configuration
+echo "# SEARCHING CONFIG APPS"
 ENV_CONFIG=$(find -L $SCRIPT_DIR/.. -name config.app)
+echo "# DONE"
+echo "# SOURCE CONFIGS"
+echo $ENV_CONFIG
 source $ENV_CONFIG 
-# 1>/dev/null 2>/dev/null
-
+echo "# DONE"
 # FUNCTIONS
 #############
 # function in_array
@@ -232,8 +237,8 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		DB_TARGET_FOLDER=$(dirname $DB_TARGET);									# /STARK/databases/gatk/current
 		DB_RELEASE=$DATE;
 		DB_RELEASE_FILE=$DB_TARGET_FILE;										# 1000G_omni2.5.b37.vcf.gz
-		DB_RELEASE_FOLDER=$DBFOLDER_GATK/$DATE;									# /STARK/databases/gatk/DATE
-		DB_RELEASE_FILE_PATH="$DB_RELEASE_FOLDER/$DB_RELEASE_FILE";				# /STARK/databases/gatk/DATE/1000G_omni2.5.b37.vcf.gz
+		DB_RELEASE_FOLDER=$DBFOLDER_GATK/$DATE/$ASSEMBLY;						# /STARK/databases/gatk/DATE/hg18
+		DB_RELEASE_FILE_PATH="$DB_RELEASE_FOLDER/$DB_RELEASE_FILE";				# /STARK/databases/gatk/DATE/hg19/1000G_omni2.5.b37.vcf.gz
 
 		DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DATE
 		mkdir -p $DB_TMP
@@ -352,32 +357,21 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 	echo "$DB_RELEASE_INFOS_JSON" > $DB_TMP/STARK.database.release
 
 	if (($GATK_RESOURCE_NB)); then
-
 		cat $MK.existing_gatk_db >> $MK
-
 		MK_DBFOLDER_GATK_ALL="$MK_DBFOLDER_GATK_ALL $MK_DBFOLDER_GATK_ALL_existing_gatk_db"
 		MK_ALL="$MK_ALL $MK_ALL_existing_gatk_db" 
-
 		echo "$DB_TARGET_FOLDER: $MK_DBFOLDER_GATK_ALL
-			# folder
 			mkdir -p $DB_RELEASE_FOLDER/original
 			chmod 0775 $DB_RELEASE_FOLDER -R
-			# database release info
-			-[ ! -s $DB_TARGET_DB_FOLDER/STARK.database ] && cp $DB_TMP/STARK.database $DB_TARGET_DB_FOLDER/STARK.database
+			-[ ! -s $DBFOLDER_GATK/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_GATK/STARK.database
 			cp $DB_TMP/STARK.database.release $DB_RELEASE_FOLDER/
-			chmod o+r $DB_TARGET_DB_FOLDER/STARK.database $DB_RELEASE_FOLDER/STARK.database.release
-			# links
-			-[ $DB_TARGET_RELEASE != $DATE ] && ln -snf $DATE/ $DB_TARGET_FOLDER
-			-[ latest != $DATE ] && ln -snf $DATE/ $DB_TARGET_DB_FOLDER/latest
-			-(($CURRENT)) && [ current != $DATE ] && ln -snf $DATE/ $DB_TARGET_DB_FOLDER/current
-			# Clear
+			chmod o+r $DBFOLDER_GATK/STARK.database $DBFOLDER_GATK/STARK.database.release
+			[ ! -e $$DBFOLDER_GATK/current ] || unlink $DBFOLDER_GATK/current
+			ln -snf $$DBFOLDER_GATK/$DATE $DBFOLDER_GATK/current
 			rm -rf $DB_TMP;
 		" >> $MK
-
 		MK_ALL="$MK_ALL $DB_TARGET_FOLDER" 
-
 	fi;
-
 fi;
 
 
@@ -725,8 +719,8 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 	fi;
 fi;
 
-
 if [ -e $GENOME ] ; then
+
 
 	# Samtools genome index
 	if [ ! -d $GENOME.hts-ref ] ; then

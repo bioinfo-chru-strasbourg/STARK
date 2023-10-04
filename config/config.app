@@ -20,11 +20,11 @@ export CONFIG_DATABASES=$STARK_FOLDER_CONFIG/databases.app
 export CONFIG_TOOLS=$STARK_FOLDER_CONFIG/tools.app
 export CONFIG_CONFIG=$STARK_FOLDER_CONFIG/config.app
 
-source $CONFIG_HEADER 1>/dev/null 2>/dev/null
-source $CONFIG_FOOTER 1>/dev/null 2>/dev/null
-source $CONFIG_FUNCTIONS 1>/dev/null 2>/dev/null
-source $CONFIG_TOOLS 1>/dev/null 2>/dev/null
-source $CONFIG_DATABASES 1>/dev/null 2>/dev/null
+source $CONFIG_HEADER 
+source $CONFIG_FOOTER 
+source $CONFIG_FUNCTIONS 
+source $CONFIG_TOOLS
+source $CONFIG_DATABASES 
 
 [ -e $STARK_FOLDER_CONFIG/default.app ] && export CONFIG_DEFAULT_APP=$STARK_FOLDER_CONFIG/default.app
 [ -e $STARK_FOLDER_APPS/default.app ] && export CONFIG_DEFAULT_APP=$STARK_FOLDER_APPS/default.app
