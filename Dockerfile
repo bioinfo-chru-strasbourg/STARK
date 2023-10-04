@@ -994,8 +994,6 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	cd $TOOL_SOURCE_BUILD/$TOOL_NAME-$TOOL_VERSION/source && \
 	make STAR && \
 	cp STAR $TOOL_DEST/bin/ && \
-	#mkdir $TOOL_DEST/scripts/ && \
-	#cp -R $TOOL_SOURCE_BUILD/$TOOL_NAME-$TOOL_VERSION/extras/scripts/ $TOOL_DEST/scripts/ && \
 	$TOOL_CHECK ;
 
 ###############
@@ -1022,8 +1020,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	cp -r * $TOOL_DEST/bin/ && \
 	$TOOL_CHECK ;
 
-## FusionInspector now included with STAR-Fusion
-## Interval Tree is included with STAR-Fusion
+## FusionInspector & Interval Tree included with STAR-Fusion
 
 
 ##########
