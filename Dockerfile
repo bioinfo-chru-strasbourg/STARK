@@ -733,9 +733,6 @@ ENV TOOL_TARBALL="$TOOL_VERSION.zip"
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/bioinfo-chru-strasbourg/howard/archive/refs/heads/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
-#ENV TOOL_PARAM_DATABASE_FOLDER_LINK=$DATABASES
-#ENV TOOL_PARAM_DATABASE_FOLDER=/databases
-
 
 # TOOL INSTALLATION
 RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
@@ -787,7 +784,23 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	cp -R $TOOL_SOURCE_BUILD/*/* $TOOL_DEST/bin/ && \
 	$TOOL_CHECK ;
 
+################
+# FLT3_ITD_ext #
+################
 
+# TOOL INFO
+ENV TOOL_NAME="FLT3_ITD_ext"
+ENV TOOL_VERSION="1.1"
+ENV TOOL_TARBALL="$TOOL_NAME"
+ENV TOOL_SOURCE_EXTERNAL="https://github.com/ht50/FLT3_ITD_ext/zip/refs/heads/master.zip"
+ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+# TOOL PARAMETERS
+
+# TOOL INSTALLATION
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
+	unzip -q $TOOL_SOURCE -d $TOOL_DEST/bin/ && \
+	$TOOL_CHECK ;
 
 ##########
 # MUTECT #
@@ -959,37 +972,15 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
  	source $TOOL_INIT && \
  	cp $TOOL_SOURCE $TOOL_DEST/bin/ && \
- 	chmod a+x $TOOL_DEST/bin/* && \
  	$TOOL_CHECK ;
-
-################
-# FLT3_ITD_ext #
-################
-
-# TOOL INFO
-ENV TOOL_NAME="FLT3_ITD_ext"
-ENV TOOL_VERSION="1.1"
-ENV TOOL_TARBALL="$TOOL_NAME"
-ENV TOOL_SOURCE_EXTERNAL="https://github.com/ht50/FLT3_ITD_ext/zip/refs/heads/master.zip"
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-# TOOL PARAMETERS
-
-# TOOL INSTALLATION
-RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-	source $TOOL_INIT && \
-	cp $TOOL_SOURCE $TOOL_DEST/bin/ && \
-	#chmod a+x $TOOL_DEST/bin/* && \
-	$TOOL_CHECK ;
 
 
 ########
 # STAR #
 ########
 
-# https://github.com/alexdobin/STAR/archive/refs/tags/2.7.8a.zip
 # TOOL INFO
 ENV TOOL_NAME="STAR"
-#ENV TOOL_VERSION="2.7.10a"
 ENV TOOL_VERSION="2.7.8a"
 ENV TOOL_TARBALL="$TOOL_VERSION.zip"
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/alexdobin/$TOOL_NAME/archive/refs/tags/$TOOL_TARBALL"
@@ -1011,12 +1002,11 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 # STAR FUSION #
 ###############
 
-# https://github.com/STAR-Fusion/STAR-Fusion/releases/download/STAR-Fusion-v1.10.1/STAR-Fusion.v1.10.1.tar.gz
-# Compatibility with STAR v2.7.8a
+# Depends on STAR v2.7.8a
 
 # TOOL INFO
 ENV TOOL_NAME="STAR-Fusion"
-ENV TOOL_VERSION="1.10.1"
+ENV TOOL_VERSION="1.12.0"
 ENV TOOL_TARBALL="$TOOL_NAME.v$TOOL_VERSION.tar.gz"
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/$TOOL_NAME/$TOOL_NAME/releases/download/$TOOL_NAME-v$TOOL_VERSION/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
@@ -1038,11 +1028,9 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 # ARRIBA #
 ##########
 
-# https://github.com/suhrig/arriba/releases/download/v2.1.0/arriba_v2.1.0.tar.gz
-
 # TOOL INFO
 ENV TOOL_NAME="arriba"
-ENV TOOL_VERSION="2.2.1"
+ENV TOOL_VERSION="2.4.0"
 ENV TOOL_TARBALL=$TOOL_NAME"_v"$TOOL_VERSION".tar.gz"  
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/suhrig/$TOOL_NAME/releases/download/v$TOOL_VERSION/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
