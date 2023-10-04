@@ -22,6 +22,7 @@ fi;
 export GENOME
 
 # REF_CACHE_FOLDER and REF_CACHE and REF_PATH
+
 #if [ -z $REF_PATH ] || [ "$REF_PATH" == "" ]; then
 #	REF_PATH="http://www.ebi.ac.uk/ena/cram/md5/%s"
 #	export REF_PATH
@@ -37,6 +38,7 @@ export REFSEQ_GENES=$DBFOLDER_REFGENE/current/refGene.$ASSEMBLY.bed
 
 # dbSNP and other variant sets
 #################################
+
 # Mandatory DB (for calling with GATK variant recalibration)
 DBFOLDER_DBSNP=$DBFOLDER/dbsnp
 # BDSNP DB (used for calling, especially with GATK)
@@ -58,7 +60,7 @@ GATK_DATABASES_INDEL_LIST=$(echo $VARIANTRECALIBRATION_INDEL_RESOURCES | tr '\t'
 GATK_DATABASES_LIST=$(echo "$GATK_DATABASES_SNP_LIST$GATK_DATABASES_INDEL_LIST" | sort -u)
 VARIANTRECALIBRATION_CHECK=1
 for GATK_RESOURCE in $GATK_DATABASES_LIST; do
-    if [ ! -e $DBFOLDER_GATK/current/$(echo $GATK_RESOURCE | cut -d: -f2) ]; then
+    if [ ! -e $DBFOLDER_GATK/current/$ASSEMBLY/$(echo $GATK_RESOURCE | cut -d: -f2) ]; then
         echo "#[WARNING] No GATK DATABASES '$GATK_RESOURCE' in the database. Recalibration step impossible. Please check '$DBFOLDER_GATK' folder or configuration file" >>/dev/stderr
 	    VARIANTRECALIBRATION_CHECK=0
     fi;
@@ -84,7 +86,7 @@ export VARIANTRECALIBRATION_INDEL_RESOURCES_OPTION
 
 
 
-# HOWARD ANNOTATION/PRIOTITIZATION/TRANSLATION CONFIGURATION
+# HOWARD ANNOTATION/PRIORIZATION/TRANSLATION CONFIGURATION
 ##############################################################
 
 # Configuration
