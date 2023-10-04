@@ -237,7 +237,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		DB_TARGET_FOLDER=$(dirname $DB_TARGET);									# /STARK/databases/gatk/current
 		DB_RELEASE=$DATE;
 		DB_RELEASE_FILE=$DB_TARGET_FILE;										# 1000G_omni2.5.b37.vcf.gz
-		DB_RELEASE_FOLDER=$DBFOLDER_GATK/$DATE/$ASSEMBLY;						# /STARK/databases/gatk/DATE/hg18
+		DB_RELEASE_FOLDER=$DBFOLDER_GATK/$DATE/$ASSEMBLY;						# /STARK/databases/gatk/DATE/hg19
 		DB_RELEASE_FILE_PATH="$DB_RELEASE_FOLDER/$DB_RELEASE_FILE";				# /STARK/databases/gatk/DATE/hg19/1000G_omni2.5.b37.vcf.gz
 
 		DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DATE
@@ -365,7 +365,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 			chmod 0775 $DB_RELEASE_FOLDER -R
 			-[ ! -s $DBFOLDER_GATK/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_GATK/STARK.database
 			cp $DB_TMP/STARK.database.release $DB_RELEASE_FOLDER/
-			chmod o+r $DBFOLDER_GATK/STARK.database $DBFOLDER_GATK/STARK.database.release
+			chmod o+r $DBFOLDER_GATK/STARK.database $DB_RELEASE_FOLDER/STARK.database.release
 			[ ! -e $$DBFOLDER_GATK/current ] || unlink $DBFOLDER_GATK/current
 			ln -snf $$DBFOLDER_GATK/$DATE $DBFOLDER_GATK/current
 			rm -rf $DB_TMP;
