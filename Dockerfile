@@ -1042,12 +1042,10 @@ ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	source $TOOL_INIT && \
 	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
-	mkdir -p $TOOL_DEST/database/ && \
-	cp $TOOL_SOURCE_BUILD/$TOOL_NAME"_v"$TOOL_VERSION/database/* $TOOL_DEST/database/ && \
 	cp $TOOL_SOURCE_BUILD/$TOOL_NAME"_v"$TOOL_VERSION/$TOOL_NAME $TOOL_DEST/bin/ && \
 	chmod a+x $TOOL_DEST/bin/* && \
 	mkdir -p $TOOL_DEST/scripts/ && \
-	cp $TOOL_SOURCE_BUILD/$TOOL_NAME"_v"$TOOL_VERSION/*.{sh,R} $TOOL_DEST/scripts/ && \
+	cp $TOOL_SOURCE_BUILD/$TOOL_NAME"_v"$TOOL_VERSION/scripts/*.sh $TOOL_DEST/scripts/ && \
 	chmod a+x $TOOL_DEST/scripts/*.sh && \
 	$TOOL_CHECK ;
 
@@ -1067,7 +1065,7 @@ ENV INSTALL_DIR=/usr/lib
 WORKDIR $INSTALL_DIR
 RUN git clone https://github.com/SamuelNicaise/variantconvert.git && cd $TOOL_NAME && git fetch && git checkout $TOOL_VERSION && $PIP install -e . && $PIP cache purge
 RUN python $INSTALL_DIR/$TOOL_NAME/src/$TOOL_NAME/__main__.py init
-RUN python $INSTALL_DIR/$TOOL_NAME/src/$TOOL_NAME/__main__.py config --set GENOME.path=/STARK/databases/genomes/current/hg19.fa --configFiles hg19/*.json
+RUN python $INSTALL_DIR/$TOOL_NAME/src/$TOOL_NAME/__main__.py config --set GENOME.path=/STARK/databases/genomes/current/hg19/hg19.fa --configFiles hg19/*.json
 WORKDIR $WORKDIR
 
 
@@ -1079,7 +1077,7 @@ WORKDIR $WORKDIR
 
 # TOOL INFO
 ENV TOOL_NAME="stark"
-ENV TOOL_VERSION="19.0.0-devel"
+ENV TOOL_VERSION="19.0.1-devel"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
 ENV TOOL="/tool"
