@@ -1004,10 +1004,12 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 # Depends on STAR v2.7.8a
 
+# https://github.com/STAR-Fusion/STAR-Fusion/releases/download/STAR-Fusion-v1.12.0/STAR-Fusion-v1.12.0.FULL.tar.gz
+
 # TOOL INFO
 ENV TOOL_NAME="STAR-Fusion"
 ENV TOOL_VERSION="1.12.0"
-ENV TOOL_TARBALL="$TOOL_NAME.v$TOOL_VERSION.tar.gz"
+ENV TOOL_TARBALL="$TOOL_NAME-v$TOOL_VERSION.FULL.tar.gz"
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/$TOOL_NAME/$TOOL_NAME/releases/download/$TOOL_NAME-v$TOOL_VERSION/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
@@ -1015,7 +1017,7 @@ ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	source $TOOL_INIT && \
 	tar xvf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
-	cd  $TOOL_SOURCE_BUILD/$TOOL_NAME.v$TOOL_VERSION/ && \
+	cd  $TOOL_SOURCE_BUILD/$TOOL_NAME-v$TOOL_VERSION/ && \
 	make && \
 	cp -r * $TOOL_DEST/bin/ && \
 	$TOOL_CHECK ;
