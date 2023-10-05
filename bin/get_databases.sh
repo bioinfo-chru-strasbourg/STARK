@@ -232,7 +232,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 	> $MK.existing_gatk_db
 
 	for GATK_RESOURCE in $GATK_DATABASES_LIST; do
-		DB_TARGET=$DBFOLDER_GATK/current/$(echo $GATK_RESOURCE | cut -d: -f2);	# /STARK/databases/gatk/current/1000G_omni2.5.b37.vcf.gz
+		DB_TARGET=$DBFOLDER_GATK/current/$ASSEMBLY/$(echo $GATK_RESOURCE | cut -d: -f2);	# /STARK/databases/gatk/current/1000G_omni2.5.b37.vcf.gz
 		DB_TARGET_FILE=$(basename $DB_TARGET);									# 1000G_omni2.5.b37.vcf.gz
 		DB_TARGET_FOLDER=$(dirname $DB_TARGET);									# /STARK/databases/gatk/current
 		DB_RELEASE=$DATE;
@@ -380,14 +380,14 @@ fi;
 #############################
 # Install with HOWARD v2
 
+DATABASE="snpeff"
+DATABASE_NAME="SnpEff"
+DATABASE_FULLNAME="SnpEff Annotations"
+DATABASE_WEBSITE="http://snpeff.sourceforge.net/"
+DATABASE_DESCRIPTION="Genetic variant annotation and functional effect prediction toolbox"
+
 if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
 
-	DATABASE="snpeff"
-	DATABASE_NAME="SnpEff"
-	DATABASE_FULLNAME="SnpEff Annotations"
-	DATABASE_WEBSITE="http://snpeff.sourceforge.net/"
-	DATABASE_DESCRIPTION="Genetic variant annotation and functional effect prediction toolbox"
-	
 	DBFOLDER_SNPEFF=$(dirname $SNPEFF_DATABASES)
 
 	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DATE
@@ -467,13 +467,14 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 	fi;
 fi;
 
+
+DATABASE="refGene"
+DATABASE_NAME="RefGene"
+DATABASE_FULLNAME="Reference Genes"
+DATABASE_WEBSITE="https://genome.ucsc.edu/"
+DATABASE_DESCRIPTION="Known human protein-coding and non-protein-coding genes taken from the NCBI RNA reference sequences collection (RefSeq)"
+
 if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
-	
-	DATABASE="refGene"
-	DATABASE_NAME="RefGene"
-	DATABASE_FULLNAME="Reference Genes"
-	DATABASE_WEBSITE="https://genome.ucsc.edu/"
-	DATABASE_DESCRIPTION="Known human protein-coding and non-protein-coding genes taken from the NCBI RNA reference sequences collection (RefSeq)"
 	
 	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DATE
 	mkdir -p $DB_TMP
@@ -881,7 +882,7 @@ if [ -e $GENOME ] ; then
 	if [ ! -e $(dirname $GENOME)/$(basename $GENOME).star.idx ]; then
 		if [ "$STAR" != "" ]; then
 		    echo "$(dirname $GENOME)/$(basename $GENOME).star.idx: $GENOME
-			STAR --runThreadN $THREADS --runMode genomeGenerate --genomeDir $(dirname $GENOME)/$(basename $GENOME).star.idx --genomeFastaFiles $GENOME --sjdbGTFfile $DBFOLDER_GENCODE/current/$ASSEMBLY/gencode.*annotation.gtf ;
+			STAR --runThreadN $THREADS --runMode genomeGenerate --genomeDir $(dirname $GENOME)/ --genomeFastaFiles $GENOME --sjdbGTFfile $DBFOLDER_GENCODE/current/$ASSEMBLY/gencode.*annotation.gtf ;
 		    " >> $MK
 			MK_ALL="$MK_ALL $(dirname $GENOME)/$(basename $GENOME).star.idx"
 		fi;
