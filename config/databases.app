@@ -31,10 +31,10 @@ export GENOME
 export REF_CACHE_FOLDER=$GENOME.hts-ref;
 export REF_CACHE="$REF_CACHE_FOLDER/%2s/%2s/%s";
 
-# refGene/RefSeq
+# refGene/refSeq
 #################
 DBFOLDER_REFGENE=$DBFOLDER/refGene
-export REFSEQ_GENES=$DBFOLDER_REFGENE/current/refGene.$ASSEMBLY.bed
+export REFSEQ_GENES=$DBFOLDER_REFGENE/current/$ASSEMBLY/refGene.$ASSEMBLY.bed
 
 # dbSNP and other variant sets
 #################################

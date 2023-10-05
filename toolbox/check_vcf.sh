@@ -38,11 +38,11 @@ function release () {
 function usage {
 	echo "# USAGE: $(basename $0) --vcf=<VCF>|--ref=<VCF_REF> [options...]";
 	echo "# -f/--vcf            VCF to compare with the referecen VCF";
-	echo "# -r/--ref            Refrence VCF";
-	echo "# -v/--verbose          VERBOSE option";
-	echo "# -d/--debug            DEBUG option";
-	echo "# -n/--release          RELEASE option";
-	echo "# -h/--help             HELP option";
+	echo "# -r/--ref            Reference VCF";
+	echo "# -v/--verbose        VERBOSE option";
+	echo "# -d/--debug          DEBUG option";
+	echo "# -n/--release        RELEASE option";
+	echo "# -h/--help           HELP option";
 	echo "#";
 }
 

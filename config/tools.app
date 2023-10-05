@@ -364,7 +364,7 @@ TOOLS_LIST=$TOOLS_LIST" CAP"
 
 
 # HOWARD
-export HOWARD_FOLDER=$NGS_TOOLS/howard/current			# DIR
+export HOWARD_FOLDER=$NGS_TOOLS/howard/0.9.15.6			# DIR
 export HOWARD_FOLDER_BIN=$HOWARD_FOLDER/bin				# DIR
 export HOWARD_FOLDER_DOCS=$HOWARD_FOLDER/docs			# DIR
 export HOWARD_VERSION=0.9.15.6							# VER
@@ -376,10 +376,10 @@ export HOWARD_REF="inhouse"
 TOOLS_LIST=$TOOLS_LIST" HOWARD"
 
 # HOWARD2 (devel)
-export ARRIBA=howard						# BIN-JAR
-export ARRIBA_VERSION=devel					# VER
-export ARRIBA_DESCRIPTION=""
-export ARRIBA_REF=""
+export HOWARD2=howard						# BIN-JAR
+export HOWARD2_VERSION=devel				# VER
+export HOWARD2_DESCRIPTION=""
+export HOWARD2_REF=""
 TOOLS_LIST=$TOOLS_LIST" HOWARD2"
 
 # SCRIPTS

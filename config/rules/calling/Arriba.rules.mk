@@ -5,17 +5,15 @@
 # Author: Samuel Nicaise, Thomas Lavaux
 ############################
 
-# ARRIBA_DATABASES=$DBFOLDER/arriba/current
-
 %.Arriba$(POST_CALLING).vcf: %.bam %.empty.vcf
 	mkdir -p $*.arriba.reports;
-	$ARRIBA \
+	$(ARRIBA) \
 		-x $< \
 		-a $(GENOME) \
-		-g $(CTAT_DATABASES)/$ASSEMBLY/ref_annot.gtf \
-		-k $$(ls $(ARRIBA_DATABASES)/$ASSEMBLY/known_fusions_$(ASSEMBLY)_*.tsv.gz) \
-		-b $$(ls $(ARRIBA_DATABASES)/$ASSEMBLY/blacklist_$(ASSEMBLY)_*.tsv.gz) \
-		-p $$(ls $(ARRIBA_DATABASES)/$ASSEMBLY/protein_domains_$(ASSEMBLY)_*.gff3) \
+		-g $(CTAT_DATABASES)/$(ASSEMBLY)/ref_annot.gtf \
+		-k $$(ls $(ARRIBA_DATABASES)/$(ASSEMBLY)/known_fusions_$(ASSEMBLY)_*.tsv.gz) \
+		-b $$(ls $(ARRIBA_DATABASES)/$(ASSEMBLY)/blacklist_$(ASSEMBLY)_*.tsv.gz) \
+		-p $$(ls $(ARRIBA_DATABASES)/$(ASSEMBLY)/protein_domains_$(ASSEMBLY)_*.gff3) \
 		-o $*.arriba.reports/arriba.fusions.tsv \
 		-O $*.arriba.reports/arriba.fusions.discarded.tsv;
 

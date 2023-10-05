@@ -25,16 +25,13 @@ FASTQ_COMPRESSION_LEVEL=1
 # ANALYSIS PARAMETERS
 #######################
 
-ASSEMBLY="hg19"
-REF=$CTAT_DATABASES"/ref_genome.fa"
-
 #TODO: add example to auto compute MAX_CONCURRENT based on memory
 #variable specific to app... etc
 MAX_CONCURRENT_ALIGNMENTS_STAR="2"
 export MAX_CONCURRENT_ALIGNMENTS_STAR
 
 POST_ALIGNMENT_STEPS="sorting splitncigar recalibration compress"
-PIPELINES="star_raw.Arriba.howard star.STARFusion.howard star.gatkHC_SOMATIC.howard star.itdseek.howard"
+PIPELINES="star_raw.Arriba.howard star.STARFusion.howard star.gatkHC_SOMATIC.howard"
 POST_CALLING_MERGING_STEPS="sorting"
 
 # COVERAGE CRITERIA (default "1,30")

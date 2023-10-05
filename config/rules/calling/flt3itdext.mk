@@ -15,7 +15,7 @@
 FLT3INDEX?="/STARK/tools/FLT3_ITD_ext/current/bin/FLT3_dna_e14e15"
 
 %.flt3itdext$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf 
-	$(FLT3ITDEXT) -b $< -mr 5 -g $$ASSEMBLY --ngstype HC -i $$FLT3INDEX -o $$@.tmp1;
+	$(FLT3ITDEXT) -b $< -mr 5 -g $(ASSEMBLY) --ngstype HC -i $$FLT3INDEX -o $$@.tmp1;
 	# add genotype
 	(grep "^##" $@.tmp1.vcf && echo '##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">' && grep "^#CHROM" $@.tmp1.vcf | grep "^#" -v $@.tmp.results.vcf | awk '{print $0"\tGT\t0/1"}' ) > $@.tmp2.vcf; \
 	# Filter 

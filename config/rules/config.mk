@@ -6,10 +6,6 @@
 ##############################
 
 
-#MK_PATH=$(abspath $(lastword $(MAKEFILE_LIST)))
-#MK_DIR_PATH=$(shell dirname $(MK_PATH))
-
-#NGS_SCRIPTS?=$(MK_DIR_PATH)
 NGSscripts?=$(NGS_SCRIPTS)
 NGSEnv?=/tool/
 STARK_FOLDER_ROOT?=/tool
@@ -18,9 +14,6 @@ STARK_FOLDER_BIN?=$(STARK_FOLDER_ROOT)/bin
 STARK_FOLDER_APPS?=$(STARK_FOLDER_CONFIG)/apps
 STARK_FOLDER_RULES?=$(STARK_FOLDER_CONFIG)/rules
 ENV?=$(STARK_FOLDER_CONFIG)/default.app
-
-
-
 
 # RELEASE FILE
 RELEASE_FILE?=$(shell source $(STARK_FOLDER_CONFIG)/config.app; source_app $(ENV); echo $$RELEASE_FILE)
@@ -34,8 +27,6 @@ THREADS_BY_CALLER?=$(THREADS)
 THREADS_BWA?=$(THREADS_BY_SAMPLE)
 THREADS_SAMTOOLS?=$(THREADS_BY_SAMPLE)
 
-
-
 # FOLDERS
 MISEQDIR?=$(MISEQ_FOLDER)
 INPUTDIR?=$(DEMULTIPLEXING_FOLDER)
@@ -44,10 +35,6 @@ TMP_FOLDER_TMP?=/tmp				# NGS Temporary folder
 TMP_SYS_FOLDER?=/tmp				# System Temporary folder
 ASSEMBLY?=hg19					# Default assembly
 GENOMES?=genomes				# Genomes folder
-#REF?=$(GENOMES)/$(ASSEMBLY)/$(ASSEMBLY).fa	# Default Reference genome FASTA file
-REF?=$(GENOMES)/current/$(ASSEMBLY).fa	# Default Reference genome FASTA file
-
-
 
 ### TOOLS
 BWA?=bwa
@@ -58,15 +45,13 @@ GATK?=GenomeAnalysisTK.jar
 IGVTOOLS?=igvtools
 JAVA?=java
 TABIX?=tabix
-FASTQC?=fastqc
 BGZIP?=bgzip
 GZ?=gzip
 HOWARD?=HOWARD
 SNPEFF?=snpEff.jar
-VARSCAN?=$(NGSbin)/varscan.jar
+VARSCAN?=varscan.jar
 CAP?=CAP
 CAP_SOFTCLIPTOQ0?=CAP.SoftClipToQ0.pl
-
 
 
 # JAVA OPTIONS
@@ -133,8 +118,6 @@ POST_ANNOTATION?=
 #.normalization.sorting
 #.filtration.recalibration
 
-
-
 # COLORS RGB
 PASS_COLOR_RGB?=0,255,0
 WARN_COLOR_RGB?=252,161,6
@@ -142,15 +125,7 @@ FAIL_COLOR_RGB?=255,0,0
 MISS_COLOR_RGB?=139,0,0
 FILTERED_COLOR_RGB?=252,161,6
 
-
-
 # HEADER
-#RELEASE_CMD := $(shell echo "\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#" >> $(RELEASE_INFOS) )
-#RELEASE_CMD := $(shell echo "\# $(ENV_NAME) - $(ENV_DESCRIPTION)" >> $(RELEASE_INFOS) )
-#RELEASE_CMD := $(shell echo "\# RELEASE $(ENV_RELEASE) - $(ENV_DATE) - COPYRIGHT © $(ENV_COPYRIGHT) - $(ENV_AUTHOR) ($(ENV_LICENCE) licence)" >> $(RELEASE_INFOS) )
-#RELEASE_CMD := $(shell echo "\# CONFIG  Scripts '$(NGSscripts)' - ENV '$(ENV)' - TOOLS '$(NGSEnv)'" >> $(RELEASE_INFOS) )
-#RELEASE_CMD := $(shell echo "\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#" >> $(RELEASE_INFOS) )
-
 RELEASE_CMD := $(shell echo "\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#" >> $(RELEASE_INFOS) )
 RELEASE_CMD := $(shell echo "\# $(ENV_NAME) - $(ENV_DESCRIPTION)" >> $(RELEASE_INFOS) )
 RELEASE_CMD := $(shell echo "\# RELEASE $(ENV_RELEASE) [$(ENV_DATE)]" >> $(RELEASE_INFOS) )

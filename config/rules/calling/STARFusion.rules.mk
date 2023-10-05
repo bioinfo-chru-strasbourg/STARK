@@ -9,9 +9,9 @@
 
 %.STARFusion$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.junction
 	mkdir -p $*.fusion.reports;
-	$STARFUSION \
+	$(STARFUSION) \
 		--chimeric_junction $*.junction \
-		--genome_lib_dir $$CTAT_DATABASES/$ASSEMBLY/ \
+		--genome_lib_dir $$CTAT_DATABASES/$(ASSEMBLY)/ \
 		--output_dir $*.fusion.reports;
 
 	mv $*.fusion.reports/star-fusion.fusion_predictions.tsv $*.fusion.reports/$$(echo $(@F) | rev | cut -d"." -f4-  | rev).star-fusion.tsv

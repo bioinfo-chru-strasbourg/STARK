@@ -366,8 +366,8 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 			-[ ! -s $DBFOLDER_GATK/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_GATK/STARK.database
 			cp $DB_TMP/STARK.database.release $DB_RELEASE_FOLDER/
 			chmod o+r $DBFOLDER_GATK/STARK.database $DB_RELEASE_FOLDER/STARK.database.release
-			[ ! -e $$DBFOLDER_GATK/current ] || unlink $DBFOLDER_GATK/current
-			ln -snf $$DBFOLDER_GATK/$DATE $DBFOLDER_GATK/current
+			[ ! -e $DBFOLDER_GATK/current ] || unlink $DBFOLDER_GATK/current
+			ln -snf $DBFOLDER_GATK/$DATE $DBFOLDER_GATK/current
 			rm -rf $DB_TMP;
 		" >> $MK
 		MK_ALL="$MK_ALL $DB_TARGET_FOLDER" 
@@ -378,11 +378,16 @@ fi;
 #############################
 # ANNOVAR & SNPEFF & REFSEQ #
 #############################
-
 # Install with HOWARD v2
 
-
 if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
+
+	DATABASE="snpeff"
+	DATABASE_NAME="SnpEff"
+	DATABASE_FULLNAME="SnpEff Annotations"
+	DATABASE_WEBSITE="http://snpeff.sourceforge.net/"
+	DATABASE_DESCRIPTION="Genetic variant annotation and functional effect prediction toolbox"
+	
 	DBFOLDER_SNPEFF=$(dirname $SNPEFF_DATABASES)
 
 	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DATE
@@ -393,10 +398,22 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		if (($UPDATE)); then
 			if [ -e $DBFOLDER_SNPEFF ]; then mv -f $DBFOLDER_SNPEFF $DBFOLDER_SNPEFF.V$DATE; fi;
 		fi;
-		
+
+		DB_INFOS_JSON='
+		{
+			"code": "'$DATABASE'",
+			"name": "'$DATABASE_NAME'",
+			"fullname": "'$DATABASE_FULLNAME'",
+			"website": "'$DATABASE_WEBSITE'",
+			"description": "'$DATABASE_DESCRIPTION'"
+		}
+		';
+		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
+
 		echo "$DBFOLDER_SNPEFF: $DBFOLDER
 			howard databases --assembly='$ASSEMBLY' --download-snpeff=$DBFOLDER_SNPEFF/$DATE
 			
+			-[ ! -s $DBFOLDER_SNPEFF/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_SNPEFF/STARK.database && chmod o+r $DBFOLDER_SNPEFF/STARK.database 
 			[ ! -e $DBFOLDER_SNPEFF/current ] || unlink $DBFOLDER_SNPEFF/current
 			ln -snf $DBFOLDER_SNPEFF/$DATE $DBFOLDER_SNPEFF/current
 
@@ -408,6 +425,12 @@ fi;
 
 
 if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
+	DATABASE="annovar"
+	DATABASE_NAME="ANNOVAR"
+	DATABASE_FULLNAME="ANNOVAR Annotations"
+	DATABASE_WEBSITE="https://doc-openbio.readthedocs.io/projects/annovar/"
+	DATABASE_DESCRIPTION="ANNOVAR is an efficient software tool to utilize update-to-date information to functionally annotate genetic variants detected from diverse genomes"
+	
 	DBFOLDER_ANNOVAR=$(dirname $ANNOVAR_DATABASES)
 
 	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DATE
@@ -418,10 +441,23 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		if (($UPDATE)); then
 			if [ -e $DBFOLDER_ANNOVAR ]; then mv -f $DBFOLDER_ANNOVAR $DBFOLDER_ANNOVAR.V$DATE; fi;
 		fi;
-		
+
+		DB_INFOS_JSON='
+		{
+			"code": "'$DATABASE'",
+			"name": "'$DATABASE_NAME'",
+			"fullname": "'$DATABASE_FULLNAME'",
+			"website": "'$DATABASE_WEBSITE'",
+			"description": "'$DATABASE_DESCRIPTION'"
+		}
+		';
+		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
+	
+		# remove dbnsfp42a (memoryleak)
 		echo "$DBFOLDER_ANNOVAR: $DBFOLDER
-			howard databases --assembly='$ASSEMBLY' --download-annovar=$DBFOLDER_ANNOVAR/$DATE --download-annovar-files='refGene,gnomad_exome,dbnsfp42a,cosmic70,clinvar_202*,nci60'
+			howard databases --assembly='$ASSEMBLY' --download-annovar=$DBFOLDER_ANNOVAR/$DATE --download-annovar-files='refGene,gnomad_exome,cosmic70,clinvar_202*,nci60' 
 			
+			-[ ! -s $DBFOLDER_ANNOVAR/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_ANNOVAR/STARK.database && chmod o+r $DBFOLDER_ANNOVAR/STARK.database 
 			[ ! -e $DBFOLDER_ANNOVAR/current ] || unlink $DBFOLDER_ANNOVAR/current
 			ln -snf $DBFOLDER_ANNOVAR/$DATE $DBFOLDER_ANNOVAR/current
 
@@ -432,7 +468,13 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 fi;
 
 if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
-	# DBFOLDER_REFGENE=$DBFOLDER/refGene
+	
+	DATABASE="refGene"
+	DATABASE_NAME="RefGene"
+	DATABASE_FULLNAME="Reference Genes"
+	DATABASE_WEBSITE="https://genome.ucsc.edu/"
+	DATABASE_DESCRIPTION="Known human protein-coding and non-protein-coding genes taken from the NCBI RNA reference sequences collection (RefSeq)"
+	
 	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DATE
 	mkdir -p $DB_TMP
 	chmod 0775 $DB_TMP;
@@ -441,15 +483,52 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		if (($UPDATE)); then
 			if [ -e $DBFOLDER_REFGENE ]; then mv -f $DBFOLDER_REFGENE $DBFOLDER_REFGENE.V$DATE; fi;
 		fi;
-		
+
+		DB_INFOS_JSON='
+		{
+			"code": "'$DATABASE'",
+			"name": "'$DATABASE_NAME'",
+			"fullname": "'$DATABASE_FULLNAME'",
+			"website": "'$DATABASE_WEBSITE'",
+			"description": "'$DATABASE_DESCRIPTION'"
+		}
+		';
+		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
+
+
+		echo "$DB_TMP/ncbiRefSeq.txt: $DBFOLDER
+			howard databases --assembly='$ASSEMBLY' --download-refseq=$DB_TMP
+			cat $DB_TMP/ncbiRefSeq.txt | while IFS='' read -r line; do \
+				CHROM=\$\$(echo \$\$line | awk '{print \$\$3}' | cut -d\"_\" -f1); \
+				NM=\$\$(echo \$\$line | awk '{print \$\$2}'); \
+				GENE=\$\$(echo \$\$line | awk '{print \$\$13}'); \
+				STRAND=\$\$(echo \$\$line | awk '{print \$\$4}'); \
+				echo \$\$line | awk '{print \$\$10}' | tr \",\" \"\\n\" | grep -v '^\$\$' > $TMP_DATABASES_DOWNLOAD_RAM/refGene.unsorted.bed.NM1 ; \
+				echo \$\$line | awk '{print \$\$11}' | tr \",\" \"\\n\" | grep -v '^\$\$' > $TMP_DATABASES_DOWNLOAD_RAM/refGene.unsorted.bed.NM2; \
+				paste $TMP_DATABASES_DOWNLOAD_RAM/refGene.unsorted.bed.NM1 $TMP_DATABASES_DOWNLOAD_RAM/refGene.unsorted.bed.NM2 | while read SS ; do \
+					echo -e \"\$\$CHROM\t\$\$SS\t\$\$GENE\t\$\$NM\t\$\$STRAND\" >> $DB_TMP/refGene.unsorted.bed; \
+				done; \
+			done
+			cat $DB_TMP/refGene.unsorted.bed | sort -k1,1V -k2,2n -k3,3n > $DB_TMP/refGene.$ASSEMBLY.bed
+			rsync -ar $DB_TMP/refGene.$ASSEMBLY.bed $DBFOLDER_REFGENE/$DATE/refGene.$ASSEMBLY.bed
+		" >> $MK
+
+		if false; then
+			# Generates refGene genes file (txt) from bed file with ref genome
+			echo "$DB_TMP/refGene.$ASSEMBLY.txt: $DBFOLDER $DB_TMP/refGene.$ASSEMBLY.bed "$(dirname $GENOME)/$ASSEMBLY.dict"
+				mkdir -p $DB_TMP
+				awk -F'\t' 'substr(\$\$6,1,2)==\"NM\" {print \$\$0}' $DB_TMP/refGene.$ASSEMBLY.bed | grep \$\$(grep \"@SQ\" "$(dirname $GENOME)/$ASSEMBLY.dict" | cut -f2 | cut -d: -f2 | tr '\n' ' ' | sed 's/chr/ -e ^chr/gi') > $DB_TMP/refGene.$ASSEMBLY.txt
+				rsync -ar $DB_TMP/refGene.$ASSEMBLY.txt $DBFOLDER_REFGENE/$DATE/refGene.$ASSEMBLY.txt
+				" >> $MK
+		fi;
+
 		echo "$DBFOLDER_REFGENE: $DBFOLDER
-			howard databases --assembly='$ASSEMBLY' --download-refseq=$DBFOLDER_REFGENE/$DATE
-			
+			-[ ! -s $DBFOLDER_REFGENE/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_REFGENE/STARK.database && chmod o+r $DBFOLDER_REFGENE/STARK.database 
 			[ ! -e $DBFOLDER_REFGENE/current ] || unlink $DBFOLDER_REFGENE/current
 			ln -snf $DBFOLDER_REFGENE/$DATE $DBFOLDER_REFGENE/current
-
 			rm -rf $DB_TMP;
-		" >> $MK
+			" >> $MK
+
 		MK_ALL="$MK_ALL $DBFOLDER_REFGENE"
 	fi;
 fi;
