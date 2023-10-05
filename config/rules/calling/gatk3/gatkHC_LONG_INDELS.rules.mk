@@ -37,7 +37,6 @@ GATKHC_FLAGS_LONG_INDELS= -nct $(THREADS_GATKHC_LONG_INDELS) -stand_call_conf 10
 GATKHC_INDEL_SIZE_LONG_INDELS?=20
 
 %.gatkHC_LONG_INDELS$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed.interval_list
-	#
 	$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) $(GATKHC_FLAGS_LONG_INDELS) \
 		-T HaplotypeCaller \
 		-R $(GENOME) \

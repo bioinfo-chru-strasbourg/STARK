@@ -36,7 +36,6 @@ GATK4HC_FLAGS_SHARED?=
 GATK4HC_FLAGS= --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC) --min-pruning $(MINPRUNING_GATK4HC) --native-pair-hmm-threads $(THREADS_GATK4HC) $(GATK4HC_FLAGS_SHARED) --max-reads-per-alignment-start $(maxreadsperalignmentstart_GATK4HC) --standard-min-confidence-threshold-for-calling $(STAND_CALL_CONF_GATK4HC)
 
 %.gatk4HC$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed.interval_list #%.from_manifest.interval_list
-	#
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK4) HaplotypeCaller \
 		$(GATK4HC_FLAGS) \
 		-R $(GENOME) \
