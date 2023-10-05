@@ -9,7 +9,7 @@
 
 %.STARFusion$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.junction
 	mkdir -p $*.fusion.reports;
-	STAR-Fusion \
+	$STARFUSION \
 		--chimeric_junction $*.junction \
 		--genome_lib_dir $$CTAT_DATABASES/$ASSEMBLY/ \
 		--output_dir $*.fusion.reports;

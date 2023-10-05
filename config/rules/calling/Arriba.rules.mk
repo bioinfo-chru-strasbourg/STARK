@@ -10,7 +10,7 @@
 
 %.Arriba$(POST_CALLING).vcf: %.bam %.empty.vcf
 	mkdir -p $*.arriba.reports;
-	arriba \
+	$ARRIBA \
 		-x $< \
 		-a $(GENOME) \
 		-g $(CTAT_DATABASES)/$ASSEMBLY/ref_annot.gtf \
@@ -19,7 +19,7 @@
 		-p $$(ls $(ARRIBA_DATABASES)/$ASSEMBLY/protein_domains_$(ASSEMBLY)_*.gff3) \
 		-o $*.arriba.reports/arriba.fusions.tsv \
 		-O $*.arriba.reports/arriba.fusions.discarded.tsv;
-	# rename ...reports/arriba.fusions.tsv to ...reports/<sample>.arriba.fusions.tsv
+
 	mv $*.arriba.reports/arriba.fusions.tsv $*.arriba.reports/$$(echo $(@F) | rev | cut -d"." -f4-  | rev).arriba.fusions.tsv
 	mv $*.arriba.reports/arriba.fusions.discarded.tsv $*.arriba.reports/$$(echo $(@F) | rev | cut -d"." -f4-  | rev).arriba.fusions.discarded.tsv
 	# convert to vcf

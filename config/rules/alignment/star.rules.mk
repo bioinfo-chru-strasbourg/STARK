@@ -22,7 +22,7 @@ STAR_FLAGS?=--outSAMtype BAM SortedByCoordinate --chimOutJunctionFormat 1 --outS
 %.star_raw.bam: %.R1$(POST_SEQUENCING).fastq.gz %.R2$(POST_SEQUENCING).fastq.gz
 	echo "ID:1\tPL:ILLUMINA\tPU:PU\tLB:001\tSM:$(*F)" > $@.RG_STAR
 	$(PYTHON3) $(STARK_FOLDER_BIN)/functions.py launch \
-					--cmd "STAR --genomeDir $$CTAT_DATABASES/$ASSEMBLY/$(dirname $GENOME).star.idx/ \
+					--cmd "STAR --genomeDir $$CTAT_DATABASES/$ASSEMBLY/ref_genome.fa.star.idx/ \
 							--runThreadN 14 \
 							--readFilesIn $*.R1$(POST_SEQUENCING).fastq.gz $*.R2$(POST_SEQUENCING).fastq.gz \
 							--readFilesCommand zcat \
