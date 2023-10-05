@@ -514,7 +514,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		" >> $MK
 
 		if false; then
-			# Generates refGene genes file (txt) from bed file with ref genome
+			# Generates refGene genes file (txt file) from bed file with ref genome
 			echo "$DB_TMP/refGene.$ASSEMBLY.txt: $DBFOLDER $DB_TMP/refGene.$ASSEMBLY.bed "$(dirname $GENOME)/$ASSEMBLY.dict"
 				mkdir -p $DB_TMP
 				awk -F'\t' 'substr(\$\$6,1,2)==\"NM\" {print \$\$0}' $DB_TMP/refGene.$ASSEMBLY.bed | grep \$\$(grep \"@SQ\" "$(dirname $GENOME)/$ASSEMBLY.dict" | cut -f2 | cut -d: -f2 | tr '\n' ' ' | sed 's/chr/ -e ^chr/gi') > $DB_TMP/refGene.$ASSEMBLY.txt
