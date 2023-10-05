@@ -12,9 +12,10 @@
 # --minreads, -mr  Minimum number of supporting reads to be included in VCF
 # --genome, -g  Genome build (defaults to "hg19"; or can be "hg38")
 # --ngstype, -n NGS platform type (defaults to "HC" [hybrid capture]; or can be "amplicon", "NEB", or "Archer")
+FLT3INDEX="/STARK/tools/FLT3_ITD_ext/current/bin/FLT3_dna_e14e15"
 
 %.flt3itdext$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf 
-	$(FLT3ITDEXT) -b $< -mr 5 -g $ASSEMBLY --ngstype HC -o $@;
+	$(FLT3ITDEXT) -b $< -mr 5 -g $$ASSEMBLY --ngstype HC -i $$FLT3INDEX -o $@;
 	if (( $$(grep -c ^ERROR $@.tmp) )); then \
 		echo "[ERROR] ITDSeek failed: "; \
 		grep ^ERROR $@.tmp; \
