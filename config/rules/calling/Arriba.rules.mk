@@ -6,7 +6,6 @@
 ############################
 
 # ARRIBA_DATABASES=$DBFOLDER/arriba/current
-# CTAT_DATABASES=$DBFOLDER/CTAT_LIB/current
 
 %.Arriba$(POST_CALLING).vcf: %.bam %.empty.vcf
 	mkdir -p $*.arriba.reports;

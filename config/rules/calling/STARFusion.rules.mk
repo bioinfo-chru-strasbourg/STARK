@@ -13,7 +13,7 @@
 		--chimeric_junction $*.junction \
 		--genome_lib_dir $$CTAT_DATABASES/$ASSEMBLY/ \
 		--output_dir $*.fusion.reports;
-	# rename ...reports/star-fusion.fusion_predictions.tsv to ...reports/<sample>.star-fusion.tsv
+
 	mv $*.fusion.reports/star-fusion.fusion_predictions.tsv $*.fusion.reports/$$(echo $(@F) | rev | cut -d"." -f4-  | rev).star-fusion.tsv
 	mv $*.fusion.reports/star-fusion.fusion_predictions.abridged.tsv $*.fusion.reports/$$(echo $(@F) | rev | cut -d"." -f4-  | rev).star-fusion.abridged.tsv
 	# convert to vcf

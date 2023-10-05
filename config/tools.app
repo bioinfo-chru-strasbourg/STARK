@@ -209,7 +209,7 @@ TOOLS_LIST=$TOOLS_LIST" FASTP"
 
 
 # UMI TOOLS
-export UMITOOLS=$NGS_TOOLS/umi_tools/current/bin/umi_tools		# BIN
+export UMITOOLS=umi_tools		# BIN
 export UMITOOLS_VERSION=1.1.4										# VER
 export UMITOOLS_DESCRIPTION="UMI-tools contains tools for dealing with Unique Molecular Identifiers (UMIs)/Random Molecular Tags (RMTs) and single cell RNA-Seq cell barcodes."
 export UMITOOLS_REF="https://github.com/CGATOxford/UMI-tools"
@@ -366,7 +366,6 @@ TOOLS_LIST=$TOOLS_LIST" CAP"
 # HOWARD
 export HOWARD_FOLDER=$NGS_TOOLS/howard/current			# DIR
 export HOWARD_FOLDER_BIN=$HOWARD_FOLDER/bin				# DIR
-#export HOWARD_FOLDER_CONFIG=$HOWARD_FOLDER/config		# DIR
 export HOWARD_FOLDER_DOCS=$HOWARD_FOLDER/docs			# DIR
 export HOWARD_VERSION=0.9.15.6							# VER
 export HOWARD=$HOWARD_FOLDER_BIN/HOWARD					# BIN-SCRIPT
@@ -376,6 +375,12 @@ export HOWARD_DESCRIPTION="Highly Open and Valuable tool for Variant Annotation 
 export HOWARD_REF="inhouse"
 TOOLS_LIST=$TOOLS_LIST" HOWARD"
 
+# HOWARD2 (devel)
+export ARRIBA=howard						# BIN-JAR
+export ARRIBA_VERSION=devel					# VER
+export ARRIBA_DESCRIPTION=""
+export ARRIBA_REF=""
+TOOLS_LIST=$TOOLS_LIST" HOWARD2"
 
 # SCRIPTS
 export STARK_BED_NORMALIZATION=$STARK_FOLDER_BIN/bed_normalization.awk
