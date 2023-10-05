@@ -20,7 +20,8 @@
 		grep ^ERROR $@.tmp; \
 		cp $*.empty.vcf $@; \
 	fi;
-	# Filter on DP \
+	# Check if genotype is missing
+	# Filter on DP
 	$(BCFTOOLS) view -e " FORMAT/DP[*] < $(DPMIN_ITDSEEK) || FORMAT/VAF[*] <= $(VAFMIN_ITDSEEK) "  $@.tmp2 > $@; \
 	# Cleaning
 	rm -rf $@.tmp*
