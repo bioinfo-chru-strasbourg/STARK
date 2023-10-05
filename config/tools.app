@@ -168,14 +168,6 @@ export CUTEVARIANT_DESCRIPTION="A standalone and free application to explore gen
 export CUTEVARIANT_REF="Cutevariant: a standalone GUI-based desktop application to explore genetic variations from an annotated VCF file Sacha Schutz, Charles Monod-Broca, Lucas Bourneuf, Pierre Marijon, Tristan Montier Bioinformatics Advances, Volume 2, Issue 1, 2022, vbab028, doi.org/10.1093/bioadv/vbab028"
 TOOLS_LIST=$TOOLS_LIST" CUTEVARIANT"
 
-# # R
-# export R=$NGS_TOOLS/anaconda/miniconda2/bin/R	# BIN-R
-# export R_VERSION=3.2.2							# VER
-# export R_DESCRIPTION="R: A Language and Environment for Statistical Computing."
-# export R_REF="R Development Core Team (2008). R: A language and environment for statistical computing. R Foundation for Statistical Computing, Vienna, Austria. ISBN 3-900051-07-0, URL http://www.R-project.org."
-# TOOLS_LIST=$TOOLS_LIST" R"
-
-
 # MUTECT
 export MUTECT=$NGS_TOOLS/mutect/current/bin/mutect.jar		# BIN-JAR
 export MUTECT_VERSION=1.1.7									# VER
@@ -364,7 +356,7 @@ TOOLS_LIST=$TOOLS_LIST" CAP"
 
 
 # HOWARD
-export HOWARD_FOLDER=$NGS_TOOLS/howard/0.9.15.6			# DIR
+export HOWARD_FOLDER=$NGS_TOOLS/howard/0.9.15.6			# DIR (change to current)
 export HOWARD_FOLDER_BIN=$HOWARD_FOLDER/bin				# DIR
 export HOWARD_FOLDER_DOCS=$HOWARD_FOLDER/docs			# DIR
 export HOWARD_VERSION=0.9.15.6							# VER
