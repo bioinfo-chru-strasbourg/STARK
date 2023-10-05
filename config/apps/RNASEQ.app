@@ -31,8 +31,8 @@ MAX_CONCURRENT_ALIGNMENTS_STAR="2"
 export MAX_CONCURRENT_ALIGNMENTS_STAR
 
 POST_ALIGNMENT_STEPS="sorting splitncigar recalibration compress"
+#PIPELINES="star_raw.Arriba.howard star_raw.STARFusion.howard star_raw.gatkHC_SOMATIC.howard"
 PIPELINES="star_raw.Arriba.howard star_raw.STARFusion.howard star_raw.gatkHC_SOMATIC.howard"
-
 POST_CALLING_MERGING_STEPS="sorting"
 
 # COVERAGE CRITERIA (default "1,30")
