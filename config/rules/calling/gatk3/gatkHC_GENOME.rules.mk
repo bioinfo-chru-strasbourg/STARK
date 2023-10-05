@@ -38,7 +38,6 @@ DPMIN_HC_GENOME=4
 GATKHC_GENOME_FLAGS= -nct $(THREADS_GATKHC_GENOME) -stand_call_conf $(STAND_CALL_CONF_HC_GENOME) -dfrac $(DFRAC_HC_GENOME) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample_HC_GENOME) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC_GENOME) -minPruning $(MINPRUNING_HC_GENOME)  $(GATKHC_FLAGS_SHARED)
 
 %.gatkHC_GENOME$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed.interval_list
-	#
 	$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) $(GATKHC_GENOME_FLAGS) \
 		-T HaplotypeCaller \
 		-R $(GENOME) \

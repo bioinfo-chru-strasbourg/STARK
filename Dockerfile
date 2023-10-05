@@ -727,7 +727,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 # https://github.com/bioinfo-chru-strasbourg/howard/archive/refs/heads/devel.zip
 
 # TOOL INFO
-ENV TOOL_NAME="howard"
+ENV TOOL_NAME="howarddevel"
 ENV TOOL_VERSION="devel"
 ENV TOOL_TARBALL="$TOOL_VERSION.zip"
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/bioinfo-chru-strasbourg/howard/archive/refs/heads/$TOOL_TARBALL"
