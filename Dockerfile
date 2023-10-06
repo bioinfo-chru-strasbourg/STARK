@@ -130,7 +130,7 @@ RUN echo "#[INFO] STARK installation configuration" && \
 ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git make ncurses-devel tbb-devel unzip rsync wget which xz xz-devel zlib zlib-devel docker java-17 java-1.8.0 curl-devel openssl-devel htslib diffutils"
 ENV YUM_REMOVE="autoconf automake bzip2-devel lzma-devel ncurses-devel perl-devel tbb-devel xz-devel zlib-devel zlib2-devel python3-devel curl-devel openssl-devel"
 ENV PYTHON_MODULE=" pathos numpy scipy argparse"
-ENV PERL_INSTALL=" perl perl-Switch perl-Time-HiRes perl-Data-Dumper perl-Digest-MD5 perl-Tk perl-devel perl-PerlIO-gzip perl-DB_File perl-URI perl-Carp-Assert perl-Archive-Tar perl-Digest-MD5 perl-JSON-XS"
+ENV PERL_INSTALL=" perl perl-Switch perl-Time-HiRes perl-Data-Dumper perl-Digest-MD5 perl-Tk perl-Tree-Interval perl-devel perl-PerlIO-gzip perl-DB_File perl-URI perl-Carp-Assert perl-Archive-Tar perl-Digest-MD5 perl-JSON-XS"
 
 ENV REPO_SYSTEM_GIT="$REPO/sources.system.tar.gz?path=sources/system"
 ENV REPO_SYSTEM_HTTP="$REPO/sources/system/"
@@ -310,7 +310,7 @@ ENV MAMBA="/root/mambaforge/bin/mamba"
 ENV PIP="/root/mambaforge/bin/pip"
 RUN $MAMBA init
 RUN $PIP install $PYTHON_MODULE  && $PIP cache purge
-RUN $MAMBA install -y -c bioconda -c conda-forge umi_tools~=1.1.4 bbmap~=39.01 sumaclust~=1.0.31 star-fusion~=1.12.0 R r-biocmanager r-cowplot r-argparse r-ranger r-tidyverse && $MAMBA clean -afy && \
+RUN $MAMBA install -y -c bioconda -c conda-forge umi_tools~=1.1.4 bbmap~=39.01 sumaclust~=1.0.31 R r-biocmanager r-cowplot r-argparse r-ranger r-tidyverse && $MAMBA clean -afy && \
 	ln -s /root/mambaforge/bin/python /usr/local/bin/python && \
 	ln -s /root/mambaforge/bin/python3 /usr/local/bin/python3 && \
 	ln -s /root/mambaforge/bin/pip /usr/local/bin/pip && \
@@ -999,26 +999,23 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 ###############
 # STAR FUSION #
 ###############
-
 # Depends on STAR v2.7.8a
 
-# https://github.com/STAR-Fusion/STAR-Fusion/releases/download/STAR-Fusion-v1.12.0/STAR-Fusion-v1.12.0.FULL.tar.gz
-
 # TOOL INFO
-#ENV TOOL_NAME="STAR-Fusion"
-#ENV TOOL_VERSION="1.12.0"
-#ENV TOOL_TARBALL="$TOOL_NAME-v$TOOL_VERSION.FULL.tar.gz"
-#ENV TOOL_SOURCE_EXTERNAL="https://github.com/$TOOL_NAME/$TOOL_NAME/releases/download/$TOOL_NAME-v$TOOL_VERSION/$TOOL_TARBALL"
-#ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+ENV TOOL_NAME="STAR-Fusion"
+ENV TOOL_VERSION="1.12.2"
+ENV TOOL_TARBALL="$TOOL_NAME-v$TOOL_VERSION.FULL.tar.gz"
+ENV TOOL_SOURCE_EXTERNAL="https://github.com/$TOOL_NAME/$TOOL_NAME/releases/download/$TOOL_NAME-v$TOOL_VERSION/$TOOL_TARBALL"
+ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
 # TOOL INSTALLATION
-#RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-#	source $TOOL_INIT && \
-#	tar xvf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
-#	cd  $TOOL_SOURCE_BUILD/$TOOL_NAME-v$TOOL_VERSION/ && \
-#	make && \
-#	cp -r * $TOOL_DEST/bin/ && \
-#	$TOOL_CHECK ;
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
+	tar xvf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
+	cd  $TOOL_SOURCE_BUILD/$TOOL_NAME-v$TOOL_VERSION/ && \
+	make && \
+	cp -r * $TOOL_DEST/bin/ && \
+	$TOOL_CHECK ;
 
 ## FusionInspector & Interval Tree included with STAR-Fusion
 
