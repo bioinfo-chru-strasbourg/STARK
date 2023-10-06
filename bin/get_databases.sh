@@ -615,6 +615,7 @@ fi;
 ########
 # CTAT #
 ########
+
 DATABASE="ctat"
 DATABASE_NAME="ctat"
 DATABASE_FULLNAME=" CTAT Genome Lib"
@@ -634,6 +635,10 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 
 	if [ $ASSEMBLY == "hg19" ] ; then CTAT_CURRENT="https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/GRCh37_gencode_v19_CTAT_lib_Mar012021.plug-n-play.tar.gz"; fi;
 	if [ $ASSEMBLY == "hg38" ] ; then CTAT_CURRENT="https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/GRCh38_gencode_v37_CTAT_lib_Mar012021.plug-n-play.tar.gz"; fi;
+		
+		# Replace AnnotFilterRule.pm with this one after unpacking CTAT
+		CTAT_PM="https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/__genome_libs_StarFv1.10/AnnotFilterRule.pm"
+
 		CTAT_DATE=$(curl -s -I $CTAT_CURRENT | grep "Last-Modified: " | sed "s/Last-Modified: //g" | sed "s/\r$//g");
 		CTAT_DATE_RELEASE=$(date -d "$CTAT_DATE");
 
@@ -675,10 +680,12 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		# MK
 		echo "$DBFOLDER_CTAT: $DBFOLDER
 			wget --progress=bar:force:noscroll $CTAT_CURRENT -P $DB_TMP;
+			wget --progress=bar:force:noscroll $CTAT_PM -P $DB_TMP;
 			mkdir -p $DBFOLDER_CTAT/$DATE/$ASSEMBLY
 			chmod 0775 $DBFOLDER_CTAT/$DATE/$ASSEMBLY
 			tar -xzf  $DB_TMP/$(basename $CTAT_CURRENT) -C  $DB_TMP --strip-components=1
 			cp -R $DB_TMP/ctat_genome_lib_build_dir/* $DBFOLDER_CTAT/$DATE/$ASSEMBLY
+			\cp $DB_TMP/AnnotFilterRule.pm $DBFOLDER_CTAT/$DATE/$ASSEMBLY
 			-[ ! -s $DBFOLDER_CTAT/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_CTAT/STARK.database && chmod o+r $DBFOLDER_CTAT/STARK.database 
 			-[ ! -s $DBFOLDER_CTAT/$DATE/$ASSEMBLY/STARK.database.release ] && cp $DB_TMP/STARK.database.release $DBFOLDER_CTAT/$DATE/$ASSEMBLY/STARK.database.release && chmod o+r $DBFOLDER_CTAT/$DATE/$ASSEMBLY/STARK.database.release
 

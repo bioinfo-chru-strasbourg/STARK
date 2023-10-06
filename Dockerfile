@@ -128,9 +128,10 @@ RUN echo "#[INFO] STARK installation configuration" && \
 # This will install system packages, python packages and scripts to install tools
 
 ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git make ncurses-devel tbb-devel unzip rsync wget which xz xz-devel zlib zlib-devel docker java-17 java-1.8.0 curl-devel openssl-devel htslib diffutils"
-ENV YUM_REMOVE="autoconf automake bzip2-devel lzma-devel ncurses-devel perl-devel tbb-devel xz-devel zlib-devel zlib2-devel python3-devel curl-devel openssl-devel"
+ENV YUM_REMOVE="autoconf automake bzip2-devel lzma-devel ncurses-devel  tbb-devel xz-devel zlib-devel zlib2-devel python3-devel curl-devel openssl-devel"
+# perl-devel
 ENV PYTHON_MODULE=" pathos numpy scipy argparse"
-ENV PERL_INSTALL=" perl perl-Switch perl-Time-HiRes perl-Data-Dumper perl-Digest-MD5 perl-Tk perl-Tree-Interval perl-devel perl-PerlIO-gzip perl-DB_File perl-URI perl-Carp-Assert perl-Archive-Tar perl-Digest-MD5 perl-JSON-XS"
+#ENV PERL_INSTALL=" perl perl-Switch perl-Time-HiRes perl-Data-Dumper perl-Digest-MD5 perl-Tk perl-devel perl-PerlIO-gzip perl-DB_File perl-URI perl-Carp-Assert perl-Archive-Tar perl-JSON-XS"
 
 ENV REPO_SYSTEM_GIT="$REPO/sources.system.tar.gz?path=sources/system"
 ENV REPO_SYSTEM_HTTP="$REPO/sources/system/"
@@ -213,7 +214,7 @@ RUN echo "#[INFO] SYSTEM Sources scripts" && \
 
 
 
-# System isntallation
+# System installation
 RUN echo "#[INFO] SYSTEM YUM installation - and download" && \
 	# Create system repository \
 	mkdir -p $SOURCES/$SOURCES_FOLDER/system && \
@@ -310,7 +311,8 @@ ENV MAMBA="/root/mambaforge/bin/mamba"
 ENV PIP="/root/mambaforge/bin/pip"
 RUN $MAMBA init
 RUN $PIP install $PYTHON_MODULE  && $PIP cache purge
-RUN $MAMBA install -y -c bioconda -c conda-forge umi_tools~=1.1.4 bbmap~=39.01 sumaclust~=1.0.31 R r-biocmanager r-cowplot r-argparse r-ranger r-tidyverse && $MAMBA clean -afy && \
+# R r-biocmanager r-cowplot r-argparse r-ranger r-tidyverse
+RUN $MAMBA install -y -c bioconda -c conda-forge -c biobuilds  umi_tools~=1.1.4 bbmap~=39.01 sumaclust~=1.0.31 star-fusion~=1.12.0 && $MAMBA clean -afy && \
 	ln -s /root/mambaforge/bin/python /usr/local/bin/python && \
 	ln -s /root/mambaforge/bin/python3 /usr/local/bin/python3 && \
 	ln -s /root/mambaforge/bin/pip /usr/local/bin/pip && \
@@ -325,16 +327,16 @@ RUN $MAMBA install -y -c bioconda -c conda-forge umi_tools~=1.1.4 bbmap~=39.01 s
 ########
 
 # PERL installation
-RUN	echo "#[INFO] SYSTEM Perl packages installation - download from yum" && \
-	mkdir -p $SOURCES/$SOURCES_FOLDER/perl/build/install && \
-	yum $YUM_PARAM install -y --downloadonly --downloaddir=$SOURCES/$SOURCES_FOLDER/perl/build/install --enablerepo=powertools $PERL_INSTALL && \
-	yum $YUM_PARAM localinstall -y --nogpgcheck $SOURCES/$SOURCES_FOLDER/perl/build/install/*.rpm && \
-	rsync -auczqAXhi --no-links --no-perms --no-owner --no-group --ignore-missing-args $SOURCES/$SOURCES_FOLDER/perl/build/install/*rpm $SOURCES/$SOURCES_FOLDER/system/ && \
-	rm -rf $SOURCES/$SOURCES_FOLDER/perl/build && \
-	yum clean -y all && \
-	rm -rf /var/cache/yum && \
-	echo "#[INFO] System Clean" && \
-	echo "#";
+#RUN	echo "#[INFO] SYSTEM Perl packages installation - download from yum" && \
+#	mkdir -p $SOURCES/$SOURCES_FOLDER/perl/build/install && \
+#	yum $YUM_PARAM install -y --downloadonly --downloaddir=$SOURCES/$SOURCES_FOLDER/perl/build/install --enablerepo=powertools $PERL_INSTALL && \
+#	yum $YUM_PARAM localinstall -y --nogpgcheck $SOURCES/$SOURCES_FOLDER/perl/build/install/*.rpm && \
+#	rsync -auczqAXhi --no-links --no-perms --no-owner --no-group --ignore-missing-args $SOURCES/$SOURCES_FOLDER/perl/build/install/*rpm $SOURCES/$SOURCES_FOLDER/system/ && \
+#	rm -rf $SOURCES/$SOURCES_FOLDER/perl/build && \
+#	yum clean -y all && \
+#	rm -rf /var/cache/yum && \
+#	echo "#[INFO] System Clean" && \
+#	echo "#";
 
 
 
@@ -784,12 +786,12 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	cp -R $TOOL_SOURCE_BUILD/*/* $TOOL_DEST/bin/ && \
 	$TOOL_CHECK ;
 
-################
-# FLT3_ITD_ext #
-################
+##############
+# FLT3ITDext #
+##############
 
 # TOOL INFO
-ENV TOOL_NAME="FLT3_ITD_ext"
+ENV TOOL_NAME="flt3itdext"
 ENV TOOL_VERSION="1.1"
 ENV TOOL_TARBALL="$TOOL_NAME"
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/ht50/FLT3_ITD_ext/zip/refs/heads/master.zip"
@@ -1002,20 +1004,20 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 # Depends on STAR v2.7.8a
 
 # TOOL INFO
-ENV TOOL_NAME="STAR-Fusion"
-ENV TOOL_VERSION="1.12.2"
-ENV TOOL_TARBALL="$TOOL_NAME-v$TOOL_VERSION.FULL.tar.gz"
-ENV TOOL_SOURCE_EXTERNAL="https://github.com/$TOOL_NAME/$TOOL_NAME/releases/download/$TOOL_NAME-v$TOOL_VERSION/$TOOL_TARBALL"
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+#ENV TOOL_NAME="STAR-Fusion"
+#ENV TOOL_VERSION="1.12.0"
+#ENV TOOL_TARBALL="$TOOL_NAME-v$TOOL_VERSION.FULL.tar.gz"
+#ENV TOOL_SOURCE_EXTERNAL="https://github.com/$TOOL_NAME/$TOOL_NAME/releases/download/$TOOL_NAME-v$TOOL_VERSION/$TOOL_TARBALL"
+#ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
 # TOOL INSTALLATION
-RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-	source $TOOL_INIT && \
-	tar xvf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
-	cd  $TOOL_SOURCE_BUILD/$TOOL_NAME-v$TOOL_VERSION/ && \
-	make && \
-	cp -r * $TOOL_DEST/bin/ && \
-	$TOOL_CHECK ;
+#RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+#	source $TOOL_INIT && \
+#	tar xvf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
+#	cd  $TOOL_SOURCE_BUILD/$TOOL_NAME-v$TOOL_VERSION/ && \
+#	make && \
+#	cp -r * $TOOL_DEST/bin/ && \
+#	$TOOL_CHECK ;
 
 ## FusionInspector & Interval Tree included with STAR-Fusion
 
