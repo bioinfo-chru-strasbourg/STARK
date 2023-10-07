@@ -312,7 +312,7 @@ ENV PIP="/root/mambaforge/bin/pip"
 RUN $MAMBA init
 RUN $PIP install $PYTHON_MODULE  && $PIP cache purge
 # R r-biocmanager r-cowplot r-argparse r-ranger r-tidyverse
-RUN $MAMBA install -y -c bioconda -c conda-forge -c biobuilds -c compbiocore perl-switch perl-time-hires perl-data-dumper perl-digest-md5 umi_tools~=1.1.4 bbmap~=39.01 sumaclust~=1.0.31 star-fusion~=1.12.0 && $MAMBA clean -afy && \
+RUN $MAMBA install -y -c bioconda -c conda-forge -c biobuilds umi_tools~=1.1.4 bbmap~=39.01 sumaclust~=1.0.31 star-fusion~=1.12.0 && $MAMBA clean -afy && \
 	ln -s /root/mambaforge/bin/python /usr/local/bin/python && \
 	ln -s /root/mambaforge/bin/python3 /usr/local/bin/python3 && \
 	ln -s /root/mambaforge/bin/pip /usr/local/bin/pip && \
