@@ -98,24 +98,24 @@ REMOVE_INTERMEDIATE_SAM?=1
 
 
 # MERGE SNP and InDel VCF
-%.vcf: %.SNP.vcf %.InDel.vcf %.dict
+%.vcf: %.SNP.vcf %.InDel.vcf
 	$(JAVA) $(JAVA_FLAGS_GATK4) -jar $(GATK4) \
 		MergeVcfs \
 		-I $*.SNP.vcf \
 		-I $*.InDel.vcf \
 		--CREATE_INDEX false \
-		--SEQUENCE_DICTIONARY $$(cat $*.dict) \
+		--SEQUENCE_DICTIONARY $(DICT) \
 		-O $@;
 
 
 # MERGE SNP and InDel VCF for Post calling steps. Because of loop in rules
-%.vcf: %.POST_CALLING_SNP.vcf %.POST_CALLING_InDel.vcf %.dict
+%.vcf: %.POST_CALLING_SNP.vcf %.POST_CALLING_InDel.vcf
 	$(JAVA) $(JAVA_FLAGS_GATK4) -jar $(GATK4) \
 		MergeVcfs \
 		-I $*.POST_CALLING_SNP.vcf \
 		-I $*.POST_CALLING_InDel.vcf \
 		--CREATE_INDEX false \
-		--SEQUENCE_DICTIONARY $$(cat $*.dict) \
+		--SEQUENCE_DICTIONARY $(DICT) \
 		-O $@;
 
 
@@ -363,7 +363,7 @@ GATKRR_FLAGS=
 
 
 # Interval from bed from manifest?
-%.from_manifest.interval_list: %.bed %.bam %.bam.bai %.bam.bed %.dict
+%.from_manifest.interval_list: %.bed %.bam %.bam.bai %.bam.bed
 	# manifest to interval (not needed?)
 	#cat $<  | tr -d '\r' | sed -e "s/^M//" | awk -F"\t" '{print $$1":"$$2"-"$$3}' > $@
 	# try to extract from the bam if exists, in order to not call in the whome genome
@@ -380,7 +380,7 @@ GATKRR_FLAGS=
 		echo "[INFO] Generate $@ from $@.bed with PICARD BedToIntervalList" ; \
 		#awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$5}' $@.bed > $@.bed.4fields ; \
 		awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$4}' $@.bed > $@.bed.4fields ; \
-		$(JAVA) -jar $(PICARD) BedToIntervalList -I $@.bed.4fields -O $@ -SD $$(cat $*.dict) ; \
+		$(JAVA) -jar $(PICARD) BedToIntervalList -I $@.bed.4fields -O $@ -SD $(DICT) ; \
 		rm $@.bed.4fields ; \
 	fi;
 	# If error, try intervals with GREP/SED/AWK
@@ -394,13 +394,13 @@ GATKRR_FLAGS=
 
 
 # Interval from BED
-%.bed.interval_list: %.bed %.dict
+%.bed.interval_list: %.bed
 	# BED to Intervals (not needed?)
 	# INTERVAL WITH PICARD
 	if [ -s $< ]; then \
 		#cut $< -f1-3,5 > $@.4fields ; \
 		awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$4}' $< > $@.4fields ; \
-		$(JAVA) -jar $(PICARD) BedToIntervalList -I $@.4fields -O $@ -SD $$(cat $*.dict) ; \
+		$(JAVA) -jar $(PICARD) BedToIntervalList -I $@.4fields -O $@ -SD $(DICT) ; \
 		rm $@.4fields ; \
 	fi;
 	# If error, try intervals with GREP/SED/AWK

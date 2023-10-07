@@ -5,7 +5,7 @@
 # Author: Samuel Nicaise, Thomas Lavaux
 ############################
 
-%.Arriba$(POST_CALLING).vcf: %.bam %.empty.vcf
+%.Arriba$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf
 	mkdir -p $*.arriba.reports;
 	$(ARRIBA) \
 		-x $< \

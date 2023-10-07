@@ -157,7 +157,6 @@ all: $(FINAL) $(FINAL_REPORT) $(FINAL_REPORT_FILES) $(FINAL_REPORT).variants $(F
 # MAIN
 ########
 
-
 $(RELEASE): $(RELEASE).empty.vcf
 	#echo "RELEASE" > $@
 	echo "" > $@

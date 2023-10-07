@@ -15,7 +15,7 @@ THREADS_OUTLYZER_FILTERED?=$(THREADS_BY_CALLER)
 VAF_OUTLYZER_FILTERED?=0.01
 DPMIN_OUTLYZER_FILTERED?=30
 
-%.outLyzer_filtered$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.dict %.design.bed
+%.outLyzer_filtered$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed
 	# create tmp Directory
 	mkdir -p $@.outlyser_tmp
 	# Generate VCF with OutLyser
@@ -24,7 +24,7 @@ DPMIN_OUTLYZER_FILTERED?=30
 		# Normalize OutLyzer output VCF ; \
 		cat $@.outlyser_tmp/*.vcf | awk -f $(STARK_FOLDER_BIN)/outlyzer_norm.awk > $@.tmp.normalized.vcf ; \
 		# sort and contig ; \
-		$(JAVA) -jar $(PICARD) SortVcf -I $@.tmp.normalized.vcf -O $@.tmp.normalized.sorted.vcf -SD $$(cat $*.dict) ; \
+		$(JAVA) -jar $(PICARD) SortVcf -I $@.tmp.normalized.vcf -O $@.tmp.normalized.sorted.vcf -SD $(DICT) ; \
 		# filtration by bcftools \
 		$(BCFTOOLS) view -i 'FORMAT/DP>=$(DPMIN_OUTLYZER_FILTERED) && FORMAT/VAF>=$(VAF_OUTLYZER_FILTERED)' $@.tmp.normalized.sorted.vcf > $@; \
 	else \

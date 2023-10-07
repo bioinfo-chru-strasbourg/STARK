@@ -36,7 +36,7 @@ STAR_FLAGS?=--outSAMtype BAM SortedByCoordinate --chimOutJunctionFormat 1 --outS
 	-rm -rf $@.Aligned.sortedByCoord.out.bam $@.RG_STAR $@._STARgenome $@._STARpass1;
 
 %.bam: %.splitncigar.bam %.splitncigar.bam.bai
-	$(JAVA) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) SplitNCigarReads -R $(GENOME) -I $< -O $@
+	$(JAVA) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) SplitNCigarReads -R $(GENOMES) -I $< -O $@
 
 %.star.junction: %.star_raw.bam
 	mv $<.Chimeric.out.junction $@

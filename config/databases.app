@@ -21,13 +21,10 @@ if [ -z $GENOME ] || [ "$GENOME" == "" ]; then
 fi;
 export GENOME
 
+DICT=$DATABASES/genomes/current/$ASSEMBLY/$ASSEMBLY.dict
+export DICT
+
 # REF_CACHE_FOLDER and REF_CACHE and REF_PATH
-
-#if [ -z $REF_PATH ] || [ "$REF_PATH" == "" ]; then
-#	REF_PATH="http://www.ebi.ac.uk/ena/cram/md5/%s"
-#	export REF_PATH
-#fi;
-
 export REF_CACHE_FOLDER=$GENOME.hts-ref;
 export REF_CACHE="$REF_CACHE_FOLDER/%2s/%2s/%s";
 
