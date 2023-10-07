@@ -30,6 +30,7 @@ FASTQ_COMPRESSION_LEVEL=1
 MAX_CONCURRENT_ALIGNMENTS_STAR="2"
 export MAX_CONCURRENT_ALIGNMENTS_STAR
 
+#POST_ALIGNMENT_STEPS="sorting splitncigar recalibration compress"
 POST_ALIGNMENT_STEPS="sorting splitncigar recalibration compress"
 PIPELINES="star_raw.Arriba.howard star.STARFusion.howard star.gatkHC_SOMATIC.howard"
 POST_CALLING_MERGING_STEPS="sorting"
