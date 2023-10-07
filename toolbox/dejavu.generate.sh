@@ -1007,7 +1007,7 @@ for GP_FOLDER in $GP_LIST_UNIQ; do
 						$BGZIP -c $<.tmp.fixed2.vcf -l 0 > $<.tmp.fixed.vcf.gz;
 						$TABIX $<.tmp.fixed.vcf.gz
 						if $BCFTOOLS annotate -x FILTER,QUAL,ID,INFO $<.tmp.fixed.vcf.gz 1>/dev/null 2>/dev/null; then \
-							$BCFTOOLS annotate -x FILTER,QUAL,ID,INFO $<.tmp.fixed.vcf.gz | $BCFTOOLS norm -m -any -c s --fasta-ref $GENOMES/current/$ASSEMBLY.fa | $BCFTOOLS norm --rm-dup=exact | $BCFTOOLS +fixploidy  -- -f 2 | $BCFTOOLS +setGT  -- -t . -n 0 | $BCFTOOLS sort -T $<.sort. -o \$@ -O z 2>/dev/null; \
+							$BCFTOOLS annotate -x FILTER,QUAL,ID,INFO $<.tmp.fixed.vcf.gz | $BCFTOOLS norm -m -any -c s --fasta-ref $GENOME | $BCFTOOLS norm --rm-dup=exact | $BCFTOOLS +fixploidy  -- -f 2 | $BCFTOOLS +setGT  -- -t . -n 0 | $BCFTOOLS sort -T $<.sort. -o \$@ -O z 2>/dev/null; \
 						else \
 							cp $VCF.empty.vcf \$@.tmp; \
 							$BGZIP -c \$@.tmp -l 0 > \$@; \
@@ -1031,7 +1031,7 @@ for GP_FOLDER in $GP_LIST_UNIQ; do
 			# Minimum VCF
 			echo "$TMP/$GROUP/$PROJECT/dejavu.simple.vcf: $VCFGZ_LIST $TMP/$GROUP/$PROJECT/dejavu.simple.empty.vcf" >> $MK
 			if [ $VCFGZ_NB -gt 1 ]; then
-				echo "	if ! $BCFTOOLS merge --force-samples $TMP/$GROUP/$PROJECT/*.simple.vcf.gz | $BCFTOOLS norm -m -any -c s --fasta-ref $GENOMES/current/$ASSEMBLY.fa | $BCFTOOLS norm --rm-dup=exact | $BCFTOOLS +setGT  -- -t . -n 0 | $BCFTOOLS +fill-tags -- -t AN,AC,AF,AC_Hemi,AC_Hom,AC_Het,ExcHet,HWE,MAF,NS > \$@; then \
+				echo "	if ! $BCFTOOLS merge --force-samples $TMP/$GROUP/$PROJECT/*.simple.vcf.gz | $BCFTOOLS norm -m -any -c s --fasta-ref $GENOME | $BCFTOOLS norm --rm-dup=exact | $BCFTOOLS +setGT  -- -t . -n 0 | $BCFTOOLS +fill-tags -- -t AN,AC,AF,AC_Hemi,AC_Hom,AC_Het,ExcHet,HWE,MAF,NS > \$@; then \
 							cp $TMP/$GROUP/$PROJECT/dejavu.simple.empty.vcf \$@; \
 							echo '#[ERROR] VCF not well-formed for \$@' ; \
 						fi;
@@ -1050,7 +1050,7 @@ for GP_FOLDER in $GP_LIST_UNIQ; do
 			if (($DEJAVU_VCFSTATS )) && [ "$VCFSTATS" != "" ]; then
 				echo "$TMP/$GROUP/$PROJECT/dejavu.stats.vcfstats.tar.gz: $TMP/$GROUP/$PROJECT/dejavu.annotated.vcf.gz $TMP/$GROUP/$PROJECT/dejavu.annotated.vcf.gz.tbi
 					mkdir -p $TMP/$GROUP/$PROJECT/dejavu.stats.vcfstats
-					$JAVA -jar $VCFSTATS --inputFile $TMP/$GROUP/$PROJECT/dejavu.annotated.vcf.gz --outputDir $TMP/$GROUP/$PROJECT/dejavu.stats.vcfstats --referenceFile $GENOMES/current/$ASSEMBLY.fa -t $THREADS \$\$($BGZIP -dc $TMP/$GROUP/$PROJECT/dejavu.annotated.vcf.gz |  perl -ne 'print \"\$\$1\n\" if /##INFO=<ID=(.*?),/' | awk '{print \"--infoTag \"\$\$1\":All\"}')
+					$JAVA -jar $VCFSTATS --inputFile $TMP/$GROUP/$PROJECT/dejavu.annotated.vcf.gz --outputDir $TMP/$GROUP/$PROJECT/dejavu.stats.vcfstats --referenceFile $GENOME -t $THREADS \$\$($BGZIP -dc $TMP/$GROUP/$PROJECT/dejavu.annotated.vcf.gz |  perl -ne 'print \"\$\$1\n\" if /##INFO=<ID=(.*?),/' | awk '{print \"--infoTag \"\$\$1\":All\"}')
 					tar -zvcf $TMP/$GROUP/$PROJECT/dejavu.stats.vcfstats.tar.gz $TMP/$GROUP/$PROJECT/dejavu.stats.vcfstats
 					rm -rf $TMP/$GROUP/$PROJECT/dejavu.stats.vcfstats
 				" >> $MK
