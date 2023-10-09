@@ -30,7 +30,10 @@ FASTQ_COMPRESSION_LEVEL=1
 MAX_CONCURRENT_ALIGNMENTS_STAR="2"
 export MAX_CONCURRENT_ALIGNMENTS_STAR
 
-#POST_ALIGNMENT_STEPS="sorting splitncigar recalibration compress"
+# replace all genome with the CTAT_LIB
+GENOME=$DBFOLDER/CTAT_LIB/current/$ASSEMBLY/ref_genome.fa
+DICT=$DBFOLDER/CTAT_LIB/current/$ASSEMBLY/ref_genome.dict
+
 POST_ALIGNMENT_STEPS="sorting splitncigar recalibration compress"
 PIPELINES="star_raw.Arriba.howard star.STARFusion.howard star.gatkHC_SOMATIC.howard"
 POST_CALLING_MERGING_STEPS="sorting"
