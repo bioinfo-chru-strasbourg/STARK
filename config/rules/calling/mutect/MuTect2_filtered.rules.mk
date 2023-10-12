@@ -31,22 +31,16 @@ GATK4_MUTECT2_FILTERED_FLAGS_SHARED?=--disable-read-filter MateOnSameContigOrNoM
 	# Normalization
 	grep "^##" $@.tmp.unfiltered.vcf | sed s/ID=TLOD,Number=A/ID=TLOD,Number=./gi > $@.tmp.unfiltered.TLOD.vcf
 	grep "^##" -v $@.tmp.unfiltered.vcf | cut -f1-10 >> $@.tmp.unfiltered.TLOD.vcf
-	# Sorting
-	#$(JAVA) -jar $(PICARD) SortVcf -I $@.tmp.unfiltered.TLOD.vcf -O $@.tmp.unfiltered.TLOD.sorted.vcf -SD $(DICT);
 	# HOWARD VAF calculation & Filtration by BCFTOOLS
-	# +if (($$($(BCFTOOLS) view -H $@.tmp.unfiltered.TLOD.vcf | wc -l ))); then \
-	# 	$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp.unfiltered.TLOD.vcf --output=$@.tmp.unfiltered.TLOD.HOWARD.vcf --calculation="VAF"; \
-	# 	$(BCFTOOLS) view -i 'FORMAT/DP>=$(DPMIN_MUTECT2_FILTERED) && FORMAT/VAF>=$(VAF_MUTECT2_FILTERED) && FORMAT/VAF<$(VAF_MUTECT2_FILTERED_HOM)' $@.tmp.unfiltered.TLOD.HOWARD.vcf | $(BCFTOOLS) view -e 'GT="0/0"' -o $@.tmp.cleaned.vcf; \
-	# else \
-	# 	cp $@.tmp.unfiltered.TLOD.vcf $@.tmp.cleaned.vcf; \
-	# fi;
+	 +if (($$($(BCFTOOLS) view -H $@.tmp.unfiltered.TLOD.vcf | wc -l ))); then \
+	 	$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp.unfiltered.TLOD.vcf --output=$@.tmp.unfiltered.TLOD.HOWARD.vcf --calculation="VAF"; \
+	 	$(BCFTOOLS) view -i 'FORMAT/DP>=$(DPMIN_MUTECT2_FILTERED) && FORMAT/VAF>=$(VAF_MUTECT2_FILTERED) && FORMAT/VAF<$(VAF_MUTECT2_FILTERED_HOM)' $@.tmp.unfiltered.TLOD.HOWARD.vcf | $(BCFTOOLS) view -e 'GT="0/0"' -o $@.tmp.cleaned.vcf; \
+	 else \
+	 	cp $@.tmp.unfiltered.TLOD.vcf $@.tmp.cleaned.vcf; \
+	 fi;
 	cp $@.tmp.unfiltered.TLOD.vcf $@.tmp.cleaned.vcf;
 	# Sorting and contig
 	$(JAVA) -jar $(PICARD) SortVcf -I $@.tmp.cleaned.vcf -O $@ -SD $(DICT);
-	# Empty
-	#if [ ! -e $@.tmp.FilterMutectCalls.TLOD.sorted.HOWARD.bcftools.vcf ]; then cp $*.empty.vcf $@.tmp.FilterMutectCalls.TLOD.sorted.HOWARD.bcftools.vcf; fi;
-	# Copy
-	#if [ ! -e $@ ]; then cp $@.tmp.FilterMutectCalls.TLOD.sorted.HOWARD.bcftools.vcf $@; fi;
 	# Clean
 	rm -f $@.tmp* $@.idx
 

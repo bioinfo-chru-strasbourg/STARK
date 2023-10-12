@@ -423,13 +423,14 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 	fi;
 fi;
 
+DATABASE="annovar"
+DATABASE_NAME="ANNOVAR"
+DATABASE_FULLNAME="ANNOVAR Annotations"
+DATABASE_WEBSITE="https://doc-openbio.readthedocs.io/projects/annovar/"
+DATABASE_DESCRIPTION="ANNOVAR is an efficient software tool to utilize update-to-date information to functionally annotate genetic variants detected from diverse genomes"
 
 if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
-	DATABASE="annovar"
-	DATABASE_NAME="ANNOVAR"
-	DATABASE_FULLNAME="ANNOVAR Annotations"
-	DATABASE_WEBSITE="https://doc-openbio.readthedocs.io/projects/annovar/"
-	DATABASE_DESCRIPTION="ANNOVAR is an efficient software tool to utilize update-to-date information to functionally annotate genetic variants detected from diverse genomes"
+	
 	
 	DBFOLDER_ANNOVAR=$(dirname $ANNOVAR_DATABASES)
 
@@ -453,9 +454,8 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		';
 		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
 	
-		# remove dbnsfp42a (memoryleak)
 		echo "$DBFOLDER_ANNOVAR: $DBFOLDER
-			howard databases --assembly='$ASSEMBLY' --download-annovar=$DBFOLDER_ANNOVAR/$DATE --download-annovar-files='refGene,gnomad_exome,cosmic70,clinvar_202*,nci60' 
+			howard databases --assembly='$ASSEMBLY' --download-annovar=$DBFOLDER_ANNOVAR/$DATE --download-annovar-files='refGene,gnomad_exome,cosmic70,dbnsfp42a,clinvar_202*,nci60' 
 			
 			-[ ! -s $DBFOLDER_ANNOVAR/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_ANNOVAR/STARK.database && chmod o+r $DBFOLDER_ANNOVAR/STARK.database 
 			[ ! -e $DBFOLDER_ANNOVAR/current ] || unlink $DBFOLDER_ANNOVAR/current
@@ -464,6 +464,50 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 			rm -rf $DB_TMP;
 		" >> $MK
 		MK_ALL="$MK_ALL $DBFOLDER_ANNOVAR"
+	fi;
+fi;
+
+DATABASE="dbsnp"
+DATABASE_NAME="dbSNP"
+DATABASE_FULLNAME="Single-nucleotide polymorphism Database"
+DATABASE_WEBSITE="https://www.ncbi.nlm.nih.gov/snp/"
+DATABASE_DESCRIPTION="Human single nucleotide variations, microsatellites, and small-scale insertions and deletions along with publication, population frequency, molecular consequence, and genomic and RefSeq mapping information for both common variations and clinical mutations"
+
+if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
+	
+	
+	DBFOLDER_DBSNP=$(dirname $DBSNP_DATABASES)
+
+	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DATE
+	mkdir -p $DB_TMP
+	chmod 0775 $DB_TMP;
+
+	if [ ! -e $DBFOLDER_DBSNP ] || (($UPDATE)); then
+		if (($UPDATE)); then
+			if [ -e $DBFOLDER_DBSNP ]; then mv -f $DBFOLDER_DBSNP $DBFOLDER_DBSNP.V$DATE; fi;
+		fi;
+
+		DB_INFOS_JSON='
+		{
+			"code": "'$DATABASE'",
+			"name": "'$DATABASE_NAME'",
+			"fullname": "'$DATABASE_FULLNAME'",
+			"website": "'$DATABASE_WEBSITE'",
+			"description": "'$DATABASE_DESCRIPTION'"
+		}
+		';
+		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
+	
+		echo "$DBFOLDER_DBSNP: $DBFOLDER
+			howard databases --assembly='$ASSEMBLY' --download-dbsnp=$DBFOLDER_DBSNP/$DATE --download-dbsnp-vcf
+			
+			-[ ! -s $DBFOLDER_DBSNP/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_DBSNP/STARK.database && chmod o+r $DBFOLDER_DBSNP/STARK.database 
+			[ ! -e $DBFOLDER_DBSNP/current ] || unlink $DBFOLDER_DBSNP/current
+			ln -snf $DBFOLDER_DBSNP/$DATE $DBFOLDER_DBSNP/current
+
+			rm -rf $DB_TMP;
+		" >> $MK
+		MK_ALL="$MK_ALL $DBFOLDER_DBSNP"
 	fi;
 fi;
 
@@ -684,6 +728,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 			mkdir -p $DBFOLDER_CTAT/$DATE/$ASSEMBLY
 			chmod 0775 $DBFOLDER_CTAT/$DATE/$ASSEMBLY
 			tar -xzf  $DB_TMP/$(basename $CTAT_CURRENT) -C  $DB_TMP --strip-components=1
+			$JAVA -jar $PICARD CreateSequenceDictionary -REFERENCE $DB_TMP/ctat_genome_lib_build_dir/ref_genome.fa -OUTPUT $DB_TMP/ctat_genome_lib_build_dir/ref_genome.dict 
 			cp -R $DB_TMP/ctat_genome_lib_build_dir/* $DBFOLDER_CTAT/$DATE/$ASSEMBLY
 			\cp $DB_TMP/AnnotFilterRule.pm $DBFOLDER_CTAT/$DATE/$ASSEMBLY
 			-[ ! -s $DBFOLDER_CTAT/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_CTAT/STARK.database && chmod o+r $DBFOLDER_CTAT/STARK.database 

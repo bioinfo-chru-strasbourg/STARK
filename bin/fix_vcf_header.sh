@@ -393,8 +393,8 @@ if [ "$EXTENSION" == "gz" ]; then
     mv $OUTPUT_TMP.compressed $OUTPUT_TMP
 fi;
 
-mv $OUTPUT_TMP $VCF_OUTPUT
-
+#mv $OUTPUT_TMP $VCF_OUTPUT
+$BCFTOOLS view $OUTPUT_TMP > $VCF_OUTPUT
 
 # Clear
 #######

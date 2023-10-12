@@ -30,12 +30,18 @@ FASTQ_COMPRESSION_LEVEL=1
 MAX_CONCURRENT_ALIGNMENTS_STAR="2"
 export MAX_CONCURRENT_ALIGNMENTS_STAR
 
-# replace all genome with the CTAT_LIB
+# replace genome/dict with the CTAT_LIB genome
 GENOME=$DBFOLDER/CTAT_LIB/current/$ASSEMBLY/ref_genome.fa
 DICT=$DBFOLDER/CTAT_LIB/current/$ASSEMBLY/ref_genome.dict
+export GENOME
+export DICT
 
 POST_ALIGNMENT_STEPS="sorting splitncigar recalibration compress"
-PIPELINES="star_raw.Arriba.howard star.STARFusion.howard star.gatkHC_SOMATIC.howard"
+PIPELINES="star.Arriba.howard star.STARFusion.howard star.gatkHC_SOMATIC.howard"
+
+#POST_ALIGNMENT_STEPS="sorting splitncigar recalibration compress"
+#PIPELINES="star.Arriba star.STARFusion star.gatkHC_SOMATIC"
+
 POST_CALLING_MERGING_STEPS="sorting"
 
 # COVERAGE CRITERIA (default "1,30")
@@ -66,11 +72,11 @@ HOWARD_ANNOTATION_ANALYSIS="null" # no more annotation
 
 # CALCULATION
 # Default calculation with HOWARD for all VCF/pipelines
-HOWARD_CALCULATION="VARTYPE,NOMEN"
+#HOWARD_CALCULATION="VARTYPE,NOMEN"
 # Default minimal calculation with HOWARD for final VCF report
-HOWARD_CALCULATION_MINIMAL="VARTYPE,NOMEN"
+#HOWARD_CALCULATION_MINIMAL="VARTYPE,NOMEN"
 # Default calculation with HOWARD for final VCF report
-HOWARD_CALCULATION_REPORT="FindByPipelines,VAF_STATS,DP_STATS,VARTYPE,NOMEN"
+#HOWARD_CALCULATION_REPORT="FindByPipelines,VAF_STATS,DP_STATS,VARTYPE,NOMEN"
 
 # METRICS SNPEFF (default 0)
 # Generate snpEff variant metrics from VCF

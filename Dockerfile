@@ -312,7 +312,7 @@ ENV PIP="/root/mambaforge/bin/pip"
 RUN $MAMBA init
 RUN $PIP install $PYTHON_MODULE  && $PIP cache purge
 # R r-biocmanager r-cowplot r-argparse r-ranger r-tidyverse
-RUN $MAMBA install -y -c bioconda -c conda-forge -c biobuilds umi_tools~=1.1.4 bbmap~=39.01 sumaclust~=1.0.31 star-fusion~=1.12.0 && $MAMBA clean -afy && \
+RUN $MAMBA install -y -c bioconda -c conda-forge -c biobuilds umi_tools~=1.1.4 bbmap~=39.01 sumaclust~=1.0.31 star-fusion~=1.12.0 bcftools~=1.18.0 && $MAMBA clean -afy && \
 	ln -s /root/mambaforge/bin/python /usr/local/bin/python && \
 	ln -s /root/mambaforge/bin/python3 /usr/local/bin/python3 && \
 	ln -s /root/mambaforge/bin/pip /usr/local/bin/pip && \
@@ -464,19 +464,19 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 ##########
 
 # TOOL INFO
-ENV TOOL_NAME="htslib"
-ENV TOOL_VERSION="1.17"
-ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.tar.bz2"
-ENV TOOL_SOURCE_EXTERNAL="https://github.com/samtools/$TOOL_NAME/releases/download/$TOOL_VERSION/$TOOL_TARBALL"
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+#ENV TOOL_NAME="htslib"
+#ENV TOOL_VERSION="1.15.1"
+#ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.tar.bz2"
+#ENV TOOL_SOURCE_EXTERNAL="https://github.com/samtools/$TOOL_NAME/releases/download/$TOOL_VERSION/$TOOL_TARBALL"
+#ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
 
 # TOOL INSTALLATION
-RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-	source $TOOL_INIT && \
-	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
-	make install --quiet -j $THREADS -C $(ls -d $TOOL_SOURCE_BUILD/*) prefix=$TOOL_DEST && \
-	$TOOL_CHECK ;
+#RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+#	source $TOOL_INIT && \
+#	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
+#	make install --quiet -j $THREADS -C $(ls -d $TOOL_SOURCE_BUILD/*) prefix=$TOOL_DEST && \
+#	$TOOL_CHECK ;
 
 
 
@@ -485,19 +485,19 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 ############
 
 # TOOL INFO
-ENV TOOL_NAME="bcftools"
-ENV TOOL_VERSION="1.17"
-ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.tar.bz2"
-ENV TOOL_SOURCE_EXTERNAL="https://github.com/samtools/$TOOL_NAME/releases/download/$TOOL_VERSION/$TOOL_TARBALL"
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+#ENV TOOL_NAME="bcftools"
+#ENV TOOL_VERSION="1.15.1"
+#ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.tar.bz2"
+#ENV TOOL_SOURCE_EXTERNAL="https://github.com/samtools/$TOOL_NAME/releases/download/$TOOL_VERSION/$TOOL_TARBALL"
+#ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
 
 # TOOL INSTALLATION
-RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-	source $TOOL_INIT && \
-	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
-	make install --quiet -j $THREADS -C $(ls -d $TOOL_SOURCE_BUILD/*) prefix=$TOOL_DEST && \
-	$TOOL_CHECK ;
+#RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+#	source $TOOL_INIT && \
+#	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
+#	make install --quiet -j $THREADS -C $(ls -d $TOOL_SOURCE_BUILD/*) prefix=$TOOL_DEST && \
+#	$TOOL_CHECK ;
 
 
 
@@ -874,7 +874,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 # TOOL INFO
 ENV TOOL_NAME="samtools"
-ENV TOOL_VERSION="1.17"
+ENV TOOL_VERSION="1.18"
 ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.tar.bz2"
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/samtools/$TOOL_NAME/releases/download/$TOOL_VERSION/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH

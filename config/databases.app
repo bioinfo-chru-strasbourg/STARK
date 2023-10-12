@@ -17,16 +17,18 @@ export ASSEMBLY
 
 # default Genome
 if [ -z $GENOME ] || [ "$GENOME" == "" ]; then
-	GENOME=$DATABASES/genomes/current/$ASSEMBLY/$ASSEMBLY.fa
+	GENOME=$DBFOLDER/genomes/current/$ASSEMBLY/$ASSEMBLY.fa
 fi;
 export GENOME
 
-DICT=$DATABASES/genomes/current/$ASSEMBLY/$ASSEMBLY.dict
+if [ -z $DICT ] || [ "$DICT" == "" ]; then
+	DICT=$DBFOLDER/genomes/current/$ASSEMBLY/$ASSEMBLY.dict
+fi;
 export DICT
 
-# REF_CACHE_FOLDER and REF_CACHE and REF_PATH
-export REF_CACHE_FOLDER=$GENOME.hts-ref;
-export REF_CACHE="$REF_CACHE_FOLDER/%2s/%2s/%s";
+# REF_CACHE_FOLDER and REF_CACHE
+#export REF_CACHE_FOLDER=$GENOME.hts-ref;
+#export REF_CACHE="$REF_CACHE_FOLDER/%2s/%2s/%s";
 
 # refGene/refSeq
 #################
@@ -189,3 +191,12 @@ else
 fi;
 export GENCODE_DATABASES
 DATABASES_CONFIG_LIST=$DATABASES_CONFIG_LIST" GENCODE_DATABASES"
+
+# Dbsnp
+if [ ! -z $FOLDER_DATABASES_DBSNP ] && [ "$FOLDER_DATABASES_DBSNP" != "" ]; then
+	DBSNP_DATABASES=$FOLDER_DATABASES_DBSNP
+else
+	DBSNP_DATABASES=$DBFOLDER/dnsnp/current
+fi;
+export DBSNP_DATABASES
+DATABASES_CONFIG_LIST=$DATABASES_CONFIG_LIST" DBSNP_DATABASES"

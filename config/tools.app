@@ -67,8 +67,8 @@ TOOLS_LIST=$TOOLS_LIST" BCL2FASTQ"
 
 
 # SAMTOOLS
-export SAMTOOLS=$NGS_TOOLS/samtools/current/bin/samtools		# BIN
-export SAMTOOLS_VERSION=1.17									# VER
+export SAMTOOLS=samtools										# BIN $NGS_TOOLS/samtools/current/bin/
+export SAMTOOLS_VERSION=1.18									# VER
 export SAMTOOLS_DESCRIPTION="Reading/writing/editing/indexing/viewing SAM/BAM/CRAM format"
 export SAMTOOLS_REF="Li H.*, Handsaker B.*, Wysoker A., Fennell T., Ruan J., Homer N., Marth G., Abecasis G., Durbin R. and 1000 Genome Project Data Processing Subgroup (2009) The Sequence alignment/map (SAM) format and SAMtools. Bioinformatics, 25, 2078-9. [PMID: 19505943]. Li H A statistical framework for SNP calling, mutation discovery, association mapping and population genetical parameter estimation from sequencing data. Bioinformatics. 2011 Nov 1;27(21):2987-93. Epub 2011 Sep 8. [PMID: 21903627]"
 TOOLS_LIST=$TOOLS_LIST" SAMTOOLS"
@@ -76,7 +76,7 @@ TOOLS_LIST=$TOOLS_LIST" SAMTOOLS"
 
 # VCFUTILS
 export VCFUTILS=$NGS_TOOLS/bcftools/current/bin/vcfutils.pl		# BIN-SCRIPT
-export VCFUTILS_VERSION=1.17									# VER
+export VCFUTILS_VERSION=1.18									# VER
 export VCFUTILS_DESCRIPTION="fix a compatibility issue with the new bcftools"
 export VCFUTILS_REF="unknown"
 TOOLS_LIST=$TOOLS_LIST" VCFUTILS"
@@ -88,25 +88,25 @@ export HTSLIB_REF="http://www.htslib.org/"
 
 
 # TABIX
-export TABIX=$NGS_TOOLS/htslib/current/bin/tabix			# BIN
+export TABIX=tabix											# BIN $NGS_TOOLS/htslib/current/bin/
 export TABIX_PATH=$(dirname $TABIX)							# BIN
-export TABIX_VERSION=1.17									# VER
+export TABIX_VERSION=1.18									# VER
 export TABIX_DESCRIPTION="Indexing VCF files"
 export TABIX_REF=$HTSLIB_REF
 TOOLS_LIST=$TOOLS_LIST" TABIX"
 
 
 # BGZIP
-export BGZIP=$NGS_TOOLS/htslib/current/bin/bgzip			# BIN
-export BGZIP_VERSION=1.17									# VER
+export BGZIP=/bgzip											# BIN   $NGS_TOOLS/htslib/current/bin
+export BGZIP_VERSION=1.18									# VER
 export BGZIP_DESCRIPTION="Compressing VCF files"
 export BGZIP_REF=$HTSLIB_REF
 TOOLS_LIST=$TOOLS_LIST" BGZIP"
 
 
 # BCFTOOLS
-export BCFTOOLS=$NGS_TOOLS/bcftools/current/bin/bcftools		# BIN
-export BCFTOOLS_VERSION=1.17									# VER
+export BCFTOOLS=bcftools									# BIN $NGS_TOOLS/bcftools/current/bin/
+export BCFTOOLS_VERSION=1.18								# VER
 export BCFTOOLS_DESCRIPTION="Reading/writing BCF2/VCF/gVCF files and calling/filtering/summarising SNP and short indel sequence variants"
 export BCFTOOLS_REF=$HTSLIB_REF
 TOOLS_LIST=$TOOLS_LIST" BCFTOOLS"
@@ -114,7 +114,7 @@ TOOLS_LIST=$TOOLS_LIST" BCFTOOLS"
 
 # PICARD
 export PICARD=$NGS_TOOLS/picard/current/bin/picard.jar		# BIN
-export PICARD_VERSION=3.0.0									# VER
+export PICARD_VERSION=3.1.0								# VER
 export PICARD_DESCRIPTION="Java command line tools for manipulating high-throughput sequencing data (HTS) data and formats"
 export PICARDLIB=$NGS_TOOLS/picard/2.18.5/bin				# DIR
 export PICARD_REF="http://broadinstitute.github.io/picard/"
@@ -186,7 +186,7 @@ TOOLS_LIST=$TOOLS_LIST" OUTLYZER"
 
 # FASTQC
 # export FASTQC=$NGS_TOOLS/fastqc/current/bin/fastqc		# BIN
-# export FASTQC_VERSION=0.11.8							# VER
+# export FASTQC_VERSION=0.11.8								# VER
 # export FASTQC_DESCRIPTION="A quality control tool for high throughput sequence data."
 # export FASTQC_REF="http://www.bioinformatics.bbsrc.ac.uk/projects/fastqc"
 # TOOLS_LIST=$TOOLS_LIST" FASTQC"
@@ -201,8 +201,8 @@ TOOLS_LIST=$TOOLS_LIST" FASTP"
 
 
 # UMI TOOLS
-export UMITOOLS=umi_tools		# BIN
-export UMITOOLS_VERSION=1.1.4										# VER
+export UMITOOLS=umi_tools						# BIN
+export UMITOOLS_VERSION=1.1.4					# VER
 export UMITOOLS_DESCRIPTION="UMI-tools contains tools for dealing with Unique Molecular Identifiers (UMIs)/Random Molecular Tags (RMTs) and single cell RNA-Seq cell barcodes."
 export UMITOOLS_REF="https://github.com/CGATOxford/UMI-tools"
 TOOLS_LIST=$TOOLS_LIST" UMITOOLS"
@@ -232,7 +232,7 @@ export BWA_REF=$BWA1_REF
 TOOLS_LIST=$TOOLS_LIST" BWA"
 
 # STAR
-export STAR=STAR		# BIN $NGS_TOOLS/STAR/current/bin/
+export STAR=STAR							# BIN $NGS_TOOLS/STAR/current/bin/
 export STAR_VERSION=2.7.8a					# VER
 export STAR_DESCRIPTION="Spliced Transcripts Alignment to a Reference"
 export STAR_REF="https://github.com/alexdobin/STAR"
@@ -257,7 +257,6 @@ TOOLS_LIST=$TOOLS_LIST" BEDTOOLS"
 
 # ANNOVAR
 export ANNOVAR=$NGS_TOOLS/annovar/current/bin			# DIR
-#export ANNOVAR_VERSION=2019Oct24						# VER
 export ANNOVAR_VERSION=2020Jun08						# VER
 export ANNOVAR_DESCRIPTION="an efficient software tool to utilize update-to-date information to functionally annotate genetic variants detected from diverse genomes"
 export ANNOVAR_REF="Wang K, Li M, Hakonarson H. ANNOVAR: Functional annotation of genetic variants from next-generation sequencing data Nucleic Acids Research, 38:e164, 2010"

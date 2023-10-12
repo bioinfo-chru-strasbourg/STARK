@@ -38,16 +38,6 @@ MK_DATE="13/04/2021"
 
 
 
-# %.fastq.gz: %.R1$(POST_SEQUENCING).fastq.gz %.R2$(POST_SEQUENCING).fastq.gz
-#	### depreciated: old code looking for FASTQ Reads2 file from INPUTDIR (demultiplexing folder)
-# 	# Create directory
-# 	mkdir -p $(@D)
-# 	# Contatenate all fastq.gz files
-# 	zcat $^ | $(GZ) - --fast -f -q > $@;
-
-
-
-
 # CONFIG/RELEASE
 RELEASE_COMMENT := "\#\# FASTQ '$(MK_RELEASE)': Generate uniq FASTQ from two FASTQ Read1 and Read2 files."
 RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )

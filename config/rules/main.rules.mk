@@ -128,7 +128,7 @@ REMOVE_INTERMEDIATE_SAM?=1
 # VCF to tab delimiter
 %.tsv: %.vcf
 	# translation step
-	#$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$< --output=$@ --translation=TSV --fields="$(HOWARD_FIELDS)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)" --force;
+	$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$< --output=$@ --translation=TSV --fields="$(HOWARD_FIELDS)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)" --force;
 	touch $@
 	# Touch
 	if [ ! -e $@ ]; then touch $@; fi;
