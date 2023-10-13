@@ -369,8 +369,8 @@ TOOLS_LIST=$TOOLS_LIST" HOWARD"
 # HOWARD2 (devel)
 export HOWARD2=howard						# BIN-JAR
 export HOWARD2_VERSION=devel				# VER
-export HOWARD2_DESCRIPTION=""
-export HOWARD2_REF=""
+export HOWARD2_DESCRIPTION=""Highly Open and Valuable tool for Variant Annotation & Ranking"
+export HOWARD2_REF="inhouse"
 TOOLS_LIST=$TOOLS_LIST" HOWARD2"
 
 # SCRIPTS
