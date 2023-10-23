@@ -465,19 +465,19 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 ##########
 
 # TOOL INFO
-#ENV TOOL_NAME="htslib"
-#ENV TOOL_VERSION="1.15.1"
-#ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.tar.bz2"
-#ENV TOOL_SOURCE_EXTERNAL="https://github.com/samtools/$TOOL_NAME/releases/download/$TOOL_VERSION/$TOOL_TARBALL"
-#ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+ENV TOOL_NAME="htslib"
+ENV TOOL_VERSION="1.18"
+ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.tar.bz2"
+ENV TOOL_SOURCE_EXTERNAL="https://github.com/samtools/$TOOL_NAME/releases/download/$TOOL_VERSION/$TOOL_TARBALL"
+ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
 
 # TOOL INSTALLATION
-#RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-#	source $TOOL_INIT && \
-#	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
-#	make install --quiet -j $THREADS -C $(ls -d $TOOL_SOURCE_BUILD/*) prefix=$TOOL_DEST && \
-#	$TOOL_CHECK ;
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
+	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
+	make install --quiet -j $THREADS -C $(ls -d $TOOL_SOURCE_BUILD/*) prefix=$TOOL_DEST && \
+	$TOOL_CHECK ;
 
 
 

@@ -67,7 +67,7 @@ TOOLS_LIST=$TOOLS_LIST" BCL2FASTQ"
 
 
 # SAMTOOLS
-export SAMTOOLS=samtools										# BIN $NGS_TOOLS/samtools/current/bin/
+export SAMTOOLS=$NGS_TOOLS/samtools/current/bin/samtools		# BIN 
 export SAMTOOLS_VERSION=1.18									# VER
 export SAMTOOLS_DESCRIPTION="Reading/writing/editing/indexing/viewing SAM/BAM/CRAM format"
 export SAMTOOLS_REF="Li H.*, Handsaker B.*, Wysoker A., Fennell T., Ruan J., Homer N., Marth G., Abecasis G., Durbin R. and 1000 Genome Project Data Processing Subgroup (2009) The Sequence alignment/map (SAM) format and SAMtools. Bioinformatics, 25, 2078-9. [PMID: 19505943]. Li H A statistical framework for SNP calling, mutation discovery, association mapping and population genetical parameter estimation from sequencing data. Bioinformatics. 2011 Nov 1;27(21):2987-93. Epub 2011 Sep 8. [PMID: 21903627]"
@@ -369,7 +369,7 @@ TOOLS_LIST=$TOOLS_LIST" HOWARD"
 # HOWARD2 (devel)
 export HOWARD2=howard						# BIN-JAR
 export HOWARD2_VERSION=devel				# VER
-export HOWARD2_DESCRIPTION=""Highly Open and Valuable tool for Variant Annotation & Ranking"
+export HOWARD2_DESCRIPTION="Highly Open and Valuable tool for Variant Annotation & Ranking"
 export HOWARD2_REF="inhouse"
 TOOLS_LIST=$TOOLS_LIST" HOWARD2"
 
@@ -395,5 +395,5 @@ export PATH=$PATH:$TABIX_PATH:$JAVA_PATH
 if (($(grep -c " 6." /etc/centos-release 2>/dev/null))); then
 	export PERL5LIB=$BCL2FASTQ_PERLLIB:$ENV_PERLLIB
 else
-	export PERL5LIB=
+	export PERL5LIB
 fi;

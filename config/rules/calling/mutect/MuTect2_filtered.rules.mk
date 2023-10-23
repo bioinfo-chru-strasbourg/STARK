@@ -33,7 +33,8 @@ GATK4_MUTECT2_FILTERED_FLAGS_SHARED?=--disable-read-filter MateOnSameContigOrNoM
 	grep "^##" -v $@.tmp.unfiltered.vcf | cut -f1-10 >> $@.tmp.unfiltered.TLOD.vcf
 	# HOWARD VAF calculation & Filtration by BCFTOOLS
 	 +if (($$($(BCFTOOLS) view -H $@.tmp.unfiltered.TLOD.vcf | wc -l ))); then \
-	 	$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp.unfiltered.TLOD.vcf --output=$@.tmp.unfiltered.TLOD.HOWARD.vcf --calculation="VAF"; \
+	 	#$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp.unfiltered.TLOD.vcf --output=$@.tmp.unfiltered.TLOD.HOWARD.vcf --calculation="VAF"; \
+		$(HOWARD2) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp.unfiltered.TLOD.vcf --output=$@.tmp.unfiltered.TLOD.HOWARD.vcf --calculation="VAF"; \
 	 	$(BCFTOOLS) view -i 'FORMAT/DP>=$(DPMIN_MUTECT2_FILTERED) && FORMAT/VAF>=$(VAF_MUTECT2_FILTERED) && FORMAT/VAF<$(VAF_MUTECT2_FILTERED_HOM)' $@.tmp.unfiltered.TLOD.HOWARD.vcf | $(BCFTOOLS) view -e 'GT="0/0"' -o $@.tmp.cleaned.vcf; \
 	 else \
 	 	cp $@.tmp.unfiltered.TLOD.vcf $@.tmp.cleaned.vcf; \

@@ -1078,11 +1078,10 @@ for GP_FOLDER in $GP_LIST_UNIQ; do
 					$TABIX \$@.tmp.tmp.tmp.vcf.gz
 					$BCFTOOLS merge $< \$@.tmp.tmp.tmp.vcf.gz | $BCFTOOLS sort -T $<.sort.2. > \$@.tmp.ann.vcf
 					+$HOWARD --input=\$@.tmp.ann.vcf --output=\$@.tmp.vcf --config=$HOWARD_CONFIG --config_annotation=$HOWARD_CONFIG_ANNOTATION --calculation=$DEJAVU_CALCULATION --nomen_fields=$DEJAVU_NOMEN_FIELDS --annovar_folder=$ANNOVAR --annovar_databases=$ANNOVAR_DATABASES --snpeff_jar=$SNPEFF --snpeff_databases=$SNPEFF_DATABASES --multithreading --threads=$THREADS --snpeff_threads=$THREADS --split=$HOWARD_split --tmp=$TMP_FOLDER_TMP --env=$CONFIG_TOOLS
-					#
-					#+$HOWARD --input=$< --output=\$@.tmp.vcf --config=$HOWARD_CONFIG --config_annotation=$HOWARD_CONFIG_ANNOTATION --annotation=$DEJAVU_ANNOTATION --calculation=$DEJAVU_CALCULATION --nomen_fields=$DEJAVU_NOMEN_FIELDS --annovar_folder=$ANNOVAR --annovar_databases=$ANNOVAR_DATABASES --snpeff_jar=$SNPEFF --snpeff_databases=$SNPEFF_DATABASES --multithreading --threads=$THREADS --snpeff_threads=$THREADS --split=$HOWARD_split --tmp=$TMP_FOLDER_TMP --env=$CONFIG_TOOLS
+					+$HOWARD --input=$< --output=\$@.tmp.vcf --config=$HOWARD_CONFIG --config_annotation=$HOWARD_CONFIG_ANNOTATION --annotation=$DEJAVU_ANNOTATION --calculation=$DEJAVU_CALCULATION --nomen_fields=$DEJAVU_NOMEN_FIELDS --annovar_folder=$ANNOVAR --annovar_databases=$ANNOVAR_DATABASES --snpeff_jar=$SNPEFF --snpeff_databases=$SNPEFF_DATABASES --multithreading --threads=$THREADS --snpeff_threads=$THREADS --split=$HOWARD_split --tmp=$TMP_FOLDER_TMP --env=$CONFIG_TOOLS
 					mkdir $<.sort.
 					$BCFTOOLS sort -T $<.sort. \$@.tmp.vcf | $BCFTOOLS annotate -x INFO/AN,INFO/AC,INFO/AF  | $BCFTOOLS +fill-tags -- -t AN,AC,AF,AC_Hemi,AC_Hom,AC_Het,ExcHet,HWE,MAF,NS > \$@;
-					#rm \$@.tmp.vcf
+					rm \$@.tmp.vcf
 					rm -rf \$@.tmp*
 					rm -rf $<.sort.*
 				" >> $MK

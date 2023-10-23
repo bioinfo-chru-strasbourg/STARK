@@ -18,8 +18,6 @@ MK_DATE="13/04/2021"
 
 # HOWARD Variables
 ####################
-
-
 HOWARD_ANNOTATION_MINIMAL?="Symbol,location,outcome,hgvs"
 HOWARD_CALCULATION?=VAF,NOMEN,VAF_STATS,DP_STATS,VARTYPE
 HOWARD_NOMEN_FIELDS?="hgvs"
@@ -27,12 +25,12 @@ HOWARD_NOMEN_FIELDS?="hgvs"
 
 # RULES
 ########
-
 %.howard_minimal$(POST_ANNOTATION).vcf: %.vcf %.empty.vcf %.transcripts
 	# Prevent comma in description in vcf header
 	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$< --output=$@.tmp --threads=$(THREADS_BY_CALLER) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
 	# Annotation step
 	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp --output=$@ --annotation=$(HOWARD_ANNOTATION_MINIMAL) --calculation=$(HOWARD_CALCULATION_MINIMAL) --transcripts=$*.transcripts --nomen_fields=$(HOWARD_NOMEN_FIELDS)  --norm=$(GENOME);
+	#+$(HOWARD2) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp --output=$@ --annotation=$(HOWARD_ANNOTATION_MINIMAL) --calculation=$(HOWARD_CALCULATION_MINIMAL) --transcripts=$*.transcripts --nomen_fields=$(HOWARD_NOMEN_FIELDS)  --norm=$(GENOME);
 	cp $@.tmp $@
 	-if [ ! -e $@ ]; then cp $*.empty.vcf $@; fi;
 	# Downgrading VCF format 4.2 to 4.1
