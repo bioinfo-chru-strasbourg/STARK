@@ -24,7 +24,6 @@ RELEASE_NOTES=$RELEASE_NOTES"# 0.9.6.0-28/07/2022: Change snpEff download, add G
 RELEASE_NOTES=$RELEASE_NOTES"# STARK 19: \n";
 
 
-
 # Header
 function header () {
 	echo "#######################################";
@@ -156,6 +155,7 @@ in_array ()
     done;
     return 1
 }
+
 # ACTION
 ACTION=0
 [ $BUILD ] || [ $UPDATE ] && ACTION=1;
@@ -200,7 +200,6 @@ fi;
 
 DATE=$(date '+%Y%m%d-%H%M%S')
 
-# output
 echo ""
 echo "#[INFO] DB_RELEASE=$DATE"
 echo "#[INFO] ASSEMBLY=$ASSEMBLY"
@@ -212,14 +211,12 @@ MK_ERR=$TMP_DATABASES_DOWNLOAD_FOLDER/mk.err
 MK_ALL=""
 > $MK
 
-# INFOS
 DOWNLOAD_METHOD="STARK Databases downloading script [$SCRIPT_RELEASE-$SCRIPT_DATE]"
 
 ##############################
 # GATK VARIANT RECALIBRATION #
 ##############################
 # For GATK3/4
-
 DATABASE="gatk"
 DATABASE_NAME="GATK"
 DATABASE_FULLNAME="GATK Databases"
@@ -377,11 +374,9 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 fi;
 
 
-#####################################
-# ANNOVAR & SNPEFF & REFSEQ & DBSNP #
-#####################################
-# Install with HOWARD v2
-
+##########
+# SNPEFF #
+##########
 DATABASE="snpeff"
 DATABASE_NAME="SnpEff"
 DATABASE_FULLNAME="SnpEff Annotations"
@@ -423,6 +418,9 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 	fi;
 fi;
 
+###########
+# ANNOVAR #
+###########
 DATABASE="annovar"
 DATABASE_NAME="ANNOVAR"
 DATABASE_FULLNAME="ANNOVAR Annotations"
@@ -464,6 +462,9 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 	fi;
 fi;
 
+#########
+# dbSNP #
+#########
 DATABASE="dbsnp"
 DATABASE_NAME="dbSNP"
 DATABASE_FULLNAME="Single-nucleotide polymorphism Database"
@@ -505,7 +506,9 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 	fi;
 fi;
 
-
+###########
+# REFGENE #
+###########
 DATABASE="refGene"
 DATABASE_NAME="RefGene"
 DATABASE_FULLNAME="Reference Genes"
@@ -624,7 +627,6 @@ fi;
 ########
 # CTAT #
 ########
-
 DATABASE="ctat"
 DATABASE_NAME="ctat"
 DATABASE_FULLNAME=" CTAT Genome Lib"
@@ -645,7 +647,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 	if [ $ASSEMBLY == "hg19" ] ; then CTAT_CURRENT="https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/GRCh37_gencode_v19_CTAT_lib_Mar012021.plug-n-play.tar.gz"; fi;
 	if [ $ASSEMBLY == "hg38" ] ; then CTAT_CURRENT="https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/GRCh38_gencode_v37_CTAT_lib_Mar012021.plug-n-play.tar.gz"; fi;
 		
-		# Replace AnnotFilterRule.pm with this one after unpacking CTAT
+		# Replace AnnotFilterRule.pm with a valid one after unpacking CTAT
 		CTAT_PM="https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/__genome_libs_StarFv1.10/AnnotFilterRule.pm"
 
 		CTAT_DATE=$(curl -s -I $CTAT_CURRENT | grep "Last-Modified: " | sed "s/Last-Modified: //g" | sed "s/\r$//g");
@@ -666,7 +668,6 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		';
 		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
 
-		# DATABASE Release Infos
 		DB_RELEASE_INFOS_JSON='
 		{
 			"release": "'$CTAT_DATE'",
@@ -686,7 +687,6 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		(($VERBOSE)) && echo "#[INFO] CTAT URL=$CTAT_CURRENT"
 		(($VERBOSE)) && echo "#[INFO] CTAT RELEASE=$DATE"
 
-		# MK
 		echo "$DBFOLDER_CTAT: $DBFOLDER
 			wget --progress=bar:force:noscroll $CTAT_CURRENT -P $DB_TMP;
 			wget --progress=bar:force:noscroll $CTAT_PM -P $DB_TMP;
@@ -749,7 +749,6 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		';
 		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
 
-		# DATABASE Release Infos
 		DB_RELEASE_INFOS_JSON='
 		{
 			"release": "'$GENCODE_DATE'",
@@ -769,7 +768,6 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		(($VERBOSE)) && echo "#[INFO] GENCODE URL=$GENCODE_CURRENT"
 		(($VERBOSE)) && echo "#[INFO] GENCODE RELEASE=$DATE"
 
-		# MK
 		echo "$DBFOLDER_GENCODE: $DBFOLDER
 			mkdir -p $DBFOLDER_GENCODE/$DATE/$ASSEMBLY;
 			chmod 0775 $DBFOLDER_GENCODE/$DATE/$ASSEMBLY;
@@ -786,6 +784,14 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 	fi;
 fi;
 
+###########
+# GENOMES #
+###########
+DATABASE="genomes"
+DATABASE_NAME="Genomes"
+DATABASE_FULLNAME="Reference Genome Sequences Assembly"
+DATABASE_WEBSITE="https://genome.ucsc.edu/"
+DATABASE_DESCRIPTION="Reference sequence was produced by the Genome Reference Consortium, and is composed of genomic sequence, primarily finished clones that were sequenced as part of the Human Genome Project"
 
 if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
 
@@ -799,103 +805,113 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 			if [ -e $DBFOLDER_GENOME ]; then mv -f $DBFOLDER_GENOME $DBFOLDER_GENOME.V$DATE; fi;
 		fi;
 		
+		DB_INFOS_JSON='
+		{
+			"code": "'$DATABASE'",
+			"name": "'$DATABASE_NAME'",
+			"fullname": "'$DATABASE_FULLNAME'",
+			"website": "'$DATABASE_WEBSITE'",
+			"description": "'$DATABASE_DESCRIPTION'"
+		}
+		';
+		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
+
 		echo "$DBFOLDER_GENOME: $DBFOLDER
 			howard databases --assembly='$ASSEMBLY' --download-genomes=$DBFOLDER_GENOME/$DATE;
+			-[ ! -s $DBFOLDER_GENOME/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_GENOME/STARK.database && chmod o+r $DBFOLDER_GENOME/STARK.database;
 			[ ! -e $DBFOLDER_GENOME/current ] || unlink $DBFOLDER_GENOME/current;
 			ln -snf $DBFOLDER_GENOME/$DATE $DBFOLDER_GENOME/current;
 			rm -rf $DB_TMP;
 		" >> $MK
 		MK_ALL="$MK_ALL $DBFOLDER_GENOME"
-		GENOME=$DBFOLDER/genomes/current/$ASSEMBLY/$ASSEMBLY.fa
-		export GENOME
 	fi;
 
-	if [ -e $GENOME ] ; then
-
-		# Samtools genome index
-		if [ ! -d $GENOME.hts-ref ] ; then
-			if [ "$SAMTOOLS" != "" ]; then
-				echo "$GENOME.hts-ref: $GENOME
-					mkdir -p $GENOME.hts-ref;
-					perl $(dirname $SAMTOOLS)/seq_cache_populate.pl -root $GENOME.hts-ref $GENOME;
-					echo 'done.' > $GENOME.hts-ref;
-				" >> $MK
-				MK_ALL="$MK_ALL $GENOME.hts-ref"
-			fi;
+	############
+	# INDEXING #
+	############
+	# Samtools genome index
+	if [ ! -d $GENOME.hts-ref ]; then
+		if [ "$SAMTOOLS" != "" ]; then
+			echo "$GENOME.hts-ref: $GENOME
+				mkdir -p $GENOME.hts-ref;
+				perl $(dirname $SAMTOOLS)/seq_cache_populate.pl -root $GENOME.hts-ref $GENOME;
+			" >> $MK
+			MK_ALL="$MK_ALL $GENOME.hts-ref"
 		fi;
+	fi;
 
-		## BOWTIE index
-		if [ ! -e $(dirname $GENOME)/$ASSEMBLY.rev.1.bt2 ]; then
-			if [ "$BOWTIE" != "" ]; then
-				echo "$(dirname $GENOME)/$ASSEMBLY.rev.1.bt2: $GENOME
-					$(dirname $BOWTIE)/bowtie2-build --threads $THREADS --packed $GENOME $(dirname $GENOME)/$ASSEMBLY.rev ;
-				" >> $MK
-				MK_ALL="$MK_ALL $(dirname $GENOME)/$ASSEMBLY.rev.1.bt2"
-			fi;
+	## BOWTIE index
+	if [ ! -e $(dirname $GENOME)/$ASSEMBLY.rev.1.bt2 ]; then
+		if [ "$BOWTIE" != "" ]; then
+			echo "$(dirname $GENOME)/$ASSEMBLY.rev.1.bt2: $GENOME
+				$(dirname $BOWTIE)/bowtie2-build --threads $THREADS --packed $GENOME $(dirname $GENOME)/$ASSEMBLY.rev;
+			" >> $MK
+			MK_ALL="$MK_ALL $(dirname $GENOME)/$ASSEMBLY.rev.1.bt2"
 		fi;
+	fi;
 
-		## BWA index
-		if [ ! -e $GENOME.bwt ]; then
-			if [ "$BWA" != "" ]; then
-				echo "$GENOME.bwt: $GENOME
-					$BWA index -a bwtsw $GENOME;
-				" >> $MK
-				MK_ALL="$MK_ALL $GENOME.bwt"
-			fi;
+	## BWA index
+	if [ ! -e $GENOME.bwt ]; then
+		if [ "$BWA" != "" ]; then
+			echo "$GENOME.bwt: $GENOME
+				$BWA index -a bwtsw $GENOME;
+			" >> $MK
+			MK_ALL="$MK_ALL $GENOME.bwt"
 		fi;
+	fi;
 
-		## BWA2 index TODO make it optional
-		if [ ! -e $GENOME.bwt.2bit.64 ]; then
-			if [ "$BWA2" != "" ]; then
-				echo "$GENOME.bwt.2bit.64: $GENOME
-					$BWA2 index $GENOME;
-				" >> $MK
-				MK_ALL="$MK_ALL $GENOME.bwt.2bit.64"
-			fi;
+	## BWA2 index TODO make it optional
+	if [ ! -e $GENOME.bwt.2bit.64 ]; then
+		if [ "$BWA2" != "" ]; then
+			echo "$GENOME.bwt.2bit.64: $GENOME
+				$BWA2 index $GENOME;
+			" >> $MK
+			MK_ALL="$MK_ALL $GENOME.bwt.2bit.64"
 		fi;
+	fi;
 
-		## SAMTOOLS index
-		if [ ! -e $GENOME.fai ]; then
-			if [ "$SAMTOOLS" != "" ]; then
-				echo "$GENOME.fai: $GENOME
-					$SAMTOOLS faidx $GENOME;
-				" >> $MK
-				MK_ALL="$MK_ALL $GENOME.fai"
-			fi;
+	## SAMTOOLS index
+	if [ ! -e $GENOME.fai ]; then
+		if [ "$SAMTOOLS" != "" ]; then
+			echo "$GENOME.fai: $GENOME
+				$SAMTOOLS faidx $GENOME;
+			" >> $MK
+			MK_ALL="$MK_ALL $GENOME.fai"
 		fi;
+	fi;
 
-		## PICARD index
-		if [ ! -e $(dirname $GENOME)/$ASSEMBLY.dict ]; then
-			if [ "$PICARD" != "" ]; then
-				echo "$(dirname $GENOME)/$ASSEMBLY.dict: $GENOME
-					$JAVA -jar $PICARD CreateSequenceDictionary \
-						-REFERENCE $GENOME \
-						-OUTPUT $(dirname $GENOME)/$ASSEMBLY.dict ;
-				" >> $MK
-				MK_ALL="$MK_ALL $(dirname $GENOME)/$ASSEMBLY.dict"
-			fi;
+	## PICARD index
+	if [ ! -e $(dirname $GENOME)/$ASSEMBLY.dict ]; then
+		if [ "$PICARD" != "" ]; then
+			echo "$(dirname $GENOME)/$ASSEMBLY.dict: $GENOME
+				$JAVA -jar $PICARD CreateSequenceDictionary \
+					-REFERENCE $GENOME \
+					-OUTPUT $(dirname $GENOME)/$ASSEMBLY.dict;
+			" >> $MK
+			MK_ALL="$MK_ALL $(dirname $GENOME)/$ASSEMBLY.dict"
 		fi;
+	fi;
 
-		## GATK IMG
-		if [ ! -e $GENOME.img ]; then
-			if [ "$PICARD" != "" ]; then
-				echo "$GENOME.img: $GENOME
-					$JAVA -XX:+UseParallelGC -XX:ParallelGCThreads=$THREADS -jar $GATK4 BwaMemIndexImageCreator \
-						--input $GENOME \
-						--output $GENOME.img;
-				" >> $MK
-				MK_ALL="$MK_ALL $GENOME.img"
-			fi;	
-		fi;
+	## GATK IMG
+	if [ ! -e $GENOME.img ]; then
+		if [ "$PICARD" != "" ]; then
+			echo "$GENOME.img: $GENOME
+				$JAVA -XX:+UseParallelGC -XX:ParallelGCThreads=$THREADS -jar $GATK4 BwaMemIndexImageCreator \
+					--input $GENOME \
+					--output $GENOME.img;
+			" >> $MK
+			MK_ALL="$MK_ALL $GENOME.img"
+		fi;	
+	fi;
 
-		## STAR index 
-		if [ ! -e $(dirname $GENOME)/$(basename $GENOME).star.idx ]; then
-			if [ "$STAR" != "" ]; then
-				echo "$(dirname $GENOME)/$(basename $GENOME).star.idx: $GENOME
-				STAR --runThreadN $THREADS --runMode genomeGenerate --genomeDir $(dirname $GENOME)/ --genomeFastaFiles $GENOME --sjdbGTFfile $DBFOLDER_GENCODE/current/$ASSEMBLY/gencode.*annotation.gtf ;
-				" >> $MK
-				MK_ALL="$MK_ALL $(dirname $GENOME)/$(basename $GENOME).star.idx"
-			fi;
+	## STAR index 
+	if [ ! -e $(dirname $GENOME)/$(basename $GENOME).star.idx ]; then
+		if [ "$STAR" != "" ]; then
+			echo "$(dirname $GENOME)/$(basename $GENOME).star.idx: $GENOME
+			mkdir -p $(dirname $GENOME)/$(basename $GENOME).star.idx;
+			STAR --runThreadN $THREADS --runMode genomeGenerate --genomeDir $(dirname $GENOME)/$(basename $GENOME).star.idx --genomeFastaFiles $GENOME --sjdbGTFfile $DBFOLDER_GENCODE/current/$ASSEMBLY/gencode.*annotation.gtf;
+			" >> $MK
+			MK_ALL="$MK_ALL $(dirname $GENOME)/$(basename $GENOME).star.idx"
 		fi;
 	fi;
 fi;
@@ -910,12 +926,12 @@ if [ ! -z "$MK_ALL" ]; then
 		echo '#[INFO] Build release: $DATE' >> $DATABASES/STARK.download.releases
 	" >> $MK
 
-	# DATABASES INIT
 	(($VERBOSE)) && echo "DATABASE INIT"
 
 	if ((1)); then
 		if (($BUILD)) || (($UPDATE)); then
 			echo "#[INFO] DATABASES DOWNLOADING..."
+			echo "#[INFO] THAT CAN TAKE SOME TIME..."
 			if (($VERBOSE)) || (($DEBUG)); then
 				if (($DEBUG)); then
 					make -k -j $THREADS $MK_OPTION -f $MK all;
@@ -925,13 +941,13 @@ if [ ! -z "$MK_ALL" ]; then
 			else
 				make -k -j $THREADS $MK_OPTION -f $MK all 1>$MK_LOG 2>$MK_ERR;
 				if (($(cat $MK_LOG $MK_ERR | grep "\*\*\*" -c))); then
-					echo "#[ERROR] Fail download databases"
+					echo "#[ERROR] Databases download failed"
 					exit 1
 				fi;
 			fi;
 			echo "#[INFO] DATABASES DOWNLOADED"
 		else
-			echo "## use --build or --update to download databases"
+			echo "## use --build or --update to download or update databases"
 		fi;
 	fi;
 else
