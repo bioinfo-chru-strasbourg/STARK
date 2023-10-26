@@ -213,6 +213,49 @@ MK_ALL=""
 
 DOWNLOAD_METHOD="STARK Databases downloading script [$SCRIPT_RELEASE-$SCRIPT_DATE]"
 
+###########
+# GENOMES #
+###########
+DATABASE="genomes"
+DATABASE_NAME="Genomes"
+DATABASE_FULLNAME="Reference Genome Sequences Assembly"
+DATABASE_WEBSITE="https://genome.ucsc.edu/"
+DATABASE_DESCRIPTION="Reference sequence was produced by the Genome Reference Consortium, and is composed of genomic sequence, primarily finished clones that were sequenced as part of the Human Genome Project"
+
+if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
+
+	DBFOLDER_GENOME=$DATABASES/genomes
+	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DATE
+	mkdir -p $DB_TMP
+	chmod 0775 $DB_TMP;
+
+	if [ ! -e $DBFOLDER_GENOME ] || (($UPDATE)); then
+		if (($UPDATE)); then
+			if [ -e $DBFOLDER_GENOME ]; then mv -f $DBFOLDER_GENOME $DBFOLDER_GENOME.V$DATE; fi;
+		fi;
+		
+		DB_INFOS_JSON='
+		{
+			"code": "'$DATABASE'",
+			"name": "'$DATABASE_NAME'",
+			"fullname": "'$DATABASE_FULLNAME'",
+			"website": "'$DATABASE_WEBSITE'",
+			"description": "'$DATABASE_DESCRIPTION'"
+		}
+		';
+		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
+
+		echo "$DBFOLDER_GENOME: $DBFOLDER
+			howard databases --assembly='$ASSEMBLY' --download-genomes=$DBFOLDER_GENOME/$DATE;
+			-[ ! -s $DBFOLDER_GENOME/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_GENOME/STARK.database && chmod o+r $DBFOLDER_GENOME/STARK.database;
+			[ ! -e $DBFOLDER_GENOME/current ] || unlink $DBFOLDER_GENOME/current;
+			ln -snf $DBFOLDER_GENOME/$DATE $DBFOLDER_GENOME/current;
+			rm -rf $DB_TMP;
+		" >> $MK
+		MK_ALL="$MK_ALL $DBFOLDER_GENOME"
+	fi;
+fi;
+
 ##############################
 # GATK VARIANT RECALIBRATION #
 ##############################
@@ -504,6 +547,53 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 	fi;
 fi;
 
+#########
+# dbSNP #
+#########
+DATABASE="dbsnp"
+DATABASE_NAME="dbSNP"
+DATABASE_FULLNAME="Single-nucleotide polymorphism Database"
+DATABASE_WEBSITE="https://www.ncbi.nlm.nih.gov/snp/"
+DATABASE_DESCRIPTION="Human single nucleotide variations, microsatellites, and small-scale insertions and deletions along with publication, population frequency, molecular consequence, and genomic and RefSeq mapping information for both common variations and clinical mutations"
+
+if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
+	
+	DBFOLDER_DBSNP=$(dirname $DBSNP_DATABASES)
+
+	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DATE
+	mkdir -p $DB_TMP
+	chmod 0775 $DB_TMP;
+
+	if [ ! -e $DBFOLDER_DBSNP ] || (($UPDATE)); then
+		if (($UPDATE)); then
+			if [ -e $DBFOLDER_DBSNP ]; then mv -f $DBFOLDER_DBSNP $DBFOLDER_DBSNP.V$DATE; fi;
+		fi;
+
+		DB_INFOS_JSON='
+		{
+			"code": "'$DATABASE'",
+			"name": "'$DATABASE_NAME'",
+			"fullname": "'$DATABASE_FULLNAME'",
+			"website": "'$DATABASE_WEBSITE'",
+			"description": "'$DATABASE_DESCRIPTION'"
+		}
+		';
+		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
+	
+		echo "$DBFOLDER_DBSNP: $DBFOLDER
+			howard databases --assembly='$ASSEMBLY' --genomes-folder=$DBFOLDER_GENOME/current/ --download-dbsnp=$DB_TMP --download-dbsnp-vcf;
+			$TABIX -p vcf $DB_TMP/*/*.vcf.gz
+			cp $DB_TMP/*/*.vcf.gz $DBFOLDER_DBSNP/$DATE/$ASSEMBLY;
+			cp $DB_TMP/*/*.vcf.gz.tbi $DBFOLDER_DBSNP/$DATE/$ASSEMBLY;
+			-[ ! -s $DBFOLDER_DBSNP/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_DBSNP/STARK.database && chmod o+r $DBFOLDER_DBSNP/STARK.database;
+			[ ! -e $DBFOLDER_DBSNP/current ] || unlink $DBFOLDER_DBSNP/current;
+			ln -snf $DBFOLDER_DBSNP/$DATE $DBFOLDER_DBSNP/current;
+			rm -rf $DB_TMP;
+		" >> $MK
+		MK_ALL="$MK_ALL $DBFOLDER_DBSNP"
+	fi;
+fi;
+
 ##########
 # ARRIBA #
 ##########
@@ -739,186 +829,6 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 	fi;
 fi;
 
-###########
-# GENOMES #
-###########
-DATABASE="genomes"
-DATABASE_NAME="Genomes"
-DATABASE_FULLNAME="Reference Genome Sequences Assembly"
-DATABASE_WEBSITE="https://genome.ucsc.edu/"
-DATABASE_DESCRIPTION="Reference sequence was produced by the Genome Reference Consortium, and is composed of genomic sequence, primarily finished clones that were sequenced as part of the Human Genome Project"
-
-if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
-
-	DBFOLDER_GENOME=$DATABASES/genomes
-	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DATE
-	mkdir -p $DB_TMP
-	chmod 0775 $DB_TMP;
-
-	if [ ! -e $DBFOLDER_GENOME ] || (($UPDATE)); then
-		if (($UPDATE)); then
-			if [ -e $DBFOLDER_GENOME ]; then mv -f $DBFOLDER_GENOME $DBFOLDER_GENOME.V$DATE; fi;
-		fi;
-		
-		DB_INFOS_JSON='
-		{
-			"code": "'$DATABASE'",
-			"name": "'$DATABASE_NAME'",
-			"fullname": "'$DATABASE_FULLNAME'",
-			"website": "'$DATABASE_WEBSITE'",
-			"description": "'$DATABASE_DESCRIPTION'"
-		}
-		';
-		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
-
-		echo "$DBFOLDER_GENOME: $DBFOLDER
-			howard databases --assembly='$ASSEMBLY' --download-genomes=$DBFOLDER_GENOME/$DATE;
-			-[ ! -s $DBFOLDER_GENOME/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_GENOME/STARK.database && chmod o+r $DBFOLDER_GENOME/STARK.database;
-			[ ! -e $DBFOLDER_GENOME/current ] || unlink $DBFOLDER_GENOME/current;
-			ln -snf $DBFOLDER_GENOME/$DATE $DBFOLDER_GENOME/current;
-			rm -rf $DB_TMP;
-		" >> $MK
-		MK_ALL="$MK_ALL $DBFOLDER_GENOME"
-	fi;
-
-	############
-	# INDEXING #
-	############
-	# Samtools genome index
-	if [ ! -d $GENOME.hts-ref ]; then
-		if [ "$SAMTOOLS" != "" ]; then
-			echo "$GENOME.hts-ref: $GENOME
-				mkdir -p $GENOME.hts-ref;
-				perl $(dirname $SAMTOOLS)/seq_cache_populate.pl -root $GENOME.hts-ref $GENOME;
-			" >> $MK
-			MK_ALL="$MK_ALL $GENOME.hts-ref"
-		fi;
-	fi;
-
-	## BOWTIE index
-	if [ ! -e $(dirname $GENOME)/$ASSEMBLY.rev.1.bt2 ]; then
-		if [ "$BOWTIE" != "" ]; then
-			echo "$(dirname $GENOME)/$ASSEMBLY.rev.1.bt2: $GENOME
-				$(dirname $BOWTIE)/bowtie2-build --threads $THREADS --packed $GENOME $(dirname $GENOME)/$ASSEMBLY.rev;
-			" >> $MK
-			MK_ALL="$MK_ALL $(dirname $GENOME)/$ASSEMBLY.rev.1.bt2"
-		fi;
-	fi;
-
-	## BWA index
-	if [ ! -e $GENOME.bwt ]; then
-		if [ "$BWA" != "" ]; then
-			echo "$GENOME.bwt: $GENOME
-				$BWA index -a bwtsw $GENOME;
-			" >> $MK
-			MK_ALL="$MK_ALL $GENOME.bwt"
-		fi;
-	fi;
-
-	## BWA2 index
-	if [ ! -e $GENOME.bwt.2bit.64 ] && [ BWA2_INDEX == "1" ]; then
-		if [ "$BWA2" != "" ]; then
-			echo "$GENOME.bwt.2bit.64: $GENOME
-				$BWA2 index $GENOME;
-			" >> $MK
-			MK_ALL="$MK_ALL $GENOME.bwt.2bit.64"
-		fi;
-	fi;
-
-	## SAMTOOLS faidx index
-	if [ ! -e $GENOME.fai ]; then
-		if [ "$SAMTOOLS" != "" ]; then
-			echo "$GENOME.fai: $GENOME
-				$SAMTOOLS faidx $GENOME;
-			" >> $MK
-			MK_ALL="$MK_ALL $GENOME.fai"
-		fi;
-	fi;
-
-	## PICARD index
-	if [ ! -e $(dirname $GENOME)/$ASSEMBLY.dict ]; then
-		if [ "$PICARD" != "" ]; then
-			echo "$(dirname $GENOME)/$ASSEMBLY.dict: $GENOME
-				$JAVA -jar $PICARD CreateSequenceDictionary \
-					-REFERENCE $GENOME \
-					-OUTPUT $(dirname $GENOME)/$ASSEMBLY.dict;
-			" >> $MK
-			MK_ALL="$MK_ALL $(dirname $GENOME)/$ASSEMBLY.dict"
-		fi;
-	fi;
-
-	## GATK IMG
-	if [ ! -e $GENOME.img ]; then
-		if [ "$PICARD" != "" ]; then
-			echo "$GENOME.img: $GENOME
-				$JAVA -XX:+UseParallelGC -XX:ParallelGCThreads=$THREADS -jar $GATK4 BwaMemIndexImageCreator \
-					--input $GENOME \
-					--output $GENOME.img;
-			" >> $MK
-			MK_ALL="$MK_ALL $GENOME.img"
-		fi;	
-	fi;
-
-	## STAR index 
-	if [ ! -e $(dirname $GENOME)/$(basename $GENOME).star.idx ]; then
-		if [ "$STAR" != "" ]; then
-			echo "$(dirname $GENOME)/$(basename $GENOME).star.idx: $GENOME
-			mkdir -p $(dirname $GENOME)/$(basename $GENOME).star.idx;
-			STAR --runThreadN 4 --runMode genomeGenerate --genomeDir $(dirname $GENOME)/$(basename $GENOME).star.idx --genomeFastaFiles $GENOME --sjdbGTFfile $DBFOLDER_GENCODE/current/$ASSEMBLY/gencode.*annotation.gtf;
-			" >> $MK
-			MK_ALL="$MK_ALL $(dirname $GENOME)/$(basename $GENOME).star.idx"
-		fi;
-	fi;
-fi;
-
-#########
-# dbSNP #
-#########
-DATABASE="dbsnp"
-DATABASE_NAME="dbSNP"
-DATABASE_FULLNAME="Single-nucleotide polymorphism Database"
-DATABASE_WEBSITE="https://www.ncbi.nlm.nih.gov/snp/"
-DATABASE_DESCRIPTION="Human single nucleotide variations, microsatellites, and small-scale insertions and deletions along with publication, population frequency, molecular consequence, and genomic and RefSeq mapping information for both common variations and clinical mutations"
-
-if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
-	
-	DBFOLDER_DBSNP=$(dirname $DBSNP_DATABASES)
-
-	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DATE
-	mkdir -p $DB_TMP
-	chmod 0775 $DB_TMP;
-
-	if [ ! -e $DBFOLDER_DBSNP ] || (($UPDATE)); then
-		if (($UPDATE)); then
-			if [ -e $DBFOLDER_DBSNP ]; then mv -f $DBFOLDER_DBSNP $DBFOLDER_DBSNP.V$DATE; fi;
-		fi;
-
-		DB_INFOS_JSON='
-		{
-			"code": "'$DATABASE'",
-			"name": "'$DATABASE_NAME'",
-			"fullname": "'$DATABASE_FULLNAME'",
-			"website": "'$DATABASE_WEBSITE'",
-			"description": "'$DATABASE_DESCRIPTION'"
-		}
-		';
-		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
-	
-		echo "$DBFOLDER_DBSNP: $DBFOLDER
-			howard databases --assembly='$ASSEMBLY' --genomes-folder=$DBFOLDER_GENOME/current/ --download-dbsnp=$DB_TMP --download-dbsnp-vcf;
-			$TABIX -p vcf $DB_TMP/*/*.vcf.gz
-			cp $DB_TMP/*/*.vcf.gz $DBFOLDER_DBSNP/$DATE/$ASSEMBLY;
-			cp $DB_TMP/*/*.vcf.gz.tbi $DBFOLDER_DBSNP/$DATE/$ASSEMBLY;
-			-[ ! -s $DBFOLDER_DBSNP/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_DBSNP/STARK.database && chmod o+r $DBFOLDER_DBSNP/STARK.database;
-			[ ! -e $DBFOLDER_DBSNP/current ] || unlink $DBFOLDER_DBSNP/current;
-			ln -snf $DBFOLDER_DBSNP/$DATE $DBFOLDER_DBSNP/current;
-			rm -rf $DB_TMP;
-		" >> $MK
-		MK_ALL="$MK_ALL $DBFOLDER_DBSNP"
-	fi;
-fi;
-
-
 if [ ! -z "$MK_ALL" ]; then
 	echo "$DBFOLDER:
 		mkdir -p $DBFOLDER
@@ -966,6 +876,109 @@ if (($DEBUG)); then
 	echo "# LOG=$MK_LOG"
 	echo ""
 	cat -n $MK
+fi;
+
+############
+# INDEXING #
+############
+
+if [ -e $GENOME ]; then
+
+	MK_IDX_ALL=$TMP_DATABASES_DOWNLOAD_FOLDER/mk_idx
+	MK_IDX_ALL_LOG=$TMP_DATABASES_DOWNLOAD_FOLDER/mk_idx.log
+	MK_IDX_ALL_ERR=$TMP_DATABASES_DOWNLOAD_FOLDER/mk_idx.err
+	MK_IDX=""
+	> $MK_IDX_ALL
+
+	# Samtools genome index
+	if [ ! -d $GENOME.hts-ref ]; then
+		if [ "$SAMTOOLS" != "" ]; then
+			echo "$GENOME.hts-ref: $GENOME
+				mkdir -p $GENOME.hts-ref;
+				perl $(dirname $SAMTOOLS)/seq_cache_populate.pl -root $GENOME.hts-ref $GENOME;
+			" >> $MK_IDX_ALL
+			MK_IDX="$MK_IDX $GENOME.hts-ref"
+		fi;
+	fi;
+
+	## BOWTIE index
+	if [ ! -e $(dirname $GENOME)/$ASSEMBLY.rev.1.bt2 ]; then
+		if [ "$BOWTIE" != "" ]; then
+			echo "$(dirname $GENOME)/$ASSEMBLY.rev.1.bt2: $GENOME
+				$(dirname $BOWTIE)/bowtie2-build --threads $THREADS --packed $GENOME $(dirname $GENOME)/$ASSEMBLY.rev;
+			" >> $MK_IDX_ALL
+			MK_IDX="$MK_IDX $(dirname $GENOME)/$ASSEMBLY.rev.1.bt2"
+		fi;
+	fi;
+
+	## BWA index
+	if [ ! -e $GENOME.bwt ]; then
+		if [ "$BWA" != "" ]; then
+			echo "$GENOME.bwt: $GENOME
+				$BWA index -a bwtsw $GENOME;
+			" >> $MK_IDX_ALL
+			MK_IDX="$MK_IDX $GENOME.bwt"
+		fi;
+	fi;
+
+	## BWA2 index
+	if [ ! -e $GENOME.bwt.2bit.64 ] && [ BWA2_INDEX == "1" ]; then
+		if [ "$BWA2" != "" ]; then
+			echo "$GENOME.bwt.2bit.64: $GENOME
+				$BWA2 index $GENOME;
+			" >> $MK_IDX_ALL
+			MK_IDX="$MK_IDX $GENOME.bwt.2bit.64"
+		fi;
+	fi;
+
+	## PICARD index
+	if [ ! -e $(dirname $GENOME)/$ASSEMBLY.dict ]; then
+		if [ "$PICARD" != "" ]; then
+			echo "$(dirname $GENOME)/$ASSEMBLY.dict: $GENOME
+				$JAVA -jar $PICARD CreateSequenceDictionary \
+					-REFERENCE $GENOME \
+					-OUTPUT $(dirname $GENOME)/$ASSEMBLY.dict;
+			" >> $MK_IDX_ALL
+			MK_IDX="$MK_IDX $(dirname $GENOME)/$ASSEMBLY.dict"
+		fi;
+	fi;
+
+	## GATK IMG
+	if [ ! -e $GENOME.img ]; then
+		if [ "$PICARD" != "" ]; then
+			echo "$GENOME.img: $GENOME
+				$JAVA -XX:+UseParallelGC -XX:ParallelGCThreads=$THREADS -jar $GATK4 BwaMemIndexImageCreator \
+					--input $GENOME \
+					--output $GENOME.img;
+			" >> $MK_IDX_ALL
+			MK_IDX="$MK_IDX $GENOME.img"
+		fi;	
+	fi;
+
+	## STAR index 
+	if [ ! -e $(dirname $GENOME)/$(basename $GENOME).star.idx ]; then
+		if [ "$STAR" != "" ]; then
+			echo "$(dirname $GENOME)/$(basename $GENOME).star.idx: $GENOME
+			mkdir -p $(dirname $GENOME)/$(basename $GENOME).star.idx;
+			STAR --runThreadN 4 --runMode genomeGenerate --genomeDir $(dirname $GENOME)/$(basename $GENOME).star.idx --genomeFastaFiles $GENOME --sjdbGTFfile $DBFOLDER_GENCODE/current/$ASSEMBLY/gencode.*annotation.gtf;
+			" >> $MK_IDX_ALL
+			MK_IDX="$MK_IDX $(dirname $GENOME)/$(basename $GENOME).star.idx"
+		fi;
+	fi;
+
+	if [ ! -z "$MK_IDX" ]; then
+		echo "all: $MK_IDX
+			echo '#[INFO] Indexing genome: $DATE' >> $DATABASES/STARK.download.releases
+		" >> $MK_IDX_ALL
+	
+		echo "#[INFO] GENOME INDEXING..."
+		make -k -j $THREADS $MK_OPTION -f $MK_IDX_ALL all 1>$MK_IDX_ALL_LOG 2>$MK_IDX_ALL_ERR
+		if (($(cat $MK_IDX_ALL_LOG $MK_IDX_ALL_ERR | grep "\*\*\*" -c))); then
+			echo "#[ERROR] Genome indexing failed"
+			exit 1
+		fi;
+	fi;
+
 fi;
 
 if ((0)); then
