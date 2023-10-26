@@ -260,13 +260,13 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 			(($VERBOSE)) && echo ""
 			(($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME/$GATK_RESOURCE' release '$DATE' for '$ASSEMBLY'"
 
-			if [ $ASSEMBLY == "hg38" ]; then
-				DBFOLDER_GATK_URL="https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0"
-			elif [ $ASSEMBLY == "hg19" ]; then
-				DBFOLDER_GATK_URL="https://data.broadinstitute.org/snowman/hg19/variant_calling/vqsr_resources/Exome/v2"
-			else
-				DBFOLDER_GATK_URL="https://data.broadinstitute.org/snowman/$ASSEMBLY/variant_calling/vqsr_resources/Exome/v2"
-			fi;
+			#if [ $ASSEMBLY == "hg38" ]; then
+			#	DBFOLDER_GATK_URL="https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0"
+			#elif [ $ASSEMBLY == "hg19" ]; then
+			#	DBFOLDER_GATK_URL="https://data.broadinstitute.org/snowman/hg19/variant_calling/vqsr_resources/Exome/v2"
+			#else
+			#	DBFOLDER_GATK_URL="https://data.broadinstitute.org/snowman/$ASSEMBLY/variant_calling/vqsr_resources/Exome/v2"
+			#fi;
 
 			DBFOLDER_GATK_URL_FILE="$DB_TARGET_FILE"
 			DB_TARGET_FILE_LIST="$DB_TARGET_FILE_LIST $DB_TARGET_FILE"
@@ -452,57 +452,13 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
 	
 		echo "$DBFOLDER_ANNOVAR: $DBFOLDER
-			howard databases --assembly='$ASSEMBLY' --download-annovar=$DBFOLDER_ANNOVAR/$DATE --download-annovar-files='refGene,gnomad_exome,cosmic70,dbnsfp42a,clinvar_202*,nci60' 
+			howard databases --assembly='$ASSEMBLY' --download-annovar=$DBFOLDER_ANNOVAR/$DATE --download-annovar-files='$ANNOVAR_FILES'
 			-[ ! -s $DBFOLDER_ANNOVAR/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_ANNOVAR/STARK.database && chmod o+r $DBFOLDER_ANNOVAR/STARK.database 
 			[ ! -e $DBFOLDER_ANNOVAR/current ] || unlink $DBFOLDER_ANNOVAR/current
 			ln -snf $DBFOLDER_ANNOVAR/$DATE $DBFOLDER_ANNOVAR/current
 			rm -rf $DB_TMP;
 		" >> $MK
 		MK_ALL="$MK_ALL $DBFOLDER_ANNOVAR"
-	fi;
-fi;
-
-#########
-# dbSNP #
-#########
-DATABASE="dbsnp"
-DATABASE_NAME="dbSNP"
-DATABASE_FULLNAME="Single-nucleotide polymorphism Database"
-DATABASE_WEBSITE="https://www.ncbi.nlm.nih.gov/snp/"
-DATABASE_DESCRIPTION="Human single nucleotide variations, microsatellites, and small-scale insertions and deletions along with publication, population frequency, molecular consequence, and genomic and RefSeq mapping information for both common variations and clinical mutations"
-
-if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
-	
-	DBFOLDER_DBSNP=$(dirname $DBSNP_DATABASES)
-
-	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DATE
-	mkdir -p $DB_TMP
-	chmod 0775 $DB_TMP;
-
-	if [ ! -e $DBFOLDER_DBSNP ] || (($UPDATE)); then
-		if (($UPDATE)); then
-			if [ -e $DBFOLDER_DBSNP ]; then mv -f $DBFOLDER_DBSNP $DBFOLDER_DBSNP.V$DATE; fi;
-		fi;
-
-		DB_INFOS_JSON='
-		{
-			"code": "'$DATABASE'",
-			"name": "'$DATABASE_NAME'",
-			"fullname": "'$DATABASE_FULLNAME'",
-			"website": "'$DATABASE_WEBSITE'",
-			"description": "'$DATABASE_DESCRIPTION'"
-		}
-		';
-		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
-	
-		echo "$DBFOLDER_DBSNP: $DBFOLDER
-			howard databases --assembly='$ASSEMBLY' --download-dbsnp=$DBFOLDER_DBSNP/$DATE --download-dbsnp-vcf;
-			-[ ! -s $DBFOLDER_DBSNP/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_DBSNP/STARK.database && chmod o+r $DBFOLDER_DBSNP/STARK.database ;
-			[ ! -e $DBFOLDER_DBSNP/current ] || unlink $DBFOLDER_DBSNP/current;
-			ln -snf $DBFOLDER_DBSNP/$DATE $DBFOLDER_DBSNP/current;
-			rm -rf $DB_TMP;
-		" >> $MK
-		MK_ALL="$MK_ALL $DBFOLDER_DBSNP"
 	fi;
 fi;
 
@@ -569,7 +525,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		(($VERBOSE)) && echo ""
 		(($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME' release '$DATE' for ' [$ASSEMBLY]"
 
-		ARRIBA_CURRENT="https://github.com/suhrig/arriba/releases/download/v2.4.0/arriba_v2.4.0.tar.gz";
+		#ARRIBA_CURRENT="https://github.com/suhrig/arriba/releases/download/v2.4.0/arriba_v2.4.0.tar.gz";
 
 		if (($UPDATE)); then
 			if [ -e $DBFOLDER_ARRIBA ]; then mv -f $DBFOLDER_ARRIBA $DBFOLDER_ARRIBA.V$DATE; fi;
@@ -644,11 +600,11 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		(($VERBOSE)) && echo ""
 		(($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME' release '$DATE' for [$ASSEMBLY]"
 
-	if [ $ASSEMBLY == "hg19" ] ; then CTAT_CURRENT="https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/GRCh37_gencode_v19_CTAT_lib_Mar012021.plug-n-play.tar.gz"; fi;
-	if [ $ASSEMBLY == "hg38" ] ; then CTAT_CURRENT="https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/GRCh38_gencode_v37_CTAT_lib_Mar012021.plug-n-play.tar.gz"; fi;
+	#if [ $ASSEMBLY == "hg19" ] ; then CTAT_CURRENT="https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/GRCh37_gencode_v19_CTAT_lib_Mar012021.plug-n-play.tar.gz"; fi;
+	#if [ $ASSEMBLY == "hg38" ] ; then CTAT_CURRENT="https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/GRCh38_gencode_v37_CTAT_lib_Mar012021.plug-n-play.tar.gz"; fi;
 		
 		# Replace AnnotFilterRule.pm with a valid one after unpacking CTAT
-		CTAT_PM="https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/__genome_libs_StarFv1.10/AnnotFilterRule.pm"
+		#CTAT_PM="https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/__genome_libs_StarFv1.10/AnnotFilterRule.pm"
 
 		CTAT_DATE=$(curl -s -I $CTAT_CURRENT | grep "Last-Modified: " | sed "s/Last-Modified: //g" | sed "s/\r$//g");
 		CTAT_DATE_RELEASE=$(date -d "$CTAT_DATE");
@@ -706,7 +662,6 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 	fi;
 fi;
 
-
 ###########
 # GENCODE #
 ###########
@@ -728,9 +683,9 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		(($VERBOSE)) && echo ""
 		(($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME' release '$DATE' for [$ASSEMBLY]"
 	# for hg19 the last gencode version is v19
-	if [ $ASSEMBLY == "hg19" ] ; then GENCODE_CURRENT="https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_19/gencode.v19.annotation.gtf.gz"; fi;
+	#if [ $ASSEMBLY == "hg19" ] ; then GENCODE_CURRENT="https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_19/gencode.v19.annotation.gtf.gz"; fi;
 	# for hg38 the first gencode version is v20 ; current version (10/2023) is v44
-	if [ $ASSEMBLY == "hg38" ] ; then GENCODE_CURRENT="https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_44/gencode.v44.primary_assembly.annotation.gtf.gz"; fi;
+	#if [ $ASSEMBLY == "hg38" ] ; then GENCODE_CURRENT="https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_44/gencode.v44.primary_assembly.annotation.gtf.gz"; fi;
 		GENCODE_DATE=$(curl -s -I $GENCODE_CURRENT | grep "Last-Modified: " | sed "s/Last-Modified: //g" | sed "s/\r$//g");
 		GENCODE_DATE_RELEASE=$(date -d "$GENCODE_DATE");
 
@@ -860,8 +815,8 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		fi;
 	fi;
 
-	## BWA2 index TODO make it optional
-	if [ ! -e $GENOME.bwt.2bit.64 ]; then
+	## BWA2 index
+	if [ ! -e $GENOME.bwt.2bit.64 ] && [ BWA2_INDEX == "1" ]; then
 		if [ "$BWA2" != "" ]; then
 			echo "$GENOME.bwt.2bit.64: $GENOME
 				$BWA2 index $GENOME;
@@ -870,7 +825,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		fi;
 	fi;
 
-	## SAMTOOLS index
+	## SAMTOOLS faidx index
 	if [ ! -e $GENOME.fai ]; then
 		if [ "$SAMTOOLS" != "" ]; then
 			echo "$GENOME.fai: $GENOME
@@ -909,12 +864,57 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		if [ "$STAR" != "" ]; then
 			echo "$(dirname $GENOME)/$(basename $GENOME).star.idx: $GENOME
 			mkdir -p $(dirname $GENOME)/$(basename $GENOME).star.idx;
-			STAR --runThreadN $THREADS --runMode genomeGenerate --genomeDir $(dirname $GENOME)/$(basename $GENOME).star.idx --genomeFastaFiles $GENOME --sjdbGTFfile $DBFOLDER_GENCODE/current/$ASSEMBLY/gencode.*annotation.gtf;
+			STAR --runThreadN 4 --runMode genomeGenerate --genomeDir $(dirname $GENOME)/$(basename $GENOME).star.idx --genomeFastaFiles $GENOME --sjdbGTFfile $DBFOLDER_GENCODE/current/$ASSEMBLY/gencode.*annotation.gtf;
 			" >> $MK
 			MK_ALL="$MK_ALL $(dirname $GENOME)/$(basename $GENOME).star.idx"
 		fi;
 	fi;
 fi;
+
+#########
+# dbSNP #
+#########
+DATABASE="dbsnp"
+DATABASE_NAME="dbSNP"
+DATABASE_FULLNAME="Single-nucleotide polymorphism Database"
+DATABASE_WEBSITE="https://www.ncbi.nlm.nih.gov/snp/"
+DATABASE_DESCRIPTION="Human single nucleotide variations, microsatellites, and small-scale insertions and deletions along with publication, population frequency, molecular consequence, and genomic and RefSeq mapping information for both common variations and clinical mutations"
+
+if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
+	
+	DBFOLDER_DBSNP=$(dirname $DBSNP_DATABASES)
+
+	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DATE
+	mkdir -p $DB_TMP
+	chmod 0775 $DB_TMP;
+
+	if [ ! -e $DBFOLDER_DBSNP ] || (($UPDATE)); then
+		if (($UPDATE)); then
+			if [ -e $DBFOLDER_DBSNP ]; then mv -f $DBFOLDER_DBSNP $DBFOLDER_DBSNP.V$DATE; fi;
+		fi;
+
+		DB_INFOS_JSON='
+		{
+			"code": "'$DATABASE'",
+			"name": "'$DATABASE_NAME'",
+			"fullname": "'$DATABASE_FULLNAME'",
+			"website": "'$DATABASE_WEBSITE'",
+			"description": "'$DATABASE_DESCRIPTION'"
+		}
+		';
+		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
+	
+		echo "$DBFOLDER_DBSNP: $DBFOLDER
+			howard databases --assembly='$ASSEMBLY' --genomes-folder=$DBFOLDER_GENOME/current/ --download-dbsnp=$DBFOLDER_DBSNP/$DATE --download-dbsnp-vcf;
+			-[ ! -s $DBFOLDER_DBSNP/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_DBSNP/STARK.database && chmod o+r $DBFOLDER_DBSNP/STARK.database ;
+			[ ! -e $DBFOLDER_DBSNP/current ] || unlink $DBFOLDER_DBSNP/current;
+			ln -snf $DBFOLDER_DBSNP/$DATE $DBFOLDER_DBSNP/current;
+			rm -rf $DB_TMP;
+		" >> $MK
+		MK_ALL="$MK_ALL $DBFOLDER_DBSNP"
+	fi;
+fi;
+
 
 if [ ! -z "$MK_ALL" ]; then
 	echo "$DBFOLDER:

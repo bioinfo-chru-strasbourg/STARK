@@ -30,6 +30,39 @@ export DICT
 #export REF_CACHE_FOLDER=$GENOME.hts-ref;
 #export REF_CACHE="$REF_CACHE_FOLDER/%2s/%2s/%s";
 
+# Indexing genome with BWA2
+BWA2_INDEX=1 # 1 = true
+export BWA2_INDEX
+
+# Databases URLs
+ARRIBA_CURRENT="https://github.com/suhrig/arriba/releases/download/v2.4.0/arriba_v2.4.0.tar.gz";
+export ARRIBA_CURRENT
+
+if [ $ASSEMBLY == "hg19" ] ; then CTAT_CURRENT="https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/GRCh37_gencode_v19_CTAT_lib_Mar012021.plug-n-play.tar.gz"; fi;
+if [ $ASSEMBLY == "hg38" ] ; then CTAT_CURRENT="https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/GRCh38_gencode_v37_CTAT_lib_Mar012021.plug-n-play.tar.gz"; fi;
+CTAT_PM="https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/__genome_libs_StarFv1.10/AnnotFilterRule.pm"
+export CTAT_CURRENT
+export CTAT_PM
+
+# for hg19 the last gencode version is v19
+if [ $ASSEMBLY == "hg19" ] ; then GENCODE_CURRENT="https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_19/gencode.v19.annotation.gtf.gz"; fi;
+# for hg38 the first gencode version is v20 ; current version (10/2023) is v44
+if [ $ASSEMBLY == "hg38" ] ; then GENCODE_CURRENT="https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_44/gencode.v44.primary_assembly.annotation.gtf.gz"; fi;
+export GENCODE_CURRENT
+
+if [ $ASSEMBLY == "hg38" ]; then
+	DBFOLDER_GATK_URL="https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0"
+elif [ $ASSEMBLY == "hg19" ]; then
+	DBFOLDER_GATK_URL="https://data.broadinstitute.org/snowman/hg19/variant_calling/vqsr_resources/Exome/v2"
+else
+	DBFOLDER_GATK_URL="https://data.broadinstitute.org/snowman/$ASSEMBLY/variant_calling/vqsr_resources/Exome/v2"
+fi;
+export DBFOLDER_GATK_URL
+
+# ANNOVAR Files
+ANNOVAR_FILES="refGene,gnomad_exome,cosmic70,dbnsfp42a,clinvar_202*,nci60"
+export ANNOVAR_FILES
+
 # refGene/refSeq
 #################
 DBFOLDER_REFGENE=$DBFOLDER/refGene
@@ -162,7 +195,7 @@ fi;
 export SNPEFF_DATABASES
 DATABASES_CONFIG_LIST=$DATABASES_CONFIG_LIST" SNPEFF_DATABASES"
 
-# Arriba STAR Fusion Gencode Databases Configuration
+# Arriba STAR-Fusion Gencode Databases Configuration
 ####################################################
 
 # Arriba
