@@ -229,6 +229,10 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 	mkdir -p $DB_TMP
 	chmod 0775 $DB_TMP;
 
+	if [ ! -e $DBFOLDER_GENOME/current ]; then
+		mkdir -p $DBFOLDER_GENOME/current;
+	fi;
+
 	if [ ! -e $DBFOLDER_GENOME/current/$ASSEMBLY ] || (($UPDATE)); then
 		if (($UPDATE)); then
 			if [ -e $DBFOLDER_GENOME/current/$ASSEMBLY ]; then mv -f $DBFOLDER_GENOME/current/$ASSEMBLY $DBFOLDER_GENOME.V$DATE; fi;
@@ -353,6 +357,10 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 	GATK_RESOURCE_NB=0
 	MK_DBFOLDER_GATK_ALL=""
 	> $MK.existing_gatk_db
+
+	if [ ! -e $DBFOLDER_GATK/current ]; then
+		mkdir -p $DBFOLDER_GATK/current;
+	fi;
 
 	for GATK_RESOURCE in $GATK_DATABASES_LIST; do
 		DB_TARGET_GATK=$DBFOLDER_GATK/current/$ASSEMBLY/$(echo $GATK_RESOURCE | cut -d: -f2);		# /STARK/databases/gatk/current/hg19/1000G_omni2.5.b37.vcf.gz
@@ -497,7 +505,11 @@ DATABASE_DESCRIPTION="Genetic variant annotation and functional effect predictio
 
 if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
 
-	DBFOLDER_SNPEFF=$(dirname $SNPEFF_DATABASES) # $DBFOLDER/snpeff
+	DBFOLDER_SNPEFF=$(dirname $SNPEFF_DATABASES) 
+
+	if [ ! -e $DBFOLDER_SNPEFF/current ]; then
+		mkdir -p $DBFOLDER_SNPEFF/current;
+	fi;
 
 	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DATE
 	mkdir -p $DB_TMP
@@ -543,6 +555,10 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 	
 	DBFOLDER_ANNOVAR=$(dirname $ANNOVAR_DATABASES)
 
+	if [ ! -e $DBFOLDER_ANNOVAR/current ]; then
+		mkdir -p $DBFOLDER_ANNOVAR/current;
+	fi;
+
 	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DATE
 	mkdir -p $DB_TMP
 	chmod 0775 $DB_TMP;
@@ -585,6 +601,12 @@ DATABASE_DESCRIPTION="Known human protein-coding and non-protein-coding genes ta
 
 if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
 	
+	DBFOLDER_REFGENE=$DBFOLDER/refGene
+
+	if [ ! -e $DBFOLDER_REFGENE/current ]; then
+		mkdir -p $DBFOLDER_REFGENE/current;
+	fi;
+
 	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DATE
 	mkdir -p $DB_TMP
 	chmod 0775 $DB_TMP;
@@ -628,6 +650,10 @@ DATABASE_DESCRIPTION="Human single nucleotide variations, microsatellites, and s
 if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
 	
 	DBFOLDER_DBSNP=$(dirname $DBSNP_DATABASES)
+
+	if [ ! -e $DBFOLDER_DBSNP/current ]; then
+		mkdir -p $DBFOLDER_DBSNP/current;
+	fi;
 
 	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DATE
 	mkdir -p $DB_TMP
@@ -677,6 +703,10 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 	
 	DBFOLDER_DBNSFP=$(dirname $DBNSFP_DATABASES)
 
+	if [ ! -e $DBFOLDER_DBNSFP/current ]; then
+		mkdir -p $DBFOLDER_DBNSFP/current;
+	fi;
+
 	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DATE
 	mkdir -p $DB_TMP
 	chmod 0775 $DB_TMP;
@@ -721,6 +751,10 @@ DATABASE_DESCRIPTION="Arriba is a command-line tool for the detection of gene fu
 
 if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
 	DBFOLDER_ARRIBA=$(dirname $ARRIBA_DATABASES)
+
+	if [ ! -e $DBFOLDER_ARRIBA/current ]; then
+		mkdir -p $DBFOLDER_ARRIBA/current;
+	fi;
 
 	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DATE
 	mkdir -p $DB_TMP
@@ -795,6 +829,10 @@ DATABASE_DESCRIPTION=" CTAT Genome Lib is a resource collection used by the Trin
 
 if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
 	DBFOLDER_CTAT=$(dirname $CTAT_DATABASES)
+
+	if [ ! -e $DBFOLDER_CTAT/current ]; then
+		mkdir -p $DBFOLDER_CTAT/current;
+	fi;
 
 	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DATE
 	mkdir -p $DB_TMP
@@ -872,6 +910,10 @@ DATABASE_DESCRIPTION=" The goal of the GENCODE project is to identify and classi
 if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
 
 	DBFOLDER_GENCODE=$(dirname $GENCODE_DATABASES)
+
+	if [ ! -e $DBFOLDER_GENCODE/current ]; then
+		mkdir -p $DBFOLDER_GENCODE/current;
+	fi;
 
 	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DATE
 	mkdir -p $DB_TMP
