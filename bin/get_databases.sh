@@ -249,14 +249,14 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		';
 		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
 
-		echo "$DBFOLDER_GENOME: $DBFOLDER
+		echo "$GENOME: $DBFOLDER_GENOME
 			howard databases --assembly='$ASSEMBLY' --download-genomes=$DBFOLDER_GENOME/$DATE;
 			-[ ! -s $DBFOLDER_GENOME/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_GENOME/STARK.database && chmod o+r $DBFOLDER_GENOME/STARK.database;
 			[ ! -e $DBFOLDER_GENOME/current/$ASSEMBLY ] || unlink $DBFOLDER_GENOME/current/$ASSEMBLY;
 			ln -snf $DBFOLDER_GENOME/$DATE/$ASSEMBLY $DBFOLDER_GENOME/current/$ASSEMBLY;
 			rm -rf $DB_TMP;
 		" >> $MK
-		MK_ALL="$MK_ALL $DBFOLDER_GENOME"
+		MK_ALL="$MK_ALL $GENOME"
 	fi;
 
 ############
