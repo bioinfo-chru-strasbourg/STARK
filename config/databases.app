@@ -47,9 +47,16 @@ export CTAT_CURRENT
 export CTAT_PM
 
 # for hg19 the last gencode version is v19
-if [ $ASSEMBLY == "hg19" ] ; then GENCODE_CURRENT="https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_19/gencode.v19.annotation.gtf.gz"; fi;
+if [ $ASSEMBLY == "hg19" ] ; then
+	GENCODE_VERSION="19"
+	GENCODE_CURRENT="https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_$GENCODE_VERSION/gencode.v$GENCODE_VERSION.annotation.gtf.gz";
+fi;
 # for hg38 the first gencode version is v20 ; current version (10/2023) is v44
-if [ $ASSEMBLY == "hg38" ] ; then GENCODE_CURRENT="https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_44/gencode.v44.primary_assembly.annotation.gtf.gz"; fi;
+if [ $ASSEMBLY == "hg38" ] ; then 
+	GENCODE_VERSION="44"
+	GENCODE_CURRENT="https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_$GENCODE_VERSION/gencode.v$GENCODE_VERSION.primary_assembly.annotation.gtf.gz";
+fi;
+export GENCODE_VERSION
 export GENCODE_CURRENT
 
 # GATK VARIANT RECALIBRATION URLs

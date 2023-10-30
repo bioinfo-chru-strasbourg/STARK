@@ -223,15 +223,14 @@ DATABASE_WEBSITE="https://genome.ucsc.edu/"
 DATABASE_DESCRIPTION="Reference sequence was produced by the Genome Reference Consortium, and is composed of genomic sequence, primarily finished clones that were sequenced as part of the Human Genome Project"
 
 if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
-
 	DBFOLDER_GENOME=$DATABASES/genomes
+		if [ ! -e $DBFOLDER_GENOME/current ]; then
+		mkdir -p $DBFOLDER_GENOME/current;
+	fi;
+	
 	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DATE
 	mkdir -p $DB_TMP
 	chmod 0775 $DB_TMP;
-
-	if [ ! -e $DBFOLDER_GENOME/current ]; then
-		mkdir -p $DBFOLDER_GENOME/current;
-	fi;
 
 	if [ ! -e $DBFOLDER_GENOME/current/$ASSEMBLY ] || (($UPDATE)); then
 		if (($UPDATE)); then
@@ -331,11 +330,11 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 	## STAR index 
 	if [ ! -e $(dirname $GENOME)/$(basename $GENOME).star.idx ]; then
 		if [ "$STAR" != "" ]; then
-			echo "$(dirname $GENOME)/$(basename $GENOME).star.idx: $GENOME
-			mkdir -p $(dirname $GENOME)/$(basename $GENOME).star.idx;
-			STAR --runThreadN 4 --runMode genomeGenerate --genomeDir $(dirname $GENOME)/$(basename $GENOME).star.idx --genomeFastaFiles $GENOME --sjdbGTFfile $DBFOLDER_GENCODE/current/$ASSEMBLY/gencode.*annotation.gtf;
-			" >> $MK
-			MK_ALL="$MK_ALL $(dirname $GENOME)/$(basename $GENOME).star.idx"
+				echo "$(dirname $GENOME)/$(basename $GENOME).star.idx: $GENOME $DBFOLDER_GENCODE/current/$ASSEMBLY/gencode.v$GENCODE_VERSION.annotation.gtf
+				mkdir -p $(dirname $GENOME)/$(basename $GENOME).star.idx;
+				STAR --runThreadN 4 --runMode genomeGenerate --genomeDir $(dirname $GENOME)/$(basename $GENOME).star.idx --genomeFastaFiles $GENOME --sjdbGTFfile $DBFOLDER_GENCODE/current/$ASSEMBLY/gencode.v$GENCODE_VERSION.annotation.gtf;
+				" >> $MK
+				MK_ALL="$MK_ALL $(dirname $GENOME)/$(basename $GENOME).star.idx"
 		fi;
 	fi;
 
@@ -506,7 +505,6 @@ DATABASE_DESCRIPTION="Genetic variant annotation and functional effect predictio
 if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
 
 	DBFOLDER_SNPEFF=$(dirname $SNPEFF_DATABASES) 
-
 	if [ ! -e $DBFOLDER_SNPEFF/current ]; then
 		mkdir -p $DBFOLDER_SNPEFF/current;
 	fi;
@@ -554,7 +552,6 @@ DATABASE_DESCRIPTION="ANNOVAR is an efficient software tool to utilize update-to
 if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
 	
 	DBFOLDER_ANNOVAR=$(dirname $ANNOVAR_DATABASES)
-
 	if [ ! -e $DBFOLDER_ANNOVAR/current ]; then
 		mkdir -p $DBFOLDER_ANNOVAR/current;
 	fi;
@@ -602,7 +599,6 @@ DATABASE_DESCRIPTION="Known human protein-coding and non-protein-coding genes ta
 if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
 	
 	DBFOLDER_REFGENE=$DBFOLDER/refGene
-
 	if [ ! -e $DBFOLDER_REFGENE/current ]; then
 		mkdir -p $DBFOLDER_REFGENE/current;
 	fi;
@@ -650,7 +646,6 @@ DATABASE_DESCRIPTION="Human single nucleotide variations, microsatellites, and s
 if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
 	
 	DBFOLDER_DBSNP=$(dirname $DBSNP_DATABASES)
-
 	if [ ! -e $DBFOLDER_DBSNP/current ]; then
 		mkdir -p $DBFOLDER_DBSNP/current;
 	fi;
@@ -702,7 +697,6 @@ DATABASE_DESCRIPTION="dbNSFP is a database developed for functional prediction a
 if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
 	
 	DBFOLDER_DBNSFP=$(dirname $DBNSFP_DATABASES)
-
 	if [ ! -e $DBFOLDER_DBNSFP/current ]; then
 		mkdir -p $DBFOLDER_DBNSFP/current;
 	fi;
@@ -750,8 +744,8 @@ DATABASE_WEBSITE="https://github.com/suhrig/arriba/"
 DATABASE_DESCRIPTION="Arriba is a command-line tool for the detection of gene fusions from RNA-Seq data"
 
 if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
+	
 	DBFOLDER_ARRIBA=$(dirname $ARRIBA_DATABASES)
-
 	if [ ! -e $DBFOLDER_ARRIBA/current ]; then
 		mkdir -p $DBFOLDER_ARRIBA/current;
 	fi;
@@ -828,8 +822,8 @@ DATABASE_WEBSITE="https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/"
 DATABASE_DESCRIPTION=" CTAT Genome Lib is a resource collection used by the Trinity Cancer Transcriptome Analysis Toolkit (CTAT). This CTAT-genome-lib-builder system is leveraged for preparing a target genome and annotation set for use with Trinity CTAT tools, including fusion transcript detection and cancer mutation discovery"
 
 if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
-	DBFOLDER_CTAT=$(dirname $CTAT_DATABASES)
 
+	DBFOLDER_CTAT=$(dirname $CTAT_DATABASES)
 	if [ ! -e $DBFOLDER_CTAT/current ]; then
 		mkdir -p $DBFOLDER_CTAT/current;
 	fi;
@@ -910,7 +904,6 @@ DATABASE_DESCRIPTION=" The goal of the GENCODE project is to identify and classi
 if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
 
 	DBFOLDER_GENCODE=$(dirname $GENCODE_DATABASES)
-
 	if [ ! -e $DBFOLDER_GENCODE/current ]; then
 		mkdir -p $DBFOLDER_GENCODE/current;
 	fi;
@@ -994,9 +987,9 @@ if [ ! -z "$MK_ALL" ]; then
 			echo "#[INFO] THAT CAN TAKE SOME TIME..."
 			if (($VERBOSE)) || (($DEBUG)); then
 				if (($DEBUG)); then
-					make -k -j $THREADS $MK_OPTION -f $MK all;
+					make -k -j $THREADS $MK_OPTION -f $MK all 1>$MK_LOG 2>$MK_ERR;
 				elif (($VERBOSE)); then
-					make -k -j $THREADS $MK_OPTION -f $MK all;
+					make -k -j $THREADS $MK_OPTION -f $MK all 1>$MK_LOG 2>$MK_ERR;
 				fi;
 			else
 				make -k -j $THREADS $MK_OPTION -f $MK all 1>$MK_LOG 2>$MK_ERR;
