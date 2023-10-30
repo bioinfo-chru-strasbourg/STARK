@@ -294,12 +294,14 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 	fi;
 
 	## BWA2 index
-	if [ ! -e $GENOME.bwt.2bit.64 ] && [ BWA2_INDEX == "1" ]; then
+	if [ ! -e $GENOME.bwt.2bit.64 ]; then 
 		if [ "$BWA2" != "" ]; then
-			echo "$GENOME.bwt.2bit.64: $GENOME
-				$BWA2 index $GENOME;
-			" >> $MK
-			MK_ALL="$MK_ALL $GENOME.bwt.2bit.64"
+			if [ BWA2_INDEX == "1" ]; then
+				echo "$GENOME.bwt.2bit.64: $GENOME
+					$BWA2 index $GENOME;
+				" >> $MK
+				MK_ALL="$MK_ALL $GENOME.bwt.2bit.64"
+			fi;
 		fi;
 	fi;
 
@@ -478,17 +480,17 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		cat $MK.existing_gatk_db >> $MK
 		MK_DBFOLDER_GATK_ALL="$MK_DBFOLDER_GATK_ALL $MK_DBFOLDER_GATK_ALL_existing_gatk_db"
 		MK_ALL="$MK_ALL $MK_ALL_existing_gatk_db" 
-		echo "$DBFOLDER_GATK/current/$ASSEMBLY: $MK_DBFOLDER_GATK_ALL
+		echo "$DBFOLDER_GATK/current/$ASSEMBLY/success: $MK_DBFOLDER_GATK_ALL
 			mkdir -p $DBFOLDER_GATK/$DATE/$ASSEMBLY/original
 			chmod 0775 $DBFOLDER_GATK/$DATE/$ASSEMBLY -R
 			-[ ! -s $DBFOLDER_GATK/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_GATK/STARK.database
 			cp $DB_TMP/STARK.database.release $DBFOLDER_GATK/$DATE/$ASSEMBLY/
 			chmod o+r $DBFOLDER_GATK/STARK.database $DBFOLDER_GATK/$DATE/$ASSEMBLY/STARK.database.release
 			[ ! -e $DBFOLDER_GATK/current/$ASSEMBLY ] || unlink $DBFOLDER_GATK/current/$ASSEMBLY
-			ln -snf $DBFOLDER_GATK/$DATE $DBFOLDER_GATK/current/$ASSEMBLY
+			ln -snf $DBFOLDER_GATK/$DATE/$ASSEMBLY $DBFOLDER_GATK/current/$ASSEMBLY
 			rm -rf $DB_TMP;
 		" >> $MK
-		MK_ALL="$MK_ALL $DBFOLDER_GATK/current/$ASSEMBLY" 
+		MK_ALL="$MK_ALL $DBFOLDER_GATK/current/$ASSEMBLY/success" 
 	fi;
 fi;
 
@@ -529,14 +531,14 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		';
 		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
 
-		echo "$DBFOLDER_SNPEFF: $DBFOLDER
+		echo "$DBFOLDER_SNPEFF/success: $DBFOLDER
 			howard databases --assembly='$ASSEMBLY' --download-snpeff=$DBFOLDER_SNPEFF/$DATE
 			-[ ! -s $DBFOLDER_SNPEFF/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_SNPEFF/STARK.database && chmod o+r $DBFOLDER_SNPEFF/STARK.database 
 			[ ! -e $DBFOLDER_SNPEFF/current/$ASSEMBLY ] || unlink $DBFOLDER_SNPEFF/current/$ASSEMBLY
 			ln -snf $DBFOLDER_SNPEFF/$DATE/$ASSEMBLY $DBFOLDER_SNPEFF/current/$ASSEMBLY
 			rm -rf $DB_TMP;
 		" >> $MK
-		MK_ALL="$MK_ALL $DBFOLDER_SNPEFF"
+		MK_ALL="$MK_ALL $DBFOLDER_SNPEFF/success"
 	fi;
 fi;
 
@@ -576,14 +578,14 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		';
 		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
 	
-		echo "$DBFOLDER_ANNOVAR: $DBFOLDER
+		echo "$DBFOLDER_ANNOVAR/success: $DBFOLDER
 			howard databases --assembly='$ASSEMBLY' --download-annovar=$DBFOLDER_ANNOVAR/$DATE --download-annovar-files='$ANNOVAR_FILES'
 			-[ ! -s $DBFOLDER_ANNOVAR/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_ANNOVAR/STARK.database && chmod o+r $DBFOLDER_ANNOVAR/STARK.database 
 			[ ! -e $DBFOLDER_ANNOVAR/current/$ASSEMBLY ] || unlink $DBFOLDER_ANNOVAR/current/$ASSEMBLY
 			ln -snf $DBFOLDER_ANNOVAR/$DATE/$ASSEMBLY $DBFOLDER_ANNOVAR/current/$ASSEMBLY
 			rm -rf $DB_TMP;
 		" >> $MK
-		MK_ALL="$MK_ALL $DBFOLDER_ANNOVAR"
+		MK_ALL="$MK_ALL $DBFOLDER_ANNOVAR/success"
 	fi;
 fi;
 
@@ -623,14 +625,14 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		';
 		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
 
-		echo "$DBFOLDER_REFGENE: $DBFOLDER
+		echo "$DBFOLDER_REFGENE/success: $DBFOLDER
 			howard databases --assembly='$ASSEMBLY' --download-refseq=$DBFOLDER_REFGENE/$DATE;
 			-[ ! -s $DBFOLDER_REFGENE/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_REFGENE/STARK.database && chmod o+r $DBFOLDER_REFGENE/STARK.database;
 			[ ! -e $DBFOLDER_REFGENE/current/$ASSEMBLY ] || unlink $DBFOLDER_REFGENE/current/$ASSEMBLY;
 			ln -snf $DBFOLDER_REFGENE/$DATE/$ASSEMBLY $DBFOLDER_REFGENE/current/$ASSEMBLY;
 			" >> $MK
 
-		MK_ALL="$MK_ALL $DBFOLDER_REFGENE"
+		MK_ALL="$MK_ALL $DBFOLDER_REFGENE/success"
 	fi;
 fi;
 
@@ -672,7 +674,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		
 		# $TABIX -p vcf $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/dbnsp.vcf.gz	failed
 		# Seems that dbsnp b156 can't be tabix 
-		echo "$DBFOLDER_DBSNP: $DBFOLDER
+		echo "$DBFOLDER_DBSNP/success: $DBFOLDER
 			howard databases --assembly='$ASSEMBLY' --genomes-folder=$DBFOLDER_GENOME/current/ --download-dbsnp=$DB_TMP --download-dbsnp-vcf;
 			mkdir -p $DBFOLDER_DBSNP/$DATE/$ASSEMBLY;
 			cp $DB_TMP/$ASSEMBLY/*/dbsnp.vcf.gz $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/;
@@ -681,7 +683,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 			ln -snf $DBFOLDER_DBSNP/$DATE/$ASSEMBLY $DBFOLDER_DBSNP/current/$ASSEMBLY;
 			rm -rf $DB_TMP;
 		" >> $MK
-		MK_ALL="$MK_ALL $DBFOLDER_DBSNP"
+		MK_ALL="$MK_ALL $DBFOLDER_DBSNP/success"
 	fi;
 fi;
 
@@ -721,7 +723,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		';
 		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
 		
-		echo "$DBFOLDER_DBNSFP: $DBFOLDER
+		echo "$DBFOLDER_DBNSFP/success: $DBFOLDER
 			howard databases --assembly='$ASSEMBLY' --genomes-folder=$DBFOLDER_GENOME/current/ --download-dbnsfp=$DB_TMP --download-dbnsfp-vcf;
 			mkdir -p $DBFOLDER_DBNSFP/$DATE/$ASSEMBLY;
 			cp $DB_TMP/$ASSEMBLY/*/dbnsfp.vcf.gz $DBFOLDER_DBNSFP/$DATE/$ASSEMBLY/;
@@ -730,7 +732,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 			ln -snf $DBFOLDER_DBNSFP/$DATE/$ASSEMBLY $DBFOLDER_DBNSFP/current/$ASSEMBLY;
 			rm -rf $DB_TMP;
 		" >> $MK
-		MK_ALL="$MK_ALL $DBFOLDER_DBNSFP"
+		MK_ALL="$MK_ALL $DBFOLDER_DBNSFP/success"
 	fi;
 fi;
 
@@ -793,7 +795,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		(($VERBOSE)) && echo "#[INFO] ARRIBA URL=$ARRIBA_CURRENT"
 		(($VERBOSE)) && echo "#[INFO] ARRIBA RELEASE=$DBFOLDER_ARRIBA/$DATE/$ASSEMBLY"
 
-		echo "$DBFOLDER_ARRIBA: $DBFOLDER
+		echo "$DBFOLDER_ARRIBA/success: $DBFOLDER
 			wget --progress=bar:force:noscroll $ARRIBA_CURRENT -P $DB_TMP;
 			mkdir -p $DBFOLDER_ARRIBA/$DATE/$ASSEMBLY;
 			chmod 0775 $DBFOLDER_ARRIBA/$DATE/$ASSEMBLY;
@@ -808,7 +810,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 			ln -snf $DBFOLDER_ARRIBA/$DATE/$ASSEMBLY $DBFOLDER_ARRIBA/current/$ASSEMBLY;
 			rm -rf $DB_TMP;
 		" >> $MK
-		MK_ALL="$MK_ALL $DBFOLDER_ARRIBA"
+		MK_ALL="$MK_ALL $DBFOLDER_ARRIBA/success"
 	fi;
 fi;
 
@@ -873,7 +875,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		(($VERBOSE)) && echo "#[INFO] CTAT URL=$CTAT_CURRENT"
 		(($VERBOSE)) && echo "#[INFO] CTAT RELEASE=$DATE"
 
-		echo "$DBFOLDER_CTAT: $DBFOLDER
+		echo "$DBFOLDER_CTAT/success: $DBFOLDER
 			wget --progress=bar:force:noscroll $CTAT_CURRENT -P $DB_TMP;
 			wget --progress=bar:force:noscroll $CTAT_PM -P $DB_TMP;
 			mkdir -p $DBFOLDER_CTAT/$DATE/$ASSEMBLY;
@@ -888,7 +890,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 			ln -snf $DBFOLDER_CTAT/$DATE/$ASSEMBLY $DBFOLDER_CTAT/current/$ASSEMBLY;
 			rm -rf $DB_TMP;
 		" >> $MK
-		MK_ALL="$MK_ALL $DBFOLDER_CTAT"
+		MK_ALL="$MK_ALL $DBFOLDER_CTAT/success"
 	fi;
 fi;
 
@@ -953,7 +955,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		(($VERBOSE)) && echo "#[INFO] GENCODE URL=$GENCODE_CURRENT"
 		(($VERBOSE)) && echo "#[INFO] GENCODE RELEASE=$DATE"
 
-		echo "$DBFOLDER_GENCODE: $DBFOLDER
+		echo "$DBFOLDER_GENCODE/success: $DBFOLDER
 			mkdir -p $DBFOLDER_GENCODE/$DATE/$ASSEMBLY;
 			chmod 0775 $DBFOLDER_GENCODE/$DATE/$ASSEMBLY;
 			wget --progress=bar:force:noscroll $GENCODE_CURRENT -P $DB_TMP;
@@ -965,7 +967,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 			ln -snf $DBFOLDER_GENCODE/$DATE/$ASSEMBLY $DBFOLDER_GENCODE/current/$ASSEMBLY;
 			rm -rf $DB_TMP;
 		" >> $MK
-		MK_ALL="$MK_ALL $DBFOLDER_GENCODE"
+		MK_ALL="$MK_ALL $DBFOLDER_GENCODE/success"
 	fi;
 fi;
 
@@ -987,9 +989,9 @@ if [ ! -z "$MK_ALL" ]; then
 			echo "#[INFO] THAT CAN TAKE SOME TIME..."
 			if (($VERBOSE)) || (($DEBUG)); then
 				if (($DEBUG)); then
-					make -k -j $THREADS $MK_OPTION -f $MK all 1>$MK_LOG 2>$MK_ERR;
+					make -k -j $THREADS $MK_OPTION -f $MK all;
 				elif (($VERBOSE)); then
-					make -k -j $THREADS $MK_OPTION -f $MK all 1>$MK_LOG 2>$MK_ERR;
+					make -k -j $THREADS $MK_OPTION -f $MK all;
 				fi;
 			else
 				make -k -j $THREADS $MK_OPTION -f $MK all 1>$MK_LOG 2>$MK_ERR;
