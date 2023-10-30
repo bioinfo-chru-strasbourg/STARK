@@ -7,6 +7,8 @@
 DATABASES_LIST=""
 DATABASES_CONFIG_LIST=""
 
+#ASSEMBLY=hg38
+
 # ASSEMBLY & GENOME
 ################
 # default Assembly
@@ -31,7 +33,7 @@ export DICT
 #export REF_CACHE="$REF_CACHE_FOLDER/%2s/%2s/%s";
 
 # Indexing genome with BWA2
-BWA2_INDEX=1 # 1 = true
+BWA2_INDEX=0 # 1 = true
 export BWA2_INDEX
 
 # Databases URLs
@@ -50,6 +52,7 @@ if [ $ASSEMBLY == "hg19" ] ; then GENCODE_CURRENT="https://ftp.ebi.ac.uk/pub/dat
 if [ $ASSEMBLY == "hg38" ] ; then GENCODE_CURRENT="https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_44/gencode.v44.primary_assembly.annotation.gtf.gz"; fi;
 export GENCODE_CURRENT
 
+# GATK VARIANT RECALIBRATION URLs
 if [ $ASSEMBLY == "hg38" ]; then
 	DBFOLDER_GATK_URL="https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0"
 elif [ $ASSEMBLY == "hg19" ]; then
@@ -67,6 +70,7 @@ export ANNOVAR_FILES
 #################
 DBFOLDER_REFGENE=$DBFOLDER/refGene
 export REFSEQ_GENES=$DBFOLDER_REFGENE/current/$ASSEMBLY/refGene.$ASSEMBLY.bed
+export DBFOLDER_REFGENE
 
 # dbSNP and other variant sets
 #################################
@@ -225,6 +229,10 @@ fi;
 export GENCODE_DATABASES
 DATABASES_CONFIG_LIST=$DATABASES_CONFIG_LIST" GENCODE_DATABASES"
 
+# Needed for genome indexing with STAR
+DBFOLDER_GENCODE=$(dirname $GENCODE_DATABASES)
+export DBFOLDER_GENCODE
+
 # Dbsnp
 if [ ! -z $FOLDER_DATABASES_DBSNP ] && [ "$FOLDER_DATABASES_DBSNP" != "" ]; then
 	DBSNP_DATABASES=$FOLDER_DATABASES_DBSNP
@@ -233,3 +241,12 @@ else
 fi;
 export DBSNP_DATABASES
 DATABASES_CONFIG_LIST=$DATABASES_CONFIG_LIST" DBSNP_DATABASES"
+
+# dbNSFP
+if [ ! -z $FOLDER_DATABASES_DBNSFP ] && [ "$FOLDER_DATABASES_DBNSFP" != "" ]; then
+	DBNSFP_DATABASES=$FOLDER_DATABASES_DBNSFP
+else
+	DBNSFP_DATABASES=$DBFOLDER/dbnsfp/current
+fi;
+export DBNSFP_DATABASES
+DATABASES_CONFIG_LIST=$DATABASES_CONFIG_LIST" DBNSNFP_DATABASES"
