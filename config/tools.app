@@ -88,7 +88,7 @@ export HTSLIB_REF="http://www.htslib.org/"
 
 
 # TABIX
-export TABIX=tabix											# BIN $NGS_TOOLS/htslib/current/bin/
+export TABIX=$NGS_TOOLS/htslib/current/bin/tabix			# BIN 
 export TABIX_PATH=$(dirname $TABIX)							# BIN
 export TABIX_VERSION=1.18									# VER
 export TABIX_DESCRIPTION="Indexing VCF files"
@@ -97,7 +97,7 @@ TOOLS_LIST=$TOOLS_LIST" TABIX"
 
 
 # BGZIP
-export BGZIP=/bgzip											# BIN   $NGS_TOOLS/htslib/current/bin
+export BGZIP=$NGS_TOOLS/htslib/current/bin/bgzip			# BIN   
 export BGZIP_VERSION=1.18									# VER
 export BGZIP_DESCRIPTION="Compressing VCF files"
 export BGZIP_REF=$HTSLIB_REF
@@ -105,7 +105,7 @@ TOOLS_LIST=$TOOLS_LIST" BGZIP"
 
 
 # BCFTOOLS
-export BCFTOOLS=bcftools									# BIN $NGS_TOOLS/bcftools/current/bin/
+export BCFTOOLS=bcftools									# BIN $NGS_TOOLS/bcftools/current/bin/ 
 export BCFTOOLS_VERSION=1.18								# VER
 export BCFTOOLS_DESCRIPTION="Reading/writing BCF2/VCF/gVCF files and calling/filtering/summarising SNP and short indel sequence variants"
 export BCFTOOLS_REF=$HTSLIB_REF
