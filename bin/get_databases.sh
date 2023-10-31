@@ -739,11 +739,9 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		}
 		';
 		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
-		
+
 		echo "$DBFOLDER_DBNSFP/done: $DBFOLDER
-			howard databases --assembly='$ASSEMBLY' --genomes-folder=$DBFOLDER_GENOME/current/ --download-dbnsfp=$DB_TMP --download-dbnsfp-vcf;
-			mkdir -p $DBFOLDER_DBNSFP/$DATE/$ASSEMBLY;
-			cp $DB_TMP/$ASSEMBLY/*/dbnsfp.vcf.gz $DBFOLDER_DBNSFP/$DATE/$ASSEMBLY/;
+			howard databases --assembly='$ASSEMBLY' --genomes-folder=$DBFOLDER_GENOME/current/ --download-dbnsfp=$DBFOLDER_DBNSFP/$DATE --download-dbnsfp-vcf;
 			-[ ! -s $DBFOLDER_DBNSFP/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_DBNSFP/STARK.database && chmod o+r $DBFOLDER_DBNSFP/STARK.database;
 			[ ! -e $DBFOLDER_DBNSFP/current/$ASSEMBLY ] || unlink $DBFOLDER_DBNSFP/current/$ASSEMBLY;
 			ln -snf $DBFOLDER_DBNSFP/$DATE/$ASSEMBLY $DBFOLDER_DBNSFP/current/$ASSEMBLY;
