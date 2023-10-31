@@ -21,7 +21,7 @@ RELEASE_NOTES=$RELEASE_NOTES"# 0.9.3b-31/05/2019: Add APP configuration\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.4b-17/06/2020: Clarify code, organisation DB/RELEASE, add STARK.description\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.5.0-11/04/2021: Change snpEff download, some bugs fixed, option --current, remove option --rebuild\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.6.0-28/07/2022: Change snpEff download, add GATK databases, some bugs fixed\n";
-RELEASE_NOTES=$RELEASE_NOTES"# STARK 19: \n";
+RELEASE_NOTES=$RELEASE_NOTES"# 1.0.0-01/11/2023: Rewrite for STARK 19 new database structure: clean code, HOWARD database python, fix makefile rules (point to file, not directory), add CTAT/arriba\n";
 
 
 # Header
@@ -144,7 +144,7 @@ echo "# DONE"
 
 # FUNCTIONS
 #############
-# function in_array
+
 in_array () 
 { 
     param=$1;
@@ -156,24 +156,20 @@ in_array ()
     return 1
 }
 
-# ACTION
 ACTION=0
 [ $BUILD ] || [ $UPDATE ] && ACTION=1;
 
-# DATABASES FOLDER
 [ ! -z $DATABASES ] && [ ! -d $DATABASES ] && mkdir -p $DATABASES && echo "#[INFO] Create databases folder '$DATABASES' "
-
-# DATABASES LIST
 [ "$DATABASES_LIST_INPUT" == "" ] && DATABASES_LIST_INPUT="ALL"
 echo "#[INFO] Databases list: '$DATABASES_LIST_INPUT' "
 
-# ENV
 (($VERBOSE)) && [ ! -z "$APP" ] && echo "#[INFO] Search Application '$APP'"
 ENV=$(find_app "$APP" "$STARK_FOLDER_APPS")
 source_app "$APP" "$STARK_FOLDER_APPS" 1
 APP_NAME=$(name_app "$APP" "$STARK_FOLDER_APPS");
 export ENV
 export APP
+
 (($VERBOSE)) && [ -z "$APP" ] && [ -z "$ENV" ] && echo "#[INFO] No Application provided. STARK default parameters will be used."
 (($VERBOSE)) && [ ! -z "$APP" ] && [ ! -z "$ENV" ] && echo "#[INFO] Application '$APP' found ('$ENV')"
 (($VERBOSE)) && [ ! -z "$APP" ] && [ -z "$ENV" ] && echo "#[INFO] Application '$APP' NOT found"
@@ -181,19 +177,20 @@ export APP
 # CORES
 re='^[0-9]+$'
 CORES=$(nproc)
+
 if ! [[ $THREADS =~ $re ]] || [ -z "$THREADS" ] || [ "$THREADS" == "" ] || [ $THREADS -gt $CORES ] ; then
 	CORES_FREE=0
 	THREADS=$(($CORES-$CORES_FREE))
 fi;
-# THREADS
+
 if [[ $THREADS_INPUT =~ $re ]] && [ "$THREADS_INPUT" != "" ]; then
 	THREADS=$THREADS_INPUT;
 fi;
 
-# TMP FOLDER_RUN
 TMP_DATABASES_DOWNLOAD_FOLDER=$TMP_FOLDER_TMP/$RANDOM$RANDOM
 mkdir -p $TMP_DATABASES_DOWNLOAD_FOLDER
 TMP_DATABASES_DOWNLOAD_RAM="$(mktemp -d -p /dev/shm/)"
+
 if [ "$TMP_DATABASES_DOWNLOAD_RAM" == "" ]; then
 	TMP_DATABASES_DOWNLOAD_RAM=$TMP_DATABASES_DOWNLOAD_FOLDER;
 fi;
@@ -224,7 +221,7 @@ DATABASE_DESCRIPTION="Reference sequence was produced by the Genome Reference Co
 
 if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
 	DBFOLDER_GENOME=$DATABASES/genomes
-		if [ ! -e $DBFOLDER_GENOME/current ]; then
+	if [ ! -e $DBFOLDER_GENOME/current ]; then
 		mkdir -p $DBFOLDER_GENOME/current;
 	fi;
 	
@@ -233,6 +230,10 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 	chmod 0775 $DB_TMP;
 
 	if [ ! -e $DBFOLDER_GENOME/current/$ASSEMBLY ] || (($UPDATE)); then
+		
+		(($VERBOSE)) && echo ""
+		(($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME' release '$DATE' for ' [$ASSEMBLY]"
+		
 		if (($UPDATE)); then
 			if [ -e $DBFOLDER_GENOME/current/$ASSEMBLY ]; then mv -f $DBFOLDER_GENOME/current/$ASSEMBLY $DBFOLDER_GENOME.V$DATE; fi;
 		fi;
@@ -258,18 +259,14 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		MK_ALL="$MK_ALL $GENOME"
 	fi;
 
-############
-# INDEXING #
-############
-
 	# Samtools genome index
 	if [ ! -d $GENOME.hts-ref ]; then
 		if [ "$SAMTOOLS" != "" ]; then
-			echo "$GENOME.hts-ref: $GENOME
+			echo "$GENOME.hts-ref/done: $GENOME
 				mkdir -p $GENOME.hts-ref;
 				perl $(dirname $SAMTOOLS)/seq_cache_populate.pl -root $GENOME.hts-ref $GENOME;
 			" >> $MK
-			MK_ALL="$MK_ALL $GENOME.hts-ref"
+			MK_ALL="$MK_ALL $GENOME.hts-ref/done"
 		fi;
 	fi;
 
@@ -332,11 +329,11 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 	## STAR index 
 	if [ ! -e $(dirname $GENOME)/$(basename $GENOME).star.idx ]; then
 		if [ "$STAR" != "" ]; then
-				echo "$(dirname $GENOME)/$(basename $GENOME).star.idx: $GENOME $DBFOLDER_GENCODE/current/$ASSEMBLY/gencode.v$GENCODE_VERSION.annotation.gtf
+			echo "$(dirname $GENOME)/$(basename $GENOME).star.idx/done: $GENOME $DBFOLDER_GENCODE/current/$ASSEMBLY/gencode.v$GENCODE_VERSION.annotation.gtf
 				mkdir -p $(dirname $GENOME)/$(basename $GENOME).star.idx;
 				STAR --runThreadN 4 --runMode genomeGenerate --genomeDir $(dirname $GENOME)/$(basename $GENOME).star.idx --genomeFastaFiles $GENOME --sjdbGTFfile $DBFOLDER_GENCODE/current/$ASSEMBLY/gencode.v$GENCODE_VERSION.annotation.gtf;
-				" >> $MK
-				MK_ALL="$MK_ALL $(dirname $GENOME)/$(basename $GENOME).star.idx"
+			" >> $MK
+			MK_ALL="$MK_ALL $(dirname $GENOME)/$(basename $GENOME).star.idx/done"
 		fi;
 	fi;
 
@@ -480,7 +477,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		cat $MK.existing_gatk_db >> $MK
 		MK_DBFOLDER_GATK_ALL="$MK_DBFOLDER_GATK_ALL $MK_DBFOLDER_GATK_ALL_existing_gatk_db"
 		MK_ALL="$MK_ALL $MK_ALL_existing_gatk_db" 
-		echo "$DBFOLDER_GATK/current/$ASSEMBLY/success: $MK_DBFOLDER_GATK_ALL
+		echo "$DBFOLDER_GATK/current/$ASSEMBLY/done: $MK_DBFOLDER_GATK_ALL
 			mkdir -p $DBFOLDER_GATK/$DATE/$ASSEMBLY/original
 			chmod 0775 $DBFOLDER_GATK/$DATE/$ASSEMBLY -R
 			-[ ! -s $DBFOLDER_GATK/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_GATK/STARK.database
@@ -490,7 +487,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 			ln -snf $DBFOLDER_GATK/$DATE/$ASSEMBLY $DBFOLDER_GATK/current/$ASSEMBLY
 			rm -rf $DB_TMP;
 		" >> $MK
-		MK_ALL="$MK_ALL $DBFOLDER_GATK/current/$ASSEMBLY/success" 
+		MK_ALL="$MK_ALL $DBFOLDER_GATK/current/$ASSEMBLY/done" 
 	fi;
 fi;
 
@@ -516,6 +513,10 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 	chmod 0775 $DB_TMP;
 
 	if [ ! -e $DBFOLDER_SNPEFF/current/$ASSEMBLY ] || (($UPDATE)); then
+		
+		(($VERBOSE)) && echo ""
+		(($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME' release '$DATE' for ' [$ASSEMBLY]"
+		
 		if (($UPDATE)); then
 			if [ -e $DBFOLDER_SNPEFF/current/$ASSEMBLY ]; then mv -f $DBFOLDER_SNPEFF/current/$ASSEMBLY $DBFOLDER_SNPEFF.V$DATE; fi;
 		fi;
@@ -531,14 +532,14 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		';
 		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
 
-		echo "$DBFOLDER_SNPEFF/success: $DBFOLDER
+		echo "$DBFOLDER_SNPEFF/done: $DBFOLDER
 			howard databases --assembly='$ASSEMBLY' --download-snpeff=$DBFOLDER_SNPEFF/$DATE
 			-[ ! -s $DBFOLDER_SNPEFF/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_SNPEFF/STARK.database && chmod o+r $DBFOLDER_SNPEFF/STARK.database 
 			[ ! -e $DBFOLDER_SNPEFF/current/$ASSEMBLY ] || unlink $DBFOLDER_SNPEFF/current/$ASSEMBLY
 			ln -snf $DBFOLDER_SNPEFF/$DATE/$ASSEMBLY $DBFOLDER_SNPEFF/current/$ASSEMBLY
 			rm -rf $DB_TMP;
 		" >> $MK
-		MK_ALL="$MK_ALL $DBFOLDER_SNPEFF/success"
+		MK_ALL="$MK_ALL $DBFOLDER_SNPEFF/done"
 	fi;
 fi;
 
@@ -563,6 +564,10 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 	chmod 0775 $DB_TMP;
 
 	if [ ! -e $DBFOLDER_ANNOVAR/current/$ASSEMBLY ] || (($UPDATE)); then
+		
+		(($VERBOSE)) && echo ""
+		(($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME' release '$DATE' for ' [$ASSEMBLY]"
+
 		if (($UPDATE)); then
 			if [ -e $DBFOLDER_ANNOVAR/current/$ASSEMBLY ]; then mv -f $DBFOLDER_ANNOVAR/current/$ASSEMBLY $DBFOLDER_ANNOVAR.V$DATE; fi;
 		fi;
@@ -578,14 +583,14 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		';
 		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
 	
-		echo "$DBFOLDER_ANNOVAR/success: $DBFOLDER
+		echo "$DBFOLDER_ANNOVAR/done: $DBFOLDER
 			howard databases --assembly='$ASSEMBLY' --download-annovar=$DBFOLDER_ANNOVAR/$DATE --download-annovar-files='$ANNOVAR_FILES'
 			-[ ! -s $DBFOLDER_ANNOVAR/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_ANNOVAR/STARK.database && chmod o+r $DBFOLDER_ANNOVAR/STARK.database 
 			[ ! -e $DBFOLDER_ANNOVAR/current/$ASSEMBLY ] || unlink $DBFOLDER_ANNOVAR/current/$ASSEMBLY
 			ln -snf $DBFOLDER_ANNOVAR/$DATE/$ASSEMBLY $DBFOLDER_ANNOVAR/current/$ASSEMBLY
 			rm -rf $DB_TMP;
 		" >> $MK
-		MK_ALL="$MK_ALL $DBFOLDER_ANNOVAR/success"
+		MK_ALL="$MK_ALL $DBFOLDER_ANNOVAR/done"
 	fi;
 fi;
 
@@ -610,6 +615,10 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 	chmod 0775 $DB_TMP;
 
 	if [ ! -e $DBFOLDER_REFGENE/current/$ASSEMBLY ] || (($UPDATE)); then
+		
+		(($VERBOSE)) && echo ""
+		(($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME' release '$DATE' for ' [$ASSEMBLY]"
+		
 		if (($UPDATE)); then
 			if [ -e $DBFOLDER_REFGENE/current/$ASSEMBLY ]; then mv -f $DBFOLDER_REFGENE/current/$ASSEMBLY $DBFOLDER_REFGENE.V$DATE; fi;
 		fi;
@@ -625,14 +634,14 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		';
 		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
 
-		echo "$DBFOLDER_REFGENE/success: $DBFOLDER
+		echo "$DBFOLDER_REFGENE/done: $DBFOLDER
 			howard databases --assembly='$ASSEMBLY' --download-refseq=$DBFOLDER_REFGENE/$DATE;
 			-[ ! -s $DBFOLDER_REFGENE/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_REFGENE/STARK.database && chmod o+r $DBFOLDER_REFGENE/STARK.database;
 			[ ! -e $DBFOLDER_REFGENE/current/$ASSEMBLY ] || unlink $DBFOLDER_REFGENE/current/$ASSEMBLY;
 			ln -snf $DBFOLDER_REFGENE/$DATE/$ASSEMBLY $DBFOLDER_REFGENE/current/$ASSEMBLY;
 			" >> $MK
 
-		MK_ALL="$MK_ALL $DBFOLDER_REFGENE/success"
+		MK_ALL="$MK_ALL $DBFOLDER_REFGENE/done"
 	fi;
 fi;
 
@@ -657,6 +666,10 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 	chmod 0775 $DB_TMP;
 
 	if [ ! -e $DBFOLDER_DBSNP/current/$ASSEMBLY ] || (($UPDATE)); then
+		
+		(($VERBOSE)) && echo ""
+		(($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME' release '$DATE' for ' [$ASSEMBLY]"
+
 		if (($UPDATE)); then
 			if [ -e $DBFOLDER_DBSNP/current/$ASSEMBLY ]; then mv -f $DBFOLDER_DBSNP/current/$ASSEMBLY $DBFOLDER_DBSNP.V$DATE; fi;
 		fi;
@@ -674,7 +687,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		
 		# $TABIX -p vcf $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/dbnsp.vcf.gz	failed
 		# Seems that dbsnp b156 can't be tabix 
-		echo "$DBFOLDER_DBSNP/success: $DBFOLDER
+		echo "$DBFOLDER_DBSNP/done: $DBFOLDER
 			howard databases --assembly='$ASSEMBLY' --genomes-folder=$DBFOLDER_GENOME/current/ --download-dbsnp=$DB_TMP --download-dbsnp-vcf;
 			mkdir -p $DBFOLDER_DBSNP/$DATE/$ASSEMBLY;
 			cp $DB_TMP/$ASSEMBLY/*/dbsnp.vcf.gz $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/;
@@ -683,7 +696,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 			ln -snf $DBFOLDER_DBSNP/$DATE/$ASSEMBLY $DBFOLDER_DBSNP/current/$ASSEMBLY;
 			rm -rf $DB_TMP;
 		" >> $MK
-		MK_ALL="$MK_ALL $DBFOLDER_DBSNP/success"
+		MK_ALL="$MK_ALL $DBFOLDER_DBSNP/done"
 	fi;
 fi;
 
@@ -708,6 +721,10 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 	chmod 0775 $DB_TMP;
 
 	if [ ! -e $DBFOLDER_DBNSFP/current/$ASSEMBLY ] || (($UPDATE)); then
+		
+		(($VERBOSE)) && echo ""
+		(($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME' release '$DATE' for ' [$ASSEMBLY]"
+		
 		if (($UPDATE)); then
 			if [ -e $DBFOLDER_DBNSFP/current/$ASSEMBLY ]; then mv -f $DBFOLDER_DBNSFP/current/$ASSEMBLY $DBFOLDER_DBNSFP.V$DATE; fi;
 		fi;
@@ -723,7 +740,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		';
 		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
 		
-		echo "$DBFOLDER_DBNSFP/success: $DBFOLDER
+		echo "$DBFOLDER_DBNSFP/done: $DBFOLDER
 			howard databases --assembly='$ASSEMBLY' --genomes-folder=$DBFOLDER_GENOME/current/ --download-dbnsfp=$DB_TMP --download-dbnsfp-vcf;
 			mkdir -p $DBFOLDER_DBNSFP/$DATE/$ASSEMBLY;
 			cp $DB_TMP/$ASSEMBLY/*/dbnsfp.vcf.gz $DBFOLDER_DBNSFP/$DATE/$ASSEMBLY/;
@@ -732,7 +749,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 			ln -snf $DBFOLDER_DBNSFP/$DATE/$ASSEMBLY $DBFOLDER_DBNSFP/current/$ASSEMBLY;
 			rm -rf $DB_TMP;
 		" >> $MK
-		MK_ALL="$MK_ALL $DBFOLDER_DBNSFP/success"
+		MK_ALL="$MK_ALL $DBFOLDER_DBNSFP/done"
 	fi;
 fi;
 
@@ -795,7 +812,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		(($VERBOSE)) && echo "#[INFO] ARRIBA URL=$ARRIBA_CURRENT"
 		(($VERBOSE)) && echo "#[INFO] ARRIBA RELEASE=$DBFOLDER_ARRIBA/$DATE/$ASSEMBLY"
 
-		echo "$DBFOLDER_ARRIBA/success: $DBFOLDER
+		echo "$DBFOLDER_ARRIBA/done: $DBFOLDER
 			wget --progress=bar:force:noscroll $ARRIBA_CURRENT -P $DB_TMP;
 			mkdir -p $DBFOLDER_ARRIBA/$DATE/$ASSEMBLY;
 			chmod 0775 $DBFOLDER_ARRIBA/$DATE/$ASSEMBLY;
@@ -810,7 +827,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 			ln -snf $DBFOLDER_ARRIBA/$DATE/$ASSEMBLY $DBFOLDER_ARRIBA/current/$ASSEMBLY;
 			rm -rf $DB_TMP;
 		" >> $MK
-		MK_ALL="$MK_ALL $DBFOLDER_ARRIBA/success"
+		MK_ALL="$MK_ALL $DBFOLDER_ARRIBA/done"
 	fi;
 fi;
 
@@ -875,7 +892,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		(($VERBOSE)) && echo "#[INFO] CTAT URL=$CTAT_CURRENT"
 		(($VERBOSE)) && echo "#[INFO] CTAT RELEASE=$DATE"
 
-		echo "$DBFOLDER_CTAT/success: $DBFOLDER
+		echo "$DBFOLDER_CTAT/done: $DBFOLDER
 			wget --progress=bar:force:noscroll $CTAT_CURRENT -P $DB_TMP;
 			wget --progress=bar:force:noscroll $CTAT_PM -P $DB_TMP;
 			mkdir -p $DBFOLDER_CTAT/$DATE/$ASSEMBLY;
@@ -890,7 +907,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 			ln -snf $DBFOLDER_CTAT/$DATE/$ASSEMBLY $DBFOLDER_CTAT/current/$ASSEMBLY;
 			rm -rf $DB_TMP;
 		" >> $MK
-		MK_ALL="$MK_ALL $DBFOLDER_CTAT/success"
+		MK_ALL="$MK_ALL $DBFOLDER_CTAT/done"
 	fi;
 fi;
 
@@ -955,7 +972,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		(($VERBOSE)) && echo "#[INFO] GENCODE URL=$GENCODE_CURRENT"
 		(($VERBOSE)) && echo "#[INFO] GENCODE RELEASE=$DATE"
 
-		echo "$DBFOLDER_GENCODE/success: $DBFOLDER
+		echo "$DBFOLDER_GENCODE/done: $DBFOLDER
 			mkdir -p $DBFOLDER_GENCODE/$DATE/$ASSEMBLY;
 			chmod 0775 $DBFOLDER_GENCODE/$DATE/$ASSEMBLY;
 			wget --progress=bar:force:noscroll $GENCODE_CURRENT -P $DB_TMP;
@@ -967,7 +984,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 			ln -snf $DBFOLDER_GENCODE/$DATE/$ASSEMBLY $DBFOLDER_GENCODE/current/$ASSEMBLY;
 			rm -rf $DB_TMP;
 		" >> $MK
-		MK_ALL="$MK_ALL $DBFOLDER_GENCODE/success"
+		MK_ALL="$MK_ALL $DBFOLDER_GENCODE/done"
 	fi;
 fi;
 
