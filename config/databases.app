@@ -7,7 +7,6 @@
 DATABASES_LIST=""
 DATABASES_CONFIG_LIST=""
 
-#ASSEMBLY=hg38
 #####################
 # ASSEMBLY & GENOME #
 #####################

@@ -685,12 +685,8 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		';
 		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
 		
-		# $TABIX -p vcf $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/dbnsp.vcf.gz	failed
-		# Seems that dbsnp b156 can't be tabix 
 		echo "$DBFOLDER_DBSNP/done: $DBFOLDER
-			howard databases --assembly='$ASSEMBLY' --genomes-folder=$DBFOLDER_GENOME/current/ --download-dbsnp=$DB_TMP --download-dbsnp-vcf;
-			mkdir -p $DBFOLDER_DBSNP/$DATE/$ASSEMBLY;
-			cp $DB_TMP/$ASSEMBLY/*/dbsnp.vcf.gz $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/;
+			howard databases --assembly='$ASSEMBLY' --genomes-folder=$DBFOLDER_GENOME/current/ --download-dbsnp=$DBFOLDER_DBSNP/$DATE --download-dbsnp-vcf;
 			-[ ! -s $DBFOLDER_DBSNP/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_DBSNP/STARK.database && chmod o+r $DBFOLDER_DBSNP/STARK.database;
 			[ ! -e $DBFOLDER_DBSNP/current/$ASSEMBLY ] || unlink $DBFOLDER_DBSNP/current/$ASSEMBLY;
 			ln -snf $DBFOLDER_DBSNP/$DATE/$ASSEMBLY $DBFOLDER_DBSNP/current/$ASSEMBLY;
@@ -970,7 +966,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		(($VERBOSE)) && echo "#[INFO] GENCODE URL=$GENCODE_CURRENT"
 		(($VERBOSE)) && echo "#[INFO] GENCODE RELEASE=$DATE"
 
-		echo "$DBFOLDER_GENCODE/done: $DBFOLDER
+		echo "$DBFOLDER_GENCODE/current/$ASSEMBLY/gencode.v$GENCODE_VERSION.annotation.gtf.gz: $DBFOLDER
 			mkdir -p $DBFOLDER_GENCODE/$DATE/$ASSEMBLY;
 			chmod 0775 $DBFOLDER_GENCODE/$DATE/$ASSEMBLY;
 			wget --progress=bar:force:noscroll $GENCODE_CURRENT -P $DB_TMP;
@@ -982,7 +978,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 			ln -snf $DBFOLDER_GENCODE/$DATE/$ASSEMBLY $DBFOLDER_GENCODE/current/$ASSEMBLY;
 			rm -rf $DB_TMP;
 		" >> $MK
-		MK_ALL="$MK_ALL $DBFOLDER_GENCODE/done"
+		MK_ALL="$MK_ALL $DBFOLDER_GENCODE/current/$ASSEMBLY/gencode.v$GENCODE_VERSION.annotation.gtf.gz"
 	fi;
 fi;
 
