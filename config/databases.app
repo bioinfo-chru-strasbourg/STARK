@@ -132,7 +132,7 @@ fi;
 export DBSNP_DATABASES
 DATABASES_CONFIG_LIST=$DATABASES_CONFIG_LIST" DBSNP_DATABASES"
 DBFOLDER_DBSNP=$DBFOLDER/dbsnp
-export VCFDBSNP=$DBFOLDER_DBSNP/current/$ASSEMBLY/dbsnp.$ASSEMBLY.vcf.gz
+export VCFDBSNP=$DBFOLDER_DBSNP/current/$ASSEMBLY/dbsnp.vcf.gz
 
 if [ ! -e $VCFDBSNP ]; then
 	echo "#[WARNING] No VCFDBSNP '$VCFDBSNP' in the database. Calling step impossible. Please check '$DBFOLDER' folder or configuration file" >>/dev/stderr
