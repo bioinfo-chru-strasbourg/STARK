@@ -698,6 +698,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		echo "$DBFOLDER_DBSNP/done: $DBFOLDER
 			howard databases --assembly='$ASSEMBLY' --genomes-folder=$DBFOLDER_GENOME/current/ --download-dbsnp=$DBFOLDER_DBSNP/$DATE --download-dbsnp-vcf;
 			mv $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/*/dbsnp.vcf.gz $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/dbsnp.vcf.gz;
+			tabix $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/dbsnp.vcf.gz;
 			-[ ! -s $DBFOLDER_DBSNP/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_DBSNP/STARK.database && chmod o+r $DBFOLDER_DBSNP/STARK.database;
 			[ ! -e $DBFOLDER_DBSNP/current/$ASSEMBLY ] || unlink $DBFOLDER_DBSNP/current/$ASSEMBLY;
 			ln -snf $DBFOLDER_DBSNP/$DATE/$ASSEMBLY $DBFOLDER_DBSNP/current/$ASSEMBLY;
