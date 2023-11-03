@@ -388,7 +388,13 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 
 			DBFOLDER_GATK_URL_FILE="$(basename $DB_TARGET_GATK)"
 			DB_TARGET_FILE_LIST="$DB_TARGET_FILE_LIST $(basename $DB_TARGET_GATK)"
+
+			if [[] "$DBFOLDER_GATK_URL_FILE" =~ .*"assembly38.dbsnp138".* ]]; then
+				DBFOLDER_GATK_URL=$DBFOLDER_GATK_URL_DBSNP
+			fi;
+
 			DBFOLDER_GATK_URL_FILE_DATE=$(curl -s -I $DBFOLDER_GATK_URL/$DBFOLDER_GATK_URL_FILE | grep "Last-Modified: " | sed "s/Last-Modified: //g" | sed "s/\r$//g")
+						
 			DB_RELEASE_FROM_DOWNLOAD=$(date -d "$DBFOLDER_GATK_URL_FILE_DATE")
 			DB_RELEASE_FILE=$(basename $DB_RELEASE_FILE_PATH)
 
