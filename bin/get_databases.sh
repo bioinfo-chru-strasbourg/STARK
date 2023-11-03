@@ -339,16 +339,20 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 
 fi;
 
-##############################
-# GATK VARIANT RECALIBRATION #
-##############################
-# For GATK3/4
-DATABASE="gatk"
-DATABASE_NAME="GATK"
-DATABASE_FULLNAME="GATK Databases"
+###############################
+# GATK4 VARIANT RECALIBRATION #
+###############################
+DATABASE="gatk4"
+DATABASE_NAME="GATK4"
+DATABASE_FULLNAME="GATK4 Databases"
 DATABASE_WEBSITE="https://www.broadinstitute.org/"
-DATABASE_DESCRIPTION="Databases for GATK Variant Recalibration"
-
+DATABASE_DESCRIPTION="Databases for GATK4 Variant Recalibration"
+# Ressource documentation
+# https://gatk.broadinstitute.org/hc/en-us/articles/360035890811-Resource-bundle
+# What is variant recalibration
+# https://gatk.broadinstitute.org/hc/en-us/articles/13832765070875-VariantRecalibrator
+# https://gatk.broadinstitute.org/hc/en-us/articles/360035531612-Variant-Quality-Score-Recalibration-VQSR-
+# https://gatk.broadinstitute.org/hc/en-us/articles/360035531112--How-to-Filter-variants-either-with-VQSR-or-by-hard-filtering
 if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
 
 	DBFOLDER_GATK_URL_FULL_COPY=0
