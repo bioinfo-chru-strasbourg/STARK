@@ -159,12 +159,12 @@ export REFSEQ_GENES=$DBFOLDER_REFGENE/current/$ASSEMBLY/refGene.$ASSEMBLY.bed
 
 # GATK VARIANT RECALIBRATION URLs
 if [ $ASSEMBLY == "hg38" ]; then
-	DBFOLDER_GATK_URL="https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0"
+	DBFOLDER_GATK_URL_DEFAULT="https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0"
 	DBFOLDER_GATK_URL_DBSNP="https://storage.googleapis.com/gcp-public-data/broad-references/hg38/v0"
 elif [ $ASSEMBLY == "hg19" ]; then
 	DBFOLDER_GATK_URL="https://data.broadinstitute.org/snowman/hg19/variant_calling/vqsr_resources/Exome/v2"
 fi;
-export DBFOLDER_GATK_URL
+export DBFOLDER_GATK_URL_DEFAULT
 export DBFOLDER_GATK_URL_DBSNP
 
 # Gatk resources folder

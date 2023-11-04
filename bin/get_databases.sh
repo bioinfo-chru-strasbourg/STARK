@@ -395,6 +395,8 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 
 			if [[ "$DBFOLDER_GATK_URL_FILE" =~ .*"assembly38.dbsnp138".* ]]; then
 				DBFOLDER_GATK_URL=$DBFOLDER_GATK_URL_DBSNP
+			else
+				DBFOLDER_GATK_URL=$DBFOLDER_GATK_URL_DEFAULT
 			fi;
 
 			DBFOLDER_GATK_URL_FILE_DATE=$(curl -s -I $DBFOLDER_GATK_URL/$DBFOLDER_GATK_URL_FILE | grep "Last-Modified: " | sed "s/Last-Modified: //g" | sed "s/\r$//g")
