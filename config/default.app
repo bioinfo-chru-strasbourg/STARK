@@ -80,7 +80,7 @@ FOLDER_FAVORITES=
 
 # ASSEMBLY (default hg19)
 # Assembly is automatically detected in manifest file (configured in the SampleSheet of each run), if any
-ASSEMBLY=hg38
+ASSEMBLY=hg19
 
 
 # PIPELINES (default "bwamem.gatkHC.howard")
