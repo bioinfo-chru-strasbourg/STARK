@@ -393,14 +393,15 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 			DBFOLDER_GATK_URL_FILE="$(basename $DB_TARGET_GATK)"
 			DB_TARGET_FILE_LIST="$DB_TARGET_FILE_LIST $(basename $DB_TARGET_GATK)"
 
-			if [[ "$DBFOLDER_GATK_URL_FILE" =~ .*"assembly38.dbsnp138".* ]]; then
+			if [[ "$DBFOLDER_GATK_URL_FILE" =~ .*"dbsnp138"*. ]]; then
+				#echo $DBFOLDER_GATK_URL_FILE
 				DBFOLDER_GATK_URL=$DBFOLDER_GATK_URL_DBSNP
 			else
 				DBFOLDER_GATK_URL=$DBFOLDER_GATK_URL_DEFAULT
 			fi;
 
 			DBFOLDER_GATK_URL_FILE_DATE=$(curl -s -I $DBFOLDER_GATK_URL/$DBFOLDER_GATK_URL_FILE | grep "Last-Modified: " | sed "s/Last-Modified: //g" | sed "s/\r$//g")
-						
+	
 			DB_RELEASE_FROM_DOWNLOAD=$(date -d "$DBFOLDER_GATK_URL_FILE_DATE")
 			DB_RELEASE_FILE=$(basename $DB_RELEASE_FILE_PATH)
 
@@ -699,8 +700,10 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		
 		echo "$DBFOLDER_DBSNP/done: $DBFOLDER
 			howard databases --assembly='$ASSEMBLY' --genomes-folder=$DBFOLDER_GENOME/current/ --download-dbsnp=$DBFOLDER_DBSNP/$DATE --download-dbsnp-vcf;
-			mv $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/*/dbsnp.vcf.gz $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/dbsnp.vcf.gz;
-			tabix $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/dbsnp.vcf.gz;
+			mv $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/*/dbsnp.vcf.gz $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/dbsnp.unsorted.vcf.gz;
+			$BCFTOOLS sort $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/dbsnp.unsorted.vcf.gz -O $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/dbsnp.vcf.gz;
+			rm -f $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/dbsnp.unsorted.vcf.gz;
+			$TABIX $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/dbsnp.vcf.gz;
 			-[ ! -s $DBFOLDER_DBSNP/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_DBSNP/STARK.database && chmod o+r $DBFOLDER_DBSNP/STARK.database;
 			[ ! -e $DBFOLDER_DBSNP/current/$ASSEMBLY ] || unlink $DBFOLDER_DBSNP/current/$ASSEMBLY;
 			ln -snf $DBFOLDER_DBSNP/$DATE/$ASSEMBLY $DBFOLDER_DBSNP/current/$ASSEMBLY;
