@@ -274,7 +274,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 	if [ ! -e $(dirname $GENOME)/$ASSEMBLY.rev.1.bt2 ]; then
 		if [ "$BOWTIE" != "" ]; then
 			echo "$(dirname $GENOME)/$ASSEMBLY.rev.1.bt2: $GENOME
-				$(dirname $BOWTIE)/bowtie2-build --threads $THREADS --packed $GENOME $(dirname $GENOME)/$ASSEMBLY.rev;
+				$(dirname $BOWTIE)/bowtie2-build --threads $THREADS --packed $GENOME $(dirname $GENOME)/$ASSEMBLY;
 			" >> $MK
 			MK_ALL="$MK_ALL $(dirname $GENOME)/$ASSEMBLY.rev.1.bt2"
 		fi;
@@ -700,9 +700,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		
 		echo "$DBFOLDER_DBSNP/done: $DBFOLDER
 			howard databases --assembly='$ASSEMBLY' --genomes-folder=$DBFOLDER_GENOME/current/ --download-dbsnp=$DBFOLDER_DBSNP/$DATE --download-dbsnp-vcf;
-			mv $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/*/dbsnp.vcf.gz $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/dbsnp.unsorted.vcf.gz;
-			$BCFTOOLS sort $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/dbsnp.unsorted.vcf.gz -O $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/dbsnp.vcf.gz;
-			rm -f $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/dbsnp.unsorted.vcf.gz;
+			$BCFTOOLS sort $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/*/dbsnp.vcf.gz -o $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/dbsnp.vcf.gz;
 			$TABIX $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/dbsnp.vcf.gz;
 			-[ ! -s $DBFOLDER_DBSNP/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_DBSNP/STARK.database && chmod o+r $DBFOLDER_DBSNP/STARK.database;
 			[ ! -e $DBFOLDER_DBSNP/current/$ASSEMBLY ] || unlink $DBFOLDER_DBSNP/current/$ASSEMBLY;
