@@ -664,9 +664,22 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 
 		echo "$DBFOLDER_REFGENE/done: $DBFOLDER
 			howard databases --assembly='$ASSEMBLY' --download-refseq=$DBFOLDER_REFGENE/$DATE;
+			cat $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/ncbiRefSeq.txt | while IFS='' read -r line; do \
+				CHROM=\$\$(echo \$\$line | awk '{print \$\$3}' | cut -d\"_\" -f1); \
+				NM=\$\$(echo \$\$line | awk '{print \$\$2}'); \
+				GENE=\$\$(echo \$\$line | awk '{print \$\$13}'); \
+				STRAND=\$\$(echo \$\$line | awk '{print \$\$4}'); \
+				echo \$\$line | awk '{print \$\$10}' | tr \",\" \"\\n\" | grep -v '^\$\$' > $TMP_DATABASES_DOWNLOAD_RAM/refGene.unsorted.bed.NM1 ; \
+				echo \$\$line | awk '{print \$\$11}' | tr \",\" \"\\n\" | grep -v '^\$\$' > $TMP_DATABASES_DOWNLOAD_RAM/refGene.unsorted.bed.NM2; \
+				paste $TMP_DATABASES_DOWNLOAD_RAM/refGene.unsorted.bed.NM1 $TMP_DATABASES_DOWNLOAD_RAM/refGene.unsorted.bed.NM2 | while read SS ; do \
+					echo -e \"\$\$CHROM\t\$\$SS\t\$\$GENE\t\$\$NM\t\$\$STRAND\" >> $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/refGene.unsorted.bed; \
+				done; \
+			done;
+			cat $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/refGene.unsorted.bed | sort -k1,1V -k2,2n -k3,3n > $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/refGene.$ASSEMBLY.bed;
 			-[ ! -s $DBFOLDER_REFGENE/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_REFGENE/STARK.database && chmod o+r $DBFOLDER_REFGENE/STARK.database;
 			[ ! -e $DBFOLDER_REFGENE/current/$ASSEMBLY ] || unlink $DBFOLDER_REFGENE/current/$ASSEMBLY;
 			ln -snf $DBFOLDER_REFGENE/$DATE/$ASSEMBLY $DBFOLDER_REFGENE/current/$ASSEMBLY;
+			rm -rf $DBFOLDER_REFGENE/$DATE/refGene.unsorted.bed;
 			" >> $MK
 
 		MK_ALL="$MK_ALL $DBFOLDER_REFGENE/done"
