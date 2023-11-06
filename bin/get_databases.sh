@@ -250,16 +250,21 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
 
 		echo "$GENOME: $DBFOLDER_GENOME
-			howard databases --assembly='$ASSEMBLY' --download-genomes=$DBFOLDER_GENOME/$DATE;
-			-[ ! -s $DBFOLDER_GENOME/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_GENOME/STARK.database && chmod o+r $DBFOLDER_GENOME/STARK.database;
+			howard databases --assembly='$ASSEMBLY' --download-genomes=$DBFOLDER_GENOME/$DATE $GENOME_REGEX;
 			[ ! -e $DBFOLDER_GENOME/current/$ASSEMBLY ] || unlink $DBFOLDER_GENOME/current/$ASSEMBLY;
 			ln -snf $DBFOLDER_GENOME/$DATE/$ASSEMBLY $DBFOLDER_GENOME/current/$ASSEMBLY;
+			-[ ! -s $DBFOLDER_GENOME/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_GENOME/STARK.database && chmod o+r $DBFOLDER_GENOME/STARK.database;
+			mv $GENOME $GENOME.tmp;
+			mv $GENOME.fai $GENOME.fai.tmp;
+			cut -f1 $GENOME.fai.tmp|sort -k1V|parallel -k '$SAMTOOLS faidx $GENOME.tmp {}' > $GENOME;
 			rm -rf $DB_TMP;
+			rm -rf  $DBFOLDER_GENOME/$DATE/$ASSEMBLY/*.tmp;
+			rm -rf  $DBFOLDER_GENOME/$DATE/$ASSEMBLY/*.tmp.fai;
 		" >> $MK
 		MK_ALL="$MK_ALL $GENOME"
 	fi;
 
-	# Samtools genome index
+	# Samtools hts-ref
 	if [ ! -d $GENOME.hts-ref ]; then
 		if [ "$SAMTOOLS" != "" ]; then
 			echo "$GENOME.hts-ref/done: $GENOME
@@ -267,6 +272,16 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 				perl $(dirname $SAMTOOLS)/seq_cache_populate.pl -root $GENOME.hts-ref $GENOME;
 			" >> $MK
 			MK_ALL="$MK_ALL $GENOME.hts-ref/done"
+		fi;
+	fi;
+
+	# Samtools index
+	if [ ! -e $GENOME.fai ]; then
+		if [ "$SAMTOOLS" != "" ]; then
+		    echo "$GENOME.fai: $GENOME
+				$SAMTOOLS faidx $GENOME;
+		    " >> $MK
+			MK_ALL="$MK_ALL $GENOME.fai"
 		fi;
 	fi;
 

@@ -6,10 +6,14 @@
 #############
 DATABASES_LIST=""
 DATABASES_CONFIG_LIST=""
-ASSEMBLY=hg38
+
 #####################
 # ASSEMBLY & GENOME #
 #####################
+
+#GENOME_REGEX="--download-genomes-contig-regex='chr[0-9XYM]+$'"
+GENOME_REGEX=""
+export GENOME_REGEX
 
 if [ -z $ASSEMBLY ] || [ "$ASSEMBLY" == "" ]; then
 	ASSEMBLY=hg19
