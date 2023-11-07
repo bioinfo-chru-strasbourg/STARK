@@ -676,10 +676,10 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 				done; \
 			done;
 			cat $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/refGene.unsorted.bed | sort -k1,1V -k2,2n -k3,3n > $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/refGene.$ASSEMBLY.bed;
+			rm -rf $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/refGene.unsorted.bed;
 			-[ ! -s $DBFOLDER_REFGENE/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_REFGENE/STARK.database && chmod o+r $DBFOLDER_REFGENE/STARK.database;
 			[ ! -e $DBFOLDER_REFGENE/current/$ASSEMBLY ] || unlink $DBFOLDER_REFGENE/current/$ASSEMBLY;
 			ln -snf $DBFOLDER_REFGENE/$DATE/$ASSEMBLY $DBFOLDER_REFGENE/current/$ASSEMBLY;
-			rm -rf $DBFOLDER_REFGENE/$DATE/refGene.unsorted.bed;
 			" >> $MK
 
 		MK_ALL="$MK_ALL $DBFOLDER_REFGENE/done"
