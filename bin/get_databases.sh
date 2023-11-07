@@ -409,7 +409,6 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 			DB_TARGET_FILE_LIST="$DB_TARGET_FILE_LIST $(basename $DB_TARGET_GATK)"
 
 			if [[ "$DBFOLDER_GATK_URL_FILE" =~ .*"dbsnp138"*. ]]; then
-				#echo $DBFOLDER_GATK_URL_FILE
 				DBFOLDER_GATK_URL=$DBFOLDER_GATK_URL_DBSNP
 			else
 				DBFOLDER_GATK_URL=$DBFOLDER_GATK_URL_DEFAULT
@@ -663,20 +662,8 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
 
 		echo "$DBFOLDER_REFGENE/done: $DBFOLDER
-			howard databases --assembly='$ASSEMBLY' --download-refseq=$DBFOLDER_REFGENE/$DATE;
-			cat $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/ncbiRefSeq.txt | while IFS='' read -r line; do \
-				CHROM=\$\$(echo \$\$line | awk '{print \$\$3}' | cut -d\"_\" -f1); \
-				NM=\$\$(echo \$\$line | awk '{print \$\$2}'); \
-				GENE=\$\$(echo \$\$line | awk '{print \$\$13}'); \
-				STRAND=\$\$(echo \$\$line | awk '{print \$\$4}'); \
-				echo \$\$line | awk '{print \$\$10}' | tr \",\" \"\\n\" | grep -v '^\$\$' > $TMP_DATABASES_DOWNLOAD_RAM/refGene.unsorted.bed.NM1 ; \
-				echo \$\$line | awk '{print \$\$11}' | tr \",\" \"\\n\" | grep -v '^\$\$' > $TMP_DATABASES_DOWNLOAD_RAM/refGene.unsorted.bed.NM2; \
-				paste $TMP_DATABASES_DOWNLOAD_RAM/refGene.unsorted.bed.NM1 $TMP_DATABASES_DOWNLOAD_RAM/refGene.unsorted.bed.NM2 | while read SS ; do \
-					echo -e \"\$\$CHROM\t\$\$SS\t\$\$GENE\t\$\$NM\t\$\$STRAND\" >> $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/refGene.unsorted.bed; \
-				done; \
-			done;
-			cat $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/refGene.unsorted.bed | sort -k1,1V -k2,2n -k3,3n > $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/refGene.$ASSEMBLY.bed;
-			rm -rf $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/refGene.unsorted.bed;
+			howard databases --assembly='$ASSEMBLY' --download-refseq=$DBFOLDER_REFGENE/$DATE --download-refseq-format-file='ncbiRefSeq.txt' ;
+			mv DBFOLDER_REFGENE/$DATE/$ASSEMBLY/ncbiRefSeq.bed $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/refGene.$ASSEMBLY.bed;
 			-[ ! -s $DBFOLDER_REFGENE/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_REFGENE/STARK.database && chmod o+r $DBFOLDER_REFGENE/STARK.database;
 			[ ! -e $DBFOLDER_REFGENE/current/$ASSEMBLY ] || unlink $DBFOLDER_REFGENE/current/$ASSEMBLY;
 			ln -snf $DBFOLDER_REFGENE/$DATE/$ASSEMBLY $DBFOLDER_REFGENE/current/$ASSEMBLY;
@@ -727,13 +714,15 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
 		
 		echo "$DBFOLDER_DBSNP/done: $DBFOLDER
-			howard databases --assembly='$ASSEMBLY' --genomes-folder=$DBFOLDER_GENOME/current/ --download-dbsnp=$DBFOLDER_DBSNP/$DATE --download-dbsnp-vcf;
-			$BCFTOOLS sort $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/*/dbsnp.vcf.gz -o $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/dbsnp.vcf.gz;
-			$TABIX $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/dbsnp.vcf.gz;
+			howard databases --assembly='$ASSEMBLY' --genomes-folder=$DBFOLDER_GENOME/current/ --download-dbsnp=$DBFOLDER_DBSNP/$DATE --download-dbsnp-releases=$DBSNP_VERSION_LIST --download-dbsnp-vcf --download-dbsnp-url-files-prefix=$DBSNP_VERSION_PREFIX --download-dbsnp-assemblies-map=$DBSNP_ASSEMBLY_MAP;
+			for DBSNP_VERSION in $DBSNP_VERSION_LIST; do
+				$BCFTOOLS sort $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/$DBSNP_VERSION/dbsnp.vcf.gz -o $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/dbsnp.$DBSNP_VERSION.vcf.gz;
+				$TABIX $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/dbsnp.$DBSNP_VERSION.vcf.gz;
+				rm -rf $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/$DBSNP_VERSION/;
+			done;
 			-[ ! -s $DBFOLDER_DBSNP/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_DBSNP/STARK.database && chmod o+r $DBFOLDER_DBSNP/STARK.database;
 			[ ! -e $DBFOLDER_DBSNP/current/$ASSEMBLY ] || unlink $DBFOLDER_DBSNP/current/$ASSEMBLY;
 			ln -snf $DBFOLDER_DBSNP/$DATE/$ASSEMBLY $DBFOLDER_DBSNP/current/$ASSEMBLY;
-			rm -rf $DB_TMP;
 		" >> $MK
 		MK_ALL="$MK_ALL $DBFOLDER_DBSNP/done"
 	fi;

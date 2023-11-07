@@ -4052,8 +4052,8 @@ GENES_PANEL_NUM=0
 					if [ "$HOWARD_FIELDS_REPORT" == "" ]; then
 						HOWARD_FIELDS_REPORT=$(echo $HOWARD_FIELDS | sed "s/ALL//")
 					fi;
-					$HOWARD --config=$HOWARD_CONFIG --config=$HOWARD_CONFIG --config_prioritization=$HOWARD_CONFIG_PRIORITIZATION --config_annotation=$HOWARD_CONFIG_ANNOTATION --pzfields="PZScore,PZFlag,PZComment,PZInfos" --format=tab  --fields="$HOWARD_FIELDS_REPORT" --sort=$HOWARD_SORT --sort_by="$HOWARD_SORT_BY" --order_by="$HOWARD_ORDER_BY" --multithreading --threads=$THREADS --snpeff_threads=$THREADS_BY_SAMPLE --tmp=$TMP_FOLDER_TMP --env=$CONFIG_TOOLS --input=$GENES_PANEL_VCF --output=$HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.tmp --force;
-					GENES_PANEL_REPORT_TSV=$HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.tmp
+					$HOWARD2 --input=$GENES_PANEL_VCF --output=$HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV;
+					GENES_PANEL_REPORT_TSV=$HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV;
 				fi;
 
 				# Formating to create table

@@ -94,7 +94,7 @@ REMOVE_INTERMEDIATE_SAM?=1
 
 # VCF NORMALIZATION with BCFTOOLS
 %.vcf: %.normalization.vcf
-	$(BCFTOOLS) norm -m- -f $(GENOME)) $< | $(BCFTOOLS) norm --rm-dup exact | $(BCFTOOLS) annotate -x INFO/DP | $(BCFTOOLS) +setGT -- -t . -n 0 | $(BCFTOOLS) +fixploidy -- | $(BCFTOOLS) +fill-tags -- -t all > $@
+	$(BCFTOOLS) norm -m- -f $(GENOME) $< | $(BCFTOOLS) norm --rm-dup exact | $(BCFTOOLS) annotate -x INFO/DP | $(BCFTOOLS) +setGT -- -t . -n 0 | $(BCFTOOLS) +fixploidy -- | $(BCFTOOLS) +fill-tags -- -t all > $@
 
 
 # MERGE SNP and InDel VCF
@@ -127,13 +127,9 @@ REMOVE_INTERMEDIATE_SAM?=1
 
 # VCF to tab delimiter
 %.tsv: %.vcf
-	# translation step
-	$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$< --output=$@ --translation=TSV --fields="$(HOWARD_FIELDS)" --sort=$(HOWARD_SORT) --sort_by="$(HOWARD_SORT_BY)" --order_by="$(HOWARD_ORDER_BY)" --force;
+	$(HOWARD2) convert --input=$< --output=$@;
 	touch $@
-	# Touch
 	if [ ! -e $@ ]; then touch $@; fi;
-	# Cleaning
-
 
 
 ## BAM/FASTQ Files
@@ -159,9 +155,6 @@ REMOVE_INTERMEDIATE_SAM?=1
 %.cram: %.bam
 	echo "test BAM to CRAM: $^"
 	$(SAMTOOLS) view -o $@ -O CRAM -S -T $(GENOME) $*.bam -@ $(THREADS_SAMTOOLS);
-	# test Empty output file
-	# Remove intermediate SAM file
-
 
 # BAM Indexing
 %.cram.crai: %.cram
@@ -171,7 +164,7 @@ REMOVE_INTERMEDIATE_SAM?=1
 # BAM Compress
 %.bam: %.compress.bam
 	$(SAMTOOLS) sort $< -o $@ -l $(BAM_COMPRESSION) -T $<.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS);
-	rm -rf $*.compress.bai
+	rm -rf $*.compress.bai;
 
 
 # BAM Sorting
@@ -181,28 +174,28 @@ REMOVE_INTERMEDIATE_SAM?=1
 	else \
 		mv $< $@; \
 	fi;
-	rm -f $<
+	rm -f $<;
 
 
 # FASTQ Compression with GZIP
 %.fastq.gz: %.fastq
-	$(GZ) --fast $< -c > $@
+	$(GZ) --fast $< -c > $@;
 
 
 # FASTQ(s) from BAM
 %.R1.fastq %.R2.fastq: %.bam
-	$(JAVA) -jar $(PICARD) SamToFastq -INPUT $< -FASTQ $*.R1.fastq -SECOND_END_FASTQ $*.R2.fastq
+	$(JAVA) -jar $(PICARD) SamToFastq -INPUT $< -FASTQ $*.R1.fastq -SECOND_END_FASTQ $*.R2.fastq;
 
 
 # BAM reduction
 GATKRR_FLAGS=
 %.reduced.bam: %.bam %.bam.bai
-	$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) $(GATKRR_FLAGS) -T ReduceReads -R $(GENOME) -I $< -o $@
+	$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) $(GATKRR_FLAGS) -T ReduceReads -R $(GENOME) -I $< -o $@;
 
 
 # SampleSheet Copy
 %.SampleSheet.csv:
-	-mkdir -p $(@D)
+	-mkdir -p $(@D);
 	-cp -p $(@D)/`echo $$(basename $(@D))`.SampleSheet.csv $@ 2>/dev/null || cp -p $(INPUTDIR)/`echo $$(basename $$(dirname $(@D)))`/SampleSheet.csv $@ 2>/dev/null || touch $@;
 
 
@@ -212,7 +205,7 @@ GATKRR_FLAGS=
 
 # Manifest from SampleSheet to Manifest
 %.manifest: %.manifest_from_samplesheet
-	-mkdir -p $(@D)
+	-mkdir -p $(@D);
 	# Create MANIFEST file
 	# 1. test if main manifest file (SAMPLE.manifest) exists (use for Sample analysis)
 	# 2. test if a manifest is found on SampleSheet (use for Run analysis)
@@ -234,7 +227,6 @@ GATKRR_FLAGS=
 		touch $@; \
 	fi;
 	if [ ! -e $@ ]; then touch $@; fi;
-	# Clean
 
 
 # Manifest from SampleSheet name to Manifest
@@ -267,7 +259,6 @@ GATKRR_FLAGS=
 		touch $@; \
 	fi;
 	if [ ! -e $@ ]; then touch $@; fi;
-	# Clean
 
 
 # SampleSheet to Manifest from SampleSheet
@@ -279,7 +270,7 @@ GATKRR_FLAGS=
 	# copy the manifest into the sample folder
 	# clean
 	# Create directory if needed
-	-mkdir -p $(@D)
+	-mkdir -p $(@D);
 	# SampleSheet empty
 	if [ ! -e $< ]; then touch $<; fi;
 	# Manifest List
@@ -309,7 +300,6 @@ GATKRR_FLAGS=
 	if [ -s $(@D)/`echo $$(basename $(@D))`.manifest ] && [ "$(@D)/`echo $$(basename $(@D))`.manifest" != "$@" ]; then \
 		cp -p $(@D)/`echo $$(basename $(@D))`.manifest $@; \
 	fi;
-	#
 	# Empty manifest if failed!
 	if [ ! -e $@ ]; then touch $@; fi;
 	# Touch manifest to use time of SampleSheet
@@ -318,7 +308,7 @@ GATKRR_FLAGS=
 	fi;
 	for manifest in `cut -d"," -f1 $*.manifests_list.txt`; do grep ",$$manifest," $< | cut -d"," -f1 | sed "s/$$/,$$manifest/g" >> $*.manifest_by_samples.txt; echo "-----" >> $*.manifest_by_samples.txt; done; \
 	# Clean
-	-rm -f $*.manifests_list.txt
+	-rm -f $*.manifests_list.txt;
 	# Remove intermediate files
 	-rm -f $(@D)/$(*F).INDEX_SAMPLEMANIFEST_I $(@D)/$(*F).SAMPLE_MANIFEST_I $(@D)/$(*F).SAMPLE_MANIFEST;
 
@@ -332,7 +322,7 @@ GATKRR_FLAGS=
 	# copy the manifest into the sample folder
 	# clean
 	# Create directory if needed
-	-mkdir -p $(@D)
+	-mkdir -p $(@D);
 	# SampleSheet empty
 	if [ ! -e $< ]; then touch $<; fi;
 	# Manifest List
@@ -357,15 +347,13 @@ GATKRR_FLAGS=
 	# Empty manifest if failed!
 	if [ ! -e $@ ]; then touch $@; fi;
 	# Clean
-	-rm -f $*.manifests_list_name.txt
+	-rm -f $*.manifests_list_name.txt;
 	# Remove intermediate files
 	-rm -f $(@D)/$(*F).INDEX_SAMPLEMANIFEST_I_name $(@D)/$(*F).SAMPLE_MANIFEST_I_name $(@D)/$(*F).SAMPLE_MANIFEST_name;
 
 
 # Interval from bed from manifest?
 %.from_manifest.interval_list: %.bed %.bam %.bam.bai %.bam.bed
-	# manifest to interval (not needed?)
-	#cat $<  | tr -d '\r' | sed -e "s/^M//" | awk -F"\t" '{print $$1":"$$2"-"$$3}' > $@
 	# try to extract from the bam if exists, in order to not call in the whome genome
 	-+if [ -s $< ]; then \
 		cp $< $@.bed; \
@@ -378,7 +366,6 @@ GATKRR_FLAGS=
 	# INTERVAL WITH PICARD
 	if [ -s $@.bed ]; then \
 		echo "[INFO] Generate $@ from $@.bed with PICARD BedToIntervalList" ; \
-		#awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$5}' $@.bed > $@.bed.4fields ; \
 		awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$4}' $@.bed > $@.bed.4fields ; \
 		$(JAVA) -jar $(PICARD) BedToIntervalList -I $@.bed.4fields -O $@ -SD $(DICT) ; \
 		rm $@.bed.4fields ; \
@@ -388,17 +375,12 @@ GATKRR_FLAGS=
 		echo "[INFO] Generate $@ from $@.bed with GREP/SED" ; \
 		grep -v ^@ $@.bed  | tr -d '\r' | sed -e "s/^M//" | awk -F"\t" '{print $$1":"$$2"-"$$3}' | sed s/:0-/:1-/gi > $@; \
 	fi;
-	# touch
 	if [ ! -e $@ ]; then touch $@; fi;
-	# clean
-
 
 # Interval from BED
 %.bed.interval_list: %.bed
-	# BED to Intervals (not needed?)
 	# INTERVAL WITH PICARD
 	if [ -s $< ]; then \
-		#cut $< -f1-3,5 > $@.4fields ; \
 		awk -F"\t" '{print $$1"\t"$$2"\t"$$3"\t"$$4}' $< > $@.4fields ; \
 		$(JAVA) -jar $(PICARD) BedToIntervalList -I $@.4fields -O $@ -SD $(DICT) ; \
 		rm $@.4fields ; \
@@ -412,8 +394,8 @@ GATKRR_FLAGS=
 
 # interval_list to intervals
 %.intervals: %.interval_list
-	touch $@
-	-grep -v ^@ $< > $@
+	touch $@;
+	-grep -v ^@ $< > $@;
 
 
 # BED primer file from a Manifest
@@ -462,8 +444,6 @@ GATKRR_FLAGS=
 		touch $@; \
 	fi;
 	if [ ! -e $@ ]; then touch $@; fi;
-	# Clean
-
 
 # BED file from a Manifest
 %.bed_name: %.manifest_name
@@ -494,7 +474,6 @@ GATKRR_FLAGS=
 		touch $@; \
 	fi;
 	if [ ! -e $@ ]; then touch $@; fi;
-	# Clean
 
 
 # BED file from a Manifest
@@ -518,8 +497,6 @@ GATKRR_FLAGS=
 		fi; \
 	fi;
 	if [ ! -e $@ ]; then touch $@; fi;
-	# Clean
-
 
 # BED clipped region file from a Manifest
 %.region_clipped.bed: %.manifest %.bed

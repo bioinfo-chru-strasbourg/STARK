@@ -119,9 +119,7 @@ REPORT_SECTIONS?=ALL
 	# 1) merge | keep only breakends
 	# 2) merge | exclude breakends | do the bcftools norm that crashes on breakends
 	# 3) merge the two above | rest of normalization
-	#
 	# In case there is no SVTYPE, do the full command directly
-	#
 	$(BCFTOOLS) merge --threads=$(THREADS_BY_SAMPLE) -l $< --force-samples -m none --info-rules - > $@.merge_step0.vcf
 	if (($(BCFTOOLS) head $@.merge_step0.vcf | grep ID=SVTYPE)); then \
 	$(BCFTOOLS) view -i 'INFO/SVTYPE="BND"' $@.merge_step0.vcf > $@.bnd_only.tmp.vcf; \
