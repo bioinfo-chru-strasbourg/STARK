@@ -37,7 +37,8 @@ export GENOME
 export DICT
 
 POST_ALIGNMENT_STEPS="sorting splitncigar recalibration compress"
-PIPELINES="star.Arriba.howard star.STARFusion.howard star.gatkHC_SOMATIC.howard"
+#PIPELINES="star.Arriba.howard star.STARFusion.howard star.gatkHC_SOMATIC.howard"
+PIPELINES="star.Arriba star.STARFusion star.gatkHC_SOMATIC"
 
 #POST_ALIGNMENT_STEPS="sorting splitncigar recalibration compress"
 #PIPELINES="star.Arriba star.STARFusion star.gatkHC_SOMATIC"

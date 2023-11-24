@@ -25,7 +25,6 @@ CAP_TMP_FOLDER?=$(TMP_FOLDER_TMP) # TMP_SYS_FOLDER ???
 %.bam: %.clipping.bam %.clipping.bam.bai %.manifest
 	# Clipping
 	+$(CAP) --function=clipping --env=$(CONFIG_TOOLS) --ref=$(GENOME) --bam=$< --manifest=$*.manifest --output=$@ --threads=$(CAP_THREADS) --bedtools=$(BEDTOOLS) --samtools=$(SAMTOOLS) --picard=$(PICARD) --tmp=$(CAP_TMP_FOLDER) $(CAP_OPTIONS)
-	#-rm $*.unclipped.*
 	-rm $*.clipping.*
 
 

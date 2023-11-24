@@ -1,5 +1,5 @@
 ############################
-# HOWARD Annotation Rules
+# HOWARD2 Annotation Rules
 # Author: Antony Le Bechec
 ############################
 # Release

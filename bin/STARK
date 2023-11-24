@@ -31,18 +31,11 @@ source $ENV_CONFIG 1>/dev/null 2>/dev/null
 # Header
 function header () {
 	cat $STARK_FOLDER_DOCS/HEADER
-	#echo "#######################################";
-	#echo "# $SCRIPT_NAME [$SCRIPT_RELEASE-$SCRIPT_DATE]";
-	#echo "# $SCRIPT_DESCRIPTION ";
-	#echo "# $SCRIPT_AUTHOR @ $SCRIPT_COPYRIGHT © $SCRIPT_LICENCE";
-	#echo "#######################################";
 }
 
 # Release
 function release () {
 	cat $STARK_FOLDER_DOCS/RELEASE_NOTES
-	#echo "# RELEASE NOTES:";
-	#echo -e $RELEASE_NOTES
 }
 
 # Usage
@@ -50,11 +43,6 @@ function usage {
 	echo "# USAGE: $(basename $0) --analysis=<FILE>|--reads=<FASTQ>|--run=<RUN> [options...]";
 	echo "";
 	echo "### Launch an analysis through (by order of priority):";
-	#echo "# --analysis a configuration file ";
-	#echo "# --reads a list of sample files ";
-	#echo "# --runs a list of runs folders ";
-	#echo "";
-	#echo "### Analysis configuration file ###";
 	echo "# --analysis=<FILE1,FILE2...>              List of configuration file in JSON format defining options (see below).";
 	echo "#                                          Format: { \"option1\":\"value1\", \"option2\":\"value2\"...}";
 	echo "# --reads=<FILE1,FILE2...>                 List of Reads files";
@@ -67,18 +55,7 @@ function usage {
 	echo "#                                          Analysis name of each RUN can be defined using ':' after each RUN (default: run folder name)";
 	echo "#                                          Format: RUN1:RUN1_ANALYSIS_NAME,RUN2:RUN2_ANALYSIS_NAME...";
 	echo "#                                          Example: /path_of_my_runs/my_run:my_run1,run_name_folder_in_configured_runs_folder:my_run2";
-	#echo "#                                          Examples:";
-	#echo "#                                          - SAMPLE Analysis";
-	#echo "#                                          { \"fastq\":\"sample1.R1.fastq,sample2.bam\",";
-	#echo "#                                            \"fastq_R2\":\"sample1.R2.fastq,\",";
-	#echo "#                                            \"bed\":\"sample1.manifest,sample2.bed\",";
-	#echo "#                                            \"application\":\"APP2\" }";
-	#echo "#                                          - RUN Analysis";
-	#echo "#                                          { \"run\":\"/path_of_my_runs/my_run:my_run1,run_name_folder_in_configured_runs_folder:my_run2\",";
-	#echo "#                                            \"bed\":\"my_run.bed,my_other_run.manifest\",";
-	#echo "#                                            \"application\":\"APP2\" }";
 	echo ""
-
 	echo "### SAMPLE Analysis options";
 	echo "# --sample=<STRING1,STRING2...>            List of corresponding SAMPLE Name";
 	echo "#                                          Automatically detected from input files.";
@@ -95,7 +72,6 @@ function usage {
 	echo "#                                          *fastq.gz|*fq.gz";
 	echo "# --other_files=<FILE1,FILE2...>           List of corresponding other files (beware of correspondance).";
 	echo "#                                          Files will be copied into each SAMPLE folder";
-	#echo "# --adapters=<STRING>                      Adapters to trim.";
 	echo ""
 
 	echo "### RUN Analysis options";
@@ -212,11 +188,6 @@ fi;
 PARAM=$@
 DEBUG=0
 VERBOSE=0
-#PARAM=$(echo $@ | tr "\n" " ")
-#echo $PARAM;
-#echo $ARGS;
-#PARAM=$(echo $ARGS | sed s/--//gi);
-#exit 0;
 
 eval set -- "$ARGS"
 while true
@@ -501,7 +472,6 @@ in_array ()
 # ENV
 #########
 
-#echo "APP=$APP"; exit;
 (($VERBOSE)) && [ ! -z "$APP" ] && echo "#[INFO] Search Application '$APP'"
 
 ENV=$(find_app "$APP" "$STARK_FOLDER_APPS")
@@ -531,8 +501,6 @@ fi;
 if [[ $THREADS_INPUT =~ $re ]] && [ "$THREADS_INPUT" != "" ]; then
 	THREADS=$THREADS_INPUT;
 fi;
-#echo "#[INFO] Threads processing: $THREADS";
-
 
 
 # DEBUG
@@ -588,18 +556,8 @@ SAMPLESHEET_INPUT_ARRAY=($(echo $SAMPLESHEET_INPUT | tr "," " "))
 
 if (($APPLICATIONS_INFOS)); then
 
-	#if [ ! -e $SAMPLESHEET_INPUT ]; then
-	#	echo "#[ERROR] SampleSheet '$SAMPLESHEET_INPUT' does NOT exists."
-	#	#exit 0;
-	#fi;
-	#  (env -i bash -c "export APP=default && source /tool/config/config.app && source_app $APP && env | grep "APP"")
-
-	#SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-
 	RUNS_TEST=$RUNS
-
 	APP_TEST=$APP
-	#APP_TEST_NAME=$(source_app "$APP" "$STARK_FOLDER_APPS" 2>/dev/null; echo $APP_NAME)
 	APP_TEST_NAME=$(name_app "$APP" "$STARK_FOLDER_APPS" 2>/dev/null)
 	APP_TEST_ENV=$ENV
 
@@ -644,7 +602,7 @@ if (($APPLICATIONS_INFOS)); then
 			#FIELD_SEP="\t"
 			#APP_INFOS=$(source_app "$STARK_FOLDER_APPS/$ENV_DEF"
 			if ! APP_INFOS=$(source_app "$STARK_FOLDER_APPS/$ENV_DEF"; 
-			echo -e "$APP_RELEASE\t$APP_DESCRIPTION\t$APP_GROUP\t$APP_PROJECT\t$FOLDER_RUN\t$FOLDER_RESULTS\t$FOLDER_REPOSITORY\t$FOLDER_ARCHIVES\t$FOLDER_FAVORITES\t$PIPELINES\t$POST_SEQUENCING_STEPS\t$POST_ALIGNMENT_STEPS\t$POST_CALLING_STEPS\t$POST_ANNOTATION_STEPS\t$HOWARD_ANNOTATION_REPORT"); then
+			echo -e "$APP_RELEASE\t$APP_DESCRIPTION\t$APP_GROUP\t$APP_PROJECT\t$FOLDER_RUN\t$FOLDER_RESULTS\t$FOLDER_REPOSITORY\t$FOLDER_ARCHIVES\t$FOLDER_FAVORITES\t$PIPELINES\t$POST_SEQUENCING_STEPS\t$POST_ALIGNMENT_STEPS\t$POST_CALLING_STEPS\t$POST_ANNOTATION_STEPS\t$HOWARD2_ANNOTATION_REPORT"); then
 			 	echo "#[ERROR] Application '$ENV_DEF' error";
 			 	exit 1
 			fi
@@ -662,7 +620,7 @@ if (($APPLICATIONS_INFOS)); then
 			POST_ALIGNMENT_STEPS=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $12}')
 			POST_CALLING_STEPS=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $13}')
 			POST_ANNOTATION_STEPS=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $14}')
-			HOWARD_ANNOTATION_REPORT=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $15}')
+			HOWARD2_ANNOTATION_REPORT=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $15}')
 
 			[ -z "$APP_DESCRIPTION" ] && APP_DESCRIPTION="-";
 			[ -z "$APP_GROUP" ] && APP_GROUP="UNKNOWN";
@@ -686,7 +644,7 @@ if (($APPLICATIONS_INFOS)); then
 				# echo "#[INFO]    ARCHIVES               $FOLDER_ARCHIVES";
 				# echo "#[INFO]    FAVORITES               $FOLDER_FAVORITES";
 				echo "#[INFO]    PIPELINES              $PIPELINES "
-				echo "#[INFO]    ANNOTATIONS            $HOWARD_ANNOTATION_REPORT "
+				echo "#[INFO]    ANNOTATIONS            $HOWARD2_ANNOTATION_REPORT "
 				echo "#[INFO]    POST SEQUENCING STEPS  $POST_SEQUENCING_STEPS "
 				echo "#[INFO]    POST ALIGNMENT STEPS   $POST_ALIGNMENT_STEPS "
 				echo "#[INFO]    POST CALLING STEPS     $POST_CALLING_STEPS "
@@ -779,9 +737,6 @@ if (($APPLICATIONS_INFOS)); then
 
 		done;
 
-	# else
-	# 	echo "";
-	# 	echo "#[INFO] USE $(basename $0) --applications_infos --runs=<RUN> to detect RAW FOLDER and APPLICATION of RUN";
 	fi;
 	echo "";
 
@@ -856,10 +811,7 @@ if (($DATABASES_INFOS)); then
 	#echo "$ENV"
 	for D in $DATABASES_LIST; do
 		VAR_D=$D; #echo ${!VAR_VERSION};
-		#VAR_DESCRIPTION=$T"_DESCRIPTION"; #echo ${!VAR_DESCRIPTION};
-		#VAR_REF=$T"_REF"; #echo ${!VAR_REF};
 		echo "## $D: "${!VAR_D}"";
-		#echo ""
 	done
 
 	echo ""
@@ -869,10 +821,7 @@ if (($DATABASES_INFOS)); then
 	#echo ""
 	for DC in $DATABASES_CONFIG_LIST; do
 		VAR_DC=$DC; #echo ${!VAR_VERSION};
-		#VAR_DESCRIPTION=$T"_DESCRIPTION"; #echo ${!VAR_DESCRIPTION};
-		#VAR_REF=$T"_REF"; #echo ${!VAR_REF};
 		echo "## $DC: "${!VAR_DC}"";
-		#echo ""
 	done
 
 	EXIT=1
@@ -895,7 +844,6 @@ if (($RELEASE_INFOS)); then
 	touch $RELEASE_INFOS $MAKEFILE_PARAM
 
 	#source $ENV;
-	#make -e -f $STARK_FOLDER_BIN/NGSWorkflow.mk PARAM=$MAKEFILE_PARAM RELEASE_INFOS=$RELEASE_INFOS $RELEASE_INFOS 1>/dev/null 2>/dev/null;
 	make -e -f $STARK_FOLDER_BIN/STARK.launch.analysis.mk PARAM=$MAKEFILE_PARAM RELEASE_INFOS=$RELEASE_INFOS $RELEASE_INFOS 1>/dev/null 2>/dev/null;
 	
 	cat $RELEASE_INFOS | sed "s/^## /\n## /"
@@ -1358,7 +1306,6 @@ if [ ! -z "$RUNS" ]; then
 
 				DEM_SAMPLESHEET=$DEMULTIPLEXING_FOLDER/$R_BASENAME/SampleSheet.csv
 				DEM_STARKCOMPLETE=$DEMULTIPLEXING_FOLDER/$R_BASENAME/STARKComplete.txt
-				#DEM_MANIFEST_LIST=$DEMULTIPLEXING_FOLDER/$R_BASENAME/STARKComplete.txt
 
 
 				# Test DEM_TODO
@@ -1394,20 +1341,14 @@ if [ ! -z "$RUNS" ]; then
 				else
 					CMD=""
 				fi;
-				#CMD=""
 
-				#echo "CMD=$CMD"; exit 0
 
-			#fi;
 			elif [ -s $R/SampleSheet.csv ] || [ -s "$SAMPLESHEET_INPUT_RI" ]; then
 
 				echo "#[INFO] RUN '$R_NAME' is a demultiplexed folder (Fastq) including configuration file SampleSheet"
 
-				#RUN_SAMPLESHEET_TEST=$RUN_SAMPLESHEET
 				# RUN is a DEM RUN (FASTQ)
-				#echo "#[INFO] RUN analysis as a DEM folder (Fastq)";
 				CONFIG_FILE_TAB_LIST=""
-				#RUN_CONFIG_FILE_LIST=""
 
 				# Find SampleSheet
 				RUN_SAMPLESHEET=""
@@ -1416,14 +1357,12 @@ if [ ! -z "$RUNS" ]; then
 				# sampleSheet within the RUN folder
 				[ -z $RUN_SAMPLESHEET ] && RUN_SAMPLESHEET=$R/SampleSheet.csv
 				# Echo
-				#(($DEBUG)) && echo "#[INFO] [ -f $R/SampleSheet.csv ] || [ -f $SAMPLESHEET_INPUT_RI ]";
 				[ ! -e $RUN_SAMPLESHEET ] && echo "#[ERROR] No SampleSheet for RUN '$R'" && exit 1;
 				echo "#[INFO] SampleSheet found for RUN '$R': $RUN_SAMPLESHEET";
 
 				# RUN_ANALYSIS_NAME
 				RUN_ANALYSIS_NAME=$R_NAME
 				[ ! -z $ANALYSIS_NAME ] && RUN_ANALYSIS_NAME=$ANALYSIS_NAME
-				#echo " R_NAME=$R_NAME ANALYSIS_NAME=$ANALYSIS_NAME RUN_ANALYSIS_NAME=$RUN_ANALYSIS_NAME"; exit 0;
 
 
 				ANALYSIS_TAG_SAMPLESHEET=$(grep "^Description" $RUN_SAMPLESHEET | cut -d, -f2- | tr "," "!" | tr " " "!"  | tr -d '\r')
@@ -1468,14 +1407,8 @@ if [ ! -z "$RUNS" ]; then
 				MANIFEST_INDEX_FIELD=2;
 				SAMPLE_DESCRIPTION_FIELD=3;
 				SAMPLE_PROJECT_FIELD=3;
-				# SAMPLE_ID_FIELD=0;
-				# SAMPLE_NAME_FIELD=0;
-				# MANIFEST_INDEX_FIELD=0;
-				# SAMPLE_DESCRIPTION_FIELD=0;
-				# SAMPLE_PROJECT_FIELD=0;
 
 				C=1
-				#for i in $(awk '/Data/{y=1;next}y' $DEM_SAMPLESHEET | tr -d '\r' | sed 's/,/\t/g' | head -n 1) ; do
 				for i in $(cat $RUN_SAMPLESHEET | awk '/\[Data\]/,/\[[^Data]/' | grep "^\[" -v | sed '/^[[:space:]]*$/d' | tr -d '\r' | sed 's/,/\t/g' | head -n 1) ; do
 					[ $i == "Sample_ID" ] && SAMPLE_ID_FIELD=$C
 					[ $i == "Sample_Name" ] && SAMPLE_NAME_FIELD=$C
@@ -1488,9 +1421,6 @@ if [ ! -z "$RUNS" ]; then
 				# Create config
 				APP_LIST=""
 				for L in $(cat $RUN_SAMPLESHEET | awk '/\[Data\]/,/\[[^Data]/' | grep "^\[" -v | sed '/^[[:space:]]*$/d' | tail -n +2 | tr -d '\r'); do
-					# SAMPLE ID/NAME
-					# SAMPLE_ID=$(echo $L | cut -d, -f1)
-					# SAMPLE_NAME=$(echo $L | cut -d, -f2)
 					SAMPLE_ID=$(echo $L | cut -d, -f$SAMPLE_ID_FIELD)
 					SAMPLE_NAME=$(echo $L | cut -d, -f$SAMPLE_NAME_FIELD)
 					[ -z $SAMPLE_NAME ] && SAMPLE_NAME=$SAMPLE_ID
@@ -1498,8 +1428,6 @@ if [ ! -z "$RUNS" ]; then
 					if [ "$SAMPLE_LIST" == "" ] || $(list_include_item "$SAMPLE_LIST" "$SAMPLE_NAME"); then #
 
 						# APP
-						#SAMPLE_APP="$(echo $L | cut -d, -f$SAMPLE_PROJECT_FIELD | awk -F[$TAG_DELIMITER ] '{print $1}' | tr " " "+" | tr "," "+")"
-						# NEW APP extraction format
 						SAMPLE_DESCRIPTION_FIELD_VALUE=$(echo $L | cut -d, -f$SAMPLE_DESCRIPTION_FIELD)
 						SAMPLE_TAG=$(echo $L | cut -d, -f$SAMPLE_DESCRIPTION_FIELD | tr " " "!")"!"
 						SAMPLE_APP=$(extract_tag "$SAMPLE_DESCRIPTION_FIELD_VALUE" "APP" | tr " " "+")
@@ -1526,17 +1454,11 @@ if [ ! -z "$RUNS" ]; then
 						if [ "$STARK_DEMULTIPLEXING_READS_MAPPING" == "" ]; then
 							STARK_DEMULTIPLEXING_READS_MAPPING="R1 I1 I2 R2";
 						fi;
-						# $(echo $READS_MAPPING | tr "," " " | cut -d' ' -f1)
 
 						# Patterns for Fastq R1
 						FASTQ_PATTERN_ILLUMINA='_S*_'$(echo $STARK_DEMULTIPLEXING_READS_MAPPING | tr "," " " | cut -d' ' -f1)'_*.fastq.gz';
 						FASTQ_PATTERN_GENERIC='.*'$(echo $STARK_DEMULTIPLEXING_READS_MAPPING | tr "," " " | cut -d' ' -f1)'*.fastq.gz';
 
-						# Check Fastq R1 with pattern Illumina
-						# SAMPLE_FASTQ_R1_PATTERN=$SAMPLE_NAME'_S*_R1_*.fastq.gz'
-						# SAMPLE_FASTQ_R2_PATTERN=$SAMPLE_NAME'_S*_R2_*.fastq.gz'
-						# SAMPLE_FASTQ_I1_PATTERN=$SAMPLE_NAME'_S*_I1_*.fastq.gz'
-						# SAMPLE_FASTQ_I2_PATTERN=$SAMPLE_NAME'_S*_I2_*.fastq.gz'
 						SAMPLE_FASTQ_R1_PATTERN=$SAMPLE_NAME'_S*_'$(echo $STARK_DEMULTIPLEXING_READS_MAPPING | tr "," " " | cut -d' ' -f1)'_*.fastq.gz'
 						SAMPLE_FASTQ_R2_PATTERN=$SAMPLE_NAME'_S*_'$(echo $STARK_DEMULTIPLEXING_READS_MAPPING | tr "," " " | cut -d' ' -f4)'_*.fastq.gz'
 						SAMPLE_FASTQ_I1_PATTERN=$SAMPLE_NAME'_S*_'$(echo $STARK_DEMULTIPLEXING_READS_MAPPING | tr "," " " | cut -d' ' -f2)'_*.fastq.gz'
@@ -1581,7 +1503,6 @@ if [ ! -z "$RUNS" ]; then
 								MANIFEST_FILE=$FOLDER_MANIFEST/$MANIFEST_FILENAME && (($VERBOSE)) && echo "#[INFO] Manifest file found for sample '$SAMPLE_NAME': $MANIFEST_FILE"
 							else
 								MANIFEST_FILE=""
-								#echo "#[WARN] Manifest file NOT found"
 								echo "#[ERROR] Manifest file NOT found: $MANIFEST_FILENAME"
 								exit 1
 							fi;
@@ -1598,7 +1519,6 @@ if [ ! -z "$RUNS" ]; then
 							MANIFEST_GENES_FILE=$(echo $MANIFEST_GENES_FILE | sed "s/+$//")
 
 							# Transcripts File
-							#MANIFEST_TRANSCRIPTS_FILE=$(ls "$R/$MANIFEST_FILENAME*.transcripts" 2>/dev/null | tr "\n" "+") && (($VERBOSE)) &&  echo "#[INFO] Manifest Transcripts file found for sample '$SAMPLE_NAME': $MANIFEST_TRANSCRIPTS_FILE"
 							if (($(ls $R/$MANIFEST_FILENAME*.transcripts 2>/dev/null | wc -l))); then
 								MANIFEST_TRANSCRIPTS_FILE=$(ls $R/$MANIFEST_FILENAME*.transcripts 2>/dev/null | tr "\n" "+" | sed "s/+$//" | sed "s/^+//") && (($VERBOSE)) &&  echo "#[INFO] Manifest Transcripts file found for sample '$SAMPLE_NAME': $MANIFEST_TRANSCRIPTS_FILE"
 							elif (($(ls $FOLDER_MANIFEST/$MANIFEST_FILENAME*.transcripts 2>/dev/null | wc -l))); then
@@ -1619,17 +1539,9 @@ if [ ! -z "$RUNS" ]; then
 							PEDIGREE_FILE=$FOLDER_PEDIGREE/$SAMPLE_APP_GROUP.$SAMPLE_APP_PROJECT.ped && (($VERBOSE)) && echo "#[INFO] Manifest file found for sample '$SAMPLE_NAME': $PEDIGREE_FILE"
 						else
 							PEDIGREE_FILE=""
-							#echo "#[WARN] Manifest file NOT found"
-							echo "#[WARN] Pediree file NOT found"
+							echo "#[WARN] Pedigree file NOT found"
 						fi;
 						
-						# echo "FOLDER_PEDIGREE=$FOLDER_PEDIGREE"
-						# echo "SAMPLE_APP_GROUP=$SAMPLE_APP_GROUP"
-						# echo "SAMPLE_APP_PROJECT=$SAMPLE_APP_PROJECT"
-						# cat $PEDIGREE_FILE
-						# exit 0
-
-						# OTHER FILES
 						OTHER_FILES="";
 						if [ -d $R/Stats ]; then
 							(($DEBUG)) && echo "#[INFO] $R/Stats added to Others Files"
@@ -1643,22 +1555,12 @@ if [ ! -z "$RUNS" ]; then
 						else
 							(($DEBUG)) && echo "#[WARN] $R/Stats added to Others Files"
 						fi;
-						#echo "OTHER_FILES=$OTHER_FILES"
-						#exit 0
-
-						#OTHER_FILES="$R/Stats:$SAMPLE_NAME.demultiplexing/Stats+$R/Reports:$SAMPLE_NAME.demultiplexing/Reports"
-
-						#	echo "SAMPLE_LIST '$SAMPLE_NAME' found in the list '$SAMPLE_LIST'"
 						APP_LIST=$(echo "$APP_LIST $SAMPLE_APP" | tr " " "\n" | sort -u | tr "\n" " ")
 						echo "$SAMPLE_APP,$SAMPLE_ID,$SAMPLE_NAME,$SAMPLE_FASTQ_R1,$SAMPLE_FASTQ_R2,$SAMPLE_FASTQ_I1,$SAMPLE_FASTQ_I2,$MANIFEST_FILE,$MANIFEST_GENES_FILE,$MANIFEST_TRANSCRIPTS_FILE,$PEDIGREE_FILE,$SAMPLE_TAG,$OTHER_FILES" >> $CONFIG_FILE_TAB
-						#echo "$SAMPLE_APP,$SAMPLE_ID,$SAMPLE_NAME,$SAMPLE_FASTQ_R1,$SAMPLE_FASTQ_R2,$SAMPLE_FASTQ_I1,$SAMPLE_FASTQ_I2,$MANIFEST_FILE,$MANIFEST_GENES_FILE,$MANIFEST_TRANSCRIPTS_FILE,$SAMPLE_TAG,$OTHER_FILES >> $CONFIG_FILE_TAB"
 					fi;
 
 				done;
 
-				#(($DEBUG)) && cat $CONFIG_FILE_TAB | column -t
-				#(($DEBUG)) && ls -l  $TMP_FOLDER_TMP_R/*.config.tab
-				#(($DEBUG)) && cat $TMP_FOLDER_TMP_R/*.config.tab | sort -u
 				(($DEBUG)) && for T in $TMP_FOLDER_TMP_R/*.config.tab; do echo ""; echo $T; cat $T | sort -u; done;
 
 				(($DEBUG)) && echo "#[INFO] CONFIG_FILE_TAB_LIST=$CONFIG_FILE_TAB_LIST"; #exit 0;
@@ -1668,19 +1570,15 @@ if [ ! -z "$RUNS" ]; then
 				# Create config
 				ANALYSIS_FILES=""
 
-
-				#for APP_ONE_RUN_CONFIG_FILE in $R/*.config.tab; do
 				for APP_ONE_RUN_CONFIG_FILE in $(echo $CONFIG_FILE_TAB_LIST | tr " " "\n"); do
-					#echo "APP_ONE_RUN_CONFIG_FILE=$APP_ONE_RUN_CONFIG_FILE"
 					APP_ONE=$(basename $APP_ONE_RUN_CONFIG_FILE | sed s/.config.tab//)
-
-
 					SAMPLE_TEST=$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u | awk -F"," -v APP=$APP_ONE '$1==APP{print $3}' | tr '\n' ',' | sed s/,$//)
 
 					if ! APP_INFOS=$(source_app "$APP_ONE" "$STARK_FOLDER_APPS/"; echo -e "$APP_RELEASE\t$APP_DESCRIPTION\t$APP_GROUP\t$APP_PROJECT\t$FOLDER_RUN\t$FOLDER_RESULTS\t$FOLDER_REPOSITORY\t$FOLDER_ARCHIVES\t$FOLDER_FAVORITES\t$PIPELINES\t$POST_ALIGNMENT_STEPS\t$HOWARD_ANNOTATION_REPORT"); then
 						echo "#[ERROR] Application '$APP_ONE' error";
 						exit 1
 					fi
+
 					#APP_RELEASE_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $1}')
 					#APP_DESCRIPTION_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $2}')
 					#APP_GROUP_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $3}')
@@ -1690,29 +1588,15 @@ if [ ! -z "$RUNS" ]; then
 					FOLDER_REPOSITORY_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $7}')
 					FOLDER_ARCHIVES_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $8}')
 					FOLDER_FAVORITES_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $9}')
-					#PIPELINES_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $10}')
-					#POST_ALIGNMENT_STEPS_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $11}')
-					#HOWARD_ANNOTATION_REPORT_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $12}')
-
-					#echo APP_ONE=$APP_ONE
-					#echo APP_INFOS=$APP_INFOS
-					#echo FOLDER_REPOSITORY_ONE=$FOLDER_REPOSITORY_ONE
-					#exit 0
-
-					#echo "SAMPLE_TEST="$SAMPLE_TEST
-					#echo "APP_ONE=$APP_ONE"
-					#RUN_CONFIG_FILE=$R/$APP_ONE.analysis.json
 					RUN_CONFIG_FILE=$TMP_FOLDER_TMP_R/$APP_ONE.analysis.json
-					#RUN_CONFIG_FILE_LIST="$RUN_CONFIG_FILE_LIST$RUN_CONFIG_FILE"
+
 					> $RUN_CONFIG_FILE
 					echo "{" >> $RUN_CONFIG_FILE
 					# APP
-					#echo "\"app\":\"$APP_ONE\"," >> $RUN_CONFIG_FILE
 					echo "\"app\":\"$APP_ONE\"," >> $RUN_CONFIG_FILE
 					# RUN
 					echo "\"analysis_name\":\"$RUN_ANALYSIS_NAME\"," >> $RUN_CONFIG_FILE
 					# ANALYSIS TAG
-					#echo ${ANALYSIS_TAG}; exit 0;
 					echo "\"analysis_tag\":\"${ANALYSIS_TAG}\"," >> $RUN_CONFIG_FILE
 					# SAMPLE NAME
 					echo "\"sample\":\""$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u | awk -F"," -v APP=$APP_ONE '$1==APP{print $3}' | tr '\n' ',' | sed s/,$//)"\"," >> $RUN_CONFIG_FILE
@@ -1761,8 +1645,6 @@ if [ ! -z "$RUNS" ]; then
 				else
 					echo "#[ERROR] No Samples to analyse " && exit 1;
 				fi;
-				#CMD=""
-				#echo "CMD=$CMD"; exit 0
 
 			elif (($(find -L $R -name '*R1*fastq.gz' -or -name '*.sam' -or -name '*.bam' -or -name '*.cram' | wc -l))); then
 
@@ -1774,26 +1656,21 @@ if [ ! -z "$RUNS" ]; then
 				(($VERBOSE)) && echo "#[INFO] Search FASTQ Read1 (*R1*fastq.gz)"
 				for R1 in $(find -L $R -name '*R1*fastq.gz'); do
 					(($VERBOSE)) && echo "#[INFO] FASTQ Read1 found: $R1";
-					# find R2
-					#echo $R1 | sed s/[._-]R1[._-]/R2/gi
 
 					(($VERBOSE)) && echo "#[INFO] Search for *R2*fastq.gz"
 					re='(.*[._-])R1([._-].*)'
-					#if [[ $R1 =~ $re ]]; then
 					R2=""
 					if [[ $R1 =~ $re ]]; then
 						R2=${BASH_REMATCH[1]}"R2"${BASH_REMATCH[2]}
 				  	fi;
 			  		[ "$R2" != "" ] && [ -f $R2 ] && (($VERBOSE)) && echo "#[INFO] Corresponding FASTQ Read2 found: $R2"
-					#echo $R2
+
 
 					FASTQ_R1="$FASTQ_R1$R1,"
 					[ "$R2" != "" ] && [ -f $R2 ] && FASTQ_R2="$FASTQ_R2$R2"
 					FASTQ_R2="$FASTQ_R2,"
 
 				done;
-				#FASTQ_R1=$(echo $FASTQ_R1 | sed s/,$//)
-				#FASTQ_R2=$(echo $FASTQ_R2 | sed s/,$//)
 				(($DEBUG)) && echo "#[INFO] List FASTQ_R1: $FASTQ_R1"
 				(($DEBUG)) && echo "#[INFO] List FASTQ_R2: $FASTQ_R2"
 
@@ -1813,7 +1690,6 @@ if [ ! -z "$RUNS" ]; then
 				(($DEBUG)) && echo "#[INFO] List FASTQ_R2: $FASTQ_R2"
 
 				CMD="$STARK_FOLDER_BIN/STARK $PARAM --reads=$FASTQ_R1 --fastq_R2=$FASTQ_R2 "
-				#CMD=""
 
 			fi
 
@@ -1821,15 +1697,6 @@ if [ ! -z "$RUNS" ]; then
 
 			(($DEBUG)) && echo "#[INFO] CMD=$CMD"
 			[ "$CMD" != "" ] && eval $CMD --no_header || exit 1
-			# if [ "$CMD" != "" ]; then
-			# 	if $CMD --no_header; then
-			# 		(($DEBUG)) && echo "#[INFO] CMD OK"
-			# 	else
-			# 		exit 1
-			# 	fi;
-			# fi;
-
-
 			echo ""
 
 		done;
@@ -1844,8 +1711,6 @@ if [ ! -z "$RUNS" ]; then
 	fi;
 
 
-
-	#exit 0;
 fi;
 
 # Break analysis

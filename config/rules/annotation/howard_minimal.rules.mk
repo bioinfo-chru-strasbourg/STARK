@@ -16,11 +16,11 @@ MK_DATE="13/04/2021"
 # 13/04/2021-V0.9.4.2: Add HOWARD_CONFIG_OPTIONS
 
 
-# HOWARD Variables
+# HOWARD2 Variables
 ####################
-HOWARD_ANNOTATION_MINIMAL?="Symbol,location,outcome,hgvs"
-HOWARD_CALCULATION?=VAF,NOMEN,VAF_STATS,DP_STATS,VARTYPE
-HOWARD_NOMEN_FIELDS?="hgvs"
+HOWARD2_ANNOTATION_MINIMAL?="Symbol,location,outcome,hgvs"
+HOWARD2_CALCULATION?=VAF,NOMEN,VAF_STATS,DP_STATS,VARTYPE
+HOWARD2_NOMEN_FIELDS?="hgvs"
 
 
 # RULES
@@ -29,7 +29,7 @@ HOWARD_NOMEN_FIELDS?="hgvs"
 	# Prevent comma in description in vcf header
 	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$< --output=$@.tmp --threads=$(THREADS_BY_CALLER) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
 	# Annotation step
-	+$(HOWARD2) $(HOWARD2_CONFIG_OPTIONS) --input=$@.tmp --output=$@ --annotation=$(HOWARD_ANNOTATION_MINIMAL) --calculation=$(HOWARD_CALCULATION_MINIMAL) --transcripts=$*.transcripts --assembly=$(ASSEMBLY) --hgvs_field=$(HOWARD_NOMEN_FIELDS);
+	+$(HOWARD2) $(HOWARD2_CONFIG_OPTIONS) --input=$@.tmp --output=$@ --annotation=$(HOWARD2_ANNOTATION_MINIMAL) --calculation=$(HOWARD2_CALCULATION_MINIMAL) --transcripts=$*.transcripts --assembly=$(ASSEMBLY) --hgvs_field=$(HOWARD2_NOMEN_FIELDS);
 	cp $@.tmp $@
 	-if [ ! -e $@ ]; then cp $*.empty.vcf $@; fi;
 	# Downgrading VCF format 4.2 to 4.1

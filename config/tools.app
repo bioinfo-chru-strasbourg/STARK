@@ -194,7 +194,7 @@ TOOLS_LIST=$TOOLS_LIST" OUTLYZER"
 
 # FASTP
 export FASTP_VERSION=0.23.2							# VER
-export FASTP=$NGS_TOOLS/fastp/current/bin/fastp		# BIN
+export FASTP=fastp		# BIN $NGS_TOOLS/fastp/current/bin/
 export FASTP_DESCRIPTION="A tool designed to provide fast all-in-one preprocessing for FastQ files."
 export FASTP_REF="https://github.com/OpenGene/fastp"
 TOOLS_LIST=$TOOLS_LIST" FASTP"

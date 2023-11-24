@@ -1135,8 +1135,6 @@ GENES_BASES_HTML=$(echo $GENES_BASES_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
 
 # VARIANTS count
 FINAL_VCF="$SAMPLE_FOLDER/$SAMPLE.reports/$SAMPLE.final.vcf.gz"
-#FINAL_TSV="$SAMPLE_FOLDER/$SAMPLE.reports/$SAMPLE.final.tsv"
-#VARIANT_NUMBER=$(grep -cv "^#" $FINAL_VCF)
 VARIANT_NUMBER=$(zcat $FINAL_VCF | grep -cv "^#" )
 FINAL_VCF_PZFLAG_HEADER=$(zcat $FINAL_VCF | grep  "^##INFO=<ID=PZFlag")
 
@@ -1148,12 +1146,11 @@ PIPELINES_HTML="<strong>$PIPELINES_NUMBER pipeline"$([ $PIPELINES_NUMBER -gt 1 ]
 ALIGNERS_CALLERS_ANNOTATORS_HTML="($ALIGNERS_HTML, $CALLERS_HTML, $ANNOTATORS_HTML)"
 
 # HOWARD PRIORITIZATION 
-HOWARD_PRIORITIZATION_PARAM=$(FIRST=$(echo $HOWARD_PRIORITIZATION_REPORT,$HOWARD_PRIORITIZATION,$HOWARD_PRIORITIZATION_VARANK | tr "," " " | cut -d" " -f1) && echo $FIRST","$(echo $HOWARD_PRIORITIZATION_REPORT,$HOWARD_PRIORITIZATION,$HOWARD_PRIORITIZATION_VARANK | tr "," " " | tr " " "\n" | sort -u | grep -v "^$FIRST" | tr "\n" "," | sed s/,$//) | tr "," " ")
-HOWARD_PRIORITIZATION_LIST=""
-for HOWARD_P in $(echo "$HOWARD_PRIORITIZATION_PARAM" | tr " " "\n"); do
-	#if (($(head -n1 $FINAL_TSV | tr "\t" "\n" | grep "^PZFlag-$HOWARD_P$" | wc -l))); then
+HOWARD2_PRIORITIZATION_PARAM=$(FIRST=$(echo $HOWARD2_PRIORITIZATION_REPORT,$HOWARD2_PRIORITIZATION,$HOWARD2_PRIORITIZATION_VARANK | tr "," " " | cut -d" " -f1) && echo $FIRST","$(echo $HOWARD2_PRIORITIZATION_REPORT,$HOWARD2_PRIORITIZATION,$HOWARD2_PRIORITIZATION_VARANK | tr "," " " | tr " " "\n" | sort -u | grep -v "^$FIRST" | tr "\n" "," | sed s/,$//) | tr "," " ")
+HOWARD2_PRIORITIZATION_LIST=""
+for HOWARD_P in $(echo "$HOWARD2_PRIORITIZATION_PARAM" | tr " " "\n"); do
 	if (($(echo "$FINAL_VCF_PZFLAG_HEADER" | grep "^##INFO=<ID=PZFlag-$HOWARD_P," | wc -l))); then
-		HOWARD_PRIORITIZATION_LIST=$HOWARD_PRIORITIZATION_LIST" "$HOWARD_P
+		HOWARD2_PRIORITIZATION_LIST=$HOWARD2_PRIORITIZATION_LIST" "$HOWARD_P
 	fi;
 done;
 
@@ -1165,7 +1162,6 @@ if (($SEQUENCING_ARCHIVE_METRICS_CRAM_VALIDATION)); then
 else
 	SEQUENCING_ARCHIVE_METRICS_CRAM_MESSAGE=" (<span style='color:red;'>NOT validated</span>)"
 fi;
-# grep "CRAM_cram_source" $SEQUENCING_ARCHIVE_METRICS  | cut -d$'\t' -f2 | xargs basename
 
 
 if [ "$AFTER_TOTAL_SEQUENCES" != "$BEFORE_TOTAL_SEQUENCES" ]; then
@@ -1285,14 +1281,7 @@ SECTION_NAME="Sequencing &amp; Mapping"
 SECTION_ID="sequencing_mapping"
 
 # FILES
-#FASTQCDATA="$SAMPLE_FOLDER/$SAMPLE.sequencing/metrics.fastqc.txt"
-#FASTQCIMAGESDIR="$SAMPLE_FOLDER/$SAMPLE.sequencing/"$SAMPLE"_fastqc/Images"
-
-#PER_BASE_QUALITY_FILE="$FASTQCIMAGESDIR/per_base_quality.png"
-#cp $PER_BASE_QUALITY_FILE $HTMLDIR/$(basename $PER_BASE_QUALITY_FILE)
 HTML_LOGO="$HTMLFOLDER/$(basename $LOGO)"
-#PER_BASE_QUALITY_FILE_HTML="$HTMLFOLDER/$(basename $PER_BASE_QUALITY_FILE)"
-
 
 echo '
 <div class="progress1 pb-4" style="border-style: solid none none none ; border-color: rgb(20, 157, 204); border-radius: 0px;">
@@ -2845,7 +2834,7 @@ if ((1)); then
 						'$(echo $ALIGNERS_CALLERS_ANNOTATORS | sed "s/ /<br>/gi")'
 						'$([ "$POST_CALLING_STEPS" != "" ] && echo "<br>with post calling steps <strong>"$POST_CALLING_STEPS"</strong>")'
 						'$([ "$POST_ANNOTATION_STEPS" != "" ] && echo "<br>with post annotation steps <strong>"$POST_ANNOTATION_STEPS"</strong>")'
-						'$([ "$HOWARD_PRIORITIZATION_LIST" != "" ] && echo "<br>with post prioritization <strong>"$HOWARD_PRIORITIZATION_LIST"</strong>")'
+						'$([ "$HOWARD2_PRIORITIZATION_LIST" != "" ] && echo "<br>with post prioritization <strong>"$HOWARD2_PRIORITIZATION_LIST"</strong>")'
 					</p>
 
 					'"$(cat $HTMLFILE_VARIANTS_STATS_GENES_PANEL)"'
@@ -4049,8 +4038,8 @@ GENES_PANEL_NUM=0
 
 				# Create TSV if not exists
 				if [ ! -s $GENES_PANEL_REPORT_TSV ] || ((0)); then
-					if [ "$HOWARD_FIELDS_REPORT" == "" ]; then
-						HOWARD_FIELDS_REPORT=$(echo $HOWARD_FIELDS | sed "s/ALL//")
+					if [ "$HOWARD2_FIELDS_REPORT" == "" ]; then
+						HOWARD2_FIELDS_REPORT=$(echo $HOWARD2_FIELDS | sed "s/ALL//")
 					fi;
 					$HOWARD2 --input=$GENES_PANEL_VCF --output=$HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV;
 					GENES_PANEL_REPORT_TSV=$HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV;
@@ -4267,7 +4256,7 @@ if in_array $SECTION_ID $SECTIONS || in_array ALL $SECTIONS ; then
 					'$(echo $ALIGNERS_CALLERS_ANNOTATORS | sed "s/ /<br>/gi")'
 					'$([ "$POST_CALLING_STEPS" != "" ] && echo "<br>with post calling steps <strong>"$POST_CALLING_STEPS"</strong>")'
 					'$([ "$POST_ANNOTATION_STEPS" != "" ] && echo "<br>with post annotation steps <strong>"$POST_ANNOTATION_STEPS"</strong>")'
-					'$([ "$HOWARD_PRIORITIZATION_LIST" != "" ] && echo "<br>with post prioritization steps <strong>"$HOWARD_PRIORITIZATION_LIST"</strong>")'
+					'$([ "$HOWARD2_PRIORITIZATION_LIST" != "" ] && echo "<br>with post prioritization steps <strong>"$HOWARD2_PRIORITIZATION_LIST"</strong>")'
 					<br>
 
 				</p>
@@ -4321,7 +4310,7 @@ if in_array $SECTION_ID $SECTIONS || in_array ALL $SECTIONS ; then
 					'$(echo $ALIGNERS_CALLERS_ANNOTATORS | sed "s/ /<br>/gi")'
 					'$([ "$POST_CALLING_STEPS" != "" ] && echo "<br>with post calling steps <strong>"$POST_CALLING_STEPS"</strong>")'
 					'$([ "$POST_ANNOTATION_STEPS" != "" ] && echo "<br>with post annotation steps <strong>"$POST_ANNOTATION_STEPS"</strong>")'
-					'$([ "$HOWARD_PRIORITIZATION_LIST" != "" ] && echo "<br>with post prioritization steps <strong>"$HOWARD_PRIORITIZATION_LIST"</strong>")'
+					'$([ "$HOWARD2_PRIORITIZATION_LIST" != "" ] && echo "<br>with post prioritization steps <strong>"$HOWARD2_PRIORITIZATION_LIST"</strong>")'
 					<br>
 
 				</p>

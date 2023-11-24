@@ -312,7 +312,7 @@ ENV PIP="/root/mambaforge/bin/pip"
 RUN $MAMBA init
 RUN $PIP install $PYTHON_MODULE  && $PIP cache purge
 # R r-biocmanager r-cowplot r-argparse r-ranger r-tidyverse
-RUN $MAMBA install -y -c bioconda -c conda-forge -c biobuilds umi_tools~=1.1.4 bbmap~=39.01 sumaclust~=1.0.31 star-fusion~=1.12.0 bcftools~=1.18.0 && $MAMBA clean -afy && \
+RUN $MAMBA install -y -c bioconda -c conda-forge -c biobuilds umi_tools~=1.1.4 bbmap~=39.01 sumaclust~=1.0.31 fastp~=0.23.2 star-fusion~=1.12.0 bcftools~=1.18.0 && $MAMBA clean -afy && \
 	ln -s /root/mambaforge/bin/python /usr/local/bin/python && \
 	ln -s /root/mambaforge/bin/python3 /usr/local/bin/python3 && \
 	ln -s /root/mambaforge/bin/pip /usr/local/bin/pip && \
@@ -573,7 +573,6 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 ENV TOOL_NAME="bwa"
 ENV TOOL_VERSION="0.7.17"
 ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.tar.bz2"
-#ENV TOOL_SOURCE_EXTERNAL="https://sourceforge.net/projects/bio-bwa/files/$TOOL_NAME-$TOOL_VERSION.tar.bz2/download"
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/lh3/bwa/releases/download/v$TOOL_VERSION/bwa-$TOOL_VERSION.tar.bz2"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
@@ -614,19 +613,19 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 #########
 
 # TOOL INFO
-ENV TOOL_NAME="fastp"
-ENV TOOL_VERSION="0.23.2"
-ENV TOOL_TARBALL="$TOOL_NAME"
-ENV TOOL_SOURCE_EXTERNAL="http://opengene.org/$TOOL_NAME/$TOOL_NAME.$TOOL_VERSION"
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+#ENV TOOL_NAME="fastp"
+#ENV TOOL_VERSION="0.23.2"
+#ENV TOOL_TARBALL="$TOOL_NAME"
+#ENV TOOL_SOURCE_EXTERNAL="http://opengene.org/$TOOL_NAME/$TOOL_NAME.$TOOL_VERSION"
+#ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
 
 # TOOL INSTALLATION
-RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-	source $TOOL_INIT && \
-	cp $TOOL_SOURCE $TOOL_DEST/bin/ && \
-	chmod a+x $TOOL_DEST/bin/* && \
-	$TOOL_CHECK ;
+#RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+#	source $TOOL_INIT && \
+#	cp $TOOL_SOURCE $TOOL_DEST/bin/ && \
+#	chmod a+x $TOOL_DEST/bin/* && \
+#	$TOOL_CHECK ;
 
 
 

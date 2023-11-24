@@ -21,16 +21,16 @@
 
 
 # HOWARD Prioritization
-HOWARD_FILTER?="default"
-HOWARD_CONFIG?="config.ini"
-HOWARD_CONFIG_PRIORITIZATION?="config.prioritization.ini"
-HOWARD_CONFIG_ANNOTATION?="config.annotation.ini"
+#HOWARD_FILTER?="default"
+#HOWARD_CONFIG?="config.ini"
+#HOWARD_CONFIG_PRIORITIZATION?="config.prioritization.ini"
+#HOWARD_CONFIG_ANNOTATION?="config.annotation.ini"
 
 # HOWARD Translation
-HOWARD_FIELDS?="NOMEN,PZFlag,PZScore,PZComment,CNOMEN,PNOMEN,location,outcome,VAF_average,dbSNP,dbSNPNonFlagged,popfreq,ALL"
-HOWARD_SORT?="PZFlag::DESC,PZScore:n:DESC"
-HOWARD_SORT_BY?="PZFlag,PZScore"
-HOWARD_ORDER_BY?="DESC,DESC"
+#HOWARD_FIELDS?="NOMEN,PZFlag,PZScore,PZComment,CNOMEN,PNOMEN,location,outcome,VAF_average,dbSNP,dbSNPNonFlagged,popfreq,ALL"
+#HOWARD_SORT?="PZFlag::DESC,PZScore:n:DESC"
+#HOWARD_SORT_BY?="PZFlag,PZScore"
+#HOWARD_ORDER_BY?="DESC,DESC"
 
 # OPTIONS
 REMOVE_INTERMEDIATE_SAM?=1

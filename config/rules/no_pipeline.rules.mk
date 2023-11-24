@@ -25,7 +25,6 @@
 	# BedToIntervalList
 	$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) BedToIntervalList -I $@.tmp.4fields -O $@.tmp.interval -SD $(DICT);
 	# Alignment - Empty BAM
-	#grep "^@" $@.tmp.interval | $(SAMTOOLS) view -b --no-PG > $@
 	grep "^@" $@.tmp.interval > $@.tmp.sam
 	if (($$(zcat $*.R2.fastq.gz | head -n 1 | wc -l))); then \
 		$(SAMTOOLS) import -1 $*.R1.fastq.gz -2 $*.R2.fastq.gz -T '*' -@ $(THREADS_SAMTOOLS) >> $@.tmp.sam; \

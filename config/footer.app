@@ -1160,40 +1160,40 @@ export HOWARD_PRIORITIZATION_DEFAULT
 
 # Report
 # Default filter to prioritize/rank variant for Report
-if [ -z "$HOWARD_PRIORITIZATION_REPORT" ]; then
-	HOWARD_PRIORITIZATION_REPORT=$HOWARD_PRIORITIZATION_DEFAULT
+if [ -z "$HOWARD2_PRIORITIZATION_REPORT" ]; then
+	HOWARD2_PRIORITIZATION_REPORT=$HOWARD2_PRIORITIZATION_DEFAULT
 fi;
 if [ ! -z "$APP_NAME" ] && [ ${APP_NAME^^} != "DEFAULT" ]; then
-	HOWARD_PRIORITIZATION_REPORT="$APP_NAME,$HOWARD_PRIORITIZATION_REPORT"
+	HOWARD2_PRIORITIZATION_REPORT="$APP_NAME,$HOWARD2_PRIORITIZATION_REPORT"
 fi;
 # Keep fist as first and sort the rest
-HOWARD_PRIORITIZATION_REPORT=$(echo $(echo $HOWARD_PRIORITIZATION_REPORT | tr "," " " | cut -d" " -f1 | tr " " "," && echo $HOWARD_PRIORITIZATION_REPORT | tr "," " " | tr " " "\n" | sort -u | grep -v "^$(echo $HOWARD_PRIORITIZATION_REPORT | tr "," " " | cut -d" " -f1)$" | tr "\n" "," | sed s/,$//) | tr " " "," )
-export HOWARD_PRIORITIZATION_REPORT
+HOWARD2_PRIORITIZATION_REPORT=$(echo $(echo $HOWARD2_PRIORITIZATION_REPORT | tr "," " " | cut -d" " -f1 | tr " " "," && echo $HOWARD2_PRIORITIZATION_REPORT | tr "," " " | tr " " "\n" | sort -u | grep -v "^$(echo $HOWARD2_PRIORITIZATION_REPORT | tr "," " " | cut -d" " -f1)$" | tr "\n" "," | sed s/,$//) | tr " " "," )
+export HOWARD2_PRIORITIZATION_REPORT
 
 
 # ANALYSIS
 # Default filter to prioritize/rank variant for whole analysis (calculation forced)
-if [ -z "$HOWARD_PRIORITIZATION_ANALYSIS" ]; then
-	HOWARD_PRIORITIZATION_ANALYSIS=$HOWARD_PRIORITIZATION_DEFAULT
+if [ -z "$HOWARD2_PRIORITIZATION_ANALYSIS" ]; then
+	HOWARD2_PRIORITIZATION_ANALYSIS=$HOWARD2_PRIORITIZATION_DEFAULT
 fi;
 if [ ! -z "$APP_NAME" ] && [ ${APP_NAME^^} != "DEFAULT" ]; then
-	HOWARD_PRIORITIZATION_ANALYSIS="$APP_NAME,$HOWARD_PRIORITIZATION_ANALYSIS"
+	HOWARD2_PRIORITIZATION_ANALYSIS="$APP_NAME,$HOWARD2_PRIORITIZATION_ANALYSIS"
 fi;
 # Keep fist as first and sort the rest
-HOWARD_PRIORITIZATION_ANALYSIS=$(echo $(echo $HOWARD_PRIORITIZATION_ANALYSIS | tr "," " " | cut -d" " -f1 | tr " " "," && echo $HOWARD_PRIORITIZATION_ANALYSIS | tr "," " " | tr " " "\n" | sort -u | grep -v "^$(echo $HOWARD_PRIORITIZATION_ANALYSIS | tr "," " " | cut -d" " -f1)$" | tr "\n" "," | sed s/,$//) | tr " " "," )
+HOWARD2_PRIORITIZATION_ANALYSIS=$(echo $(echo $HOWARD2_PRIORITIZATION_ANALYSIS | tr "," " " | cut -d" " -f1 | tr " " "," && echo $HOWARD2_PRIORITIZATION_ANALYSIS | tr "," " " | tr " " "\n" | sort -u | grep -v "^$(echo $HOWARD2_PRIORITIZATION_ANALYSIS | tr "," " " | cut -d" " -f1)$" | tr "\n" "," | sed s/,$//) | tr " " "," )
 export HOWARD_PRIORITIZATION_ANALYSIS
 
 
 # VARANK
 # Default prioritization with HOWARD for VaRank score mode
-if [ -z "$HOWARD_PRIORITIZATION_VARANK" ]; then
-	HOWARD_PRIORITIZATION_VARANK=$HOWARD_PRIORITIZATION_DEFAULT
+if [ -z "$HOWARD2_PRIORITIZATION_VARANK" ]; then
+	HOWARD2_PRIORITIZATION_VARANK=$HOWARD2_PRIORITIZATION_DEFAULT
 fi;
 if [ ! -z "$APP_NAME" ] && [ ${APP_NAME^^} != "DEFAULT" ]; then
-	HOWARD_PRIORITIZATION_VARANK="$APP_NAME,$HOWARD_PRIORITIZATION_VARANK"
+	HOWARD2_PRIORITIZATION_VARANK="$APP_NAME,$HOWARD2_PRIORITIZATION_VARANK"
 fi;
 # Keep fist as first and sort the rest
-HOWARD_PRIORITIZATION_VARANK=$(echo $(echo $HOWARD_PRIORITIZATION_VARANK | tr "," " " | cut -d" " -f1 | tr " " "," && echo $HOWARD_PRIORITIZATION_VARANK | tr "," " " | tr " " "\n" | sort -u | grep -v "^$(echo $HOWARD_PRIORITIZATION_VARANK | tr "," " " | cut -d" " -f1)$" | tr "\n" "," | sed s/,$//) | tr " " "," )
+HOWARD2_PRIORITIZATION_VARANK=$(echo $(echo $HOWARD2_PRIORITIZATION_VARANK | tr "," " " | cut -d" " -f1 | tr " " "," && echo $HOWARD2_PRIORITIZATION_VARANK | tr "," " " | tr " " "\n" | sort -u | grep -v "^$(echo $HOWARD2_PRIORITIZATION_VARANK | tr "," " " | cut -d" " -f1)$" | tr "\n" "," | sed s/,$//) | tr " " "," )
 export HOWARD_PRIORITIZATION_VARANK
 
 
@@ -1204,58 +1204,54 @@ export HOWARD_PRIORITIZATION_VARANK
 
 # DEFAULT
 # Fields to show after translation
-if [ -z $HOWARD_FIELDS ]; then
-	HOWARD_FIELDS="NOMEN,PZFlag,PZScore,PZComment,CNOMEN,PNOMEN,location,outcome,snpeff_impact,VAF_average,dbSNP,dbSNPNonFlagged,popfreq,ALL"
+if [ -z $HOWARD2_FIELDS ]; then
+	HOWARD2_FIELDS="NOMEN,PZFlag,PZScore,PZComment,CNOMEN,PNOMEN,location,outcome,snpeff_impact,VAF_average,dbSNP,dbSNPNonFlagged,popfreq,ALL"
 fi;
-export HOWARD_FIELDS
+export HOWARD2_FIELDS
 # Sort variant in the TXT using 2 fields
-if [ -z $HOWARD_SORT_BY ]; then
-	HOWARD_SORT_BY="PZFlag,PZScore"
+if [ -z $HOWARD2_SORT_BY ]; then
+	HOWARD2_SORT_BY="PZFlag,PZScore"
 fi;
-export HOWARD_SORT_BY
+export HOWARD2_SORT_BY
 # Order fields in variant ranking
-if [ -z $HOWARD_ORDER_BY ]; then
-	HOWARD_ORDER_BY="DESC,DESC"
+if [ -z $HOWARD2_ORDER_BY ]; then
+	HOWARD2_ORDER_BY="DESC,DESC"
 fi;
-export HOWARD_ORDER_BY
+export HOWARD2_ORDER_BY
 
 # MINIMAL
 # Fields to show after minimal translation
-if [ -z $HOWARD_FIELDS_MINIMAL ]; then
-	#HOWARD_FIELDS_MINIMAL=$HOWARD_FIELDS
-	HOWARD_FIELDS_MINIMAL=$(echo $HOWARD_FIELDS | sed "s/ALL//")
+if [ -z $HOWARD2_FIELDS_MINIMAL ]; then
+	HOWARD2_FIELDS_MINIMAL=$(echo $HOWARD2_FIELDS | sed "s/ALL//")
 fi;
-export HOWARD_FIELDS_MINIMAL
+export HOWARD2_FIELDS_MINIMAL
 # Sort variant in the TXT using 2 fields
-if [ -z $HOWARD_SORT_BY_MINIMAL ]; then
-	HOWARD_SORT_BY_MINIMAL=$HOWARD_SORT_BY
+if [ -z $HOWARD2_SORT_BY_MINIMAL ]; then
+	HOWARD2_SORT_BY_MINIMAL=$HOWARD_SORT_BY
 fi;
-export HOWARD_SORT_BY_MINIMAL
+export HOWARD2_SORT_BY_MINIMAL
 # Order fields in variant ranking
-if [ -z $HOWARD_ORDER_BY_MINIMAL ]; then
-	HOWARD_ORDER_BY_MINIMAL=$HOWARD_ORDER_BY
+if [ -z $HOWARD2_ORDER_BY_MINIMAL ]; then
+	HOWARD2_ORDER_BY_MINIMAL=$HOWARD_ORDER_BY
 fi;
-export HOWARD_ORDER_BY_MINIMAL
+export HOWARD2_ORDER_BY_MINIMAL
 
 # REPORT
 # Fields to show after minimal translation
-if [ -z $HOWARD_FIELDS_REPORT ]; then
-	#HOWARD_FIELDS_REPORT=$HOWARD_FIELDS
-	HOWARD_FIELDS_REPORT=$(echo $HOWARD_FIELDS | sed "s/ALL//")
+if [ -z $HOWARD2_FIELDS_REPORT ]; then
+	HOWARD2_FIELDS_REPORT=$(echo $HOWARD2_FIELDS | sed "s/ALL//")
 fi;
-export HOWARD_FIELDS_REPORT
+export HOWARD2_FIELDS_REPORT
 # Sort variant in the TXT using 2 fields
-if [ -z $HOWARD_SORT_BY_REPORT ]; then
-	HOWARD_SORT_BY_REPORT=$HOWARD_SORT_BY
+if [ -z $HOWARD2_SORT_BY_REPORT ]; then
+	HOWARD2_SORT_BY_REPORT=$HOWARD2_SORT_BY
 fi;
-export HOWARD_SORT_BY_REPORT
+export HOWARD2_SORT_BY_REPORT
 # Order fields in variant ranking
-if [ -z $HOWARD_ORDER_BY_REPORT ]; then
-	HOWARD_ORDER_BY_REPORT=$HOWARD_ORDER_BY
+if [ -z $HOWARD2_ORDER_BY_REPORT ]; then
+	HOWARD2_ORDER_BY_REPORT=$HOWARD2_ORDER_BY
 fi;
-export HOWARD_ORDER_BY_REPORT
-
-
+export HOWARD2_ORDER_BY_REPORT
 
 # INFO to FORMAT
 # Transfers INFO annotation to FORMAT annotation

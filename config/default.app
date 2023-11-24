@@ -80,7 +80,7 @@ FOLDER_FAVORITES=
 
 # ASSEMBLY (default hg19)
 # Assembly is automatically detected in manifest file (configured in the SampleSheet of each run), if any
-ASSEMBLY=hg38
+ASSEMBLY=hg19
 
 
 # PIPELINES (default "bwamem.gatkHC.howard")
@@ -578,26 +578,26 @@ MAX_CONCURRENT_HSMETRICS_RAM=16g
 # ANNOTATION
 # Default annotation with HOWARD for intermediate VCF (for each caller) used by default with annotation rule "howard"
 #ANNOTATION_TYPE="core,frequency,score,annotation,prediction,snpeff,snpeff_hgvs" "core,symbol,location,outcome,hgvs,snpeff,snpeff_hgvs,snpeff_split"
-HOWARD_ANNOTATION="symbol,location,outcome,hgvs"
+HOWARD2_ANNOTATION="symbol,location,outcome,hgvs"
 # Default annotation with HOWARD for minimal VCF annotation (rule howard_minimal)
-HOWARD_ANNOTATION_MINIMAL="core,snpeff_split"
+HOWARD2_ANNOTATION_MINIMAL="core,snpeff_split"
 # Default annotation with HOWARD for report
-HOWARD_ANNOTATION_REPORT="core,frequency,score,annotation,prediction,snpeff,snpeff_hgvs,snpeff_split"
+HOWARD2_ANNOTATION_REPORT="core,frequency,score,annotation,prediction,snpeff,snpeff_hgvs,snpeff_split"
 # Default annotation with HOWARD for whole analysis
-HOWARD_ANNOTATION_ANALYSIS="null" # no more annotation
+HOWARD2_ANNOTATION_ANALYSIS="null" # no more annotation
 
 
 # CALCULATION
 # Default calculation with HOWARD for all VCF/pipelines
-HOWARD_CALCULATION="VAF_STATS,DP_STATS,VARTYPE,NOMEN,BARCODE"
+HOWARD2_CALCULATION="VAF_STATS,DP_STATS,VARTYPE,NOMEN,BARCODE"
 # Default minimal calculation with HOWARD for final VCF report
-HOWARD_CALCULATION_MINIMAL="VAF_STATS,DP_STATS,VARTYPE,NOMEN,BARCODE"
+HOWARD2_CALCULATION_MINIMAL="VAF_STATS,DP_STATS,VARTYPE,NOMEN,BARCODE"
 # Default calculation with HOWARD for final VCF report
-HOWARD_CALCULATION_REPORT="FindByPipelines,GenotypeConcordance,VAF,VAF_STATS,DP_STATS,VARTYPE,NOMEN,BARCODE"
+HOWARD2_CALCULATION_REPORT="FindByPipelines,GenotypeConcordance,VAF,VAF_STATS,DP_STATS,VARTYPE,NOMEN,BARCODE"
 # Default calculation with HOWARD for whole analysis (calculation forced, no transcripts list available)
-HOWARD_CALCULATION_ANALYSIS="VAF_STATS,DP_STATS,BARCODE"
+HOWARD2_CALCULATION_ANALYSIS="VAF_STATS,DP_STATS,BARCODE"
 # List of annotation fields to extract NOMEN annotation (default 'hgvs', see HOWARD docs)
-HOWARD_NOMEN_FIELDS="hgvs"
+HOWARD2_NOMEN_FIELDS="hgvs"
 
 
 # PRIORITIZATION
@@ -610,31 +610,31 @@ HOWARD_NOMEN_FIELDS="hgvs"
 # Minimal prioritization with HOWARD (deprecated)
 #HOWARD_PRIORITIZATION_MINIMAL=$HOWARD_PRIORITIZATION_DEFAULT # "default"
 # Default prioritization with HOWARD for Report (full/final VCF)
-HOWARD_PRIORITIZATION_REPORT=$HOWARD_PRIORITIZATION_DEFAULT # "default"
+HOWARD2_PRIORITIZATION_REPORT=$HOWARD2_PRIORITIZATION_DEFAULT # "default"
 # Default prioritization with HOWARD for whole analysis (prioritization forced)
-HOWARD_PRIORITIZATION_ANALYSIS="" # "none"
+HOWARD2_PRIORITIZATION_ANALYSIS="" # "none"
 # Default prioritization with HOWARD for VaRank score mode
-HOWARD_PRIORITIZATION_VARANK=VaRank # "default"
+HOWARD2_PRIORITIZATION_VARANK=VaRank # "default"
 
 
 # TRANSLATION
 # List of fields to show in the TSV file
 # use ALL to show ALL "other" annotations
 # Default filter to prioritize/rank variant, Sort variant in the TXT using 2 fields, Order fields in variant ranking
-HOWARD_FIELDS="NOMEN,PZFlag,PZScore,PZComment,CNOMEN,PNOMEN,location,outcome,snpeff_impact,VAF_average,dbSNP,dbSNPNonFlagged,popfreq,ALL"
-HOWARD_SORT="PZFlag::DESC,PZScore:n:DESC"
-HOWARD_SORT_BY="PZFlag,PZScore"
-HOWARD_ORDER_BY="DESC,DESC"
+HOWARD2_FIELDS="NOMEN,PZFlag,PZScore,PZComment,CNOMEN,PNOMEN,location,outcome,snpeff_impact,VAF_average,dbSNP,dbSNPNonFlagged,popfreq,ALL"
+HOWARD2_SORT="PZFlag::DESC,PZScore:n:DESC"
+HOWARD2_SORT_BY="PZFlag,PZScore"
+HOWARD2_ORDER_BY="DESC,DESC"
 # Minimal
-HOWARD_FIELDS_MINIMAL="NOMEN,PZFlag,PZScore,PZComment,CNOMEN,PNOMEN,location,outcome,snpeff_impact,VAF_average,dbSNP,dbSNPNonFlagged,popfreq"
-HOWARD_SORT_MINIMAL="PZFlag::DESC,PZScore:n:DESC"
-HOWARD_SORT_BY_MINIMAL="PZFlag,PZScore"
-HOWARD_ORDER_BY_MINIMAL="DESC,DESC"
+HOWARD2_FIELDS_MINIMAL="NOMEN,PZFlag,PZScore,PZComment,CNOMEN,PNOMEN,location,outcome,snpeff_impact,VAF_average,dbSNP,dbSNPNonFlagged,popfreq"
+HOWARD2_SORT_MINIMAL="PZFlag::DESC,PZScore:n:DESC"
+HOWARD2_SORT_BY_MINIMAL="PZFlag,PZScore"
+HOWARD2_ORDER_BY_MINIMAL="DESC,DESC"
 # REPORT
-HOWARD_FIELDS_REPORT="NOMEN,PZFlag,PZScore,PZComment,CNOMEN,PNOMEN,location,outcome,snpeff_impact,VAF_average,dbSNP,dbSNPNonFlagged,popfreq"
-HOWARD_SORT_REPORT="PZFlag::DESC,PZScore:n:DESC"
-HOWARD_SORT_BY_REPORT="PZFlag,PZScore"
-HOWARD_ORDER_BY_REPORT="DESC,DESC"
+HOWARD2_FIELDS_REPORT="NOMEN,PZFlag,PZScore,PZComment,CNOMEN,PNOMEN,location,outcome,snpeff_impact,VAF_average,dbSNP,dbSNPNonFlagged,popfreq"
+HOWARD2_SORT_REPORT="PZFlag::DESC,PZScore:n:DESC"
+HOWARD2_SORT_BY_REPORT="PZFlag,PZScore"
+HOWARD2_ORDER_BY_REPORT="DESC,DESC"
 
 
 # INFO to FORMAT

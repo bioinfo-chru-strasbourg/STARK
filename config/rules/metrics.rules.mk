@@ -318,7 +318,6 @@ MAX_CONCURRENT_HSMETRICS_RAM?=24g
 			grep -f $(@D)/$(*F).$$(basename $$one_bed).4fields.contig_from_dict $(@D)/$(*F).$$(basename $$one_bed).4fields.tmp > $(@D)/$(*F).$$(basename $$one_bed).4fields ; \
 			# BedToIntervalList \
 			$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) BedToIntervalList -I $(@D)/$(*F).$$(basename $$one_bed).4fields -O $(@D)/$(*F).$$(basename $$one_bed).interval -SD $(DICT); \
-			# \
 			# If bam is small enough (lower than MAX_VALIDATION_BAM_SIZE Kb), launch CollectHsMetrics the classic way \
 			# Otherwise increase RAM to MAX_CONCURRENT_HSMETRICS_RAM and limit command to MAX_CONCURRENT_HSMETRICS concurrent launches \
 			if [ $$(du $*.validation.bam | cut -f1) -lt $(MAX_VALIDATION_BAM_SIZE) ] ; then \
@@ -330,7 +329,6 @@ MAX_CONCURRENT_HSMETRICS_RAM?=24g
 					--target $(@D)/$(*F).$$(basename $$one_bed).HsMetrics \
 					--max_jobs $(MAX_CONCURRENT_HSMETRICS);\
 			fi; \
-			# \
 			# If bed empty just touch \
 			touch $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_target_coverage.tmp ; \
 			touch $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp ; \

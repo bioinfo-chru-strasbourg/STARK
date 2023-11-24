@@ -47,7 +47,8 @@ JAVA?=java
 TABIX?=tabix
 BGZIP?=bgzip
 GZ?=gzip
-HOWARD?=HOWARD
+#HOWARD?=HOWARD
+HOWARD2?=HOWARD2
 SNPEFF?=snpEff.jar
 VARSCAN?=varscan.jar
 CAP?=CAP
@@ -83,12 +84,12 @@ OMNI?=$(DBFOLDER)/1000G_omni2.5.hg19.vcf
 PHASE1_1000G?=$(DBFOLDER)/1000G_phase1.snps.high_confidence.hg19.sites.vcf
 
 # HOWARD
-HOWARD_CONFIG_OPTIONS?=--config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES)/$(ASSEMBLY) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES)/$(ASSEMBLY) --multithreading --threads=$(THREADS) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --java=$(JAVA)
-HOWARD_DEJAVU_CONFIG_OPTIONS?=--config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_DEJAVU_ANNOTATION) --annovar_folder=$(ANNOVAR) --annovar_databases=$(DEJAVU_ANNOVAR_DATABASES)/$(ASSEMBLY) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES)/$(ASSEMBLY) --multithreading --threads=$(THREADS) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --java=$(JAVA)
+#HOWARD_CONFIG_OPTIONS?=--config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES)/$(ASSEMBLY) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES)/$(ASSEMBLY) --multithreading --threads=$(THREADS) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --java=$(JAVA)
+#HOWARD_DEJAVU_CONFIG_OPTIONS?=--config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_DEJAVU_ANNOTATION) --annovar_folder=$(ANNOVAR) --annovar_databases=$(DEJAVU_ANNOVAR_DATABASES)/$(ASSEMBLY) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES)/$(ASSEMBLY) --multithreading --threads=$(THREADS) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --java=$(JAVA)
 
 # HOWARD2
-HOWARD2_CONFIG_OPTIONS?=--config=$(HOWARD2_CONFIG) --config_prioritization=$(HOWARD2_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD2_CONFIG_ANNOTATION) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES)/$(ASSEMBLY) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES)/$(ASSEMBLY) --multithreading --threads=$(THREADS) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --java=$(JAVA)
-HOWARD2_DEJAVU_CONFIG_OPTIONS?=--config=$(HOWARD2_CONFIG) --config_prioritization=$(HOWARD2_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD2_CONFIG_DEJAVU_ANNOTATION) --annovar_folder=$(ANNOVAR) --annovar_databases=$(DEJAVU_ANNOVAR_DATABASES)/$(ASSEMBLY) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES)/$(ASSEMBLY) --multithreading --threads=$(THREADS) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --java=$(JAVA)
+HOWARD2_CONFIG_OPTIONS?=--config=$(HOWARD2_CONFIG) --prioritization=$(HOWARD2_CONFIG_PRIORITIZATION) --annotation=$(HOWARD2_CONFIG_ANNOTATION) --multithreading --threads=$(THREADS) --verbosity=DEBUG
+HOWARD2_DEJAVU_CONFIG_OPTIONS?=--config=$(HOWARD2_CONFIG) --prioritization=$(HOWARD2_CONFIG_PRIORITIZATION) --annotation=$(HOWARD2_CONFIG_DEJAVU_ANNOTATION) --multithreading --threads=$(THREADS) --verbosity=DEBUG
 
 
 # FIX_VCF_HEADER_REFORMAT

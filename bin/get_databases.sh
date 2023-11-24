@@ -250,7 +250,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
 
 		echo "$GENOME: $DBFOLDER_GENOME
-			howard databases --assembly='$ASSEMBLY' --download-genomes=$DBFOLDER_GENOME/$DATE $GENOME_REGEX;
+			howard databases --assembly='$ASSEMBLY' --download-genomes=$DBFOLDER_GENOME/$DATE --download-genomes-contig-regex=$GENOME_REGEX;
 			[ ! -e $DBFOLDER_GENOME/current/$ASSEMBLY ] || unlink $DBFOLDER_GENOME/current/$ASSEMBLY;
 			ln -snf $DBFOLDER_GENOME/$DATE/$ASSEMBLY $DBFOLDER_GENOME/current/$ASSEMBLY;
 			-[ ! -s $DBFOLDER_GENOME/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_GENOME/STARK.database && chmod o+r $DBFOLDER_GENOME/STARK.database;
@@ -714,7 +714,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
 		
 		echo "$DBFOLDER_DBSNP/done: $DBFOLDER
-			howard databases --assembly='$ASSEMBLY' --genomes-folder=$DBFOLDER_GENOME/current/ --download-dbsnp=$DBFOLDER_DBSNP/$DATE --download-dbsnp-releases=$DBSNP_VERSION_LIST --download-dbsnp-vcf --download-dbsnp-url-files-prefix=$DBSNP_VERSION_PREFIX --download-dbsnp-assemblies-map=$DBSNP_ASSEMBLY_MAP;
+			howard databases --assembly='$ASSEMBLY' --genomes-folder=$DBFOLDER_GENOME/current/ --download-dbsnp=$DBFOLDER_DBSNP/$DATE --download-dbsnp-releases='$DBSNP_VERSION_LIST' --download-dbsnp-url-files='$DBSNP_URL_FILES' --download-dbsnp-vcf --download-dbsnp-parquet —memory=$MEMORY --threads=$THREADS;
 			for DBSNP_VERSION in $DBSNP_VERSION_LIST; do
 				$BCFTOOLS sort $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/$DBSNP_VERSION/dbsnp.vcf.gz -o $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/dbsnp.$DBSNP_VERSION.vcf.gz;
 				$TABIX $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/dbsnp.$DBSNP_VERSION.vcf.gz;
@@ -769,7 +769,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
 
 		echo "$DBFOLDER_DBNSFP/done: $DBFOLDER
-			howard databases --assembly='$ASSEMBLY' --genomes-folder=$DBFOLDER_GENOME/current/ --download-dbnsfp=$DBFOLDER_DBNSFP/$DATE --download-dbnsfp-vcf;
+			howard databases --assembly='$ASSEMBLY' --genomes-folder=$DBFOLDER_GENOME/current/ --download-dbnsfp=$DBFOLDER_DBNSFP/$DATE --download-dbnsfp-vcf --download-dbnsfp-parquet —memory=$MEMORY --threads=$THREADS;
 			-[ ! -s $DBFOLDER_DBNSFP/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_DBNSFP/STARK.database && chmod o+r $DBFOLDER_DBNSFP/STARK.database;
 			[ ! -e $DBFOLDER_DBNSFP/current/$ASSEMBLY ] || unlink $DBFOLDER_DBNSFP/current/$ASSEMBLY;
 			ln -snf $DBFOLDER_DBNSFP/$DATE/$ASSEMBLY $DBFOLDER_DBNSFP/current/$ASSEMBLY;
@@ -839,7 +839,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		(($VERBOSE)) && echo "#[INFO] ARRIBA RELEASE=$DBFOLDER_ARRIBA/$DATE/$ASSEMBLY"
 
 		echo "$DBFOLDER_ARRIBA/done: $DBFOLDER
-			wget --progress=bar:force:noscroll $ARRIBA_CURRENT -P $DB_TMP;
+			aria2c -c -s 16 -x 16 -k 1M -j 1 $ARRIBA_CURRENT -d $DB_TMP;
 			mkdir -p $DBFOLDER_ARRIBA/$DATE/$ASSEMBLY;
 			chmod 0775 $DBFOLDER_ARRIBA/$DATE/$ASSEMBLY;
 			tar -xzf  $DB_TMP/$(basename $ARRIBA_CURRENT) -C $DB_TMP --strip-components=1;
@@ -919,7 +919,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		(($VERBOSE)) && echo "#[INFO] CTAT RELEASE=$DATE"
 
 		echo "$DBFOLDER_CTAT/done: $DBFOLDER
-			wget --progress=bar:force:noscroll $CTAT_CURRENT -P $DB_TMP;
+			aria2c -c -s 16 -x 16 -k 1M -j 1 $CTAT_CURRENT -d $DB_TMP;
 			wget --progress=bar:force:noscroll $CTAT_PM -P $DB_TMP;
 			mkdir -p $DBFOLDER_CTAT/$DATE/$ASSEMBLY;
 			chmod 0775 $DBFOLDER_CTAT/$DATE/$ASSEMBLY;
@@ -1001,7 +1001,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		echo "$DBFOLDER_GENCODE/current/$ASSEMBLY/gencode.v$GENCODE_VERSION.annotation.gtf.gz: $DBFOLDER
 			mkdir -p $DBFOLDER_GENCODE/$DATE/$ASSEMBLY;
 			chmod 0775 $DBFOLDER_GENCODE/$DATE/$ASSEMBLY;
-			wget --progress=bar:force:noscroll $GENCODE_CURRENT -P $DB_TMP;
+			aria2c -c -s 16 -x 16 -k 1M -j 1 $GENCODE_CURRENT -d $DB_TMP;
 			cp $DB_TMP/$(basename $GENCODE_CURRENT) $DBFOLDER_GENCODE/$DATE/$ASSEMBLY/gencode.v$GENCODE_VERSION.annotation.gtf.gz;
 			gzip -d $DBFOLDER_GENCODE/$DATE/$ASSEMBLY/gencode.v$GENCODE_VERSION.annotation.gtf.gz;
 			-[ ! -s $DBFOLDER_GENCODE/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_GENCODE/STARK.database && chmod o+r $DBFOLDER_GENCODE/STARK.database;
@@ -1016,8 +1016,8 @@ fi;
 
 if [ ! -z "$MK_ALL" ]; then
 	echo "$DBFOLDER:
-		mkdir -p $DBFOLDER
-		chmod 0775 $DBFOLDER
+		mkdir -p $DBFOLDER;
+		chmod 0775 $DBFOLDER;
 	" >> $MK
 
 	echo "all: $MK_ALL
@@ -1070,7 +1070,7 @@ if ((0)); then
 
 	if ((1)); then
 		echo ""
-		(($VERBOSE)) && echo "#[INFO] DOWNLOAD GENOME $ASSEMBLY"
+		(($VERBOSE)) && echo "#[INFO] DOWNLOAD GENOME [$ASSEMBLY]"
 		(($VERBOSE)) && echo "#"
 	fi;
 fi;

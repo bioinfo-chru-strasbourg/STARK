@@ -43,13 +43,13 @@ PIPELINES_CMD := $(shell echo "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
 include $(CONFIG)
 
 
-#FORMAT RUNS_SAMPLES=RUN1:SAMPLE1 RUN1:SAMPLE2 RUN2:SAMPLEX
+# FORMAT RUNS_SAMPLES=RUN1:SAMPLE1 RUN1:SAMPLE2 RUN2:SAMPLEX
 # Found in $(PARAM)
 RUNS?=
 RUNS_SAMPLES?=
 
 
-#NUMBER CALCULATION
+# NUMBER CALCULATION
 NB_RUN=$(shell echo $(RUNS) | wc -w)
 NB_SAMPLE=$(shell echo $(RUNS_SAMPLES) | wc -w)
 NB_ALIGNERS=$(shell echo $(ALIGNERS) | wc -w)
@@ -58,7 +58,7 @@ NB_ANNOTATORS=$(shell echo $(ANNOTATORS) | wc -w)
 NB_WORKFLOWS=$(shell echo "$(NB_ALIGNERS) * $(NB_CALLERS) * $(NB_ANNOTATORS)" | bc)
 NB_PIPELINES=$(shell echo $(PIPELINES) | wc -w)
 
-#VARIABLES
+# VARIABLES
 SEP=:
 DATE:=$(shell date '+%Y%m%d-%H%M%S')
 VALIDATION?=0
@@ -131,7 +131,6 @@ VCF_REPORT_FILES=	$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RU
 		$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).reports/$(call sample,$(RUN_SAMPLE)).final.vcf.gz.tbi )
 
 
-#REPORT_FILES_EXT= final.vcf final.vcf.idx final.vcf.gz final.vcf.gz.tbi full.vcf full.vcf.idx full.vcf.gz full.vcf.gz.tbi final.tsv full.tsv final.vcf.metrics/metrics full.vcf.metrics/metrics config  $(ANALYSIS_DATE).final.vcf $(ANALYSIS_DATE).final.vcf.idx $(ANALYSIS_DATE).final.vcf.gz $(ANALYSIS_DATE).final.vcf.gz.tbi $(ANALYSIS_DATE).full.vcf $(ANALYSIS_DATE).full.vcf.idx $(ANALYSIS_DATE).full.vcf.gz $(ANALYSIS_DATE).full.vcf.gz.tbi $(ANALYSIS_DATE).final.tsv $(ANALYSIS_DATE).full.tsv $(ANALYSIS_DATE).config
 REPORT_FILES_EXT= final.vcf.gz final.vcf.gz.tbi full.vcf.gz full.vcf.gz.tbi final.vcf.metrics/metrics full.vcf.metrics/metrics config $(ANALYSIS_DATE).final.vcf.gz $(ANALYSIS_DATE).final.vcf.gz.tbi $(ANALYSIS_DATE).full.vcf.gz $(ANALYSIS_DATE).full.vcf.gz.tbi $(ANALYSIS_DATE).config
 
 REPORT_FILES=$(foreach EXT,$(REPORT_FILES_EXT), $(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).reports/$(call sample,$(RUN_SAMPLE)).$(EXT) ) )
@@ -158,19 +157,17 @@ all: $(FINAL) $(FINAL_REPORT) $(FINAL_REPORT_FILES) $(FINAL_REPORT).variants $(F
 ########
 
 $(RELEASE): $(RELEASE).empty.vcf
-	#echo "RELEASE" > $@
 	echo "" > $@
 	$(STARK_FOLDER_BIN)/STARK --applications_infos_all --app="$(ENV)" >> $@
 	$(STARK_FOLDER_BIN)/STARK --tools_infos --app="$(ENV)" >> $@
 	$(STARK_FOLDER_BIN)/STARK --databases_infos --app="$(ENV)" >> $@
-	$(HOWARD_FOLDER_BIN)/VCFannotation.pl --show_annotations_full --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --input=$< >> $@
-	echo "" >> $@;
-	echo "################################" >> $@;
-	echo "# PRIORITIZATION CONFIGURATION #" >> $@;
-	echo "################################" >> $@;
-	$(STARK_FOLDER_BIN)/parse_config_prioritization_ini.pl --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --applications=$(HOWARD_PRIORITIZATION_REPORT)  --no_header | sort -u -f | sort -k1,2 -f | column -s$$'\t' -t >> $@;
-	#$(STARK_FOLDER_BIN)/STARK --applications_infos_all --app="$(ENV)" >> $@
-	echo "" >> $@
+	#$(HOWARD_FOLDER_BIN)/VCFannotation.pl --show_annotations_full --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --input=$< >> $@
+	#echo "" >> $@;
+	#echo "################################" >> $@;
+	#echo "# PRIORITIZATION CONFIGURATION #" >> $@;
+	#echo "################################" >> $@;
+	#$(STARK_FOLDER_BIN)/parse_config_prioritization_ini.pl --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --applications=$(HOWARD_PRIORITIZATION_REPORT)  --no_header | sort -u -f | sort -k1,2 -f | column -s$$'\t' -t >> $@;
+	#echo "" >> $@
 	cat $(RELEASE_INFOS) >> $@
 
 
@@ -204,7 +201,6 @@ $(RELEASE): $(RELEASE).empty.vcf
 
 
 ## Create all reports for all SAMPLES
-#$(FINAL_REPORT): %.$(ANALYSIS_DATE).report.summary $(REPORTS)
 $(FINAL_REPORT): $(FINAL_REPORT).report.header $(REPORTS)
 	@echo " " >> $@
 	# Creating Report $@ with Reports $^
@@ -236,10 +232,7 @@ CLEAN=	$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/
 	$(RELEASE).empty.vcf \
 	$(PIPELINES_INFOS)
 
-#$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).*.transcripts ) \
-# from_manifest.interval_list.bed
 
-
-clean: #$(CLEAN)
+clean:
 	echo $(CLEAN)
 	-rm -f $(CLEAN)
