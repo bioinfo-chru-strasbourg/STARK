@@ -14,7 +14,6 @@ DATABASES_CONFIG_LIST=""
 #####################
 
 GENOME_REGEX="'chr[0-9XYM]+\$$'"
-#GENOME_REGEX=""
 export GENOME_REGEX
 
 if [ -z $ASSEMBLY ] || [ "$ASSEMBLY" == "" ]; then
@@ -137,15 +136,20 @@ else
 fi;
 export DBSNP_DATABASES
 
-# List of DBSNP to download ex "b151,b156"
-DBSNP_VERSION_LIST="b152"
-export DBSNP_VERSION_LIST
+# Version of DBSNP to download ex "b156"
+DBSNP_VERSION_DOWNLOAD="b152"
+export DBSNP_VERSION_DOWNLOAD
 
-DBSNP_URL_FILES="{"hg38": "GCF_000001405.38.bgz"}"
-export DBSNP_URL_FILES
+#--download-dbsnp-url-files='$DBSNP_URL_FILES'
+#DBSNP_URL_FILES="{"hg38": "GCF_000001405.38.bgz"}"
+#export DBSNP_URL_FILES
 
 # Version of DBSNP to use for GATK tools (realignement, recalibration, calling)
 DBSNP_VERSION="b151"
+dbSNPBuildID="b151"
+
+export DBSNP_VERSION
+export dbSNPBuildID
 
 DATABASES_CONFIG_LIST=$DATABASES_CONFIG_LIST" DBSNP_DATABASES"
 DBFOLDER_DBSNP=$DBFOLDER/dbsnp

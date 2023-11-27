@@ -21,7 +21,7 @@ RELEASE_NOTES=$RELEASE_NOTES"# 0.9.3b-31/05/2019: Add APP configuration\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.4b-17/06/2020: Clarify code, organisation DB/RELEASE, add STARK.description\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.5.0-11/04/2021: Change snpEff download, some bugs fixed, option --current, remove option --rebuild\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.6.0-28/07/2022: Change snpEff download, add GATK databases, some bugs fixed\n";
-RELEASE_NOTES=$RELEASE_NOTES"# 1.0.0-01/11/2023: Rewrite for STARK 19 new database structure: clean code, HOWARD database python, fix makefile rules (point to file, not directory), add CTAT/arriba\n";
+RELEASE_NOTES=$RELEASE_NOTES"# 1.0.0-01/11/2023: Rewrite for STARK 19 new database structure: clean code, HOWARD database python, fix makefile rules (point to file, not directory), add CTAT/arriba, use aria2c\n";
 
 
 # Header
@@ -714,12 +714,12 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
 		
 		echo "$DBFOLDER_DBSNP/done: $DBFOLDER
-			howard databases --assembly='$ASSEMBLY' --genomes-folder=$DBFOLDER_GENOME/current/ --download-dbsnp=$DBFOLDER_DBSNP/$DATE --download-dbsnp-releases='$DBSNP_VERSION_LIST' --download-dbsnp-url-files='$DBSNP_URL_FILES' --download-dbsnp-vcf --download-dbsnp-parquet —memory=$MEMORY --threads=$THREADS;
-			for DBSNP_VERSION in $DBSNP_VERSION_LIST; do
-				$BCFTOOLS sort $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/$DBSNP_VERSION/dbsnp.vcf.gz -o $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/dbsnp.$DBSNP_VERSION.vcf.gz;
-				$TABIX $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/dbsnp.$DBSNP_VERSION.vcf.gz;
-				rm -rf $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/$DBSNP_VERSION/;
-			done;
+			howard databases --assembly='$ASSEMBLY' --genomes-folder=$DBFOLDER_GENOME/current/ --download-dbsnp=$DBFOLDER_DBSNP/$DATE --download-dbsnp-releases='$DBSNP_VERSION_DOWNLOAD' --download-dbsnp-vcf --download-dbsnp-parquet —memory=$MEMORY --threads=$THREADS;
+			$BCFTOOLS sort $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/$DBSNP_VERSION/dbsnp.vcf.gz -o $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/dbsnp.$DBSNP_VERSION.vcf.gz;
+			$TABIX $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/dbsnp.$DBSNP_VERSION.vcf.gz;
+			rm -rf $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/$DBSNP_VERSION/;
+			mv $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/$DBSNP_VERSION/dbsnp.parquet $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/$DBSNP_VERSION/dbsnp.$DBSNP_VERSION.parquet;
+			howard query --input=$DBFOLDER_DBSNP/$DATE/$ASSEMBLY/dbsnp.$DBSNP_VERSION.parquet --query='SELECT "#CHROM", POS, ID, REF, ALT, QUAL, FILTER, INFO FROM variants WHERE dbSNPBuildID<=$DBSNP_VERSION' --include_header --output=$DBFOLDER_DBSNP/$DATE/$ASSEMBLY/dbsnp.$DBSNP_VERSION.vcf.gz —memory=$MEMORY --threads=$THREADS;
 			-[ ! -s $DBFOLDER_DBSNP/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_DBSNP/STARK.database && chmod o+r $DBFOLDER_DBSNP/STARK.database;
 			[ ! -e $DBFOLDER_DBSNP/current/$ASSEMBLY ] || unlink $DBFOLDER_DBSNP/current/$ASSEMBLY;
 			ln -snf $DBFOLDER_DBSNP/$DATE/$ASSEMBLY $DBFOLDER_DBSNP/current/$ASSEMBLY;
