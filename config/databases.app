@@ -137,7 +137,7 @@ fi;
 export DBSNP_DATABASES
 
 # Version of DBSNP to download ex "b156"
-DBSNP_VERSION_DOWNLOAD="b152"
+DBSNP_VERSION_DOWNLOAD="b151"
 export DBSNP_VERSION_DOWNLOAD
 
 #--download-dbsnp-url-files='$DBSNP_URL_FILES'

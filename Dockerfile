@@ -312,7 +312,7 @@ ENV PIP="/root/mambaforge/bin/pip"
 RUN $MAMBA init
 RUN $PIP install $PYTHON_MODULE  && $PIP cache purge
 # R r-biocmanager r-cowplot r-argparse r-ranger r-tidyverse
-RUN $MAMBA install -y -c bioconda -c conda-forge -c biobuilds umi_tools~=1.1.4 bbmap~=39.01 sumaclust~=1.0.31 fastp~=0.23.2 star-fusion~=1.12.0 bcftools~=1.18.0 && $MAMBA clean -afy && \
+RUN $MAMBA install -y -c bioconda -c conda-forge -c biobuilds umi_tools~=1.1.4 bbmap~=39.01 sumaclust~=1.0.31 fastp~=0.23.2 gencore~=0.17.2 star-fusion~=1.12.0 bcftools~=1.18.0 && $MAMBA clean -afy && \
 	ln -s /root/mambaforge/bin/python /usr/local/bin/python && \
 	ln -s /root/mambaforge/bin/python3 /usr/local/bin/python3 && \
 	ln -s /root/mambaforge/bin/pip /usr/local/bin/pip && \
@@ -771,37 +771,19 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 ###########
 
 # TOOL INFO
-ENV TOOL_NAME="itdseek"
-ENV TOOL_VERSION="1.2-2"
-ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.zip"
-ENV TOOL_SOURCE_EXTERNAL="https://github.com/tommyau/itdseek/zipball/master/$TOOL_TARBALL"
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+#ENV TOOL_NAME="itdseek"
+#ENV TOOL_VERSION="1.2-2"
+#ENV TOOL_TARBALL="$TOOL_NAME-$TOOL_VERSION.zip"
+#ENV TOOL_SOURCE_EXTERNAL="https://github.com/tommyau/itdseek/zipball/master/$TOOL_TARBALL"
+#ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
 
 # TOOL INSTALLATION
-RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-	source $TOOL_INIT && \
-	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
-	cp -R $TOOL_SOURCE_BUILD/*/* $TOOL_DEST/bin/ && \
-	$TOOL_CHECK ;
-
-##############
-# FLT3ITDext #
-##############
-
-# TOOL INFO
-ENV TOOL_NAME="flt3itdext"
-ENV TOOL_VERSION="1.1"
-ENV TOOL_TARBALL="$TOOL_NAME"
-ENV TOOL_SOURCE_EXTERNAL="https://github.com/ht50/FLT3_ITD_ext/zip/refs/heads/master.zip"
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-# TOOL PARAMETERS
-
-# TOOL INSTALLATION
-RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-	source $TOOL_INIT && \
-	unzip -q $TOOL_SOURCE -d $TOOL_DEST/bin/ && \
-	$TOOL_CHECK ;
+#RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+#	source $TOOL_INIT && \
+#	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
+#	cp -R $TOOL_SOURCE_BUILD/*/* $TOOL_DEST/bin/ && \
+#	$TOOL_CHECK ;
 
 ##########
 # MUTECT #
@@ -921,19 +903,19 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 # https://github.com/OpenGene/gencore
 
 # TOOL INFO
-ENV TOOL_NAME="gencore"
-ENV TOOL_VERSION="0.17.2"
-ENV TOOL_TARBALL="$TOOL_NAME"
-ENV TOOL_SOURCE_EXTERNAL="http://opengene.org/$TOOL_NAME/$TOOL_NAME"
-ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+#ENV TOOL_NAME="gencore"
+#ENV TOOL_VERSION="0.17.2"
+#ENV TOOL_TARBALL="$TOOL_NAME"
+#ENV TOOL_SOURCE_EXTERNAL="http://opengene.org/$TOOL_NAME/$TOOL_NAME"
+#ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
 
 # TOOL INSTALLATION
-RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-	source $TOOL_INIT && \
-	cp $TOOL_SOURCE $TOOL_DEST/bin/ && \
-	chmod a+x $TOOL_DEST/bin/* && \
-	$TOOL_CHECK ;
+#RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+#	source $TOOL_INIT && \
+#	cp $TOOL_SOURCE $TOOL_DEST/bin/ && \
+#	chmod a+x $TOOL_DEST/bin/* && \
+#	$TOOL_CHECK ;
 
 
 

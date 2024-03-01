@@ -155,7 +155,7 @@ TOOLS_LIST=$TOOLS_LIST" GATK"
 
 
 # GENCORE
-export GENCORE=$NGS_TOOLS/gencore/current/bin/gencore	# BIN-JAR
+export GENCORE=gencore	# BIN-JAR $NGS_TOOLS/gencore/current/bin/
 export GENCORE_VERSION=0.17.2							# VER
 export GENCORE_DESCRIPTION="An efficient tool to remove sequencing duplications and eliminate sequencing errors by generating consensus reads."
 export GENCORE_REF="Chen, S., Zhou, Y., Chen, Y. et al. Gencore: an efficient tool to generate consensus reads for error suppressing and duplicate removing of NGS data. BMC Bioinformatics 20, 606 (2019) doi:10.1186/s12859-019-3280-9"
@@ -193,8 +193,8 @@ TOOLS_LIST=$TOOLS_LIST" OUTLYZER"
 
 
 # FASTP
-export FASTP_VERSION=0.23.2							# VER
 export FASTP=fastp		# BIN $NGS_TOOLS/fastp/current/bin/
+export FASTP_VERSION=0.23.2							# VER
 export FASTP_DESCRIPTION="A tool designed to provide fast all-in-one preprocessing for FastQ files."
 export FASTP_REF="https://github.com/OpenGene/fastp"
 TOOLS_LIST=$TOOLS_LIST" FASTP"
@@ -272,18 +272,11 @@ TOOLS_LIST=$TOOLS_LIST" VARSCAN"
 
 
 # ITDSEEK
-export ITDSEEK=$NGS_TOOLS/itdseek/current/bin/itdseek.sh	# BIN-JAR
-export ITDSEEK_VERSION=1.2-2								# VER
-export ITDSEEK_DESCRIPTION="FLT3 ITD detection algorithm"
-export ITDSEEK_REF="Chun Hang Au, Anna Wa, Dona N. Ho, Tsun Leung Chan and Edmond S. K. Ma. Clinical evaluation of panel testing by next-generation sequencing (NGS) for gene mutations in myeloid neoplasms. Diagn Pathol. 2016 Jan 22;11:11. doi: 10.1186/s13000-016-0456-8."
-TOOLS_LIST=$TOOLS_LIST" ITDSEEK"
-
-# FTL3ITDEXT
-export FTL3ITDEXT=$NGS_TOOLS/flt3itdext/current/bin/FLT3_ITD_ext.pl	# BIN-JAR
-export FTL3ITDEXT_VERSION=1.1											# VER
-export FTL3ITDEXT_DESCRIPTION="FLT3 ITD EXT detection algorithm"
-export FTL3ITDEXT_REF="https://github.com/ht50/FLT3_ITD_ext"
-TOOLS_LIST=$TOOLS_LIST" FTL3ITDEXT"
+#export ITDSEEK=$NGS_TOOLS/itdseek/current/bin/itdseek.sh	# BIN-JAR
+#export ITDSEEK_VERSION=1.2-2								# VER
+#export ITDSEEK_DESCRIPTION="FLT3 ITD detection algorithm"
+#export ITDSEEK_REF="Chun Hang Au, Anna Wa, Dona N. Ho, Tsun Leung Chan and Edmond S. K. Ma. Clinical evaluation of panel testing by next-generation sequencing (NGS) for gene mutations in myeloid neoplasms. Diagn Pathol. 2016 Jan 22;11:11. doi: 10.1186/s13000-016-0456-8."
+#TOOLS_LIST=$TOOLS_LIST" ITDSEEK"
 
 # TRIMMOMATIC
 export TRIMMOMATIC=$NGS_TOOLS/trimmomatic/current/bin/trimmomatic.jar	# BIN-JAR
