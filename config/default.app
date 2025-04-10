@@ -574,6 +574,8 @@ MAX_CONCURRENT_HSMETRICS_RAM=16g
 # Example: HOWARD_CONFIG_DEJAVU_ANNOTATION=$STARK_FOLDER_APPS/MY_APP_GROUP/config.annotation.ini
 #HOWARD_CONFIG_DEJAVU_ANNOTATION=$HOWARD_FOLDER_CONFIG/config.annotation.ini
 
+# HOWARD CONFIG
+HOWARD2_CONFIG=$HOWARD_FOLDER_CONFIG/config.json
 
 # ANNOTATION
 # Default annotation with HOWARD for intermediate VCF (for each caller) used by default with annotation rule "howard"

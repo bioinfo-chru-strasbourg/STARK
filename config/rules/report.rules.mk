@@ -114,13 +114,13 @@ REPORT_SECTIONS?=ALL
 %.merge.vcf: %.final_variants_files_vcf_gz $(BAM)
 	# Generate pipeline name list
 	cat $< | rev | cut -d/ -f1 | rev | sed s/\.vcf.gz//gi | cut -d. -f2- > $@.pipelines
-	# Merge VCF, normalize and rehead with pipelines names
+	# Merge VCF, normalize and rehead with pipelines names (prevent empty VCFs, force single if only one VCF)
 	# bcftools norm -f <ref> <vcf> is not compatible with breakends. Do that treatment separately.
 	# 1) merge | keep only breakends
 	# 2) merge | exclude breakends | do the bcftools norm that crashes on breakends
 	# 3) merge the two above | rest of normalization
 	# In case there is no SVTYPE, do the full command directly
-	$(BCFTOOLS) merge --threads=$(THREADS_BY_SAMPLE) -l $< --force-samples -m none --info-rules - > $@.merge_step0.vcf
+	$(BCFTOOLS) merge --threads=$(THREADS_BY_SAMPLE) -l $< --force-samples $$( [ $$(cat $< | wc -l) -lt 2 ] && echo " --force-single " ) -m none --info-rules - $$((($$($(BCFTOOLS) view $$(cat $<) | grep "^#" -v | head -n 1 | wc -l))) && echo "" || echo " --print-header ") > $@.merge_step0.vcf;
 	if (($(BCFTOOLS) head $@.merge_step0.vcf | grep ID=SVTYPE)); then \
 	$(BCFTOOLS) view -i 'INFO/SVTYPE="BND"' $@.merge_step0.vcf > $@.bnd_only.tmp.vcf; \
 	$(BGZIP) $@.bnd_only.tmp.vcf; \
@@ -191,7 +191,12 @@ REPORT_SECTIONS?=ALL
 		$(BGZIP) --threads=$(THREADS_BY_SAMPLE) -f $<.tmp.$$S; \
 		$(TABIX) -f $<.tmp.$$S.gz; \
 	done;
-	$(BCFTOOLS) concat $<.tmp.*.gz -a -D > $@.tmp;
+	# Prevent empty VCFs
+	if (($$($(BCFTOOLS) view $<.tmp.*.gz | grep "^#" -v | head -n 1 | wc -l))); then \
+		$(BCFTOOLS) concat $<.tmp.*.gz -a -D > $@.tmp; \
+	else \
+		$(BCFTOOLS) view $<.tmp.*.gz > $@.tmp; \
+	fi;
 	if [ "$(INFO_TO_FORMAT_ANNOTATIONS)" != "" ]; then \
 		$(STARK_FOLDER_BIN)/INFO_to_FORMAT.sh --input=$@.tmp --output=$@ --annotations=$(INFO_TO_FORMAT_ANNOTATIONS) --bcftools=$(BCFTOOLS) --tabix=$(TABIX) --threads=$(THREADS_BY_SAMPLE); \
 	else \
@@ -202,7 +207,7 @@ REPORT_SECTIONS?=ALL
 %.variants: $(VCF_REPORT_FILES) %.variants_full
 	# List of final VCF files
 	echo $^ | tr " " "\n" | tr "\t" "\n" | grep "final.vcf.gz$$" > $@.tmp.vcf_list
-	$(BCFTOOLS) merge --threads=$(THREADS) -l $@.tmp.vcf_list -m none --force-samples | $(BCFTOOLS) filter --threads=$(THREADS) -S . -e 'GT=="0/0" | GT=="0|0"' > $@.tmp.merged;
+	$(BCFTOOLS) merge --threads=$(THREADS) -l $@.tmp.vcf_list -m none --force-samples $$([ $$(cat $@.tmp.vcf_list | wc -l) -lt 2 ] && echo " --force-single ") | $(BCFTOOLS) filter --threads=$(THREADS) -S . -e 'GT=="0/0" | GT=="0|0"' > $@.tmp.merged;
 	# Prevent comma in description in vcf header
 	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp.merged --output=$@.tmp.merged --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
 	# Sort VCF

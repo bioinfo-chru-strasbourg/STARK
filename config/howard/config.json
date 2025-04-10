@@ -1,0 +1,55 @@
+{
+    "threads": 24,
+    "memory": null,
+    "verbosity": "WARNING",
+    "docker": {
+        "automount": true,
+        "notremove": false,
+        "tmp": false
+    },
+    "folders": {
+        "databases": {
+            "genomes": "/STARK/databases/genomes/current",
+            "annotations": [
+                "/STARK/databases/annotations/current",
+                "/STARK/databases/dbnsfp/current",
+                "/STARK/databases/dbsnp/current"
+            ],
+            "parquet": [
+                "/STARK/databases/annotations/current"
+            ],
+            "bcftools": [
+                "/STARK/databases/annotations/current"
+            ],
+            "annovar": [
+                "/STARK/databases/annovar/current"
+            ],
+            "snpeff": "/STARK/databases/snpeff/current",
+            "varank": "/STARK/databases/varank/current",
+            "spliceai": "/STARK/databases/spliceai/current",
+            "spip": "/STARK/databases/spip/current"
+        }
+    },
+    "tools": {
+        "bcftools": "bcftools",
+        "bgzip": "bgzip",
+        "java": "java",
+        "snpeff": "/STARK/tools/snpeff/current/share/snpeff-5.1d-0/snpEff.jar",
+        "annovar": "/STARK/tools/annovar/current/bin/table_annovar.pl",
+        "exomiser": "/STARK/tools/exomiser/current/bin/exomiser-cli-14.0.0.jar",
+        "docker": "docker",
+        "splice": {
+            "docker": {
+                "image": "bioinfochrustrasbourg/splice:0.2.4",
+                "entrypoint": "/bin/bash",
+                "options": null,
+                "command": null,
+                "config": {
+                    "automount": true,
+                    "notremove": false,
+                    "tmp": false
+                }
+            }
+        }
+    }
+}

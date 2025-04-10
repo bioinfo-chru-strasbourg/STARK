@@ -137,7 +137,8 @@ fi;
 export DBSNP_DATABASES
 
 # Version of DBSNP to download ex "b156"
-DBSNP_VERSION_DOWNLOAD="b151"
+#DBSNP_VERSION_DOWNLOAD="b151"
+DBSNP_VERSION_DOWNLOAD="b153"
 export DBSNP_VERSION_DOWNLOAD
 
 #--download-dbsnp-url-files='$DBSNP_URL_FILES'
@@ -145,15 +146,21 @@ export DBSNP_VERSION_DOWNLOAD
 #export DBSNP_URL_FILES
 
 # Version of DBSNP to use for GATK tools (realignement, recalibration, calling)
-DBSNP_VERSION="b151"
+# DBSNP_VERSION="b151"
 dbSNPBuildID="b151"
+DBSNP_VERSION="151"
+DBSNP_BUILDID="151"
+#dbSNPBuildID="b153"
 
 export DBSNP_VERSION
 export dbSNPBuildID
+export DBSNP_BUILDID
 
 DATABASES_CONFIG_LIST=$DATABASES_CONFIG_LIST" DBSNP_DATABASES"
 DBFOLDER_DBSNP=$DBFOLDER/dbsnp
-export VCFDBSNP=$DBFOLDER_DBSNP/current/$ASSEMBLY/dbsnp.$DBSNP_VERSION.vcf.gz
+#export VCFDBSNP=$DBFOLDER_DBSNP/current/$ASSEMBLY/dbsnp.$DBSNP_VERSION.vcf.gz
+#export VCFDBSNP=$DBFOLDER_DBSNP/current/$ASSEMBLY/$DBSNP_VERSION/dbsnp.vcf.gz
+export VCFDBSNP=$DBFOLDER_DBSNP/current/$ASSEMBLY/$DBSNP_VERSION_DOWNLOAD/dbsnp.b$DBSNP_BUILDID.vcf.gz
 
 if [ ! -e $VCFDBSNP ]; then
 	echo "#[WARNING] No VCFDBSNP '$VCFDBSNP' in the database. Calling step impossible. Please check '$DBFOLDER' folder or configuration file" >>/dev/stderr
@@ -174,7 +181,8 @@ DATABASES_CONFIG_LIST=$DATABASES_CONFIG_LIST" DBNSFP_DATABASES"
 # refGene/refSeq
 DBFOLDER_REFGENE=$DBFOLDER/refGene
 export DBFOLDER_REFGENE
-export REFSEQ_GENES=$DBFOLDER_REFGENE/current/$ASSEMBLY/refGene.$ASSEMBLY.bed
+#export REFSEQ_GENES=$DBFOLDER_REFGENE/current/$ASSEMBLY/refGene.$ASSEMBLY.bed
+export REFSEQ_GENES=$DBFOLDER_REFGENE/current/$ASSEMBLY/ncbiRefSeq.bed
 
 ##################
 # GATK DATABASES #
@@ -185,6 +193,10 @@ if [ $ASSEMBLY == "hg38" ]; then
 	DBFOLDER_GATK_URL_DEFAULT="https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0"
 	DBFOLDER_GATK_URL_DBSNP="https://storage.googleapis.com/gcp-public-data--broad-references/hg38/v0"
 elif [ $ASSEMBLY == "hg19" ]; then
+	DBFOLDER_GATK_URL_DEFAULT="https://data.broadinstitute.org/snowman/hg19/variant_calling/vqsr_resources/Exome/v2"
+	DBFOLDER_GATK_URL="https://data.broadinstitute.org/snowman/hg19/variant_calling/vqsr_resources/Exome/v2"
+else
+	DBFOLDER_GATK_URL_DEFAULT="https://data.broadinstitute.org/snowman/hg19/variant_calling/vqsr_resources/Exome/v2"
 	DBFOLDER_GATK_URL="https://data.broadinstitute.org/snowman/hg19/variant_calling/vqsr_resources/Exome/v2"
 fi;
 export DBFOLDER_GATK_URL_DEFAULT
@@ -263,7 +275,8 @@ DATABASES_CONFIG_LIST=$DATABASES_CONFIG_LIST" SNPEFF_CONFIG"
 #DATABASES_CONFIG_LIST=$DATABASES_CONFIG_LIST" HOWARD_CONFIG_DEJAVU_ANNOTATION"
 
 ############### Main Folder for HOWARD2 configuration
-export HOWARD2_FOLDER_CONFIG="/STARK/tools/howarddevel/current/config"
+#export HOWARD2_FOLDER_CONFIG="/STARK/tools/howard/devel/config"
+export HOWARD2_FOLDER_CONFIG=$STARK_FOLDER_CONFIG/howard
 
 if [ -z $HOWARD2_CONFIG ] || [ ! -e $HOWARD2_CONFIG ]; then
 	HOWARD2_CONFIG=$HOWARD2_FOLDER_CONFIG/config.json	
