@@ -1081,8 +1081,7 @@ if [ "$ANALYSIS" != "" ]; then
 			PARAM_ANALYSIS=$(echo "$PARAM " | sed "s/--analysis=[^ |$]*//gi" | sed "s/-w [^ |$]*//gi")
 
 			PARAM_STARK_TEST=0
-			#PARAM_STARK="$($PYTHON2 $STARK_FOLDER_BIN/json_to_options.py $J)" && PARAM_STARK_TEST=1
-			PARAM_STARK="$($PYTHON2 $STARK_FOLDER_BIN/json_to_options.py $J)" && PARAM_STARK_TEST=1
+			PARAM_STARK="$($PYTHON $STARK_FOLDER_BIN/json_to_options.py $J)" && PARAM_STARK_TEST=1
 
 			! (($PARAM_STARK_TEST)) && echo "#[ERROR] Config file '$J' malformed " && cat $J && exit 1;
 
@@ -1782,7 +1781,7 @@ if [ ! -z "$RUNS" ]; then
 					echo "}" >> $RUN_CONFIG_FILE
 
 					(($DEBUG)) && echo "#[INFO] " && cat $RUN_CONFIG_FILE
-					(($DEBUG)) && echo "#[INFO] " && $PYTHON2 $STARK_FOLDER_BIN/json_to_options.py $RUN_CONFIG_FILE
+					(($DEBUG)) && echo "#[INFO] " && $PYTHON $STARK_FOLDER_BIN/json_to_options.py $RUN_CONFIG_FILE
 
 					ANALYSIS_FILES="$ANALYSIS_FILES,$RUN_CONFIG_FILE"
 

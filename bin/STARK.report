@@ -1085,22 +1085,22 @@ SEQUENCING_FASTP_HTML_HTML_LINK='
 SEQUENCING_FILTERING_STEP="before_filtering"
 
 # Reads Length
-BEFORE_SEQUENCE_LENGTH=$(cat $SEQUENCING_FASTP_JSON | $PYTHON2 -c "import sys, json; print json.load(sys.stdin)['summary']['before_filtering']['read1_mean_length']")
-AFTER_SEQUENCE_LENGTH=$(cat $SEQUENCING_FASTP_JSON | $PYTHON2 -c "import sys, json; print json.load(sys.stdin)['summary']['after_filtering']['read1_mean_length']")
+BEFORE_SEQUENCE_LENGTH=$(cat $SEQUENCING_FASTP_JSON | $PYTHON -c "import sys, json; print(json.load(sys.stdin)['summary']['before_filtering']['read1_mean_length'])")
+AFTER_SEQUENCE_LENGTH=$(cat $SEQUENCING_FASTP_JSON | $PYTHON -c "import sys, json; print(json.load(sys.stdin)['summary']['after_filtering']['read1_mean_length'])")
 
 # READS and BASES count
-BEFORE_TOTAL_SEQUENCES=$(cat $SEQUENCING_FASTP_JSON | $PYTHON2 -c "import sys, json; print json.load(sys.stdin)['summary']['before_filtering']['total_reads']")
+BEFORE_TOTAL_SEQUENCES=$(cat $SEQUENCING_FASTP_JSON | $PYTHON -c "import sys, json; print(json.load(sys.stdin)['summary']['before_filtering']['total_reads'])")
 BEFORE_TOTAL_SEQUENCES_HTML=$(echo $BEFORE_TOTAL_SEQUENCES | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
-BEFORE_TOTAL_BASES=$(cat $SEQUENCING_FASTP_JSON | $PYTHON2 -c "import sys, json; print json.load(sys.stdin)['summary']['before_filtering']['total_bases']")
+BEFORE_TOTAL_BASES=$(cat $SEQUENCING_FASTP_JSON | $PYTHON -c "import sys, json; print(json.load(sys.stdin)['summary']['before_filtering']['total_bases'])")
 BEFORE_TOTAL_BASES_HTML=$(echo $BEFORE_TOTAL_BASES | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
-AFTER_TOTAL_SEQUENCES=$(cat $SEQUENCING_FASTP_JSON | $PYTHON2 -c "import sys, json; print json.load(sys.stdin)['summary']['after_filtering']['total_reads']")
+AFTER_TOTAL_SEQUENCES=$(cat $SEQUENCING_FASTP_JSON | $PYTHON -c "import sys, json; print(json.load(sys.stdin)['summary']['after_filtering']['total_reads'])")
 AFTER_TOTAL_SEQUENCES_HTML=$(echo $AFTER_TOTAL_SEQUENCES | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
-AFTER_TOTAL_BASES=$(cat $SEQUENCING_FASTP_JSON | $PYTHON2 -c "import sys, json; print json.load(sys.stdin)['summary']['after_filtering']['total_bases']")
+AFTER_TOTAL_BASES=$(cat $SEQUENCING_FASTP_JSON | $PYTHON -c "import sys, json; print(json.load(sys.stdin)['summary']['after_filtering']['total_bases'])")
 AFTER_TOTAL_BASES_HTML=$(echo $AFTER_TOTAL_BASES | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
 AFTER_TOTAL_SEQUENCES_PERCENT=$(echo "scale = 4; ($AFTER_TOTAL_SEQUENCES / $BEFORE_TOTAL_SEQUENCES)*100" | bc | sed s/00$//)
 
 # Q30
-BEFORE_Q30=$(cat $SEQUENCING_FASTP_JSON | $PYTHON2 -c "import sys, json; print json.load(sys.stdin)['summary']['before_filtering']['q30_rate']")
+BEFORE_Q30=$(cat $SEQUENCING_FASTP_JSON | $PYTHON -c "import sys, json; print(json.load(sys.stdin)['summary']['before_filtering']['q30_rate'])")
 if [ "$BEFORE_Q30" == "1" ]; then
 	BEFORE_Q30_HTML="100"
 elif [ "$BEFORE_Q30" == "0" ]; then
@@ -1110,7 +1110,7 @@ else
 fi;
 [ "$BEFORE_Q30_HTML" == "" ] && BEFORE_Q30_HTML="?"
 
-AFTER_Q30=$(cat $SEQUENCING_FASTP_JSON | $PYTHON2 -c "import sys, json; print json.load(sys.stdin)['summary']['after_filtering']['q30_rate']")
+AFTER_Q30=$(cat $SEQUENCING_FASTP_JSON | $PYTHON -c "import sys, json; print(json.load(sys.stdin)['summary']['after_filtering']['q30_rate'])")
 if [ "$AFTER_Q30" == "1" ]; then
 	AFTER_Q30_HTML="100"
 elif [ "$AFTER_Q30" == "0" ]; then

@@ -385,38 +385,6 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 ################
 
 
-
-##########
-# PATHOS #
-##########
-
-# # TOOL INFO
-# ENV TOOL_NAME="pathos"
-# ENV TOOL_VERSION="master"
-# ENV TOOL_TARBALL="$TOOL_VERSION.tar.gz"
-# ENV TOOL_SOURCE_EXTERNAL="https://github.com/uqfoundation/pathos/archive/$TOOL_TARBALL"
-# ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
-# # TOOL PARAMETERS
-# ENV TOOL_TARBALL_FOLDER="$TOOL_NAME-$TOOL_VERSION"
-
-# # TOOL INSTALLATION
-# RUN source $TOOL_INIT && \
-# 	echo "#[INFO] TOOL installation" && \
-# 	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
-# 	echo "#[INFO] TOOL installation - python2 setup.py build" && \
-# 	(cd $TOOL_SOURCE_BUILD/$TOOL_TARBALL_FOLDER/; python2 setup.py build) && \
-# 	echo "#[INFO] TOOL installation - python2 setup.py install" && \
-# 	(cd $TOOL_SOURCE_BUILD/$TOOL_TARBALL_FOLDER/; python2 setup.py install) && \
-#     $TOOL_CHECK ;
-
-
-#echo "#[INFO] TOOL installation - pip2 install" && \
-#	pip2 install pathos==0.2.6 && \
-
-
-
-
-
 ###########
 # ANNOVAR #
 ###########
