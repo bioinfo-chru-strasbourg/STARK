@@ -121,7 +121,7 @@ REPORT_SECTIONS?=ALL
 	# 3) merge the two above | rest of normalization
 	# In case there is no SVTYPE, do the full command directly
 	$(BCFTOOLS) merge --threads=$(THREADS_BY_SAMPLE) -l $< --force-samples $$( [ $$(cat $< | wc -l) -lt 2 ] && echo " --force-single " ) -m none --info-rules - $$((($$($(BCFTOOLS) view $$(cat $<) | grep "^#" -v | head -n 1 | wc -l))) && echo "" || echo " --print-header ") > $@.merge_step0.vcf;
-	if (($(BCFTOOLS) head $@.merge_step0.vcf | grep ID=SVTYPE)); then \
+	if (($(BCFTOOLS) head $@.merge_step0.vcf | grep "ID=SVTYPE" -c)); then \
 	$(BCFTOOLS) view -i 'INFO/SVTYPE="BND"' $@.merge_step0.vcf > $@.bnd_only.tmp.vcf; \
 	$(BGZIP) $@.bnd_only.tmp.vcf; \
 	$(TABIX) $@.bnd_only.tmp.vcf.gz; \
@@ -131,7 +131,7 @@ REPORT_SECTIONS?=ALL
 	$(BCFTOOLS) concat $@.bnd_only.tmp.vcf.gz $@.all_except_bnd.tmp.vcf.gz -a | $(BCFTOOLS) sort | $(BCFTOOLS) norm --threads=$(THREADS_BY_SAMPLE) --rm-dup exact | $(BCFTOOLS) +fill-tags -- -t AN,AC,AF,AC_Hemi,AC_Hom,AC_Het,ExcHet,HWE,MAF,NS | $(BCFTOOLS) reheader --threads=$(THREADS_BY_SAMPLE) -s $@.pipelines > $@.tmp.merged.vcf; \
 	rm -f $@.merge_step0.vcf $@.bnd_only.tmp.vcf $@.all_except_bnd.tmp.vcf; \
 	else \
-	$(BCFTOOLS) merge --threads=$(THREADS_BY_SAMPLE) -l $< --force-samples -m none --info-rules - | $(BCFTOOLS) sort | $(BCFTOOLS) norm --threads=$(THREADS_BY_SAMPLE) --rm-dup exact | $(BCFTOOLS) +fill-tags -- -t AN,AC,AF,AC_Hemi,AC_Hom,AC_Het,ExcHet,HWE,MAF,NS | $(BCFTOOLS) reheader --threads=$(THREADS_BY_SAMPLE) -s $@.pipelines > $@.tmp.merged.vcf; \
+	$(BCFTOOLS) merge --threads=$(THREADS_BY_SAMPLE) -l $< --force-samples $$( [ $$(cat $< | wc -l) -lt 2 ] && echo " --force-single " ) -m none --info-rules - | $(BCFTOOLS) sort | $(BCFTOOLS) norm --threads=$(THREADS_BY_SAMPLE) --rm-dup exact | $(BCFTOOLS) +fill-tags -- -t AN,AC,AF,AC_Hemi,AC_Hom,AC_Het,ExcHet,HWE,MAF,NS | $(BCFTOOLS) reheader --threads=$(THREADS_BY_SAMPLE) -s $@.pipelines > $@.tmp.merged.vcf; \
 	fi;
 	# | $(BCFTOOLS) view --exclude 'FORMAT/GT="0/0"'
 	# | $(BCFTOOLS) +setGT  -- -t . -n 0 
@@ -173,7 +173,9 @@ REPORT_SECTIONS?=ALL
 %.full.vcf: %.merge.vcf %.transcripts
 	cp $< $@.tmp0
 	# Prevent comma in description in vcf header
-	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp0 --output=$@ --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
+	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$< --output=$@.tmp0.vcf --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
+	# HOWARD annotation
+	$(HOWARD2) process $(HOWARD2_CONFIG_OPTIONS) --input=$@.tmp0.vcf --output=$@ --param=$(HOWARD2_PARAM_REPORT)
 	# cleaning
 	rm -rf $@.tmp*
 
@@ -192,11 +194,16 @@ REPORT_SECTIONS?=ALL
 		$(TABIX) -f $<.tmp.$$S.gz; \
 	done;
 	# Prevent empty VCFs
-	if (($$($(BCFTOOLS) view $<.tmp.*.gz | grep "^#" -v | head -n 1 | wc -l))); then \
-		$(BCFTOOLS) concat $<.tmp.*.gz -a -D > $@.tmp; \
-	else \
+	#if (($$($(BCFTOOLS) view $<.tmp.*.gz | grep "^#" -v | head -n 1 | wc -l))); then
+	# if (($$(zcat $<.tmp.*.gz | grep "^#" -v | head -n 1 | wc -l))); then \
+	# 	$(BCFTOOLS) concat $<.tmp.*.gz -a -D > $@.tmp; \
+	# else \
+	# 	$(BCFTOOLS) view $<.tmp.*.gz > $@.tmp; \
+	# fi;
+	-if ! $(BCFTOOLS) concat $<.tmp.*.gz -a -D > $@.tmp; then \
 		$(BCFTOOLS) view $<.tmp.*.gz > $@.tmp; \
 	fi;
+	#$(BCFTOOLS) concat $<.tmp.*.gz -a -D > $@.tmp;
 	if [ "$(INFO_TO_FORMAT_ANNOTATIONS)" != "" ]; then \
 		$(STARK_FOLDER_BIN)/INFO_to_FORMAT.sh --input=$@.tmp --output=$@ --annotations=$(INFO_TO_FORMAT_ANNOTATIONS) --bcftools=$(BCFTOOLS) --tabix=$(TABIX) --threads=$(THREADS_BY_SAMPLE); \
 	else \
@@ -207,9 +214,11 @@ REPORT_SECTIONS?=ALL
 %.variants: $(VCF_REPORT_FILES) %.variants_full
 	# List of final VCF files
 	echo $^ | tr " " "\n" | tr "\t" "\n" | grep "final.vcf.gz$$" > $@.tmp.vcf_list
-	$(BCFTOOLS) merge --threads=$(THREADS) -l $@.tmp.vcf_list -m none --force-samples $$([ $$(cat $@.tmp.vcf_list | wc -l) -lt 2 ] && echo " --force-single ") | $(BCFTOOLS) filter --threads=$(THREADS) -S . -e 'GT=="0/0" | GT=="0|0"' > $@.tmp.merged;
+	$(BCFTOOLS) merge --threads=$(THREADS) -l $@.tmp.vcf_list -m none --force-samples $$([ $$(cat $@.tmp.vcf_list | wc -l) -lt 2 ] && echo " --force-single ") | $(BCFTOOLS) filter --threads=$(THREADS) -S . -e 'GT=="0/0" | GT=="0|0"' > $@.tmp.merged.vcf;
+	# HOWARD annotation
+	$(HOWARD2) process $(HOWARD2_CONFIG_OPTIONS) --input=$@.tmp.merged.vcf --output=$@.tmp.merged.annotated.vcf --param=$(HOWARD2_PARAM_ANALYSIS)
 	# Prevent comma in description in vcf header
-	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp.merged --output=$@.tmp.merged --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
+	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp.merged.annotated.vcf --output=$@.tmp.merged --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
 	# Sort VCF
 	mkdir -p $@.tmp.merged.SAMTOOLS_PREFIX
 	$(BCFTOOLS) sort -T $@.tmp.merged.SAMTOOLS_PREFIX $@.tmp.merged > $@.tmp.calculated.prioritized.sorted

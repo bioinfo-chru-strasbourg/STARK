@@ -14,7 +14,7 @@
 
 %.bam.grp: %.bam %.bam.bai %.from_manifest.interval_list
 	# Generate BaseRecalibrator grp file for recalibration
-	$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) -T BaseRecalibrator -R $(GENOME) -knownSites $(VCFDBSNP) -I $< -o $@ -L $*.from_manifest.interval_list -nct $(THREADS_BY_SAMPLE) -U -compress 0
+	$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) -T BaseRecalibrator -R $(GENOME) -knownSites $(VCFDBSNP) -I $< -o $@ -L $*.from_manifest.interval_list -nct $(THREADS_BY_SAMPLE) -U -compress 1
 
 %.bam: %.recalibration.bam %.recalibration.bam.bai %.recalibration.bam.grp 
 	# Recalibrate BAM with BaseRecalibrator grp file

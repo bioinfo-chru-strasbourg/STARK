@@ -39,15 +39,16 @@ HOWARD2_NOMEN_FIELDS?="hgvs"
 	#+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp0 --output=$@ --annotation=$(HOWARD_ANNOTATION) --calculation=$(HOWARD_CALCULATION) --transcripts=$*.transcripts --nomen_fields=$(HOWARD_NOMEN_FIELDS) --norm=$$(cat $*.genome);
 	#+$(HOWARD2) $(HOWARD2_CONFIG_OPTIONS) --input=$@.tmp0 --output=$@ --annotation=$(HOWARD2_ANNOTATION) --calculation=$(HOWARD2_CALCULATION) --transcripts=$*.transcripts --assembly=$(ASSEMBLY) --hgvs_field=$(HOWARD2_NOMEN_FIELDS);
 	# HOWARD2 DEVEL command
-	$(HOWARD2) convert --input=$< --output=$@
+	#$(HOWARD2) convert --input=$< --output=$@
+	$(HOWARD2) process $(HOWARD2_CONFIG_OPTIONS) --input=$< --output=$@ --param=$(HOWARD2_PARAM)
 	# Prevent comma in description in vcf header
 	#$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@ --output=$@ --threads=$(THREADS_BY_CALLER) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
 	# Clear
 	-if [ ! -e $@ ]; then cp $*.empty.vcf $@; fi;
 	# Downgrading VCF format 4.2 to 4.1
-	-cat $@ | sed "s/##fileformat=VCFv4.2/##fileformat=VCFv4.1/" > $@.dowgrade.4.2.to.4.1.tmp;
+	-cat $@ | sed "s/##fileformat=VCFv4.2/##fileformat=VCFv4.1/" > $@.downgrade.4.2.to.4.1.tmp;
 	-rm -f $@;
-	-mv $@.dowgrade.4.2.to.4.1.tmp $@;
+	-mv $@.downgrade.4.2.to.4.1.tmp $@;
 	# clean
 	rm -rf $@.tmp*
 

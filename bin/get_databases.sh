@@ -287,7 +287,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		echo "$GENOME: $DBFOLDER_GENOME
 			howard databases --assembly='$ASSEMBLY' --download-genomes=$DBFOLDER_GENOME/$DATE --download-genomes-contig-regex=$GENOME_REGEX;
 			[ ! -e $DBFOLDER_GENOME/$RELEASE/$ASSEMBLY ] || unlink $DBFOLDER_GENOME/$RELEASE/$ASSEMBLY;
-			ln -snf $DBFOLDER_GENOME/$DATE/$ASSEMBLY $DBFOLDER_GENOME/$RELEASE/$ASSEMBLY;
+			ln -snf ../$DATE/$ASSEMBLY $DBFOLDER_GENOME/$RELEASE/$ASSEMBLY;
 			-[ ! -s $DBFOLDER_GENOME/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_GENOME/STARK.database && chmod o+r $DBFOLDER_GENOME/STARK.database;
 			#mv $GENOME $GENOME.tmp;
 			#mv $GENOME.fai $GENOME.fai.tmp;
@@ -761,10 +761,11 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
 		
 		echo "$DBFOLDER_DBSNP/done: $DBFOLDER $GENOME
-			howard databases --assembly=$ASSEMBLY --genomes-folder=$DBFOLDER_GENOME/$RELEASE --download-dbsnp=$DBFOLDER_DBSNP/$DATE --download-dbsnp-releases=$DBSNP_VERSION_DOWNLOAD --download-dbsnp-parquet --memory=$MEMORYG --threads=$THREADS $DEBUG
-			howard query --input=$DBFOLDER_DBSNP/$DATE/$ASSEMBLY/$DBSNP_VERSION_DOWNLOAD/dbsnp.parquet --query=\"SELECT \\\"#CHROM\\\", POS, ID, REF, ALT, '.' AS QUAL, '.' AS FILTER, INFO FROM variants WHERE COMMON\" --output=$DBFOLDER_DBSNP/$DATE/$ASSEMBLY/$DBSNP_VERSION_DOWNLOAD/dbsnp.COMMON.vcf.gz --memory=$MEMORYG --threads=$THREADS $DEBUG
+			howard databases --assembly=$ASSEMBLY --genomes-folder=$DBFOLDER_GENOME/$RELEASE --download-dbsnp=$DBFOLDER_DBSNP/$DATE --download-dbsnp-releases=$DBSNP_VERSION_DOWNLOAD --download-dbsnp-parquet --memory=$MEMORYG --threads=$THREADS
+			howard convert --input=$DBFOLDER_DBSNP/$DATE/$ASSEMBLY/$DBSNP_VERSION_DOWNLOAD/dbsnp.parquet --output=$DBFOLDER_DBSNP/$DATE/$ASSEMBLY/$DBSNP_VERSION_DOWNLOAD/dbsnp.vcf.gz --memory=$MEMORYG --threads=$THREADS
+			howard query --input=$DBFOLDER_DBSNP/$DATE/$ASSEMBLY/$DBSNP_VERSION_DOWNLOAD/dbsnp.parquet --query=\"SELECT \\\"#CHROM\\\", POS, ID, REF, ALT, '.' AS QUAL, '.' AS FILTER, INFO FROM variants WHERE COMMON\" --output=$DBFOLDER_DBSNP/$DATE/$ASSEMBLY/$DBSNP_VERSION_DOWNLOAD/dbsnp.COMMON.vcf.gz --memory=$MEMORYG --threads=$THREADS
 			$TABIX $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/$DBSNP_VERSION_DOWNLOAD/dbsnp.COMMON.vcf.gz
-			howard query --input=$DBFOLDER_DBSNP/$DATE/$ASSEMBLY/$DBSNP_VERSION_DOWNLOAD/dbsnp.parquet --query=\"SELECT \\\"#CHROM\\\", POS, ID, REF, ALT, QUAL, FILTER, INFO FROM variants WHERE dbSNPBuildID<=$DBSNP_BUILDID\" --output=$DBFOLDER_DBSNP/$DATE/$ASSEMBLY/$DBSNP_VERSION_DOWNLOAD/dbsnp.b$DBSNP_BUILDID.vcf.gz --memory=$MEMORYG --threads=$THREADS $DEBUG
+			howard query --input=$DBFOLDER_DBSNP/$DATE/$ASSEMBLY/$DBSNP_VERSION_DOWNLOAD/dbsnp.parquet --query=\"SELECT \\\"#CHROM\\\", POS, ID, REF, ALT, QUAL, FILTER, INFO FROM variants WHERE dbSNPBuildID<=$DBSNP_BUILDID\" --output=$DBFOLDER_DBSNP/$DATE/$ASSEMBLY/$DBSNP_VERSION_DOWNLOAD/dbsnp.b$DBSNP_BUILDID.vcf.gz --memory=$MEMORYG --threads=$THREADS
 			$TABIX -f $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/$DBSNP_VERSION_DOWNLOAD/dbsnp.COMMON.vcf.gz
 			$TABIX -f $DBFOLDER_DBSNP/$DATE/$ASSEMBLY/$DBSNP_VERSION_DOWNLOAD/dbsnp.b$DBSNP_BUILDID.vcf.gz
 			-[ ! -s $DBFOLDER_DBSNP/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_DBSNP/STARK.database && chmod o+r $DBFOLDER_DBSNP/STARK.database;

@@ -18,7 +18,7 @@ THREADS_RTC?=$(THREADS_BY_SAMPLE)
 GATKRealignerTargetCreatorFLAGS= -nt $(THREADS_RTC) #-nt 8
 GATKRealignerTargetCreatorOptions= -known $(VCFDBSNP) -allowPotentiallyMisencodedQuals
 GATKIndelRealignerFLAGS=
-GATKIndelRealignerOptions= -known $(VCFDBSNP) --LODThresholdForCleaning 2.0 -compress 0 --maxReadsForRealignment 50000 --maxReadsForConsensuses 120 --maxReadsInMemory 2000000 --maxConsensuses 30 -model USE_READS -allowPotentiallyMisencodedQuals -dfrac 1
+GATKIndelRealignerOptions= -known $(VCFDBSNP) --LODThresholdForCleaning 2.0 -compress 1 --maxReadsForRealignment 50000 --maxReadsForConsensuses 120 --maxReadsInMemory 2000000 --maxConsensuses 30 -model USE_READS -allowPotentiallyMisencodedQuals -dfrac 1
 
 %.bam: %.realignment.bam %.realignment.bam.bai %.realignment.design.bed
 	# RealignerTargetCreator 

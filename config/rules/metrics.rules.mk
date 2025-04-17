@@ -571,12 +571,11 @@ MAX_CONCURRENT_HSMETRICS_RAM?=24g
 		$(HOWARD2) convert --input=$@.$$bed_subname.vcf --output=$@.$$bed_subname.tsv; \
 		touch $@.$$bed_subname.tsv; \
 		# TSV REPORT \
-		$(HOWARD2) convert --input=$@.$$bed_subname.vcf --output=$@.$$bed_subname.report.tsv; \
-		touch $@.$$bed_subname.report.tsv; \
+		cp $@.$$bed_subname.tsv $@.$$bed_subname.report.tsv; \
 		if [ "$$(echo $* | rev | cut -d'.' -f 1 | rev)" == "final" ] || [ "$$(echo $* | rev | cut -d'.' -f 1 | rev)" == "full" ]; then \
 			# SNPEFF STATS \
 			if [ "$$(echo $* | rev | cut -d'.' -f 1 | rev)" == "final" ]; then \
-				(($(METRICS_SNPEFF))) && $(JAVA) -jar $(SNPEFF) -c $(SNPEFF_CONFIG) $(ASSEMBLY) $@.$$bed_subname.vcf > $@.$$bed_subname.snpeff.vcf; \
+				(($(METRICS_SNPEFF))) && $(JAVA) -jar $(SNPEFF) -dataDir $(SNPEFF_DATABASES) $(ASSEMBLY) $@.$$bed_subname.vcf -csvStats $@.$$bed_subname.snpeff.stats.csv -htmlStats $@.$$bed_subname.snpeff.stats.html > $@.$$bed_subname.snpeff.vcf; \
 				touch $@.$$bed_subname.snpeff.vcf; \
 			fi; \
 			# Copy VCF and TSV for rename \

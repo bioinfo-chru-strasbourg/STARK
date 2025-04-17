@@ -915,77 +915,6 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 # 	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
 
 
-
-##########
-# HOWARD #
-##########
-
-# TOOL INFO
-ENV TOOL_NAME="howard"
-ENV TOOL_VERSION="0.9.15.6"
-ENV TOOL_TARBALL="$TOOL_VERSION.tar.gz"
-ENV TOOL_SOURCE_EXTERNAL="https://github.com/bioinfo-chru-strasbourg/howard/archive/refs/heads/$TOOL_TARBALL"
-ENV PATH=$PATH:$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin
-# TOOL PARAMETERS
-ENV TOOL_PARAM_DATABASE_FOLDER_LINK=$DATABASES
-ENV TOOL_PARAM_DATABASE_FOLDER=/databases
-
-
-# TOOL INSTALLATION
-RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-	source $TOOL_INIT && \
-	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
-	cp -R $TOOL_SOURCE_BUILD/*/* $TOOL_DEST/ && \
-	chmod a+x $TOOL_DEST/* -R && \
-	mkdir -p $TOOL_PARAM_DATABASE_FOLDER_LINK && \
-	mkdir -p $TOOL_PARAM_DATABASE_FOLDER && \
-	ln -s $DATABASES $TOOL_DATABASE_FOLDER && \
-	$TOOL_CHECK ;
-
-
-
-############
-# HOWARD 2 #
-############
-
-# https://github.com/bioinfo-chru-strasbourg/howard/archive/refs/heads/devel.zip
-
-# TOOL INFO
-ENV TOOL_NAME="howard"
-ENV TOOL_VERSION="devel"
-ENV TOOL_TARBALL="$TOOL_VERSION.zip"
-ENV TOOL_SOURCE_EXTERNAL="https://github.com/bioinfo-chru-strasbourg/howard/archive/refs/heads/$TOOL_TARBALL"
-ENV PATH=$PATH:$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin
-# TOOL PARAMETERS
-
-# # TOOL INSTALLATION
-# RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-# 	source $TOOL_INIT && \
-# 	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
-# 	cp -R $TOOL_SOURCE_BUILD/*/* $TOOL_DEST/ && \
-# 	cd $TOOL_DEST/ && \
-# 	$PYTHON -m pip install -e . && \
-#     $TOOL_CHECK ;
-
-
-RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-	$MAMBA create -y -p $TOOLS/$TOOL_NAME/$TOOL_VERSION PYTHON=3.10 && \
-	source $TOOL_INIT && \
-	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
-	cp -R $TOOL_SOURCE_BUILD/*/* $TOOL_DEST/ && \
-	$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python -m pip install -e $TOOL_DEST && \
-	$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python -m pip install polars-lts-cpu && \
-	#ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current && \
-	$MAMBA clean -y --all
-	# echo ls -lah $TOOLS/$TOOL_NAME/ && \
-	# ls -lah $TOOLS/$TOOL_NAME/ && \
-	# echo ls -lah $TOOLS/$TOOL_NAME/current/ && \
-	# ls -lah $TOOLS/$TOOL_NAME/current/ && \
-	# echo ls -lah $TOOLS/$TOOL_NAME/current/bin/ && \
-	# ls -lah $TOOLS/$TOOL_NAME/current/bin/ && \
-	# whereis howard && \
-	# howard --help
-	
 ############
 # IGVTOOLS #
 ############
@@ -1435,6 +1364,78 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	#ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current && \
 	$MAMBA clean -y --all
 
+
+
+##########
+# HOWARD #
+##########
+
+# TOOL INFO
+ENV TOOL_NAME="howard"
+ENV TOOL_VERSION="0.9.15.6"
+ENV TOOL_TARBALL="$TOOL_VERSION.tar.gz"
+ENV TOOL_SOURCE_EXTERNAL="https://github.com/bioinfo-chru-strasbourg/howard/archive/refs/heads/$TOOL_TARBALL"
+ENV PATH=$PATH:$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin
+# TOOL PARAMETERS
+ENV TOOL_PARAM_DATABASE_FOLDER_LINK=$DATABASES
+ENV TOOL_PARAM_DATABASE_FOLDER=/databases
+
+
+# TOOL INSTALLATION
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
+	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
+	cp -R $TOOL_SOURCE_BUILD/*/* $TOOL_DEST/ && \
+	chmod a+x $TOOL_DEST/* -R && \
+	mkdir -p $TOOL_PARAM_DATABASE_FOLDER_LINK && \
+	mkdir -p $TOOL_PARAM_DATABASE_FOLDER && \
+	ln -s $DATABASES $TOOL_DATABASE_FOLDER && \
+	$TOOL_CHECK ;
+
+
+
+############
+# HOWARD 2 #
+############
+
+# https://github.com/bioinfo-chru-strasbourg/howard/archive/refs/heads/devel.zip
+
+# TOOL INFO
+ENV TOOL_NAME="howard"
+ENV TOOL_VERSION="devel"
+ENV TOOL_TARBALL="$TOOL_VERSION.zip"
+ENV TOOL_SOURCE_EXTERNAL="https://github.com/bioinfo-chru-strasbourg/howard/archive/refs/heads/$TOOL_TARBALL"
+ENV PATH=$PATH:$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin
+# TOOL PARAMETERS
+
+# # TOOL INSTALLATION
+# RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+# 	source $TOOL_INIT && \
+# 	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
+# 	cp -R $TOOL_SOURCE_BUILD/*/* $TOOL_DEST/ && \
+# 	cd $TOOL_DEST/ && \
+# 	$PYTHON -m pip install -e . && \
+#     $TOOL_CHECK ;
+
+
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	$MAMBA create -y -p $TOOLS/$TOOL_NAME/$TOOL_VERSION PYTHON=3.10 && \
+	source $TOOL_INIT && \
+	unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD && \
+	cp -R $TOOL_SOURCE_BUILD/*/* $TOOL_DEST/ && \
+	$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python -m pip install -e $TOOL_DEST && \
+	$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python -m pip install polars-lts-cpu && \
+	#ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current && \
+	$MAMBA clean -y --all
+	# echo ls -lah $TOOLS/$TOOL_NAME/ && \
+	# ls -lah $TOOLS/$TOOL_NAME/ && \
+	# echo ls -lah $TOOLS/$TOOL_NAME/current/ && \
+	# ls -lah $TOOLS/$TOOL_NAME/current/ && \
+	# echo ls -lah $TOOLS/$TOOL_NAME/current/bin/ && \
+	# ls -lah $TOOLS/$TOOL_NAME/current/bin/ && \
+	# whereis howard && \
+	# howard --help
+	
 
 
 

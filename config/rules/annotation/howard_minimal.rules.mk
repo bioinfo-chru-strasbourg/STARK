@@ -39,12 +39,13 @@ HOWARD2_NOMEN_FIELDS?="hgvs"
 	# HOWARD2 DEVEL command
 	#$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$< --output=$@.tmp0.vcf --threads=$(THREADS_BY_CALLER) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
 	$(HOWARD2) convert --input=$< --output=$@
+	#$(HOWARD2) process --input=$< --output=$@ --config=$(HOWARD2_CONFIG) --param=$(HOWARD2_PARAM)
 	cp $@.tmp $@
 	-if [ ! -e $@ ]; then cp $*.empty.vcf $@; fi;
 	# Downgrading VCF format 4.2 to 4.1
-	-cat $@ | sed "s/##fileformat=VCFv4.2/##fileformat=VCFv4.1/" > $@.dowgrade.4.2.to.4.1.tmp;
+	-cat $@ | sed "s/##fileformat=VCFv4.2/##fileformat=VCFv4.1/" > $@.downgrade.4.2.to.4.1.tmp;
 	-rm -f $@ $@.tmp*;
-	-mv $@.dowgrade.4.2.to.4.1.tmp $@;
+	-mv $@.downgrade.4.2.to.4.1.tmp $@;
 
 
 # CONFIG/RELEASE

@@ -191,7 +191,7 @@ BAM_CHECK_STEPS=0
 # METRICS SNPEFF (default 0)
 # Generate snpEff variant metrics from VCF
 # Only for Report final VCF
-METRICS_SNPEFF=1
+METRICS_SNPEFF=0
 
 # PIPELINES PRIORITIZATION
 # List of pipelines to prioritize for the report (final.vcf)
@@ -576,6 +576,30 @@ MAX_CONCURRENT_HSMETRICS_RAM=16g
 
 # HOWARD CONFIG
 HOWARD2_CONFIG=$HOWARD_FOLDER_CONFIG/config.json
+#HOWARD2_CONFIG={}
+
+# HOWARD PARAM
+# Use $HOWARD_FOLDER_CONFIG if necessary
+# default: $HOWARD_FOLDER_CONFIG/param.json
+# Example: HOWARD_PARAM=$APP_FOLDER/param.json
+# Example: HOWARD_PARAM=$STARK_FOLDER_APPS/MY_APP_GROUP/param.json
+
+# Default HOWARD2 parameters
+#HOWARD2_PARAM=$HOWARD_FOLDER_CONFIG/param.json
+#HOWARD2_PARAM='{}'
+
+# Default HOWARD2 parameters for minimal VCF annotation (rule howard_minimal)
+#HOWARD2_PARAM_MINIMAL=$HOWARD_FOLDER_CONFIG/param.json
+#HOWARD2_HOWARD2_PARAM_MINIMALPARAM='{}'
+
+# Default HOWARD2 parameters for report (rule howard)
+#HOWARD2_PARAM_REPORT=$HOWARD_FOLDER_CONFIG/param.json
+#HOWARD2_PARAM_REPORT='{}'
+
+# Default HOWARD2 parameters for whole analysis (rule howard)
+HOWARD2_PARAM_ANALYSIS=$HOWARD_FOLDER_CONFIG/param.json
+#HOWARD2_PARAM_ANALYSIS='{}'
+
 
 # ANNOTATION
 # Default annotation with HOWARD for intermediate VCF (for each caller) used by default with annotation rule "howard"

@@ -1262,6 +1262,59 @@ fi;
 export INFO_TO_FORMAT_ANNOTATIONS
 
 
+# HOWARD2
+##########
+
+
+# HOWARD CONFIG
+
+#HOWARD2_CONFIG=$HOWARD_FOLDER_CONFIG/config.json
+#HOWARD2_CONFIG={}
+if [ -z "$HOWARD2_CONFIG" ]; then
+	HOWARD2_CONFIG='{}'
+fi;
+export HOWARD2_CONFIG
+
+# HOWARD PARAM
+# Use $HOWARD_FOLDER_CONFIG if necessary
+# default: $HOWARD_FOLDER_CONFIG/param.json
+# Example: HOWARD_PARAM=$APP_FOLDER/param.json
+# Example: HOWARD_PARAM=$STARK_FOLDER_APPS/MY_APP_GROUP/param.json
+
+# Default HOWARD2 parameters
+#HOWARD2_PARAM=$HOWARD_FOLDER_CONFIG/param.json
+#HOWARD2_PARAM='{}'
+if [ -z $HOWARD2_PARAM ]; then
+	HOWARD2_PARAM='{}'
+fi;
+export HOWARD2_PARAM
+
+# Default HOWARD2 parameters for minimal VCF annotation (rule howard_minimal)
+#HOWARD2_PARAM_MINIMAL=$HOWARD_FOLDER_CONFIG/param.json
+#HOWARD2_HOWARD2_PARAM_MINIMALPARAM='{}'
+if [ -z $HOWARD2_HOWARD2_PARAM_MINIMALPARAM ]; then
+	HOWARD2_HOWARD2_PARAM_MINIMALPARAM='{}'
+fi;
+export HOWARD2_HOWARD2_PARAM_MINIMALPARAM
+
+# Default HOWARD2 parameters for report (rule howard)
+#HOWARD2_PARAM_REPORT=$HOWARD_FOLDER_CONFIG/param.json
+#HOWARD2_PARAM_REPORT='{}'
+if [ -z $HOWARD2_PARAM_REPORT ]; then
+	HOWARD2_PARAM_REPORT='{}'
+fi;
+export HOWARD2_PARAM_REPORT
+
+# Default HOWARD2 parameters for whole analysis (rule howard)
+#HOWARD2_PARAM_ANALYSIS=$HOWARD_FOLDER_CONFIG/param.json
+#HOWARD2_PARAM_ANALYSIS='{}'
+if [ -z $HOWARD2_PARAM_ANALYSIS ]; then
+	HOWARD2_PARAM_ANALYSIS='{}'
+fi;
+export HOWARD2_PARAM_ANALYSIS
+
+
+
 # Recalibration and Filtration
 ################################
 
