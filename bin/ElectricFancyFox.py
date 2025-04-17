@@ -98,27 +98,27 @@ usage="# Usage:\n\
 "
 
 if len(sys.argv)<3:
-	print usage	
+	print(usage)
 	sys.exit(1)
 
 # input SampleSheet file
 miseqSampleSheet=sys.argv[1]
 if miseqSampleSheet.strip()=="":
-	print "# Error: No inputMiSeqSampleSheet file defined  (e.g. 'SampleSheet.csv')"
-	print usage	
+	print("# Error: No inputMiSeqSampleSheet file defined  (e.g. 'SampleSheet.csv')")
+	print(usage)
 	sys.exit(1)
 try:
 	open(miseqSampleSheet)
 except IOError:
-	print "# Error: '"+miseqSampleSheet+"' file does not exist!"
-	print usage	
+	print("# Error: '"+miseqSampleSheet+"' file does not exist!")
+	print(usage)
 	sys.exit(1)
 
 # output file
 output=sys.argv[2]
 if output.strip()=="":
-	print "# Error: No output file defined (e.g. 'SampleSheet.casava.csv')"
-	print usage	
+	print("# Error: No output file defined (e.g. 'SampleSheet.casava.csv')")
+	print(usage)
 	sys.exit(1)
 
 # output type
@@ -126,10 +126,10 @@ outputTypeDefault="bcl2fastqSampleSheet"
 try:
 	outputType=sys.argv[3]
 except IndexError:
-	print "# Warning: No output type defined, '"+outputTypeDefault+"' will be used "
+	print("# Warning: No output type defined, '"+outputTypeDefault+"' will be used ")
 	outputType=outputTypeDefault
 if outputType.strip()=="":
-	print "# Warning: No output type defined, '"+outputTypeDefault+"' will be used "
+	print("# Warning: No output type defined, '"+outputTypeDefault+"' will be used ")
 	outputType=outputTypeDefault
 
 # flowcellID
@@ -156,9 +156,9 @@ operationCode_Settings="[Settings]"
 operationCode_Data="[Data]"
 
 
-print "# Welcome to this tool."
+print("# Welcome to this tool.")
 
-print "# I will process the MiSeq sample sheet <"+miseqSampleSheet+"> today."
+print("# I will process the MiSeq sample sheet <"+miseqSampleSheet+"> today.")
 
 
 cavasaSampleSheet_content="FCID,Lane,SampleID,SampleRef,Index,Description,Control,Recipe,Operator,SampleProject\n"
@@ -198,27 +198,27 @@ for line in open(miseqSampleSheet):
 	or linestripcol1==operationCode_Data):
 		#operationCode=line.strip()
 		operationCode=linestripcol1
-		print "# "+operationCode+" processing..."
+		print("# "+operationCode+" processing...")
 		continue
 
-	#print "# "+operationCode+" and "+linestripcol1+" ??? "
+	#print("# "+operationCode+" and "+linestripcol1+" ??? "
 
 	# [Header]
 	if operationCode==operationCode_Header:
-		#print "# "+operationCode+" == HEADER "
+		#print("# "+operationCode+" == HEADER "
 		if line.find("Project Name,")>=0:
 			projectName=line.replace("Project Name,","").strip()
-			print "#    Project Name: "+projectName
+			print("#    Project Name: "+projectName)
 		if line.find("Investigator Name,")>=0:
 			InvestigatorName=line.replace("Investigator Name,","").strip()
-			print "#    Investigator Name: "+InvestigatorName
+			print("#    Investigator Name: "+InvestigatorName)
 		if line.find("Assay,")>=0:
 			Assay=line.replace("Assay,","").strip()
-			print "#    Assay: "+Assay
+			print("#    Assay: "+Assay)
 	
 	# [Manifests]
 	if operationCode==operationCode_Manifests:
-		#print "######### "+line
+		#print("######### "+line)
 		if line.strip()!="":
 			tokens=line.strip().split(",")
 			if tokens[1].strip()!="":
@@ -240,7 +240,7 @@ for line in open(miseqSampleSheet):
 			
 			if reads_length!="":
 				reads_length_array.append(reads_length)
-				print "#    Reads "+`nb_reads`+": "+reads_length_array[(nb_reads-1)]+"pb"
+				print("#    Reads "+`nb_reads`+": "+reads_length_array[(nb_reads-1)]+"pb")
 				readsLength_content=readsLength_content+reads_length+"\n"
 			
 				sequencing_method="Unknown"
@@ -261,7 +261,7 @@ for line in open(miseqSampleSheet):
 	
 	# [Data]
 	if operationCode==operationCode_Data:
-		#print line
+		#print(line)
 		tokens=line.split(",")
 		
 		if not gotHeader: # [Data] Header First line !
@@ -296,9 +296,9 @@ for line in open(miseqSampleSheet):
 			#if Assay=="HaloPlex":
 			#	dual=False
 			if dual:
-				print "#    Dual index detected"
+				print("#    Dual index detected")
 			else:
-				print "#    Single index detected"
+				print("#    Single index detected")
 
 			gotHeader=True
 
@@ -314,21 +314,21 @@ for line in open(miseqSampleSheet):
 
 		# take the identifier if the name is empty.
 		if sampleName=="":
-			print "#    Warning: Sample_Name is empty, will use Sample_ID for the sample name"
+			print("#    Warning: Sample_Name is empty, will use Sample_ID for the sample name")
 			sampleName=tokens[0].strip()
 
 		if sampleName=="":
-			print "#    Error: sample name is empty."
+			print("#    Error: sample name is empty.")
 			sys.exit(1)
 
 		# replace space " " by underscore "_"
-		#print "# SampleName0="+sampleName
+		#print("# SampleName0="+sampleName
 		#sampleName=sampleName.replace(' ', '_')
-		#print "# SampleName1="+sampleName
+		#print("# SampleName1="+sampleName
 		
 		# Skip name with space
 		if " " in sampleName:
-			print "#    Warning: sample name 'sampleName' contains a space. This sample will be skipped."
+			print("#    Warning: sample name 'sampleName' contains a space. This sample will be skipped.")
 			continue
 		
 		# index
@@ -403,5 +403,5 @@ stream.close()
 
 
 
-print "# Output file <"+output+"> ("+outputType+") is now on the disk"
-print "# Have a nice day."
+print("# Output file <"+output+"> ("+outputType+") is now on the disk")
+print("# Have a nice day.")
