@@ -41,14 +41,16 @@ HOWARD2_NOMEN_FIELDS?="hgvs"
 	# HOWARD2 DEVEL command
 	#$(HOWARD2) convert --input=$< --output=$@
 	$(HOWARD2) process $(HOWARD2_CONFIG_OPTIONS) --input=$< --output=$@ --param=$(HOWARD2_PARAM)
+	# Clean INFO spaces
+	$(STARK_FOLDER_BIN)/clean_vcf_info_spaces.sh --input=$@
 	# Prevent comma in description in vcf header
 	#$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@ --output=$@ --threads=$(THREADS_BY_CALLER) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
 	# Clear
 	-if [ ! -e $@ ]; then cp $*.empty.vcf $@; fi;
 	# Downgrading VCF format 4.2 to 4.1
-	-cat $@ | sed "s/##fileformat=VCFv4.2/##fileformat=VCFv4.1/" > $@.downgrade.4.2.to.4.1.tmp;
-	-rm -f $@;
-	-mv $@.downgrade.4.2.to.4.1.tmp $@;
+	#-cat $@ | sed "s/##fileformat=VCFv4.2/##fileformat=VCFv4.1/" > $@.downgrade.4.2.to.4.1.tmp;
+	#-rm -f $@;
+	#-mv $@.downgrade.4.2.to.4.1.tmp $@;
 	# clean
 	rm -rf $@.tmp*
 

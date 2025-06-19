@@ -1,10 +1,15 @@
 {
+  "annotations": "ALL:format=parquet:release=disabled",
   "annotation": {
     "parquet": {
       "annotations": {
-        "/STARK/databases/dbsnp/current/hg19/default/dbsnp.parquet": {
-          "INFO": null
-        }
+        "/STARK/databases/dbnsfp/current/hg19/dbNSFP5.1a.INTERPRO.partition.parquet": {"INFO": null},
+        "/STARK/databases/dbnsfp/current/hg19/dbNSFP5.1a.GNOMAD4.partition.parquet": {"INFO": null},
+        "/STARK/databases/dbnsfp/current/hg19/dbNSFP5.1a.CADD.partition.parquet": {"INFO": null},
+        "/STARK/databases/dbnsfp/current/hg19/dbNSFP5.1a.FATHMM.partition.parquet": {"INFO": null},
+        "/STARK/databases/dbnsfp/current/hg19/dbNSFP5.1a.POLYPHEN2.partition.parquet": {"INFO": null},
+        "/STARK/databases/dbnsfp/current/hg19/dbNSFP5.1a.SIFT.partition.parquet": {"INFO": null},
+        "/STARK/databases/dbnsfp/current/hg19/dbNSFP5.1a.VEP.partition.parquet": {"INFO": null}
       }
     },
     "snpeff": {

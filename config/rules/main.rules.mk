@@ -67,7 +67,7 @@ REMOVE_INTERMEDIATE_SAM?=1
 	# If no VCF or empty file, create an empty VCF
 	-if [ ! -s $< ]; then cp $*.empty.vcf $<; fi;
 	# Indexing with IGVTOOLS
-	-$(IGVTOOLS) index $<
+	$(IGVTOOLS) index $<
 	# Empty index if fail
 	if [ ! -e $@ ]; then touch $@; fi;
 	# remove files
@@ -110,13 +110,43 @@ REMOVE_INTERMEDIATE_SAM?=1
 
 # MERGE SNP and InDel VCF for Post calling steps. Because of loop in rules
 %.vcf: %.POST_CALLING_SNP.vcf %.POST_CALLING_InDel.vcf
-	$(JAVA) $(JAVA_FLAGS_GATK4) -jar $(GATK4) \
-		MergeVcfs \
-		-I $*.POST_CALLING_SNP.vcf \
-		-I $*.POST_CALLING_InDel.vcf \
-		--CREATE_INDEX false \
-		--SEQUENCE_DICTIONARY $(DICT) \
-		-O $@;
+	# $(JAVA) $(JAVA_FLAGS_GATK4) -jar $(GATK4) \
+	# 	MergeVcfs \
+	# 	-I $*.POST_CALLING_SNP.vcf \
+	# 	-I $*.POST_CALLING_InDel.vcf \
+	# 	--CREATE_INDEX false \
+	# 	--SEQUENCE_DICTIONARY $(DICT) \
+	# 	-O $@;
+	# Concat VCF files using bcftools
+	# -mkdir -p $(@D)
+	# if [ ! -e $*.POST_CALLING_SNP.vcf ]; then touch $*.POST_CALLING_SNP.vcf; fi;
+	# if [ ! -e $*.POST_CALLING_InDel.vcf ]; then touch $*.POST_CALLING_InDel.vcf; fi;
+	# # Check if the VCF files are empty
+	# if [ ! -s $*.POST_CALLING_SNP.vcf ] && [ ! -s $*.POST_CALLING_InDel.vcf ]; then \
+	# 	echo "[WARNING] No SNP or InDel VCF files found for merging"; \
+	# 	touch $@; \
+	# 	exit 0; \
+	# fi;
+	# Concatenate the VCF files
+	# Using bcftools concat
+	# -o: output file
+	# -O v: output format VCF
+	# -a: append INFO fields
+	# -d: discard INFO fields that are not present in all files
+	# -f: force output even if no variants are present
+	# -c: check if the files are sorted
+	# -s: skip the header of the second file
+	# -g: generate a new header
+	#$(BCFTOOLS) concat -o $@ -O v -a -d all -f -c -s -g $*.POST_CALLING_SNP.vcf $*.POST_CALLING_InDel.vcf
+	#$(BCFTOOLS) concat -o $@ -O v -a $*.POST_CALLING_SNP.vcf $*.POST_CALLING_InDel.vcf
+	$(BGZIP) $*.POST_CALLING_SNP.vcf
+	$(BGZIP) $*.POST_CALLING_InDel.vcf
+	$(TABIX) $*.POST_CALLING_SNP.vcf.gz
+	$(TABIX) $*.POST_CALLING_InDel.vcf.gz
+	$(BCFTOOLS) concat -o $@ -O v -a $*.POST_CALLING_SNP.vcf.gz $*.POST_CALLING_InDel.vcf.gz
+
+	# Clear
+	rm -f $*.POST_CALLING_SNP.vcf.gz* $*.POST_CALLING_InDel.vcf.gz*
 
 
 

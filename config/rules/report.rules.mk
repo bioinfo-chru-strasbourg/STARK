@@ -133,6 +133,7 @@ REPORT_SECTIONS?=ALL
 	else \
 	$(BCFTOOLS) merge --threads=$(THREADS_BY_SAMPLE) -l $< --force-samples $$( [ $$(cat $< | wc -l) -lt 2 ] && echo " --force-single " ) -m none --info-rules - | $(BCFTOOLS) sort | $(BCFTOOLS) norm --threads=$(THREADS_BY_SAMPLE) --rm-dup exact | $(BCFTOOLS) +fill-tags -- -t AN,AC,AF,AC_Hemi,AC_Hom,AC_Het,ExcHet,HWE,MAF,NS | $(BCFTOOLS) reheader --threads=$(THREADS_BY_SAMPLE) -s $@.pipelines > $@.tmp.merged.vcf; \
 	fi;
+	rm -f $@.merge_step0.vcf;
 	# | $(BCFTOOLS) view --exclude 'FORMAT/GT="0/0"'
 	# | $(BCFTOOLS) +setGT  -- -t . -n 0 
 	# header file
@@ -170,12 +171,14 @@ REPORT_SECTIONS?=ALL
 	rm -f $@.tmp* $@.pipelines
 
 
-%.full.vcf: %.merge.vcf %.transcripts
+%.full.sorting.vcf: %.merge.vcf %.transcripts
 	cp $< $@.tmp0
 	# Prevent comma in description in vcf header
 	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$< --output=$@.tmp0.vcf --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
 	# HOWARD annotation
-	$(HOWARD2) process $(HOWARD2_CONFIG_OPTIONS) --input=$@.tmp0.vcf --output=$@ --param=$(HOWARD2_PARAM_REPORT)
+	$(HOWARD2) process $(HOWARD2_CONFIG_OPTIONS) --input=$@.tmp0.vcf --output=$@ --param=$(HOWARD2_PARAM_REPORT) $$( [ ! -z '$(HOWARD2_PRIORITIZATION_CONFIG)' ] && echo " --prioritization_config=$(HOWARD2_PRIORITIZATION_CONFIG) ") --threads=$(THREADS_BY_SAMPLE)
+	# Clean INFO spaces
+	$(STARK_FOLDER_BIN)/clean_vcf_info_spaces.sh --input=$@ --output=$@
 	# cleaning
 	rm -rf $@.tmp*
 
@@ -217,6 +220,9 @@ REPORT_SECTIONS?=ALL
 	$(BCFTOOLS) merge --threads=$(THREADS) -l $@.tmp.vcf_list -m none --force-samples $$([ $$(cat $@.tmp.vcf_list | wc -l) -lt 2 ] && echo " --force-single ") | $(BCFTOOLS) filter --threads=$(THREADS) -S . -e 'GT=="0/0" | GT=="0|0"' > $@.tmp.merged.vcf;
 	# HOWARD annotation
 	$(HOWARD2) process $(HOWARD2_CONFIG_OPTIONS) --input=$@.tmp.merged.vcf --output=$@.tmp.merged.annotated.vcf --param=$(HOWARD2_PARAM_ANALYSIS)
+	#$(HOWARD2) convert $(HOWARD2_CONFIG_OPTIONS) --input=$@.tmp.merged.vcf --output=$@.tmp.merged.annotated.vcf --param=$(HOWARD2_PARAM_ANALYSIS)
+	# Clean INFO spaces
+	$(STARK_FOLDER_BIN)/clean_vcf_info_spaces.sh --input=$@.tmp.merged.annotated.vcf --output=$@.tmp.merged.annotated.vcf
 	# Prevent comma in description in vcf header
 	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp.merged.annotated.vcf --output=$@.tmp.merged --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
 	# Sort VCF

@@ -1275,6 +1275,10 @@ if [ -z "$HOWARD2_CONFIG" ]; then
 fi;
 export HOWARD2_CONFIG
 
+
+
+
+
 # HOWARD PARAM
 # Use $HOWARD_FOLDER_CONFIG if necessary
 # default: $HOWARD_FOLDER_CONFIG/param.json
@@ -1312,6 +1316,13 @@ if [ -z $HOWARD2_PARAM_ANALYSIS ]; then
 	HOWARD2_PARAM_ANALYSIS='{}'
 fi;
 export HOWARD2_PARAM_ANALYSIS
+
+
+# HOWARD prioritization config
+if [ -z $HOWARD2_PRIORITIZATION_CONFIG ]; then
+	HOWARD2_PRIORITIZATION_CONFIG=''
+fi;
+export HOWARD2_PRIORITIZATION_CONFIG
 
 
 

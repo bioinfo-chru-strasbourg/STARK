@@ -570,6 +570,11 @@ MAX_CONCURRENT_HSMETRICS_RAM?=24g
 		# TSV \
 		$(HOWARD2) convert --input=$@.$$bed_subname.vcf --output=$@.$$bed_subname.tsv; \
 		touch $@.$$bed_subname.tsv; \
+		# HOWARD STATS \
+		$(HOWARD2) stats --input=$@.$$bed_subname.vcf --stats_md=$@.$$bed_subname.stats.md --stats_json=$@.$$bed_subname.stats.json --stats_html=$@.$$bed_subname.stats.html --annotations_stats; \
+		# BCFTOOLS STATS \
+		$(BCFTOOLS) stats $@.$$bed_subname.vcf > $@.$$bed_subname.bcftools.stats.tsv; \
+		cp $@.$$bed_subname.bcftools.stats.tsv $@.$$bed_subname.report.bcftools.stats.tsv; \
 		# TSV REPORT \
 		cp $@.$$bed_subname.tsv $@.$$bed_subname.report.tsv; \
 		if [ "$$(echo $* | rev | cut -d'.' -f 1 | rev)" == "final" ] || [ "$$(echo $* | rev | cut -d'.' -f 1 | rev)" == "full" ]; then \
