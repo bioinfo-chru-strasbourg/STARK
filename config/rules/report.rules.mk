@@ -3,8 +3,8 @@
 # Author: Antony Le Bechec
 ############################
 # Release
-MK_RELEASE="0.9.5"
-MK_DATE="27/09/2019"
+MK_RELEASE="0.9.6.0"
+MK_DATE="25/06/2025"
 
 # Release note
 # 11/12/2015-0.9b: Create file
@@ -14,6 +14,7 @@ MK_DATE="27/09/2019"
 # 02/10/2018-0.9.4b: Change Howard annotation, replace VCFTOOLS with BCFTOOLS, merge with multiallele not allowed
 # 27/09/2019-0.9.4.1b: Add HOWARD NOMEN field option
 # 06/02/2023-0.9.5: Add INFO_to_FORMAT, add threads on bcftools and bgzip
+# 25/06/2025-0.9.6.0: STARK release 19 compatibility
 
 INTERSEC?=2
 NB_VARIANTS_TO_SHOW?=20
@@ -176,7 +177,7 @@ REPORT_SECTIONS?=ALL
 	# Prevent comma in description in vcf header
 	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$< --output=$@.tmp0.vcf --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
 	# HOWARD annotation
-	$(HOWARD2) process $(HOWARD2_CONFIG_OPTIONS) --input=$@.tmp0.vcf --output=$@ --param=$(HOWARD2_PARAM_REPORT) $$( [ ! -z '$(HOWARD2_PRIORITIZATION_CONFIG)' ] && echo " --prioritization_config=$(HOWARD2_PRIORITIZATION_CONFIG) ") --threads=$(THREADS_BY_SAMPLE)
+	$(HOWARD) process $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp0.vcf --output=$@ --param=$(HOWARD_PARAM_REPORT) $$( [ ! -z '$(HOWARD_PRIORITIZATION_CONFIG)' ] && echo " --prioritization_config=$(HOWARD_PRIORITIZATION_CONFIG) ") --threads=$(THREADS_BY_SAMPLE)
 	# Clean INFO spaces
 	$(STARK_FOLDER_BIN)/clean_vcf_info_spaces.sh --input=$@ --output=$@
 	# cleaning
@@ -219,8 +220,7 @@ REPORT_SECTIONS?=ALL
 	echo $^ | tr " " "\n" | tr "\t" "\n" | grep "final.vcf.gz$$" > $@.tmp.vcf_list
 	$(BCFTOOLS) merge --threads=$(THREADS) -l $@.tmp.vcf_list -m none --force-samples $$([ $$(cat $@.tmp.vcf_list | wc -l) -lt 2 ] && echo " --force-single ") | $(BCFTOOLS) filter --threads=$(THREADS) -S . -e 'GT=="0/0" | GT=="0|0"' > $@.tmp.merged.vcf;
 	# HOWARD annotation
-	$(HOWARD2) process $(HOWARD2_CONFIG_OPTIONS) --input=$@.tmp.merged.vcf --output=$@.tmp.merged.annotated.vcf --param=$(HOWARD2_PARAM_ANALYSIS)
-	#$(HOWARD2) convert $(HOWARD2_CONFIG_OPTIONS) --input=$@.tmp.merged.vcf --output=$@.tmp.merged.annotated.vcf --param=$(HOWARD2_PARAM_ANALYSIS)
+	$(HOWARD) process $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp.merged.vcf --output=$@.tmp.merged.annotated.vcf --param=$(HOWARD_PARAM_ANALYSIS)
 	# Clean INFO spaces
 	$(STARK_FOLDER_BIN)/clean_vcf_info_spaces.sh --input=$@.tmp.merged.annotated.vcf --output=$@.tmp.merged.annotated.vcf
 	# Prevent comma in description in vcf header

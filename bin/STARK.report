@@ -1147,11 +1147,11 @@ PIPELINES_HTML="<strong>$PIPELINES_NUMBER pipeline"$([ $PIPELINES_NUMBER -gt 1 ]
 ALIGNERS_CALLERS_ANNOTATORS_HTML="($ALIGNERS_HTML, $CALLERS_HTML, $ANNOTATORS_HTML)"
 
 # HOWARD PRIORITIZATION 
-HOWARD2_PRIORITIZATION_PARAM=$(FIRST=$(echo $HOWARD2_PRIORITIZATION_REPORT,$HOWARD2_PRIORITIZATION,$HOWARD2_PRIORITIZATION_VARANK | tr "," " " | cut -d" " -f1) && echo $FIRST","$(echo $HOWARD2_PRIORITIZATION_REPORT,$HOWARD2_PRIORITIZATION,$HOWARD2_PRIORITIZATION_VARANK | tr "," " " | tr " " "\n" | sort -u | grep -v "^$FIRST" | tr "\n" "," | sed s/,$//) | tr "," " ")
-HOWARD2_PRIORITIZATION_LIST=""
-for HOWARD_P in $(echo "$HOWARD2_PRIORITIZATION_PARAM" | tr " " "\n"); do
+HOWARD_PRIORITIZATION_PARAM=$(FIRST=$(echo $HOWARD_PRIORITIZATION_REPORT,$HOWARD_PRIORITIZATION,$HOWARD_PRIORITIZATION_VARANK | tr "," " " | cut -d" " -f1) && echo $FIRST","$(echo $HOWARD_PRIORITIZATION_REPORT,$HOWARD_PRIORITIZATION,$HOWARD_PRIORITIZATION_VARANK | tr "," " " | tr " " "\n" | sort -u | grep -v "^$FIRST" | tr "\n" "," | sed s/,$//) | tr "," " ")
+HOWARD_PRIORITIZATION_LIST=""
+for HOWARD_P in $(echo "$HOWARD_PRIORITIZATION_PARAM" | tr " " "\n"); do
 	if (($(echo "$FINAL_VCF_PZFLAG_HEADER" | grep "^##INFO=<ID=PZFlag-$HOWARD_P," | wc -l))); then
-		HOWARD2_PRIORITIZATION_LIST=$HOWARD2_PRIORITIZATION_LIST" "$HOWARD_P
+		HOWARD_PRIORITIZATION_LIST=$HOWARD_PRIORITIZATION_LIST" "$HOWARD_P
 	fi;
 done;
 
@@ -2864,7 +2864,7 @@ if ((1)); then
 						'$(echo $ALIGNERS_CALLERS_ANNOTATORS | sed "s/ /<br>/gi")'
 						'$([ "$POST_CALLING_STEPS" != "" ] && echo "<br>with post calling steps <strong>"$POST_CALLING_STEPS"</strong>")'
 						'$([ "$POST_ANNOTATION_STEPS" != "" ] && echo "<br>with post annotation steps <strong>"$POST_ANNOTATION_STEPS"</strong>")'
-						'$([ "$HOWARD2_PRIORITIZATION_LIST" != "" ] && echo "<br>with post prioritization <strong>"$HOWARD2_PRIORITIZATION_LIST"</strong>")'
+						'$([ "$HOWARD_PRIORITIZATION_LIST" != "" ] && echo "<br>with post prioritization <strong>"$HOWARD_PRIORITIZATION_LIST"</strong>")'
 					</p>
 
 					'"$(cat $HTMLFILE_VARIANTS_STATS_GENES_PANEL)"'
@@ -4081,30 +4081,9 @@ GENES_PANEL_NUM=0
 			# HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV
 			if [ -s $GENES_PANEL_VCF ]; then
 
-				# Create TSV if not exists
-				# if [ ! -s $GENES_PANEL_REPORT_TSV ] || ((0)); then
-				# 	if [ "$HOWARD2_FIELDS_REPORT" == "" ]; then
-				# 		HOWARD2_FIELDS_REPORT=$(echo $HOWARD2_FIELDS | sed "s/ALL//")
-				# 	fi;
-				# 	$HOWARD2 convert --input=$GENES_PANEL_VCF --output=$HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV --explode_infos --explode_infos_fields=NOMEN;
-				# 	GENES_PANEL_REPORT_TSV=$HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV;
-				# fi;
-
 				# Generate GENES_PANEL_REPORT_TSV
-				# $HOWARD2 convert --input=$GENES_PANEL_VCF --output=$GENES_PANEL_REPORT_TSV --explode_infos --explode_infos_fields=NOMEN,PZFlag,PZScore;
-				$HOWARD2 query --input=$GENES_PANEL_VCF --output=$GENES_PANEL_REPORT_TSV --explode_infos --explode_infos_fields=NOMEN,PZFlag,PZScore --query="SELECT v.NOMEN, vv.SAMPLES.\"$SAMPLE\".GT, v.FILTER, v.PZFlag, v.PZScore, concat(v.\"#CHROM\", '-', v.POS, '-', v.REF, '-', v.ALT) AS ID FROM variants AS v JOIN variants_view AS vv ON (v.\"#CHROM\"=vv.\"#CHROM\" AND v.POS=vv.POS AND v.REF=vv.REF AND v.ALT=vv.ALT) ORDER BY v.PZFlag DESC, v.PZScore DESC LIMIT $TABLE_LIMIT_CUT" 1>/dev/null 2>/dev/null;
-
-				#$HOWARD2 convert --input=$GENES_PANEL_VCF --output=$HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV --query='SELECT "#CHROM", "POS", "REF", "ALT" FROM variants_view ORDER BY ' 
-
-
-				# head -n5 $GENES_PANEL_REPORT_TSV
-
-				# # Formating to create table
-				# #cut -f 8- $GENES_PANEL_REPORT_TSV | rev | cut -f 3- | rev >$HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.INFO
-				# cut -f 11- $GENES_PANEL_REPORT_TSV | rev | cut -f 3- | rev >$HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.INFO
-				# cut -f -7 $GENES_PANEL_REPORT_TSV >$HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.CHROMPOSREFALT
-				# rev $GENES_PANEL_REPORT_TSV | cut -f -2 | rev >$HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.FORMATSAMPLE
-				# paste $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.INFO $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.CHROMPOSREFALT $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.FORMATSAMPLE > $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV
+				# $HOWARD convert --input=$GENES_PANEL_VCF --output=$GENES_PANEL_REPORT_TSV --explode_infos --explode_infos_fields=NOMEN,PZFlag,PZScore;
+				$HOWARD query --config=$HOWARD_CONFIG --threads=1 --input=$GENES_PANEL_VCF --output=$GENES_PANEL_REPORT_TSV --explode_infos --explode_infos_fields=NOMEN,PZFlag,PZScore --query="SELECT v.NOMEN, vv.SAMPLES.\"$SAMPLE\".GT, v.FILTER, v.PZFlag, v.PZScore, concat(v.\"#CHROM\", '-', v.POS, '-', v.REF, '-', v.ALT) AS ID FROM variants AS v JOIN variants_view AS vv ON (v.\"#CHROM\"=vv.\"#CHROM\" AND v.POS=vv.POS AND v.REF=vv.REF AND v.ALT=vv.ALT) ORDER BY v.PZFlag DESC, v.PZScore DESC LIMIT $TABLE_LIMIT_CUT" 1>/dev/null 2>/dev/null;
 
 				cp $GENES_PANEL_REPORT_TSV $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV
 
@@ -4317,7 +4296,7 @@ if in_array $SECTION_ID $SECTIONS || in_array ALL $SECTIONS ; then
 					'$(echo $ALIGNERS_CALLERS_ANNOTATORS | sed "s/ /<br>/gi")'
 					'$([ "$POST_CALLING_STEPS" != "" ] && echo "<br>with post calling steps <strong>"$POST_CALLING_STEPS"</strong>")'
 					'$([ "$POST_ANNOTATION_STEPS" != "" ] && echo "<br>with post annotation steps <strong>"$POST_ANNOTATION_STEPS"</strong>")'
-					'$([ "$HOWARD2_PRIORITIZATION_LIST" != "" ] && echo "<br>with post prioritization steps <strong>"$HOWARD2_PRIORITIZATION_LIST"</strong>")'
+					'$([ "$HOWARD_PRIORITIZATION_LIST" != "" ] && echo "<br>with post prioritization steps <strong>"$HOWARD_PRIORITIZATION_LIST"</strong>")'
 					<br>
 
 				</p>
@@ -4371,7 +4350,7 @@ fi;
 # 					'$(echo $ALIGNERS_CALLERS_ANNOTATORS | sed "s/ /<br>/gi")'
 # 					'$([ "$POST_CALLING_STEPS" != "" ] && echo "<br>with post calling steps <strong>"$POST_CALLING_STEPS"</strong>")'
 # 					'$([ "$POST_ANNOTATION_STEPS" != "" ] && echo "<br>with post annotation steps <strong>"$POST_ANNOTATION_STEPS"</strong>")'
-# 					'$([ "$HOWARD2_PRIORITIZATION_LIST" != "" ] && echo "<br>with post prioritization steps <strong>"$HOWARD2_PRIORITIZATION_LIST"</strong>")'
+# 					'$([ "$HOWARD_PRIORITIZATION_LIST" != "" ] && echo "<br>with post prioritization steps <strong>"$HOWARD_PRIORITIZATION_LIST"</strong>")'
 # 					<br>
 
 # 				</p>

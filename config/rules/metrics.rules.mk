@@ -3,8 +3,8 @@
 # Author: Antony Le Bechec
 ############################
 # Release
-MK_RELEASE="0.9.5.1b"
-MK_DATE="27/09/2019"
+MK_RELEASE="0.9.6.0"
+MK_DATE="25/06/2025"
 
 # Release note
 # 18/12/2015 - 0.9.2b : Force gzip metrics files
@@ -12,6 +12,7 @@ MK_DATE="27/09/2019"
 # 29/09/2016 - 0.9.4b : Add Amplicon coverage metrics.amplicon_coverage
 # 29/09/2016 - 0.9.5b : Chenge metrics.genes rule
 # 27/09/2019 - 0.9.5.1b: Change FATBAM to CAP tool, add HOWARD option
+# 25/06/2025 - 0.9.6.0: STARK release 19 compatibility
 
 
 
@@ -568,10 +569,10 @@ MAX_CONCURRENT_HSMETRICS_RAM?=24g
 			$(BCFTOOLS) view $*.vcf.gz | $(BCFTOOLS) norm --rm-dup exact > $@.$$bed_subname.vcf; \
 		fi ; \
 		# TSV \
-		$(HOWARD2) convert --input=$@.$$bed_subname.vcf --output=$@.$$bed_subname.tsv; \
+		$(HOWARD) convert $(HOWARD_CONFIG_OPTIONS) --input=$@.$$bed_subname.vcf --output=$@.$$bed_subname.tsv; \
 		touch $@.$$bed_subname.tsv; \
 		# HOWARD STATS \
-		$(HOWARD2) stats --input=$@.$$bed_subname.vcf --stats_md=$@.$$bed_subname.stats.md --stats_json=$@.$$bed_subname.stats.json --stats_html=$@.$$bed_subname.stats.html --annotations_stats; \
+		$(HOWARD) stats $(HOWARD_CONFIG_OPTIONS) --input=$@.$$bed_subname.vcf --stats_md=$@.$$bed_subname.stats.md --stats_json=$@.$$bed_subname.stats.json --stats_html=$@.$$bed_subname.stats.html --annotations_stats; \
 		# BCFTOOLS STATS \
 		$(BCFTOOLS) stats $@.$$bed_subname.vcf > $@.$$bed_subname.bcftools.stats.tsv; \
 		cp $@.$$bed_subname.bcftools.stats.tsv $@.$$bed_subname.report.bcftools.stats.tsv; \
