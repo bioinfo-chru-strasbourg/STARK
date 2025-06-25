@@ -3,8 +3,8 @@
 # Author: Antony Le Bechec
 ############################
 # Release
-MK_RELEASE="0.9.4.2"
-MK_DATE="13/04/2021"
+MK_RELEASE="0.9.5.0"
+MK_DATE="25/06/2025"
 
 ## Release note
 # 10/07/2015-V0.9b: Create HOWARD annotation and VCF translation
@@ -14,33 +14,30 @@ MK_DATE="13/04/2021"
 # 02/10/2018-V0.9.4b: Modification of the HOWARD annotation
 # 27/09/2019-V0.9.4.1b: Add HOWARD NOMEN field option
 # 13/04/2021-V0.9.4.2: Add HOWARD_CONFIG_OPTIONS
+# 25/06/2025-V0.9.5.0: STARK release 19 compatibility
 
 
-# HOWARD2 Variables
+# HOWARD Variables
 ####################
 
 HOWARD_ANNOTATION?="core,frequency,score,annotation,prediction,snpeff,snpeff_hgvs"
 HOWARD_CALCULATION?=VAF,NOMEN,VAF_STATS,DP_STATS,VARTYPE
 HOWARD_NOMEN_FIELDS?="hgvs"
 
-HOWARD2_ANNOTATION?="core,frequency,score,annotation,prediction,snpeff,snpeff_hgvs"
-HOWARD2_CALCULATION?=VAF,NOMEN,VAF_STATS,DP_STATS,VARTYPE
-HOWARD2_NOMEN_FIELDS?="hgvs"
+HOWARD_ANNOTATION?="core,frequency,score,annotation,prediction,snpeff,snpeff_hgvs"
+HOWARD_CALCULATION?=VAF,NOMEN,VAF_STATS,DP_STATS,VARTYPE
+HOWARD_NOMEN_FIELDS?="hgvs"
 
 
 # RULES
 ########
 
-# HOWARD2 ANNOTATION
+# HOWARD ANNOTATION
 %.howard$(POST_ANNOTATION).vcf: %.vcf %.empty.vcf %.transcripts 
 	# Prevent comma in description in vcf header;
 	#$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$< --output=$@.tmp0 --threads=$(THREADS_BY_CALLER) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
-	# Annotation calculation step HOWARD2
-	#+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp0 --output=$@ --annotation=$(HOWARD_ANNOTATION) --calculation=$(HOWARD_CALCULATION) --transcripts=$*.transcripts --nomen_fields=$(HOWARD_NOMEN_FIELDS) --norm=$$(cat $*.genome);
-	#+$(HOWARD2) $(HOWARD2_CONFIG_OPTIONS) --input=$@.tmp0 --output=$@ --annotation=$(HOWARD2_ANNOTATION) --calculation=$(HOWARD2_CALCULATION) --transcripts=$*.transcripts --assembly=$(ASSEMBLY) --hgvs_field=$(HOWARD2_NOMEN_FIELDS);
-	# HOWARD2 DEVEL command
-	#$(HOWARD2) convert --input=$< --output=$@
-	$(HOWARD2) process $(HOWARD2_CONFIG_OPTIONS) --input=$< --output=$@ --param=$(HOWARD2_PARAM)
+	# Annotation calculation step HOWARD
+	$(HOWARD) process $(HOWARD_CONFIG_OPTIONS) --input=$< --output=$@ --param=$(HOWARD_PARAM)
 	# Clean INFO spaces
 	$(STARK_FOLDER_BIN)/clean_vcf_info_spaces.sh --input=$@
 	# Prevent comma in description in vcf header

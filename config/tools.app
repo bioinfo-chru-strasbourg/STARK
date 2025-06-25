@@ -356,24 +356,24 @@ export CAP_REF="inhouse"
 TOOLS_LIST=$TOOLS_LIST" CAP"
 
 
-# HOWARD
-export HOWARD_VERSION=0.9.15.6							# VER
-export HOWARD_FOLDER=$NGS_TOOLS/howard/$HOWARD_VERSION			# DIR 
-export HOWARD_FOLDER_BIN=$HOWARD_FOLDER/bin				# DIR
-export HOWARD_FOLDER_DOCS=$HOWARD_FOLDER/docs			# DIR
-export HOWARD=$HOWARD_FOLDER_BIN/HOWARD					# BIN-SCRIPT
-export HOWARD_RELEASE=$HOWARD_VERSION
-export HOWARDDIR=$HOWARD_FOLDER_BIN
+# # HOWARD
+# export HOWARD_VERSION=0.9.15.6							# VER
+# export HOWARD_FOLDER=$NGS_TOOLS/howard/$HOWARD_VERSION			# DIR 
+# export HOWARD_FOLDER_BIN=$HOWARD_FOLDER/bin				# DIR
+# export HOWARD_FOLDER_DOCS=$HOWARD_FOLDER/docs			# DIR
+# export HOWARD=$HOWARD_FOLDER_BIN/HOWARD					# BIN-SCRIPT
+# export HOWARD_RELEASE=$HOWARD_VERSION
+# export HOWARDDIR=$HOWARD_FOLDER_BIN
+# export HOWARD_DESCRIPTION="Highly Open and Valuable tool for Variant Annotation & Ranking"
+# export HOWARD_REF="inhouse"
+# TOOLS_LIST=$TOOLS_LIST" HOWARD"
+
+# HOWARD (devel)
+export HOWARD=howard						# BIN-JAR
+export HOWARD_VERSION=devel				# VER
 export HOWARD_DESCRIPTION="Highly Open and Valuable tool for Variant Annotation & Ranking"
 export HOWARD_REF="inhouse"
 TOOLS_LIST=$TOOLS_LIST" HOWARD"
-
-# HOWARD2 (devel)
-export HOWARD2=howard						# BIN-JAR
-export HOWARD2_VERSION=devel				# VER
-export HOWARD2_DESCRIPTION="Highly Open and Valuable tool for Variant Annotation & Ranking"
-export HOWARD2_REF="inhouse"
-TOOLS_LIST=$TOOLS_LIST" HOWARD2"
 
 # SCRIPTS
 export STARK_BED_NORMALIZATION=$STARK_FOLDER_BIN/bed_normalization.awk

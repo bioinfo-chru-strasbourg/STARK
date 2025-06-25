@@ -1,7 +1,7 @@
 ############################
 # Main Rules
-# Release: 0.9.5.3
-# Date: 25/05/2023
+# Release: 0.9.6.0
+# Date: 25/06/2025
 # Author: Antony Le Bechec
 ############################
 
@@ -18,6 +18,7 @@
 # 27/09/2019-0.9.5.1b: Change FATBAM to CAP tool
 # 28/07/2022-0.9.5.2: Change SNP and InDel merge, 2 rules for POST_CALLING and Callers (such as VarScan)
 # 25/05/2023-0.9.5.3: Cleaning
+# 25/06/2025-0.9.6.0: STARK release 19 compatibility
 
 
 # HOWARD Prioritization
@@ -157,7 +158,7 @@ REMOVE_INTERMEDIATE_SAM?=1
 
 # VCF to tab delimiter
 %.tsv: %.vcf
-	$(HOWARD2) convert --input=$< --output=$@;
+	$(HOWARD) convert $(HOWARD_CONFIG_OPTIONS) --input=$< --output=$@;
 	touch $@
 	if [ ! -e $@ ]; then touch $@; fi;
 

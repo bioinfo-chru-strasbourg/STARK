@@ -1,13 +1,14 @@
 ############################
-# HOWARD2 Annotation Rules
+# SnpEff Annotation Rules
 # Author: Antony Le Bechec
 ############################
 # Release
-MK_RELEASE="0.9b"
-MK_DATE="21/04/2016"
+MK_RELEASE="0.9.1.0"
+MK_DATE="25/06/2025"
 
 ## Release note
 # 21/04/2016-V0.9b: Create SNPEFF
+# 25/06/2025-V0.9.1.0: STARK release 19 compatibility
 
 
 
