@@ -32,17 +32,16 @@ HOWARD_NOMEN_FIELDS?="hgvs"
 # RULES
 ########
 %.howard_minimal$(POST_ANNOTATION).vcf: %.vcf %.empty.vcf %.transcripts
-	# Prevent comma in description in vcf header
-	#$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$< --output=$@.tmp --threads=$(THREADS_BY_CALLER) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
 	# Annotation step
-	$(HOWARD) process $(HOWARD_CONFIG_OPTIONS) --input=$< --output=$@ --param=$(HOWARD_MINIMALPARAM)
+	if (( $$(grep -v "^#" $< | head -n1 | wc -l) )); then \
+		$(HOWARD) process $(HOWARD_CONFIG_OPTIONS) --input=$< --output=$@ --param=$(HOWARD_MINIMALPARAM)
+	else \
+		cp $< $@; \
+	fi;
 	# Clean INFO spaces
 	$(STARK_FOLDER_BIN)/clean_vcf_info_spaces.sh --input=$@
+	# Empty
 	-if [ ! -e $@ ]; then cp $*.empty.vcf $@; fi;
-	# Downgrading VCF format 4.2 to 4.1
-	-cat $@ | sed "s/##fileformat=VCFv4.2/##fileformat=VCFv4.1/" > $@.downgrade.4.2.to.4.1.tmp;
-	-rm -f $@ $@.tmp*;
-	-mv $@.downgrade.4.2.to.4.1.tmp $@;
 
 
 # CONFIG/RELEASE

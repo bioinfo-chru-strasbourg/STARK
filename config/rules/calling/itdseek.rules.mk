@@ -30,7 +30,7 @@ VAFMIN_ITDSEEK=0.00
 		echo '##FORMAT=<ID=GT,Number=.,Type=String,Description="Genotype">' >> $@.tmp2; \
 		echo '##FORMAT=<ID=DP,Number=.,Type=Integer,Description="Read depth">' >> $@.tmp2; \
 		echo '##FORMAT=<ID=VAF,Number=.,Type=Float,Description="VAF Variant Frequency, from ITD allele fraction">' >> $@.tmp2; \
-		#Add contig \
+		# Add contig \
 		echo '##contig=<ID=chr13,assembly=hg19,length=115169878>' >> $@.tmp2; \
 		echo '##reference=file://'$(GENOME) >> $@.tmp2; \
 		# Add sample columns FORMAT and $SAMPLE \
