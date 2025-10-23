@@ -184,198 +184,225 @@ gotHeader=False
 operationCode=""
 
 for line in open(miseqSampleSheet):
-	
-	linestrip=line.strip()
 
-	if linestrip=="":
-		continue
+    linestrip = line.strip()
 
-	linestripcols=linestrip.split(",")
-	linestripcol1=linestripcols[0]
-	if (linestripcol1==operationCode_Header
-	or linestripcol1==operationCode_Manifests
-	or linestripcol1==operationCode_Reads
-	or linestripcol1==operationCode_Settings
-	or linestripcol1==operationCode_Data):
-		#operationCode=line.strip()
-		operationCode=linestripcol1
-		print("# "+operationCode+" processing...")
-		continue
+    if linestrip == "":
+        continue
 
-	#print"# "+operationCode+" and "+linestripcol1+" ??? "
+    linestripcols = linestrip.split(",")
+    linestripcol1 = linestripcols[0]
+    if (
+        linestripcol1 == operationCode_Header
+        or linestripcol1 == operationCode_Manifests
+        or linestripcol1 == operationCode_Reads
+        or linestripcol1 == operationCode_Settings
+        or linestripcol1 == operationCode_Data
+    ):
+        operationCode = linestripcol1
+        print("# " + operationCode + " processing...")
+        continue
 
-	# [Header]
-	if operationCode==operationCode_Header:
-		#print"# "+operationCode+" == HEADER "
-		if line.find("Project Name,")>=0:
-			projectName=line.replace("Project Name,","").strip()
-			print("#    Project Name: "+projectName)
-		if line.find("Investigator Name,")>=0:
-			InvestigatorName=line.replace("Investigator Name,","").strip()
-			print("#    Investigator Name: "+InvestigatorName)
-		if line.find("Assay,")>=0:
-			Assay=line.replace("Assay,","").strip()
-			print("#    Assay: "+Assay)
-	
-	# [Manifests]
-	if operationCode==operationCode_Manifests:
-		#print"######### "+line
-		if line.strip()!="":
-			tokens=line.strip().split(",")
-			if tokens[1].strip()!="":
-				if manifests_content.strip()=="":
-					manifests_content=tokens[1]
-				else:
-					manifests_content=manifests_content+","+tokens[1]
-				# Manifest2
-				manifests_content_list=manifests_content_list+""+tokens[0]+","+tokens[1]+"\n"
+    # [Header]
+    if operationCode == operationCode_Header:
+        if line.find("Project Name,") >= 0:
+            projectName = line.replace("Project Name,", "").strip()
+            print("#    Project Name: " + projectName)
+        if line.find("Investigator Name,") >= 0:
+            InvestigatorName = line.replace("Investigator Name,", "").strip()
+            print("#    Investigator Name: " + InvestigatorName)
+        if line.find("Assay,") >= 0:
+            Assay = line.replace("Assay,", "").strip()
+            print("#    Assay: " + Assay)
 
-	# [Reads]
-	if operationCode==operationCode_Reads:
-		if line.strip()!="":
-			
-			# Sequencing Method
-			nb_reads=nb_reads+1
-			reads_length_split=line.strip().split(",")
-			reads_length=reads_length_split[0]
-			
-			if reads_length!="":
-				reads_length_array.append(reads_length)
-				print("#    Reads "+str(nb_reads)+": "+str(reads_length_array[(nb_reads-1)])+"pb")
-				readsLength_content=readsLength_content+reads_length+"\n"
-			
-				sequencing_method="Unknown"
-				if nb_reads==1:
-					sequencing_method="SE"
-					maskRead1="Y"+reads_length_array[0]
-				else:
-					if nb_reads==2:
-						sequencing_method="PE"
-						maskRead1="Y"+reads_length_array[0]
-						maskRead2="Y"+reads_length_array[1]
-	
-	# [Settings]
-	if operationCode==operationCode_Settings:
-		if line.find("Adapter")>=0:
-			tokens=line.strip().split(",")
-			adapters_content=adapters_content+">"+tokens[0]+"\n"+tokens[1]+"\n"
-	
-	# [Data]
-	if operationCode==operationCode_Data:
-		#printline
-		tokens=line.split(",")
-		
-		if not gotHeader: # [Data] Header First line !
-			
-			# main information
-			sampleProject="Unknown"
-			if projectName!="" and projectName!="Unknown":
-				sampleProject=projectName
-			else:
-				if InvestigatorName!="" and InvestigatorName!="Unknown":
-					sampleProject=InvestigatorName
-					
-			machineOperator="Unknown"
-			if InvestigatorName!="":
-				machineOperator=InvestigatorName
+    # [Manifests]
+    if operationCode == operationCode_Manifests and line.strip() != "":
+        tokens = line.strip().split(",")
 
-			# Index determination
-			I5_Index_ID=0
-			I7_Index_ID=0
-			for i in range(len(tokens)):
-				#if tokens[i]=="I5_Index_ID":
-				if tokens[i]=="index2":
-					I5_Index_ID=i
-				if tokens[i]=="index":
-					I7_Index_ID=i
+        if tokens[1].strip() != "":
+            if manifests_content.strip() == "":
+                manifests_content = tokens[1]
+            else:
+                manifests_content = manifests_content + "," + tokens[1]
+            # Manifest2
+            manifests_content_list = (
+                manifests_content_list + "" + tokens[0] + "," + tokens[1] + "\n"
+            )
 
-			# Dual index determination
-			dual=False
-			for i in range(len(tokens)):
-				if tokens[i]=="I5_Index_ID":
-					dual=True
-			#if Assay=="HaloPlex":
-			#	dual=False
+    # [Reads]
+    if operationCode == operationCode_Reads and line.strip() != "":
 
-			if dual:
-				print("#    Dual index detected")
-			else:
-				print("#    Single index detected")
+        # Sequencing Method
+        nb_reads = nb_reads + 1
+        reads_length_split = line.strip().split(",")
+        reads_length = reads_length_split[0]
 
-			gotHeader=True
+        if reads_length != "":
+            reads_length_array.append(reads_length)
+            print(
+                "#    Reads "
+                + str(nb_reads)
+                + ": "
+                + str(reads_length_array[(nb_reads - 1)])
+                + "pb"
+            )
+            readsLength_content = readsLength_content + reads_length + "\n"
 
-			continue
+            sequencing_method = "Unknown"
+            if nb_reads == 1:
+                sequencing_method = "SE"
+                maskRead1 = "Y" + reads_length_array[0]
+            else:
+                if nb_reads == 2:
+                    sequencing_method = "PE"
+                    maskRead1 = "Y" + reads_length_array[0]
+                    maskRead2 = "Y" + reads_length_array[1]
 
-		#tokens=line.split(",")
-	
-		# MiSeq format
-		# Sample_ID,Sample_Name,Sample_Plate,Sample_Well,Sample_Project,index,I7_Index_ID,Description,GenomeFolder
-		# 90377-1,,LSPQ20120606,A01,,ATCACG,A001,,PhiX\Illumina\RTA\Sequence\WholeGenomeFASTA
+    # [Settings]
+    if operationCode == operationCode_Settings and line.find("Adapter") >= 0:
+        tokens = line.strip().split(",")
+        adapters_content = adapters_content + ">" + tokens[0] + "\n" + tokens[1] + "\n"
 
-		sampleName=tokens[1].strip()
+    # [Data]
+    if operationCode == operationCode_Data:
+        # printline
+        tokens = line.split(",")
 
-		# take the identifier if the name is empty.
-		if sampleName=="":
-			print("#    Warning: Sample_Name is empty, will use Sample_ID for the sample name")
-			sampleName=tokens[0].strip()
+        if not gotHeader:  # [Data] Header First line !
 
-		if sampleName=="":
-			print("#    Error: sample name is empty.")
-			sys.exit(1)
+            # main information
+            sampleProject = "Unknown"
+            if projectName != "" and projectName != "Unknown":
+                sampleProject = projectName
+            else:
+                if InvestigatorName != "" and InvestigatorName != "Unknown":
+                    sampleProject = InvestigatorName
 
-		# replace space " " by underscore "_"
-		#print"# SampleName0="+sampleName
-		#sampleName=sampleName.replace(' ', '_')
-		#print"# SampleName1="+sampleName
-		
-		# Skip name with space
-		if " " in sampleName:
-			print("#    Warning: sample name 'sampleName' contains a space. This sample will be skipped.")
-			continue
-		
-		# index
-		
-		
-		#if len(tokens)==10:
-		if dual:
-			if Assay=="HaloPlex":
-				index=tokens[5].strip() #+"-"+tokens[7].strip()
-				maskIndex="I"+str(len(tokens[I7_Index_ID].strip()))+","+"Y"+str(len(tokens[I5_Index_ID].strip()))
-			else:
-				index=tokens[5].strip()+"-"+tokens[7].strip()
-				maskIndex="I"+str(len(tokens[I7_Index_ID].strip()))+","+"I"+str(len(tokens[I5_Index_ID].strip()))
-		else:
-			index=tokens[5].strip()
-			maskIndex="I"+len(tokens[5].strip())
-		
+            machineOperator = "Unknown"
+            if InvestigatorName != "":
+                machineOperator = InvestigatorName
 
-		# CASAVA/BCL2FASTQ format
-		#FCID,Lane,SampleID,SampleRef,Index,Description,Control,Recipe,Operator,SampleProject
-		#000000000-A0VER,1,R6_WT,,GCCAAT,,N,PE_indexing,FR,RNA-seq_spr0058_20120604
+            # Index determination
+            I5_Index_ID = 0
+            I7_Index_ID = 0
+            for i in range(len(tokens)):
+                # if tokens[i]=="I5_Index_ID":
+                if tokens[i] == "index2":
+                    I5_Index_ID = i
+                if tokens[i] == "index":
+                    I7_Index_ID = i
 
-		cavasaSampleSheet_content=cavasaSampleSheet_content+flowcellIdentifier+","	# FCID
-		cavasaSampleSheet_content=cavasaSampleSheet_content+lane+","			# Lane
-		cavasaSampleSheet_content=cavasaSampleSheet_content+sampleName+","		# SampleID
-		cavasaSampleSheet_content=cavasaSampleSheet_content+","				# SampleRef
-		cavasaSampleSheet_content=cavasaSampleSheet_content+index+","			# Index
-		cavasaSampleSheet_content=cavasaSampleSheet_content+","
-		cavasaSampleSheet_content=cavasaSampleSheet_content+"N,"
-		cavasaSampleSheet_content=cavasaSampleSheet_content+"PE_indexing,"
-		cavasaSampleSheet_content=cavasaSampleSheet_content+machineOperator+","		# Operator
-		cavasaSampleSheet_content=cavasaSampleSheet_content+sampleProject
-		cavasaSampleSheet_content=cavasaSampleSheet_content+"\n"
-		
-		bcl2fastqSampleSheet_content=bcl2fastqSampleSheet_content+flowcellIdentifier+","	# FCID
-		bcl2fastqSampleSheet_content=bcl2fastqSampleSheet_content+lane+","			# Lane
-		bcl2fastqSampleSheet_content=bcl2fastqSampleSheet_content+sampleName+","		# SampleID
-		bcl2fastqSampleSheet_content=bcl2fastqSampleSheet_content+","				# SampleRef
-		bcl2fastqSampleSheet_content=bcl2fastqSampleSheet_content+index+","			# Index
-		bcl2fastqSampleSheet_content=bcl2fastqSampleSheet_content+","
-		bcl2fastqSampleSheet_content=bcl2fastqSampleSheet_content+"N,"
-		bcl2fastqSampleSheet_content=bcl2fastqSampleSheet_content+"PE_indexing,"
-		bcl2fastqSampleSheet_content=bcl2fastqSampleSheet_content+machineOperator+","		# Operator
-		bcl2fastqSampleSheet_content=bcl2fastqSampleSheet_content+sampleProject
-		bcl2fastqSampleSheet_content=bcl2fastqSampleSheet_content+"\n"
+            # Dual index determination
+            dual = False
+            for i in range(len(tokens)):
+                if tokens[i] == "I5_Index_ID":
+                    dual = True
+
+            if dual:
+                print("#    Dual index detected")
+            else:
+                print("#    Single index detected")
+
+            gotHeader = True
+
+            continue
+
+        # MiSeq format
+        # Sample_ID,Sample_Name,Sample_Plate,Sample_Well,Sample_Project,index,I7_Index_ID,Description,GenomeFolder
+        # 90377-1,,LSPQ20120606,A01,,ATCACG,A001,,PhiX\Illumina\RTA\Sequence\WholeGenomeFASTA
+
+        sampleName = tokens[1].strip()
+
+        # take the identifier if the name is empty.
+        if sampleName == "":
+            print(
+                "#    Warning: Sample_Name is empty, will use Sample_ID for the sample name"
+            )
+            sampleName = tokens[0].strip()
+
+        if sampleName == "":
+            print("#    Error: sample name is empty.")
+            sys.exit(1)
+
+        # replace space " " by underscore "_"
+        # print"# SampleName0="+sampleName
+        # sampleName=sampleName.replace(' ', '_')
+        # print"# SampleName1="+sampleName
+
+        # Skip name with space
+        if " " in sampleName:
+            print(
+                "#    Warning: sample name 'sampleName' contains a space. This sample will be skipped."
+            )
+            continue
+
+        # index
+
+        # if len(tokens)==10:
+        if dual:
+            if Assay == "HaloPlex":
+                index = tokens[5].strip()  # +"-"+tokens[7].strip()
+                maskIndex = (
+                    "I"
+                    + str(len(tokens[I7_Index_ID].strip()))
+                    + ","
+                    + "Y"
+                    + str(len(tokens[I5_Index_ID].strip()))
+                )
+            else:
+                index = tokens[5].strip() + "-" + tokens[7].strip()
+                maskIndex = (
+                    "I"
+                    + str(len(tokens[I7_Index_ID].strip()))
+                    + ","
+                    + "I"
+                    + str(len(tokens[I5_Index_ID].strip()))
+                )
+        else:
+            index = tokens[5].strip()
+            maskIndex = "I" + str(len(tokens[5].strip()))
+
+        # CASAVA/BCL2FASTQ format
+        # FCID,Lane,SampleID,SampleRef,Index,Description,Control,Recipe,Operator,SampleProject
+        # 000000000-A0VER,1,R6_WT,,GCCAAT,,N,PE_indexing,FR,RNA-seq_spr0058_20120604
+
+        cavasaSampleSheet_content = (
+            cavasaSampleSheet_content + flowcellIdentifier + ","
+        )  # FCID
+        cavasaSampleSheet_content = cavasaSampleSheet_content + lane + ","  # Lane
+        cavasaSampleSheet_content = (
+            cavasaSampleSheet_content + sampleName + ","
+        )  # SampleID
+        cavasaSampleSheet_content = cavasaSampleSheet_content + ","  # SampleRef
+        cavasaSampleSheet_content = cavasaSampleSheet_content + index + ","  # Index
+        cavasaSampleSheet_content = cavasaSampleSheet_content + ","
+        cavasaSampleSheet_content = cavasaSampleSheet_content + "N,"
+        cavasaSampleSheet_content = cavasaSampleSheet_content + "PE_indexing,"
+        cavasaSampleSheet_content = (
+            cavasaSampleSheet_content + machineOperator + ","
+        )  # Operator
+        cavasaSampleSheet_content = cavasaSampleSheet_content + sampleProject
+        cavasaSampleSheet_content = cavasaSampleSheet_content + "\n"
+
+        bcl2fastqSampleSheet_content = (
+            bcl2fastqSampleSheet_content + flowcellIdentifier + ","
+        )  # FCID
+        bcl2fastqSampleSheet_content = bcl2fastqSampleSheet_content + lane + ","  # Lane
+        bcl2fastqSampleSheet_content = (
+            bcl2fastqSampleSheet_content + sampleName + ","
+        )  # SampleID
+        bcl2fastqSampleSheet_content = bcl2fastqSampleSheet_content + ","  # SampleRef
+        bcl2fastqSampleSheet_content = (
+            bcl2fastqSampleSheet_content + index + ","
+        )  # Index
+        bcl2fastqSampleSheet_content = bcl2fastqSampleSheet_content + ","
+        bcl2fastqSampleSheet_content = bcl2fastqSampleSheet_content + "N,"
+        bcl2fastqSampleSheet_content = bcl2fastqSampleSheet_content + "PE_indexing,"
+        bcl2fastqSampleSheet_content = (
+            bcl2fastqSampleSheet_content + machineOperator + ","
+        )  # Operator
+        bcl2fastqSampleSheet_content = bcl2fastqSampleSheet_content + sampleProject
+        bcl2fastqSampleSheet_content = bcl2fastqSampleSheet_content + "\n"
 
 # Mask
 mask=maskRead1+","+maskIndex
@@ -383,7 +410,6 @@ if sequencing_method=="PE":
 	mask=mask+","+maskRead2
 mask_content=mask
 
-	
 # Write file
 stream=open(output,"w")
 if outputType=="bcl2fastqSampleSheet":
@@ -401,8 +427,6 @@ if outputType=="manifests":
 if outputType=="manifests_list":
 	stream.write(manifests_content_list)
 stream.close()
-
-
 
 print("# Output file <"+output+"> ("+outputType+") is now on the disk")
 print("# Have a nice day.")
