@@ -29,13 +29,21 @@ BWAMEM_FLAGS?= mem -C -M -t $(THREADS_BWA)
 	echo "@RG\tID:1\tPL:ILLUMINA\tPU:PU\tLB:001\tSM:$(*F)" > $@.RG
 	if [ "`cat $@.RG`" != "" ]; then echo " -R "`cat $@.RG` > $@.RG; fi;
 	# Alignment
-	if (($$(zcat $*.R2.fastq.gz | head -n 1 | wc -l))); then \
-		echo "BWA MEM Paired-End"; \
-		$(BWA) $(BWAMEM_FLAGS) $$(cat $@.RG) $(GENOME) $*.R1$(POST_SEQUENCING).fastq.gz $*.R2$(POST_SEQUENCING).fastq.gz | $(SAMTOOLS) sort - -l 1 -O BAM -o $@.tmp -T $@.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS); \
-	else \
-		echo "BWA MEM Single-End"; \
-		$(BWA) $(BWAMEM_FLAGS) $$(cat $@.RG) $(GENOME) $*.R1$(POST_SEQUENCING).fastq.gz | $(SAMTOOLS) sort - -l 1 -O BAM -o $@.tmp -T $@.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS); \
-	fi;
+	while [ ! -s $@.tmp ]; do \
+		if (($$(zcat $*.R2.fastq.gz | head -n 1 | wc -l))); then \
+			echo "BWA MEM Paired-End"; \
+			$(BWA) $(BWAMEM_FLAGS) $$(cat $@.RG) $(GENOME) $*.R1$(POST_SEQUENCING).fastq.gz $*.R2$(POST_SEQUENCING).fastq.gz | $(SAMTOOLS) sort - -l 1 -O BAM -o $@.tmp -T $@.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS); \
+		else \
+			echo "BWA MEM Single-End"; \
+			$(BWA) $(BWAMEM_FLAGS) $$(cat $@.RG) $(GENOME) $*.R1$(POST_SEQUENCING).fastq.gz | $(SAMTOOLS) sort - -l 1 -O BAM -o $@.tmp -T $@.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS); \
+		fi; \
+		if [ ! -s $@.tmp ]; then \
+			echo "## WARNING: BWA MEM failed for $*, retrying..."; \
+			sleep 1; \
+		else \
+			echo "BWA MEM finished for $*"; \
+		fi; \
+	done; \
 	# AddOrReplaceReadGroups
 	if (($$($(SAMTOOLS) view $@.tmp -H | grep "^@RG" -c))); then \
 		echo "# BAM $@.tmp with read group"; \
