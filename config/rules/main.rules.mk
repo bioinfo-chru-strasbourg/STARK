@@ -195,7 +195,7 @@ REMOVE_INTERMEDIATE_SAM?=1
 # BAM Compress
 %.bam: %.compress.bam
 	$(SAMTOOLS) sort $< -o $@ -l $(BAM_COMPRESSION) -T $<.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS);
-	rm -rf $*.compress.bai;
+	rm -rf $*.compress.bam $*.compress.bai;
 
 
 # BAM Sorting

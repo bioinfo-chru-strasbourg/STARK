@@ -1568,9 +1568,11 @@ export THREADS_COPY
 
 # MEMORY
 MEMTOTAL=$(cat /proc/meminfo 2>/dev/null | grep MemTotal | awk '{print $2}')	# MEMORY in octet
-#export MEMORY=$(($MEMTOTAL/$THREADS/1024/1024))			# MEMORY in Go
+export MEMTOTAL
+MEMTOTAL_IN_GO=$(($MEMTOTAL/1024/1024))	# MEMORY in Go
+export MEMTOTAL_IN_GO
 
-if [ "$MEMORY" == "" ] || [ $MEMORY -lt 1 ]; then MEMORY=$(($MEMTOTAL/$CORES_TO_USE/1024/1024)); fi;
+if [ "$MEMORY" == "" ] || [ $MEMORY -lt 1 ]; then MEMORY=$(($MEMTOTAL_IN_GO/$CORES_TO_USE)); fi;
 if [ "$MEMORY" == "" ] || [ $MEMORY -lt 1 ]; then MEMORY=1; fi;
 export MEMORY				# MEMORY in Go
 

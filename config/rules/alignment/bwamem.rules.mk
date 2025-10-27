@@ -3,8 +3,8 @@
 # Author: Antony Le Bechec
 ############################
 # Release
-MK_RELEASE="0.9.3.1"
-MK_DATE="23/05/2021"
+MK_RELEASE="0.9.4.0"
+MK_DATE="27/10/2025"
 
 # Release note
 # 25/07/20140.2b: add clipping step (".unclipped" on targets)
@@ -12,6 +12,7 @@ MK_DATE="23/05/2021"
 # 29/09/2016-0.9.2b: Cleaning, PICARD new release picard.jar
 # 13/04/2021-0.9.3.0: Cleaning, removing old BWA alignment release
 # 23/05/2021-0.9.3.1: Remove samtools view step
+# 27/10/2025-0.9.4.0: Add checks for BWA MEM success
 
 
 
@@ -20,40 +21,41 @@ MK_DATE="23/05/2021"
 ###################################
 
 ## BWA MEM (Last powerful algorithm, including SW, HMM...)
+## A lockfile is used to check BWA ressources. This is due to occasional BWA failures on some systems (e.g. memory issue).
 
 # Options
 BWAMEM_FLAGS?= mem -C -M -t $(THREADS_BWA)
+BWAMEM_MIN_MEM?=6
+MAX_CONCURRENT_ALIGNMENTS_BWAMEM?=$(shell if [ $(shell echo "$(MEMTOTAL_IN_GO)/$(BWAMEM_MIN_MEM)" | bc) -lt 1 ]; then echo 1; else echo "$(MEMTOTAL_IN_GO)/$(BWAMEM_MIN_MEM)" | bc; fi)
 
-%.bwamem$(POST_ALIGNMENT).bam: %.R1$(POST_SEQUENCING).fastq.gz %.R2$(POST_SEQUENCING).fastq.gz #check in the code
-	# Read group
-	echo "@RG\tID:1\tPL:ILLUMINA\tPU:PU\tLB:001\tSM:$(*F)" > $@.RG
-	if [ "`cat $@.RG`" != "" ]; then echo " -R "`cat $@.RG` > $@.RG; fi;
+
+%.bwamem$(POST_ALIGNMENT).bam: %.R1$(POST_SEQUENCING).fastq.gz %.R2$(POST_SEQUENCING).fastq.gz
+	# List of FASTQs
+	if (($$(zcat $*.R2.fastq.gz | head -n 1 | wc -l))); then \
+		echo "$*.R1$(POST_SEQUENCING).fastq.gz $*.R2$(POST_SEQUENCING).fastq.gz" > $@.fastq_list; \
+	else \
+		echo "$*.R1$(POST_SEQUENCING).fastq.gz" > $@.fastq_list; \
+	fi;
 	# Alignment
-	while [ ! -s $@.tmp ]; do \
-		if (($$(zcat $*.R2.fastq.gz | head -n 1 | wc -l))); then \
-			echo "BWA MEM Paired-End"; \
-			$(BWA) $(BWAMEM_FLAGS) $$(cat $@.RG) $(GENOME) $*.R1$(POST_SEQUENCING).fastq.gz $*.R2$(POST_SEQUENCING).fastq.gz | $(SAMTOOLS) sort - -l 1 -O BAM -o $@.tmp -T $@.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS); \
-		else \
-			echo "BWA MEM Single-End"; \
-			$(BWA) $(BWAMEM_FLAGS) $$(cat $@.RG) $(GENOME) $*.R1$(POST_SEQUENCING).fastq.gz | $(SAMTOOLS) sort - -l 1 -O BAM -o $@.tmp -T $@.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS); \
-		fi; \
-		if [ ! -s $@.tmp ]; then \
-			echo "## WARNING: BWA MEM failed for $*, retrying..."; \
-			sleep 1; \
-		else \
-			echo "BWA MEM finished for $*"; \
-		fi; \
-	done; \
+	$(PYTHON3) $(STARK_FOLDER_BIN)/functions.py launch \
+		--cmd "$(BWA) $(BWAMEM_FLAGS) -R '@RG\tID:1\tPL:ILLUMINA\tPU:PU\tLB:001\tSM:$(*F)' $(GENOME) $$(cat $@.fastq_list) -o $@.sam 2> $@.bwa.log" \
+		--lockfile_prefix $$(echo $@ | xargs -0 dirname | xargs -0 dirname)/lockfile.bwamem. \
+		--target $@ \
+		--max_jobs $(MAX_CONCURRENT_ALIGNMENTS_BWAMEM);
+	# Sorting
+	echo "#[INFO] Sorting BAM file for $*:"
+	head -n50 $@.sam
+	$(SAMTOOLS) sort $@.sam -l 1 -O BAM -o $@.tmp -T $@.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS)
+	rm $@.sam
 	# AddOrReplaceReadGroups
 	if (($$($(SAMTOOLS) view $@.tmp -H | grep "^@RG" -c))); then \
-		echo "# BAM $@.tmp with read group"; \
+		echo "#[INFO] BAM $@.tmp with read group"; \
 		mv $@.tmp $@; \
 	else \
-		echo "# BAM $@.tmp without read group"; \
+		echo "#[INFO] BAM $@.tmp without read group"; \
 		$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) AddOrReplaceReadGroups $(PICARD_FLAGS) -I $@.tmp O=$@ -COMPRESSION_LEVEL 1 -RGSM $(*F); \
 	fi;
-	-rm $@.tmp $@.RG
-
+	-rm $@.tmp $@.RG $@.fastq_list $@.bwa.log
 
 
 # CONFIG/RELEASE
