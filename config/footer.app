@@ -1590,36 +1590,59 @@ if ((1)); then
 	[ "$NB_PIPELINES" == "" ] && NB_PIPELINES=1
 	[ "$NB_ALIGNERS" == "" ] && NB_ALIGNERS=1
 	[ "$NB_CALLERS" == "" ] && NB_CALLERS=1
-	# NB_SAMPLE=1
-	# NB_PIPELINES=1
-	# NB_ALIGNERS=1
-	# NB_CALLERS=1
+	export NB_SAMPLE
+	export NB_PIPELINES
+	export NB_ALIGNERS
+	export NB_CALLERS
+
+	# # Default
+	# JAVA_MEMORY_BY_SAMPLE=$JAVA_MEMORY
+	# JAVA_MEMORY_BY_CALLER=$JAVA_MEMORY
+
+	# # Calcul
+	# JAVA_MEMORY_BY_SAMPLE=$(($MEMTOTAL/$NB_SAMPLE/1024/1024))				# Number of threads by sample
+	# JAVA_MEMORY_BY_PIPELINE=$(($JAVA_MEMORY_BY_SAMPLE/$NB_PIPELINES))	# Number of threads for a pipeline's command
+	# JAVA_MEMORY_BY_ALIGNER=$(($JAVA_MEMORY_BY_SAMPLE/$NB_ALIGNERS))	# Number of threads for a aligner's command
+	# JAVA_MEMORY_BY_CALLER=$(($JAVA_MEMORY_BY_SAMPLE/$NB_CALLERS))		# Number of threads for a caller's command
+
+	# # Test
+	# if [ "$JAVA_MEMORY_BY_SAMPLE" == "" ] || [ $JAVA_MEMORY_BY_SAMPLE -lt 1 ]; then JAVA_MEMORY_BY_SAMPLE=1; fi;
+	# if [ "$JAVA_MEMORY_BY_PIPELINE" == "" ] || [ $JAVA_MEMORY_BY_PIPELINE -lt 1 ]; then JAVA_MEMORY_BY_PIPELINE=1; fi;
+	# if [ "$JAVA_MEMORY_BY_ALIGNER" == "" ] || [ $JAVA_MEMORY_BY_ALIGNER -lt 1 ]; then JAVA_MEMORY_BY_ALIGNER=1; fi;
+	# if [ "$JAVA_MEMORY_BY_CALLER" == "" ] || [ $JAVA_MEMORY_BY_CALLER -lt 1 ]; then JAVA_MEMORY_BY_CALLER=1; fi;
 
 	# Default
-	JAVA_MEMORY_BY_SAMPLE=$JAVA_MEMORY
-	JAVA_MEMORY_BY_CALLER=$JAVA_MEMORY
+	MEMORY_BY_SAMPLE=$MEMORY
+	MEMORY_BY_CALLER=$MEMORY
 
 	# Calcul
-	JAVA_MEMORY_BY_SAMPLE=$(($MEMTOTAL/$NB_SAMPLE/1024/1024))				# Number of threads by sample
-	JAVA_MEMORY_BY_PIPELINE=$(($JAVA_MEMORY_BY_SAMPLE/$NB_PIPELINES))	# Number of threads for a pipeline's command
-	JAVA_MEMORY_BY_ALIGNER=$(($JAVA_MEMORY_BY_SAMPLE/$NB_ALIGNERS))	# Number of threads for a aligner's command
-	JAVA_MEMORY_BY_CALLER=$(($JAVA_MEMORY_BY_SAMPLE/$NB_CALLERS))		# Number of threads for a caller's command
+	MEMORY_BY_SAMPLE=$(($MEMTOTAL/$NB_SAMPLE/1024/1024))				# Number of threads by sample
+	MEMORY_BY_PIPELINE=$(($MEMORY_BY_SAMPLE/$NB_PIPELINES))	# Number of threads for a pipeline's command
+	MEMORY_BY_ALIGNER=$(($MEMORY_BY_SAMPLE/$NB_ALIGNERS))	# Number of threads for a aligner's command
+	MEMORY_BY_CALLER=$(($MEMORY_BY_SAMPLE/$NB_CALLERS))		# Number of threads for a caller's command
 
 	# Test
-	if [ "$JAVA_MEMORY_BY_SAMPLE" == "" ] || [ $JAVA_MEMORY_BY_SAMPLE -lt 1 ]; then JAVA_MEMORY_BY_SAMPLE=1; fi;
-	if [ "$JAVA_MEMORY_BY_PIPELINE" == "" ] || [ $JAVA_MEMORY_BY_PIPELINE -lt 1 ]; then JAVA_MEMORY_BY_PIPELINE=1; fi;
-	if [ "$JAVA_MEMORY_BY_ALIGNER" == "" ] || [ $JAVA_MEMORY_BY_ALIGNER -lt 1 ]; then JAVA_MEMORY_BY_ALIGNER=1; fi;
-	if [ "$JAVA_MEMORY_BY_CALLER" == "" ] || [ $JAVA_MEMORY_BY_CALLER -lt 1 ]; then JAVA_MEMORY_BY_CALLER=1; fi;
+	if [ "$MEMORY_BY_SAMPLE" == "" ] || [ $MEMORY_BY_SAMPLE -lt 1 ]; then MEMORY_BY_SAMPLE=1; fi;
+	if [ "$MEMORY_BY_PIPELINE" == "" ] || [ $MEMORY_BY_PIPELINE -lt 1 ]; then MEMORY_BY_PIPELINE=1; fi;
+	if [ "$MEMORY_BY_ALIGNER" == "" ] || [ $MEMORY_BY_ALIGNER -lt 1 ]; then MEMORY_BY_ALIGNER=1; fi;
+	if [ "$MEMORY_BY_CALLER" == "" ] || [ $MEMORY_BY_CALLER -lt 1 ]; then MEMORY_BY_CALLER=1; fi;
+
 
 fi;
 
+# MEMORY FLAGS
+################
+export MEMORY_BY_SAMPLE
+export MEMORY_BY_PIPELINE
+export MEMORY_BY_ALIGNER
+export MEMORY_BY_CALLER
 
 # JAVA FLAGS
 ##############
-export JAVA_MEMORY_BY_SAMPLE
-export JAVA_MEMORY_BY_PIPELINE
-export JAVA_MEMORY_BY_ALIGNER
-export JAVA_MEMORY_BY_CALLER
+export JAVA_MEMORY_BY_SAMPLE=MEMORY_BY_SAMPLE
+export JAVA_MEMORY_BY_PIPELINE=MEMORY_BY_PIPELINE
+export JAVA_MEMORY_BY_ALIGNER=MEMORY_BY_ALIGNER
+export JAVA_MEMORY_BY_CALLER=MEMORY_BY_CALLER
 export JAVA_FLAGS_TMP_FOLDER=" -Dorg.xerial.snappy.tempdir=$TMP_FOLDER_TMP -Djava.io.tmpdir=$TMP_FOLDER_TMP";
 export JAVA_FLAGS_OTHER_PARAM=" -Dsnappy.disable=true -Dsamjdk.try_use_intel_deflater=false ";
 export JAVA_FLAGS_DEFAULT=" -Xmx"$JAVA_MEMORY"g $JAVA_FLAGS_OTHER_PARAM $JAVA_FLAGS_TMP_FOLDER";

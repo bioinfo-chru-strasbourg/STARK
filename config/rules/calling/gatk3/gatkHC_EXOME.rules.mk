@@ -35,7 +35,7 @@ MBQ_HC_EXOME=17
 STAND_CALL_CONF_HC_EXOME=30
 DFRAC_HC_EXOME=1
 DPMIN_HC_EXOME=4
-GATKHC_EXOME_FLAGS= -nct $(THREADS_GATKHC_EXOME) -stand_call_conf $(STAND_CALL_CONF_HC_EXOME) -dfrac $(DFRAC_HC_EXOME) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample_HC_EXOME) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC_EXOME) -minPruning $(MINPRUNING_HC_EXOME)  $(GATKHC_FLAGS_SHARED)
+GATKHC_EXOME_FLAGS= -nct $(THREADS_GATKHC_EXOME) -stand_call_conf $(STAND_CALL_CONF_HC_EXOME) -dfrac $(DFRAC_HC_EXOME) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample_HC_EXOME) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC_EXOME) -minPruning $(MINPRUNING_HC_EXOME)  $(GATK3HC_FLAGS_SHARED)
 
 %.gatkHC_EXOME$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf  %.design.bed.interval_list
 	$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) $(GATKHC_EXOME_FLAGS) \

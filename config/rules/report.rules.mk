@@ -175,9 +175,11 @@ REPORT_SECTIONS?=ALL
 %.full.sorting.vcf: %.merge.vcf %.transcripts
 	cp $< $@.tmp0
 	# Prevent comma in description in vcf header
-	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$< --output=$@.tmp0.vcf --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
-	# HOWARD annotation
-	$(HOWARD) process $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp0.vcf --output=$@ --param=$(HOWARD_PARAM_REPORT) $$( [ ! -z '$(HOWARD_PRIORITIZATION_CONFIG)' ] && echo " --prioritization_config=$(HOWARD_PRIORITIZATION_CONFIG) ") --threads=$(THREADS_BY_SAMPLE)
+	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$< --output=$@.tmp00.vcf --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
+	# Normalisation for 1 variant per line (no multiple variants), and genotype 0/0* or 0|0* to ./., and genotype ./.* to ./.
+	$(BCFTOOLS) norm -m- $@.tmp00.vcf --threads $(THREADS_BY_SAMPLE) | sed -E 's#\t[0|\.]([/|\|])[0|\.][^\t|$$]*#\t.\1.#g' > $@.tmp0.vcf;
+	# HOWARD annotation prioritization calculation process
+	$(HOWARD) process $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp0.vcf --output=$@ --param=$(HOWARD_PARAM_REPORT) $$( [ ! -z '$(HOWARD_PRIORITIZATION_CONFIG)' ] && echo " --prioritization_config=$(HOWARD_PRIORITIZATION_CONFIG) ") --threads=$(THREADS_BY_SAMPLE) --memory=$$( (( $(MEMORY_BY_SAMPLE) > $(MEMORY) )) && echo "$(MEMORY_BY_SAMPLE)" || echo "$(MEMORY)" )G # --memory=1G # --memory=$(MEMORY)G --memory=$(MEMORY_BY_SAMPLE)G --memory=$$( (( $(MEMORY_BY_SAMPLE) > $(MEMORY) ))  && echo "$(MEMORY_BY_SAMPLE)" || echo "$(MEMORY)" )G
 	# Clean INFO spaces
 	$(STARK_FOLDER_BIN)/clean_vcf_info_spaces.sh --input=$@ --output=$@
 	# cleaning

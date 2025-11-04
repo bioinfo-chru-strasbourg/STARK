@@ -1,13 +1,13 @@
 ############################
 # GATK Realignment Rules
+# Release: 0.9.1
+# Date: 31/10/2025
 # Author: Antony Le Bechec
 ############################
-# Release
-MK_RELEASE="0.9.3beta"
-MK_DATE="10/03/2015"
 
 # Release note
-# 10/03/2015: change genome reference location, in the file %.genome
+# 10/03/2015-0.9.0: change genome reference location, in the file %.genome
+# 31/10/2025-0.9.1: Reduce IndelRealigner by filtering intervals on chromosomes
 
 
 ## INTERVALS
@@ -35,10 +35,15 @@ GATKIndelRealignerOptions= -known $(VCFDBSNP) --LODThresholdForCleaning 2.0 -com
 		echo "	$(SAMTOOLS) view -b -f 12 $*.realignment.bam > $*.for_realignment.unmapped.bam;" >> $*.realignment1.mk; \
 		echo -n " $*.for_realignment.unmapped.bam " > $*.realignment2.mk; \
 		for chr in $$($(SAMTOOLS) idxstats $< | grep -v "\*" | awk '{ if ($$3+$$4>0) print $$1 }'); do \
-			#echo $$chr  >> $*.realignment.mk; \
-			echo "$*.for_realignment.$$chr.bam: $*.realignment.bam" >> $*.realignment1.mk; \
-			echo "	$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) $(GATKIndelRealignerFLAGS) -T IndelRealigner -R $(GENOME) -I $*.realignment.bam -o $*.for_realignment.$$chr.bam -targetIntervals $*.for_realignment.RealignerTargetCreator.intervals $(GATKIndelRealignerOptions) -L $$chr" >> $*.realignment1.mk; \
-			echo -n " $*.for_realignment.$$chr.bam " >> $*.realignment2.mk; \
+			grep "^$$chr:" $*.for_realignment.RealignerTargetCreator.intervals > $*.for_realignment.RealignerTargetCreator.$$chr.intervals; \
+			if [ -s $*.for_realignment.RealignerTargetCreator.$$chr.intervals ]; then \
+				echo "$*.for_realignment.$$chr.bam: $*.realignment.bam" >> $*.realignment1.mk; \
+				echo "	$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) $(GATKIndelRealignerFLAGS) --analysis_type IndelRealigner --reference_sequence $(GENOME) --input_file $*.realignment.bam --out $*.for_realignment.$$chr.bam --interval_padding $(INTERVAL_PADDING) --targetIntervals $*.for_realignment.RealignerTargetCreator.$$chr.intervals $(GATKIndelRealignerOptions) --intervals $$chr" >> $*.realignment1.mk; \
+				echo -n " $*.for_realignment.$$chr.bam " >> $*.realignment2.mk; \
+			else \
+				echo "#[INFO] No intervals to realign on chromosome $$chr for $*:"; \
+				continue; \
+			fi; \
 		done; \
 		echo -n "$@: " | cat - $*.realignment2.mk > $*.realignment3.mk; \
 		echo ""  >> $*.realignment3.mk; \

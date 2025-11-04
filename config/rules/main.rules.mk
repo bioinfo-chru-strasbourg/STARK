@@ -194,18 +194,28 @@ REMOVE_INTERMEDIATE_SAM?=1
 
 # BAM Compress
 %.bam: %.compress.bam
-	$(SAMTOOLS) sort $< -o $@ -l $(BAM_COMPRESSION) -T $<.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS);
+	# Check if sorting is needed
+	if ((! $$($(SAMTOOLS) view -H $< | grep "^@HD.*VN:.*SO:" | wc -l))) || (($$($(SAMTOOLS) view -H $< | grep "^@HD.*VN:.*SO:unsorted" | wc -l))) ; then \
+		$(SAMTOOLS) sort $< -o $@ -l $(BAM_COMPRESSION) -T $<.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS); \
+	else \
+		$(SAMTOOLS) view $< -o $@ -O BAM,level=$(BAM_COMPRESSION) -@ $(THREADS_SAMTOOLS); \
+	fi;
 	rm -rf $*.compress.bam $*.compress.bai;
 
 
 # BAM Sorting
 %.bam : %.sorting.bam
 	if ((! $$($(SAMTOOLS) view -H $< | grep "^@HD.*VN:.*SO:" | wc -l))) || (($$($(SAMTOOLS) view -H $< | grep "^@HD.*VN:.*SO:unsorted" | wc -l))) ; then \
-		$(SAMTOOLS) sort $< -o $@ -T $<.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS); \
+		$(SAMTOOLS) sort $< -o $@ -l 1 -T $<.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS); \
 	else \
 		mv $< $@; \
 	fi;
 	rm -f $<;
+
+# BAM Remove secondary reads
+%.bam : %.removesecondary.bam
+	$(SAMTOOLS) view -Fx100 $< -o $@ -O BAM,level=$(BAM_COMPRESSION) -@ $(THREADS_SAMTOOLS); \
+	rm -f $< $<.bai;
 
 
 # FASTQ Compression with GZIP
@@ -574,6 +584,9 @@ PIPELINES_COMMENT := "POST_ALIGNMENT:sorting:BAM sorting"
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
 
 PIPELINES_COMMENT := "POST_ALIGNMENT:compress:BAM compression:BAM_COMPRESS='$(BAM_COMPRESSION)'"
+PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
+
+PIPELINES_COMMENT := "POST_ALIGNMENT:removesecondary:BAM remove secondary reads"
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
 
 

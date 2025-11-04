@@ -1,10 +1,9 @@
 ############################
 # Metrics Rules
+# Release: 0.9.6.1
+# Date: 31/10/2025
 # Author: Antony Le Bechec
 ############################
-# Release
-MK_RELEASE="0.9.6.0"
-MK_DATE="25/06/2025"
 
 # Release note
 # 18/12/2015 - 0.9.2b : Force gzip metrics files
@@ -13,6 +12,7 @@ MK_DATE="25/06/2025"
 # 29/09/2016 - 0.9.5b : Chenge metrics.genes rule
 # 27/09/2019 - 0.9.5.1b: Change FATBAM to CAP tool, add HOWARD option
 # 25/06/2025 - 0.9.6.0: STARK release 19 compatibility
+# 31/10/2025 - 0.9.6.1: DepthOfCoverage GATK4 output format TABLE
 
 
 
@@ -248,16 +248,17 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 	# see rule %.bam.bed
 	# Create directory
 	mkdir -p $(@D);
-	if (($(BAM_METRICS))) && ((1)); then \
+	if (($(BAM_METRICS))); then \
 		grep -v ^@ $*.for_metrics_bed > $*.withoutheader.for_metrics_bed.gatk.bed ; \
 		# GATK DepthOfCoverage needs BED without HEADER!!! ; \
 		if [ ! -e $(@D)/$(*F) ]; then \
-			$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) $(GATKDOC_FLAGS) \
-				-T DepthOfCoverage \
-				-R $(GENOME) \
-				-o $(@D)/$(*F) \
-				-I $< \
-				-L $*.withoutheader.for_metrics_bed.gatk.bed; \
+			$(JAVA) $(JAVA_FLAGS_GATK4) -XX:ParallelGCThreads=$(THREADS_BY_SAMPLE) -jar $(GATK4) \
+				DepthOfCoverage \
+			    -R $(GENOME) \
+			    -O $(@D)/$(*F) \
+			    -I $< \
+				-L $*.withoutheader.for_metrics_bed.gatk.bed \
+				--output-format TABLE; \
 		fi; \
 		rm $*.withoutheader.for_metrics_bed.gatk.bed; \
 		echo "#[INFO] BAM GATK Metrics done" > $@; \

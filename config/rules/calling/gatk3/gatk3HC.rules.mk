@@ -1,7 +1,7 @@
 ############################
 # GATK Calling Rules
-# Release: 0.9.4
-# Date: 03/02/2023
+# Release: 0.9.5
+# Date: 31/10/2025
 # Author: Antony Le Bechec
 ############################
 
@@ -21,11 +21,12 @@
 # 0.9.3.8-29/07/2022: Remove --dontUseSoftClippedBases for GATKHC
 # 0.9.3.9-29/07/2022: Add --dontUseSoftClippedBases for GATKHC, add GATKUG_LONG_INDELS and GATKHC_LONG_INDELS
 # 0.9.4-03/02/2023: Extract gatkHC
+# 0.9.5-31/10/2025: Change GATKHC to GATK3HC
 
 
 
 # OPTIONS
-GATKHC_FLAGS_SHARED=--baq OFF --read_filter BadCigar --allow_potentially_misencoded_quality_scores --dontUseSoftClippedBases
+GATK3HC_FLAGS_SHARED=--baq OFF --read_filter BadCigar --allow_potentially_misencoded_quality_scores --dontUseSoftClippedBases
 
 
 ########################
@@ -41,19 +42,23 @@ GATKHC_FLAGS_SHARED=--baq OFF --read_filter BadCigar --allow_potentially_misenco
 # Finally, HaplotypeCaller is also able to correctly handle the splice junctions that make RNAseq a challenge for most variant callers.
 
 
-##########
-# gatkHC #
-##########
+###########
+# gatk3HC #
+###########
 
-DFRAC_HC=1
-MBQ_HC=17
-MINPRUNING?=4
-THREADS_GATKHC?=$(THREADS_BY_CALLER)
-maxReadsInRegionPerSample=250
-GATKHC_FLAGS= -nct $(THREADS_GATKHC) -stand_call_conf 10 -dfrac $(DFRAC_HC) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC) -minPruning $(MINPRUNING) $(GATKHC_FLAGS_SHARED)
+# GATK3HC Flags
+GATK3HC_FLAGS=$(GATK3HC_FLAGS_SHARED) \
+	--num_cpu_threads_per_data_thread $(THREADS_BY_CALLER) \
+	--dbsnp $(VCFDBSNP) \
+	--standard_min_confidence_threshold_for_calling 10 \
+	--downsample_to_fraction 1 \
+	--maxReadsInRegionPerSample 250 \
+	--min_base_quality_score 17 \
+	--minPruning 4
 
-%.gatkHC$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed.interval_list #%.from_manifest.interval_list
-	$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) $(GATKHC_FLAGS) \
+
+%.gatk3HC$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed.interval_list #%.from_manifest.interval_list
+	$(JAVA8) $(JAVA_FLAGS) -XX:ParallelGCThreads=$(THREADS_BY_CALLER) -jar $(GATK3) $(GATK3HC_FLAGS) \
 		-T HaplotypeCaller \
 		-R $(GENOME) \
 		$$(if [ "`grep ^ -c $*.design.bed.interval_list`" == "0" ]; then echo ""; else echo "-L $*.design.bed.interval_list"; fi;) \
@@ -68,8 +73,8 @@ GATKHC_FLAGS= -nct $(THREADS_GATKHC) -stand_call_conf 10 -dfrac $(DFRAC_HC) --ma
 RELEASE_COMMENT := "\#\# CALLING GATK Haplotype Caller '$(MK_RELEASE)': GATK Haplotype Caller tool identify variants from aligned BAM with shared parameters: GATK='$(GATK3)'"
 RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
-RELEASE_COMMENT := "\#\# CALLING GATKHC identify variants and generate *.gatkHC.vcf files with parameters: GATKHC_FLAGS='$(GATKHC_FLAGS)', INTERVAL_PADDING='$(INTERVAL_PADDING)'"
+RELEASE_COMMENT := "\#\# CALLING GATK3HC identify variants and generate *.gatk3HC.vcf files with parameters: GATK3HC_FLAGS='$(GATK3HC_FLAGS)', INTERVAL_PADDING='$(INTERVAL_PADDING)'"
 RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
-PIPELINES_COMMENT := "CALLER:gatkHC:GATK Haplotype Caller - by default:GATKHC_FLAGS='$(GATKHC_FLAGS)', INTERVAL_PADDING='$(INTERVAL_PADDING)'"
+PIPELINES_COMMENT := "CALLER:gatk3HC:GATK Haplotype Caller - by default:GATK3HC_FLAGS='$(GATK3HC_FLAGS)', INTERVAL_PADDING='$(INTERVAL_PADDING)'"
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )

@@ -1,10 +1,9 @@
 ############################
 # BWA Aligner Rules
+# Release: 0.9.4.0
+# Date: 27/10/2025
 # Author: Antony Le Bechec
 ############################
-# Release
-MK_RELEASE="0.9.4.0"
-MK_DATE="27/10/2025"
 
 # Release note
 # 25/07/20140.2b: add clipping step (".unclipped" on targets)
@@ -12,7 +11,7 @@ MK_DATE="27/10/2025"
 # 29/09/2016-0.9.2b: Cleaning, PICARD new release picard.jar
 # 13/04/2021-0.9.3.0: Cleaning, removing old BWA alignment release
 # 23/05/2021-0.9.3.1: Remove samtools view step
-# 27/10/2025-0.9.4.0: Add checks for BWA MEM success
+# 27/10/2025-0.9.4.0: Add function to manage memory for BWA MEM
 
 
 
@@ -24,9 +23,21 @@ MK_DATE="27/10/2025"
 ## A lockfile is used to check BWA ressources. This is due to occasional BWA failures on some systems (e.g. memory issue).
 
 # Options
-BWAMEM_FLAGS?= mem -C -M -t $(THREADS_BWA)
+
+# BWA MEM flags to set specific parameters (see BWA help)
+BWAMEM_FLAGS?=-C -M #-t $(THREADS_BY_ALIGNER)
+
+# Add flag to post alignment samtools view to remove specific reads (e.g. secondary, supplementary)
+BWAMEM_SAMTOOLS_FILTER_FLAG?=
+
+# Memory management
+# Use a minimum of 6 Go per BWA MEM process
+# The calculation of MAX_CONCURRENT_ALIGNMENTS_BWAMEM is done to avoid overloading the system memory
 BWAMEM_MIN_MEM?=6
-MAX_CONCURRENT_ALIGNMENTS_BWAMEM?=$(shell if [ $(shell echo "$(MEMTOTAL_IN_GO)/$(BWAMEM_MIN_MEM)" | bc) -lt 1 ]; then echo 1; else echo "$(MEMTOTAL_IN_GO)/$(BWAMEM_MIN_MEM)" | bc; fi)
+MAX_CONCURRENT_ALIGNMENTS_BWAMEM?=$(shell if [ $(shell echo "$(MEMTOTAL_IN_GO)/$(BWAMEM_MIN_MEM)/$(NB_ALIGNERS)" | bc) -lt 1 ]; then echo 1; else echo "$(MEMTOTAL_IN_GO)/$(BWAMEM_MIN_MEM)/$(NB_ALIGNERS)" | bc; fi)
+
+# Threads per BWA MEM process
+THREADS_BWAMEM?=$(shell echo " if ($(MAX_CONCURRENT_ALIGNMENTS_BWAMEM)<$(NB_SAMPLE)) ($(THREADS)/$(MAX_CONCURRENT_ALIGNMENTS_BWAMEM)) else ($(THREADS)/$(NB_SAMPLE))" | bc)
 
 
 %.bwamem$(POST_ALIGNMENT).bam: %.R1$(POST_SEQUENCING).fastq.gz %.R2$(POST_SEQUENCING).fastq.gz
@@ -38,14 +49,13 @@ MAX_CONCURRENT_ALIGNMENTS_BWAMEM?=$(shell if [ $(shell echo "$(MEMTOTAL_IN_GO)/$
 	fi;
 	# Alignment
 	$(PYTHON3) $(STARK_FOLDER_BIN)/functions.py launch \
-		--cmd "$(BWA) $(BWAMEM_FLAGS) -R '@RG\tID:1\tPL:ILLUMINA\tPU:PU\tLB:001\tSM:$(*F)' $(GENOME) $$(cat $@.fastq_list) -o $@.sam 2> $@.bwa.log" \
+		--cmd "$(BWA) mem $(BWAMEM_FLAGS) -t $(THREADS_BWAMEM) -R '@RG\tID:1\tPL:ILLUMINA\tPU:PU\tLB:001\tSM:$(*F)' $(GENOME) $$(cat $@.fastq_list) -o $@.sam" \
 		--lockfile_prefix $$(echo $@ | xargs -0 dirname | xargs -0 dirname)/lockfile.bwamem. \
 		--target $@ \
 		--max_jobs $(MAX_CONCURRENT_ALIGNMENTS_BWAMEM);
 	# Sorting
 	echo "#[INFO] Sorting BAM file for $*:"
-	head -n50 $@.sam
-	$(SAMTOOLS) sort $@.sam -l 1 -O BAM -o $@.tmp -T $@.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS)
+	$(SAMTOOLS) view -h $(BWAMEM_SAMTOOLS_FILTER_FLAG) $@.sam -@ $(THREADS_SAMTOOLS) | $(SAMTOOLS) sort -l 1 -O BAM -o $@.tmp -T $@.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS)
 	rm $@.sam
 	# AddOrReplaceReadGroups
 	if (($$($(SAMTOOLS) view $@.tmp -H | grep "^@RG" -c))); then \
@@ -55,7 +65,7 @@ MAX_CONCURRENT_ALIGNMENTS_BWAMEM?=$(shell if [ $(shell echo "$(MEMTOTAL_IN_GO)/$
 		echo "#[INFO] BAM $@.tmp without read group"; \
 		$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) AddOrReplaceReadGroups $(PICARD_FLAGS) -I $@.tmp O=$@ -COMPRESSION_LEVEL 1 -RGSM $(*F); \
 	fi;
-	-rm $@.tmp $@.RG $@.fastq_list $@.bwa.log
+	-rm $@.tmp $@.RG $@.fastq_list
 
 
 # CONFIG/RELEASE

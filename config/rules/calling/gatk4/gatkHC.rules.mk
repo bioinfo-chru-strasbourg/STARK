@@ -1,7 +1,7 @@
 ############################
 # GATK Calling Rules
-# Release: 0.9.4
-# Date: 03/02/2023
+# Release: 0.9.5
+# Date: 31/10/2025
 # Author: Antony Le Bechec
 ############################
 
@@ -21,42 +21,45 @@
 # 0.9.3.8-29/07/2022: Remove --dontUseSoftClippedBases for GATKHC
 # 0.9.3.9-29/07/2022: Add --dontUseSoftClippedBases for GATKHC, add GATKUG_LONG_INDELS and GATKHC_LONG_INDELS
 # 0.9.4-03/02/2023: Extract gatk4HC
+# 0.9.5-31/10/2025: Change GATK4HC to GATKHC
 
-
+GATKHC_FLAGS_SHARED?=--dont-use-soft-clipped-bases
 
 ###########
-# gatk4HC #
+# gatkHC #
 ###########
 
-MINPRUNING_GATK4HC?=4
-THREADS_GATK4HC?=$(THREADS_BY_CALLER)
-STAND_CALL_CONF_GATK4HC=30
-maxreadsperalignmentstart_GATK4HC=1000
-GATK4HC_FLAGS_SHARED?=
-GATK4HC_FLAGS= --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC) --min-pruning $(MINPRUNING_GATK4HC) --native-pair-hmm-threads $(THREADS_GATK4HC) $(GATK4HC_FLAGS_SHARED) --max-reads-per-alignment-start $(maxreadsperalignmentstart_GATK4HC) --standard-min-confidence-threshold-for-calling $(STAND_CALL_CONF_GATK4HC)
+# GATKHC Flags
+GATKHC_FLAGS=$(GATK4HC_FLAGS_SHARED) \
+	--interval-padding $(INTERVAL_PADDING) \
+	--dbsnp $(VCFDBSNP) \
+	--native-pair-hmm-threads $(THREADS_BY_CALLER) \
+	--min-base-quality-score 17 \
+	--min-pruning 4 \
+	--max-reads-per-alignment-start 1000 \
+	--standard-min-confidence-threshold-for-calling 30
 
-%.gatk4HC$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed.interval_list #%.from_manifest.interval_list
-	$(JAVA) $(JAVA_FLAGS) -jar $(GATK4) HaplotypeCaller \
-		$(GATK4HC_FLAGS) \
+
+%.gatkHC$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed.interval_list
+	$(JAVA) $(JAVA_FLAGS) -XX:ParallelGCThreads=$(THREADS_BY_CALLER) -jar $(GATK4) \
+		HaplotypeCaller \
+		$(GATKHC_FLAGS) \
 		-R $(GENOME) \
-		$$(if [ "`grep ^ -c $*.design.bed.interval_list`" == "0" ]; then echo ""; else echo "-L $*.design.bed.interval_list"; fi;) \
 		-I $< \
-		-ip $(INTERVAL_PADDING) \
-		-O $@;
+		-O $@ \
+		$$(if [ "`grep ^ -c $*.design.bed.interval_list`" == "0" ]; then echo ""; else echo "-L $*.design.bed.interval_list"; fi;);
 	-if [ ! -e $@ ]; then cp $*.empty.vcf $@; fi;
 	-if [ ! -e $@ ]; then touch $@; fi;
 	-rm -f $@.idx
 
 
-
-
-RELEASE_COMMENT := "\#\# CALLING GATK4 '$(MK_RELEASE)': GATK tool identify variants from aligned BAM with shared parameters: GATK4='$(GATK4)'"
+RELEASE_COMMENT := "\#\# CALLING GATK '$(MK_RELEASE)': GATK tool identify variants from aligned BAM with shared parameters: GATKHC_FLAGS='$(GATKHC_FLAGS)'"
 RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
 
-RELEASE_COMMENT := "\#\# CALLING GATK4HC identify variants and generate *.gatk4HC.vcf files with parameters: GATK4HC_FLAGS='$(GATK4HC_FLAGS)'"
+RELEASE_COMMENT := "\#\# CALLING GATK4HC identify variants and generate *.gatkHC.vcf files with parameters: GATKHC_FLAGS='$(GATKHC_FLAGS)'"
 RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
 
-PIPELINES_COMMENT := "CALLER:gatk4HC:GATK4 Haplotype Caller - by default:GATK4HC_FLAGS='$(GATK4HC_FLAGS)'"
+PIPELINES_COMMENT := "CALLER:gatkHC:GATK4 Haplotype Caller - by default:GATKHC_FLAGS='$(GATKHC_FLAGS)'"
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
