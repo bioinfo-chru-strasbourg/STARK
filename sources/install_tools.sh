@@ -1,7 +1,7 @@
 #!/bin/bash
 #################################
 ##
-## STARK Install Tools 
+## STARK Install Tools
 ##
 #################################
 
@@ -189,16 +189,22 @@ if ((1)); then
         TYPE=$(echo $TOOL | jq -r '.type');
         DEST="$TOOLS_DIR/$NAME/$VERSION"
 
+		# Clean version for Mamba
+		MAMBA_VERSION=$VERSION
+
         echo "Install $NAME=$VERSION ($TYPE)..."
 
         # Shared tools
         if [ "$TYPE" == "shared" ]; then
 			echo "Shared install"
-            TOOLS_LIST_FOR_MAMBA=$TOOLS_LIST_FOR_MAMBA" $NAME=$VERSION"
+            TOOLS_LIST_FOR_MAMBA=$TOOLS_LIST_FOR_MAMBA" $NAME=$MAMBA_VERSION"
             #DEST=$SHARED_TOOLS
         elif [ "$TYPE" == "mamba" ]; then
 			echo "Mamba install"
-            $MAMBA create -y -p $TOOLS_DIR/$NAME/$VERSION -c bioconda -c compbiocore -c conda-forge $NAME=$VERSION
+			if ! $MAMBA create -y -p $TOOLS_DIR/$NAME/$VERSION -c bioconda -c compbiocore -c conda-forge $NAME=$MAMBA_VERSION; then
+				echo "#[ERROR] Mamba installation failed."
+				exit 1
+			fi
             $MAMBA clean -y --all
             find $TOOLS_DIR/$NAME/$VERSION -follow -ignore_readdir_race \( -name '*.a' -o -name '*.pyc' -o -name '*.txt' -o -name '*.md' -o -name '*.pdf' -o  -name '__pycache__' \) -exec rm -rf {} +
         elif [ "$TYPE" == "custom" ]; then
@@ -228,7 +234,10 @@ if ((1)); then
 
     if [ "$TOOLS_LIST_FOR_MAMBA" != "" ] && ((1)); then
         echo $MAMBA create -y -p $SHARED_TOOLS -c bioconda -c compbiocore -c conda-forge $TOOLS_LIST_FOR_MAMBA
-		$MAMBA create -y -p $SHARED_TOOLS -c bioconda -c compbiocore -c conda-forge $TOOLS_LIST_FOR_MAMBA
+		if ! $MAMBA create -y -p $SHARED_TOOLS -c bioconda -c compbiocore -c conda-forge $TOOLS_LIST_FOR_MAMBA; then
+			echo "#[ERROR] Mamba installation failed."
+			exit 1
+		fi
         $MAMBA clean -y --all
         find $SHARED_TOOLS -follow -ignore_readdir_race \( -name '*.a' -o -name '*.pyc' -o -name '*.txt' -o -name '*.md' -o -name '*.pdf' -o  -name '__pycache__' \) -exec rm -rf {} +
 		

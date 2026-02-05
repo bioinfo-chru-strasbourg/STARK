@@ -135,7 +135,7 @@ WORKDIR $WORKDIR
 # This will install system packages, python packages and scripts to install tools
 
 #ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git make mlocate ncurses-devel tbb-devel unzip rsync wget which xz xz-devel zlib zlib-devel docker java-17 java-1.8.0 curl-devel openssl-devel htslib diffutils parallel aria2 jq"
-ENV PACKAGES_INSTALL="autoconf automake htop tree bc bzip2 bzip2-devel curl gcc gcc-c++ git make mlocate ncurses-devel tbb-devel unzip rsync wget which xz xz-devel zlib zlib-devel docker java-17 java-1.8.0 curl-devel openssl-devel diffutils parallel aria2 jq"
+ENV PACKAGES_INSTALL="autoconf automake htop tree bc bzip2 bzip2-devel curl gcc gcc-c++ git make mlocate ncurses-devel tbb-devel unzip rsync wget which xz xz-devel zlib zlib-devel docker java-21 java-1.8.0 curl-devel openssl-devel diffutils parallel aria2 jq"
 #ENV YUM_REMOVE="autoconf automake bzip2-devel lzma-devel ncurses-devel tbb-devel xz-devel zlib-devel zlib2-devel python3-devel curl-devel openssl-devel"
 
 ENV PYTHON_MODULE=" pathos numpy scipy argparse"
@@ -421,6 +421,26 @@ RUN	echo "#[INFO] SYSTEM Perl installation - download from yum" && \
 # 	echo "#";
 
 
+
+
+##########
+# JAVA7 #
+##########
+
+ENV TOOL_NAME="java"
+ENV TOOL_VERSION="1.7.0"
+ENV TOOL_TARBALL="jdk-7u80-linux-x64.tar.gz"
+# Source external failed because Oracle requires to accept license agreement. Tarball already provided in sources.
+ENV TOOL_SOURCE_EXTERNAL="https://www.oracle.com/webapps/redirect/signon?nexturl=https://download.oracle.com/otn/java/jdk/7u80-b15/jdk-7u80-linux-x64.tar.gz"
+ENV PATH=$PATH:$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin
+RUN echo "#[INFO] SYSTEM Java installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
+	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
+	cp $TOOL_SOURCE_BUILD/*/* $TOOL_DEST/ -R && \
+	echo "#[INFO] TOOL databases configuration" && \
+	$TOOL_CHECK ;
+
+
 ##########
 # JAVA8 #
 ##########
@@ -433,18 +453,17 @@ RUN echo "#[INFO] SYSTEM Java installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	ln -s /usr/lib/jvm/jre-1.8.0/bin/java $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/java ;
 
 
-
 ########
 # JAVA #
 ########
 
 ENV TOOL_NAME="java"
-ENV TOOL_VERSION="17"
+ENV TOOL_VERSION="21"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 RUN echo "#[INFO] SYSTEM Java installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	mkdir -p $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin && \
-	ln -s /usr/lib/jvm/jre-17/bin/java $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/java && \
-	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
+	ln -snf /usr/lib/jvm/jre-21/bin/java $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/java && \
+	ln -snf $TOOL_VERSION/ $TOOLS/$TOOL_NAME/current ;
 
 
 
@@ -881,7 +900,15 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 # 	$MAMBA clean -y --all && \
 # 	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
 
+# TOOL INFO - deprecated!!!
+ENV TOOL_NAME="gatk4"
+ENV TOOL_VERSION="4.6.1.0-0"
+ENV PATH=$PATH:$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	ln -s $(ls $TOOLS/$TOOL_NAME/$TOOL_VERSION/share/gatk4-$TOOL_VERSION/gatk-package-*-local.jar) $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/GenomeAnalysisTK4.jar
 
+
+# $NGS_TOOLS/gatk4/current/share/gatk4-$GATK4_VERSION-0/gatk-package-$GATK4_VERSION-local.jar
 
 ########
 # GATK #
@@ -913,6 +940,13 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 # 	$MAMBA create -y -p $TOOLS/$TOOL_NAME/$TOOL_VERSION -c bioconda $TOOL_NAME~=$TOOL_VERSION && \
 # 	$MAMBA clean -y --all && \
 # 	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
+
+# TOOL INFO - deprecated!!!
+ENV TOOL_NAME="gatk"
+ENV TOOL_VERSION="3.8"
+ENV PATH=$PATH:$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	ln -s $(ls $TOOLS/$TOOL_NAME/$TOOL_VERSION/opt/*/GenomeAnalysisTK*.jar) $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/GenomeAnalysisTK.jar
 
 
 ############
@@ -997,6 +1031,14 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 # 	$MAMBA clean -y --all && \
 # 	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
 
+# TOOL INFO - deprecated!!!
+ENV TOOL_NAME="mutect"
+ENV TOOL_VERSION="1.1.6"
+ENV PATH=$PATH:$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	ln -s $(ls $TOOLS/$TOOL_NAME/$TOOL_VERSION*/share/$TOOL_NAME*$TOOL_VERSION*/muTect*jar) $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/muTect.jar
+
+
 
 
 ############
@@ -1018,6 +1060,32 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	chmod a+x $TOOL_DEST/bin/*.py && \
 	$TOOL_CHECK ;
 
+
+
+
+# #############
+# # UMI_TOOLS #
+# #############
+# # pip install umi_tools
+# # https://github.com/CGATOxford/UMI-tools/archive/1.1.2.zip
+
+# # TOOL INFO
+# ENV TOOL_NAME="umi_tools"
+# ENV TOOL_VERSION="1.1.6"
+# ENV TOOL_TARBALL="$TOOL_VERSION.zip"
+# ENV TOOL_SOURCE_EXTERNAL="https://github.com/CGATOxford/UMI-tools/archive/v$TOOL_VERSION.zip"
+# ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
+# # TOOL PARAMETERS
+
+# # # TOOL INSTALLATION
+# # RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+# # 	pip3 install umi_tools==$TOOL_VERSION && \
+# # 	ln -s /usr/local/bin/umi_tools $TOOL_DEST/bin/umi_tools && \
+# # 	chmod a+x $TOOL_DEST/bin/* && \
+# # 	$TOOL_CHECK ;
+
+# # source $TOOL_INIT && \
+# # unzip -q $TOOL_SOURCE -d $TOOL_SOURCE_BUILD
 
 
 ##########
@@ -1047,6 +1115,12 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 # 	$MAMBA clean -y --all && \
 # 	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
 
+# TOOL INFO
+ENV TOOL_NAME="picard"
+ENV TOOL_VERSION="3.4.0-0"
+ENV PATH=$PATH:$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	ln -s $(ls $TOOLS/$TOOL_NAME/$TOOL_VERSION/share/$TOOL_NAME*$TOOL_VERSION*/picard*jar) $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/picard.jar
 
 
 
@@ -1115,6 +1189,14 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 # 	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current && \
 # 	echo ln -s  $(find $TOOLS/$TOOL_NAME/$TOOL_VERSION -name "snpEff.jar" | head -n 1) $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/$(basename $(find $TOOLS/$TOOL_NAME/$TOOL_VERSION -name "snpEff.jar" | head -n 1))
 
+# TOOL INFO
+ENV TOOL_NAME="snpeff"
+ENV TOOL_VERSION="5.3.0a-0"
+ENV PATH=$PATH:$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	ln -s $(ls $TOOLS/$TOOL_NAME/$TOOL_VERSION/share/$TOOL_NAME*$TOOL_VERSION*/snpEff.jar) $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/snpEff.jar
+
+# $SNPEFF_FOLDER/share/snpeff-$SNPEFF_VERSION-0/snpEff.jar
 
 
 #############
@@ -1174,6 +1256,13 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 # 	$MAMBA create -y -p $TOOLS/$TOOL_NAME/$TOOL_VERSION -c bioconda $TOOL_NAME~=$TOOL_VERSION && \
 # 	$MAMBA clean -y --all && \
 # 	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
+
+# TOOL INFO
+ENV TOOL_NAME="varscan"
+ENV TOOL_VERSION="2.4.6-0"
+ENV PATH=$PATH:$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	ln -s $(ls $TOOLS/$TOOL_NAME/$TOOL_VERSION/share/*/VarScan*jar) $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/VarScan.jar
 
 
 

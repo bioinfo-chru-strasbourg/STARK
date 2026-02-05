@@ -15,9 +15,9 @@ MUTECT_INTERVAL_PADDING?=0
 DPMIN_MUTECT?=30
 
 
-%.MuTect$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed.interval_listt
+%.MuTect$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed.interval_list
 	# Calling
-	$(JAVA) -jar $(MUTECT) \
+	$(JAVA7) -jar $(MUTECT) \
 		--analysis_type MuTect \
 		--reference_sequence $(GENOME) \
 		$$(if [ "`grep ^ -c $*.design.bed.interval_list`" == "0" ]; then echo ""; else echo "--intervals $*.design.bed.interval_list"; fi;) \
