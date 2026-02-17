@@ -34,7 +34,7 @@
         "bcftools": "bcftools",
         "bgzip": "bgzip",
         "java": "java",
-        "snpeff": "/STARK/tools/snpeff/current/share/snpeff-5.1d-0/snpEff.jar",
+        "snpeff": "/STARK/tools/snpeff/current/bin/snpEff.jar",
         "annovar": "/STARK/tools/annovar/current/bin/table_annovar.pl",
         "exomiser": "/STARK/tools/exomiser/current/bin/exomiser-cli-14.0.0.jar",
         "docker": "docker",

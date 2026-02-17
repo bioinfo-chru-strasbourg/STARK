@@ -495,6 +495,13 @@ CRAM_OPTIONS="version=3.0,level=9,no_ref"
 CRAM_REMOVE_TAGS="BD,BI"
 
 
+### VCF Report
+
+# VCF genotype missing
+# "missing": Replace 0/0 or 0|0 genotypes by ./. and .|.
+# "missing_clean": Replace 0/0 or 0|0 genotypes by ./. and .|. and clean by removing other FORMAT fields
+VCF_MISSING_GENOTYPE="missing_clean"
+
 
 # THREADS (default AUTO)
 # Number of threads to use for the analysis
@@ -722,20 +729,20 @@ VARIANTFILTRATION_INVALIDATE_PREVIOUS_FILTERS=1
 # These resources need to be available on STARK Databases folder for GATK
 # default:
 if [ "$ASSEMBLY" == 'hg19' ]; then
-VARIANTRECALIBRATION_SNP_RESOURCES="
-    -resource:hapmap,known=false,training=true,truth=true,prior=15.0 hapmap_3.3.b37.vcf.gz
-    -resource:omni,known=false,training=true,truth=true,prior=12.0 1000G_omni2.5.b37.vcf.gz
-    -resource:1000G,known=false,training=true,truth=false,prior=10.0 1000G_phase1.snps.high_confidence.b37.vcf.gz 
-    -resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.b37.vcf.gz
-"
+    VARIANTRECALIBRATION_SNP_RESOURCES="
+        -resource:hapmap,known=false,training=true,truth=true,prior=15.0 hapmap_3.3.hg19.sites.vcf.gz
+        -resource:omni,known=false,training=true,truth=true,prior=12.0 1000G_omni2.5.hg19.sites.vcf.gz
+        -resource:1000G,known=false,training=true,truth=false,prior=10.0 1000G_phase1.snps.high_confidence.hg19.sites.vcf.gz
+        -resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.hg19.vcf.gz
+    "
 fi;
 if [ "$ASSEMBLY" == 'hg38' ]; then
-VARIANTRECALIBRATION_SNP_RESOURCES="
-    -resource:hapmap,known=false,training=true,truth=true,prior=15.0 hapmap_3.3.hg38.vcf.gz
-    -resource:omni,known=false,training=true,truth=true,prior=12.0 1000G_omni2.5.hg38.vcf.gz
-    -resource:1000G,known=false,training=true,truth=false,prior=10.0 1000G_phase1.snps.high_confidence.hg38.vcf.gz
-    -resource:dbsnp,known=true,training=false,truth=false,prior=2.0 Homo_sapiens_assembly38.dbsnp138.vcf.gz
-"
+    VARIANTRECALIBRATION_SNP_RESOURCES="
+        -resource:hapmap,known=false,training=true,truth=true,prior=15.0 hapmap_3.3.hg38.vcf.gz
+        -resource:omni,known=false,training=true,truth=true,prior=12.0 1000G_omni2.5.hg38.vcf.gz
+        -resource:1000G,known=false,training=true,truth=false,prior=10.0 1000G_phase1.snps.high_confidence.hg38.vcf.gz
+        -resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.hg38.vcf.gz
+    "
 fi;
 export VARIANTRECALIBRATION_SNP_RESOURCES
 
@@ -743,16 +750,16 @@ export VARIANTRECALIBRATION_SNP_RESOURCES
 # These resources need to be available on STARK Databases folder for GATK
 # default:
 if [ "$ASSEMBLY" == 'hg19' ]; then
-VARIANTRECALIBRATION_INDEL_RESOURCES="
-    -resource:mills,known=false,training=true,truth=true,prior=12.0 Mills_and_1000G_gold_standard.indels.b37.vcf.gz
-    -resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.b37.vcf.gz
-"
+    VARIANTRECALIBRATION_INDEL_RESOURCES="
+        -resource:mills,known=false,training=true,truth=true,prior=12.0 Mills_and_1000G_gold_standard.indels.hg19.sites.vcf.gz
+        -resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.hg19.vcf.gz
+    "
 fi;
 if [ "$ASSEMBLY" == 'hg38' ]; then
-VARIANTRECALIBRATION_INDEL_RESOURCES="
-    -resource:mills,known=false,training=true,truth=true,prior=12.0 Mills_and_1000G_gold_standard.indels.hg38.vcf.gz
-    -resource:dbsnp,known=true,training=false,truth=false,prior=2.0 Homo_sapiens_assembly38.dbsnp138.vcf.gz
-"
+    VARIANTRECALIBRATION_INDEL_RESOURCES="
+        -resource:mills,known=false,training=true,truth=true,prior=12.0 Mills_and_1000G_gold_standard.indels.hg38.vcf.gz
+        -resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.hg38.vcf.gz
+    "
 fi;
 
 # Variant Recalibrator SNP annotations option (see documentation guide for more info)

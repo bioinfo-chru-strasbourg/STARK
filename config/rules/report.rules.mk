@@ -177,7 +177,14 @@ REPORT_SECTIONS?=ALL
 	# Prevent comma in description in vcf header
 	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$< --output=$@.tmp00.vcf --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
 	# Normalisation for 1 variant per line (no multiple variants), and genotype 0/0* or 0|0* to ./., and genotype ./.* to ./.
-	$(BCFTOOLS) norm -m- $@.tmp00.vcf --threads $(THREADS_BY_SAMPLE) | sed -E 's#\t[0|\.]([/|\|])[0|\.][^\t|$$]*#\t.\1.#g' > $@.tmp0.vcf;
+	#$(BCFTOOLS) norm -m- $@.tmp00.vcf --threads $(THREADS_BY_SAMPLE) --force | sed -E 's#\t[0|\.]([/|\|])[0|\.][^\t|$$]*#\t.\1.#g' > $@.tmp0.vcf;
+	if [ "$(VCF_MISSING_GENOTYPE)" = "missing" ]; then \
+		$(BCFTOOLS) norm -m- $@.tmp00.vcf --threads $(THREADS_BY_SAMPLE) --force | $(BCFTOOLS) +setGT -- -t q -i 'GT="0/0" || GT="0|0" || GT="\./\." || GT="\.|\." || GT="0/\." || GT="\./0" || GT="0|\." || GT="\.|0"' -n '.' | $(BCFTOOLS) view --threads $(THREADS_BY_SAMPLE) > $@.tmp0.vcf; \
+	elif [ "$(VCF_MISSING_GENOTYPE)" = "missing_clean" ]; then \
+		$(BCFTOOLS) norm -m- $@.tmp00.vcf --threads $(THREADS_BY_SAMPLE) --force | $(BCFTOOLS) +setGT -- -t q -i 'GT="0/0" || GT="0|0" || GT="\./\." || GT="\.|\." || GT="0/\." || GT="\./0" || GT="0|\." || GT="\.|0"' -n '.' | awk -f $(STARK_FOLDER_BIN)/vcf_missing_clean.awk | $(BCFTOOLS) view --threads $(THREADS_BY_SAMPLE) > $@.tmp0.vcf; \
+	else \
+		$(BCFTOOLS) norm -m- $@.tmp00.vcf --threads $(THREADS_BY_SAMPLE) --force | $(BCFTOOLS) view --threads $(THREADS_BY_SAMPLE) > $@.tmp0.vcf; \
+	fi;
 	# HOWARD annotation prioritization calculation process
 	$(HOWARD) process $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp0.vcf --output=$@ --param=$(HOWARD_PARAM_REPORT) $$( [ ! -z '$(HOWARD_PRIORITIZATION_CONFIG)' ] && echo " --prioritization_config=$(HOWARD_PRIORITIZATION_CONFIG) ") --threads=$(THREADS_BY_SAMPLE) --memory=$$( (( $(MEMORY_BY_SAMPLE) > $(MEMORY) )) && echo "$(MEMORY_BY_SAMPLE)" || echo "$(MEMORY)" )G # --memory=1G # --memory=$(MEMORY)G --memory=$(MEMORY_BY_SAMPLE)G --memory=$$( (( $(MEMORY_BY_SAMPLE) > $(MEMORY) ))  && echo "$(MEMORY_BY_SAMPLE)" || echo "$(MEMORY)" )G
 	# Clean INFO spaces
