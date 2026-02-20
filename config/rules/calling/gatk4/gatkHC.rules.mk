@@ -23,21 +23,20 @@
 # 0.9.4-03/02/2023: Extract gatk4HC
 # 0.9.5-31/10/2025: Change GATK4HC to GATKHC
 
-GATKHC_FLAGS_SHARED?=--dont-use-soft-clipped-bases
 
 ###########
 # gatkHC #
 ###########
 
 # GATKHC Flags
-GATKHC_FLAGS=$(GATK4HC_FLAGS_SHARED) \
-	--interval-padding $(INTERVAL_PADDING) \
+GATKHC_FLAGS=--interval-padding $(INTERVAL_PADDING) \
 	--dbsnp $(VCFDBSNP) \
 	--native-pair-hmm-threads $(THREADS_BY_CALLER) \
 	--min-base-quality-score 17 \
 	--min-pruning 4 \
 	--max-reads-per-alignment-start 1000 \
-	--standard-min-confidence-threshold-for-calling 30
+	--standard-min-confidence-threshold-for-calling 30 \
+	--dont-use-soft-clipped-bases true
 
 
 %.gatkHC$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed.interval_list
@@ -53,11 +52,11 @@ GATKHC_FLAGS=$(GATK4HC_FLAGS_SHARED) \
 	-rm -f $@.idx
 
 
-RELEASE_COMMENT := "\#\# CALLING GATK '$(MK_RELEASE)': GATK tool identify variants from aligned BAM with shared parameters: GATKHC_FLAGS='$(GATKHC_FLAGS)'"
-RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
+# RELEASE_COMMENT := "\#\# CALLING GATK '$(MK_RELEASE)': GATK tool identify variants from aligned BAM with shared parameters: GATKHC_FLAGS='$(GATKHC_FLAGS)'"
+# RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
 
-RELEASE_COMMENT := "\#\# CALLING GATK4HC identify variants and generate *.gatkHC.vcf files with parameters: GATKHC_FLAGS='$(GATKHC_FLAGS)'"
+RELEASE_COMMENT := "\#\# CALLING GATKHC identify variants and generate *.gatkHC.vcf files with parameters: GATKHC_FLAGS='$(GATKHC_FLAGS)'"
 RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
 

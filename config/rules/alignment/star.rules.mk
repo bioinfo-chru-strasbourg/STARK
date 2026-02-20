@@ -15,13 +15,15 @@ MK_DATE="24/08/2022"
 ###################################
 
 MAX_CONCURRENT_ALIGNMENTS_STAR?=1
-STAR_FLAGS?=--outSAMtype BAM SortedByCoordinate --chimOutJunctionFormat 1 --outSAMunmapped Within --outBAMcompression 0 --outFilterMultimapNmax 50 --peOverlapNbasesMin 10 --alignSplicedMateMapLminOverLmate 0.5 --alignSJstitchMismatchNmax 5 -1 5 5 --chimSegmentMin 10 --chimOutType Junctions WithinBAM --chimJunctionOverhangMin 10 --chimScoreDropMax 30 --chimScoreJunctionNonGTAG 0 --chimScoreSeparation 1 --chimSegmentReadGapMax 3 --chimMultimapNmax 50 --twopassMode Basic --quantMode TranscriptomeSAM GeneCounts --quantTranscriptomeBan Singleend
+#STAR_FLAGS?=--outSAMtype BAM SortedByCoordinate --chimOutJunctionFormat 1 --outSAMunmapped Within --outBAMcompression 0 --outFilterMultimapNmax 50 --peOverlapNbasesMin 10 --alignSplicedMateMapLminOverLmate 0.5 --alignSJstitchMismatchNmax 5 -1 5 5 --chimSegmentMin 10 --chimOutType Junctions WithinBAM --chimJunctionOverhangMin 10 --chimScoreDropMax 30 --chimScoreJunctionNonGTAG 0 --chimScoreSeparation 1 --chimSegmentReadGapMax 3 --chimMultimapNmax 50 --twopassMode Basic --quantMode TranscriptomeSAM GeneCounts --quantTranscriptomeBan Singleend
+STAR_FLAGS?=--outSAMtype BAM SortedByCoordinate --chimOutJunctionFormat 1 --outSAMunmapped Within --outBAMcompression 0 --outFilterMultimapNmax 50 --peOverlapNbasesMin 10 --alignSplicedMateMapLminOverLmate 0.5 --alignSJstitchMismatchNmax 5 -1 5 5 --chimSegmentMin 10 --chimOutType Junctions WithinBAM --chimJunctionOverhangMin 10 --chimScoreDropMax 30 --chimScoreJunctionNonGTAG 0 --chimScoreSeparation 1 --chimSegmentReadGapMax 3 --chimMultimapNmax 50 --twopassMode Basic --quantMode TranscriptomeSAM GeneCounts --quantTranscriptomeSAMoutput BanSingleEnd
 
-%.star.bam: %.R1$(POST_SEQUENCING).fastq.gz %.R2$(POST_SEQUENCING).fastq.gz
+# Raw alignemnt with STAR
+%.star.star_raw.bam: %.R1$(POST_SEQUENCING).fastq.gz %.R2$(POST_SEQUENCING).fastq.gz
 	echo "ID:1\tPL:ILLUMINA\tPU:PU\tLB:001\tSM:$(*F)" > $@.RG_STAR;
 	$(PYTHON3) $(STARK_FOLDER_BIN)/functions.py launch \
 					--cmd "$(STAR) --genomeDir  $(GENOME).star.idx \
-							--runThreadN 14 \
+							--runThreadN $(THREADS_BY_SAMPLE) \
 							--readFilesIn $*.R1$(POST_SEQUENCING).fastq.gz $*.R2$(POST_SEQUENCING).fastq.gz \
 							--readFilesCommand zcat \
 							--outFileNamePrefix $@. \
@@ -35,17 +37,27 @@ STAR_FLAGS?=--outSAMtype BAM SortedByCoordinate --chimOutJunctionFormat 1 --outS
 		-O $@ -COMPRESSION_LEVEL 1 -RGSM $(*F);
 	-rm -rf $@.Aligned.sortedByCoord.out.bam $@.RG_STAR $@._STARgenome $@._STARpass1;
 
+# Alignement with STAR from raw alignement (with post alignment for SNV calling)
+%.star$(POST_ALIGNMENT).bam: %.star.star_raw.bam
+	ln -s $< $@
+
+# POST ALIGNMENT STEPS
+
+# Post alignment spécific for STAR: we need to use the bam with splitNcigar for SNV calling. However, splitNcigar is forbiden for fusion detection tools (Arriba and STARFusion) to work properly (see STARFusion.rules.mk and Arriba.rules.mk for explanation).
 %.bam: %.splitncigar.bam %.splitncigar.bam.bai
 	$(JAVA) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) SplitNCigarReads -R $(GENOME) -I $< -O $@
 
-%.star.junction: %.star.bam
-	mv $<.Chimeric.out.junction $@
+# %.splitncigar.bam: %.bam %.bam.bai
+# 	$(JAVA) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) SplitNCigarReads -R $(GENOME) -I $< -O $@
 
-%.star$(POST_ALIGNMENT).bam: %.star.bam
-	ln -s $< $@
+# Copy junction file from STAR alignments if exist, otherwise create empty file to avoid error in STARFusion rules
+%.star.junction: %.star.star_raw.bam
+	if [ -e $@ ]; then touch $@; else cp $<.Chimeric.out.junction $@; fi;
+
+
 
 # CONFIG/RELEASE
-RELEASE_COMMENT := "\#\# STAR ALIGNMENT '$(MK_RELEASE)': STAR generates an aligned BAM file from FASTQ file
+RELEASE_COMMENT := "\#\# STAR ALIGNMENT '$(MK_RELEASE)': STAR generates an aligned BAM file from FASTQ files."
 RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
 

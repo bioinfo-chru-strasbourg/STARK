@@ -5,21 +5,26 @@
 # Author: Samuel Nicaise, Thomas Lavaux
 ############################
 
-%.STARFusion$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.junction
+
+# STARFusion need raw alignement, without splitNcigar, to work properly. So we need to use bam without splitNcigar directly from STAR alignments (%$(POST_ALIGNMENT).bam).
+
+#%.STARFusion$(POST_CALLING).vcf: %$(POST_ALIGNMENT).bam %$(POST_ALIGNMENT).bam.bai %.empty.vcf %.junction
+%.STARFusion$(POST_CALLING).vcf: %.star_raw.bam %.star_raw.bam.bai %.empty.vcf %.junction
 	mkdir -p $*.fusion.reports;
-	$(STARFUSION) \
+	$(MAMBA) run -p $(STARFUSION_ENV) $(STARFUSION) \
 		--chimeric_junction $*.junction \
 		--genome_lib_dir $$(dirname $(GENOME)) \
 		--output_dir $*.fusion.reports;
 	mv $*.fusion.reports/star-fusion.fusion_predictions.tsv $*.fusion.reports/$$(echo $(@F) | rev | cut -d"." -f4-  | rev).star-fusion.tsv
 	mv $*.fusion.reports/star-fusion.fusion_predictions.abridged.tsv $*.fusion.reports/$$(echo $(@F) | rev | cut -d"." -f4-  | rev).star-fusion.abridged.tsv
 	# convert to vcf
-	variantconvert convert \
+	$(VARIANTCONVERT) convert \
 		-i $*.fusion.reports/$$(echo $(@F) | rev | cut -d"." -f4-  | rev).star-fusion.abridged.tsv \
 		-o $@ \
-		-fi breakpoints \
-		-fo vcf \
-		-c $(ASSEMBLY)/starfusion.json;
+		-c $(VARIANTCONVERT_CONFIGS)/$(ASSEMBLY)/starfusion.stark.json;
+
+# -fi breakpoints \
+# -fo vcf \
 
 # CONFIG/RELEASE
 RELEASE_COMMENT := "\#\# CALLING STARFusion '$(MK_RELEASE)': CTAT Tool to detect fusions based on RNA-Seq data"

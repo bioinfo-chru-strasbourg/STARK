@@ -5,7 +5,9 @@
 # Author: Samuel Nicaise, Thomas Lavaux
 ############################
 
-%.Arriba$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf
+# Arriba need raw alignement, without splitNcigar, to work properly. So we need to use bam without splitNcigar directly from STAR alignments (%$(POST_ALIGNMENT).bam).
+
+%.Arriba$(POST_CALLING).vcf: %.star_raw.bam %.star_raw.bam.bai %.empty.vcf
 	mkdir -p $*.arriba.reports;
 	$(ARRIBA) \
 		-x $< \
@@ -16,16 +18,16 @@
 		-p $$(ls $(ARRIBA_DATABASES)/$(ASSEMBLY)/protein_domains_$(ASSEMBLY)_*.gff3) \
 		-o $*.arriba.reports/arriba.fusions.tsv \
 		-O $*.arriba.reports/arriba.fusions.discarded.tsv;
-
 	mv $*.arriba.reports/arriba.fusions.tsv $*.arriba.reports/$$(echo $(@F) | rev | cut -d"." -f4-  | rev).arriba.fusions.tsv
 	mv $*.arriba.reports/arriba.fusions.discarded.tsv $*.arriba.reports/$$(echo $(@F) | rev | cut -d"." -f4-  | rev).arriba.fusions.discarded.tsv
 	# convert to vcf
 	variantconvert convert \
 		-i $*.arriba.reports/$$(echo $(@F) | rev | cut -d"." -f4-  | rev).arriba.fusions.tsv \
 		-o $@ \
-		-fi breakpoints \
-		-fo vcf \
-		-c $(ASSEMBLY)/arriba.json
+		-c $(VARIANTCONVERT_CONFIGS)/$(ASSEMBLY)/arriba.stark.json
+
+# -fi breakpoints \
+# -fo vcf \
 
 # CONFIG/RELEASE
 RELEASE_COMMENT := "\#\# CALLING Arriba '$(MK_RELEASE)': Tool to detect fusions based on RNA-Seq data"

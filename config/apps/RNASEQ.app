@@ -36,12 +36,15 @@ DICT=$DBFOLDER/CTAT_LIB/current/$ASSEMBLY/ref_genome.dict
 export GENOME
 export DICT
 
-POST_ALIGNMENT_STEPS="sorting splitncigar recalibration compress"
-#PIPELINES="star.Arriba.howard star.STARFusion.howard star.gatkHC_SOMATIC.howard"
-PIPELINES="star.Arriba star.STARFusion star.gatkHC_SOMATIC"
+# POST ALIGNMENT STEPS 
+# without dbSNP because of not same contigs
+POST_ALIGNMENT_STEPS="sorting splitncigar compress"
 
-#POST_ALIGNMENT_STEPS="sorting splitncigar recalibration compress"
-#PIPELINES="star.Arriba star.STARFusion star.gatkHC_SOMATIC"
+# PIPELINES
+# Callers without dbSNP because of not same contigs (e.g. gatkHC, MuTect2)
+# Use specific callers such as gatkHC_RNASEQ and MuTect2_RNASEQ with specific parameters for RNA-Seq data (e.g. no dbSNP, no panel of normals, etc.)
+PIPELINES="star.Arriba.howard star.STARFusion.howard star.gatkHC_RNASEQ.howard star.outLyzer.howard"
+
 
 POST_CALLING_MERGING_STEPS="sorting"
 

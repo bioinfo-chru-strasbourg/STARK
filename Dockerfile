@@ -80,6 +80,8 @@ ENV REPO="$REPO_SOURCES"
 ENV SOURCES_FOLDER="sources"
 ENV SOURCES="$STARK_FOLDER/$SOURCES_FOLDER"
 ENV DATABASES="$STARK_FOLDER/databases"
+ENV CONFIG="$STARK_FOLDER/config"
+ENV GENOMES="$DATABASES/genomes/current"
 ENV WORKDIR="/tmp"
 #ENV YUM_PARAM=" -q -e 0 "
 ENV YUM_PARAM=" "
@@ -144,183 +146,14 @@ ENV PERL_INSTALL=" perl perl-Switch perl-Time-HiRes perl-Data-Dumper perl-Digest
 ENV REPO_SYSTEM_GIT="$REPO/sources.system.tar.gz?path=sources/system"
 ENV REPO_SYSTEM_HTTP="$REPO/sources/system/"
 
-# ENV GET_TOOL_SOURCE=$SOURCES/$SOURCES_FOLDER/get_tool_source.sh
-# ENV TOOL_INIT=$SOURCES/$SOURCES_FOLDER/tool_init.sh
-# ENV TOOL_CHECK=$SOURCES/$SOURCES_FOLDER/tool_check.sh
-
 ENV GET_TOOL_SOURCE=$SOURCES/get_tool_source.sh
 ENV TOOL_INIT=$SOURCES/tool_init.sh
 ENV TOOL_CHECK=$SOURCES/tool_check.sh
 
 
-# RUN echo "#[INFO] SYSTEM Sources scripts" && \
-# 	if [ -e $GET_TOOL_SOURCE ]; then \
-# 	echo "#[INFO] GET TOOL SOURCE script exists" ; \
-# 	elif $(wget --no-cache --progress=bar:force -nv --quiet "$REPO/$SOURCES_FOLDER/$(basename $GET_TOOL_SOURCE)" -O $GET_TOOL_SOURCE); then \
-# 	echo "#[INFO] GET TOOL SOURCE script downloaded from REPO '$REPO/$SOURCES_FOLDER/$(basename $GET_TOOL_SOURCE)'" ; \
-# 	else \
-# 	mkdir -p $(dirname $GET_TOOL_SOURCE) ; \
-# 	echo 'echo "#[INFO] TOOL source ($TOOL_SOURCE)" && \
-# 	mkdir -p $(dirname $TOOL_SOURCE) && \
-# 	if [ -e $TOOL_SOURCE ]; then \
-# 	echo "#[INFO] TOOL TARBALL already in $TOOL_SOURCE"; \
-# 	elif $(wget --no-cache --progress=bar:force "$TOOL_SOURCE_REPO" -O $TOOL_SOURCE); then \
-# 	echo "#[INFO] TOOL TARBALL downloaded from STARK REPO $TOOL_SOURCE_REPO"; \
-# 	if $(wget --no-cache --progress=bar:force -nv --quiet "$(dirname $TOOL_SOURCE_REPO)/source.info" -O $(dirname $TOOL_SOURCE)/source.info); then \
-# 	echo "#[INFO] TOOL TARBALL external source information downloaded from STARK REPO $TOOL_SOURCE_REPO " ; \
-# 	fi ; \
-# 	elif $(wget --no-cache --progress=bar:force "$TOOL_SOURCE_EXTERNAL" -O $TOOL_SOURCE); then \
-# 	echo "#[INFO] TOOL TARBALL downloaded from EXTERNAL SOURCE $TOOL_SOURCE_EXTERNAL"; \
-# 	echo "$TOOL_SOURCE_EXTERNAL" > $(dirname $TOOL_SOURCE)/source.info; \
-# 	else \
-# 	echo "#[ERROR] TOOL TARBALL NOT FOUND"; \
-# 	exit 1; \
-# 	fi && \
-# 	if [ -e $(dirname $TOOL_SOURCE)/source.info ]; then \
-# 	echo "#[INFO] TOOL TARBALL external source: "$(cat $(dirname $TOOL_SOURCE)/source.info) ; \
-# 	fi && \
-# 	exit 0;' > $GET_TOOL_SOURCE ; \
-# 	echo "#[INFO] GET TOOL SOURCE script written" ; \
-# 	fi && \
-# 	chmod u+x $GET_TOOL_SOURCE && \
-# 	if [ -e $TOOL_INIT ]; then \
-# 	echo "#[INFO] TOOL INIT script exists" ; \
-# 	elif $(wget --no-cache --progress=bar:force -nv --quiet "$REPO/$SOURCES_FOLDER/$(basename $TOOL_INIT)" -O $TOOL_INIT); then \
-# 	echo "#[INFO] TOOLS INIT script downloaded from REPO '$REPO/$SOURCES_FOLDER/$(basename $TOOL_INIT)'" ; \
-# 	else \
-# 	mkdir -p $(dirname $TOOL_INIT) ; \
-# 	echo 'echo "#[INFO] TOOL $TOOL_NAME/$TOOL_VERSION" && \
-# 	export TOOL_SOURCE=$SOURCES/$SOURCES_FOLDER/tools/$TOOL_NAME/$TOOL_VERSION/$TOOL_TARBALL && \
-# 	export TOOL_SOURCE_REPO=$REPO/$SOURCES_FOLDER/tools/$TOOL_NAME/$TOOL_VERSION/$TOOL_TARBALL && \
-# 	export TOOL_SOURCE_BUILD=$SOURCES/$SOURCES_FOLDER/tools/$TOOL_NAME/$TOOL_VERSION/build && \
-# 	export TOOL_DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION && \
-# 	export PATH=$TOOL_DEST/bin:$PATH && \
-# 	# Get TOOL SOURCE && \
-# 	$GET_TOOL_SOURCE $TOOL_SOURCE $TOOL_SOURCE_REPO $TOOL_SOURCE_EXTERNAL && \
-# 	# TOOL folder preparation \
-# 	echo "#[INFO] TOOL preparation" && \
-# 	mkdir -p $TOOL_SOURCE_BUILD && \
-# 	mkdir -p $TOOL_DEST/bin && \
-# 	echo "#[INFO] TOOL release as current (forced)" && \
-# 	ln -snf $TOOL_VERSION/ $TOOLS/$TOOL_NAME/previous && \
-# 	if [ -e $TOOLS/$TOOL_NAME/current ]; then ln -snf $(basename $(realpath $TOOLS/$TOOL_NAME/current))/ $TOOLS/$TOOL_NAME/previous; fi && \
-# 	ln -snf $TOOL_VERSION/ $TOOLS/$TOOL_NAME/current && \
-# 	ln -snf $TOOL_VERSION/ $TOOLS/$TOOL_NAME/latest' > $TOOL_INIT ; \
-# 	echo "#[INFO] TOOLS INIT script written" ; \
-# 	fi && \
-# 	chmod u+x $TOOL_INIT && \
-# 	if [ -e $TOOL_CHECK ]; then \
-# 	echo "#[INFO] TOOLS CHECK script exists" ; \
-# 	elif $(wget --no-cache --progress=bar:force -nv --quiet "$REPO/$SOURCES_FOLDER/$(basename $TOOL_CHECK)" -O $TOOL_CHECK); then \
-# 	echo "#[INFO] TOOLS CHECK script downloaded from REPO '$REPO/$SOURCES_FOLDER/$(basename $TOOL_CHECK)'" ; \
-# 	else \
-# 	mkdir -p $(dirname $TOOL_CHECK) ; \
-# 	echo 'echo "#[INFO] TOOL cleaning" && \
-# 	rm -rf $TOOL_SOURCE_BUILD && \
-# 	if (($REMOVE_SOURCES)); then rm -rf $SOURCES/$SOURCES_FOLDER/tools/$TOOL_NAME/$TOOL_VERSION; fi && \
-# 	echo "#[INFO] TOOL $TOOL_NAME/$TOOL_VERSION installed" ;' > $TOOL_CHECK ; \
-# 	echo "#[INFO] TOOLS CHECK script written" ; \
-# 	fi && \
-# 	chmod u+x $TOOL_CHECK && \
-# 	echo "#";
-
-# Add tools and install script
-#ADD install_system.sh ${TOOLS}/install_system.sh
-
 # System installation
 RUN echo "#[INFO] SYSTEM Packages installation" && \
 	${SOURCES}/install_system.sh --yum_install="${PACKAGES_INSTALL}" --yum_param="${YUM_PARAM}"
-
-# RUN echo "#[INFO] SYSTEM YUM installation - and download" && \
-# 	# Create system repository \
-# 	mkdir -p $SOURCES/$SOURCES_FOLDER/system && \
-# 	mkdir -p $SOURCES/$SOURCES_FOLDER/system/$(uname -m) && \
-# 	# INSTALL WGET \
-# 	echo "#[INFO] System install wget package" && \
-# 	#ls $SOURCES/$SOURCES_FOLDER/system/*.rpm && \
-# 	if ! ls $SOURCES/$SOURCES_FOLDER/system/$(uname -m)/wget-*.rpm 1> /dev/null 2>&1; then \
-# 	echo "#[INFO] System wget package not locally available"; \
-# 	yum $YUM_PARAM install -y --nogpgcheck --downloadonly --downloaddir=$SOURCES/$SOURCES_FOLDER/system/$(uname -m)/ wget; \
-# 	echo "#[INFO] System wget package downloaded from YUM Repository"; \
-# 	fi && \
-# 	echo "#[INFO] System install rsync package" && \
-# 	if ! ls $SOURCES/$SOURCES_FOLDER/system/$(uname -m)/rsync-*.rpm 1> /dev/null 2>&1; then \
-# 	echo "#[INFO] System rsync package not locally available"; \
-# 	yum $YUM_PARAM install -y --nogpgcheck --downloadonly --downloaddir=$SOURCES/$SOURCES_FOLDER/system/$(uname -m)/ rsync; \
-# 	echo "#[INFO] System rsync package downloaded from YUM Repository"; \
-# 	fi && \
-# 	# Install packages locally \
-# 	echo "#[INFO] System packages installation locally" && \
-# 	yum $YUM_PARAM localinstall -y --allowerasing --nogpgcheck $SOURCES/$SOURCES_FOLDER/system/$(uname -m)/wget-*.rpm $SOURCES/$SOURCES_FOLDER/system/$(uname -m)/rsync-*.rpm && \
-# 	# Test WGET installation \
-# 	if ! command -v wget 1>/dev/null 2>/dev/null; then \
-# 	echo "#[ERROR] System wget package not installed (Please open Internet connexion or provide WGET rpm in sources/system folder)"; \
-# 	exit 1; \
-# 	fi && \
-# 	if ! command -v rsync 1>/dev/null 2>/dev/null; then \
-# 	echo "#[ERROR] System rsync package not installed (Please open Internet connexion or provide RSYNC rpm in sources/system folder)"; \
-# 	exit 1; \
-# 	fi && \
-# 	# DOWNLOAD packages from repository \
-# 	echo "#[INFO] System packages download from REPO '$REPO'"; \
-# 	mkdir -p $SOURCES/$SOURCES_FOLDER/system/$(uname -m)/build && \
-# 	# in GIT mode
-# 	if wget -q --progress=bar:force --tries=3 $REPO_SYSTEM_GIT -O $SOURCES/$SOURCES_FOLDER/system/$(uname -m)/build/STARK-repo.sources.system.tar.gz; then \
-# 	if tar xf $SOURCES/$SOURCES_FOLDER/system/$(uname -m)/build/STARK-repo.sources.system.tar.gz -C $SOURCES/$SOURCES_FOLDER/system/$(uname -m)/build/; then \
-# 	rsync -auczqAXhi --no-links --no-perms --no-owner --no-group --ignore-missing-args $SOURCES/$SOURCES_FOLDER/system/$(uname -m)/build/STARK-repo.sources.system*/sources/system/*rpm $SOURCES/$SOURCES_FOLDER/system/$(uname -m)/; \
-# 	echo "#[INFO] System packages downloaded from REPO '$REPO' (GIT)"; \
-# 	else \
-# 	echo "#[WARNING] System fail to uncompress packages from REPO '$REPO'"; \
-# 	fi; \
-# 	# in HTTP mode
-# 	elif wget -q --progress=bar:force --tries=3 -r --no-parent $REPO_SYSTEM_HTTP -x --directory-prefix=$SOURCES/$SOURCES_FOLDER/system/$(uname -m)/build/STARK-repo.sources.system/; then \
-# 	rsync -auczqAXhi --no-links --no-perms --no-owner --no-group --ignore-missing-args $SOURCES/$SOURCES_FOLDER/system/$(uname -m)/build/STARK-repo.sources.system/*/sources/system/*rpm $SOURCES/$SOURCES_FOLDER/system/$(uname -m)/; \
-# 	echo "#[INFO] System packages downloaded from REPO '$REPO' (FTP/HTTP)"; \
-# 	else \
-# 	echo "#[WARNING] System fail packages download from REPO '$REPO'"; \
-# 	fi && \
-# 	rm -rf $SOURCES/$SOURCES_FOLDER/system/$(uname -m)/build && \
-# 	# Install packages locally \
-# 	echo "#[INFO] System packages installation locally" && \
-# 	if ! ls $SOURCES/$SOURCES_FOLDER/system/$(uname -m)/*.rpm 1> /dev/null 2>&1; then \
-# 	yum $YUM_PARAM localinstall -y --nogpgcheck $SOURCES/$SOURCES_FOLDER/system/$(uname -m)/*.rpm; \
-# 	echo "#[INFO] System packages installation locally done."; \
-# 	fi && \
-# 	#yum $YUM_PARAM localinstall -y --nogpgcheck $SOURCES/$SOURCES_FOLDER/system/$(uname -m)/*.rpm && \
-# 	# Install EPEL Repository \
-# 	echo "#[INFO] System EPEL Repository package" && \
-# 	if ! ls $SOURCES/$SOURCES_FOLDER/system/$(uname -m)/epel-release-*.rpm 1> /dev/null 2>&1; then \
-# 	yum $YUM_PARAM install -y --nogpgcheck --downloadonly --downloaddir=$SOURCES/$SOURCES_FOLDER/system/$(uname -m)/ epel-release; \
-# 	echo "#[INFO] System EPEL Repository package downloaded from YUM repository"; \
-# 	fi && \
-# 	if ls $SOURCES/$SOURCES_FOLDER/system/$(uname -m)/epel-release-*.rpm 1> /dev/null 2>&1; then \
-# 	yum $YUM_PARAM localinstall -y --nogpgcheck $SOURCES/$SOURCES_FOLDER/system/$(uname -m)/epel-release-*.rpm; \
-# 	echo "#[INFO] System EPEL Repository package enabled"; \
-# 	else \
-# 	echo "#[WARNING] System fail enable EPEL Repository"; \
-# 	fi && \
-# 	# Update YUM \
-# 	echo "#[INFO] System packages update from YUM Repository" && \
-# 	mkdir -p $SOURCES/$SOURCES_FOLDER/system/$(uname -m)/build/update && \
-# 	yum $YUM_PARAM update -y --downloadonly --downloaddir=$SOURCES/$SOURCES_FOLDER/system/$(uname -m)/build/update && \
-# 	yum $YUM_PARAM localinstall -y --nogpgcheck $SOURCES/$SOURCES_FOLDER/system/$(uname -m)/build/update/*.rpm && \
-# 	rsync -auczqAXhi --no-links --no-perms --no-owner --no-group --ignore-missing-args $SOURCES/$SOURCES_FOLDER/system/$(uname -m)/build/update/*rpm $SOURCES/$SOURCES_FOLDER/system/$(uname -m)/ && \
-# 	echo "#[INFO] System packages downloaded & updated from YUM Repository" && \
-# 	echo "#[INFO] System packages install from YUM Repository" && \
-# 	mkdir -p $SOURCES/$SOURCES_FOLDER/system/$(uname -m)/build/install && \
-# 	yum $YUM_PARAM install -y --downloadonly --allowerasing --downloaddir=$SOURCES/$SOURCES_FOLDER/system/$(uname -m)/build/install/ $YUM_INSTALL && \
-# 	ls -lah $SOURCES/$SOURCES_FOLDER/system/$(uname -m)/build/install/ && \
-# 	yum $YUM_PARAM localinstall -y --nogpgcheck --allowerasing $SOURCES/$SOURCES_FOLDER/system/$(uname -m)/build/install/*.rpm && \
-# 	rsync -auczqAXhi --no-links --no-perms --no-owner --no-group --ignore-missing-args $SOURCES/$SOURCES_FOLDER/system/$(uname -m)/build/install/*rpm $SOURCES/$SOURCES_FOLDER/system/$(uname -m)/ && \
-# 	echo "#[INFO] System packages downloaded & installed from YUM Repository" && \
-# 	rm -rf $SOURCES/$SOURCES_FOLDER/system/$(uname -m)/build && \
-# 	yum clean -y all && \
-# 	rm -rf /var/cache/yum && \
-# 	echo "#[INFO] System Clean" && \
-# 	echo "#[INFO] SYSTEM Bashrc" && \
-# 	echo "alias ll='ll -lah'" >> ~/.bashrc && \
-# 	echo "#"
-	
 
 
 #############
@@ -371,8 +204,8 @@ RUN echo "#[INFO] SYSTEM Python installation '$TOOL_NAME:$TOOL_VERSION'" && \
     $MAMBA clean -y --all && \
 	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current && \
 	$PYTHON -m pip install $PYTHON_MODULE && \
-	find ${DEST} -follow -ignore_readdir_race \( -name '*.a' -o -name '*.pyc' -o -name '*.txt' -o -name '*.md' -o -name '*.pdf' -o  -name '__pycache__' \) -exec rm -rf {} +
-	
+	find ${DEST} -follow -ignore_readdir_race \( -name '*.a' -o -name '*.pyc' -o -name '*.txt' -o -name '*.md' -o -name '*.pdf' -o  -name '__pycache__' \) -exec rm -rf {} + || true
+
 
 
 
@@ -429,7 +262,7 @@ RUN	echo "#[INFO] SYSTEM Perl installation - download from yum" && \
 
 ENV TOOL_NAME="java"
 ENV TOOL_VERSION="1.7.0"
-ENV TOOL_TARBALL="jdk-7u80-linux-x64.tar.gz"
+ENV TOOL_TARBALL="jre-7u80-linux-x64.tar.gz"
 # Source external failed because Oracle requires to accept license agreement. Tarball already provided in sources.
 ENV TOOL_SOURCE_EXTERNAL="https://www.oracle.com/webapps/redirect/signon?nexturl=https://download.oracle.com/otn/java/jdk/7u80-b15/jdk-7u80-linux-x64.tar.gz"
 ENV PATH=$PATH:$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin
@@ -1191,7 +1024,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 # TOOL INFO
 ENV TOOL_NAME="snpeff"
-ENV TOOL_VERSION="5.3.0a-0"
+ENV TOOL_VERSION="5.4.0a-0"
 ENV PATH=$PATH:$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin
 RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	ln -s $(ls $TOOLS/$TOOL_NAME/$TOOL_VERSION/share/$TOOL_NAME*$TOOL_VERSION*/snpEff.jar) $TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/snpEff.jar
@@ -1398,41 +1231,9 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 
 
-
-
 ##################
 # variantconvert #
 ##################
-
-# # INFO
-# ENV TOOL_NAME="variantconvert"
-# ENV TOOL_VERSION="pypi"
-# # INSTALLATION
-# ENV INSTALL_DIR=/usr/lib
-# WORKDIR $INSTALL_DIR
-# RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-# 	git clone https://github.com/SamuelNicaise/variantconvert.git && cd $TOOL_NAME && git fetch && git checkout $TOOL_VERSION && $PIP install -e . && $PIP cache purge && \
-# 	$PYTHON $INSTALL_DIR/$TOOL_NAME/src/$TOOL_NAME/__main__.py init && \
-# 	$PYTHON $INSTALL_DIR/$TOOL_NAME/src/$TOOL_NAME/__main__.py config --set GENOME.path=/STARK/databases/genomes/current/hg19/hg19.fa --configFiles hg19/*.json
-# WORKDIR $WORKDIR
-
-
-##################
-# variantconvert #
-##################
-
-# # INFO
-# ENV TOOL_NAME="variantconvert"
-# ENV TOOL_VERSION="pypi"
-# #https://github.com/SamuelNicaise/variantconvert/archive/refs/tags/2.0.1.tar.gz
-# # INSTALLATION
-# ENV INSTALL_DIR=/usr/lib
-# WORKDIR $INSTALL_DIR
-# RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-# 	git clone https://github.com/SamuelNicaise/variantconvert.git && cd $TOOL_NAME && git fetch && git checkout $TOOL_VERSION && $PIP install -e . && $PIP cache purge && \
-# 	$PYTHON $INSTALL_DIR/$TOOL_NAME/src/$TOOL_NAME/__main__.py init && \
-# 	$PYTHON $INSTALL_DIR/$TOOL_NAME/src/$TOOL_NAME/__main__.py config --set GENOME.path=/STARK/databases/genomes/current/hg19/hg19.fa --configFiles hg19/*.json
-# WORKDIR $WORKDIR
 
 # TOOL INFO
 ENV TOOL_NAME="variantconvert"
@@ -1441,6 +1242,8 @@ ENV TOOL_TARBALL=$TOOL_VERSION".tar.gz"
 ENV TOOL_SOURCE_EXTERNAL="https://github.com/SamuelNicaise/$TOOL_NAME/archive/refs/tags/$TOOL_TARBALL"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
+#ENV CONFIG_VARIANTCONVERT_FOLDER="$CONFIG/variantconvert"
+ENV CONFIG_VARIANTCONVERT_FOLDER=$TOOLS/$TOOL_NAME/$TOOL_VERSION/configs
 
 # TOOL INSTALLATION
 RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
@@ -1451,6 +1254,10 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	cp -R $TOOL_SOURCE_BUILD/*/* $TOOL_DEST/ && \
 	$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python -m pip install -e $TOOL_DEST && \
 	#ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current && \
+	$TOOL_DEST/bin/variantconvert init -d $CONFIG_VARIANTCONVERT_FOLDER && \
+	for variantconvert_assembly in $CONFIG_VARIANTCONVERT_FOLDER/*; do \
+		$TOOL_DEST/bin/variantconvert config -c $variantconvert_assembly/* --set GENOME.path=$GENOMES/$(basename $variantconvert_assembly)/$(basename $variantconvert_assembly).fa; \
+	done && \
 	$MAMBA clean -y --all
 
 
@@ -1514,16 +1321,8 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	cp -R $TOOL_SOURCE_BUILD/*/* $TOOL_DEST/ && \
 	$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python -m pip install -e $TOOL_DEST && \
 	$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python -m pip install polars-lts-cpu && \
-	#ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current && \
-	$MAMBA clean -y --all
-	# echo ls -lah $TOOLS/$TOOL_NAME/ && \
-	# ls -lah $TOOLS/$TOOL_NAME/ && \
-	# echo ls -lah $TOOLS/$TOOL_NAME/current/ && \
-	# ls -lah $TOOLS/$TOOL_NAME/current/ && \
-	# echo ls -lah $TOOLS/$TOOL_NAME/current/bin/ && \
-	# ls -lah $TOOLS/$TOOL_NAME/current/bin/ && \
-	# whereis howard && \
-	# howard --help
+	$MAMBA clean -y --all && \
+	howard query --input=$TOOL_DEST/tests/data/example.vcf --query="SELECT 1"
 	
 
 
@@ -1539,8 +1338,8 @@ ENV TOOL_VERSION="19.0.1-devel"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
 ENV TOOL="/tool"
-ENV CONFIG_MYAPPS_FOLDER="$STARK_FOLDER/config/myapps"
-ENV CONFIG_HOWARD_FOLDER="$STARK_FOLDER/config/howard"
+ENV CONFIG_MYAPPS_FOLDER="$CONFIG/myapps"
+ENV CONFIG_HOWARD_FOLDER="$CONFIG/howard"
 
 
 ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
