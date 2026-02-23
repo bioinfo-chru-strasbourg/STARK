@@ -262,15 +262,11 @@ RUN	echo "#[INFO] SYSTEM Perl installation - download from yum" && \
 
 ENV TOOL_NAME="java"
 ENV TOOL_VERSION="1.7.0"
-ENV TOOL_TARBALL="jre-7u80-linux-x64.tar.gz"
-# Source external failed because Oracle requires to accept license agreement. Tarball already provided in sources.
-ENV TOOL_SOURCE_EXTERNAL="https://www.oracle.com/webapps/redirect/signon?nexturl=https://download.oracle.com/otn/java/jdk/7u80-b15/jdk-7u80-linux-x64.tar.gz"
-ENV PATH=$PATH:$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin
+ENV TOOL_TARBALL="openjdk-7u75-b13-linux-x64-18_dec_2014.tar.gz"
+ENV TOOL_SOURCE_EXTERNAL="https://download.java.net/openjdk/jdk7u75/ri/$TOOL_TARBALL"
 RUN echo "#[INFO] SYSTEM Java installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	source $TOOL_INIT && \
-	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
-	cp $TOOL_SOURCE_BUILD/*/* $TOOL_DEST/ -R && \
-	echo "#[INFO] TOOL databases configuration" && \
+	tar -xvzf $TOOL_SOURCE -C $TOOL_DEST/ --strip-components=1 && \
 	$TOOL_CHECK ;
 
 
