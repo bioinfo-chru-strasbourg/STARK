@@ -19,7 +19,7 @@
 		BaseRecalibrator \
 		-I $< \
 		-R $(GENOME) \
-		$(GATK_RECALIBRATION_KNWON_OPTIONS) \
+		$(GATK_RECALIBRATION_KNOWN_OPTIONS) \
 		--use-original-qualities \
 		-L $*.from_manifest.interval_list \
 		-O $@

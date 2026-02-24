@@ -17,10 +17,10 @@
 THREADS_RTC?=$(THREADS_BY_SAMPLE)
 GATKRealignerTargetCreatorFLAGS= -nt $(THREADS_RTC) #-nt 8
 #GATKRealignerTargetCreatorOptions= -known $(VCFDBSNP) -allowPotentiallyMisencodedQuals
-GATKRealignerTargetCreatorOptions= $(GATK_REALIGNMENT_KNWON_OPTIONS) -allowPotentiallyMisencodedQuals
+GATKRealignerTargetCreatorOptions= $(GATK_REALIGNMENT_KNOWN_OPTIONS) -allowPotentiallyMisencodedQuals
 
 GATKIndelRealignerFLAGS=
-GATKIndelRealignerOptions= $(GATK_REALIGNMENT_KNWON_OPTIONS) --LODThresholdForCleaning 2.0 -compress 1 --maxReadsForRealignment 50000 --maxReadsForConsensuses 120 --maxReadsInMemory 2000000 --maxConsensuses 30 -model USE_READS -allowPotentiallyMisencodedQuals -dfrac 1 --filter_reads_with_N_cigar
+GATKIndelRealignerOptions= $(GATK_REALIGNMENT_KNOWN_OPTIONS) --LODThresholdForCleaning 2.0 -compress 1 --maxReadsForRealignment 50000 --maxReadsForConsensuses 120 --maxReadsInMemory 2000000 --maxConsensuses 30 -model USE_READS -allowPotentiallyMisencodedQuals -dfrac 1 --filter_reads_with_N_cigar
 
 # JAVA MEMORY REALIGNMENT
 JAVA_MEMORY_REALIGNMENT_MAX?=4

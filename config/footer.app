@@ -1527,12 +1527,12 @@ export VARIANTRECALIBRATOR_VARIANTFILTRATION_INDEL_FILTER_EXPRESSION_OPTION
 # This option is used with the GATK3 RealignerTargetCreator command to identify regions to realign, and with the GATK3 IndelRealigner command to perform realignment.
 # The VCF files include Indels and can be the same as for VCF recalibration (see VARIANTRECALIBRATION_INDEL_RESOURCES).
 # Exemple:
-# - GATK_REALIGNMENT_KNWON_OPTIONS="--known $VCFDBSNP"
+# - GATK_REALIGNMENT_KNOWN_OPTIONS="--known $VCFDBSNP"
 # default:
-if [ -z "$GATK_REALIGNMENT_KNWON_OPTIONS" ]; then
-	GATK_REALIGNMENT_KNWON_OPTIONS=$(echo -e "$VARIANTRECALIBRATION_INDEL_RESOURCES" | sed "s#-resource.* \(.*\)#-known "$DBFOLDER"/gatk/current/"$ASSEMBLY"/\1#gi" | xargs echo)
+if [ -z "$GATK_REALIGNMENT_KNOWN_OPTIONS" ]; then
+	GATK_REALIGNMENT_KNOWN_OPTIONS=$(echo -e "$VARIANTRECALIBRATION_INDEL_RESOURCES" | sed "s#-resource.* \(.*\)#-known "$DBFOLDER"/gatk/current/"$ASSEMBLY"/\1#gi" | xargs echo)
 fi;
-export GATK_REALIGNMENT_KNWON_OPTIONS
+export GATK_REALIGNMENT_KNOWN_OPTIONS
 
 # GATK BAM Recalibration
 # Recalibration is a process of correcting base quality scores. It is recommended to perform recalibration before variant calling to improve the accuracy of variant calling.
@@ -1541,12 +1541,12 @@ export GATK_REALIGNMENT_KNWON_OPTIONS
 # This option is used with the GATK4 BaseRecalibrator command to identify covariates to recalibrate, and with the GATK4 PrintReads command to perform recalibration.
 # The VCF files include SNPs and can be the same as for VCF recalibration (see VARIANTRECALIBRATION_SNP_RESOURCES).
 # Exemple:
-# - GATK_RECALIBRATION_KNWON_OPTIONS="--known-sites $VCFDBSNP"
+# - GATK_RECALIBRATION_KNOWN_OPTIONS="--known-sites $VCFDBSNP"
 # default:
-if [ -z "$GATK_RECALIBRATION_KNWON_OPTIONS" ]; then
-	GATK_RECALIBRATION_KNWON_OPTIONS=$(echo -e "$VARIANTRECALIBRATION_SNP_RESOURCES" | sed "s#-resource.* \(.*\)#--known-sites "$DBFOLDER"/gatk/current/"$ASSEMBLY"/\1#gi" | xargs echo)
+if [ -z "$GATK_RECALIBRATION_KNOWN_OPTIONS" ]; then
+	GATK_RECALIBRATION_KNOWN_OPTIONS=$(echo -e "$VARIANTRECALIBRATION_SNP_RESOURCES" | sed "s#-resource.* \(.*\)#--known-sites "$DBFOLDER"/gatk/current/"$ASSEMBLY"/\1#gi" | xargs echo)
 fi;
-export GATK_RECALIBRATION_KNWON_OPTIONS
+export GATK_RECALIBRATION_KNOWN_OPTIONS
 
 
 
