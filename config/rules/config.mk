@@ -80,14 +80,16 @@ PICARD_UNALIGNED_NAME_FLAGS?=-LIBRARY_NAME 001 -PLATFORM ILLUMINA -PLATFORM_UNIT
 # DATABASES
 DBFOLDER?=/STARK/databases
 VCFDBSNP?=$(DBFOLDER)/snp138.vcf.gz
-VCFDBSNP137VCF?=$(DBFOLDER)/dbsnp_137.hg19.vcf
-VCF1000G?=$(DBFOLDER)/1000G_phase1.indels.hg19.vcf
-VCFMILLS1000G?=$(DBFOLDER)/Mills_and_1000G_gold_standard.indels.hg19.sites.vcf
-COSMIC?=$(DBFOLDER)/COSMIC.CodingMuts.vcf
-KNOWN_ALLELES?=$(VCFMILLS1000G)
-HAPMAP?=$(DBFOLDER)/hapmap_3.3.hg19.sites.vcf
-OMNI?=$(DBFOLDER)/1000G_omni2.5.hg19.vcf
-PHASE1_1000G?=$(DBFOLDER)/1000G_phase1.snps.high_confidence.hg19.sites.vcf
+VCFDBSNP_WITH_GATK?=$(shell if (( $(USE_VCFDBSNP_WITH_GATK) )); then echo "--dbsnp=$(VCFDBSNP)"; fi;)
+KNOWN_SITES?=$(VCFDBSNP)
+# VCFDBSNP137VCF?=$(DBFOLDER)/dbsnp_137.hg19.vcf
+# VCF1000G?=$(DBFOLDER)/1000G_phase1.indels.hg19.vcf
+# VCFMILLS1000G?=$(DBFOLDER)/Mills_and_1000G_gold_standard.indels.hg19.sites.vcf
+# COSMIC?=$(DBFOLDER)/COSMIC.CodingMuts.vcf
+# KNOWN_ALLELES?=$(VCFMILLS1000G)
+# HAPMAP?=$(DBFOLDER)/hapmap_3.3.hg19.sites.vcf
+# OMNI?=$(DBFOLDER)/1000G_omni2.5.hg19.vcf
+# PHASE1_1000G?=$(DBFOLDER)/1000G_phase1.snps.high_confidence.hg19.sites.vcf
 
 # HOWARD
 HOWARD_CONFIG_OPTIONS?=--config=$(HOWARD_CONFIG) --threads=$(THREADS) --verbosity=DEBUG

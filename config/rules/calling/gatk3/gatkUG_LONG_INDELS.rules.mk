@@ -39,7 +39,12 @@ GATKUG_LONG_INDELS_FLAGS= -nct $(THREADS_GATKUG_LONG_INDELS) -glm INDEL \
 		-minIndelCnt 2 \
 		-deletions 0.01 \
 		-baq OFF \
-		-stand_call_conf 10 -dfrac $(DFRAC_UG_LONG_INDELS) --dbsnp $(VCFDBSNP) -mbq $(MBQ_UG_LONG_INDELS) -rf BadCigar -dt NONE \
+		-stand_call_conf 10 \
+		-dfrac $(DFRAC_UG_LONG_INDELS) \
+		$(VCFDBSNP_WITH_GATK) \
+		-mbq $(MBQ_UG_LONG_INDELS) \
+		-rf BadCigar \
+		-dt NONE \
 		-allowPotentiallyMisencodedQuals
 
 %.gatkUG_LONG_INDELS$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed.interval_list

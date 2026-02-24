@@ -19,7 +19,13 @@ MINPRUNING_GATK4_MUTECT2_RNASEQ?=20
 MAXREADS_GATK4_MUTECT2_RNASEQ?=1000
 DPMIN_MUTECT2_RNASEQ?=30
 
-GATK4_MUTECT2_RNASEQ_FLAGS_SHARED?=--disable-read-filter MateOnSameContigOrNoMappedMateReadFilter --max-reads-per-alignment-start $(MAXREADS_GATK4_MUTECT2_RNASEQ) --dont-use-soft-clipped-bases true --min-pruning $(MINPRUNING_GATK4_MUTECT2_RNASEQ) --callable-depth $(DPMIN_MUTECT2_RNASEQ) --verbosity ERROR --native-pair-hmm-threads $(THREADS_GATK4_MUTECT2_RNASEQ)
+GATK4_MUTECT2_RNASEQ_FLAGS_SHARED?=--disable-read-filter MateOnSameContigOrNoMappedMateReadFilter \
+	--max-reads-per-alignment-start $(MAXREADS_GATK4_MUTECT2_RNASEQ) \
+	--dont-use-soft-clipped-bases true \
+	--min-pruning $(MINPRUNING_GATK4_MUTECT2_RNASEQ) \
+	--callable-depth $(DPMIN_MUTECT2_RNASEQ) \
+	--verbosity ERROR \
+	--native-pair-hmm-threads $(THREADS_GATK4_MUTECT2_RNASEQ)
 
 
 %.MuTect2_RNASEQ$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed.interval_list

@@ -16,9 +16,11 @@
 # FLAGS and Options
 THREADS_RTC?=$(THREADS_BY_SAMPLE)
 GATKRealignerTargetCreatorFLAGS= -nt $(THREADS_RTC) #-nt 8
-GATKRealignerTargetCreatorOptions= -known $(VCFDBSNP) -allowPotentiallyMisencodedQuals
+#GATKRealignerTargetCreatorOptions= -known $(VCFDBSNP) -allowPotentiallyMisencodedQuals
+GATKRealignerTargetCreatorOptions= $(GATK_REALIGNMENT_KNWON_OPTIONS) -allowPotentiallyMisencodedQuals
+
 GATKIndelRealignerFLAGS=
-GATKIndelRealignerOptions= -known $(VCFDBSNP) --LODThresholdForCleaning 2.0 -compress 1 --maxReadsForRealignment 50000 --maxReadsForConsensuses 120 --maxReadsInMemory 2000000 --maxConsensuses 30 -model USE_READS -allowPotentiallyMisencodedQuals -dfrac 1
+GATKIndelRealignerOptions= $(GATK_REALIGNMENT_KNWON_OPTIONS) --LODThresholdForCleaning 2.0 -compress 1 --maxReadsForRealignment 50000 --maxReadsForConsensuses 120 --maxReadsInMemory 2000000 --maxConsensuses 30 -model USE_READS -allowPotentiallyMisencodedQuals -dfrac 1 --filter_reads_with_N_cigar
 
 # JAVA MEMORY REALIGNMENT
 JAVA_MEMORY_REALIGNMENT_MAX?=4
@@ -43,7 +45,7 @@ JAVA_FLAGS_REALIGNMENT=-Xmx$(JAVA_MEMORY_REALIGNMENT)g $(JAVA_FLAGS_OTHER_PARAM)
 			grep "^$$chr:" $*.for_realignment.RealignerTargetCreator.intervals > $*.for_realignment.RealignerTargetCreator.$$chr.intervals; \
 			if [ -s $*.for_realignment.RealignerTargetCreator.$$chr.intervals ]; then \
 				echo "$*.for_realignment.$$chr.bam: $*.realignment.bam" >> $*.realignment1.mk; \
-				echo "	$(JAVA8) $(JAVA_FLAGS_REALIGNMENT) -jar $(GATK3) $(GATKIndelRealignerFLAGS) --analysis_type IndelRealigner --reference_sequence $(GENOME) --input_file $*.realignment.bam --out $*.for_realignment.$$chr.bam --interval_padding $(INTERVAL_PADDING) --targetIntervals $*.for_realignment.RealignerTargetCreator.$$chr.intervals $(GATKIndelRealignerOptions) --intervals $$chr" >> $*.realignment1.mk; \
+				echo "	$(JAVA8) $(JAVA_FLAGS_REALIGNMENT) -jar $(GATK3) $(GATKIndelRealignerFLAGS) $(GATKIndelRealignerOptions) --analysis_type IndelRealigner --reference_sequence $(GENOME) --input_file $*.realignment.bam --out $*.for_realignment.$$chr.bam --interval_padding $(INTERVAL_PADDING) --targetIntervals $*.for_realignment.RealignerTargetCreator.$$chr.intervals --intervals $$chr" >> $*.realignment1.mk; \
 				echo -n " $*.for_realignment.$$chr.bam " >> $*.realignment2.mk; \
 			else \
 				echo "#[INFO] No intervals to realign on chromosome $$chr for $*:"; \

@@ -15,22 +15,18 @@
 
 %.bam.grp: %.bam %.bam.bai %.from_manifest.interval_list
 	# Generate BaseRecalibrator grp file for recalibration
-	#$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) -T BaseRecalibrator -R $(GENOME) -knownSites $(VCFDBSNP) -I $< -o $@ -L $*.from_manifest.interval_list -nct $(THREADS_BY_SAMPLE) -U -compress 1
-	#$(JAVA8) $(JAVA_FLAGS) -XX:ParallelGCThreads=2 -jar $(GATK3) -T BaseRecalibrator -R $(GENOME) -knownSites $(VCFDBSNP) -I $< -o $@ -L $*.from_manifest.interval_list -U -compress 1
 	$(JAVA) $(JAVA_FLAGS_GATK4) -XX:ParallelGCThreads=2 -jar $(GATK4) \
 		BaseRecalibrator \
 		-I $< \
 		-R $(GENOME) \
-		--known-sites $(VCFDBSNP) \
+		$(GATK_RECALIBRATION_KNWON_OPTIONS) \
 		--use-original-qualities \
 		-L $*.from_manifest.interval_list \
 		-O $@
-		
-	
+
 
 %.bam: %.recalibration.bam %.recalibration.bam.bai %.recalibration.bam.grp 
 	# Recalibrate BAM with BaseRecalibrator grp file
-	#$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) -T PrintReads -R $(GENOME) -I $< -BQSR $*.recalibration.bam.grp -o $@ -nct $(THREADS_BY_SAMPLE) -U -EOQ
 	$(JAVA) $(JAVA_FLAGS_GATK4) -XX:ParallelGCThreads=$(THREADS_BY_SAMPLE) -jar $(GATK4) \
 		ApplyBQSR \
 		-R $(GENOME) \

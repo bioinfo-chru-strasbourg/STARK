@@ -37,7 +37,12 @@ GATKUG_HEMATOLOGY_FLAGS= -nct $(THREADS_GATKUG_HEMATOLOGY) -glm BOTH \
 		-minIndelCnt 2 \
 		-deletions 0.01 \
 		-baq OFF \
-		-stand_call_conf 10 -dfrac $(DFRAC_UG_HEMATOLOGY) --dbsnp $(VCFDBSNP) -mbq $(MBQ_UG_HEMATOLOGY) -rf BadCigar -dt NONE \
+		-stand_call_conf 10 \
+		-dfrac $(DFRAC_UG_HEMATOLOGY) \
+		$(VCFDBSNP_WITH_GATK) \
+		-mbq $(MBQ_UG_HEMATOLOGY) \
+		-rf BadCigar \
+		-dt NONE \
 		-allowPotentiallyMisencodedQuals
 
 %.gatkUG_HEMATOLOGY$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed.interval_list

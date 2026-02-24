@@ -42,7 +42,12 @@ GATKUG_ONCOGENET_FLAGS= -nct $(GATKUG_THREADS_ONCOGENET) -glm BOTH \
 		-minIndelCnt $(minIndelCnt_ONCOGENET) \
 		-deletions $(deletions_ONCOGENET) \
 		-baq OFF \
-		-stand_call_conf $(STAND_CALL_CONF_ONCOGENET) -dfrac $(DFRAC_UG_ONCOGENET) --dbsnp $(VCFDBSNP) -mbq $(MBQ_UG_ONCOGENET) -rf BadCigar -dt NONE
+		-stand_call_conf $(STAND_CALL_CONF_ONCOGENET) \
+		-dfrac $(DFRAC_UG_ONCOGENET) \
+		$(VCFDBSNP_WITH_GATK) \
+		-mbq $(MBQ_UG_ONCOGENET) \
+		-rf BadCigar \
+		-dt NONE
 
 %.gatkUG_ONCOGENET$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed.interval_list
 	$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) $(GATKUG_ONCOGENET_FLAGS) \

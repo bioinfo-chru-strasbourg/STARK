@@ -34,7 +34,7 @@ DPMIN_GATKUG=4
 
 # GATKUG Flags
 GATKUG_FLAGS=$(GATKUG_FLAGS_SHARED) \
-	--dbsnp $(VCFDBSNP) \
+	$(VCFDBSNP_WITH_GATK) \
 	--genotype_likelihoods_model BOTH \
 	--read_filter BadCigar \
 	--baq OFF \

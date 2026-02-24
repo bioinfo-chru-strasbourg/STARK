@@ -22,15 +22,15 @@ STAR_FLAGS?=--outSAMtype BAM SortedByCoordinate --chimOutJunctionFormat 1 --outS
 %.star.star_raw.bam: %.R1$(POST_SEQUENCING).fastq.gz %.R2$(POST_SEQUENCING).fastq.gz
 	echo "ID:1\tPL:ILLUMINA\tPU:PU\tLB:001\tSM:$(*F)" > $@.RG_STAR;
 	$(PYTHON3) $(STARK_FOLDER_BIN)/functions.py launch \
-					--cmd "$(STAR) --genomeDir  $(GENOME).star.idx \
-							--runThreadN $(THREADS_BY_SAMPLE) \
-							--readFilesIn $*.R1$(POST_SEQUENCING).fastq.gz $*.R2$(POST_SEQUENCING).fastq.gz \
-							--readFilesCommand zcat \
-							--outFileNamePrefix $@. \
-							--outSAMattrRGline $$(cat $@.RG_STAR) $(STAR_FLAGS)" \
-					--lockfile_prefix $$(echo $@ | xargs -0 dirname | xargs -0 dirname)/lockfile. \
-					--target $@ \
-					--max_jobs $(MAX_CONCURRENT_ALIGNMENTS_STAR);
+		--cmd "$(STAR) --genomeDir  $(GENOME).star.idx \
+			--runThreadN $(THREADS_BY_SAMPLE) \
+			--readFilesIn $*.R1$(POST_SEQUENCING).fastq.gz $*.R2$(POST_SEQUENCING).fastq.gz \
+			--readFilesCommand zcat \
+			--outFileNamePrefix $@. \
+			--outSAMattrRGline $$(cat $@.RG_STAR) $(STAR_FLAGS)" \
+		--lockfile_prefix $$(echo $@ | xargs -0 dirname | xargs -0 dirname)/lockfile. \
+		--target $@ \
+		--max_jobs $(MAX_CONCURRENT_ALIGNMENTS_STAR);
 	# fix issue with base recalibration and rename output
 	$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) AddOrReplaceReadGroups $(PICARD_FLAGS) \
 		-I $@.Aligned.sortedByCoord.out.bam \

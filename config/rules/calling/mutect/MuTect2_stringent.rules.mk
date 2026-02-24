@@ -18,7 +18,13 @@ DPMIN_MUTECT2_STRINGENT?=30
 VAF_MUTECT2_STRINGENT?=0.01
 VAF_MUTECT2_STRINGENT_HOM?=0.80
 
-GATK4_MUTECT2_STRINGENT_FLAGS_SHARED?=--disable-read-filter MateOnSameContigOrNoMappedMateReadFilter --max-reads-per-alignment-start $(MAXREADS_GATK4_MUTECT2_STRINGENT) --dont-use-soft-clipped-bases true --min-pruning $(MINPRUNING_GATK4_MUTECT2_STRINGENT) --callable-depth $(DPMIN_MUTECT2_STRINGENT) --verbosity ERROR --native-pair-hmm-threads $(THREADS_GATK4_MUTECT2_STRINGENT)
+GATK4_MUTECT2_STRINGENT_FLAGS_SHARED?=--disable-read-filter MateOnSameContigOrNoMappedMateReadFilter \
+	--max-reads-per-alignment-start $(MAXREADS_GATK4_MUTECT2_STRINGENT) \
+	--dont-use-soft-clipped-bases true \
+	--min-pruning $(MINPRUNING_GATK4_MUTECT2_STRINGENT) \
+	--callable-depth $(DPMIN_MUTECT2_STRINGENT) \
+	--verbosity ERROR \
+	--native-pair-hmm-threads $(THREADS_GATK4_MUTECT2_STRINGENT)
 
 
 %.MuTect2_stringent$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed.interval_list

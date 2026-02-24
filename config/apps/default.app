@@ -481,6 +481,29 @@ GENCORE_QUAL_THREESHOLD=""
 GENCORE_COVERAGE_SAMPLING=""
 
 
+### GATK CALLING
+
+# VCF DBSNP for GATK Calling and annotation
+# dbSNP database as VCF is used to annotate variant ID in ID VCF field and to provide known variants for GATK calling and annotation (if any)
+# https://gatk.broadinstitute.org/hc/en-us/articles/360046786692-VariantAnnotator#--dbsnp
+# This option allow GATK to use the VCF DBSNP for calling and annotation, if the file is available and not empty. If not, GATK will be used without DBSNP for calling and annotation.
+# See rules that use GATK for calling and annotation (e.g. "gatk_calling", "gatk_annotation", "gatk_calling_annotation") for more information about the use of VCF DBSNP for GATK calling and annotation.
+# See VCFDBSNP variable for the VCF DBSNP file path (in databases.app)
+# Default False
+# Example: 
+# - USE_VCFDBSNP_WITH_GATK=1
+# - USE_VCFDBSNP_WITH_GATK=0
+USE_VCFDBSNP_WITH_GATK=0
+
+# VCF DBSNP path
+# Path to the dbSNP database as VCF used for GATK calling and annotation (if any)
+# This file need to be available and not empty for GATK to use it for calling and annotation, if USE_VCFDBSNP_WITH_GATK=1
+# This variable is automatically defined in default configuration in databases.app
+# Default: "" (corresponding to default VCF DBSNP defined in databases.app, depending on ASSEMBLY)
+# Example: VCF_DBSNP_GATK_CALLING=$FOLDER_DATABASES/dbsnp_138.hg19.vcf.gz
+VCFDBSNP=
+
+
 ### CRAM
 
 # CRAM OPTIONS
@@ -797,6 +820,33 @@ VARIANTRECALIBRATOR_VARIANTFILTRATION_SNP_FILTER_OPTION=$VARIANTFILTRATION_SNP_F
 VARIANTRECALIBRATOR_VARIANTFILTRATION_SNP_FILTER_EXPRESSION_OPTION=$VARIANTFILTRATION_SNP_FILTER_EXPRESSION_OPTION
 VARIANTRECALIBRATOR_VARIANTFILTRATION_INDEL_FILTER_OPTION=$VARIANTFILTRATION_INDEL_FILTER_OPTION
 VARIANTRECALIBRATOR_VARIANTFILTRATION_INDEL_FILTER_EXPRESSION_OPTION=$VARIANTFILTRATION_INDEL_FILTER_EXPRESSION_OPTION
+
+
+
+# GATK BAM Realignment and Recalibration
+#####################################
+
+# GATK BAM Realignment
+# Realignment is a process of correcting misalignments around indels. It is recommended to perform realignment before variant calling, especially for indel calling, to improve the accuracy of variant calling (not for GATK4 Haplotype Caller and MuTect2).
+# This option allow GATK to perform realignment, if the file is available and not empty. If not, GATK will be used without realignment.
+# Realignemnt is performed with GATK3 RealignerTargetCreator and IndelRealigner, and not performed with GATK4 (GATK4 Haplotype Caller and MuTect2 perform local realignment during calling, so GATK4 do not include Realignemnt tools).
+# This option is used with the GATK3 RealignerTargetCreator command to identify regions to realign, and with the GATK3 IndelRealigner command to perform realignment.
+# The VCF files include Indels and can be the same as for VCF recalibration (see VARIANTRECALIBRATION_INDEL_RESOURCES).
+# Exemple:
+# - GATK_REALIGNMENT_KNWON_OPTIONS="--known $VCFDBSNP"
+# default:
+GATK_REALIGNMENT_KNWON_OPTIONS=$(echo -e "$VARIANTRECALIBRATION_INDEL_RESOURCES" | sed "s#-resource.* \(.*\)#-known "$DBFOLDER"/gatk/current/"$ASSEMBLY"/\1#gi" | xargs echo)
+
+# GATK BAM Recalibration
+# Recalibration is a process of correcting base quality scores. It is recommended to perform recalibration before variant calling to improve the accuracy of variant calling.
+# This option allow GATK to perform recalibration, if the file is available and not empty. If not, GATK will be used without recalibration.
+# Recalibration is performed with GATK4 BaseRecalibrator and PrintReads
+# This option is used with the GATK4 BaseRecalibrator command to identify covariates to recalibrate, and with the GATK4 PrintReads command to perform recalibration.
+# The VCF files include SNPs and can be the same as for VCF recalibration (see VARIANTRECALIBRATION_SNP_RESOURCES).
+# Exemple:
+# - GATK_RECALIBRATION_KNWON_OPTIONS="--known-sites $VCFDBSNP"
+# default:
+GATK_RECALIBRATION_KNWON_OPTIONS=$(echo -e "$VARIANTRECALIBRATION_SNP_RESOURCES" | sed "s#-resource.* \(.*\)#--known-sites "$DBFOLDER"/gatk/current/"$ASSEMBLY"/\1#gi" | xargs echo)
 
 
 

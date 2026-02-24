@@ -49,7 +49,7 @@ GATK3HC_FLAGS_SHARED=--baq OFF --read_filter BadCigar --allow_potentially_misenc
 # GATK3HC Flags
 GATK3HC_FLAGS=$(GATK3HC_FLAGS_SHARED) \
 	--num_cpu_threads_per_data_thread $(THREADS_BY_CALLER) \
-	--dbsnp $(VCFDBSNP) \
+	$(VCFDBSNP_WITH_GATK) \
 	--standard_min_confidence_threshold_for_calling 10 \
 	--downsample_to_fraction 1 \
 	--maxReadsInRegionPerSample 250 \

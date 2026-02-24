@@ -42,7 +42,12 @@ GATKUG_GENOME_FLAGS= -nct $(GATKUG_THREADS_GENOME) -glm BOTH \
 		-minIndelCnt $(minIndelCnt_UG_GENOME) \
 		-deletions $(deletions_UG_GENOME) \
 		-baq OFF \
-		-stand_call_conf $(STAND_CALL_CONF_UG_GENOME) -dfrac $(DFRAC_UG_GENOME) --dbsnp $(VCFDBSNP) -mbq $(MBQ_UG_GENOME) -rf BadCigar -dt NONE
+		-stand_call_conf $(STAND_CALL_CONF_UG_GENOME) \
+		-dfrac $(DFRAC_UG_GENOME) \
+		$(VCFDBSNP_WITH_GATK) \
+		-mbq $(MBQ_UG_GENOME) \
+		-rf BadCigar \
+		-dt NONE
 
 %.gatkUG_GENOME$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed.interval_list
 	$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) $(GATKUG_GENOME_FLAGS) \

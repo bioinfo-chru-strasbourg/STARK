@@ -37,7 +37,12 @@ GATKUG_SOMATIC_FLAGS= -nct $(THREADS_GATKUG_SOMATIC) -glm BOTH \
 		-minIndelCnt 2 \
 		-deletions 0.01 \
 		-baq OFF \
-		-stand_call_conf 10 -dfrac $(DFRAC_UG_SOMATIC) --dbsnp $(VCFDBSNP) -mbq $(MBQ_UG_SOMATIC) -rf BadCigar -dt NONE \
+		-stand_call_conf 10 \
+		-dfrac $(DFRAC_UG_SOMATIC) \
+		$(VCFDBSNP_WITH_GATK) \
+		-mbq $(MBQ_UG_SOMATIC) \
+		-rf BadCigar \
+		-dt NONE \
 		-allowPotentiallyMisencodedQuals
 
 %.gatkUG_SOMATIC$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed.interval_list

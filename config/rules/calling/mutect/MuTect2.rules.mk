@@ -16,7 +16,13 @@ MINPRUNING_GATK4_MUTECT2?=20
 MAXREADS_GATK4_MUTECT2?=1000
 DPMIN_MUTECT2?=30
 
-GATK4_MUTECT2_FLAGS_SHARED?=--disable-read-filter MateOnSameContigOrNoMappedMateReadFilter --max-reads-per-alignment-start $(MAXREADS_GATK4_MUTECT2) --dont-use-soft-clipped-bases true --min-pruning $(MINPRUNING_GATK4_MUTECT2) --callable-depth $(DPMIN_MUTECT2) --verbosity ERROR --native-pair-hmm-threads $(THREADS_GATK4_MUTECT2)
+GATK4_MUTECT2_FLAGS_SHARED?=--disable-read-filter MateOnSameContigOrNoMappedMateReadFilter \
+	--max-reads-per-alignment-start $(MAXREADS_GATK4_MUTECT2) \
+	--dont-use-soft-clipped-bases true \
+	--min-pruning $(MINPRUNING_GATK4_MUTECT2) \
+	--callable-depth $(DPMIN_MUTECT2) \
+	--verbosity ERROR \
+	--native-pair-hmm-threads $(THREADS_GATK4_MUTECT2)
 
 
 %.MuTect2$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed.interval_list

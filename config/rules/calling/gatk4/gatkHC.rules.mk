@@ -30,7 +30,7 @@
 
 # GATKHC Flags
 GATKHC_FLAGS=--interval-padding $(INTERVAL_PADDING) \
-	--dbsnp $(VCFDBSNP) \
+	$(VCFDBSNP_WITH_GATK) \
 	--native-pair-hmm-threads $(THREADS_BY_CALLER) \
 	--min-base-quality-score 17 \
 	--min-pruning 4 \

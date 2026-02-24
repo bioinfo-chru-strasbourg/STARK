@@ -37,16 +37,21 @@ export GENOME
 export DICT
 
 # POST ALIGNMENT STEPS 
-# without dbSNP because of not same contigs
-POST_ALIGNMENT_STEPS="sorting splitncigar compress"
+# POST_ALIGNMENT_STEPS="sorting markduplicates realignment recalibration compress" # DEFAULT
+# No recalibration because of discordance between RNA-Seq contigs and known sites VCF contigs (such as dbSNP)
+POST_ALIGNMENT_STEPS="sorting splitncigar realignment compress"
 
 # PIPELINES
-# Callers without dbSNP because of not same contigs (e.g. gatkHC, MuTect2)
-# Use specific callers such as gatkHC_RNASEQ and MuTect2_RNASEQ with specific parameters for RNA-Seq data (e.g. no dbSNP, no panel of normals, etc.)
-PIPELINES="star.Arriba.howard star.STARFusion.howard star.gatkHC_RNASEQ.howard star.outLyzer.howard"
+# Beware of dbSNP database because of not same contigs between assembly possible (e.g. for gatkHC, MuTect2)
+# See USE_VCFDBSNP_WITH_GATK and VCFDBSNP variables
+PIPELINES="star.Arriba.howard star.STARFusion.howard star.gatkHC.howard"
 
+# Not use dbSNP with GATK because of not same contigs between assembly possible
+USE_VCFDBSNP_WITH_GATK=0
 
-POST_CALLING_MERGING_STEPS="sorting"
+# POST_CALLING_MERGING_STEPS
+# variantrecalibration failed because of not deal with structural variants
+POST_CALLING_MERGING_STEPS="sorting normalization"
 
 # COVERAGE CRITERIA (default "1,30")
 # For gene coverage metrics
@@ -64,15 +69,15 @@ DEPTH_COVERAGE_THRESHOLD="1" # threshold percentage of bases over the DP thresho
 
 # HOWARD ANNOTATION/PRIOTITIZATION/TRANSLATION CONFIGURATION
 
-# ANNOTATION
-# Default annotation with HOWARD for intermediate VCF (for each caller) used by default with annotation rule "howard"
-HOWARD_ANNOTATION="null"
-# Default annotation with HOWARD for minimal VCF annotation (rule howard_minimal)
-HOWARD_ANNOTATION_MINIMAL="null"
-# Default annotation with HOWARD for report
-HOWARD_ANNOTATION_REPORT="null"
-# Default annotation with HOWARD for whole analysis
-HOWARD_ANNOTATION_ANALYSIS="null" # no more annotation
+# # ANNOTATION
+# # Default annotation with HOWARD for intermediate VCF (for each caller) used by default with annotation rule "howard"
+# HOWARD_ANNOTATION="null"
+# # Default annotation with HOWARD for minimal VCF annotation (rule howard_minimal)
+# HOWARD_ANNOTATION_MINIMAL="null"
+# # Default annotation with HOWARD for report
+# HOWARD_ANNOTATION_REPORT="null"
+# # Default annotation with HOWARD for whole analysis
+# HOWARD_ANNOTATION_ANALYSIS="null" # no more annotation
 
 # CALCULATION
 # Default calculation with HOWARD for all VCF/pipelines
@@ -87,7 +92,8 @@ HOWARD_ANNOTATION_ANALYSIS="null" # no more annotation
 METRICS_SNPEFF=0
 
 # Report Sections
-REPORT_SECTIONS="results_summary sequencing_mapping depth coverage variant_stats annex_coverage annex_depth annex_genes_coverage"
+REPORT_SECTIONS="ALL"
+#REPORT_SECTIONS="results_summary sequencing_mapping depth coverage variant_stats annex_coverage annex_depth annex_genes_coverage"
 
 # REPOSITORY
 #file patterns to exclude

@@ -33,7 +33,14 @@ MINPRUNING_SOMATIC?=20
 THREADS_GATKHC_SOMATIC?=$(THREADS_BY_CALLER)
 maxReadsInRegionPerSample_SOMATIC=1000
 MBQ_HC_SOMATIC=17
-GATKHC_SOMATIC_FLAGS= -nct $(THREADS_GATKHC_SOMATIC) -stand_call_conf 10 -dfrac $(DFRAC_HC_SOMATIC) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample_SOMATIC) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC_SOMATIC) -minPruning $(MINPRUNING_SOMATIC)  $(GATK3HC_FLAGS_SHARED)
+GATKHC_SOMATIC_FLAGS= -nct $(THREADS_GATKHC_SOMATIC) \
+	-stand_call_conf 10 \
+	-dfrac $(DFRAC_HC_SOMATIC) \
+	--maxReadsInRegionPerSample $(maxReadsInRegionPerSample_SOMATIC) \
+	$(VCFDBSNP_WITH_GATK) \
+	-mbq $(MBQ_HC_SOMATIC) \
+	-minPruning $(MINPRUNING_SOMATIC) \
+	$(GATK3HC_FLAGS_SHARED)
 
 %.gatkHC_SOMATIC$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed.interval_list
 	$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) $(GATKHC_SOMATIC_FLAGS) \

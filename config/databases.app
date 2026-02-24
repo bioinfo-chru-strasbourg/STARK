@@ -160,7 +160,10 @@ DATABASES_CONFIG_LIST=$DATABASES_CONFIG_LIST" DBSNP_DATABASES"
 DBFOLDER_DBSNP=$DBFOLDER/dbsnp
 #export VCFDBSNP=$DBFOLDER_DBSNP/current/$ASSEMBLY/dbsnp.$DBSNP_VERSION.vcf.gz
 #export VCFDBSNP=$DBFOLDER_DBSNP/current/$ASSEMBLY/$DBSNP_VERSION/dbsnp.vcf.gz
-export VCFDBSNP=$DBFOLDER_DBSNP/current/$ASSEMBLY/$DBSNP_VERSION_DOWNLOAD/dbsnp.b$DBSNP_BUILDID.vcf.gz
+if [ -z "$VCFDBSNP" ]; then
+	VCFDBSNP=$DBFOLDER_DBSNP/current/$ASSEMBLY/$DBSNP_VERSION_DOWNLOAD/dbsnp.b$DBSNP_BUILDID.vcf.gz
+fi;
+export VCFDBSNP #=$DBFOLDER_DBSNP/current/$ASSEMBLY/$DBSNP_VERSION_DOWNLOAD/dbsnp.b$DBSNP_BUILDID.vcf.gz
 
 if [ ! -e $VCFDBSNP ]; then
 	echo "#[WARNING] No VCFDBSNP '$VCFDBSNP' in the database. Calling step impossible. Please check '$DBFOLDER' folder or configuration file" >>/dev/stderr

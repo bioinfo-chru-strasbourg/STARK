@@ -42,7 +42,12 @@ GATKUG_EXOME_FLAGS= -nct $(GATKUG_THREADS_EXOME) -glm BOTH \
 		-minIndelCnt $(minIndelCnt_UG_EXOME) \
 		-deletions $(deletions_UG_EXOME) \
 		-baq OFF \
-		-stand_call_conf $(STAND_CALL_CONF_UG_EXOME) -dfrac $(DFRAC_UG_EXOME) --dbsnp $(VCFDBSNP) -mbq $(MBQ_UG_EXOME) -rf BadCigar -dt NONE
+		-stand_call_conf $(STAND_CALL_CONF_UG_EXOME) \
+		-dfrac $(DFRAC_UG_EXOME) \
+		$(VCFDBSNP_WITH_GATK) \
+		-mbq $(MBQ_UG_EXOME) \
+		-rf BadCigar \
+		-dt NONE
 
 %.gatkUG_EXOME$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed.interval_list
 	$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) $(GATKUG_EXOME_FLAGS) \

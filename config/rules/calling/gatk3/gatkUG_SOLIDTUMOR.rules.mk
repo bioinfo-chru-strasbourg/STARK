@@ -37,7 +37,12 @@ GATKUG_SOLIDTUMOR_FLAGS= -nct $(THREADS_GATKUG_SOLIDTUMOR) -glm BOTH \
 		-minIndelCnt 2 \
 		-deletions 0.01 \
 		-baq OFF \
-		-stand_call_conf 10 -dfrac $(DFRAC_UG_SOLIDTUMOR) --dbsnp $(VCFDBSNP) -mbq $(MBQ_UG_SOLIDTUMOR) -rf BadCigar -dt NONE \
+		-stand_call_conf 10 \
+		-dfrac $(DFRAC_UG_SOLIDTUMOR) \
+		$(VCFDBSNP_WITH_GATK) \
+		-mbq $(MBQ_UG_SOLIDTUMOR) \
+		-rf BadCigar \
+		-dt NONE \
 		-allowPotentiallyMisencodedQuals
 
 %.gatkUG_SOLIDTUMOR$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed.interval_list
