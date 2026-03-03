@@ -751,38 +751,41 @@ VARIANTFILTRATION_INVALIDATE_PREVIOUS_FILTERS=1
 # Variant Recalibrator SNP resources option (see documentation guide for more info)
 # These resources need to be available on STARK Databases folder for GATK
 # default:
+VARIANTRECALIBRATION_SNP_RESOURCES_DEFAULT_HG19="
+	-resource:hapmap,known=false,training=true,truth=true,prior=15.0 hapmap_3.3.hg19.sites.vcf.gz
+	-resource:omni,known=false,training=true,truth=true,prior=12.0 1000G_omni2.5.hg19.sites.vcf.gz
+	-resource:1000G,known=false,training=true,truth=false,prior=10.0 1000G_phase1.snps.high_confidence.hg19.sites.vcf.gz
+	-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.hg19.vcf.gz
+"
+VARIANTRECALIBRATION_SNP_RESOURCES_DEFAULT_HG38="
+	-resource:hapmap,known=false,training=true,truth=true,prior=15.0 hapmap_3.3.hg38.vcf.gz
+	-resource:omni,known=false,training=true,truth=true,prior=12.0 1000G_omni2.5.hg38.vcf.gz
+	-resource:1000G,known=false,training=true,truth=false,prior=10.0 1000G_phase1.snps.high_confidence.hg38.vcf.gz
+	-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.hg38.vcf.gz
+"
 if [ "$ASSEMBLY" == 'hg19' ]; then
-    VARIANTRECALIBRATION_SNP_RESOURCES="
-        -resource:hapmap,known=false,training=true,truth=true,prior=15.0 hapmap_3.3.hg19.sites.vcf.gz
-        -resource:omni,known=false,training=true,truth=true,prior=12.0 1000G_omni2.5.hg19.sites.vcf.gz
-        -resource:1000G,known=false,training=true,truth=false,prior=10.0 1000G_phase1.snps.high_confidence.hg19.sites.vcf.gz
-        -resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.hg19.vcf.gz
-    "
+    VARIANTRECALIBRATION_SNP_RESOURCES=$VARIANTRECALIBRATION_SNP_RESOURCES_DEFAULT_HG19
 fi;
 if [ "$ASSEMBLY" == 'hg38' ]; then
-    VARIANTRECALIBRATION_SNP_RESOURCES="
-        -resource:hapmap,known=false,training=true,truth=true,prior=15.0 hapmap_3.3.hg38.vcf.gz
-        -resource:omni,known=false,training=true,truth=true,prior=12.0 1000G_omni2.5.hg38.vcf.gz
-        -resource:1000G,known=false,training=true,truth=false,prior=10.0 1000G_phase1.snps.high_confidence.hg38.vcf.gz
-        -resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.hg38.vcf.gz
-    "
+    VARIANTRECALIBRATION_SNP_RESOURCES=$VARIANTRECALIBRATION_SNP_RESOURCES_DEFAULT_HG38
 fi;
-export VARIANTRECALIBRATION_SNP_RESOURCES
 
 # Variant Recalibrator INDEL resources option (see documentation guide for more info)
 # These resources need to be available on STARK Databases folder for GATK
 # default:
+VARIANTRECALIBRATION_INDEL_RESOURCES_DEFAULT_HG19="
+	-resource:mills,known=false,training=true,truth=true,prior=12.0 Mills_and_1000G_gold_standard.indels.hg19.sites.vcf.gz
+	-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.hg19.vcf.gz
+"
+VARIANTRECALIBRATION_INDEL_RESOURCES_DEFAULT_HG38="
+	-resource:mills,known=false,training=true,truth=true,prior=12.0 Mills_and_1000G_gold_standard.indels.hg38.vcf.gz
+	-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.hg38.vcf.gz
+"
 if [ "$ASSEMBLY" == 'hg19' ]; then
-    VARIANTRECALIBRATION_INDEL_RESOURCES="
-        -resource:mills,known=false,training=true,truth=true,prior=12.0 Mills_and_1000G_gold_standard.indels.hg19.sites.vcf.gz
-        -resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.hg19.vcf.gz
-    "
+    VARIANTRECALIBRATION_INDEL_RESOURCES=$VARIANTRECALIBRATION_INDEL_RESOURCES_DEFAULT_HG19
 fi;
 if [ "$ASSEMBLY" == 'hg38' ]; then
-    VARIANTRECALIBRATION_INDEL_RESOURCES="
-        -resource:mills,known=false,training=true,truth=true,prior=12.0 Mills_and_1000G_gold_standard.indels.hg38.vcf.gz
-        -resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.hg38.vcf.gz
-    "
+    VARIANTRECALIBRATION_INDEL_RESOURCES=$VARIANTRECALIBRATION_INDEL_RESOURCES_DEFAULT_HG38
 fi;
 
 # Variant Recalibrator SNP annotations option (see documentation guide for more info)

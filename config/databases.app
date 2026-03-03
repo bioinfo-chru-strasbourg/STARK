@@ -56,8 +56,11 @@ export ARRIBA_DATABASES
 DATABASES_CONFIG_LIST=$DATABASES_CONFIG_LIST" ARRIBA_DATABASES"
 
 # STAR Fusion (CTAT Lib)
-if [ $ASSEMBLY == "hg19" ] ; then CTAT_CURRENT="https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/GRCh37_gencode_v19_CTAT_lib_Mar012021.plug-n-play.tar.gz"; fi;
-if [ $ASSEMBLY == "hg38" ] ; then CTAT_CURRENT="https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/GRCh38_gencode_v37_CTAT_lib_Mar012021.plug-n-play.tar.gz"; fi;
+# if [ $ASSEMBLY == "hg19" ] ; then CTAT_CURRENT="https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/GRCh37_gencode_v19_CTAT_lib_Mar012021.plug-n-play.tar.gz"; fi;
+# if [ $ASSEMBLY == "hg38" ] ; then CTAT_CURRENT="https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/GRCh38_gencode_v37_CTAT_lib_Mar012021.plug-n-play.tar.gz"; fi;
+if [ $ASSEMBLY == "hg19" ] ; then CTAT_CURRENT="https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/GRCh37_gencode_v19_CTAT_lib_Mar012021.STAR_v2.7.11a.plug-n-play.tar.gz"; fi;
+if [ $ASSEMBLY == "hg38" ] ; then CTAT_CURRENT="https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/GRCh38_gencode_v44_CTAT_lib_Oct292023.plug-n-play.tar.gz"; fi;
+#if [ $ASSEMBLY == "hg38" ] ; then CTAT_CURRENT="https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/GRCh38_gencode_v22_CTAT_lib_Mar012021.STAR_v2.7.11a.plug-n-play.tar.gz"; fi;
 CTAT_PM="https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/__genome_libs_StarFv1.10/AnnotFilterRule.pm"
 export CTAT_CURRENT
 export CTAT_PM
@@ -138,7 +141,7 @@ export DBSNP_DATABASES
 
 # Version of DBSNP to download ex "b156"
 #DBSNP_VERSION_DOWNLOAD="b151"
-DBSNP_VERSION_DOWNLOAD="b153"
+DBSNP_VERSION_DOWNLOAD="b157"
 export DBSNP_VERSION_DOWNLOAD
 
 #--download-dbsnp-url-files='$DBSNP_URL_FILES'
@@ -147,13 +150,13 @@ export DBSNP_VERSION_DOWNLOAD
 
 # Version of DBSNP to use for GATK tools (realignement, recalibration, calling)
 # DBSNP_VERSION="b151"
-dbSNPBuildID="b151"
-DBSNP_VERSION="151"
+# dbSNPBuildID="b151"
+# DBSNP_VERSION="151"
 DBSNP_BUILDID="151"
 #dbSNPBuildID="b153"
 
-export DBSNP_VERSION
-export dbSNPBuildID
+# export DBSNP_VERSION
+# export dbSNPBuildID
 export DBSNP_BUILDID
 
 DATABASES_CONFIG_LIST=$DATABASES_CONFIG_LIST" DBSNP_DATABASES"

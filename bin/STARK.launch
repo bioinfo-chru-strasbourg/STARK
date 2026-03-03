@@ -1674,6 +1674,7 @@ for RUU in $RUN_UNIQ; do
 	echo "#[INFO] POST SEQUENCING           "$(echo $POST_SEQUENCING | tr "." "\n" | tac | tr "\n" " " )""
 	echo "#[INFO] POST ALIGNMENT            "$(echo $POST_ALIGNMENT | tr "." "\n" | tac | tr "\n" " " )""
 	echo "#[INFO] POST CALLING              "$(echo $POST_CALLING | tr "." "\n" | tac | tr "\n" " " )""
+	echo "#[INFO] POST CALLING MERGING      "$(echo $POST_CALLING_MERGING | tr "." "\n" | tac | tr "\n" " " )""
 	echo "#[INFO] POST ANNOTATION           "$(echo $POST_ANNOTATION | tr "." "\n" | tac | tr "\n" " " )""
 	echo "#[INFO] RESULTS                   $RESULTS"
 	echo "#[INFO] REPOSITORY                $REPOSITORY"
