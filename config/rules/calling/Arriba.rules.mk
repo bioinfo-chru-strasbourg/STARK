@@ -12,7 +12,7 @@
 	$(ARRIBA) \
 		-x $< \
 		-a $(GENOME) \
-		-g $(CTAT_DATABASES)/$(ASSEMBLY)/ref_annot.gtf \
+		-g $$(dirname $(GENOME_RNA))/ref_annot.gtf \
 		-k $$(ls $(ARRIBA_DATABASES)/$(ASSEMBLY)/known_fusions_$(ASSEMBLY)_*.tsv.gz) \
 		-b $$(ls $(ARRIBA_DATABASES)/$(ASSEMBLY)/blacklist_$(ASSEMBLY)_*.tsv.gz) \
 		-p $$(ls $(ARRIBA_DATABASES)/$(ASSEMBLY)/protein_domains_$(ASSEMBLY)_*.gff3) \
@@ -24,7 +24,7 @@
 	variantconvert convert \
 		-i $*.arriba.reports/$$(echo $(@F) | rev | cut -d"." -f4-  | rev).arriba.fusions.tsv \
 		-o $@ \
-		-c $(VARIANTCONVERT_CONFIGS)/$(ASSEMBLY)/arriba.stark.json
+		-c $(VARIANTCONVERT_CONFIGS)/$(ASSEMBLY)/arriba.json
 
 # -fi breakpoints \
 # -fo vcf \

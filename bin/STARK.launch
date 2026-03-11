@@ -1000,6 +1000,7 @@ for RUU in $RUN_UNIQ; do
 		THREADS_BY_CALLER=$( printf "%.0f" $(echo "scale=2;$THREADS_BY_SAMPLE/$NB_CALLERS" | bc))		# Number of threads for a caller's command
 		THREADS_BWA=$THREADS_BY_ALIGNER																	# NB of threads for BWA command
 		THREADS_RTC=$THREADS_BY_ALIGNER																	# NB of threads for GATK RealignerTargetCreator
+		THREADS_SAMTOOLS=$THREADS_BY_SAMPLE																# NB of threads for SAMTOOLS command
 	elif  [ "$ROUND" == "FLOOR" ]; then
 		THREADS_BY_SAMPLE=$(($THREADS/$NB_SAMPLE))					# Number of threads by sample
 		THREADS_BY_PIPELINE=$(($THREADS_BY_SAMPLE/$NB_PIPELINES))	# Number of threads for a pipeline's command
@@ -1007,6 +1008,7 @@ for RUU in $RUN_UNIQ; do
 		THREADS_BY_CALLER=$(($THREADS_BY_SAMPLE/$NB_CALLERS))		# Number of threads for a caller's command
 		THREADS_BWA=$THREADS_BY_ALIGNER								# NB of threads for BWA command
 		THREADS_RTC=$THREADS_BY_ALIGNER								# NB of threads for GATK RealignerTargetCreator
+		THREADS_SAMTOOLS=$THREADS_BY_SAMPLE							# NB of threads for SAMTOOLS command
 	else
 		THREADS_BY_SAMPLE=1					# Number of threads by sample
 		THREADS_BY_PIPELINE=1				# Number of threads for a pipeline's command
@@ -1014,6 +1016,7 @@ for RUU in $RUN_UNIQ; do
 		THREADS_BY_CALLER=1					# Number of threads for a caller's command
 		THREADS_BWA=$THREADS_BY_ALIGNER		# NB of threads for BWA command
 		THREADS_RTC=$THREADS_BY_ALIGNER		# NB of threads for GATK RealignerTargetCreator
+		THREADS_SAMTOOLS=$THREADS_BY_SAMPLE	# NB of threads for SAMTOOLS command
 	fi;
 	if [ "$THREADS_BY_SAMPLE" == "0" ]; then THREADS_BY_SAMPLE=1; fi;
 	if [ "$THREADS_BY_ALIGNER" == "0" ]; then THREADS_BY_ALIGNER=1; fi;
@@ -1021,6 +1024,7 @@ for RUU in $RUN_UNIQ; do
 	if [ "$THREADS_BY_PIPELINE" == "0" ]; then THREADS_BY_PIPELINE=1; fi;
 	if [ "$THREADS_BWA" == "0" ]; then THREADS_BWA=1; fi;
 	if [ "$THREADS_RTC" == "0" ]; then THREADS_RTC=1; fi;
+	if [ "$THREADS_SAMTOOLS" == "0" ]; then THREADS_SAMTOOLS=1; fi;
 
 	# THREAD_PARAMETERS
 	THREAD_PARAMETERS=""
@@ -1030,6 +1034,7 @@ for RUU in $RUN_UNIQ; do
 	THREAD_PARAMETERS=$THREAD_PARAMETERS" THREADS_BY_CALLER=$THREADS_BY_CALLER "
 	THREAD_PARAMETERS=$THREAD_PARAMETERS" THREADS_BWA=$THREADS_BWA "
 	THREAD_PARAMETERS=$THREAD_PARAMETERS" THREADS_RTC=$THREADS_RTC "
+	THREAD_PARAMETERS=$THREAD_PARAMETERS" THREADS_SAMTOOLS=$THREADS_SAMTOOLS "
 
 
 	# JAVA_MEMORY by sample and by caller

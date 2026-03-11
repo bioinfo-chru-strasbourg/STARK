@@ -144,18 +144,18 @@ do
 done
 
 # Script folder
-echo "# SEARCHING SCRIPTS"
+(($DEBUG)) && echo "#[DEBUG] SEARCHING SCRIPTS"
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-echo "# DONE"
+(($DEBUG)) && echo "#[DEBUG] DONE"
 
 # Configuration
-echo "# SEARCHING CONFIG APPS"
+(($DEBUG)) && echo "#[DEBUG] SEARCHING CONFIG APPS"
 ENV_CONFIG=$(find -L $SCRIPT_DIR/.. -name config.app)
-echo "# DONE"
-echo "# SOURCE CONFIGS"
+(($DEBUG)) && echo "#[DEBUG] DONE"
+(($DEBUG)) && echo "#[DEBUG] SOURCE CONFIGS"
 #echo $ENV_CONFIG
 source $ENV_CONFIG 
-echo "# DONE"
+(($DEBUG)) && echo "#[DEBUG] DONE"
 
 # Memory
 if [ "$MEMORY" == "" ]; then
@@ -210,6 +210,9 @@ fi;
 if [[ $THREADS_INPUT =~ $re ]] && [ "$THREADS_INPUT" != "" ]; then
 	THREADS=$THREADS_INPUT;
 fi;
+
+# ARIA
+ARIA_CMD="aria2c -c -s $THREADS -x 16 -k 1M --async-dns=false -j $THREADS"
 
 TMP_DATABASES_DOWNLOAD_FOLDER=$TMP_FOLDER_TMP/$RANDOM$RANDOM
 mkdir -p $TMP_DATABASES_DOWNLOAD_FOLDER
@@ -880,7 +883,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		(($VERBOSE)) && echo "#[INFO] ARRIBA RELEASE=$DBFOLDER_ARRIBA/$DATE/$ASSEMBLY"
 
 		echo "$DBFOLDER_ARRIBA/done: $DBFOLDER
-			aria2c -c -s 16 -x 16 -k 1M --async-dns=false -j 1 $ARRIBA_CURRENT -d $DB_TMP;
+			$ARIA_CMD $ARRIBA_CURRENT -d $DB_TMP;
 			mkdir -p $DBFOLDER_ARRIBA/$DATE/$ASSEMBLY;
 			chmod 0775 $DBFOLDER_ARRIBA/$DATE/$ASSEMBLY;
 			tar -xzf  $DB_TMP/$(basename $ARRIBA_CURRENT) -C $DB_TMP --strip-components=1;
@@ -898,10 +901,272 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 	fi;
 fi;
 
+
+########
+# PFAM #
+########
+DATABASE="pfam"
+DATABASE_NAME="pfam"
+DATABASE_FULLNAME="PFAM Database of protein families"
+DATABASE_WEBSITE="https://www.pfam.org/"
+DATABASE_DESCRIPTION="PFAM is a database of protein families, providing a comprehensive collection of protein domains and families."
+
+if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
+
+	#[ -z "$PFAM_DATABASES" ] && PFAM_DATABASES=$DATABASES/pfam/current
+
+	DBFOLDER_PFAM=$(dirname $PFAM_DATABASES)
+	if [ ! -e $DBFOLDER_PFAM/$RELEASE ]; then
+		mkdir -p $DBFOLDER_PFAM/$RELEASE;
+	fi;
+	(($DEBUG)) && echo "[DEBUG] DBFOLDER_PFAM=$DBFOLDER_PFAM"
+	(($DEBUG)) && echo "[DEBUG] RELEASE=$RELEASE"
+
+	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$PFAM_RELEASE
+	mkdir -p $DB_TMP
+	chmod 0775 $DB_TMP
+
+
+
+	if [ ! -e $DBFOLDER_PFAM/$RELEASE/$ASSEMBLY ] || (($UPDATE)); then
+		(($VERBOSE)) && echo ""
+		(($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME' release '$PFAM_RELEASE' for [$ASSEMBLY]"
+
+		PFAM_DATE=$(curl -s -I $PFAM_URL/Pfam$PFAM_RELEASE/Pfam-A.hmm.gz | grep "Last-Modified: " | sed "s/Last-Modified: //g" | sed "s/\r$//g");
+
+		if (($UPDATE)); then
+			if [ -e $DBFOLDER_PFAM/$RELEASE/$ASSEMBLY ]; then mv -f $DBFOLDER_PFAM/$RELEASE/$ASSEMBLY $DBFOLDER_PFAM.V$DATE; fi;
+		fi;
+		
+		DB_INFOS_JSON='
+		{
+			"code": "'$DATABASE'",
+			"name": "'$DATABASE_NAME'",
+			"fullname": "'$DATABASE_FULLNAME'",
+			"website": "'$DATABASE_WEBSITE'",
+			"description": "'$DATABASE_DESCRIPTION'"
+		}
+		';
+		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
+
+		DB_RELEASE_INFOS_JSON='
+		{
+			"release": "'$PFAM_RELEASE'",
+			"date": "'$DATE'",
+			"files": [ "'$DBFOLDER_PFAM'" ],
+			"assembly": [ "'$ASSEMBLY'" ],
+			"download": {
+				"methode": "'$DOWNLOAD_METHOD'",
+				"URL": "'$PFAM_URL/Pfam$PFAM_RELEASE'",
+				"file": "'Pfam-A.hmm.gz'",
+				"date": "'$PFAM_DATE'"
+			}
+		}
+		';
+		echo "$DB_RELEASE_INFOS_JSON" > $DB_TMP/STARK.database.release
+
+		echo "$PFAM_DATABASES/$ASSEMBLY/done: $DBFOLDER
+			mkdir -p $DBFOLDER_PFAM
+			$ARIA_CMD $PFAM_URL/Pfam${PFAM_RELEASE}/Pfam-A.hmm.gz -d $DB_TMP;
+			mkdir -p $DBFOLDER_PFAM/$PFAM_RELEASE/$ASSEMBLY;
+			chmod 0775 $DBFOLDER_PFAM/$PFAM_RELEASE/$ASSEMBLY;
+			$GZ -d $DB_TMP/Pfam-A.hmm.gz
+			mv $DB_TMP/Pfam-A.hmm $DBFOLDER_PFAM/$PFAM_RELEASE/$ASSEMBLY;
+			-[ ! -s $DBFOLDER_PFAM/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_PFAM/STARK.database && chmod o+r $DBFOLDER_PFAM/STARK.database; 
+			-[ ! -s $DBFOLDER_PFAM/$PFAM_RELEASE/$ASSEMBLY/STARK.database.release ] && cp $DB_TMP/STARK.database.release $DBFOLDER_PFAM/$PFAM_RELEASE/$ASSEMBLY/STARK.database.release && chmod o+r $DBFOLDER_PFAM/$PFAM_RELEASE/$ASSEMBLY/STARK.database.release;
+			[ ! -e $DBFOLDER_PFAM/$RELEASE/$ASSEMBLY ] || unlink $DBFOLDER_PFAM/$RELEASE/$ASSEMBLY;
+			ln -snf ../$PFAM_RELEASE/$ASSEMBLY $DBFOLDER_PFAM/$RELEASE/$ASSEMBLY;
+			rm -rf $DB_TMP;
+			touch $PFAM_DATABASES/$ASSEMBLY/done
+		" >> $MK
+
+		MK_ALL="$MK_ALL $PFAM_DATABASES/$ASSEMBLY/done"
+	fi;
+fi;
+
+
+########
+# DFAM #
+########
+DATABASE="dfam"
+DATABASE_NAME="dfam"
+DATABASE_FULLNAME="DFAM Database of transposable element families"
+DATABASE_WEBSITE="https://www.dfam.org/"
+DATABASE_DESCRIPTION="DFAM is a database of transposable element families, providing a comprehensive collection of transposable element sequences and annotations."
+
+if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
+
+	#[ -z "$DFAM_DATABASES" ] && DFAM_DATABASES=$DATABASES/dfam/current
+
+	DBFOLDER_DFAM=$(dirname $DFAM_DATABASES)
+	if [ ! -e $DBFOLDER_DFAM/$RELEASE ]; then
+		mkdir -p $DBFOLDER_DFAM/$RELEASE;
+	fi;
+	(($DEBUG)) && echo "[DEBUG] DBFOLDER_DFAM=$DBFOLDER_DFAM"
+	(($DEBUG)) && echo "[DEBUG] RELEASE=$RELEASE"
+
+	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DFAM_RELEASE
+	mkdir -p $DB_TMP
+	chmod 0775 $DB_TMP
+
+
+
+	if [ ! -e $DBFOLDER_DFAM/$RELEASE/$ASSEMBLY ] || (($UPDATE)); then
+		(($VERBOSE)) && echo ""
+		(($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME' release '$DFAM_RELEASE' for [$ASSEMBLY]"
+
+		DFAM_DATE=$(curl -s -I $DFAM_URL/Dfam$DFAM_RELEASE | grep "Last-Modified: " | sed "s/Last-Modified: //g" | sed "s/\r$//g");
+
+		if (($UPDATE)); then
+			if [ -e $DBFOLDER_DFAM/$RELEASE/$ASSEMBLY ]; then mv -f $DBFOLDER_DFAM/$RELEASE/$ASSEMBLY $DBFOLDER_DFAM.V$DFAM_RELEASE; fi;
+		fi;
+		
+		DB_INFOS_JSON='
+		{
+			"code": "'$DATABASE'",
+			"name": "'$DATABASE_NAME'",
+			"fullname": "'$DATABASE_FULLNAME'",
+			"website": "'$DATABASE_WEBSITE'",
+			"description": "'$DATABASE_DESCRIPTION'"
+		}
+		';
+		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
+
+		DB_RELEASE_INFOS_JSON='
+		{
+			"release": "'$DFAM_RELEASE'",
+			"date": "'$DATE'",
+			"files": [ "'$DBFOLDER_DFAM'" ],
+			"assembly": [ "'$ASSEMBLY'" ],
+			"download": {
+				"methode": "'$DOWNLOAD_METHOD'",
+				"URL": "'$DFAM_URL/Dfam$DFAM_RELEASE'",
+				"file": "'Dfam-A.hmm.gz'",
+				"date": "'$DFAM_DATE'"
+			}
+		}
+		';
+		echo "$DB_RELEASE_INFOS_JSON" > $DB_TMP/STARK.database.release
+
+		echo "$DFAM_DATABASES/$ASSEMBLY/done: $DBFOLDER
+			mkdir -p $DBFOLDER_DFAM
+			$ARIA_CMD $DFAM_URL/Dfam_${DFAM_RELEASE}/infrastructure/dfamscan/homo_sapiens_dfam.hmm -d $DB_TMP;
+			$ARIA_CMD $DFAM_URL/Dfam_${DFAM_RELEASE}/infrastructure/dfamscan/homo_sapiens_dfam.hmm.h3f -d $DB_TMP;
+			$ARIA_CMD $DFAM_URL/Dfam_${DFAM_RELEASE}/infrastructure/dfamscan/homo_sapiens_dfam.hmm.h3i -d $DB_TMP;
+			$ARIA_CMD $DFAM_URL/Dfam_${DFAM_RELEASE}/infrastructure/dfamscan/homo_sapiens_dfam.hmm.h3m -d $DB_TMP;
+			$ARIA_CMD $DFAM_URL/Dfam_${DFAM_RELEASE}/infrastructure/dfamscan/homo_sapiens_dfam.hmm.h3p -d $DB_TMP;
+			mkdir -p $DBFOLDER_DFAM/$DFAM_RELEASE/$ASSEMBLY;
+			chmod 0775 $DBFOLDER_DFAM/$DFAM_RELEASE/$ASSEMBLY;
+			mv $DB_TMP/*.hmm* $DBFOLDER_DFAM/$DFAM_RELEASE/$ASSEMBLY;
+			-[ ! -s $DBFOLDER_DFAM/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_DFAM/STARK.database && chmod o+r $DBFOLDER_DFAM/STARK.database; 
+			-[ ! -s $DBFOLDER_DFAM/$DFAM_RELEASE/$ASSEMBLY/STARK.database.release ] && cp $DB_TMP/STARK.database.release $DBFOLDER_DFAM/$DFAM_RELEASE/$ASSEMBLY/STARK.database.release && chmod o+r $DBFOLDER_DFAM/$DFAM_RELEASE/$ASSEMBLY/STARK.database.release;
+			[ ! -e $DBFOLDER_DFAM/$RELEASE/$ASSEMBLY ] || unlink $DBFOLDER_DFAM/$RELEASE/$ASSEMBLY;
+			ln -snf ../$DFAM_RELEASE/$ASSEMBLY $DBFOLDER_DFAM/$RELEASE/$ASSEMBLY;
+			rm -rf $DB_TMP;
+			touch $DFAM_DATABASES/$ASSEMBLY/done
+		" >> $MK
+
+		MK_ALL="$MK_ALL $DFAM_DATABASES/$ASSEMBLY/done"
+	fi;
+fi;
+
 ########
 # CTAT #
 ########
 DATABASE="ctat"
+DATABASE_NAME="ctat"
+DATABASE_FULLNAME=" CTAT Genome Lib"
+DATABASE_WEBSITE="https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/"
+DATABASE_DESCRIPTION=" CTAT Genome Lib is a resource collection used by the Trinity Cancer Transcriptome Analysis Toolkit (CTAT). This CTAT-genome-lib-builder system is leveraged for preparing a target genome and annotation set for use with Trinity CTAT tools, including fusion transcript detection and cancer mutation discovery"
+
+if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
+
+	#DBFOLDER_CTAT=$(dirname $CTAT_DATABASES)
+	DBFOLDER_CTAT=$GENOME.ctat
+	# if [ ! -e $DBFOLDER_CTAT ]; then
+	# 	mkdir -p $DBFOLDER_CTAT;
+	# fi;
+	(($DEBUG)) && echo "[DEBUG] DBFOLDER_CTAT=$DBFOLDER_CTAT"
+
+	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DATE
+	mkdir -p $DB_TMP
+	chmod 0775 $DB_TMP;
+
+	if [ ! -e $DBFOLDER_CTAT ] || (($UPDATE)); then
+		(($VERBOSE)) && echo ""
+		(($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME' release '$DATE' for [$ASSEMBLY]"
+
+		# CTAT_DATE=$(curl -s -I $CTAT_CURRENT | grep "Last-Modified: " | sed "s/Last-Modified: //g" | sed "s/\r$//g");
+		# CTAT_DATE_RELEASE=$(date -d "$CTAT_DATE");
+
+		if (($UPDATE)); then
+			if [ -e $DBFOLDER_CTAT ]; then mv -f $DBFOLDER_CTAT $DBFOLDER_CTAT.V$DATE; fi;
+			#mkdir -p $DBFOLDER_CTAT;
+		fi;
+		
+		# DB_INFOS_JSON='
+		# {
+		# 	"code": "'$DATABASE'",
+		# 	"name": "'$DATABASE_NAME'",
+		# 	"fullname": "'$DATABASE_FULLNAME'",
+		# 	"website": "'$DATABASE_WEBSITE'",
+		# 	"description": "'$DATABASE_DESCRIPTION'"
+		# }
+		# ';
+		# echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
+
+		# DB_RELEASE_INFOS_JSON='
+		# {
+		# 	"release": "'$RELEASE'",
+		# 	"date": "'$RELEASE'",
+		# 	"files": [ "'$DBFOLDER_CTAT'" ],
+		# 	"assembly": [ "'$ASSEMBLY'" ],
+		# 	"download": {
+		# 		"methode": "'$DOWNLOAD_METHOD'",
+		# 		"URL": "'$(dirname $CTAT_CURRENT)'",
+		# 		"file": "'$(basename $CTAT_CURRENT)'",
+		# 		"date": "'$CTAT_DATE_RELEASE'"
+		# 	}
+		# }
+		# ';
+		# echo "$DB_RELEASE_INFOS_JSON" > $DB_TMP/STARK.database.release
+
+		# (($VERBOSE)) && echo "#[INFO] CTAT URL=$CTAT_CURRENT"
+		# (($VERBOSE)) && echo "#[INFO] CTAT RELEASE=$DATE"
+
+		# echo "$DBFOLDER_CTAT/done: $DBFOLDER
+		# 	aria2c -c -s 16 -x 16 -k 1M --async-dns=false -j 1 $CTAT_CURRENT -d $DB_TMP;
+		# 	wget --progress=bar:force:noscroll $CTAT_PM -P $DB_TMP;
+		# 	mkdir -p $DBFOLDER_CTAT/$DATE/$ASSEMBLY;
+		# 	chmod 0775 $DBFOLDER_CTAT/$DATE/$ASSEMBLY;
+		# 	tar -xzf  $DB_TMP/$(basename $CTAT_CURRENT) -C  $DB_TMP --strip-components=1;
+		# 	$JAVA -jar $PICARD CreateSequenceDictionary -REFERENCE $DB_TMP/ctat_genome_lib_build_dir/ref_genome.fa -OUTPUT $DB_TMP/ctat_genome_lib_build_dir/ref_genome.dict;
+		# 	cp -R $DB_TMP/ctat_genome_lib_build_dir/* $DBFOLDER_CTAT/$DATE/$ASSEMBLY;
+		# 	\cp $DB_TMP/AnnotFilterRule.pm $DBFOLDER_CTAT/$DATE/$ASSEMBLY;
+		# 	-[ ! -s $DBFOLDER_CTAT/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_CTAT/STARK.database && chmod o+r $DBFOLDER_CTAT/STARK.database;
+		# 	-[ ! -s $DBFOLDER_CTAT/$DATE/$ASSEMBLY/STARK.database.release ] && cp $DB_TMP/STARK.database.release $DBFOLDER_CTAT/$DATE/$ASSEMBLY/STARK.database.release && chmod o+r $DBFOLDER_CTAT/$DATE/$ASSEMBLY/STARK.database.release;
+		# 	[ ! -e $DBFOLDER_CTAT/$RELEASE/$ASSEMBLY ] || unlink $DBFOLDER_CTAT/$RELEASE/$ASSEMBLY;
+		# 	ln -snf ../$DATE/$ASSEMBLY $DBFOLDER_CTAT/$RELEASE/$ASSEMBLY;
+		# 	rm -rf $DB_TMP;
+		# " >> $MK
+
+		echo "$DBFOLDER_CTAT/done: $DBFOLDER $GENOME $DFAM_DATABASES/$ASSEMBLY/done $PFAM_DATABASES/$ASSEMBLY/done $GENCODE_DATABASES/$ASSEMBLY/done
+			mkdir -p $DBFOLDER_CTAT
+			ls -l $DFAM_DATABASES/$ASSEMBLY/*
+			ls -l $PFAM_DATABASES/$ASSEMBLY/*
+			$DOCKER_RUN --rm --name ctat_prep_genome_lib_$ASSEMBLY trinityctat/starfusion /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/prep_genome_lib.pl --genome_fa $GENOME --gtf $GENCODE_DATABASES/$ASSEMBLY/gencode.v$GENCODE_VERSION.annotation.gtf --dfam_db $DFAM_DATABASES/$ASSEMBLY/homo_sapiens_dfam.hmm --pfam_db $PFAM_DATABASES/$ASSEMBLY/Pfam-A.hmm --output_dir $DBFOLDER_CTAT --CPU $THREADS
+			touch $DBFOLDER_CTAT/done;
+		" >> $MK
+
+		MK_ALL="$MK_ALL $DBFOLDER_CTAT/done"
+	fi;
+fi;
+
+
+########
+# CTAT OLD #
+########
+DATABASE="ctat_old"
 DATABASE_NAME="ctat"
 DATABASE_FULLNAME=" CTAT Genome Lib"
 DATABASE_WEBSITE="https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/"
@@ -960,7 +1225,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		(($VERBOSE)) && echo "#[INFO] CTAT RELEASE=$DATE"
 
 		echo "$DBFOLDER_CTAT/done: $DBFOLDER
-			aria2c -c -s 16 -x 16 -k 1M --async-dns=false -j 1 $CTAT_CURRENT -d $DB_TMP;
+			$ARIA_CMD $CTAT_CURRENT -d $DB_TMP;
 			wget --progress=bar:force:noscroll $CTAT_PM -P $DB_TMP;
 			mkdir -p $DBFOLDER_CTAT/$DATE/$ASSEMBLY;
 			chmod 0775 $DBFOLDER_CTAT/$DATE/$ASSEMBLY;
@@ -994,13 +1259,13 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		mkdir -p $DBFOLDER_GENCODE/$RELEASE;
 	fi;
 
-	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DATE
+	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$GENCODE_VERSION
 	mkdir -p $DB_TMP
 	chmod 0775 $DB_TMP;
 
 	if [ ! -e $DBFOLDER_GENCODE/$RELEASE/$ASSEMBLY ] || (($UPDATE)); then
 		(($VERBOSE)) && echo ""
-		(($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME' release '$DATE' for [$ASSEMBLY]"
+		(($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME' release '$GENCODE_VERSION' for [$ASSEMBLY]"
 
 		GENCODE_DATE=$(curl -s -I $GENCODE_CURRENT | grep "Last-Modified: " | sed "s/Last-Modified: //g" | sed "s/\r$//g");
 		GENCODE_DATE_RELEASE=$(date -d "$GENCODE_DATE");
@@ -1022,7 +1287,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 
 		DB_RELEASE_INFOS_JSON='
 		{
-			"release": "'$GENCODE_DATE'",
+			"release": "'$GENCODE_VERSION'",
 			"date": "'$GENCODE_DATE_RELEASE'",
 			"files": [ "'$(basename $GENCODE_CURRENT)'" ],
 			"assembly": [ "'$ASSEMBLY'" ],
@@ -1037,21 +1302,22 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		echo "$DB_RELEASE_INFOS_JSON" > $DB_TMP/STARK.database.release
 
 		(($VERBOSE)) && echo "#[INFO] GENCODE URL=$GENCODE_CURRENT"
-		(($VERBOSE)) && echo "#[INFO] GENCODE RELEASE=$DATE"
+		(($VERBOSE)) && echo "#[INFO] GENCODE RELEASE=$GENCODE_VERSION"
 
-		echo "$DBFOLDER_GENCODE/$RELEASE/$ASSEMBLY/gencode.v$GENCODE_VERSION.annotation.gtf: $DBFOLDER
-			mkdir -p $DBFOLDER_GENCODE/$DATE/$ASSEMBLY;
-			chmod 0775 $DBFOLDER_GENCODE/$DATE/$ASSEMBLY;
-			aria2c -c -s 16 -x 16 -k 1M --async-dns=false -j 1 $GENCODE_CURRENT -d $DB_TMP;
-			cp $DB_TMP/$(basename $GENCODE_CURRENT) $DBFOLDER_GENCODE/$DATE/$ASSEMBLY/gencode.v$GENCODE_VERSION.annotation.gtf.gz;
-			gzip -d $DBFOLDER_GENCODE/$DATE/$ASSEMBLY/gencode.v$GENCODE_VERSION.annotation.gtf.gz;
+		echo "$GENCODE_DATABASES/$ASSEMBLY/done: $DBFOLDER
+			mkdir -p $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY;
+			chmod 0775 $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY;
+			$ARIA_CMD $GENCODE_CURRENT -d $DB_TMP;
+			cp $DB_TMP/$(basename $GENCODE_CURRENT) $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY/gencode.v$GENCODE_VERSION.annotation.gtf.gz;
+			gzip -d $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY/gencode.v$GENCODE_VERSION.annotation.gtf.gz;
 			-[ ! -s $DBFOLDER_GENCODE/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_GENCODE/STARK.database && chmod o+r $DBFOLDER_GENCODE/STARK.database;
-			-[ ! -s $DBFOLDER_GENCODE/$DATE/$ASSEMBLY/STARK.database.release ] && cp $DB_TMP/STARK.database.release $DBFOLDER_GENCODE/$DATE/$ASSEMBLY/STARK.database.release && chmod o+r $DBFOLDER_GENCODE/$DATE/$ASSEMBLY/STARK.database.release;
+			-[ ! -s $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY/STARK.database.release ] && cp $DB_TMP/STARK.database.release $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY/STARK.database.release && chmod o+r $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY/STARK.database.release;
 			[ ! -e $DBFOLDER_GENCODE/$RELEASE/$ASSEMBLY ] || unlink $DBFOLDER_GENCODE/$RELEASE/$ASSEMBLY;
-			ln -snf ../$DATE/$ASSEMBLY $DBFOLDER_GENCODE/$RELEASE/$ASSEMBLY;
+			ln -snf ../$GENCODE_VERSION/$ASSEMBLY $DBFOLDER_GENCODE/$RELEASE/$ASSEMBLY;
 			rm -rf $DB_TMP;
+			touch $GENCODE_DATABASES/$ASSEMBLY/done;
 		" >> $MK
-		MK_ALL="$MK_ALL $DBFOLDER_GENCODE/$RELEASE/$ASSEMBLY/gencode.v$GENCODE_VERSION.annotation.gtf"
+		MK_ALL="$MK_ALL $GENCODE_DATABASES/$ASSEMBLY/done"
 	fi;
 fi;
 

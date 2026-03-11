@@ -80,7 +80,7 @@ ENV REPO="$REPO_SOURCES"
 ENV SOURCES_FOLDER="sources"
 ENV SOURCES="$STARK_FOLDER/$SOURCES_FOLDER"
 ENV DATABASES="$STARK_FOLDER/databases"
-ENV CONFIG="$STARK_FOLDER/config"
+ENV CONFIGS="$STARK_FOLDER/config"
 ENV GENOMES="$DATABASES/genomes/current"
 ENV WORKDIR="/tmp"
 #ENV YUM_PARAM=" -q -e 0 "
@@ -137,7 +137,7 @@ WORKDIR $WORKDIR
 # This will install system packages, python packages and scripts to install tools
 
 #ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git make mlocate ncurses-devel tbb-devel unzip rsync wget which xz xz-devel zlib zlib-devel docker java-17 java-1.8.0 curl-devel openssl-devel htslib diffutils parallel aria2 jq"
-ENV PACKAGES_INSTALL="autoconf automake htop tree bc bzip2 bzip2-devel curl gcc gcc-c++ git make mlocate ncurses-devel tbb-devel unzip rsync wget which xz xz-devel zlib zlib-devel docker java-21 java-1.8.0 curl-devel openssl-devel diffutils parallel aria2 jq"
+ENV PACKAGES_INSTALL="autoconf automake htop tree bc bzip2 bzip2-devel curl gcc gcc-c++ git make mlocate ncurses-devel tbb-devel unzip rsync wget which xz xz-devel zlib zlib-devel java-21 java-1.8.0 curl-devel openssl-devel diffutils parallel aria2 jq"
 #ENV YUM_REMOVE="autoconf automake bzip2-devel lzma-devel ncurses-devel tbb-devel xz-devel zlib-devel zlib2-devel python3-devel curl-devel openssl-devel"
 
 ENV PYTHON_MODULE=" pathos numpy scipy argparse"
@@ -254,6 +254,27 @@ RUN	echo "#[INFO] SYSTEM Perl installation - download from yum" && \
 # 	echo "#";
 
 
+##########
+# DOCKER #
+##########
+
+ENV TOOL_NAME="docker"
+ENV TOOL_VERSION="29.2.1"
+ENV TOOL_TARBALL="docker-$TOOL_VERSION.tgz"
+ENV TOOL_SOURCE_EXTERNAL="https://download.docker.com/linux/static/stable/x86_64/$TOOL_TARBALL"
+ENV PATH=$PATH:$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin
+# TOOL PARAMETERS
+ENV DOCKER_HOST=unix:///var/run/docker.sock
+
+# TOOL INSTALLATION
+RUN echo "#[INFO] SYSTEM Docker installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	source $TOOL_INIT && \
+	tar -xvf $TOOL_SOURCE -C $TOOL_DEST/ && \
+	pwd $TOOL_DEST && \
+	ls -lah $TOOL_DEST/* && \
+	mv $TOOL_DEST/docker/* $TOOL_DEST/bin/ && \
+	ln -s $TOOL_DEST/bin/docker /usr/local/bin/docker && \
+	$TOOL_CHECK ;
 
 
 ##########
@@ -1334,8 +1355,8 @@ ENV TOOL_VERSION="19.0.1-devel"
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
 ENV TOOL="/tool"
-ENV CONFIG_MYAPPS_FOLDER="$CONFIG/myapps"
-ENV CONFIG_HOWARD_FOLDER="$CONFIG/howard"
+ENV CONFIG_MYAPPS_FOLDER="$CONFIGS/myapps"
+ENV CONFIG_HOWARD_FOLDER="$CONFIGS/howard"
 
 
 ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION

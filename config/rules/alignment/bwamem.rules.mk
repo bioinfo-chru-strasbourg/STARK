@@ -56,6 +56,10 @@ THREADS_BWAMEM?=$(shell echo " if ($(MAX_CONCURRENT_ALIGNMENTS_BWAMEM)<$(NB_SAMP
 	# Sorting
 	echo "#[INFO] Sorting BAM file for $*:"
 	$(SAMTOOLS) view -h $(BWAMEM_SAMTOOLS_FILTER_FLAG) $@.sam -@ $(THREADS_SAMTOOLS) | $(SAMTOOLS) sort -l 1 -O BAM -o $@.tmp -T $@.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS)
+	# Samtools with docker
+	#$(DOCKER_RUN) --cpus $(THREADS_SAMTOOLS) --rm mgibio/samtools:cramify samtools view -h $(BWAMEM_SAMTOOLS_FILTER_FLAG) $@.sam -@ $(THREADS_SAMTOOLS) > $@.tmp1
+	#$(DOCKER_RUN) --cpus $(THREADS_SAMTOOLS) --rm mgibio/samtools:cramify samtools sort -l 1 -O BAM -o $@.tmp -T $@.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS) $@.tmp1
+	#-rm $@.tmp1
 	rm $@.sam
 	# AddOrReplaceReadGroups
 	if (($$($(SAMTOOLS) view $@.tmp -H | grep "^@RG" -c))); then \

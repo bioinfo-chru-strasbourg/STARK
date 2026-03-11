@@ -31,6 +31,11 @@ if [ -z $DICT ] || [ "$DICT" == "" ]; then
 fi;
 export DICT
 
+if [ -z $GENOME_RNA ] || [ "$GENOME_RNA" == "" ]; then
+	GENOME_RNA=$GENOME.ctat/ref_genome.fa
+fi;
+export GENOME_RNA
+
 # REF_CACHE_FOLDER and REF_CACHE
 #export REF_CACHE_FOLDER=$GENOME.hts-ref;
 #export REF_CACHE="$REF_CACHE_FOLDER/%2s/%2s/%s";
@@ -54,6 +59,41 @@ else
 fi;
 export ARRIBA_DATABASES
 DATABASES_CONFIG_LIST=$DATABASES_CONFIG_LIST" ARRIBA_DATABASES"
+
+# PFAM
+if [ -z $PFAM_URL ] || [ "$PFAM_URL" == "" ]; then
+	PFAM_URL="ftp://ftp.ebi.ac.uk/pub/databases/Pfam/releases";
+fi;
+export PFAM_URL
+if [ -z $PFAM_RELEASE ] || [ "$PFAM_RELEASE" == "" ]; then
+	PFAM_RELEASE="38.2"
+fi;
+export PFAM_RELEASE
+if [ ! -z $FOLDER_DATABASES_PFAM ] && [ "$FOLDER_DATABASES_PFAM" != "" ]; then
+	PFAM_DATABASES=$FOLDER_DATABASES_PFAM
+else
+	PFAM_DATABASES=$DBFOLDER/PFAM/current
+fi;
+export PFAM_DATABASES
+DATABASES_CONFIG_LIST=$DATABASES_CONFIG_LIST" PFAM_DATABASES"
+
+# DFAM
+if [ -z $DFAM_URL ] || [ "$DFAM_URL" == "" ]; then
+	DFAM_URL="https://dfam.org/releases";
+fi;
+export DFAM_URL
+if [ -z $DFAM_RELEASE ] || [ "$DFAM_RELEASE" == "" ]; then
+	DFAM_RELEASE="3.1"
+fi;
+export DFAM_RELEASE
+if [ ! -z $FOLDER_DATABASES_DFAM ] && [ "$FOLDER_DATABASES_DFAM" != "" ]; then
+	DFAM_DATABASES=$FOLDER_DATABASES_DFAM
+else
+	DFAM_DATABASES=$DBFOLDER/DFAM/current
+fi;
+export DFAM_DATABASES
+DATABASES_CONFIG_LIST=$DATABASES_CONFIG_LIST" DFAM_DATABASES"
+
 
 # STAR Fusion (CTAT Lib)
 # if [ $ASSEMBLY == "hg19" ] ; then CTAT_CURRENT="https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/GRCh37_gencode_v19_CTAT_lib_Mar012021.plug-n-play.tar.gz"; fi;

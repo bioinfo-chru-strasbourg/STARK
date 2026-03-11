@@ -7,6 +7,7 @@
 ########
 
 TOOLS_LIST=""
+DOCKER_LIST=""
 
 
 # GZIP
@@ -116,9 +117,11 @@ TOOLS_LIST=$TOOLS_LIST" BGZIP"
 # BCFTOOLS
 export BCFTOOLS_VERSION=1.23								# VER
 export BCFTOOLS=$NGS_TOOLS/bcftools/current/bin/bcftools	# BIN $NGS_TOOLS/bcftools/current/bin/ 
+export BCFTOOLS_DOCKER=dceoy/bcftools:latest					# DOCKER
 export BCFTOOLS_DESCRIPTION="Reading/writing BCF2/VCF/gVCF files and calling/filtering/summarising SNP and short indel sequence variants"
 export BCFTOOLS_REF=$HTSLIB_REF
 TOOLS_LIST=$TOOLS_LIST" BCFTOOLS"
+DOCKER_LIST=$DOCKER_LIST" $BCFTOOLS_DOCKER"
 
 
 # PICARD
@@ -332,6 +335,7 @@ export VARIANTCONVERT_DESCRIPTION="VariantConvert is a tool for converting varia
 export VARIANTCONVERT_REF="https://github.com/SamuelNicaise/variantconvert"
 TOOLS_LIST=$TOOLS_LIST" VARIANTCONVERT"
 
+
 # STARK
 export STARK=$NGS_TOOLS/stark/$ENV_RELEASE/bin			# DIR
 if [ ! -d $STARK ]; then
@@ -390,6 +394,16 @@ export STARK_RUN_METRICS=$STARK_FOLDER_BIN/runmetrics.py
 
 # PERL5LIB
 ENV_PERLLIB=$NGS_FOLDER/tools/perl/lib
+
+
+# DOCKER
+export DOCKER_VERSION=29.2.1												# VER
+export DOCKER=$NGS_TOOLS/docker/$DOCKER_VERSION/bin/docker					# BIN
+export DOCKER_MOUNTS=$($PYTHON $STARK/extract_mounts.py --docker=$DOCKER)	# MOUNTS
+export DOCKER_RUN="$DOCKER run $DOCKER_MOUNTS"								# RUN
+export DOCKER_DESCRIPTION="Docker is a platform for developing, shipping, and running applications."
+export DOCKER_REF="https://www.docker.com/"
+TOOLS_LIST=$TOOLS_LIST" DOCKER"
 
 
 # PATH

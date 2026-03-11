@@ -13,7 +13,7 @@
 	mkdir -p $*.fusion.reports;
 	$(MAMBA) run -p $(STARFUSION_ENV) $(STARFUSION) \
 		--chimeric_junction $*.junction \
-		--genome_lib_dir $$(dirname $(GENOME)) \
+		--genome_lib_dir $$(dirname $(GENOME_RNA)) \
 		--output_dir $*.fusion.reports;
 	mv $*.fusion.reports/star-fusion.fusion_predictions.tsv $*.fusion.reports/$$(echo $(@F) | rev | cut -d"." -f4-  | rev).star-fusion.tsv
 	mv $*.fusion.reports/star-fusion.fusion_predictions.abridged.tsv $*.fusion.reports/$$(echo $(@F) | rev | cut -d"." -f4-  | rev).star-fusion.abridged.tsv
@@ -21,7 +21,7 @@
 	$(VARIANTCONVERT) convert \
 		-i $*.fusion.reports/$$(echo $(@F) | rev | cut -d"." -f4-  | rev).star-fusion.abridged.tsv \
 		-o $@ \
-		-c $(VARIANTCONVERT_CONFIGS)/$(ASSEMBLY)/starfusion.stark.json;
+		-c $(VARIANTCONVERT_CONFIGS)/$(ASSEMBLY)/starfusion.json;
 
 # -fi breakpoints \
 # -fo vcf \
