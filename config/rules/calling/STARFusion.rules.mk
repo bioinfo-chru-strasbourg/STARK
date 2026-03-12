@@ -17,11 +17,15 @@
 		--output_dir $*.fusion.reports;
 	mv $*.fusion.reports/star-fusion.fusion_predictions.tsv $*.fusion.reports/$$(echo $(@F) | rev | cut -d"." -f4-  | rev).star-fusion.tsv
 	mv $*.fusion.reports/star-fusion.fusion_predictions.abridged.tsv $*.fusion.reports/$$(echo $(@F) | rev | cut -d"." -f4-  | rev).star-fusion.abridged.tsv
-	# convert to vcf
+	# VariantConvert
+	# Need to create a specific config for variantconvert with the path to the genome fasta and the assembly name to be able to convert STARFusion output to vcf with correct header (configuration file is in config/variantconvert/GENOME/starfusion.json)
+	cp $(VARIANTCONVERT_FOLDER_CONFIG)/$(ASSEMBLY)/starfusion.json $@.variantconvert.config.json
+	$(VARIANTCONVERT) config -c $@.variantconvert.config.json --set GENOME.path=$(GENOME_RNA) --fill_genome_header
+	# Convert to vcf
 	$(VARIANTCONVERT) convert \
 		-i $*.fusion.reports/$$(echo $(@F) | rev | cut -d"." -f4-  | rev).star-fusion.abridged.tsv \
 		-o $@ \
-		-c $(VARIANTCONVERT_CONFIGS)/$(ASSEMBLY)/starfusion.json;
+		-c $@.variantconvert.config.json;
 
 # -fi breakpoints \
 # -fo vcf \

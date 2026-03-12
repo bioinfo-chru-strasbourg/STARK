@@ -1163,85 +1163,85 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 fi;
 
 
-########
-# CTAT OLD #
-########
-DATABASE="ctat_old"
-DATABASE_NAME="ctat"
-DATABASE_FULLNAME=" CTAT Genome Lib"
-DATABASE_WEBSITE="https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/"
-DATABASE_DESCRIPTION=" CTAT Genome Lib is a resource collection used by the Trinity Cancer Transcriptome Analysis Toolkit (CTAT). This CTAT-genome-lib-builder system is leveraged for preparing a target genome and annotation set for use with Trinity CTAT tools, including fusion transcript detection and cancer mutation discovery"
+# ########
+# # CTAT OLD #
+# ########
+# DATABASE="ctat_old"
+# DATABASE_NAME="ctat"
+# DATABASE_FULLNAME=" CTAT Genome Lib"
+# DATABASE_WEBSITE="https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/"
+# DATABASE_DESCRIPTION=" CTAT Genome Lib is a resource collection used by the Trinity Cancer Transcriptome Analysis Toolkit (CTAT). This CTAT-genome-lib-builder system is leveraged for preparing a target genome and annotation set for use with Trinity CTAT tools, including fusion transcript detection and cancer mutation discovery"
 
-if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
+# if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
 
-	DBFOLDER_CTAT=$(dirname $CTAT_DATABASES)
-	if [ ! -e $DBFOLDER_CTAT/$RELEASE ]; then
-		mkdir -p $DBFOLDER_CTAT/$RELEASE;
-	fi;
+# 	DBFOLDER_CTAT=$(dirname $CTAT_DATABASES)
+# 	if [ ! -e $DBFOLDER_CTAT/$RELEASE ]; then
+# 		mkdir -p $DBFOLDER_CTAT/$RELEASE;
+# 	fi;
 
-	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DATE
-	mkdir -p $DB_TMP
-	chmod 0775 $DB_TMP;
+# 	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DATE
+# 	mkdir -p $DB_TMP
+# 	chmod 0775 $DB_TMP;
 
-	if [ ! -e $DBFOLDER_CTAT/$RELEASE/$ASSEMBLY ] || (($UPDATE)); then
-		(($VERBOSE)) && echo ""
-		(($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME' release '$DATE' for [$ASSEMBLY]"
+# 	if [ ! -e $DBFOLDER_CTAT/$RELEASE/$ASSEMBLY ] || (($UPDATE)); then
+# 		(($VERBOSE)) && echo ""
+# 		(($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME' release '$DATE' for [$ASSEMBLY]"
 
-		CTAT_DATE=$(curl -s -I $CTAT_CURRENT | grep "Last-Modified: " | sed "s/Last-Modified: //g" | sed "s/\r$//g");
-		CTAT_DATE_RELEASE=$(date -d "$CTAT_DATE");
+# 		CTAT_DATE=$(curl -s -I $CTAT_CURRENT | grep "Last-Modified: " | sed "s/Last-Modified: //g" | sed "s/\r$//g");
+# 		CTAT_DATE_RELEASE=$(date -d "$CTAT_DATE");
 
-		if (($UPDATE)); then
-			if [ -e $DBFOLDER_CTAT/$RELEASE/$ASSEMBLY ]; then mv -f $DBFOLDER_CTAT/$RELEASE/$ASSEMBLY $DBFOLDER_CTAT.V$DATE; fi;
-		fi;
+# 		if (($UPDATE)); then
+# 			if [ -e $DBFOLDER_CTAT/$RELEASE/$ASSEMBLY ]; then mv -f $DBFOLDER_CTAT/$RELEASE/$ASSEMBLY $DBFOLDER_CTAT.V$DATE; fi;
+# 		fi;
 		
-		DB_INFOS_JSON='
-		{
-			"code": "'$DATABASE'",
-			"name": "'$DATABASE_NAME'",
-			"fullname": "'$DATABASE_FULLNAME'",
-			"website": "'$DATABASE_WEBSITE'",
-			"description": "'$DATABASE_DESCRIPTION'"
-		}
-		';
-		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
+# 		DB_INFOS_JSON='
+# 		{
+# 			"code": "'$DATABASE'",
+# 			"name": "'$DATABASE_NAME'",
+# 			"fullname": "'$DATABASE_FULLNAME'",
+# 			"website": "'$DATABASE_WEBSITE'",
+# 			"description": "'$DATABASE_DESCRIPTION'"
+# 		}
+# 		';
+# 		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
 
-		DB_RELEASE_INFOS_JSON='
-		{
-			"release": "'$CTAT_DATE'",
-			"date": "'$CTAT_DATE_RELEASE'",
-			"files": [ "'$CTAT_CURRENT'" ],
-			"assembly": [ "'$ASSEMBLY'" ],
-			"download": {
-				"methode": "'$DOWNLOAD_METHOD'",
-				"URL": "'$(dirname $CTAT_CURRENT)'",
-				"file": "'$(basename $CTAT_CURRENT)'",
-				"date": "'$CTAT_DATE_RELEASE'"
-			}
-		}
-		';
-		echo "$DB_RELEASE_INFOS_JSON" > $DB_TMP/STARK.database.release
+# 		DB_RELEASE_INFOS_JSON='
+# 		{
+# 			"release": "'$CTAT_DATE'",
+# 			"date": "'$CTAT_DATE_RELEASE'",
+# 			"files": [ "'$CTAT_CURRENT'" ],
+# 			"assembly": [ "'$ASSEMBLY'" ],
+# 			"download": {
+# 				"methode": "'$DOWNLOAD_METHOD'",
+# 				"URL": "'$(dirname $CTAT_CURRENT)'",
+# 				"file": "'$(basename $CTAT_CURRENT)'",
+# 				"date": "'$CTAT_DATE_RELEASE'"
+# 			}
+# 		}
+# 		';
+# 		echo "$DB_RELEASE_INFOS_JSON" > $DB_TMP/STARK.database.release
 
-		(($VERBOSE)) && echo "#[INFO] CTAT URL=$CTAT_CURRENT"
-		(($VERBOSE)) && echo "#[INFO] CTAT RELEASE=$DATE"
+# 		(($VERBOSE)) && echo "#[INFO] CTAT URL=$CTAT_CURRENT"
+# 		(($VERBOSE)) && echo "#[INFO] CTAT RELEASE=$DATE"
 
-		echo "$DBFOLDER_CTAT/done: $DBFOLDER
-			$ARIA_CMD $CTAT_CURRENT -d $DB_TMP;
-			wget --progress=bar:force:noscroll $CTAT_PM -P $DB_TMP;
-			mkdir -p $DBFOLDER_CTAT/$DATE/$ASSEMBLY;
-			chmod 0775 $DBFOLDER_CTAT/$DATE/$ASSEMBLY;
-			tar -xzf  $DB_TMP/$(basename $CTAT_CURRENT) -C  $DB_TMP --strip-components=1;
-			$JAVA -jar $PICARD CreateSequenceDictionary -REFERENCE $DB_TMP/ctat_genome_lib_build_dir/ref_genome.fa -OUTPUT $DB_TMP/ctat_genome_lib_build_dir/ref_genome.dict;
-			cp -R $DB_TMP/ctat_genome_lib_build_dir/* $DBFOLDER_CTAT/$DATE/$ASSEMBLY;
-			\cp $DB_TMP/AnnotFilterRule.pm $DBFOLDER_CTAT/$DATE/$ASSEMBLY;
-			-[ ! -s $DBFOLDER_CTAT/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_CTAT/STARK.database && chmod o+r $DBFOLDER_CTAT/STARK.database;
-			-[ ! -s $DBFOLDER_CTAT/$DATE/$ASSEMBLY/STARK.database.release ] && cp $DB_TMP/STARK.database.release $DBFOLDER_CTAT/$DATE/$ASSEMBLY/STARK.database.release && chmod o+r $DBFOLDER_CTAT/$DATE/$ASSEMBLY/STARK.database.release;
-			[ ! -e $DBFOLDER_CTAT/$RELEASE/$ASSEMBLY ] || unlink $DBFOLDER_CTAT/$RELEASE/$ASSEMBLY;
-			ln -snf ../$DATE/$ASSEMBLY $DBFOLDER_CTAT/$RELEASE/$ASSEMBLY;
-			rm -rf $DB_TMP;
-		" >> $MK
-		MK_ALL="$MK_ALL $DBFOLDER_CTAT/done"
-	fi;
-fi;
+# 		echo "$DBFOLDER_CTAT/done: $DBFOLDER
+# 			$ARIA_CMD $CTAT_CURRENT -d $DB_TMP;
+# 			wget --progress=bar:force:noscroll $CTAT_PM -P $DB_TMP;
+# 			mkdir -p $DBFOLDER_CTAT/$DATE/$ASSEMBLY;
+# 			chmod 0775 $DBFOLDER_CTAT/$DATE/$ASSEMBLY;
+# 			tar -xzf  $DB_TMP/$(basename $CTAT_CURRENT) -C  $DB_TMP --strip-components=1;
+# 			$JAVA -jar $PICARD CreateSequenceDictionary -REFERENCE $DB_TMP/ctat_genome_lib_build_dir/ref_genome.fa -OUTPUT $DB_TMP/ctat_genome_lib_build_dir/ref_genome.dict;
+# 			cp -R $DB_TMP/ctat_genome_lib_build_dir/* $DBFOLDER_CTAT/$DATE/$ASSEMBLY;
+# 			\cp $DB_TMP/AnnotFilterRule.pm $DBFOLDER_CTAT/$DATE/$ASSEMBLY;
+# 			-[ ! -s $DBFOLDER_CTAT/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_CTAT/STARK.database && chmod o+r $DBFOLDER_CTAT/STARK.database;
+# 			-[ ! -s $DBFOLDER_CTAT/$DATE/$ASSEMBLY/STARK.database.release ] && cp $DB_TMP/STARK.database.release $DBFOLDER_CTAT/$DATE/$ASSEMBLY/STARK.database.release && chmod o+r $DBFOLDER_CTAT/$DATE/$ASSEMBLY/STARK.database.release;
+# 			[ ! -e $DBFOLDER_CTAT/$RELEASE/$ASSEMBLY ] || unlink $DBFOLDER_CTAT/$RELEASE/$ASSEMBLY;
+# 			ln -snf ../$DATE/$ASSEMBLY $DBFOLDER_CTAT/$RELEASE/$ASSEMBLY;
+# 			rm -rf $DB_TMP;
+# 		" >> $MK
+# 		MK_ALL="$MK_ALL $DBFOLDER_CTAT/done"
+# 	fi;
+# fi;
 
 ###########
 # GENCODE #

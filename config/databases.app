@@ -310,12 +310,18 @@ export SNPEFF_CONFIG
 DATABASES_CONFIG_LIST=$DATABASES_CONFIG_LIST" SNPEFF_CONFIG"
 
 
+##################
+# VARIANTCONVERT #
+##################
+
+# Main Folder for VARIANTCONVERT configuration
+export VARIANTCONVERT_FOLDER_CONFIG=$STARK_FOLDER_CONFIG/variantconvert
+
+
+
 ##########
 # HOWARD #
 ##########
-
-
-
 
 # Main Folder for HOWARD configuration
 export HOWARD_FOLDER_CONFIG=$STARK_FOLDER_CONFIG/howard

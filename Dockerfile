@@ -1260,7 +1260,7 @@ ENV TOOL_SOURCE_EXTERNAL="https://github.com/SamuelNicaise/$TOOL_NAME/archive/re
 ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 # TOOL PARAMETERS
 #ENV CONFIG_VARIANTCONVERT_FOLDER="$CONFIG/variantconvert"
-ENV CONFIG_VARIANTCONVERT_FOLDER=$TOOLS/$TOOL_NAME/$TOOL_VERSION/configs
+ENV CONFIGS_VARIANTCONVERT_FOLDER=$TOOLS/$TOOL_NAME/$TOOL_VERSION/configs
 
 # TOOL INSTALLATION
 RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
@@ -1271,8 +1271,8 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	cp -R $TOOL_SOURCE_BUILD/*/* $TOOL_DEST/ && \
 	$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python -m pip install -e $TOOL_DEST && \
 	#ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current && \
-	$TOOL_DEST/bin/variantconvert init -d $CONFIG_VARIANTCONVERT_FOLDER && \
-	for variantconvert_assembly in $CONFIG_VARIANTCONVERT_FOLDER/*; do \
+	$TOOL_DEST/bin/variantconvert init -d $CONFIGS_VARIANTCONVERT_FOLDER && \
+	for variantconvert_assembly in $CONFIGS_VARIANTCONVERT_FOLDER/*; do \
 		$TOOL_DEST/bin/variantconvert config -c $variantconvert_assembly/* --set GENOME.path=$GENOMES/$(basename $variantconvert_assembly)/$(basename $variantconvert_assembly).fa; \
 	done && \
 	$MAMBA clean -y --all
@@ -1357,6 +1357,7 @@ ENV PATH=$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin:$PATH
 ENV TOOL="/tool"
 ENV CONFIG_MYAPPS_FOLDER="$CONFIGS/myapps"
 ENV CONFIG_HOWARD_FOLDER="$CONFIGS/howard"
+ENV CONFIG_VARIANTCONVERT_FOLDER="$CONFIGS/variantconvert"
 
 
 ENV DEST=$TOOLS/$TOOL_NAME/$TOOL_VERSION
@@ -1384,7 +1385,10 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	mkdir -p $CONFIG_HOWARD_FOLDER && \
 	cp -R $TOOLS/$TOOL_NAME/$TOOL_VERSION/config/howard/* $CONFIG_HOWARD_FOLDER && \
 	rm -rf $TOOLS/$TOOL_NAME/$TOOL_VERSION/config/howard && \
-	ln -sf $CONFIG_HOWARD_FOLDER $TOOLS/$TOOL_NAME/$TOOL_VERSION/config/howard ;
+	ln -sf $CONFIG_HOWARD_FOLDER $TOOLS/$TOOL_NAME/$TOOL_VERSION/config/howard && \
+	# VARIANTCONVERT CONFIG FOLDER \
+	mkdir -p $CONFIG_VARIANTCONVERT_FOLDER && \
+	cp -R $CONFIGS_VARIANTCONVERT_FOLDER/* $CONFIG_VARIANTCONVERT_FOLDER/ ;
 
 
 

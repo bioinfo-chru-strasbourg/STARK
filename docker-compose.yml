@@ -76,7 +76,7 @@ services:
         command: -c "/tool/bin/get_databases.sh --build --current --databases=${DOCKER_STARK_INNER_FOLDER_DATABASES} --threads=${DOCKER_STARK_GET_DATABASES_THREADS} --databases_list=ALL --additional_annotations=${DOCKER_STARK_GET_DATABASES_ADDITIONAL_ANNOTATIONS} --verbose 1>>${DOCKER_STARK_INNER_FOLDER_DATABASES}/STARK.databases.build.log 2>>${DOCKER_STARK_INNER_FOLDER_DATABASES}/STARK.databases.build.err"
         volumes:
             # Docker sock
-            # - ${DOCKER_STARK_SOCK_MOUNT}
+            - ${DOCKER_STARK_SOCK_MOUNT}
             # Databases folder
             #- ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_DATABASES}:${DOCKER_STARK_INNER_FOLDER_DATABASES}:rw
             - /Volumes/LaCie/STARK/databases:${DOCKER_STARK_INNER_FOLDER_DATABASES}:rw
