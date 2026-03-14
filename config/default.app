@@ -409,7 +409,7 @@ POST_CALLING_STEPS=" "
 # Usually:
 #    "sorting normalization variantrecalibration" for exome or genome
 #    "sorting normalization variantfiltration" for gene panel
-POST_CALLING_MERGING_STEPS="sorting normalization variantrecalibration"
+POST_CALLING_MERGING_STEPS="sorting normalization variantrecalibration variantfiltration"
 
 
 

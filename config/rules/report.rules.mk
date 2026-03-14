@@ -112,7 +112,7 @@ REPORT_SECTIONS?=ALL
 
 
 ## MERGE OF GENERATED VCF
-%.merge.vcf: %.final_variants_files_vcf_gz $(BAM)
+%.merge$(POST_CALLING_MERGING).vcf: %.final_variants_files_vcf_gz $(BAM)
 	# Generate pipeline name list
 	cat $< | rev | cut -d/ -f1 | rev | sed s/\.vcf.gz//gi | cut -d. -f2- > $@.pipelines
 	# Merge VCF, normalize and rehead with pipelines names (prevent empty VCFs, force single if only one VCF)
@@ -122,17 +122,17 @@ REPORT_SECTIONS?=ALL
 	# 3) merge the two above | rest of normalization
 	# In case there is no SVTYPE, do the full command directly
 	$(BCFTOOLS) merge --threads=$(THREADS_BY_SAMPLE) -l $< --force-samples $$( [ $$(cat $< | wc -l) -lt 2 ] && echo " --force-single " ) -m none --info-rules - $$((($$($(BCFTOOLS) view $$(cat $<) | grep "^#" -v | head -n 1 | wc -l))) && echo "" || echo " --print-header ") > $@.merge_step0.vcf;
-	if (($(BCFTOOLS) head $@.merge_step0.vcf | grep "ID=SVTYPE" -c)); then \
-	$(BCFTOOLS) view -i 'INFO/SVTYPE="BND"' $@.merge_step0.vcf > $@.bnd_only.tmp.vcf; \
-	$(BGZIP) $@.bnd_only.tmp.vcf; \
-	$(TABIX) $@.bnd_only.tmp.vcf.gz; \
-	$(BCFTOOLS) view -e 'INFO/SVTYPE="BND"' $@.merge_step0.vcf | $(BCFTOOLS) norm --threads=$(THREADS_BY_SAMPLE) -m- -f $(GENOME) > $@.all_except_bnd.tmp.vcf; \
-	$(BGZIP) $@.all_except_bnd.tmp.vcf; \
-	$(TABIX) $@.all_except_bnd.tmp.vcf.gz; \
-	$(BCFTOOLS) concat $@.bnd_only.tmp.vcf.gz $@.all_except_bnd.tmp.vcf.gz -a | $(BCFTOOLS) sort | $(BCFTOOLS) norm --threads=$(THREADS_BY_SAMPLE) --rm-dup exact | $(BCFTOOLS) +fill-tags -- -t AN,AC,AF,AC_Hemi,AC_Hom,AC_Het,ExcHet,HWE,MAF,NS | $(BCFTOOLS) reheader --threads=$(THREADS_BY_SAMPLE) -s $@.pipelines > $@.tmp.merged.vcf; \
-	rm -f $@.merge_step0.vcf $@.bnd_only.tmp.vcf $@.all_except_bnd.tmp.vcf; \
+	if (( $$($(BCFTOOLS) head $@.merge_step0.vcf 2>/dev/null | grep "ID=SVTYPE" -c) )); then \
+		$(BCFTOOLS) view -i 'INFO/SVTYPE="BND"' $@.merge_step0.vcf > $@.bnd_only.tmp.vcf; \
+		$(BGZIP) $@.bnd_only.tmp.vcf; \
+		$(TABIX) $@.bnd_only.tmp.vcf.gz; \
+		$(BCFTOOLS) view -e 'INFO/SVTYPE="BND"' $@.merge_step0.vcf | $(BCFTOOLS) norm --threads=$(THREADS_BY_SAMPLE) -m- -f $(GENOME) > $@.all_except_bnd.tmp.vcf; \
+		$(BGZIP) $@.all_except_bnd.tmp.vcf; \
+		$(TABIX) $@.all_except_bnd.tmp.vcf.gz; \
+		$(BCFTOOLS) concat $@.bnd_only.tmp.vcf.gz $@.all_except_bnd.tmp.vcf.gz -a | $(BCFTOOLS) sort | $(BCFTOOLS) norm --threads=$(THREADS_BY_SAMPLE) --rm-dup exact | $(BCFTOOLS) +fill-tags -- -t AN,AC,AF,AC_Hemi,AC_Hom,AC_Het,ExcHet,HWE,MAF,NS | $(BCFTOOLS) reheader --threads=$(THREADS_BY_SAMPLE) -s $@.pipelines > $@.tmp.merged.vcf; \
+		rm -f $@.merge_step0.vcf $@.bnd_only.tmp.vcf $@.all_except_bnd.tmp.vcf; \
 	else \
-	$(BCFTOOLS) merge --threads=$(THREADS_BY_SAMPLE) -l $< --force-samples $$( [ $$(cat $< | wc -l) -lt 2 ] && echo " --force-single " ) -m none --info-rules - | $(BCFTOOLS) sort | $(BCFTOOLS) norm --threads=$(THREADS_BY_SAMPLE) --rm-dup exact | $(BCFTOOLS) +fill-tags -- -t AN,AC,AF,AC_Hemi,AC_Hom,AC_Het,ExcHet,HWE,MAF,NS | $(BCFTOOLS) reheader --threads=$(THREADS_BY_SAMPLE) -s $@.pipelines > $@.tmp.merged.vcf; \
+		$(BCFTOOLS) merge --threads=$(THREADS_BY_SAMPLE) -l $< --force-samples $$( [ $$(cat $< | wc -l) -lt 2 ] && echo " --force-single " ) -m none --info-rules - | $(BCFTOOLS) sort | $(BCFTOOLS) norm --threads=$(THREADS_BY_SAMPLE) --rm-dup exact | $(BCFTOOLS) +fill-tags -- -t AN,AC,AF,AC_Hemi,AC_Hom,AC_Het,ExcHet,HWE,MAF,NS | $(BCFTOOLS) reheader --threads=$(THREADS_BY_SAMPLE) -s $@.pipelines > $@.tmp.merged.vcf; \
 	fi;
 	rm -f $@.merge_step0.vcf;
 	# | $(BCFTOOLS) view --exclude 'FORMAT/GT="0/0"'
@@ -171,17 +171,17 @@ REPORT_SECTIONS?=ALL
 	# Cleaning
 	rm -f $@.tmp* $@.pipelines
 
-
-%.full.sorting.vcf: %.merge.vcf %.transcripts
+# Generate FULL VCF
+%.full.vcf: %.merge.vcf %.transcripts
 	cp $< $@.tmp0
 	# Prevent comma in description in vcf header
 	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$< --output=$@.tmp00.vcf --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
 	# Normalisation for 1 variant per line (no multiple variants), and genotype 0/0* or 0|0* to ./., and genotype ./.* to ./.
 	#$(BCFTOOLS) norm -m- $@.tmp00.vcf --threads $(THREADS_BY_SAMPLE) --force | sed -E 's#\t[0|\.]([/|\|])[0|\.][^\t|$$]*#\t.\1.#g' > $@.tmp0.vcf;
 	if [ "$(VCF_MISSING_GENOTYPE)" = "missing" ]; then \
-		$(BCFTOOLS) norm -m- $@.tmp00.vcf --threads $(THREADS_BY_SAMPLE) --force | $(BCFTOOLS) +setGT -- -t q -i 'GT="0/0" || GT="0|0" || GT="\./\." || GT="\.|\." || GT="0/\." || GT="\./0" || GT="0|\." || GT="\.|0"' -n '.' | $(BCFTOOLS) view --threads $(THREADS_BY_SAMPLE) > $@.tmp0.vcf; \
+		$(BCFTOOLS) norm -m- $@.tmp00.vcf --threads $(THREADS_BY_SAMPLE) --force | $(BCFTOOLS) +setGT -- -t q -i 'GT="\./\." || GT="\.|\." || GT="0/\." || GT="\./0" || GT="0|\." || GT="\.|0"' -n '.' | $(BCFTOOLS) view --threads $(THREADS_BY_SAMPLE) > $@.tmp0.vcf; \
 	elif [ "$(VCF_MISSING_GENOTYPE)" = "missing_clean" ]; then \
-		$(BCFTOOLS) norm -m- $@.tmp00.vcf --threads $(THREADS_BY_SAMPLE) --force | $(BCFTOOLS) +setGT -- -t q -i 'GT="0/0" || GT="0|0" || GT="\./\." || GT="\.|\." || GT="0/\." || GT="\./0" || GT="0|\." || GT="\.|0"' -n '.' | awk -f $(STARK_FOLDER_BIN)/vcf_missing_clean.awk | $(BCFTOOLS) view --threads $(THREADS_BY_SAMPLE) > $@.tmp0.vcf; \
+		$(BCFTOOLS) norm -m- $@.tmp00.vcf --threads $(THREADS_BY_SAMPLE) --force | $(BCFTOOLS) +setGT -- -t q -i 'GT="\./\." || GT="\.|\." || GT="0/\." || GT="\./0" || GT="0|\." || GT="\.|0"' -n '.' | awk -f $(STARK_FOLDER_BIN)/vcf_missing_clean.awk | $(BCFTOOLS) view --threads $(THREADS_BY_SAMPLE) > $@.tmp0.vcf; \
 	else \
 		$(BCFTOOLS) norm -m- $@.tmp00.vcf --threads $(THREADS_BY_SAMPLE) --force | $(BCFTOOLS) view --threads $(THREADS_BY_SAMPLE) > $@.tmp0.vcf; \
 	fi;
@@ -198,8 +198,8 @@ REPORT_SECTIONS?=ALL
 	$(BCFTOOLS) view --threads=$(THREADS_BY_SAMPLE) -S $@.pipelines $*.full.vcf > $@
 	-rm -f $@.tmp* $@.pipelines
 
-
-%.final$(POST_CALLING_MERGING).vcf: %.full.vcf
+# Generate FIANL VCF
+%.final.vcf: %.full.vcf
 	-rm -f $<.tmp.*
 	for S in $$(grep "^#CHROM" $< | cut -f10-); do \
 		$(BCFTOOLS) view --threads=$(THREADS_BY_SAMPLE) -U -s $$S $< | $(BCFTOOLS) view --threads=$(THREADS_BY_SAMPLE) -e 'FORMAT/GT="0/0"' | sed '/^#CHROM/s/'$$S'/'$$(echo $(@F) | cut -d\. -f1)'/' > $<.tmp.$$S; \

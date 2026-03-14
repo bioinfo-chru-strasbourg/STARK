@@ -1,13 +1,14 @@
 ############################
 # GATK4 Rules
-# Release: 0.9.1
-# Date: 02/02/2023
+# Release: 0.9.2
+# Date: 14/13/2026
 # Author: Antony Le Bechec
 ############################
 
 # Release notes:
 # 0.9.0-29/07/2022: Creation, variant filtration and variant recalibration
 # 0.9.1-02/02/2023: Extract Variant Filtration
+# 0.9.2-14/03/2026: Use BCFTools to select variants SNP, INDELS and OTHERS
 
 # OPTIONS
 
@@ -29,17 +30,18 @@ VARIANTFILTRATION_INVALIDATE_PREVIOUS_FILTERS_OPTION?=$(shell if (( $(VARIANTFIL
 ######################
 
 # SNP
-%.POST_CALLING_SNP.vcf: %.variantfiltration.vcf
-	$(JAVA) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
-		SelectVariants \
-		-R $(GENOME) \
-		-V $< \
-		--select-type-to-include SNP \
-		--select-type-to-include MIXED \
-		--select-type-to-include MNP \
-		--select-type-to-include SYMBOLIC \
-		--select-type-to-include NO_VARIATION \
-		-O $@.tmp.SNP.vcf;
+%.POST_CALLING_VARIANTFILTRATION_SNP.vcf: %.variantfiltration.vcf
+# 	$(JAVA) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
+# 		SelectVariants \
+# 		-R $(GENOME) \
+# 		-V $< \
+# 		--select-type-to-include SNP \
+# 		--select-type-to-include MIXED \
+# 		--select-type-to-include MNP \
+# 		--select-type-to-include SYMBOLIC \
+# 		--select-type-to-include NO_VARIATION \
+# 		-O $@.tmp.SNP.vcf;
+	$(BCFTOOLS) view -v snps,mnps $< -o $@.tmp.SNP.vcf;
 	$(JAVA) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
 		VariantFiltration \
 		-R $(GENOME) \
@@ -64,13 +66,14 @@ VARIANTFILTRATION_INVALIDATE_PREVIOUS_FILTERS_OPTION?=$(shell if (( $(VARIANTFIL
 
 
 # INDEL
-%.POST_CALLING_InDel.vcf: %.variantfiltration.vcf
-	$(JAVA) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
-		SelectVariants \
-		-R $(GENOME) \
-		-V $< \
-		--select-type-to-include INDEL \
-		-O $@.tmp.INDEL.vcf;
+%.POST_CALLING_VARIANTFILTRATION_InDel.vcf: %.variantfiltration.vcf
+# 	$(JAVA) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
+# 		SelectVariants \
+# 		-R $(GENOME) \
+# 		-V $< \
+# 		--select-type-to-include INDEL \
+# 		-O $@.tmp.INDEL.vcf;
+	$(BCFTOOLS) view -v indels $< -o $@.tmp.INDEL.vcf;
 	$(JAVA) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
 		VariantFiltration \
 		-R $(GENOME) \
@@ -92,6 +95,37 @@ VARIANTFILTRATION_INVALIDATE_PREVIOUS_FILTERS_OPTION?=$(shell if (( $(VARIANTFIL
 		cp $@.tmp.INDEL.invalidate.vcf $@; \
 	fi;
 	rm -rf $@.tmp*
+
+# Other varaints
+%.POST_CALLING_VARIANTFILTRATION_OTHER_variants.vcf: %.variantfiltration.vcf
+# 	-$(JAVA) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
+# 		SelectVariants \
+# 		-R $(GENOME) \
+# 		-V $< \
+# 		--select-type-to-exclude SNP \
+# 		--select-type-to-exclude INDEL \
+# 		--select-type-to-exclude MIXED \
+# 		--select-type-to-exclude MNP \
+# 		--select-type-to-exclude SYMBOLIC \
+# 		--select-type-to-exclude NO_VARIATION \
+# 		-O $@;
+	$(BCFTOOLS) view -V snps,mnps,indels $< -o $@;
+	#cp $@ $@.tmp.devel.OTHER_variants.vcf;
+
+
+# MERGE SNP and InDel VCF for Post calling steps. Because of loop in rules
+%.vcf: %.POST_CALLING_VARIANTFILTRATION_SNP.vcf %.POST_CALLING_VARIANTFILTRATION_InDel.vcf %.POST_CALLING_VARIANTFILTRATION_OTHER_variants.vcf
+	-$(JAVA) $(JAVA_FLAGS_GATK4) -jar $(GATK4) \
+		MergeVcfs \
+		-I $*.POST_CALLING_VARIANTFILTRATION_SNP.vcf \
+		-I $*.POST_CALLING_VARIANTFILTRATION_InDel.vcf \
+		-I $*.POST_CALLING_VARIANTFILTRATION_OTHER_variants.vcf \
+		--CREATE_INDEX false \
+		--SEQUENCE_DICTIONARY $(DICT) \
+		-O $@;
+	#$(BCFTOOLS) concat $*.POST_CALLING_VARIANTFILTRATION_SNP.vcf $*.POST_CALLING_VARIANTFILTRATION_InDel.vcf $*.POST_CALLING_VARIANTFILTRATION_OTHER_variants.vcf > $@;
+	# Clear
+	-rm -f $*.POST_CALLING_VARIANTFILTRATION_SNP.vcf* $*.POST_CALLING_VARIANTFILTRATION_InDel.vcf* $*.POST_CALLING_VARIANTFILTRATION_OTHER_variants.vcf*
 
 
 
