@@ -95,6 +95,29 @@ export DFAM_DATABASES
 DATABASES_CONFIG_LIST=$DATABASES_CONFIG_LIST" DFAM_DATABASES"
 
 
+# DEEPVARIANT
+# Databases for DeepVariant
+
+if [ ! -z $FOLDER_DATABASES_DEEPVARIANT ] && [ "$FOLDER_DATABASES_DEEPVARIANT" != "" ]; then
+	DEEPVARIANT_DATABASES=$FOLDER_DATABASES_DEEPVARIANT
+else
+	DEEPVARIANT_DATABASES=$DBFOLDER/deepvariant/current
+fi;
+export DEEPVARIANT_DATABASES
+DATABASES_CONFIG_LIST=$DATABASES_CONFIG_LIST" DEEPVARIANT_DATABASES"
+
+# Default PAR BED
+# DEEPVARIANT_PAR_BED="/STARK/databases/deepvariant/current/$ASSEMBLY/GRCh37_PAR.bed"
+export DEEPVARIANT_PAR_BED
+
+# Default Haploid contigs
+# DEEPVARIANT_HAPLOID_CONTIGS=
+# DEEPVARIANT_HAPLOID_CONTIGS="chrX,chrY" # For human genome, but can be different for other organisms. Heterozygous variants in these contigs will be re-genotyped as the most likely (e.g., hom ref or hom alt) because of the haploid nature of these contigs. This option is useful to avoid false positive heterozygous calls in haploid contigs, especially in PAR regions.
+export DEEPVARIANT_HAPLOID_CONTIGS
+
+
+
+
 # STAR Fusion (CTAT Lib)
 # if [ $ASSEMBLY == "hg19" ] ; then CTAT_CURRENT="https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/GRCh37_gencode_v19_CTAT_lib_Mar012021.plug-n-play.tar.gz"; fi;
 # if [ $ASSEMBLY == "hg38" ] ; then CTAT_CURRENT="https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/GRCh38_gencode_v37_CTAT_lib_Mar012021.plug-n-play.tar.gz"; fi;

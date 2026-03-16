@@ -337,7 +337,7 @@ TOOLS_LIST=$TOOLS_LIST" VARIANTCONVERT"
 
 # DEEPVARIANT
 export DEEPVARIANT_VERSION=1.10.0										# VER
-export DEEPVARIANT_DOCKER=google/deepvariant:"$DEEPVARIANT_VERSION"		# DOCKER
+export DEEPVARIANT_DOCKER=google/deepvariant:$DEEPVARIANT_VERSION		# DOCKER
 export DEEPVARIANT_DESCRIPTION="DeepVariant is a deep learning-based variant caller developed by Google."
 export DEEPVARIANT_REF="https://github.com/google/deepvariant"
 TOOLS_LIST=$TOOLS_LIST" DEEPVARIANT"

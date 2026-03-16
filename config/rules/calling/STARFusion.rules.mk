@@ -9,7 +9,7 @@
 # STARFusion need raw alignement, without splitNcigar, to work properly. So we need to use bam without splitNcigar directly from STAR alignments (%$(POST_ALIGNMENT).bam).
 
 #%.STARFusion$(POST_CALLING).vcf: %$(POST_ALIGNMENT).bam %$(POST_ALIGNMENT).bam.bai %.empty.vcf %.junction
-%.STARFusion$(POST_CALLING).vcf: %.star_raw.bam %.star_raw.bam.bai %.empty.vcf %.junction
+%.STARFusion$(POST_CALLING).vcf: %.star_raw.bam %.star_raw.bam.bai %.empty.vcf #%.junction
 	mkdir -p $*.fusion.reports;
 	$(MAMBA) run -p $(STARFUSION_ENV) $(STARFUSION) \
 		--chimeric_junction $*.junction \

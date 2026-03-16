@@ -15,32 +15,37 @@ MK_DATE="24/08/2022"
 ###################################
 
 MAX_CONCURRENT_ALIGNMENTS_STAR?=1
+STAR_KEEP_RAW_BAM?=0
 #STAR_FLAGS?=--outSAMtype BAM SortedByCoordinate --chimOutJunctionFormat 1 --outSAMunmapped Within --outBAMcompression 0 --outFilterMultimapNmax 50 --peOverlapNbasesMin 10 --alignSplicedMateMapLminOverLmate 0.5 --alignSJstitchMismatchNmax 5 -1 5 5 --chimSegmentMin 10 --chimOutType Junctions WithinBAM --chimJunctionOverhangMin 10 --chimScoreDropMax 30 --chimScoreJunctionNonGTAG 0 --chimScoreSeparation 1 --chimSegmentReadGapMax 3 --chimMultimapNmax 50 --twopassMode Basic --quantMode TranscriptomeSAM GeneCounts --quantTranscriptomeBan Singleend
 STAR_FLAGS?=--outSAMtype BAM SortedByCoordinate --chimOutJunctionFormat 1 --outSAMunmapped Within --outBAMcompression 0 --outFilterMultimapNmax 50 --peOverlapNbasesMin 10 --alignSplicedMateMapLminOverLmate 0.5 --alignSJstitchMismatchNmax 5 -1 5 5 --chimSegmentMin 10 --chimOutType Junctions WithinBAM --chimJunctionOverhangMin 10 --chimScoreDropMax 30 --chimScoreJunctionNonGTAG 0 --chimScoreSeparation 1 --chimSegmentReadGapMax 3 --chimMultimapNmax 50 --twopassMode Basic --quantMode TranscriptomeSAM GeneCounts --quantTranscriptomeSAMoutput BanSingleEnd
 
 # Raw alignemnt with STAR
 %.star.star_raw.bam: %.R1$(POST_SEQUENCING).fastq.gz %.R2$(POST_SEQUENCING).fastq.gz
-	echo "ID:1\tPL:ILLUMINA\tPU:PU\tLB:001\tSM:$(*F)" > $@.RG_STAR;
+	# Create metrics folder
+	mkdir -p $@.metrics;
+	# Create read group file for STAR
+	#echo "ID:1\tPL:ILLUMINA\tPU:PU\tLB:001\tSM:$(*F)" > $@.RG_STAR;
 	$(PYTHON3) $(STARK_FOLDER_BIN)/functions.py launch \
 		--cmd "$(STAR) --genomeDir $(GENOME_RNA).star.idx \
 			--runThreadN $(THREADS_BY_SAMPLE) \
 			--readFilesIn $*.R1$(POST_SEQUENCING).fastq.gz $*.R2$(POST_SEQUENCING).fastq.gz \
 			--readFilesCommand zcat \
-			--outFileNamePrefix $@. \
+			--outFileNamePrefix $@.metrics/star. \
 			--outSAMattrRGline ID:1 PL:ILLUMINA PU:PU LB:001 \"SM:$(*F)\" $(STAR_FLAGS)" \
 		--lockfile_prefix $$(echo $@ | xargs -0 dirname | xargs -0 dirname)/lockfile. \
 		--target $@ \
 		--max_jobs $(MAX_CONCURRENT_ALIGNMENTS_STAR);
 	# Rename output bam file
-	mv $@.Aligned.sortedByCoord.out.bam $@;
-# 	# fix issue with base recalibration and rename output
-# 	$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) AddOrReplaceReadGroups $(PICARD_FLAGS) \
-# 		-I $@.Aligned.sortedByCoord.out.bam \
-# 		-O $@ -COMPRESSION_LEVEL 1;
-# 	# fix issue with base recalibration and rename output
-# 	$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) AddOrReplaceReadGroups $(PICARD_FLAGS) \
-# 		-I $@.Aligned.sortedByCoord.out.bam \
-# 		-O $@ -COMPRESSION_LEVEL 1 -LB 001 -PU PU -PL ILLUMINA -SM $(*F);
+	if (( $(STAR_KEEP_RAW_BAM) )); then \
+		cp $@.metrics/star.Aligned.sortedByCoord.out.bam $@; \
+		cp $@.metrics/star.Chimeric.out.junction $*.star.junction; \
+	else \
+		mv $@.metrics/star.Aligned.sortedByCoord.out.bam $@; \
+		cp $@.metrics/star.Chimeric.out.junction $*.star.junction; \
+	fi;
+	# Copy junction file from STAR alignments if exist, otherwise create empty file to avoid error in STARFusion rules
+	cp $@.metrics/star.Chimeric.out.junction $*.star.junction;
+	# Clean
 	-rm -rf $@.Aligned.sortedByCoord.out.bam $@.RG_STAR $@._STARgenome $@._STARpass1 $@.rg_args;
 
 # Alignement with STAR from raw alignement (with post alignment for SNV calling)
@@ -49,16 +54,16 @@ STAR_FLAGS?=--outSAMtype BAM SortedByCoordinate --chimOutJunctionFormat 1 --outS
 
 # POST ALIGNMENT STEPS
 
-# Post alignment spécific for STAR: we need to use the bam with splitNcigar for SNV calling. However, splitNcigar is forbiden for fusion detection tools (Arriba and STARFusion) to work properly (see STARFusion.rules.mk and Arriba.rules.mk for explanation).
-%.bam: %.splitncigar.bam %.splitncigar.bam.bai
-	$(JAVA) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) SplitNCigarReads -R $(GENOME) -I $< -O $@
-
-# %.splitncigar.bam: %.bam %.bam.bai
+# DEVEL: Integrated into post alignment rules (folder postalignment)
+# # Post alignment spécific for STAR: we need to use the bam with splitNcigar for SNV calling. However, splitNcigar is forbiden for fusion detection tools (Arriba and STARFusion) to work properly (see STARFusion.rules.mk and Arriba.rules.mk for explanation).
+# %.bam: %.splitncigar.bam %.splitncigar.bam.bai
 # 	$(JAVA) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) SplitNCigarReads -R $(GENOME) -I $< -O $@
 
-# Copy junction file from STAR alignments if exist, otherwise create empty file to avoid error in STARFusion rules
-%.star.junction: %.star.star_raw.bam
-	if [ -e $@ ]; then touch $@; else cp $<.Chimeric.out.junction $@; fi;
+
+# DEVEL: integrated into star alignment rules (see above)
+# # Copy junction file from STAR alignments if exist, otherwise create empty file to avoid error in STARFusion rules
+# %.star.junction: %.star.star_raw.bam
+# 	if [ -e $@ ]; then touch $@; else cp $<.Chimeric.out.junction $@; fi;
 
 
 

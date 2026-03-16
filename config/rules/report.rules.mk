@@ -121,7 +121,8 @@ REPORT_SECTIONS?=ALL
 	# 2) merge | exclude breakends | do the bcftools norm that crashes on breakends
 	# 3) merge the two above | rest of normalization
 	# In case there is no SVTYPE, do the full command directly
-	$(BCFTOOLS) merge --threads=$(THREADS_BY_SAMPLE) -l $< --force-samples $$( [ $$(cat $< | wc -l) -lt 2 ] && echo " --force-single " ) -m none --info-rules - $$((($$($(BCFTOOLS) view $$(cat $<) | grep "^#" -v | head -n 1 | wc -l))) && echo "" || echo " --print-header ") > $@.merge_step0.vcf;
+	#$(BCFTOOLS) merge --threads=$(THREADS_BY_SAMPLE) -l $< --force-samples $$( [ $$(cat $< | wc -l) -lt 2 ] && echo " --force-single " ) -m none --info-rules - $$((($$($(BCFTOOLS) view $$(cat $<) | grep "^#" -v | head -n 1 | wc -l))) && echo "" || echo " --print-header ") > $@.merge_step0.vcf;
+	$(BCFTOOLS) merge --threads=$(THREADS_BY_SAMPLE) -l $< --force-samples $$( [ $$(cat $< | wc -l) -lt 2 ] && echo " --force-single " ) -m none --info-rules - $$((($$($(BCFTOOLS) merge --force-samples $$(cat $<) | grep "^#" -v | head -n 1 | wc -l))) && echo "" || echo " --print-header ") > $@.merge_step0.vcf;
 	if (( $$($(BCFTOOLS) head $@.merge_step0.vcf 2>/dev/null | grep "ID=SVTYPE" -c) )); then \
 		$(BCFTOOLS) view -i 'INFO/SVTYPE="BND"' $@.merge_step0.vcf > $@.bnd_only.tmp.vcf; \
 		$(BGZIP) $@.bnd_only.tmp.vcf; \
@@ -173,7 +174,6 @@ REPORT_SECTIONS?=ALL
 
 # Generate FULL VCF
 %.full.vcf: %.merge.vcf %.transcripts
-	cp $< $@.tmp0
 	# Prevent comma in description in vcf header
 	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$< --output=$@.tmp00.vcf --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
 	# Normalisation for 1 variant per line (no multiple variants), and genotype 0/0* or 0|0* to ./., and genotype ./.* to ./.

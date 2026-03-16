@@ -436,7 +436,7 @@ MAX_CONCURRENT_HSMETRICS_RAM?=24g
 	fi;
 
 
-%.bam.metrics/metrics.samtools.depth: %.validation.bam %.bam.bai
+%.bam.metrics/metrics.samtools.depth: %.validation.bam %.validation.bam.bai
 	# Create directory ;
 	mkdir -p $(@D);
 	> $@;
