@@ -31,17 +31,7 @@ VARIANTFILTRATION_INVALIDATE_PREVIOUS_FILTERS_OPTION?=$(shell if (( $(VARIANTFIL
 
 # SNP
 %.POST_CALLING_VARIANTFILTRATION_SNP.vcf: %.variantfiltration.vcf
-# 	$(JAVA) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
-# 		SelectVariants \
-# 		-R $(GENOME) \
-# 		-V $< \
-# 		--select-type-to-include SNP \
-# 		--select-type-to-include MIXED \
-# 		--select-type-to-include MNP \
-# 		--select-type-to-include SYMBOLIC \
-# 		--select-type-to-include NO_VARIATION \
-# 		-O $@.tmp.SNP.vcf;
-	$(BCFTOOLS) view -v snps,mnps $< -o $@.tmp.SNP.vcf;
+	$(BCFTOOLS) view -v snps,mnps --threads=$(THREADS_BY_CALLER) $< | $(BCFTOOLS) sort -o $@.tmp.SNP.vcf;
 	$(JAVA) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
 		VariantFiltration \
 		-R $(GENOME) \
@@ -67,13 +57,7 @@ VARIANTFILTRATION_INVALIDATE_PREVIOUS_FILTERS_OPTION?=$(shell if (( $(VARIANTFIL
 
 # INDEL
 %.POST_CALLING_VARIANTFILTRATION_InDel.vcf: %.variantfiltration.vcf
-# 	$(JAVA) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
-# 		SelectVariants \
-# 		-R $(GENOME) \
-# 		-V $< \
-# 		--select-type-to-include INDEL \
-# 		-O $@.tmp.INDEL.vcf;
-	$(BCFTOOLS) view -v indels $< -o $@.tmp.INDEL.vcf;
+	$(BCFTOOLS) view -v indels --threads=$(THREADS_BY_CALLER) $< | $(BCFTOOLS) sort -o $@.tmp.INDEL.vcf;
 	$(JAVA) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
 		VariantFiltration \
 		-R $(GENOME) \
@@ -98,19 +82,7 @@ VARIANTFILTRATION_INVALIDATE_PREVIOUS_FILTERS_OPTION?=$(shell if (( $(VARIANTFIL
 
 # Other varaints
 %.POST_CALLING_VARIANTFILTRATION_OTHER_variants.vcf: %.variantfiltration.vcf
-# 	-$(JAVA) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
-# 		SelectVariants \
-# 		-R $(GENOME) \
-# 		-V $< \
-# 		--select-type-to-exclude SNP \
-# 		--select-type-to-exclude INDEL \
-# 		--select-type-to-exclude MIXED \
-# 		--select-type-to-exclude MNP \
-# 		--select-type-to-exclude SYMBOLIC \
-# 		--select-type-to-exclude NO_VARIATION \
-# 		-O $@;
-	$(BCFTOOLS) view -V snps,mnps,indels $< -o $@;
-	#cp $@ $@.tmp.devel.OTHER_variants.vcf;
+	$(BCFTOOLS) view -V snps,mnps,indels --threads=$(THREADS_BY_CALLER) $< | $(BCFTOOLS) sort -o $@;
 
 
 # MERGE SNP and InDel VCF for Post calling steps. Because of loop in rules
@@ -123,7 +95,6 @@ VARIANTFILTRATION_INVALIDATE_PREVIOUS_FILTERS_OPTION?=$(shell if (( $(VARIANTFIL
 		--CREATE_INDEX false \
 		--SEQUENCE_DICTIONARY $(DICT) \
 		-O $@;
-	#$(BCFTOOLS) concat $*.POST_CALLING_VARIANTFILTRATION_SNP.vcf $*.POST_CALLING_VARIANTFILTRATION_InDel.vcf $*.POST_CALLING_VARIANTFILTRATION_OTHER_variants.vcf > $@;
 	# Clear
 	-rm -f $*.POST_CALLING_VARIANTFILTRATION_SNP.vcf* $*.POST_CALLING_VARIANTFILTRATION_InDel.vcf* $*.POST_CALLING_VARIANTFILTRATION_OTHER_variants.vcf*
 

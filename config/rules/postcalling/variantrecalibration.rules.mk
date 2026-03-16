@@ -35,17 +35,7 @@ VARIANTRECALIBRATOR_INDEL_OPTIONS?=$(VARIANTRECALIBRATION_INDEL_RESOURCES_OPTION
 
 # SNP
 %.POST_CALLING_VARIANTRECALIBRATION_SNP.vcf: %.variantrecalibration.vcf
-# 	$(JAVA) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
-# 		SelectVariants \
-# 		-R $(GENOME) \
-# 		-V $< \
-# 		--select-type-to-include SNP \
-# 		--select-type-to-include MIXED \
-# 		--select-type-to-include MNP \
-# 		--select-type-to-include SYMBOLIC \
-# 		--select-type-to-include NO_VARIATION \
-# 		-O $@.tmp.SNP.vcf;
-	$(BCFTOOLS) view -v snps,mnps $< -o $@.tmp.SNP.vcf;
+	$(BCFTOOLS) view -v snps,mnps --threads=$(THREADS_BY_CALLER) $< | $(BCFTOOLS) sort -o $@.tmp.SNP.vcf;
 	-if (($(VARIANTRECALIBRATION_CHECK))); then \
 		if ! $(JAVA) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
 			VariantRecalibrator \
@@ -97,13 +87,7 @@ VARIANTRECALIBRATOR_INDEL_OPTIONS?=$(VARIANTRECALIBRATION_INDEL_RESOURCES_OPTION
 
 # INDEL
 %.POST_CALLING_VARIANTRECALIBRATION_InDel.vcf: %.variantrecalibration.vcf
-# 	$(JAVA) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
-# 		SelectVariants \
-# 		-R $(GENOME) \
-# 		-V $< \
-# 		--select-type-to-include INDEL \
-# 		-O $@.tmp.InDel.vcf;
-	$(BCFTOOLS) view -v indels $< -o $@.tmp.INDEL.vcf;
+	$(BCFTOOLS) view -v indels --threads=$(THREADS_BY_CALLER) $< | $(BCFTOOLS) sort -o $@.tmp.INDEL.vcf;
 	-if (($(VARIANTRECALIBRATION_CHECK))); then \
 		if ! $(JAVA) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
 			VariantRecalibrator \
@@ -155,18 +139,7 @@ VARIANTRECALIBRATOR_INDEL_OPTIONS?=$(VARIANTRECALIBRATION_INDEL_RESOURCES_OPTION
 
 # Other variants
 %.POST_CALLING_VARIANTRECALIBRATION_OTHER_variants.vcf: %.variantrecalibration.vcf
-# 	$(JAVA) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) \
-# 		SelectVariants \
-# 		-R $(GENOME) \
-# 		-V $< \
-# 		--select-type-to-exclude SNP \
-# 		--select-type-to-exclude INDEL \
-# 		--select-type-to-exclude MIXED \
-# 		--select-type-to-exclude MNP \
-# 		--select-type-to-exclude SYMBOLIC \
-# 		--select-type-to-exclude NO_VARIATION \
-# 		-O $@;
-	$(BCFTOOLS) view -V snps,mnps,indels $< -o $@;
+	$(BCFTOOLS) view -V snps,mnps,indels --threads=$(THREADS_BY_CALLER) $< | $(BCFTOOLS) sort -o $@;
 
 
 # MERGE SNP and InDel VCF for Post calling steps. Because of loop in rules
