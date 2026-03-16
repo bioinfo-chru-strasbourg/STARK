@@ -45,9 +45,9 @@ DEEPVARIANT_DPMIN?=4
 		--logging_dir=$@.logs \
 		--par_regions_bed="$*.design.bed" \
 		--regions="$*.design.bed"
-	# Filter out missing genotypes (GT=./.) and keep only variants with a called genotype (GT=0/1, 1/1, etc.)
+	# Filter out missing genotypes (GT=./.) and keep only hom and het variants with a called genotype (GT=0/1, 1/1, etc.)
 	# Filter on DP (read depth) if specified
-	$(BCFTOOLS) view $@.tmp.vcf -g ^miss --exclude ' FORMAT/DP < $(DEEPVARIANT_DPMIN) || FORMAT/GT == "0/0" ' --threads=$(THREADS_BY_CALLER) > $@
+	$(BCFTOOLS) view $@.tmp.vcf -g ^miss --include  '(GT="het" || GT="hom") && GT!="0/0" && GT!="0|0" && FORMAT/DP >= $(DEEPVARIANT_DPMIN)' --threads=$(THREADS_BY_CALLER) > $@
 	# Empty if no file and clean up temporary files
 	-if [ ! -e $@ ]; then cp $*.empty.vcf $@; fi;
 	-if [ ! -e $@ ]; then touch $@; fi;
