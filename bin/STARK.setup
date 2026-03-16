@@ -236,6 +236,18 @@ if [ -d $VARIANTCONVERT_FOLDER_CONFIG ] || [ -L $VARIANTCONVERT_FOLDER_CONFIG ];
 fi;
 
 
+# Docker images pull
+(($VERBOSE)) && echo "#[INFO] Pull Docker images (if not exists)"
+for docker_image in $DOCKER_LIST; do
+	(($VERBOSE)) && echo "#[INFO] Pull Docker image '$docker_image'"
+	if ! docker pull $docker_image; then
+		echo "#[ERROR] Failed to pull Docker image '$docker_image'"
+		exit 1
+	else
+		(($VERBOSE)) && echo "#[INFO] Docker image '$docker_image' pulled successfully"
+	fi;
+done;
+
 ### Done
 (($VERBOSE)) && echo "#[INFO] STARK Setup done."
 

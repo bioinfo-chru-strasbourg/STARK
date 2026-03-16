@@ -335,6 +335,14 @@ export VARIANTCONVERT_DESCRIPTION="VariantConvert is a tool for converting varia
 export VARIANTCONVERT_REF="https://github.com/SamuelNicaise/variantconvert"
 TOOLS_LIST=$TOOLS_LIST" VARIANTCONVERT"
 
+# DEEPVARIANT
+export DEEPVARIANT_VERSION=1.10.0										# VER
+export DEEPVARIANT_DOCKER=google/deepvariant:"$DEEPVARIANT_VERSION"		# DOCKER
+export DEEPVARIANT_DESCRIPTION="DeepVariant is a deep learning-based variant caller developed by Google."
+export DEEPVARIANT_REF="https://github.com/google/deepvariant"
+TOOLS_LIST=$TOOLS_LIST" DEEPVARIANT"
+DOCKER_LIST=$DOCKER_LIST" $DEEPVARIANT_DOCKER"
+
 
 # STARK
 export STARK=$NGS_TOOLS/stark/$ENV_RELEASE/bin			# DIR
@@ -399,11 +407,18 @@ ENV_PERLLIB=$NGS_FOLDER/tools/perl/lib
 # DOCKER
 export DOCKER_VERSION=29.2.1												# VER
 export DOCKER=$NGS_TOOLS/docker/$DOCKER_VERSION/bin/docker					# BIN
-export DOCKER_MOUNTS=$($PYTHON $STARK/extract_mounts.py --docker=$DOCKER)	# MOUNTS
-export DOCKER_RUN="$DOCKER run $DOCKER_MOUNTS"								# RUN
 export DOCKER_DESCRIPTION="Docker is a platform for developing, shipping, and running applications."
 export DOCKER_REF="https://www.docker.com/"
 TOOLS_LIST=$TOOLS_LIST" DOCKER"
+
+# Docker Config
+if [ -z "$DOCKER_MOUNTS" ]; then
+	export DOCKER_MOUNTS=$($PYTHON $STARK/extract_mounts.py --docker=$DOCKER)	# MOUNTS
+fi;
+export DOCKER_MOUNTS
+export DOCKER_RUN="$DOCKER run $DOCKER_MOUNTS"								# RUN
+
+
 
 
 # PATH

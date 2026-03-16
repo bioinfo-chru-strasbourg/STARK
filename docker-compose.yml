@@ -59,6 +59,7 @@ services:
         entrypoint: /bin/bash
         command: -c "/tool/bin/STARK.setup --docker-env-file=/tool/.env --setup-type=INNER --setup-main-folder-pattern=/STARK_folder_setup --verbose"
         volumes:
+            - ${DOCKER_STARK_SOCK_MOUNT}
             - ${DOCKER_STARK_MAIN_FOLDER}:/STARK_folder_setup/STARK:rw
             - ${DOCKER_COMPOSE_ENV}:/tool/.env:ro
         depends_on:
