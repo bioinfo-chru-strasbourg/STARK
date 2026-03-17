@@ -112,6 +112,18 @@ REPORT_SECTIONS?=ALL
 
 
 ## MERGE OF GENERATED VCF
+
+# 	$(BCFTOOLS) merge --threads=$(THREADS_BY_SAMPLE) -l $< --force-samples $$( [ $$(cat $< | wc -l) -lt 2 ] && echo " --force-single " ) -m none --info-rules - $$((($$($(BCFTOOLS) merge --force-samples $$(cat $<) | grep "^#" -v | head -n 1 | wc -l))) && echo "" || echo " --print-header ") | $(BCFTOOLS) sort | $(BCFTOOLS) reheader --threads=$(THREADS_BY_SAMPLE) -s $@.pipelines -o $@.merge_step0.vcf;
+# 	# Extract SNP and InDels for normalization, and Others variants (e.g., SVs) without normalization. For specific normalization and to avoid issues with bcftools norm on breakends
+# 	$(BCFTOOLS) view -v snps,mnps,indels --threads=$(THREADS_BY_SAMPLE) $@.merge_step0.vcf | $(BCFTOOLS) norm --threads=$(THREADS_BY_SAMPLE) -m- -f $(GENOME) --force --write-index -Oz -o $@.tmp.merged.SNPINDELS.vcf.gz;
+# 	$(BCFTOOLS) view -V snps,mnps,indels --threads=$(THREADS_BY_SAMPLE) $@.merge_step0.vcf -Oz -o $@.tmp.merged.OTHERS.vcf.gz;
+# 	$(BCFTOOLS) concat $@.tmp.merged.SNPINDELS.vcf.gz $@.tmp.merged.OTHERS.vcf.gz -a --threads=$(THREADS_BY_SAMPLE) | $(BCFTOOLS) sort | $(BCFTOOLS) norm --threads=$(THREADS_BY_SAMPLE) --rm-dup exact | $(BCFTOOLS) +fill-tags -- -t AN,AC,AF,AC_Hemi,AC_Hom,AC_Het,ExcHet,HWE,MAF,NS -o $@.tmp.merged.vcf;
+
+# Reheader to add validation depth flags. Write new header before merge step and add in pipe of merge
+# echo '##INFO=<ID=Validation_Depth,Number=.,Type=Float,Description="Depth metrics from BAM validation">' > $@.tmp.annotate.new_header.txt
+# echo '##INFO=<ID=Validation_Depth_Flags,Number=.,Type=String,Description="Depth metrics flag from BAM validation">' >> $@.tmp.annotate.new_header.txt
+# bcftools annotate -h $@.tmp.annotate.new_header.txt $@.merge_step0.vcf --threads=$(THREADS_BY_SAMPLE) -o $@.tmp.merged.reheaded.vcf;
+
 %.merge$(POST_CALLING_MERGING).vcf: %.final_variants_files_vcf_gz $(BAM)
 	# Generate pipeline name list
 	cat $< | rev | cut -d/ -f1 | rev | sed s/\.vcf.gz//gi | cut -d. -f2- > $@.pipelines
@@ -127,11 +139,11 @@ REPORT_SECTIONS?=ALL
 		$(BCFTOOLS) view -i 'INFO/SVTYPE="BND"' $@.merge_step0.vcf > $@.bnd_only.tmp.vcf; \
 		$(BGZIP) $@.bnd_only.tmp.vcf; \
 		$(TABIX) $@.bnd_only.tmp.vcf.gz; \
-		$(BCFTOOLS) view -e 'INFO/SVTYPE="BND"' $@.merge_step0.vcf | $(BCFTOOLS) norm --threads=$(THREADS_BY_SAMPLE) -m- -f $(GENOME) > $@.all_except_bnd.tmp.vcf; \
+		$(BCFTOOLS) view -e 'INFO/SVTYPE="BND"' $@.merge_step0.vcf | $(BCFTOOLS) norm --threads=$(THREADS_BY_SAMPLE) -m- -f $(GENOME) --force > $@.all_except_bnd.tmp.vcf; \
 		$(BGZIP) $@.all_except_bnd.tmp.vcf; \
 		$(TABIX) $@.all_except_bnd.tmp.vcf.gz; \
 		$(BCFTOOLS) concat $@.bnd_only.tmp.vcf.gz $@.all_except_bnd.tmp.vcf.gz -a | $(BCFTOOLS) sort | $(BCFTOOLS) norm --threads=$(THREADS_BY_SAMPLE) --rm-dup exact | $(BCFTOOLS) +fill-tags -- -t AN,AC,AF,AC_Hemi,AC_Hom,AC_Het,ExcHet,HWE,MAF,NS | $(BCFTOOLS) reheader --threads=$(THREADS_BY_SAMPLE) -s $@.pipelines > $@.tmp.merged.vcf; \
-		rm -f $@.merge_step0.vcf $@.bnd_only.tmp.vcf $@.all_except_bnd.tmp.vcf; \
+		rm -f $@.bnd_only.tmp.vcf* $@.all_except_bnd.tmp.vcf*; \
 	else \
 		$(BCFTOOLS) merge --threads=$(THREADS_BY_SAMPLE) -l $< --force-samples $$( [ $$(cat $< | wc -l) -lt 2 ] && echo " --force-single " ) -m none --info-rules - | $(BCFTOOLS) sort | $(BCFTOOLS) norm --threads=$(THREADS_BY_SAMPLE) --rm-dup exact | $(BCFTOOLS) +fill-tags -- -t AN,AC,AF,AC_Hemi,AC_Hom,AC_Het,ExcHet,HWE,MAF,NS | $(BCFTOOLS) reheader --threads=$(THREADS_BY_SAMPLE) -s $@.pipelines > $@.tmp.merged.vcf; \
 	fi;
