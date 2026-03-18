@@ -112,66 +112,36 @@ REPORT_SECTIONS?=ALL
 
 
 ## MERGE OF GENERATED VCF
-
-# 	$(BCFTOOLS) merge --threads=$(THREADS_BY_SAMPLE) -l $< --force-samples $$( [ $$(cat $< | wc -l) -lt 2 ] && echo " --force-single " ) -m none --info-rules - $$((($$($(BCFTOOLS) merge --force-samples $$(cat $<) | grep "^#" -v | head -n 1 | wc -l))) && echo "" || echo " --print-header ") | $(BCFTOOLS) sort | $(BCFTOOLS) reheader --threads=$(THREADS_BY_SAMPLE) -s $@.pipelines -o $@.merge_step0.vcf;
-# 	# Extract SNP and InDels for normalization, and Others variants (e.g., SVs) without normalization. For specific normalization and to avoid issues with bcftools norm on breakends
-# 	$(BCFTOOLS) view -v snps,mnps,indels --threads=$(THREADS_BY_SAMPLE) $@.merge_step0.vcf | $(BCFTOOLS) norm --threads=$(THREADS_BY_SAMPLE) -m- -f $(GENOME) --force --write-index -Oz -o $@.tmp.merged.SNPINDELS.vcf.gz;
-# 	$(BCFTOOLS) view -V snps,mnps,indels --threads=$(THREADS_BY_SAMPLE) $@.merge_step0.vcf -Oz -o $@.tmp.merged.OTHERS.vcf.gz;
-# 	$(BCFTOOLS) concat $@.tmp.merged.SNPINDELS.vcf.gz $@.tmp.merged.OTHERS.vcf.gz -a --threads=$(THREADS_BY_SAMPLE) | $(BCFTOOLS) sort | $(BCFTOOLS) norm --threads=$(THREADS_BY_SAMPLE) --rm-dup exact | $(BCFTOOLS) +fill-tags -- -t AN,AC,AF,AC_Hemi,AC_Hom,AC_Het,ExcHet,HWE,MAF,NS -o $@.tmp.merged.vcf;
-
-# Reheader to add validation depth flags. Write new header before merge step and add in pipe of merge
-# echo '##INFO=<ID=Validation_Depth,Number=.,Type=Float,Description="Depth metrics from BAM validation">' > $@.tmp.annotate.new_header.txt
-# echo '##INFO=<ID=Validation_Depth_Flags,Number=.,Type=String,Description="Depth metrics flag from BAM validation">' >> $@.tmp.annotate.new_header.txt
-# bcftools annotate -h $@.tmp.annotate.new_header.txt $@.merge_step0.vcf --threads=$(THREADS_BY_SAMPLE) -o $@.tmp.merged.reheaded.vcf;
-
 %.merge$(POST_CALLING_MERGING).vcf: %.final_variants_files_vcf_gz $(BAM)
 	# Generate pipeline name list
 	cat $< | rev | cut -d/ -f1 | rev | sed s/\.vcf.gz//gi | cut -d. -f2- > $@.pipelines
-	# Merge VCF, normalize and rehead with pipelines names (prevent empty VCFs, force single if only one VCF)
-	# bcftools norm -f <ref> <vcf> is not compatible with breakends. Do that treatment separately.
-	# 1) merge | keep only breakends
-	# 2) merge | exclude breakends | do the bcftools norm that crashes on breakends
-	# 3) merge the two above | rest of normalization
-	# In case there is no SVTYPE, do the full command directly
-	#$(BCFTOOLS) merge --threads=$(THREADS_BY_SAMPLE) -l $< --force-samples $$( [ $$(cat $< | wc -l) -lt 2 ] && echo " --force-single " ) -m none --info-rules - $$((($$($(BCFTOOLS) view $$(cat $<) | grep "^#" -v | head -n 1 | wc -l))) && echo "" || echo " --print-header ") > $@.merge_step0.vcf;
-	$(BCFTOOLS) merge --threads=$(THREADS_BY_SAMPLE) -l $< --force-samples $$( [ $$(cat $< | wc -l) -lt 2 ] && echo " --force-single " ) -m none --info-rules - $$((($$($(BCFTOOLS) merge --force-samples $$(cat $<) | grep "^#" -v | head -n 1 | wc -l))) && echo "" || echo " --print-header ") > $@.merge_step0.vcf;
-	if (( $$($(BCFTOOLS) head $@.merge_step0.vcf 2>/dev/null | grep "ID=SVTYPE" -c) )); then \
-		$(BCFTOOLS) view -i 'INFO/SVTYPE="BND"' $@.merge_step0.vcf > $@.bnd_only.tmp.vcf; \
-		$(BGZIP) $@.bnd_only.tmp.vcf; \
-		$(TABIX) $@.bnd_only.tmp.vcf.gz; \
-		$(BCFTOOLS) view -e 'INFO/SVTYPE="BND"' $@.merge_step0.vcf | $(BCFTOOLS) norm --threads=$(THREADS_BY_SAMPLE) -m- -f $(GENOME) --force > $@.all_except_bnd.tmp.vcf; \
-		$(BGZIP) $@.all_except_bnd.tmp.vcf; \
-		$(TABIX) $@.all_except_bnd.tmp.vcf.gz; \
-		$(BCFTOOLS) concat $@.bnd_only.tmp.vcf.gz $@.all_except_bnd.tmp.vcf.gz -a | $(BCFTOOLS) sort | $(BCFTOOLS) norm --threads=$(THREADS_BY_SAMPLE) --rm-dup exact | $(BCFTOOLS) +fill-tags -- -t AN,AC,AF,AC_Hemi,AC_Hom,AC_Het,ExcHet,HWE,MAF,NS | $(BCFTOOLS) reheader --threads=$(THREADS_BY_SAMPLE) -s $@.pipelines > $@.tmp.merged.vcf; \
-		rm -f $@.bnd_only.tmp.vcf* $@.all_except_bnd.tmp.vcf*; \
-	else \
-		$(BCFTOOLS) merge --threads=$(THREADS_BY_SAMPLE) -l $< --force-samples $$( [ $$(cat $< | wc -l) -lt 2 ] && echo " --force-single " ) -m none --info-rules - | $(BCFTOOLS) sort | $(BCFTOOLS) norm --threads=$(THREADS_BY_SAMPLE) --rm-dup exact | $(BCFTOOLS) +fill-tags -- -t AN,AC,AF,AC_Hemi,AC_Hom,AC_Het,ExcHet,HWE,MAF,NS | $(BCFTOOLS) reheader --threads=$(THREADS_BY_SAMPLE) -s $@.pipelines > $@.tmp.merged.vcf; \
-	fi;
-	rm -f $@.merge_step0.vcf;
-	# | $(BCFTOOLS) view --exclude 'FORMAT/GT="0/0"'
-	# | $(BCFTOOLS) +setGT  -- -t . -n 0 
-	# header file
-	echo -e '##INFO=<ID=Validation_Depth_Flags,Number=.,Type=String,Description="Depth metrics flag from BAM validation">' > $@.tmp.annotate.Validation_Depth_Flags.hdr;
-	echo -e '##INFO=<ID=Validation_Depth,Number=.,Type=Float,Description="Depth metrics from BAM validation">' > $@.tmp.annotate.Validation_Depth.hdr;
+	# Merge VCF, normalize and rehead with pipelines names (prevent empty VCFs, force single if only one VCF, separate SNP/INDEL and OTHERS to avoid bcftools norm issues with breakends)
 	# Add validation flags depth and alignments depth header
-	grep "^##" $@.tmp.merged.vcf > $@.tmp.merged.reheaded.vcf;
-	cat $@.tmp.annotate.Validation_Depth_Flags.hdr >> $@.tmp.merged.reheaded.vcf;
-	cat $@.tmp.annotate.Validation_Depth.hdr >> $@.tmp.merged.reheaded.vcf;
-	grep "^#CHROM" $@.tmp.merged.vcf >> $@.tmp.merged.reheaded.vcf;
-	-grep "^#" -v $@.tmp.merged.vcf >> $@.tmp.merged.reheaded.vcf;
+	echo '##INFO=<ID=Validation_Depth,Number=.,Type=Float,Description="Depth metrics from BAM validation">' > $@.tmp.annotate.new_header.txt
+	echo '##INFO=<ID=Validation_Depth_Flags,Number=.,Type=String,Description="Depth metrics flag from BAM validation">' >> $@.tmp.annotate.new_header.txt
+	# Merge VCF, normalize and rehead with pipelines names (prevent empty VCFs, force single if only one VCF)
+	$(BCFTOOLS) merge --threads=$(THREADS_BY_SAMPLE) -l $< --force-samples $$( [ $$(cat $< | wc -l) -lt 2 ] && echo " --force-single " ) -m none --info-rules - $$((($$($(BCFTOOLS) merge --force-samples $$( [ $$(cat $< | wc -l) -lt 2 ] && echo " --force-single " ) $$(cat $<) | grep "^#" -v | head -n 1 | wc -l))) && echo "" || echo " --print-header ") | $(BCFTOOLS) sort | $(BCFTOOLS) reheader --threads=$(THREADS_BY_SAMPLE) -s $@.pipelines -o $@.merge_step0.vcf;
+	# Extract SNP and InDels with normalization
+	$(BCFTOOLS) view -v snps,mnps,indels --threads=$(THREADS_BY_SAMPLE) $@.merge_step0.vcf | $(BCFTOOLS) +fixploidy | $(BCFTOOLS) norm --threads=$(THREADS_BY_SAMPLE) -m- -f $(GENOME) --force --write-index -Oz -o $@.tmp.merged.SNPINDELS.vcf.gz;
+	# Extract others variants (e.g., SVs) without normalization, to avoid issues with bcftools norm on breakends
+	$(BCFTOOLS) view -V snps,mnps,indels --threads=$(THREADS_BY_SAMPLE) $@.merge_step0.vcf --write-index -Oz -o $@.tmp.merged.OTHERS.vcf.gz;
+	# Concat all variants, sort, normalize and fill tags (AN, AC, AF, etc.) with bcftools +fill-tags plugin
+	$(BCFTOOLS) concat $@.tmp.merged.SNPINDELS.vcf.gz $@.tmp.merged.OTHERS.vcf.gz -a --threads=$(THREADS_BY_SAMPLE) | $(BCFTOOLS) sort | $(BCFTOOLS) norm --threads=$(THREADS_BY_SAMPLE) --rm-dup exact | $(BCFTOOLS) +fill-tags -- -t AN,AC,AF,AC_Hemi,AC_Hom,AC_Het,ExcHet,HWE,MAF,NS | $(BCFTOOLS) annotate -h $@.tmp.annotate.new_header.txt --threads=$(THREADS_BY_SAMPLE) -o $@.tmp.merged.reheaded.vcf;
+	# Cleaning
+	rm -f $@.merge_step0.vcf;
 	# Add validation flags depth and alignments depth (if files exist)
 	if ((1)); then \
 		if (( $$(ls $$(dirname $$(dirname $@))/*bam.metrics/*.validation.flags.Design.bed | wc -l) )) || (( $$(ls $$(dirname $$(dirname $@))/*bam.metrics/*.design.bed.HsMetrics.per_base_coverage.gz | wc -l) )); then \
 			if (( $$(ls $$(dirname $$(dirname $@))/*bam.metrics/*.validation.flags.Design.bed | wc -l) )); then \
 				cat $$(dirname $$(dirname $@))/*bam.metrics/*.validation.flags.Design.bed | sort -k1,1 -k2,2 | $(BEDTOOLS) merge -c 10 -o distinct | $(BGZIP) --threads=$(THREADS_BY_SAMPLE) -c --index --index-name $@.tmp.flags.bed.gz.tbi > $@.tmp.flags.bed.gz; \
-				$(BCFTOOLS) annotate --threads=$(THREADS_BY_SAMPLE) -a $@.tmp.flags.bed.gz -h $@.tmp.annotate.Validation_Depth_Flags.hdr -c CHROM,POS,TO,INFO/Validation_Depth_Flags -l Validation_Depth_Flags:unique $@.tmp.merged.reheaded.vcf > $@.tmp.merged.reheaded.flags.vcf; \
+				$(BCFTOOLS) annotate --threads=$(THREADS_BY_SAMPLE) -a $@.tmp.flags.bed.gz -c CHROM,POS,TO,INFO/Validation_Depth_Flags -l Validation_Depth_Flags:unique $@.tmp.merged.reheaded.vcf > $@.tmp.merged.reheaded.flags.vcf; \
 			else \
 				cp $@.tmp.merged.reheaded.vcf $@.tmp.merged.reheaded.flags.vcf; \
 			fi; \
 			if (( $$(ls $$(dirname $$(dirname $@))/*bam.metrics/*.design.bed.HsMetrics.per_base_coverage.gz | wc -l) )); then \
 				zcat $$(dirname $$(dirname $@))/*bam.metrics/*.design.bed.HsMetrics.per_base_coverage.gz | cut -f1,2,4 | grep ^chrom -v | sort -k1,1 -k2,2n | bgzip -c > $@.tmp.depth.tab.gz; \
 				tabix -s1 -b2 -e2 $@.tmp.depth.tab.gz; \
-				$(BCFTOOLS) annotate --threads=$(THREADS_BY_SAMPLE) -a $@.tmp.depth.tab.gz -h $@.tmp.annotate.Validation_Depth.hdr -c CHROM,POS,INFO/Validation_Depth -l Validation_Depth:avg $@.tmp.merged.reheaded.flags.vcf > $@; \
+				$(BCFTOOLS) annotate --threads=$(THREADS_BY_SAMPLE) -a $@.tmp.depth.tab.gz -c CHROM,POS,INFO/Validation_Depth -l Validation_Depth:avg $@.tmp.merged.reheaded.flags.vcf > $@; \
 			else \
 				cp $@.tmp.merged.reheaded.flags.vcf $@; \
 			fi; \
