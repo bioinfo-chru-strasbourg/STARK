@@ -49,9 +49,14 @@ export BWA2_INDEX
 ###########################
 
 # Arriba
-ARRIBA_CURRENT="https://github.com/suhrig/arriba/releases/download/v2.4.0/arriba_v2.4.0.tar.gz";
-export ARRIBA_CURRENT
-
+if [ -z $ARRIBA_URL ] || [ "$ARRIBA_URL" == "" ]; then
+	ARRIBA_URL="https://github.com/suhrig/arriba/releases/download"
+fi;
+export ARRIBA_URL
+if [ -z $ARRIBA_RELEASE ] || [ "$ARRIBA_RELEASE" == "" ]; then
+	ARRIBA_RELEASE="v2.4.0"
+fi;
+export ARRIBA_RELEASE
 if [ ! -z $FOLDER_DATABASES_ARRIBA ] && [ "$FOLDER_DATABASES_ARRIBA" != "" ]; then
 	ARRIBA_DATABASES=$FOLDER_DATABASES_ARRIBA
 else

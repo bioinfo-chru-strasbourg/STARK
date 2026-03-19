@@ -697,7 +697,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 
 		echo "$DBFOLDER_REFGENE/done: $DBFOLDER
 			$HOWARD databases --assembly='$ASSEMBLY' --download-refseq=$DBFOLDER_REFGENE/$DATE --download-refseq-format-file='ncbiRefSeq.txt' ;
-			#mv $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/ncbiRefSeq.bed $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/refGene.$ASSEMBLY.bed;
+			cat $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/ncbiRefSeq.txt | awk -F '\t' -v OFS='\t' -f $STARK_FOLDER_BIN/refSeq_to_gtf.awk | sort -k1,1V -k4,4n -k5,5n -k3,3 -S4G > $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/ncbiRefSeq.gtf
 			-[ ! -s $DBFOLDER_REFGENE/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_REFGENE/STARK.database && chmod o+r $DBFOLDER_REFGENE/STARK.database;
 			[ ! -e $DBFOLDER_REFGENE/$RELEASE/$ASSEMBLY ] || unlink $DBFOLDER_REFGENE/$RELEASE/$ASSEMBLY;
 			ln -snf ../$DATE/$ASSEMBLY $DBFOLDER_REFGENE/$RELEASE/$ASSEMBLY;
@@ -839,7 +839,13 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		mkdir -p $DBFOLDER_ARRIBA/$RELEASE;
 	fi;
 
-	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DATE
+	# Arriba database URL and release
+	ARRIBA_CURRENT=$ARRIBA_URL/$ARRIBA_RELEASE"/arriba_$ARRIBA_RELEASE.tar.gz";
+
+	# Arriba database release date
+	DATE_RELEASE=$ARRIBA_RELEASE
+
+	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DATE_RELEASE
 	mkdir -p $DB_TMP
 	chmod 0775 $DB_TMP
 
@@ -865,7 +871,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 
 		DB_RELEASE_INFOS_JSON='
 		{
-			"release": "'$DATE'",
+			"release": "'$DATE_RELEASE'",
 			"date": "'$DATE'",
 			"files": [ "'$DBFOLDER_ARRIBA'" ],
 			"assembly": [ "'$ASSEMBLY'" ],
@@ -884,17 +890,17 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 
 		echo "$DBFOLDER_ARRIBA/done: $DBFOLDER
 			$ARIA_CMD $ARRIBA_CURRENT -d $DB_TMP;
-			mkdir -p $DBFOLDER_ARRIBA/$DATE/$ASSEMBLY;
-			chmod 0775 $DBFOLDER_ARRIBA/$DATE/$ASSEMBLY;
+			mkdir -p $DBFOLDER_ARRIBA/$DATE_RELEASE/$ASSEMBLY;
+			chmod 0775 $DBFOLDER_ARRIBA/$DATE_RELEASE/$ASSEMBLY;
 			tar -xzf  $DB_TMP/$(basename $ARRIBA_CURRENT) -C $DB_TMP --strip-components=1;
-			mv $DB_TMP/database/blacklist_$ASSEMBLY* $DBFOLDER_ARRIBA/$DATE/$ASSEMBLY;
-			mv $DB_TMP/database/cytobands_$ASSEMBLY* $DBFOLDER_ARRIBA/$DATE/$ASSEMBLY;
-			mv $DB_TMP/database/known_fusions_$ASSEMBLY* $DBFOLDER_ARRIBA/$DATE/$ASSEMBLY;
-			mv $DB_TMP/database/protein_domains_$ASSEMBLY* $DBFOLDER_ARRIBA/$DATE/$ASSEMBLY;
+			mv $DB_TMP/database/blacklist_$ASSEMBLY* $DBFOLDER_ARRIBA/$DATE_RELEASE/$ASSEMBLY;
+			mv $DB_TMP/database/cytobands_$ASSEMBLY* $DBFOLDER_ARRIBA/$DATE_RELEASE/$ASSEMBLY;
+			mv $DB_TMP/database/known_fusions_$ASSEMBLY* $DBFOLDER_ARRIBA/$DATE_RELEASE/$ASSEMBLY;
+			mv $DB_TMP/database/protein_domains_$ASSEMBLY* $DBFOLDER_ARRIBA/$DATE_RELEASE/$ASSEMBLY;
 			-[ ! -s $DBFOLDER_ARRIBA/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_ARRIBA/STARK.database && chmod o+r $DBFOLDER_ARRIBA/STARK.database; 
-			-[ ! -s $DBFOLDER_ARRIBA/$DATE/$ASSEMBLY/STARK.database.release ] && cp $DB_TMP/STARK.database.release $DBFOLDER_ARRIBA/$DATE/$ASSEMBLY/STARK.database.release && chmod o+r $DBFOLDER_ARRIBA/$DATE/$ASSEMBLY/STARK.database.release;
+			-[ ! -s $DBFOLDER_ARRIBA/$DATE_RELEASE/$ASSEMBLY/STARK.database.release ] && cp $DB_TMP/STARK.database.release $DBFOLDER_ARRIBA/$DATE_RELEASE/$ASSEMBLY/STARK.database.release && chmod o+r $DBFOLDER_ARRIBA/$DATE_RELEASE/$ASSEMBLY/STARK.database.release;
 			[ ! -e $DBFOLDER_ARRIBA/$RELEASE/$ASSEMBLY ] || unlink $DBFOLDER_ARRIBA/$RELEASE/$ASSEMBLY;
-			ln -snf ../$DATE/$ASSEMBLY $DBFOLDER_ARRIBA/$RELEASE/$ASSEMBLY;
+			ln -snf ../$DATE_RELEASE/$ASSEMBLY $DBFOLDER_ARRIBA/$RELEASE/$ASSEMBLY;
 			rm -rf $DB_TMP;
 		" >> $MK
 		MK_ALL="$MK_ALL $DBFOLDER_ARRIBA/done"
