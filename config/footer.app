@@ -963,6 +963,36 @@ fi;
 export BAM_VALIDATION_COMPRESSION
 
 
+### BWA MEM ALIGNER
+
+# Memory management
+
+# Use a minimum of 6 Go per BWA MEM process
+if [ -z $BWAMEM_MIN_MEM ] || ! [[ $BWAMEM_MIN_MEM =~ ^[0-9]$ ]]; then
+	BWAMEM_MIN_MEM=6
+fi;
+export BWAMEM_MIN_MEM
+
+# The calculation of MAX_CONCURRENT_ALIGNMENTS_BWAMEM is automatically done to avoid overloading the system memory
+export MAX_CONCURRENT_ALIGNMENTS_BWAMEM
+
+### STAR ALIGNMENT
+
+# Memory management
+
+# Use a minimum of 36 Go per STAR process
+if [ -z $STAR_MIN_MEM ] || ! [[ $STAR_MIN_MEM =~ ^[0-9]$ ]]; then
+	STAR_MIN_MEM=36
+fi;
+export STAR_MIN_MEM
+
+# The calculation of MAX_CONCURRENT_ALIGNMENTS_STAR is automatically done to avoid overloading the system memory
+export MAX_CONCURRENT_ALIGNMENTS_STAR
+
+# Option to keep raw BAM file from STAR (with splitNcigar for SNV calling). This option is useful to keep BAM without post-alignment steps (e.g. realignment, recalibration...).
+# Default: False (0)
+export STAR_KEEP_RAW_BAM
+
 
 ### GENCORE
 

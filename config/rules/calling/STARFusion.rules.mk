@@ -26,6 +26,8 @@
 		-i $*.fusion.reports/$$(echo $(@F) | rev | cut -d"." -f4-  | rev).star-fusion.abridged.tsv \
 		-o $@ \
 		-c $@.variantconvert.config.json;
+	# Clean
+	-rm $@.variantconvert.config.json
 
 # -fi breakpoints \
 # -fo vcf \

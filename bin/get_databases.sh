@@ -545,6 +545,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 			#ln -snf $DBFOLDER_GATK/$DATE/$ASSEMBLY $DBFOLDER_GATK/$RELEASE/$ASSEMBLY
 			ln -snf ../$DATE/$ASSEMBLY $DBFOLDER_GATK/$RELEASE/$ASSEMBLY
 			rm -rf $DB_TMP;
+			touch $DBFOLDER_GATK/$RELEASE/$ASSEMBLY/done
 		" >> $MK
 		MK_ALL="$MK_ALL $DBFOLDER_GATK/$RELEASE/$ASSEMBLY/done" 
 	fi;
@@ -598,6 +599,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 			#ln -snf $DBFOLDER_SNPEFF/$DATE/$ASSEMBLY $DBFOLDER_SNPEFF/$RELEASE/$ASSEMBLY
 			ln -snf ../$DATE/$ASSEMBLY $DBFOLDER_SNPEFF/$RELEASE/$ASSEMBLY
 			rm -rf $DB_TMP;
+			touch $DBFOLDER_SNPEFF/done
 		" >> $MK
 		MK_ALL="$MK_ALL $DBFOLDER_SNPEFF/done"
 		(($VERBOSE)) && cat $MK
@@ -650,6 +652,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 			[ ! -e $DBFOLDER_ANNOVAR/$RELEASE/$ASSEMBLY ] || unlink $DBFOLDER_ANNOVAR/$RELEASE/$ASSEMBLY
 			ln -snf ../$DATE/$ASSEMBLY $DBFOLDER_ANNOVAR/$RELEASE/$ASSEMBLY
 			rm -rf $DB_TMP;
+			touch $DBFOLDER_ANNOVAR/done
 		" >> $MK
 		MK_ALL="$MK_ALL $DBFOLDER_ANNOVAR/done"
 	fi;
@@ -666,7 +669,8 @@ DATABASE_DESCRIPTION="Known human protein-coding and non-protein-coding genes ta
 
 if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
 	
-	DBFOLDER_REFGENE=$DBFOLDER/refGene
+	#DBFOLDER_REFGENE=$DBFOLDER/refGene
+	DBFOLDER_REFGENE=$(dirname $REFGENE_DATABASES)
 	if [ ! -e $DBFOLDER_REFGENE/$RELEASE ]; then
 		mkdir -p $DBFOLDER_REFGENE/$RELEASE;
 	fi;
@@ -695,15 +699,16 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		';
 		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
 
-		echo "$DBFOLDER_REFGENE/done: $DBFOLDER
+		echo "$DBFOLDER_REFGENE/$RELEASE/$ASSEMBLY: $DBFOLDER
 			$HOWARD databases --assembly='$ASSEMBLY' --download-refseq=$DBFOLDER_REFGENE/$DATE --download-refseq-format-file='ncbiRefSeq.txt' ;
 			cat $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/ncbiRefSeq.txt | awk -F '\t' -v OFS='\t' -f $STARK_FOLDER_BIN/refSeq_to_gtf.awk | sort -k1,1V -k4,4n -k5,5n -k3,3 -S4G > $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/ncbiRefSeq.gtf
 			-[ ! -s $DBFOLDER_REFGENE/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_REFGENE/STARK.database && chmod o+r $DBFOLDER_REFGENE/STARK.database;
 			[ ! -e $DBFOLDER_REFGENE/$RELEASE/$ASSEMBLY ] || unlink $DBFOLDER_REFGENE/$RELEASE/$ASSEMBLY;
 			ln -snf ../$DATE/$ASSEMBLY $DBFOLDER_REFGENE/$RELEASE/$ASSEMBLY;
+			touch $DBFOLDER_REFGENE/$RELEASE/$ASSEMBLY
 			" >> $MK
 
-		MK_ALL="$MK_ALL $DBFOLDER_REFGENE/done"
+		MK_ALL="$MK_ALL $DBFOLDER_REFGENE/$RELEASE/$ASSEMBLY"
 	fi;
 fi;
 
@@ -888,7 +893,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		(($VERBOSE)) && echo "#[INFO] ARRIBA URL=$ARRIBA_CURRENT"
 		(($VERBOSE)) && echo "#[INFO] ARRIBA RELEASE=$DBFOLDER_ARRIBA/$DATE/$ASSEMBLY"
 
-		echo "$DBFOLDER_ARRIBA/done: $DBFOLDER
+		echo "$DBFOLDER_ARRIBA/$RELEASE/$ASSEMBLY: $DBFOLDER
 			$ARIA_CMD $ARRIBA_CURRENT -d $DB_TMP;
 			mkdir -p $DBFOLDER_ARRIBA/$DATE_RELEASE/$ASSEMBLY;
 			chmod 0775 $DBFOLDER_ARRIBA/$DATE_RELEASE/$ASSEMBLY;
@@ -903,7 +908,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 			ln -snf ../$DATE_RELEASE/$ASSEMBLY $DBFOLDER_ARRIBA/$RELEASE/$ASSEMBLY;
 			rm -rf $DB_TMP;
 		" >> $MK
-		MK_ALL="$MK_ALL $DBFOLDER_ARRIBA/done"
+		MK_ALL="$MK_ALL $DBFOLDER_ARRIBA/$RELEASE/$ASSEMBLY"
 	fi;
 fi;
 
@@ -971,7 +976,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		';
 		echo "$DB_RELEASE_INFOS_JSON" > $DB_TMP/STARK.database.release
 
-		echo "$PFAM_DATABASES/$ASSEMBLY/done: $DBFOLDER
+		echo "$PFAM_DATABASES/$ASSEMBLY: $DBFOLDER
 			mkdir -p $DBFOLDER_PFAM
 			$ARIA_CMD $PFAM_URL/Pfam${PFAM_RELEASE}/Pfam-A.hmm.gz -d $DB_TMP;
 			mkdir -p $DBFOLDER_PFAM/$PFAM_RELEASE/$ASSEMBLY;
@@ -983,10 +988,10 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 			[ ! -e $DBFOLDER_PFAM/$RELEASE/$ASSEMBLY ] || unlink $DBFOLDER_PFAM/$RELEASE/$ASSEMBLY;
 			ln -snf ../$PFAM_RELEASE/$ASSEMBLY $DBFOLDER_PFAM/$RELEASE/$ASSEMBLY;
 			rm -rf $DB_TMP;
-			touch $PFAM_DATABASES/$ASSEMBLY/done
+			touch $PFAM_DATABASES/$ASSEMBLY
 		" >> $MK
 
-		MK_ALL="$MK_ALL $PFAM_DATABASES/$ASSEMBLY/done"
+		MK_ALL="$MK_ALL $PFAM_DATABASES/$ASSEMBLY"
 	fi;
 fi;
 
@@ -1054,7 +1059,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		';
 		echo "$DB_RELEASE_INFOS_JSON" > $DB_TMP/STARK.database.release
 
-		echo "$DFAM_DATABASES/$ASSEMBLY/done: $DBFOLDER
+		echo "$DFAM_DATABASES/$ASSEMBLY: $DBFOLDER
 			mkdir -p $DBFOLDER_DFAM
 			$ARIA_CMD $DFAM_URL/Dfam_${DFAM_RELEASE}/infrastructure/dfamscan/homo_sapiens_dfam.hmm -d $DB_TMP;
 			$ARIA_CMD $DFAM_URL/Dfam_${DFAM_RELEASE}/infrastructure/dfamscan/homo_sapiens_dfam.hmm.h3f -d $DB_TMP;
@@ -1069,10 +1074,10 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 			[ ! -e $DBFOLDER_DFAM/$RELEASE/$ASSEMBLY ] || unlink $DBFOLDER_DFAM/$RELEASE/$ASSEMBLY;
 			ln -snf ../$DFAM_RELEASE/$ASSEMBLY $DBFOLDER_DFAM/$RELEASE/$ASSEMBLY;
 			rm -rf $DB_TMP;
-			touch $DFAM_DATABASES/$ASSEMBLY/done
+			touch $DFAM_DATABASES/$ASSEMBLY
 		" >> $MK
 
-		MK_ALL="$MK_ALL $DFAM_DATABASES/$ASSEMBLY/done"
+		MK_ALL="$MK_ALL $DFAM_DATABASES/$ASSEMBLY"
 	fi;
 fi;
 
@@ -1085,14 +1090,17 @@ DATABASE_FULLNAME=" CTAT Genome Lib"
 DATABASE_WEBSITE="https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/"
 DATABASE_DESCRIPTION=" CTAT Genome Lib is a resource collection used by the Trinity Cancer Transcriptome Analysis Toolkit (CTAT). This CTAT-genome-lib-builder system is leveraged for preparing a target genome and annotation set for use with Trinity CTAT tools, including fusion transcript detection and cancer mutation discovery"
 
+echo "GENOME_RNA=$GENOME_RNA";
+
 if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
 
 	#DBFOLDER_CTAT=$(dirname $CTAT_DATABASES)
-	DBFOLDER_CTAT=$GENOME.ctat
+	DBFOLDER_CTAT_ROOT=$GENOME.ctat
+	DBFOLDER_CTAT=$DBFOLDER_CTAT_ROOT/$CTAT_DATABASES_GENE_SOURCE
 	# if [ ! -e $DBFOLDER_CTAT ]; then
 	# 	mkdir -p $DBFOLDER_CTAT;
 	# fi;
-	(($DEBUG)) && echo "[DEBUG] DBFOLDER_CTAT=$DBFOLDER_CTAT"
+	(($DEBUG)) && echo "#[DEBUG] DBFOLDER_CTAT=$DBFOLDER_CTAT"
 
 	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$DATE
 	mkdir -p $DB_TMP
@@ -1137,37 +1145,96 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		# ';
 		# echo "$DB_RELEASE_INFOS_JSON" > $DB_TMP/STARK.database.release
 
-		# (($VERBOSE)) && echo "#[INFO] CTAT URL=$CTAT_CURRENT"
-		# (($VERBOSE)) && echo "#[INFO] CTAT RELEASE=$DATE"
+		if [ "$CTAT_DATABASES_GENE_SOURCE" == "refgene" ]; then
+			CTAT_REF_GENE_SOURCE=$REFGENE_DATABASES/$ASSEMBLY/ncbiRefSeq.gtf
+		elif [ "$CTAT_DATABASES_GENE_SOURCE" == "gencode" ]; then
+			CTAT_REF_GENE_SOURCE=$GENCODE_DATABASES/$ASSEMBLY/gencode.v$GENCODE_VERSION.annotation.gtf
+		else
+			echo "ERROR: CTAT_DATABASES_GENE_SOURCE '$CTAT_DATABASES_GENE_SOURCE' not supported for CTAT database preparation"
+			exit 1;
+		fi
+		CTAT_REF_GENE_SOURCE_FOLDER=$(dirname $CTAT_REF_GENE_SOURCE)
+		
 
-		# echo "$DBFOLDER_CTAT/done: $DBFOLDER
-		# 	aria2c -c -s 16 -x 16 -k 1M --async-dns=false -j 1 $CTAT_CURRENT -d $DB_TMP;
-		# 	wget --progress=bar:force:noscroll $CTAT_PM -P $DB_TMP;
-		# 	mkdir -p $DBFOLDER_CTAT/$DATE/$ASSEMBLY;
-		# 	chmod 0775 $DBFOLDER_CTAT/$DATE/$ASSEMBLY;
-		# 	tar -xzf  $DB_TMP/$(basename $CTAT_CURRENT) -C  $DB_TMP --strip-components=1;
-		# 	$JAVA -jar $PICARD CreateSequenceDictionary -REFERENCE $DB_TMP/ctat_genome_lib_build_dir/ref_genome.fa -OUTPUT $DB_TMP/ctat_genome_lib_build_dir/ref_genome.dict;
-		# 	cp -R $DB_TMP/ctat_genome_lib_build_dir/* $DBFOLDER_CTAT/$DATE/$ASSEMBLY;
-		# 	\cp $DB_TMP/AnnotFilterRule.pm $DBFOLDER_CTAT/$DATE/$ASSEMBLY;
-		# 	-[ ! -s $DBFOLDER_CTAT/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_CTAT/STARK.database && chmod o+r $DBFOLDER_CTAT/STARK.database;
-		# 	-[ ! -s $DBFOLDER_CTAT/$DATE/$ASSEMBLY/STARK.database.release ] && cp $DB_TMP/STARK.database.release $DBFOLDER_CTAT/$DATE/$ASSEMBLY/STARK.database.release && chmod o+r $DBFOLDER_CTAT/$DATE/$ASSEMBLY/STARK.database.release;
-		# 	[ ! -e $DBFOLDER_CTAT/$RELEASE/$ASSEMBLY ] || unlink $DBFOLDER_CTAT/$RELEASE/$ASSEMBLY;
-		# 	ln -snf ../$DATE/$ASSEMBLY $DBFOLDER_CTAT/$RELEASE/$ASSEMBLY;
-		# 	rm -rf $DB_TMP;
-		# " >> $MK
-
-		echo "$DBFOLDER_CTAT/done: $DBFOLDER $GENOME $DFAM_DATABASES/$ASSEMBLY/done $PFAM_DATABASES/$ASSEMBLY/done $GENCODE_DATABASES/$ASSEMBLY/done
-			mkdir -p $DBFOLDER_CTAT
-			ls -l $DFAM_DATABASES/$ASSEMBLY/*
-			ls -l $PFAM_DATABASES/$ASSEMBLY/*
-			$DOCKER_RUN --rm --name ctat_prep_genome_lib_$ASSEMBLY trinityctat/starfusion /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/prep_genome_lib.pl --genome_fa $GENOME --gtf $GENCODE_DATABASES/$ASSEMBLY/gencode.v$GENCODE_VERSION.annotation.gtf --dfam_db $DFAM_DATABASES/$ASSEMBLY/homo_sapiens_dfam.hmm --pfam_db $PFAM_DATABASES/$ASSEMBLY/Pfam-A.hmm --output_dir $DBFOLDER_CTAT --CPU $THREADS
-			touch $DBFOLDER_CTAT/done;
+		# Fusion anotation lib preparation
+		echo "$DBFOLDER_CTAT_ROOT/fusion_lib: $DBFOLDER
+			mkdir -p $DBFOLDER_CTAT_ROOT/fusion_lib;
+			$ARIA_CMD $CTAT_LIB_SOURCE -d $DBFOLDER_CTAT_ROOT;
+			tar -xzf $DBFOLDER_CTAT_ROOT/$(basename $CTAT_LIB_SOURCE) -C $DBFOLDER_CTAT_ROOT/fusion_lib --wildcards --no-anchored "fusion_lib.\*gz"  --transform='s:.*/::';
+			touch $DBFOLDER_CTAT_ROOT/fusion_lib/done;
 		" >> $MK
 
-		MK_ALL="$MK_ALL $DBFOLDER_CTAT/done"
+		# refGene preparation genome lib
+		echo "$DBFOLDER_CTAT: $DBFOLDER $GENOME $DFAM_DATABASES/$ASSEMBLY $PFAM_DATABASES/$ASSEMBLY $CTAT_REF_GENE_SOURCE_FOLDER $DBFOLDER_CTAT_ROOT/fusion_lib
+			mkdir -p $DBFOLDER_CTAT;
+			# Prepare annotation GTF
+			awk 'NR==FNR {chroms[\$\$1]; next} \$\$1 in chroms' <(cut -f1 $GENOME.fai) $CTAT_REF_GENE_SOURCE > $DBFOLDER_CTAT/ref_gene.gtf;
+			ls $DBFOLDER_CTAT_ROOT/fusion_lib/fusion_lib*gz | head -n1;
+			# Prepare genome lib
+			$DOCKER_RUN --rm --name ctat_prep_genome_lib-$ASSEMBLY-$CTAT_DATABASES_GENE_SOURCE-"$(date +%Y%m%d-%H%M%S)" trinityctat/starfusion /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/prep_genome_lib.pl --genome_fa $GENOME --gtf $DBFOLDER_CTAT/ref_gene.gtf --fusion_annot_lib=\$\$(ls $DBFOLDER_CTAT_ROOT/fusion_lib/fusion_lib*gz | head -n1) --dfam_db $DFAM_DATABASES/$ASSEMBLY/homo_sapiens_dfam.hmm --pfam_db $PFAM_DATABASES/$ASSEMBLY/Pfam-A.hmm --output_dir $DBFOLDER_CTAT --CPU $THREADS;
+			$JAVA -jar $PICARD CreateSequenceDictionary -REFERENCE $DBFOLDER_CTAT/ref_genome.fa -OUTPUT $DBFOLDER_CTAT/ref_genome.dict;
+			echo "CTAT for $CTAT_DATABASES_GENE_SOURCE generated" > $DBFOLDER_CTAT/done
+		" >> $MK
+
+		MK_ALL="$MK_ALL $DBFOLDER_CTAT"
+
+		# # refGene preparation genome lib
+		# echo "$DBFOLDER_CTAT/refgene: $DBFOLDER $GENOME $DFAM_DATABASES/$ASSEMBLY $PFAM_DATABASES/$ASSEMBLY $REFGENE_DATABASES/$ASSEMBLY $DBFOLDER_CTAT/fusion_lib
+		# 	mkdir -p $DBFOLDER_CTAT/refgene;
+		# 	# Prepare annotation GTF
+		# 	awk 'NR==FNR {chroms[\$\$1]; next} \$\$1 in chroms' <(cut -f1 $GENOME.fai) $REFGENE_DATABASES/$ASSEMBLY/ncbiRefSeq.gtf > $DBFOLDER_CTAT/refgene/refgene.gtf;
+		# 	# Prepare genome lib
+		# 	$DOCKER_RUN --rm --name ctat_prep_genome_lib_refgene_$ASSEMBLY trinityctat/starfusion /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/prep_genome_lib.pl --genome_fa $GENOME --gtf $DBFOLDER_CTAT/refgene/refgene.gtf --fusion_annot_lib=\$\$(ls $DBFOLDER_CTAT/fusion_lib/*gz | head -n1) --dfam_db $DFAM_DATABASES/$ASSEMBLY/homo_sapiens_dfam.hmm --pfam_db $PFAM_DATABASES/$ASSEMBLY/Pfam-A.hmm --output_dir $DBFOLDER_CTAT/refgene --CPU $THREADS;
+		# 	$JAVA -jar $PICARD CreateSequenceDictionary -REFERENCE $DBFOLDER_CTAT/refgene/ref_genome.fa -OUTPUT $DBFOLDER_CTAT/refgene/ref_genome.dict;
+		# 	echo "CTAT for refGene generated" > $DBFOLDER_CTAT/refgene/done
+		# " >> $MK
+
+		# # Gencode preparation genome lib (sequentialized)
+		# echo "$DBFOLDER_CTAT/gencode: $DBFOLDER $GENOME $DFAM_DATABASES/$ASSEMBLY $PFAM_DATABASES/$ASSEMBLY $GENCODE_DATABASES/$ASSEMBLY $DBFOLDER_CTAT/fusion_lib $DBFOLDER_CTAT/refgene
+		# 	mkdir -p $DBFOLDER_CTAT/gencode;
+		# 	# Prepare annotation GTF
+		# 	awk 'NR==FNR {chroms[\$\$1]; next} \$\$1 in chroms' <(cut -f1 $GENOME.fai) $GENCODE_DATABASES/$ASSEMBLY/gencode.v$GENCODE_VERSION.annotation.gtf > $DBFOLDER_CTAT/gencode/gencode.gtf;
+		# 	# Prepare genome lib
+		# 	$DOCKER_RUN --rm --name ctat_prep_genome_lib_gencode_$ASSEMBLY trinityctat/starfusion /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/prep_genome_lib.pl --genome_fa $GENOME --gtf $DBFOLDER_CTAT/gencode/gencode.gtf --fusion_annot_lib=\$\$(ls $DBFOLDER_CTAT/fusion_lib/*gz | head -n1) --dfam_db $DFAM_DATABASES/$ASSEMBLY/homo_sapiens_dfam.hmm --pfam_db $PFAM_DATABASES/$ASSEMBLY/Pfam-A.hmm --output_dir $DBFOLDER_CTAT/gencode --CPU $THREADS;
+		# 	$JAVA -jar $PICARD CreateSequenceDictionary -REFERENCE $DBFOLDER_CTAT/gencode/ref_genome.fa -OUTPUT $DBFOLDER_CTAT/gencode/ref_genome.dict;
+		# 	echo "CTAT for gencode generated" > $DBFOLDER_CTAT/gencode/done
+		# " >> $MK
+
+		# echo "$DBFOLDER_CTAT: $DBFOLDER_CTAT/refgene $DBFOLDER_CTAT/gencode 
+		# 	echo "CTAT for refGene and gencode generated" > $DBFOLDER_CTAT/done
+		# " >> $MK
+
+		# MK_ALL="$MK_ALL $DBFOLDER_CTAT"
+
+
+
+		# #echo "$DBFOLDER_CTAT/done: $DBFOLDER $GENOME $DFAM_DATABASES/$ASSEMBLY/done $PFAM_DATABASES/$ASSEMBLY/done $GENCODE_DATABASES/$ASSEMBLY/done $REFGENE_DATABASES/$ASSEMBLY/done
+		# echo "$DBFOLDER_CTAT/done: $DBFOLDER $GENOME $DFAM_DATABASES/$ASSEMBLY $PFAM_DATABASES/$ASSEMBLY $GENCODE_DATABASES/$ASSEMBLY $REFGENE_DATABASES/$ASSEMBLY
+		# 	mkdir -p $DBFOLDER_CTAT
+		# 	# Prepare annotation GTF
+		# 	#cat $REFGENE_DATABASES/$ASSEMBLY/ncbiRefSeq.gtf | cut -f1 | sort -u
+		# 	awk 'NR==FNR {chroms[\$\$1]; next} \$\$1 in chroms' <(cut -f1 $GENOME.fai) $REFGENE_DATABASES/$ASSEMBLY/ncbiRefSeq.gtf > $DBFOLDER_CTAT/ncbiRefSeq.gtf
+		# 	awk 'NR==FNR {chroms[\$\$1]; next} \$\$1 in chroms' <(cut -f1 $GENOME.fai) $GENCODE_DATABASES/$ASSEMBLY/gencode.v$GENCODE_VERSION.annotation.gtf > $DBFOLDER_CTAT/gencode.v$GENCODE_VERSION.annotation.gtf
+		# 	#head $DBFOLDER_CTAT/ncbiRefSeq.gtf
+		# 	#cat $DBFOLDER_CTAT/ncbiRefSeq.gtf | cut -f1 | sort -u
+		# 	# Prepare CTAT genome lib for fusion lib
+		# 	$ARIA_CMD $CTAT_LIB_SOURCE -d $DBFOLDER_CTAT;
+		# 	mkdir -p $DBFOLDER_CTAT/fusion_lib
+		# 	tar -xzf $DBFOLDER_CTAT/"$(dirname $CTAT_LIB_SOURCE)" -C $DBFOLDER_CTAT/fusion_lib --wildcards --no-anchored "fusion_lib.\*gz"  --transform='s:.*/::'
+		# 	#$DOCKER_RUN --rm --name ctat_prep_genome_lib_$ASSEMBLY trinityctat/starfusion /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/prep_genome_lib.pl --genome_fa $GENOME --gtf $DBFOLDER_CTAT/gencode.v$GENCODE_VERSION.annotation.gtf --fusion_annot_lib=\$\$(ls $DBFOLDER_CTAT/fusion_lib | head -n1) --dfam_db $DFAM_DATABASES/$ASSEMBLY/homo_sapiens_dfam.hmm --pfam_db $PFAM_DATABASES/$ASSEMBLY/Pfam-A.hmm --output_dir $DBFOLDER_CTAT/gencode --CPU $THREADS
+		# 	$DOCKER_RUN --rm --name ctat_prep_genome_lib_$ASSEMBLY trinityctat/starfusion /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/prep_genome_lib.pl --genome_fa $GENOME --gtf $DBFOLDER_CTAT/ncbiRefSeq.gtf --fusion_annot_lib=\$\$(ls $DBFOLDER_CTAT/fusion_lib | head -n1) --dfam_db $DFAM_DATABASES/$ASSEMBLY/homo_sapiens_dfam.hmm --pfam_db $PFAM_DATABASES/$ASSEMBLY/Pfam-A.hmm --output_dir $DBFOLDER_CTAT/refgene --CPU $THREADS
+		# 	$JAVA -jar $PICARD CreateSequenceDictionary -REFERENCE $DBFOLDER_CTAT/ref_genome.fa -OUTPUT $DBFOLDER_CTAT/ref_genome.dict;
+		# 	touch $DBFOLDER_CTAT/done;
+		# " >> $MK
+
+		# MK_ALL="$MK_ALL $DBFOLDER_CTAT/done"
+
+
 	fi;
 fi;
 
+
+# ncbiRefSeq.gtf
 
 # ########
 # # CTAT OLD #

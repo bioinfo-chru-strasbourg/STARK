@@ -18,9 +18,9 @@ APP_PROJECT="UNKNOWN"
 # ANALYSIS PARAMETERS
 #######################
 
-# Max concurrent alignments for STAR (default 1)
-# Depend on available memory (at least 30Go per concurrent alignment/samples)
-export MAX_CONCURRENT_ALIGNMENTS_STAR="1"
+# Option to keep raw BAM file from STAR (with splitNcigar for SNV calling). This option is useful to keep BAM without post-alignment steps (e.g. realignment, recalibration...).
+# Default: False (0)
+#STAR_KEEP_RAW_BAM=0
 
 # POST ALIGNMENT STEPS 
 # No need to realign because of STAR alignemnt

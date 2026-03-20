@@ -16,20 +16,24 @@
 		-k $$(ls $(ARRIBA_DATABASES)/$(ASSEMBLY)/known_fusions_$(ASSEMBLY)_*.tsv.gz) \
 		-b $$(ls $(ARRIBA_DATABASES)/$(ASSEMBLY)/blacklist_$(ASSEMBLY)_*.tsv.gz) \
 		-p $$(ls $(ARRIBA_DATABASES)/$(ASSEMBLY)/protein_domains_$(ASSEMBLY)_*.gff3) \
-		-o $*.arriba.reports/arriba.fusions.tsv \
-		-O $*.arriba.reports/arriba.fusions.discarded.tsv;
-	mv $*.arriba.reports/arriba.fusions.tsv $*.arriba.reports/$$(echo $(@F) | rev | cut -d"." -f4-  | rev).arriba.fusions.tsv
-	mv $*.arriba.reports/arriba.fusions.discarded.tsv $*.arriba.reports/$$(echo $(@F) | rev | cut -d"." -f4-  | rev).arriba.fusions.discarded.tsv
+		-o $*.Arriba.reports/arriba.fusions.tsv \
+		-O $*.Arriba.reports/arriba.fusions.discarded.tsv;
+	mv $*.Arriba.reports/arriba.fusions.tsv $*.Arriba.reports/$$(echo $(@F) | rev | cut -d"." -f4-  | rev).arriba.fusions.tsv
+	mv $*.Arriba.reports/arriba.fusions.discarded.tsv $*.Arriba.reports/$$(echo $(@F) | rev | cut -d"." -f4-  | rev).arriba.fusions.discarded.tsv
 	# VariantConvert
 	# Need to create a specific config for variantconvert with the path to the genome fasta and the assembly name to be able to convert Arriba output to vcf with correct header (configuration file is in config/variantconvert/GENOME/arriba.json)
 	cp $(VARIANTCONVERT_FOLDER_CONFIG)/$(ASSEMBLY)/arriba.json $@.variantconvert.config.json
 	$(VARIANTCONVERT) config -c $@.variantconvert.config.json --set GENOME.path=$(GENOME_RNA) --fill_genome_header
 	# Convert to vcf
 	$(VARIANTCONVERT) convert \
-		-i $*.arriba.reports/$$(echo $(@F) | rev | cut -d"." -f4-  | rev).arriba.fusions.tsv \
+		-i $*.Arriba.reports/$$(echo $(@F) | rev | cut -d"." -f4-  | rev).arriba.fusions.tsv \
 		-o $@ \
 		-c $@.variantconvert.config.json
+	# Clean
+	-rm $@.variantconvert.config.json
 
+# -g $$(dirname $(GENOME_RNA))/ref_annot.gtf \
+# -g $(REFSEQ_GENES_GTF) \
 
 # VARIANTCONVERT_FOLDER_CONFIG
 
