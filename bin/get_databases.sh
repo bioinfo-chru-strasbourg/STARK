@@ -982,7 +982,9 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 			mkdir -p $DBFOLDER_PFAM/$PFAM_RELEASE/$ASSEMBLY;
 			chmod 0775 $DBFOLDER_PFAM/$PFAM_RELEASE/$ASSEMBLY;
 			$GZ -d $DB_TMP/Pfam-A.hmm.gz
-			mv $DB_TMP/Pfam-A.hmm $DBFOLDER_PFAM/$PFAM_RELEASE/$ASSEMBLY;
+			mv $DB_TMP/Pfam-A.hmm* $DBFOLDER_PFAM/$PFAM_RELEASE/$ASSEMBLY;
+			# Pre index the Pfam-A.hmm file with hmmpress to speed up the ctat-genome-lib-builder step
+			$DOCKER_RUN --rm --name ctat_prep_genome_lib-$ASSEMBLY-PFAM-"$(date +%Y%m%d-%H%M%S)" trinityctat/starfusion hmmpress $DBFOLDER_PFAM/$PFAM_RELEASE/$ASSEMBLY/Pfam-A.hmm;
 			-[ ! -s $DBFOLDER_PFAM/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_PFAM/STARK.database && chmod o+r $DBFOLDER_PFAM/STARK.database; 
 			-[ ! -s $DBFOLDER_PFAM/$PFAM_RELEASE/$ASSEMBLY/STARK.database.release ] && cp $DB_TMP/STARK.database.release $DBFOLDER_PFAM/$PFAM_RELEASE/$ASSEMBLY/STARK.database.release && chmod o+r $DBFOLDER_PFAM/$PFAM_RELEASE/$ASSEMBLY/STARK.database.release;
 			[ ! -e $DBFOLDER_PFAM/$RELEASE/$ASSEMBLY ] || unlink $DBFOLDER_PFAM/$RELEASE/$ASSEMBLY;
@@ -1090,7 +1092,6 @@ DATABASE_FULLNAME=" CTAT Genome Lib"
 DATABASE_WEBSITE="https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/"
 DATABASE_DESCRIPTION=" CTAT Genome Lib is a resource collection used by the Trinity Cancer Transcriptome Analysis Toolkit (CTAT). This CTAT-genome-lib-builder system is leveraged for preparing a target genome and annotation set for use with Trinity CTAT tools, including fusion transcript detection and cancer mutation discovery"
 
-echo "GENOME_RNA=$GENOME_RNA";
 
 if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
 
@@ -1171,7 +1172,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 			awk 'NR==FNR {chroms[\$\$1]; next} \$\$1 in chroms' <(cut -f1 $GENOME.fai) $CTAT_REF_GENE_SOURCE > $DBFOLDER_CTAT/ref_gene.gtf;
 			ls $DBFOLDER_CTAT_ROOT/fusion_lib/fusion_lib*gz | head -n1;
 			# Prepare genome lib
-			$DOCKER_RUN --rm --name ctat_prep_genome_lib-$ASSEMBLY-$CTAT_DATABASES_GENE_SOURCE-"$(date +%Y%m%d-%H%M%S)" trinityctat/starfusion /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/prep_genome_lib.pl --genome_fa $GENOME --gtf $DBFOLDER_CTAT/ref_gene.gtf --fusion_annot_lib=\$\$(ls $DBFOLDER_CTAT_ROOT/fusion_lib/fusion_lib*gz | head -n1) --dfam_db $DFAM_DATABASES/$ASSEMBLY/homo_sapiens_dfam.hmm --pfam_db $PFAM_DATABASES/$ASSEMBLY/Pfam-A.hmm --output_dir $DBFOLDER_CTAT --CPU $THREADS;
+			$DOCKER_RUN --rm --name ctat_prep_genome_lib-$ASSEMBLY-$CTAT_DATABASES_GENE_SOURCE-"$(date +%Y%m%d-%H%M%S)" trinityctat/starfusion /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/prep_genome_lib.pl --genome_fa $GENOME --gtf $DBFOLDER_CTAT/ref_gene.gtf --fusion_annot_lib=\$\$(ls $DBFOLDER_CTAT_ROOT/fusion_lib/fusion_lib*gz | head -n1) --dfam_db $DFAM_DATABASES/$ASSEMBLY/homo_sapiens_dfam.hmm --pfam_db $PFAM_DATABASES/$ASSEMBLY/Pfam-A.hmm --output_dir $DBFOLDER_CTAT --CPU $THREADS 1> $DBFOLDER_CTAT/prep_genome_lib.log 2> $DBFOLDER_CTAT/prep_genome_lib.err;
 			$JAVA -jar $PICARD CreateSequenceDictionary -REFERENCE $DBFOLDER_CTAT/ref_genome.fa -OUTPUT $DBFOLDER_CTAT/ref_genome.dict;
 			echo "CTAT for $CTAT_DATABASES_GENE_SOURCE generated" > $DBFOLDER_CTAT/done
 		" >> $MK
