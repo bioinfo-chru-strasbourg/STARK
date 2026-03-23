@@ -325,7 +325,7 @@ MAX_CONCURRENT_HSMETRICS_RAM?=24g
 			if [ $$(du $*.validation.bam | cut -f1) -lt $(MAX_VALIDATION_BAM_SIZE) ] ; then \
 				$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) CollectHsMetrics -INPUT $*.validation.bam -OUTPUT $(@D)/$(*F).$$(basename $$one_bed).HsMetrics -R $(GENOME) -BAIT_INTERVALS $(@D)/$(*F).$$(basename $$one_bed).interval -TARGET_INTERVALS $(@D)/$(*F).$$(basename $$one_bed).interval -PER_TARGET_COVERAGE $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_target_coverage.tmp -PER_BASE_COVERAGE $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp $(PICARD_CollectHsMetrics_PARAM) -VALIDATION_STRINGENCY SILENT 2>$(@D)/$(*F).$$(basename $$one_bed).HsMetrics.err ; \
 			else \
-				$(PYTHON3) $(STARK_FOLDER_BIN)/functions.py launch \
+				$(PYTHON3) $(STARK_FOLDER_BIN)/concurrency.py launch \
 					--cmd "$(JAVA) $$(echo $(JAVA_FLAGS) | sed -e 's/-Xmx[0-9]*[a-zA-Z]/-Xmx$(MAX_CONCURRENT_HSMETRICS_RAM)/') -jar $(PICARD) CollectHsMetrics -INPUT $*.validation.bam -OUTPUT $(@D)/$(*F).$$(basename $$one_bed).HsMetrics -R $(GENOME) -BAIT_INTERVALS $(@D)/$(*F).$$(basename $$one_bed).interval -TARGET_INTERVALS $(@D)/$(*F).$$(basename $$one_bed).interval -PER_TARGET_COVERAGE $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_target_coverage.tmp -PER_BASE_COVERAGE $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp $(PICARD_CollectHsMetrics_PARAM) -VALIDATION_STRINGENCY SILENT 2>$(@D)/$(*F).$$(basename $$one_bed).HsMetrics.err" \
 					--lockfile_prefix $$(echo $*.validation.bam | xargs -0 dirname | xargs -0 dirname)/lockfile_HsMetrics. \
 					--target $(@D)/$(*F).$$(basename $$one_bed).HsMetrics \

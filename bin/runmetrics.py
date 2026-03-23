@@ -66,8 +66,12 @@ import re
 import subprocess
 from os.path import join as osj
 
-from functions import assert_file_exists_and_is_readable, tags_and_types_to_lists, \
-					get_descriptions_from_samplesheet, find_any_samplesheet
+from functions import (
+    assert_file_exists_and_is_readable,
+    # tags_and_types_to_lists,
+    get_descriptions_from_samplesheet,
+    find_any_samplesheet,
+)
 
 def get_run_path_from_metrics_file(metricsFile, fromResDir):
 	"""

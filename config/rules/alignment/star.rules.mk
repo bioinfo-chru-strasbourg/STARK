@@ -35,22 +35,18 @@ STAR_FLAGS?=--outSAMtype BAM SortedByCoordinate --chimOutJunctionFormat 1 --outS
 # Raw alignemnt with STAR
 # File star_raw.bam is an intermediate file
 %.star.star_raw.bam: %.R1$(POST_SEQUENCING).fastq.gz %.R2$(POST_SEQUENCING).fastq.gz
-	# DEVEL
-	echo "DEVEL FOR STAR ALIGNMENT"
-	echo "STAR_MIN_MEM=$(STAR_MIN_MEM)"
-	echo "MAX_CONCURRENT_ALIGNMENTS_STAR=$(MAX_CONCURRENT_ALIGNMENTS_STAR)"
-	echo "THREADS_STAR=$(THREADS_STAR)"
-	echo "MEMTOTAL_IN_GO=$(MEMTOTAL_IN_GO) NB_ALIGNERS=$(NB_ALIGNERS) STAR_MIN_MEM=$(STAR_MIN_MEM) THREADS=$(THREADS) NB_SAMPLE=$(NB_SAMPLE)"
 	# Create metrics folder
 	mkdir -p $*.star.bam.metrics/$(*F).star_raw.bam.metrics;
 	# Launch STAR alignment with lockfile to manage memory and avoid multiple STAR processes to run at the same time if not enough memory is available. The lockfile is created in the parent folder of the target (e.g. postalignment) to avoid multiple STAR processes to run at the same time if not enough memory is available.
-	$(PYTHON3) $(STARK_FOLDER_BIN)/functions.py launch \
+	$(PYTHON3) $(STARK_FOLDER_BIN)/concurrency.py launch \
 		--cmd "$(STAR) --genomeDir $(GENOME_RNA).star.idx \
 			--runThreadN $(THREADS_STAR) \
 			--readFilesIn $*.R1$(POST_SEQUENCING).fastq.gz $*.R2$(POST_SEQUENCING).fastq.gz \
 			--readFilesCommand zcat \
 			--outFileNamePrefix $*.star.bam.metrics/$(*F).star_raw.bam.metrics/$(*F).star_raw. \
-			--outSAMattrRGline ID:1 PL:ILLUMINA PU:PU LB:001 \"SM:$(*F)\" $(STAR_FLAGS)" \
+			--outSAMattrRGline ID:1 PL:ILLUMINA PU:PU LB:001 \"SM:$(*F)\" $(STAR_FLAGS) \
+			1>$*.star.bam.metrics/$(*F).star_raw.bam.metrics/$(*F).star_raw.log \
+			2>$*.star.bam.metrics/$(*F).star_raw.bam.metrics/$(*F).star_raw.err" \
 		--lockfile_prefix $$(echo $@ | xargs -0 dirname | xargs -0 dirname)/lockfile. \
 		--target $@ \
 		--max_jobs $(MAX_CONCURRENT_ALIGNMENTS_STAR);
@@ -68,24 +64,11 @@ STAR_FLAGS?=--outSAMtype BAM SortedByCoordinate --chimOutJunctionFormat 1 --outS
 	# Clean
 	-rm -rf $*.star.bam.metrics/$(*F).star_raw.bam.metrics/$(*F).star_raw._STARgenome $*.star.bam.metrics/$(*F).star_raw.bam.metrics/$(*F).star_raw._STARpass1;
 
+#$(PYTHON3) $(STARK_FOLDER_BIN)/functions.py launch
 
 # Alignement with STAR from raw alignement (with post alignment for SNV calling)
 %.star$(POST_ALIGNMENT).bam: %.star.star_raw.bam
 	ln -s $< $@
-
-# POST ALIGNMENT STEPS
-
-# DEVEL: Integrated into post alignment rules (folder postalignment)
-# # Post alignment spécific for STAR: we need to use the bam with splitNcigar for SNV calling. However, splitNcigar is forbiden for fusion detection tools (Arriba and STARFusion) to work properly (see STARFusion.rules.mk and Arriba.rules.mk for explanation).
-# %.bam: %.splitncigar.bam %.splitncigar.bam.bai
-# 	$(JAVA) $(JAVA_FLAGS_GATK4_CALLING_STEP) -jar $(GATK4) SplitNCigarReads -R $(GENOME) -I $< -O $@
-
-
-# DEVEL: integrated into star alignment rules (see above)
-# # Copy junction file from STAR alignments if exist, otherwise create empty file to avoid error in STARFusion rules
-# %.star.junction: %.star.star_raw.bam
-# 	if [ -e $@ ]; then touch $@; else cp $<.Chimeric.out.junction $@; fi;
-
 
 
 # CONFIG/RELEASE
@@ -94,5 +77,5 @@ RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
 
 # PIPELINES INFOS
-PIPELINES_COMMENT := "ALIGNER:STAR:STAR - Excellent for RNA-Seq data. From FASTQ files."
+PIPELINES_COMMENT := "ALIGNER:star:STAR - Excellent for RNA-Seq data. From FASTQ files."
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )

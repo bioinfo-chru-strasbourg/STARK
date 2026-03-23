@@ -52,7 +52,7 @@ THREADS_BWAMEM2?=$(shell echo " if ($(MAX_CONCURRENT_ALIGNMENTS_BWAMEM2)<$(NB_SA
 		echo "$*.R1$(POST_SEQUENCING).fastq.gz" > $@.fastq_list; \
 	fi;
 	# Alignment
-	$(PYTHON3) $(STARK_FOLDER_BIN)/functions.py launch \
+	$(PYTHON3) $(STARK_FOLDER_BIN)/concurrency.py launch \
 		--cmd "$(BWA2) mem $(BWAMEM2_FLAGS) -t $(THREADS_BWAMEM2) -R '@RG\tID:1\tPL:ILLUMINA\tPU:PU\tLB:001\tSM:$(*F)' $(GENOME) $$(cat $@.fastq_list) -o $@.sam" \
 		--lockfile_prefix $$(echo $@ | xargs -0 dirname | xargs -0 dirname)/lockfile.bwamem2. \
 		--target $@ \
