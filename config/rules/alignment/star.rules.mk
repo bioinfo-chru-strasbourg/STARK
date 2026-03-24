@@ -1,8 +1,8 @@
 ############################
 # STAR Aligner Rules
-# Release: 0.9.4.8
-# Date: 24/08/2022
-# Author: Samuel Nicaise, Thomas Lavaux
+# Release: 1.0.0
+# Date: 19/03/2026
+# Author: Samuel Nicaise, Thomas Lavaux, Antony Le Béchec
 ############################
 # Release
 MK_RELEASE="1.0.0"
@@ -47,7 +47,7 @@ STAR_FLAGS?=--outSAMtype BAM SortedByCoordinate --chimOutJunctionFormat 1 --outS
 			--outSAMattrRGline ID:1 PL:ILLUMINA PU:PU LB:001 \"SM:$(*F)\" $(STAR_FLAGS) \
 			1>$*.star.bam.metrics/$(*F).star_raw.bam.metrics/$(*F).star_raw.log \
 			2>$*.star.bam.metrics/$(*F).star_raw.bam.metrics/$(*F).star_raw.err" \
-		--lockfile_prefix $$(echo $@ | xargs -0 dirname | xargs -0 dirname)/lockfile. \
+		--lockfile_prefix $$(echo $@ | xargs -0 dirname | xargs -0 dirname)/lockfile.star.star_raw. \
 		--target $@ \
 		--max_jobs $(MAX_CONCURRENT_ALIGNMENTS_STAR);
 	# Catch output bam file
@@ -59,12 +59,9 @@ STAR_FLAGS?=--outSAMtype BAM SortedByCoordinate --chimOutJunctionFormat 1 --outS
 		cp $*.star.bam.metrics/$(*F).star_raw.bam.metrics/$(*F).star_raw.Chimeric.out.junction $*.star.junction; \
 		rm -rf $*.star.bam.metrics/$(*F).star_raw.bam.metrics/*.bam; \
 	fi;
-	# Copy junction file from STAR alignment (Fail if not exists)
-	cp $*.star.bam.metrics/$(*F).star_raw.bam.metrics/$(*F).star_raw.Chimeric.out.junction $*.star.junction;
 	# Clean
 	-rm -rf $*.star.bam.metrics/$(*F).star_raw.bam.metrics/$(*F).star_raw._STARgenome $*.star.bam.metrics/$(*F).star_raw.bam.metrics/$(*F).star_raw._STARpass1;
 
-#$(PYTHON3) $(STARK_FOLDER_BIN)/functions.py launch
 
 # Alignement with STAR from raw alignement (with post alignment for SNV calling)
 %.star$(POST_ALIGNMENT).bam: %.star.star_raw.bam

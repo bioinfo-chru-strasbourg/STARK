@@ -374,16 +374,16 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		fi;	
 	fi;
 
-	## STAR index 
-	if [ ! -e $(dirname $GENOME)/$(basename $GENOME).star.idx ]; then
-		if [ "$STAR" != "" ]; then
-			echo "$(dirname $GENOME)/$(basename $GENOME).star.idx/done: $GENOME $DBFOLDER_GENCODE/$RELEASE/$ASSEMBLY/gencode.v$GENCODE_VERSION.annotation.gtf
-				mkdir -p $(dirname $GENOME)/$(basename $GENOME).star.idx;
-				STAR --runThreadN $THREADS --runMode genomeGenerate --genomeDir $(dirname $GENOME)/$(basename $GENOME).star.idx --genomeFastaFiles $GENOME --sjdbGTFfile $DBFOLDER_GENCODE/$RELEASE/$ASSEMBLY/gencode.v$GENCODE_VERSION.annotation.gtf;
-			" >> $MK
-			MK_ALL="$MK_ALL $(dirname $GENOME)/$(basename $GENOME).star.idx/done"
-		fi;
-	fi;
+	# ## STAR index # cf CTAT
+	# if [ ! -e $(dirname $GENOME)/$(basename $GENOME).star.idx ]; then
+	# 	if [ "$STAR" != "" ]; then
+	# 		echo "$(dirname $GENOME)/$(basename $GENOME).star.idx/done: $GENOME $DBFOLDER_GENCODE/$RELEASE/$ASSEMBLY/gencode.v$GENCODE_VERSION.annotation.gtf
+	# 			mkdir -p $(dirname $GENOME)/$(basename $GENOME).star.idx;
+	# 			STAR --runThreadN $THREADS --runMode genomeGenerate --genomeDir $(dirname $GENOME)/$(basename $GENOME).star.idx --genomeFastaFiles $GENOME --sjdbGTFfile $DBFOLDER_GENCODE/$RELEASE/$ASSEMBLY/gencode.v$GENCODE_VERSION.annotation.gtf;
+	# 		" >> $MK
+	# 		MK_ALL="$MK_ALL $(dirname $GENOME)/$(basename $GENOME).star.idx/done"
+	# 	fi;
+	# fi;
 
 fi;
 
