@@ -28,5 +28,5 @@ The development of STARK and the configuration of the applications follow the go
 Main documentation:
 
 - [STARK Get started](get_started.md)
-- [STARK Installation](INSTALL.md)
-- [STARK User guides](user_guides/USER-GUIDE.en.19.0.0.md)
+- [STARK Installation](documentation/installation.md)
+- [STARK User guide](user_guides/USER-GUIDE.en.19.0.0.md)

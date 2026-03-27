@@ -34,6 +34,8 @@ Also, these rules can be executed in parallel on several processors, allowing ef
 
 The development of STARK and the configuration of the applications follow the good practices and recommendations of the national (INCa and ANPGM) and international (GATK) scientific community.
 
+See [STARK User guide](docs/user_guides/USER-GUIDE.en.19.0.0.md) for more information.
+
 ## Quick installation
 
 Use curl from GitHub bioinfo-chru-strasbourg to setup STARK environment by default. This setup will build STARK docker image and setup folders (in "${HOME}/STARK") and needed databases.

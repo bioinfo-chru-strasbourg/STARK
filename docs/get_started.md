@@ -1,5 +1,7 @@
 # STARK Get started
 
+See [STARK User guide](user_guides/USER-GUIDE.en.19.0.0.md) for more information.
+
 ## Quick installation
 
 Use curl from GitHub bioinfo-chru-strasbourg to setup STARK environment by default. This setup will build STARK docker image and setup folders (in "${HOME}/STARK") and needed databases.
