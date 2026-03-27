@@ -7,8 +7,8 @@
 
 SCRIPT_NAME="STARKDockerSetup"
 SCRIPT_DESCRIPTION="STARK Docker Setup"
-SCRIPT_RELEASE="0.9.1.1"
-SCRIPT_DATE="28/10/2021"
+SCRIPT_RELEASE="0.9.2"
+SCRIPT_DATE="27/03/2026"
 SCRIPT_AUTHOR="Antony Le Bechec"
 SCRIPT_COPYRIGHT="HUS/CPS"
 SCRIPT_LICENCE="GNU GPLA V3"
@@ -16,6 +16,7 @@ SCRIPT_LICENCE="GNU GPLA V3"
 # Realse note
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9b-12/04/2020: Script creation\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.1.1-28/10/2021: Script fixes\n";
+RELEASE_NOTES=$RELEASE_NOTES"# 0.9.2-27/03/2026: Remove archives step\n";
 
 # Script folder
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -24,7 +25,6 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 DOCKER_STARK_MAIN_FOLDER_DEFAULT=${HOME}/STARK
 
 # GIT_CLONE_DEFAULT
-#GIT_CLONE_DEFAULT="https://gitlab.bioinfo-diag.fr/Strasbourg/STARK.git"
 GIT_CLONE_DEFAULT="https://github.com/bioinfo-chru-strasbourg/STARK.git"
 
 
@@ -263,14 +263,14 @@ else
 	exit 1;
 fi;
 
-# Sources archives
-echo "#[INFO] STARK Docker Compose Setup - Sources Archives..."
-if docker-compose --project-name stark up stark-sources-archives >> $DOCKER_STARK_SETUP_LOG 2>> $DOCKER_STARK_SETUP_LOG; then
-	echo "#[INFO] STARK Docker Compose Setup - Sources Archives done."
-else
-	echo "#[ERROR] STARK Docker Compose Setup - Sources Archives failed!"
-	exit 1;
-fi;
+# # Sources archives
+# echo "#[INFO] STARK Docker Compose Setup - Sources Archives..."
+# if docker-compose --project-name stark up stark-sources-archives >> $DOCKER_STARK_SETUP_LOG 2>> $DOCKER_STARK_SETUP_LOG; then
+# 	echo "#[INFO] STARK Docker Compose Setup - Sources Archives done."
+# else
+# 	echo "#[ERROR] STARK Docker Compose Setup - Sources Archives failed!"
+# 	exit 1;
+# fi;
 
 echo "#[INFO] STARK Docker Compose Setup done."
 

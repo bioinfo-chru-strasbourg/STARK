@@ -1,40 +1,12 @@
-# STARK - GUIDE UTILISATEUR - version 0.9.18
+# GUIDE UTILISATEUR
 
-## Stellar Tools from raw sequencing data Analysis to variant RanKing
+**Stellar Tools from raw sequencing data Analysis to variant RanKing**
 
+**version**: 19.0.0
 
-- Introduction
-- Prérequis
-- Quick start
-   - Installation
-   - Utilisation
-- Installation détaillée
-   - Téléchargement
-   - Configuration
-   - Installation
-   - Services
-   - Répertoires
-- Module STARK
-   - Service CLI
-   - Service API
-   - Service Listener et cleaner
-   - Service DAS
-- Lancer une analyse
-   - Données et paramètres d’entrées
-   - Analyse par échantillons
-   - Analyse par run
-   - Résultats d’analyse
-   - Rapport d’analyse
-- Paramètres d’une analyse
-   - Tags
-   - SampleSheet
-   - Applications
-   - Designs, panels et transcrits de préférence
-- Contact
-- Annexes
+**TODO**
 
-
-# Introduction
+## Introduction
 
 STARK est un environnement d’analyse de données de séquençage conçu pour des données de santé (recommandations ANPGM/INCa) suivant les recommandations internationales et nationales, dont l’objectif principal est l’aide à l’interprétation des résultats en vue d’un diagnostic clinique. Flexible et adapté aux besoins des biologistes, efficient en terme de consommation de ressources, son approche « application » permet une stabilité, un suivi et une maîtrise des analyses.
 
@@ -60,7 +32,7 @@ Le code de STARK est développé sur le principe du Makefile, qui est de constru
 Le développement de STARK et la configuration des applications suivent les bonnes pratiques et recommandations de la communauté scientifique nationale (INCa et ANPGM) et internationales (GATK).
 
 
-# Prérequis
+## Prérequis
 
 OS : Tous systèmes permettant l’installation du service Docker (testé sur CentOS 7 et MacOS 11.x).
 
@@ -76,7 +48,7 @@ exomes, genomes, ...).
 - Des montages externes sont possibles, notamment pour les espaces des données brutes et des données résultats et d’archivage qui
 augmenterons au fur et à mesure de l’activité.
 
-# Quick start
+## Quick start
 
 Afin de faciliter son déploiement, l’environnement STARK est disponible en Docker, contenant les outils (binaires) et une installation automatique des bases de données nécessaires à son fonctionnement.
 
@@ -84,7 +56,7 @@ Les scripts permettant de construire l’environnement STARK ainsi qu’une desc
 
 Certains outils sont sous licence (e.g. GATK, ANNOVAR).
 
-## Installation
+### Installation
 
 L’installation simplifiée permet de télécharger les scripts de STARK, d’installer STARK-Core (construction des images Docker, configuration de la structure des répertoires et téléchargement des bases de données), et démarrer les services Docker du module principal STARK, par la commande suivante :
 
@@ -94,7 +66,7 @@ $ mkdir -p ${HOME}/STARK && cd ${HOME}/STARK && curl https://github.com/bioinfo-
 
 L’installation détaillée par étapes est détaillée en dans la section Installation détaillée.
 
-## Utilisation
+### Utilisation
 
 La commande suivante détaille les paramètres et options de lancement d’une analyse en ligne de commande :
 
@@ -111,9 +83,9 @@ $ docker exec -ti stark-module-stark-submodule-stark-service-cli bash
 Le module STARK et ses services est détaillé dans la section Module STARK.
 
 
-# Installation détaillée
+## Installation détaillée
 
-## Téléchargement
+### Téléchargement
 
 Création d’un répertoire d’installation STARK-bin et téléchargement des scripts STARK :
 
@@ -123,7 +95,7 @@ $ cd ${HOME}/STARK-bin
 $ git clone https://github.com/bioinfo-chru-strasbourg/STARK.git.
 ```
 
-## Configuration
+### Configuration
 
 La configuration de l’environnement STARK est controlé par le fichier d’environnement « .env » à la racine du répertoire d’installation. Ce fichier permet de définir les informations de création de l’image principale de STARK, des répertoires des données, et la configuration du réseau STARK associé aux différents modules et services additionnels. La configuration par défaut est adaptée à la plupart des infrastructures, seule variable du répertoire principale des données STARK-data peut être modifiée au besoin :
 
@@ -133,7 +105,7 @@ DOCKER_STARK_MAIN_FOLDER=${HOME}/STARK
 
 Dans le cas d’une configuration de l’environnement à façon, les variables du fichier principale de configuration « .env » doivent correspondre aux variables utilisées dans la structure docker du fichier « docker-compose.yml ». Egalement, la configuration des services devra possiblement être adapté.
 
-## Installation
+### Installation
 
 La construction de la principale image docker de l’environnement STARK est réalisée par la commande docker-compose, ainsi que l’installation. Cette installation va créer (si nécessaire) le répertoire des données STARK-data (ce répertoire doit être précédemment créé) et les sous-répertoires, déployer les bases de données nécessaires, et archiver les sources ayant permis la création de l’environnement STARK. Le paramètre « --project-name STARK » permet d’assurer un déploiement de l’environnement dans le stack docker « stark ». Ci-dessous les commandes pas à pas :
 
@@ -145,7 +117,7 @@ $ docker-compose --project-name STARK up stark-databases
 $ docker-compose --project-name STARK up stark-sources-archives
 ```
 
-## Services
+### Services
 
 Les services sont situés dans le dossier « STARK-bin/services » et sont organisés en modules et sous-modules (par répertoire). Chaque module contient un fichier « STARK.docker-compose.yml » décrivant les services principaux (peut être vide), le fichier « STARK.module » décrivant le module (format JSON), et le fichier « STARK.env » comprenant tous les paramètres principaux du modules, notamment pour partager les variables communes aux sous-modules. Chaque répertoire de sous-module contient les mêmes fichiers, décrivant chaque services associés et leurs paramètres. L’aide est disponible par l’option --help, les modules sont sélectionnés par l’option --modules, les sous-modules par l’option --submodules, et les services par --services. Les modules et sous-modules disponibles sont listés par l’option --modules_show. L’état des services est géré par l’option —command.
 
@@ -160,7 +132,7 @@ $ services/services.sh --modules=MyModule --submodules=MySubModule --services=My
 $ services/services.sh --modules_show
 ```
 
-## Répertoires
+### Répertoires
 
 Le répertoire STARK-bin contient l’ensemble des scripts téléchargés lors de l’installation de STARK, et les fichiers de configuration de l’environnement. Ci-dessous, les principaux scripts, fichiers de configuration et sous-répertoires :
 
@@ -219,7 +191,7 @@ STARK-data
 └── sources             # répertoires contenant les sources de STARK (packages et outils tiers)
 ```
 
-# Module STARK
+## Module STARK
 
 Pour démarrer le module principale de STARK, composé d’un seul sous-module STARK, comprenant les services CLI (Command Line Interface), API (Application Program Interface), Listener (et son service cleaner de nettoyage), et DAS (DAta Sharing) :
 
@@ -227,7 +199,7 @@ Pour démarrer le module principale de STARK, composé d’un seul sous-module S
 $ services/services.sh --modules=stark --command=up
 ```
 
-### Service CLI
+#### Service CLI
 
 Le service CLI (Command Line Interface) est un container Docker (stark-module-stark-submodule-stark-service-cli) qui permet d’executer des analyses personnalisées à partir des runs disponibles dans le répertoire STARK-data/input/runs, ou des données présentent dans le répertoire STARK-data/data. Par défaut, le répertoire de données STARK-data est disponible dans le container via lie montage /STARK.
 
@@ -258,7 +230,7 @@ et peuvent être listés par la ligne de commande find :
 $ docker exec stark-module-stark-submodule-stark-service-cli bash -c "find /STARK/tools -mindepth 2 -maxdepth 2 -type d"
 ```
 
-## Service API
+### Service API
 
 Le service API (Application Program Interface) est un container Docker (stark-module-stark-submodule-stark-service-api), dispose d’un serveur web (aide disponible), et est accessible par à l’adresse URI [http://ip:port](http://ip:port) (par défaut [http://localhost:4200).](http://localhost:4200).) Ce service est une interface permettant de mettre une command STARK en file d’attente par l’intermédiaire de paramètres au format JSON :
 
@@ -276,14 +248,14 @@ $ curl [http://localhost:4200/queue?list](http://localhost:4200/queue?list)
 $ curl -X POST -H 'Content-Type: application/json' -d '{"run":"myRun"}' [http://localhost:4200/analysis](http://localhost:4200/analysis)
 ```
 
-## Service Listener et cleaner
+### Service Listener et cleaner
 
 Le service Listener est un container Docker (stark-module-stark-submodule-stark-service-listener) est exécuté en tant que démon, et permet d’écouter si de nouveaux runs ont été déposés (dans le repertoire STARK-data/input/runs), et d’envoyer une commande d’analyse au service API. Un run est considéré à analyser s’il est terminé (RTAComplete.txt), configuré avec une SampleSheet (SampleSheet.csv), et suffisamment récent (10 jours par défaut).
 
 Le service Listener cleaner est un container Docker (stark-module-stark-submodule-stark-service-listenerclean) qui vérifie, une seule fois au démarrage ou redémarrage du service, si les runs mis en file d’attente ont bien été lancés, et les relance le cas échéant (utile après une panne ou un arrêt inopiné du serveur).
 
 
-## Service DAS
+### Service DAS
 
 Le service DAS (DAta Sharing) est un container Docker (stark-module-stark-submodule-stark-service-das), dispose d’un serveur web (aide disponible), et est accessible par à l’adresse URI [http://ip:port/publicPath/myPath](http://ip:port/publicPath/myPath) (par défaut [http://localhost:4201/static/data/public/myPath)](http://localhost:4201/static/data/public/myPath))
 
@@ -305,9 +277,9 @@ Les données de sorties :
 - [http://localhost:4201/static/data/public/data](http://localhost:4201/static/data/public/data)^
 
 
-# Lancer une analyse
+## Lancer une analyse
 
-## Données et paramètres d’entrées
+### Données et paramètres d’entrées
 
 Il est possible de lancer une analyse STARK sur un ou plusieurs échantillons (FASTQ, BAM) ou directement à partir d’un run, permettant notamment une analyse complète de runs en sortie de séquenceur Illumina (BCL).
 
@@ -339,7 +311,7 @@ _Principaux paramètres/options disponibles_
 
 
 
-## Analyse par échantillons
+### Analyse par échantillons
 
 L’analyse par échantillon permet de préciser les fichiers de reads à traiter (FASTQ, BAM, SAM, CRAM), ainsi que l’application à utiliser, les régions séquencées et d’intérêt, les transcrits de préférences, le répertoire de sortie des résultats.
 
@@ -360,7 +332,7 @@ $ STARK --application=GERMLINE --analysis_name=MyAnalysis --design=MyRegions.bed
 Note:
 - Les applications disponibles sont listées par l’option --applications_infos.
 
-## Analyse par run
+### Analyse par run
 
 L’analyse par run est conçue pour permettre de traiter un répertoire Illumina contenant les données brut (BCL) ou démultiplexées (FASTQ) directement en sortie de séquenceur, ou un répertoire contenant un ensemble des fichiers de reads (FASTQ, BAM, SAM, CRAM). Dans le cas d’un répertoire Illumina, il est nécessaire de préciser la SampleSheet ou de la déposer dans le dossier du run (https://emea.support.illumina.com).
 
@@ -376,7 +348,7 @@ Exemple de commande avec paramètres :
 $ STARK --runs=/My/Run/folder --application=EXOME --results=/path/to/My/Results/
 ```
 
-### Résultats d’analyse
+#### Résultats d’analyse
 
 Les résultats d’une analyse (ou run) sont disponibles dans les répertoires de type « repository » (par défaut archives, depository et repository), et sont organisés par groupe, projet et analyse. Ci dessous, les principaux fichiers résultats :
 
@@ -407,7 +379,7 @@ STARK-analysis
 └── analysis.ID.variants.*              # liste des variants de tous les échantillons (VCF, TSV)
 ```
 
-## Rapport d’analyse
+### Rapport d’analyse
 
 Un rapport d’analyse donne un aperçu des résultats générées à chaque étape de l’analyse.
 
@@ -417,15 +389,15 @@ Plusieurs sections résumes ensuite, par des indicateurs de qualité, les résul
 
 Exemple d’en-tête de rapport d’analyse STARK
 
-<img src="images/STARK.report.png"  width="600">
+![panel](images/STARK.report.png)
 
-# Paramètres d’une analyse
+## Paramètres d’une analyse
 
-## Tags
+### Tags
 
 Le système de tag STARK est utilisées pour ajouter des méta-informations, sous forme de mots-clés, aux échantillons, ou pour paramétrer automatiquement les analyses STARK ou les modules additionnels par l’utilisation d’une SampleSheet. Les méta-informations pour les échantillons peuvent permettre l’ajout des informations importantes afin d'aider l'interprétation biologique (par exemple le type de pathologie, l’age du patient, le sexe du patient, le matériel biologique utilisé).
 
-### Format des tags
+#### Format des tags
 
 Le format tag de STARK est le format standard d’un hashtag (composé du signe typographique « # » suivi du mot-clé, ou TAG), auquel est ajouté un TYPE en préfix (optionnel). Les tag ayant le même type peuvent être regroupés. Les tags STARK peuvent être listés en utilisant le signe typologique « ! ».
 
@@ -436,15 +408,15 @@ Le format tag de STARK est le format standard d’un hashtag (composé du signe 
 _Exemples des tags_
 
 ```
-#cancer                                         # Tag « cancer » simple sans type
-#cancer!#lymphoma!#female                       # Liste de tags simples sans type
+##cancer                                         # Tag « cancer » simple sans type
+##cancer!#lymphoma!#female                       # Liste de tags simples sans type
 PATHOLOGY#cancer                                # Tag « cancer » typé « PATHOLOGY »
 PATHOLOGY#cancer!PATHOLOGY#lymphoma             # Tags multiple typés « PATHOLOGY »
 PATHOLOGY#cancer#lymphoma                       # Tags multiple typés « PATHOLOGY » regroupés
 PATHOLOGY#cancer#lymphoma!SEX#female!#blood     # Liste de tags typés et non typés
 ```
 
-## SampleSheet
+### SampleSheet
 
 Une feuille d’échantillons, ou SampleSheet (Illumina), est requise pour chaque analyse par run. Ce fichier peut être déposé dans la racine du répertoire du run, avec le nom SampleSheet.csv, pour une analyse automatique, ou utilisé en mode manuel avec l’option --samplesheet.
 
@@ -469,13 +441,13 @@ SAMPLE3,...,APP#SOMATIC!PATHOLOGY#lymphoma,...      # Application spécifique SO
 ```
 
 
-## Applications
+### Applications
 
 Une application STARK est un ensemble de variables permettant la configuration spécifique pour une analyse (exemple : petit panel de gènes par la technologie amplicon, exome par la technologie capture, identification de mutations somatiques). Les applications disponibles peuvent être listées par l’option --applications_infos. Les applications sont stockées dans le répertoire STARK-bin/config/apps sous forme de fichier ayant l’extension « .app » (format de fichier d’environnement Linux). Une application par default « default.app » est utilisées si aucune application n’est définie lors du lancement d’une analyse.
 
 Les variables peuvent être décrites sous plusieurs sections. Ci-dessous, les principales sections et variables (cf default.app).
 
-### Informations et description de l’application
+#### Informations et description de l’application
 
 Ces informations décrivent l’application. Notamment, les informations du groupe et du projet déterminera les sous-répertoires dans lesquels seront déposés les analyses (dans les répertoires de dépôt et d’archives).
 
@@ -487,7 +459,7 @@ APP_GROUP=""                            # Groupe de l’application (UNKNOWN par
 APP_PROJECT=""                          # Projet de l’application (UNKNOWN par défaut)
 ```
 
-### Configuration principales
+#### Configuration principales
 
 Les variables principales sont utilisées à plusieurs étapes de l’analyse, comme l’alignement, le calling et l’annotation.
 
@@ -496,7 +468,7 @@ ASSEMBLY=hg19                           # Assemble du génome (auto-détecté da
 THREADS=AUTO                            # Nombre de processeur (nombre de cores - 1 par défaut)
 ```
 
-### Demultiplexing et FASTQ
+#### Demultiplexing et FASTQ
 
 L’étape de demultiplexing permet d’extraire les read (FASTQ) à partir des données brutes ( BCL). Ces reads peuvent être filtrés et traités par des étapes supplémentaires..
 
@@ -507,7 +479,7 @@ FASTQ_QUALITY_FILTERING=""              # Seuil de qualité des reads
 POST_SEQUENCING_STEPS=""                # Etapes de post séquençage
 ```
 
-### Pipelines et post-processing
+#### Pipelines et post-processing
 
 Un pipeline est une suite d’étapes d’alignement, de calling et d’annotation (format « Aligner.Caller.Annotator »). Plusieurs pipelines peuvent être renseignés et exécutés en parallèle (format « Aligner1.Caller1.Annotator1,Aligner2.Caller2.Annotator2 »). Egalement, plusieurs étapes de post-processing permettent d’ajuster les pipelines. L’option --pipelines_infos propose l’ensemble de étapes disponibles.
 
@@ -518,7 +490,7 @@ POST_CALLING_STEPS="normalization recalibration filtration"                     
 POST_ANNOTATION_STEPS="sorting recalibration normalization"                         # Post annotation
 ```
 
-### Annotation
+#### Annotation
 
 Les variables d’annotation permettent de configurer les annotations, les calculs, la priorisation des variants, et les champs a afficher dans le rapport au format TCV (cf HOWARD). Ces étapes d’annotations sont réalisées pour chaque pipeline, lors de la génération du rapport en VCF (combinaison de tous les pipelines), et au niveau de l’analyse (combinaison de tous les échantillons). Ci dessous les variables d’annotation des résultats des pipelines et du rapport:
 
@@ -533,7 +505,7 @@ HOWARD_PRIORITIZATION_REPORT="default"                                  # Priori
 HOWARD_FIELDS_REPORT=« NOMEN,location,outcome,snpeff_impact,ALL"        # Champs a afficher dans le TSV
 ```
 
-### Metrics
+#### Metrics
 
 Les metrics permettent d’évaluer notamment la qualité de séquençage et d’alignement des reads. Pour chaque échantillon et aligner), un fichier de validation (sample.aligner.validation.bam) est généré suivant les critères de qualité suivant :
 
@@ -545,7 +517,7 @@ METRICS_FLAGS="UNMAP,SECONDARY,QCFAIL,DUP"          # Ne pas considérer les rea
 COVERAGE_CRITERIA="1,5,10,20,30,50,100,200,300"     # Profondeurs a considérer pour la couverture
 ```
 
-### Rapports
+#### Rapports
 
 Afin de générer des indicateurs sur les metrics de qualité, certains seuils peuvent être configurés. Un seuil de profondeur est défini par le nombre de base, un seuil de couverture est défini par un pourcentage (de 0 à 1).
 
@@ -557,22 +529,22 @@ EXPECTED_DEPTH="100"                # Seuil espéré de profondeur
 DEPTH_COVERAGE_THRESHOLD="0.95"     # Seuil de couverture pour les profondeurs minimum et espérées
 ```
 
-### Application additionnelle
+#### Application additionnelle
 
 Des applications additionnelles peuvent être configurées pour répondre aux besoins de chaque analyse. Ainsi, pour faciliter la création de nouvelles applications, le principal d’héritage permet de modifier la configuration d’une application existante en ne changeant que les variables nécessaires. A titre d’exemple, ci-dessous la configuration d’une application dédiée à la détection de mosaic et son utilisation :
 
 ```
-# Heritage
+## Heritage
 source_app "GERMLINE"                               # Héritage de l’application GERMLINE
 
-# Description de l’application
+## Description de l’application
 APP_NAME="myAppMosaic"                              # Nom de la nouvelle application
 APP_RELEASE="1.0"                                   # Version de la nouvelle application
 APP_DESCRIPTION="My App for Mosaic"                 # Description de la nouvelle application
 APP_GROUP="myGroup"                                 # Groupe de la nouvelle application
 APP_PROJECT="myProject"                             # Projet de la nouvelle application
 
-# Configuration
+## Configuration
 PIPELINES=$PIPELINES" bwamem.outLyzer.howard"       # Ajout du pipeline avec le caller outLyzer
 HOWARD_PRIORITIZATION="myAppPrioritization"         # Utilisation d’une priorisation configurée
 COVERAGE_CRITERIA=$COVERAGE_CRITERIA",500,1000"     # Ajout de profondeurs pour les metrics
@@ -590,12 +562,12 @@ APP#myAppMosaic                 # TAG SampleSheet avec les applications myAppMos
 De la même manière, il est possible de définir des plugin d’application, ou plugApp. Il s’agit alors de configurer l’application sans héritage. Cette plugApp peut alors être utilisée en complément de l’application principale, soit par le paramètre --application, soit par le tag APP dans la SampleSheet. Ci-dessous, la configuration d’une plugAPP et son utilisation :
 
 ```
-# Description de l’application
+## Description de l’application
 APP_NAME="myPlugAppMosaic"                          # Nom de la nouvelle plugApp
 APP_RELEASE="1.0"                                   # Version de la nouvelle plugApp
 APP_DESCRIPTION="My plugApp for Mosaic"             # Description de la nouvelle plugApp
 
-# Configuration
+## Configuration
 PIPELINES=$PIPELINES" bwamem.outLyzer.howard"       # Ajout du pipeline avec le caller outLyzer
 HOWARD_PRIORITIZATION="myAppPrioritization"         # Utilisation d’une priorisation configurée
 COVERAGE_CRITERIA=$COVERAGE_CRITERIA",500,1000"     # Ajout de profondeurs pour les metrics
@@ -612,11 +584,11 @@ APP#EXOME#myPlugAppMosaic                   # TAG SampleSheet avec les applicati
 --application=EXOME,myPlugAppMosaic         # Paramètre avec les applications EXOME
 ```
 
-## Designs, panels et transcrits de préférence
+### Designs, panels et transcrits de préférence
 
 Une analyse STARK prend en compte un design (régions séquencées), un panel (les régions d’intérêt, ou gènes) et les transcrits de préférence. Pour une analyse par run, les fichiers sont détectés dans le répertoire STARK-data/input/manifests.
 
-### Design
+#### Design
 
 Un design est l’ensemble des régions utilisées lors de l’étape de séquençage, généralement définies par le fournisseur du kit de séquençage, et permet de définir les régions sur lesquelles seront identifiés les variants et calculés les metrics de qualité (profondeur et couverture).
 
@@ -645,7 +617,7 @@ chr17   41267696    41267876    BRCA1_exon03    0   -
 chr17   41275967    41276169    BRCA1_exon02    0   -
 ```
 
-### Panel
+#### Panel
 
 Un panel est un ensemble de régions regroupées en régions d’intérêt. Particulièrement, un panel de gènes permet de regrouper l’ensemble des exons d’un gène sous la même région d’intérêt « gène », afin notamment de calculer les metrics de qualité par gène (profondeur et couverture). Un panel est réalisé « à façon » et peut contenir n’importe quelles régions d’intérêt (e.g. exons, introns, régions inter-géniques) regroupées selon les besoin.
 
@@ -661,7 +633,7 @@ chr17   41267742    41267796    BRCA1   0   -
 chr17   41276033    41376132    BRCA1   0   -
 ```
 
-### Transcrits de préférence
+#### Transcrits de préférence
 
 L’étape d'annotation des variants liste un ensemble d’annotation HGVS, et puis détermine un NOMEN, c’est à dire une annotation HGVS unique. La liste des transcrits de préférence permet de choisir les transcrits souhaités, pour chaque gène, parmi les annotations HGVS des variants. Si aucun transcrit n’est défini pour un gène, l’étape d’annotation choisira l’annotation HGVS selon le calcul d’un score de pertinence.
 
@@ -677,10 +649,9 @@ NM_007294.3 BRCA1   # transcrit BRCA1 principal
 
 _Représentation sur IGV du Design et du Panel des régions EGFR (exon 18 et exon 19) :_
 
-<img src="images/panel.png"  width="600">
+![panel](images/panel.png)
 
-
-# Contact
+## Contact
 
 PLATEFORME BIOINFORMATIQUE
 
@@ -693,7 +664,7 @@ Hôpitaux Universitaires de Strasbourg (UF7363)
 bioinfo@chru-strasbourg.fr
 
 
-# HISTORIQUE DE RÉVISION
+## HISTORIQUE DE RÉVISION
 
 **Date de révision Motif de la révision**
 
@@ -706,9 +677,9 @@ bioinfo@chru-strasbourg.fr
 12-02-2021 Mise à jour pour la version 0.9.18
 
 
-# Annexes
+## Annexes
 
-## Répertoires de données
+### Répertoires de données
 
 Ce répertoire (STARK-data) contient la structure des sous-répertoires contenant les données d’entrées, les résultats des analyses (ou run), les bases de données, les fichiers de configurations et les log des modules. Ci-dessous, les principaux sous-répertoires :
 
@@ -744,11 +715,11 @@ STARK-data
 └── sources           # répertoires contenant les sources de STARK (packages et outils tiers)
 ```
 
-## Données d'entrées
+### Données d'entrées
 
 Le répertoire _input_ regroupe les données de séquençage et les fichiers de paramètres associés.
 
-### Données de séquençage
+#### Données de séquençage
 
 Répertoire regroupant les runs Illumina provenant des séquenceurs. Chaque répertoire représente un run Illumina.
 
@@ -756,7 +727,7 @@ Répertoire regroupant les runs Illumina provenant des séquenceurs. Chaque rép
 /input/runs
 ```
 
-### Designs, panels et transcrits de préférence
+#### Designs, panels et transcrits de préférence
 
 Répertoire regroupant les designs, panels de gènes, liste des transcrits de préférence, utilisés pour l'analyse des données séquençage
 
@@ -764,17 +735,17 @@ Répertoire regroupant les designs, panels de gènes, liste des transcrits de pr
 /input/manifests
 ```
 
-### Données additionnelles
+#### Données additionnelles
 
 ```
 /data
 ```
 
-## Données de résultats
+### Données de résultats
 
 Le répertoire _output_ regroupant les résultats générés par STARK
 
-### Répertoire temporaire
+#### Répertoire temporaire
 
 Répertoire temporaire utilisé pour générer des résultats intermédiaires
 
@@ -782,7 +753,7 @@ Répertoire temporaire utilisé pour générer des résultats intermédiaires
 /output/tmp
 ```
 
-### Répertoire de démultiplexing
+#### Répertoire de démultiplexing
 
 Répertoire de demultiplexing des runs, générant notamment les fichiers de reads fastq.gz pour chaque échantillon. Chaque sous répertoire correspond à un run.
 
@@ -790,7 +761,7 @@ Répertoire de demultiplexing des runs, générant notamment les fichiers de rea
 /output/demultiplexing
 ```
 
-### Répertoire de résultats
+#### Répertoire de résultats
 
 Répertoire regroupant l'ensemble des runs analysés. Chaque sous répertoire correspond à un run. Chaque répertoire de run contient des fichiers résultats propres au run (vcf, metrics, log...), et un répertoire par échantillon contenant les résultats propre à chaque échantillon (bam, vcf, tsv, metrics...)
 
@@ -798,7 +769,7 @@ Répertoire regroupant l'ensemble des runs analysés. Chaque sous répertoire co
 /output/results
 ```
 
-### Répertoire de dépôt des analyses
+#### Répertoire de dépôt des analyses
 
 ```
 /output/repository
@@ -812,7 +783,7 @@ Répertoire organisant les résultats en fonction de leur groupe et projet. La s
 
 Pour chaque répertoire d'échantillon (_SAMPLE_), les principaux fichiers permettant l'analyse des résultats ont disponibles, et un répertoire STARK contient l'ensemble des résultats de l'échantillon. D'autres répertoires (et éventuellement d'autres fichiers principaux) contiennent les résultats des modules/services STARK éventuellement exécutés (e.g. CQI, VaRank, Pool, CANOES, DECoN...).
 
-### Répertoire de dépôt des analyses avant archivage
+#### Répertoire de dépôt des analyses avant archivage
 
 ```
 /output/depository
@@ -826,7 +797,7 @@ En cas d'utilisation de ce répertoire de dépôt indépendamment d'un répertoi
 
 Ce répertoire peut être considéré comme en lecture/écriture. Les modules STARK archivant des résultats utilisent ce répertoire comme espace d'archivage.
 
-### Répertoire de dépôt des analyses archivées
+#### Répertoire de dépôt des analyses archivées
 
 ```
 /output/archives
@@ -838,7 +809,7 @@ En fonction des règles d'archivage de STARK Core et STARK Modules, seulement ce
 
 Ce répertoire peut être considéré comme en lecture seule (le répertoire _/output/depository_ étant le répertoire de dépôt des résultats). Les modules STARK interrogeant l'archivage utilisent ce répertoire comme espace d'archivage.
 
-## Configuration
+### Configuration
 
 Répertoire contenant l'ensemble des fichiers de configuration permettant les analyses STARK et ses modules.
 
@@ -848,7 +819,7 @@ Répertoire contenant l'ensemble des fichiers de configuration permettant les an
 /databases
 ```
 
-# Configuration de STARK-Core et STARK-Modules
+## Configuration de STARK-Core et STARK-Modules
 
 L'organisation des répertoires est en fonction des modules. Naturellement, chaque sous-répertoire correspond à un modules, contenant éventuellement des sous-répertoires par service (e.g. STRUCTURALVARIATION/CANOES et STRUCTURALVARIATION/DECoN).
 

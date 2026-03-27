@@ -1,26 +1,27 @@
-#######################################
-# STARK                               #
-# Stellar Tools for variants          #
-#    Analysis and RanKing             #
-# Author: Antony Le Bechec            #
-# Copyright: HUS                      #
-# License: GNU GPLA V3                #
-#######################################
+# Release notes
 
-#######################################
-# Release: 19.0.0-devel               #
-# Date: 20230512                      #
-#######################################
+## Release 19.0.0
 
-## New
+- Name: Stellar Tools for variants Analysis and RanKing
+- Author: Antony Le Bechec
+- Copyright: HUS
+- License: GNU GPLA V3
+- Date: XX/XX/XXXX
+
+### New
 
 - RNASeq
-- Annotation (howard 2.0)
-- ...
+  - Alignement with STAR
+  - Caller STAR Fusion and Arriba
+- Docker in Docker (DinD)
+  - Rules
 - Alignment BWA2
 
+- Annotation
+  - New HOWARD release
+- ...
 
-## Improvements
+### Improvements
 
 - ...
 - New releases: Java:17(LTS), Picard:3.0.0, Java:17(LTS), Samtools:1.17, Bedtools:2.31.0, IGVTools:2.16.1
@@ -29,35 +30,26 @@
 - GATK:4 as default release (available: $GATK3 and GATK4)
 - Manage high consuming rules by sequencializing (e.g. aligners such as bwamem2 and star)
 
-
-## Fixes
+### Fixes
 
 - Removed: Java:7, Java:11, Python:2
+- Many fixes
 
+## Release 0.9.18.5
 
+- Name: Stellar Tools for variants Analysis and RanKing
+- Author: Antony Le Bechec
+- Copyright: HUS
+- License: GNU GPLA V3
+- Date: 11/02/2023
 
-#######################################
-# STARK                               #
-# Stellar Tools for variants          #
-#    Analysis and RanKing             #
-# Author: Antony Le Bechec            #
-# Copyright: HUS                      #
-# License: GNU GPLA V3                #
-#######################################
-
-#######################################
-# Release: 0.9.18.5                   #
-# Date: 20230211                      #
-#######################################
-
-## New
+### New
 
 - STARK Module Management, for check, install and update additionnal modules/services
 - Additionnal pipeline step moving info annotation for genotype
 - Additionnal VCF header conformity script
 
-
-## Improvements
+### Improvements
 
 - STARK module services automatically detect docker compose command
 - Pipelines rules refactoring, loading files depending on pipelines
@@ -65,30 +57,21 @@
 - Improve analysis log (include input file, copy files and igv session log)
 - Docs in MarkDown
 
-
-## Fixes
+### Fixes
 
 - fix STARK module case in services
 - HOWARD prioritization for each pipeline vcf deprecated (only at report)
 - Deprecated callers: OutLyser caller with Python2, MuTect2 with GATKv3
 
+## Release 0.9.18.4
 
+- Name: Stellar Tools for variants Analysis and RanKing
+- Author: Antony Le Bechec
+- Copyright: HUS
+- License: GNU GPLA V3
+- Date: 20/07/2022
 
-#######################################
-# STARK                               #
-# Stellar Tools for variants          #
-#    Analysis and RanKing             #
-# Author: Antony Le Bechec            #
-# Copyright: HUS                      #
-# License: GNU GPLA V3                #
-#######################################
-
-#######################################
-# Release: 0.9.18.4                   #
-# Date: 20220720                      #
-#######################################
-
-## New
+### New
 
 - Add fastp additionnal options (useful for special adaptator trimming)
 - Include Q30 on metrics by run
@@ -98,27 +81,26 @@
 - Add healthcheck on STARK services
 - Include docker sock on STARK API
 
-
-## Improvements
+### Improvements
 
 - Tools update: samtools/bcftools, bowtie2, fastp, picard, umi_tools, gencore
 - Java update to java11 release
 - Update setup and get databases scripts (add genome.img for GATK4, improve snpEff download)
 - Improve VCF recalibration and filtration (with GATK4), with config params
 
-
-## Fixes
+### Fixes
 
 - fix merge multiallelic on final VCF
 
+## Release 0.9.18.3
 
+- Name: Stellar Tools for variants Analysis and RanKing
+- Author: Antony Le Bechec
+- Copyright: HUS
+- License: GNU GPLA V3
+- Date: 21/10/2021
 
-#######################################
-# Release: 0.9.18.3                   #
-# Date: 20211021                      #
-#######################################
-
-## New
+### New
 
 - UMI support (using FASTP for UMI barcode, and Picard MarkDuplicates and Gencore for duplicates)
 - Keep alignment for BAM/SAM/CRAM read input files (if enabled)
@@ -127,8 +109,7 @@
 - New pedigree input file (describe sample information, such as family, sex, pathology...)
 - New IGV session files (for IGV desktop and IGV-Web)
 
-
-## Improvements
+### Improvements
 
 - New HOWARD release (fields format, prioritization mode, SV compatibility...)
 - Report improved (add destructive pipeline check, pedigree information...)
@@ -139,28 +120,19 @@
 - Improve ressources management
 - Error catches
 
-
-## Fixes
+### Fixes
 
 - some fixes
 
+## Release 0.9.18.2
 
+- Name: Stellar Tools for variants Analysis and RanKing
+- Author: Antony Le Bechec
+- Copyright: HUS
+- License: GNU GPLA V3
+- Date: 23/04/2021
 
-#######################################
-# STARK                               #
-# Stellar Tools for variants          #
-#    Analysis and RanKing             #
-# Author: Antony Le Bechec            #
-# Copyright: HUS                      #
-# License: GNU GPLA V3                #
-#######################################
-
-#######################################
-# Release: 0.9.18.2                   #
-# Date: 20210423                      #
-#######################################
-
-## New
+### New
 
 - New folder architecture (bin, config, app, modules...)
 - New Application management
@@ -173,83 +145,60 @@
 - Docker compose deployment
 - Docker services support added as modules such as a dashboard, listener, launcher, and tools such as IGV and JARVIS
 
-
-## Improvements
+### Improvements
 
 - Databases files/folder structure simplification
 - Simplification of metrics (for samples and run)
 - Error catches
 
-
-## Fixes
+### Fixes
 
 - Java flags parameter
 - GZIP environment variable warning fixed
 
+## Release 0.9.17b
 
+- Name: Stellar Tools for variants Analysis and RanKing
+- Author: Antony Le Bechec
+- Copyright: IRC
+- License: GNU-GPL/CeCILL
+- Date: 02/10/2018
 
-#######################################
-# STARK                               #
-# Stellar Tools for variants          #
-#    Analysis and RanKing             #
-# Author: Antony Le Bechec            #
-# Copyright: IRC                      #
-# Licence: GNU-GPL/CeCILL             #
-#######################################
-
-#######################################
-# Release : 0.9.17b                   #
-# Date : 20181002                     #
-#######################################
-
-
-## New
+### New
 
 - HOWARD new release 0.9.13b (multithreading improved...)
 - Annotation options in applications for annotation rule howard (and a minimum annotation rule howard_minimum)
 - Annotation options in applications for report annotation
 - Report now generates VCF and TSV files with all samples for a run
 
-
-## Improvments
+### Improvments
 
 - Report generation improved (multiallelic splitted into multi lines into VCF)
 - VCF metrics improved (snpEff and BCFTOOLS stats)
 - CANOE rule improved (detection improved and exit if failed)
 
-
-## Fixes
+### Fixes
 
 - Report bugs fixed
 - Symlink bug fixed
 - some bugs from 0.9.16b fixed
 
+## Release 0.9.16b
 
+- Name: Stellar Tools for variants Analysis and RanKing
+- Author: Antony Le Bechec
+- Copyright: IRC
+- License: GNU-GPL/CeCILL
+- Date: 15/06/2018
 
-#######################################
-# STARK                               #
-# Stellar Tools for variants          #
-#    Analysis and RanKing             #
-# Author: Antony Le Bechec            #
-# Copyright: IRC                      #
-# Licence: GNU-GPL/CeCILL             #
-#######################################
-
-#######################################
-# Release : 0.9.16b                   #
-# Date : 20180615                     #
-#######################################
-
-
-## New
+### New
 
 - Option --transcripts added for sample analysis, and auto-detection for run analysis (<manifest>.transcripts)
 - FATBAM new release 0.9.8b (temporary folder, empty primers...)
 - HOWARD new release 0.9.11.1b (CALLING_QUALITY, VARTYPE calculation...)
 - CANOE CNV caller analysis generates new pictures representing region coverage
 
-
-## Improvments
+### Improvments
 
 - Rules updated to use BCFTOOLS and SAMTOOLS release 1.8
 - Report generation improved (speed-up)
@@ -261,30 +210,20 @@
 - New option listing all tools/version used in the configuration
 - Applications are now released
 
-
-## Fixes
+### Fixes
 
 - Report bugs fixed
 - some bugs from 0.9.15b fixed
 
+## Release 0.9.15b
 
+- Name: Stellar Tools for variants Analysis and RanKing
+- Author: Antony Le Bechec
+- Copyright: IRC
+- License: GNU-GPL/CeCILL
+- Date: 20/11/2017
 
-#######################################
-# STARK                               #
-# Stellar Tools for variants          #
-#    Analysis and RanKing             #
-# Author: Antony Le Bechec            #
-# Copyright: IRC                      #
-# Licence: GNU-GPL/CeCILL             #
-#######################################
-
-#######################################
-# Release : 0.9.15b                   #
-# Date : 20171120                     #
-#######################################
-
-
-## New
+### New
 
 - FLT3-ITD detection is now available through "itdseek" caller
 - APPS added (new EXOME_SOMATIC analysis)
@@ -294,8 +233,7 @@
 - Option -j/--bedfile_genes added for sample analysis
 - Folders RESULTS and REPOSITORY now work on all files systems (using symlink or not)
 
-
-## Improvments
+### Improvments
 
 - CANOE CNV caller analysis improved: algorithm statistically improved (sex separation on sex chromosomes only) and code optimization (faster)
 - CANOE CNV caller performance improved (scaling)
@@ -304,8 +242,7 @@
 - Raw data are now extract directly from fastq by default, to speed up the analysis
 - More multithreading (remove duplicates, realignment, HOWARD annotation, metrics)
 
-
-## Fixes
+### Fixes
 
 - *vcf.gz creation
 - demultiplexing check
@@ -313,24 +250,15 @@
 - canoe bugs fixed
 - some bugs from 0.9.14.1 fixed
 
+## Release 0.9.14.1b
 
+- Name: Stellar Tools for variants Analysis and RanKing
+- Author: Antony Le Bechec
+- Copyright: IRC
+- License: GNU-GPL/CeCILL
+- Date: 04/08/2017
 
-#######################################
-# STARK                               #
-# Stellar Tools for variants          #
-#    Analysis and RanKing             #
-# Author: Antony Le Bechec            #
-# Copyright: IRC                      #
-# Licence: GNU-GPL/CeCILL             #
-#######################################
-
-#######################################
-# Release : 0.9.14.1b                 #
-# Date : 20170804                     #
-#######################################
-
-
-## New
+### New
 
 - CANOE CNV caller is now available
 - APPS improved and added (new GENOME analysis)
@@ -340,31 +268,21 @@
 - Report additions: main coverage table, genes coverage, variants prioritization
 - Much more parameters included in APPS
 
-
-## Fixes
+### Fixes
 
 - canoes script correction
 - remove symbolic link copy on REP folder
 - remove $SAMPLE.bwamem.bam.cleaned.bam file (no needed because it's a tempory file)
 
+## Release 0.9.14b
 
+- Name: Stellar Tools for variants Analysis and RanKing
+- Author: Antony Le Bechec
+- Copyright: IRC
+- License: GNU-GPL/CeCILL
+- Date: 29/06/2017
 
-#######################################
-# STARK                               #
-# Stellar Tools for variants          #
-#    Analysis and RanKing             #
-# Author: Antony Le Bechec            #
-# Copyright: IRC                      #
-# Licence: GNU-GPL/CeCILL             #
-#######################################
-
-#######################################
-# Release : 0.9.14b                   #
-# Date : 20170629                     #
-#######################################
-
-
-## New
+### New
 
 - CANOE CNV caller is now available
 - APPS improved and added (new GENOME analysis)
@@ -374,15 +292,13 @@
 - Report additions: main coverage table, genes coverage, variants prioritization
 - Much more parameters included in APPS
 
-
-## Improvments
+### Improvments
 
 - Reports generation was improved, informations were added, result files clarified
 - Raw data are now extract directly from fastq by default, to speed up the analysis
 - More multithreading (remove duplcates, realignment, HOWARD annotation, metrics)
 
-
-## Fixes
+### Fixes
 
 - *vcf.gz creation
 - demultiplexing check

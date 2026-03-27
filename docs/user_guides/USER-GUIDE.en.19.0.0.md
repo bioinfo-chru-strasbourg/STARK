@@ -1,40 +1,12 @@
-# STARK - USER GUIDE - version 0.9.18
+# USER GUIDE
 
-## Stellar Tools from raw sequencing data Analysis to variant RanKing
+**Stellar Tools from raw sequencing data Analysis to variant RanKing**
 
+**version**: 19.0.0
 
-- Introduction
-- Prerequisites
-- Quick start
-   - Facility
-   - Use
-- Detailed installation
-   - Download
-   - Setup
-   - Facility
-   - Services
-   - Directories
-- STARK module
-   - CLI service
-   - API service
-   - Service Listener and Cleaner
-   - DAS Service
-- Launch an analysis
-   - Input data and parameters
-   - Analysis by samples
-   - Analysis per run
-   - Analysis results
-   - Analysis report
-- Parameters of an analysis
-   - Tags
-   - SampleSheet
-   - Apps
-   - Designs, panels and transcripts preferred
-- Contact
-- Appendices
+**TODO**
 
-
-# Introduction
+## Introduction
 
 STARK is a sequencing data analysis environment designed for health data following international (GATK) and french national recommendations (ANPGM/INCa), the main objective of which is to help interpret results for a clinical diagnosis. Flexible and adapted to the needs of biologists, efficient in terms of resource consumption, its “application” approach allows stability, monitoring and control of analyses.
 
@@ -60,7 +32,7 @@ Also, these rules can be executed in parallel on several processors, allowing ef
 The development of STARK and the configuration of the applications follow the good practices and recommendations of the national (INCa and ANPGM) and international (GATK) scientific community.
 
 
-# Prerequisites
+## Prerequisites
 
 OS: All systems allowing the installation of the Docker service (tested on CentOS 7 and MacOS 11.x).
 
@@ -76,7 +48,7 @@ exomes, genomes, etc.).
 - External assemblies are possible, in particular for the areas of raw data and results and archiving data which
 will increase as the activity progresses.
 
-# Quick start
+## Quick start
 
 In order to facilitate deployment, STARK environment is available in Docker, containing required tools (binaries) and an automatic installation of mandatory databases.
 
@@ -84,7 +56,7 @@ The scripts allowing to build the STARK environment as well as a more detailed d
 
 Some tools are licensed (eg GATK, ANNOVAR).
 
-## Facility
+### Facility
 
 The simplified installation allows you to download the STARK scripts, install STARK-Core (build Docker images, configure the directory structure and download databases), and start the Docker services of the main STARK module, by following command:
 
@@ -94,7 +66,7 @@ $ mkdir -p ${HOME}/STARK && cd ${HOME}/STARK && curl https://github.com/bioinfo-
 
 Step-by-step installation is detailed in the Detailed Installation section.
 
-## Use
+### Use
 
 The following command details the parameters and options for launching a command-line scan:
 
@@ -111,9 +83,9 @@ $ docker exec -ti stark-module-stark-submodule-stark-service-cli bash
 The STARK module and its services are detailed in the STARK module section.
 
 
-# Detailed installation
+## Detailed installation
 
-## Download
+### Download
 
 Creating a STARK-bin installation directory and downloading STARK scripts:
 
@@ -123,7 +95,7 @@ $ cd ${HOME}/STARK-bin
 $ git clone https://github.com/bioinfo-chru-strasbourg/STARK.git.
 ```
 
-## Setup
+### Setup
 
 The configuration of the STARK environment is controlled by the ".env" environment file at the root of the installation directory. This file is used to define the information for creating the main image of STARK, the data directories, and the configuration of the STARK network associated with the various modules and additional services. The default configuration is suitable for most infrastructures, the only variable in the main STARK-data directory can be modified as needed:
 
@@ -133,7 +105,7 @@ DOCKER_STARK_MAIN_FOLDER=${HOME}/STARK
 
 In the case of a custom environment configuration, the variables in the main ".env" configuration file must correspond to the variables used in the docker structure of the "docker-compose.yml" file. Also, the configuration of services may need to be adapted.
 
-## Facility
+### Facility
 
 Building the main STARK environment docker image is done by the docker-compose command, as well as installing it. This installation will create (if necessary) the STARK-data data directory (this directory must be previously created) and the subdirectories, deploy the necessary databases, and archive the sources that allowed the creation of the STARK environment. The “--project-name STARK” parameter ensures deployment of the environment in the “stark” docker stack. Below are the step-by-step commands:
 
@@ -145,7 +117,7 @@ $ docker-compose --project-name STARK up stark-databases
 $ docker-compose --project-name STARK up stark-sources-archives
 ```
 
-## Services
+### Services
 
 Services are located in the "STARK-bin/services" folder and are organized into modules and sub-modules (by directory). Each module contains a "STARK.docker-compose.yml" file describing the main services (can be empty), the "STARK.module" file describing the module (JSON format), and the "STARK.env" file including all the main parameters of the modules, in particular to share the variables common to the sub-modules. Each submodule directory contains the same files, describing each associated service and its parameters. Help is available with the --help option, modules are selected with the --modules option, submodules with the --submodules option, and services with --services. The available modules and submodules are listed by the --modules_show option. The state of services is managed by the —command option.
 
@@ -160,7 +132,7 @@ $ services/services.sh --modules=MyModule --submodules=MySubModule --services=My
 $ services/services.sh --modules_show
 ```
 
-## Directories
+### Directories
 
 The STARK-bin directory contains all the scripts downloaded during the installation of STARK, and the environment configuration files. Below are the main scripts, configuration files and subdirectories:
 
@@ -219,7 +191,7 @@ STARK-data
 └── sources                # directories containing STARK sources (3rd party packages and tools)
 ```
 
-# STARK module
+## STARK module
 
 To start the main STARK module, composed of a single STARK sub-module, including the CLI (Command Line Interface), API (Application Program Interface), Listener (and its cleaning service), and DAS (DAta Sharing ):
 
@@ -227,7 +199,7 @@ To start the main STARK module, composed of a single STARK sub-module, including
 $ services/services.sh --modules=stark --command=up
 ```
 
-### CLI Service
+#### CLI Service
 
 The CLI (Command Line Interface) service is a Docker container (stark-module-stark-submodule-stark-service-cli) that allows you to run custom analyzes from the runs available in the STARK-data/input/runs directory , or data present in the STARK-data/data directory. By default, the STARK-data data directory is available in the container via bind mount /STARK.
 
@@ -258,7 +230,7 @@ and can be listed by the find command line:
 $ docker exec stark-module-stark-submodule-stark-service-cli bash -c "find /STARK/tools -mindepth 2 -maxdepth 2 -type d"
 ```
 
-## API service
+### API service
 
 The API (Application Program Interface) service is a Docker container (stark-module-stark-submodule-stark-service-api), has a web server (help available), and is accessible via the URI address [http ://ip:port](http://ip:port) (by default [http://localhost:4200).](http://localhost:4200).) This service is an interface allowing to put a queued STARK command via JSON-formatted parameters:
 
@@ -276,14 +248,14 @@ $ curl [http://localhost:4200/queue?list](http://localhost:4200/queue?list)
 $ curl -X POST -H 'Content-Type: application/json' -d '{"run":"myRun"}' [http://localhost:4200/analysis](http://localhost:4200/analysis )
 ```
 
-## Service Listener and Cleaner
+### Service Listener and Cleaner
 
 The Listener service is a Docker container (stark-module-stark-submodule-stark-service-listener) is run as a daemon, and allows you to listen if new runs have been filed (in the STARK-data/input directory /runs), and send a run command to the API service. A run is considered to be analyzed if it is completed (RTAComplete.txt), configured with a SampleSheet (SampleSheet.csv), and sufficiently recent (10 days by default).
 
 The Listener cleaner service is a Docker container (stark-module-stark-submodule-stark-service-listenerclean) which checks, only once when starting or restarting the service, if the queued runs have been launched, and restarts them if necessary (useful after a failure or an unexpected shutdown of the server).
 
 
-## DAS Service
+### DAS Service
 
 The DAS (DAta Sharing) service is a Docker container (stark-module-stark-submodule-stark-service-das), has a web server (help available), and is accessible via the URI address [http: //ip:port/publicPath/myPath](http://ip:port/publicPath/myPath) (default [http://localhost:4201/static/data/public/myPath)](http://localhost :4201/static/data/public/myPath))
 
@@ -305,9 +277,9 @@ Output data:
 - [http://localhost:4201/static/data/public/data](http://localhost:4201/static/data/public/data)^
 
 
-# Run a scan
+## Run a scan
 
-## Input data and parameters
+### Input data and parameters
 
 It is possible to launch a STARK analysis on one or more samples (FASTQ, BAM) or directly from a run, allowing in particular a complete analysis of runs at the output of the Illumina sequencer (BCL).
 
@@ -339,7 +311,7 @@ _Main settings/options available_
 
 
 
-## Analysis by samples
+### Analysis by samples
 
 Analysis by sample makes it possible to specify the read files to be processed (FASTQ, BAM, SAM, CRAM), as well as the application to be used, the sequenced and regions of interest, the preference transcripts, the output directory of results.
 
@@ -360,7 +332,7 @@ $ STARK --application=GERMLINE --analysis_name=MyAnalysis --design=MyRegions.bed
 Note:
 - The available applications are listed by the --applications_infos option.
 
-## Analysis per run
+### Analysis per run
 
 Analysis by run is designed to process an Illumina directory containing raw (BCL) or demultiplexed (FASTQ) data directly at the sequencer output, or a directory containing a set of read files (FASTQ, BAM, SAM, CRAM ). In the case of an Illumina directory, it is necessary to specify the SampleSheet or to deposit it in the run folder (https://emea.support.illumina.com).
 
@@ -376,7 +348,7 @@ Example command with parameters:
 $ STARK --runs=/My/Run/folder --application=EXOME --results=/path/to/My/Results/
 ```
 
-### Analysis results
+#### Analysis results
 
 The results of an analysis (or run) are available in the “repository” type directories (by default archives, depository and repository), and are organized by group, project and analysis. Below are the main result files:
 
@@ -407,7 +379,7 @@ STARK-analysis
 └── analysis.ID.variants.*             # list of variants of all samples (VCF, TSV)
 ```
 
-## Analysis report
+### Analysis report
 
 An analysis report provides an overview of the results generated at each step of the analysis.
 
@@ -417,16 +389,15 @@ Several sections then summarize, using quality indicators, the results of the an
 
 Sample STARK Analysis Report Header
 
-<img src="images/STARK.report.png" width="600">
+![panel](images/STARK.report.png)
 
+## Analysis parameters
 
-# Analysis parameters
-
-## Tags
+### Tags
 
 The STARK tagging system is used to add meta-information, in the form of keywords, to samples, or to automatically parameterize STARK analyzes or add-on modules through the use of a SampleSheet. The meta-information for the samples can allow the addition of important information in order to help the biological interpretation (for example the type of pathology, the age of the patient, the sex of the patient, the biological material used).
 
-### Tag format
+#### Tag format
 
 STARK's tag format is the standard format of a hashtag (composed of the typographic sign "#" followed by the keyword, or TAG), to which is added a TYPE as a prefix (optional). Tags with the same type can be grouped together. STARK tags can be listed using the typological sign "!" ".
 
@@ -437,15 +408,15 @@ STARK's tag format is the standard format of a hashtag (composed of the typograp
 _Examples of tags_
 
 ```
-#cancer                                         # Simple typeless “cancer” tag
-#cancer!#lymphoma!#female                       # Typeless simple tag list
+##cancer                                         # Simple typeless “cancer” tag
+##cancer!#lymphoma!#female                       # Typeless simple tag list
 PATHOLOGY#cancer                                # Tag "cancer" typed "PATHOLOGY"
 PATHOLOGY#cancer!PATHOLOGY#lymphoma             # Multiple tags typed “PATHOLOGY”
 PATHOLOGY#cancer#lymphoma                       # Multiple typed “PATHOLOGY” tags grouped together
 PATHOLOGY#cancer#lymphoma!SEX#female!#blood     # List of typed and untyped tags
 ```
 
-## SampleSheet
+### SampleSheet
 
 A sample sheet, or SampleSheet (Illumina), is required for each analysis per run. This file can be placed in the root of the run directory, with the name SampleSheet.csv, for automatic analysis, or used in manual mode with the --samplesheet option.
 
@@ -470,13 +441,13 @@ SAMPLE3,...,APP#SOMATIC!PATHOLOGY#lymphoma,...     # Specific SOMATIC applicatio
 ```
 
 
-## Apps
+### Apps
 
 A STARK application is a set of variables allowing the specific configuration for an analysis (example: small panel of genes by amplicon technology, exome by capture technology, identification of somatic mutations). The available applications can be listed by the --applications_infos option. Applications are stored in the STARK-bin/config/apps directory as a file with the extension “.app” (Linux environment file format). A default application “default.app” is used if no application is defined when launching an analysis.
 
 Variables can be described under several sections. Below, the main sections and variables (see default.app).
 
-### Application information and description
+#### Application information and description
 
 This information describes the application. In particular, the group and project information will determine the sub-directories in which the analyzes will be deposited (in the repository and archive directories).
 
@@ -488,7 +459,7 @@ APP_GROUP=""                              # Application group (UNKNOWN by defaul
 APP_PROJECT=""                            # Application project (UNKNOWN by default)
 ```
 
-### Main settings
+#### Main settings
 
 Principal variables are used at several stages of the analysis, such as alignment, calling, and annotation.
 
@@ -497,7 +468,7 @@ ASSEMBLY=hg19 # Assemble genome (auto-detected in manifest)
 THREADS=AUTO # Number of processor (number of cores - 1 by default)
 ```
 
-### Demultiplexing and FASTQ
+#### Demultiplexing and FASTQ
 
 The demultiplexing step makes it possible to extract the reads (FASTQ) from the raw data (BCL). These reads can be filtered and processed through additional steps.
 
@@ -508,7 +479,7 @@ FASTQ_QUALITY_FILTERING=""    # Read quality threshold
 POST_SEQUENCING_STEPS=""      # Post sequencing steps
 ```
 
-### Pipelines and post-processing
+#### Pipelines and post-processing
 
 A pipeline is a sequence of alignment, calling and annotation steps (“Aligner.Caller.Annotator” format). Several pipelines can be populated and executed in parallel (format “Aligner1.Caller1.Annotator1,Aligner2.Caller2.Annotator2”). Also, several post-processing steps make it possible to adjust the pipelines. The --pipelines_infos option offers the set of available stages.
 
@@ -519,7 +490,7 @@ POST_CALLING_STEPS="normalization recalibration filtration"                     
 POST_ANNOTATION_STEPS="sorting recalibration normalization"                         # Post annotation
 ```
 
-### Annotation
+#### Annotation
 
 The annotation variables allow you to configure the annotations, the calculations, the prioritization of the variants, and the fields to be displayed in the report in TCV format (see HOWARD). These annotation steps are performed for each pipeline, when generating the report in VCF (combination of all pipelines), and at the analysis level (combination of all samples). Below are the annotation variables for the results of the pipelines and the report:
 
@@ -534,7 +505,7 @@ HOWARD_PRIORITIZATION_REPORT="default"                                  # Priori
 HOWARD_FIELDS_REPORT="NOMEN,location,outcome,snpeff_impact,ALL"         # Fields to display in TSV
 ```
 
-### Metrics
+#### Metrics
 
 The metrics make it possible to evaluate in particular the quality of sequencing and alignment of the reads. For each sample and aligner), a validation file (sample.aligner.validation.bam) is generated according to the following quality criteria:
 
@@ -546,7 +517,7 @@ METRICS_FLAGS="UNMAP,SECONDARY,QCFAIL,DUP"         # Don't consider reads with t
 COVERAGE_CRITERIA="1,5,10,20,30,50,100,200,300"    # Depths to consider for coverage
 ```
 
-### Reports
+#### Reports
 
 In order to generate indicators on the quality metrics, certain thresholds can be configured. A depth threshold is defined by the base number, a coverage threshold is defined by a percentage (from 0 to 1).
 
@@ -558,22 +529,22 @@ EXPECTED_DEPTH="100"                # Expected depth threshold
 DEPTH_COVERAGE_THRESHOLD="0.95"  # Coverage threshold for minimum and expected depths
 ```
 
-### Additional app
+#### Additional app
 
 Additional applications can be configured to meet the needs of each analysis. Thus, to facilitate the creation of new applications, the inheritance principal makes it possible to modify the configuration of an existing application by changing only the necessary variables. As an example, below is the configuration of an application dedicated to mosaic detection and its use:
 
 ```
-# Legacy
+## Legacy
 source_app "GERMLINE"                  # Inheritance of the GERMLINE application
 
-# App description
+## App description
 APP_NAME="myAppMosaic"                 # Name of the new application
 APP_RELEASE="1.0"                      # New app release
 APP_DESCRIPTION="My App for Mosaic"    # Description of the new app
 APP_GROUP="myGroup"                    # New application group
 APP_PROJECT="myProject"                # New application project
 
-# Setup
+## Setup
 PIPELINES=$PIPELINES" bwamem.outLyzer.howard"      # Adding the pipeline with the caller outLyzer
 HOWARD_PRIORITIZATION="myAppPrioritization"        # Using configured prioritization
 COVERAGE_CRITERIA=$COVERAGE_CRITERIA",500,1000"    # Add depths for metrics
@@ -591,12 +562,12 @@ APP#myAppMosaic               # TAG SampleSheet with myAppMosaic apps
 In the same way, it is possible to define application plugins, or plugApp. It is then a question of configuring the application without inheritance. This plugApp can then be used in addition to the main application, either by the --application parameter or by the APP tag in the SampleSheet. Below, the configuration of a plugAPP and its use:
 
 ```
-# App description
+## App description
 APP_NAME="myPlugAppMosaic"                # Name of the new plugApp
 APP_RELEASE="1.0"                         # Version of the new plugApp
 APP_DESCRIPTION="My plugApp for Mosaic"   # Description of the new plugApp
 
-# Setup
+## Setup
 PIPELINES=$PIPELINES" bwamem.outLyzer.howard"      # Adding the pipeline with the caller outLyzer
 HOWARD_PRIORITIZATION="myAppPrioritization"        # Using configured prioritization
 COVERAGE_CRITERIA=$COVERAGE_CRITERIA",500,1000"    # Add depths for metrics
@@ -613,11 +584,11 @@ APP#EXOME#myPlugAppMosaic                 # TAG SampleSheet with EXOME Apps
 --application=EXOME,myPlugAppMosaic       # Parameter with EXOME applications
 ```
 
-## Designs, panels and transcripts preferred
+### Designs, panels and transcripts preferred
 
 A STARK analysis takes into account a design (sequenced regions), a panel (regions of interest, or genes) and the preferred transcripts. For run analysis, files are detected in the STARK-data/input/manifests directory.
 
-### Design
+#### Design
 
 A design is the set of regions used during the sequencing step, generally defined by the supplier of the sequencing kit, and makes it possible to define the regions on which the variants will be identified and the quality metrics calculated (depth and coverage) .
 
@@ -646,7 +617,7 @@ chr17   41267696    41267876    BRCA1_exon03    0   -
 chr17   41275967    41276169    BRCA1_exon02    0   -
 ```
 
-### Panel
+#### Panel
 
 A panel is a set of regions grouped into regions of interest. In particular, a panel of genes makes it possible to group together all the exons of a gene under the same region of interest “gene”, in order in particular to calculate the quality metrics per gene (depth and coverage). A panel is made "to order" and can contain any regions of interest (eg exons, introns, inter-gene regions) grouped together as needed.
 
@@ -662,7 +633,7 @@ chr17   41267742    41267796    BRCA1   0   -
 chr17   41276033    41376132    BRCA1   0   -
 ```
 
-### Preferably transcribed
+#### Preferably transcribed
 
 The variant annotation step lists a set of HGVS annotations, and then determines a NOMEN, ie a single HGVS annotation. The list of preferred transcripts makes it possible to choose the desired transcripts, for each gene, among the HGVS annotations of the variants. If no transcript is defined for a gene, the annotation step will choose the HGVS annotation according to the calculation of a relevance score.
 
@@ -678,10 +649,10 @@ NM_007294.3 BRCA1   # transcrit BRCA1 principal
 
 _Representation on IGV of the Design and the Panel of the EGFR regions (exon 18 and exon 19):_
 
-<img src="images/panel.png" width="600">
+![panel](images/panel.png)
 
 
-# Contact
+## Contact
 
 BIOINFORMATICS PLATFORM
 
@@ -694,7 +665,7 @@ Strasbourg University Hospitals (UF7363)
 bioinfo@chru-strasbourg.fr
 
 
-# REVISION HISTORY
+## REVISION HISTORY
 
 **Date of revision Reason for revision**
 
@@ -707,9 +678,9 @@ bioinfo@chru-strasbourg.fr
 12-02-2021 Update for version 0.9.18
 
 
-# Appendices
+## Appendices
 
-## Data directories
+### Data directories
 
 This directory (STARK-data) contains the structure of the sub-directories containing the input data, the results of the analyzes (or run), the databases, the configuration files and the logs of the modules. Below are the main sub-directories:
 
@@ -745,11 +716,11 @@ STARK-data
 └── sources       # directories containing STARK sources (3rd party packages and tools)
 ```
 
-## Input data
+### Input data
 
 The _input_ directory contains sequencing data and associated parameter files.
 
-### Sequencing data
+#### Sequencing data
 
 Directory gathering Illumina runs from sequencers. Each directory represents an Illumina run.
 
@@ -757,7 +728,7 @@ Directory gathering Illumina runs from sequencers. Each directory represents an 
 /input/runs
 ```
 
-### Designs, panels and transcripts preferred
+#### Designs, panels and transcripts preferred
 
 Directory of designs, gene panels, list of preferred transcripts, used for sequencing data analysis
 
@@ -765,17 +736,17 @@ Directory of designs, gene panels, list of preferred transcripts, used for seque
 /input/manifests
 ```
 
-### Additional data
+#### Additional data
 
 ```
 /data
 ```
 
-## Result data
+### Result data
 
 The _output_ directory containing the results generated by STARK
 
-### Temporary directory
+#### Temporary directory
 
 Temporary directory used to generate intermediate results
 
@@ -783,7 +754,7 @@ Temporary directory used to generate intermediate results
 /output/tmp
 ```
 
-### Demultiplexing directory
+#### Demultiplexing directory
 
 Run demultiplexing directory, notably generating the fastq.gz read files for each sample. Each subdirectory corresponds to a run.
 
@@ -791,7 +762,7 @@ Run demultiplexing directory, notably generating the fastq.gz read files for eac
 /output/demultiplexing
 ```
 
-### Results directory
+#### Results directory
 
 Directory grouping together all the runs analysed. Each subdirectory corresponds to a run. Each run directory contains results files specific to the run (vcf, metrics, log...), and a directory per sample containing the results specific to each sample (bam, vcf, tsv, metrics...)
 
@@ -799,7 +770,7 @@ Directory grouping together all the runs analysed. Each subdirectory corresponds
 /output/results
 ```
 
-### Analysis repository directory
+#### Analysis repository directory
 
 ```
 /output/repository
@@ -813,7 +784,7 @@ Directory organizing the results according to their group and project. The struc
 
 For each sample directory (_SAMPLE_), the main files allowing the analysis of the results are available, and a STARK directory contains all the results of the sample. Other directories (and possibly other main files) contain the results of possibly executed STARK modules/services (eg CQI, VaRank, Pool, CANOES, DECoN...).
 
-### Directory for filing analyzes before archiving
+#### Directory for filing analyzes before archiving
 
 ```
 /output/depository
@@ -827,7 +798,7 @@ If this repository directory is used independently of an archive directory, the 
 
 This directory can be considered read/write. STARK modules archiving results use this directory as their archive space.
 
-### Directory for filing archived analyzes
+#### Directory for filing archived analyzes
 
 ```
 /output/archives
@@ -839,7 +810,7 @@ Depending on STARK Core and STARK Modules archiving rules, only certain files wi
 
 This directory can be considered read-only (the _/output/depository_ directory being the results repository directory). STARK modules querying the archive use this directory as their archive space.
 
-## Setup
+### Setup
 
 Directory containing all the configuration files allowing the STARK analyzes and its modules.
 
@@ -849,7 +820,7 @@ Directory containing all the configuration files allowing the STARK analyzes and
 /databases
 ```
 
-# Configuring STARK-Core and STARK-Modules
+## Configuring STARK-Core and STARK-Modules
 
 The organization of the directories is according to the modules. Naturally, each sub-directory corresponds to a module, possibly containing sub-directories by service (eg STRUCTURALVARIATION/CANOES and STRUCTURALVARIATION/DECoN).
 

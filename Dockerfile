@@ -1342,6 +1342,23 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	howard query --input=$TOOL_DEST/tests/data/example.vcf --query="SELECT 1"
 	
 
+##########
+# MKDOCS #
+##########
+
+
+# TOOL INFO
+ENV TOOL_NAME="mkdocs"
+ENV TOOL_VERSION="1.6.1"
+# ENV TOOL_TARBALL="$TOOL_VERSION.zip"
+# ENV TOOL_SOURCE_EXTERNAL="https://github.com/bioinfo-chru-strasbourg/howard/archive/refs/heads/$TOOL_TARBALL"
+ENV PATH=$PATH:$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin
+# TOOL PARAMETERS
+
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	$MAMBA create -y -p $TOOLS/$TOOL_NAME/$TOOL_VERSION mkdocs python=3.10 && \
+	$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python -m pip install mkdocs mkdocs-material pymdown-extensions plotly mkdocs-macros-plugin mkdocs-include-dir-to-nav mkdocs-include-markdown-plugin "markdown-exec[ansi]"
+
 
 
 #########
@@ -1370,6 +1387,7 @@ COPY toolbox $TOOLS/$TOOL_NAME/$TOOL_VERSION/toolbox
 COPY .env $TOOLS/$TOOL_NAME/$TOOL_VERSION/
 COPY docker-compose.yml $TOOLS/$TOOL_NAME/$TOOL_VERSION/
 COPY Dockerfile $TOOLS/$TOOL_NAME/$TOOL_VERSION/
+COPY mkdocs.yml $TOOLS/$TOOL_NAME/$TOOL_VERSION/
 
 # TOOL INSTALLATION
 RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
