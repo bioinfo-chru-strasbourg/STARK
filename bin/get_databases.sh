@@ -7,13 +7,13 @@
 
 SCRIPT_NAME="STARKDatabases"
 SCRIPT_DESCRIPTION="STARK download and build databases"
-SCRIPT_RELEASE="1.1.1"
-SCRIPT_DATE="17/02/2026"
+SCRIPT_RELEASE="1.2.0"
+SCRIPT_DATE="27/03/2026"
 SCRIPT_AUTHOR="Antony Le Bechec"
 SCRIPT_COPYRIGHT="IRC"
 SCRIPT_LICENCE="GNU-GPL"
 
-# Realse note
+# Release note
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9b-11/12/2018: Script creation\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.1b-12/12/2018: Change to Makefile\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.2b-21/12/2018: Add update, build, rebuild and threads options. Change dbsnp source\n";
@@ -24,6 +24,7 @@ RELEASE_NOTES=$RELEASE_NOTES"# 0.9.6.0-28/07/2022: Change snpEff download, add G
 RELEASE_NOTES=$RELEASE_NOTES"# 1.0.0-01/11/2023: Rewrite for STARK 19 new database structure: clean code, HOWARD database python, fix makefile rules (point to file, not directory), add CTAT/arriba, use aria2c\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 1.1.0-08/04/2025: Update for STARK 19: clear code, fixes and improves\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 1.1.1-17/02/2026: Update GATK4 resources, add assembly option\n";
+RELEASE_NOTES=$RELEASE_NOTES"# 1.2.0-27/03/2026: Fix bugs, genome is mandatory for any download\n";
 
 
 # Header
@@ -261,7 +262,7 @@ DATABASE_DESCRIPTION="Reference sequence was produced by the Genome Reference Co
 # GENOME for all other databases
 GENOME=$DATABASES/genomes/$RELEASE/$ASSEMBLY/$ASSEMBLY.fa
 
-if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
+if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT || [ ! -e $GENOME ]; then
 
 	DBFOLDER_GENOME=$DATABASES/genomes
 	if [ ! -e $DBFOLDER_GENOME/$RELEASE ]; then
@@ -535,7 +536,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		cat $MK.existing_gatk_db >> $MK
 		MK_DBFOLDER_GATK_ALL="$MK_DBFOLDER_GATK_ALL $MK_DBFOLDER_GATK_ALL_existing_gatk_db"
 		MK_ALL="$MK_ALL $MK_ALL_existing_gatk_db" 
-		echo "$DBFOLDER_GATK/$RELEASE/$ASSEMBLY/done: $MK_DBFOLDER_GATK_ALL
+		echo "$DBFOLDER_GATK/$RELEASE/$ASSEMBLY/done: $MK_DBFOLDER_GATK_ALL $GENOME
 			mkdir -p $DBFOLDER_GATK/$DATE/$ASSEMBLY/original
 			chmod 0775 $DBFOLDER_GATK/$DATE/$ASSEMBLY -R
 			-[ ! -s $DBFOLDER_GATK/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_GATK/STARK.database
@@ -592,7 +593,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		';
 		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
 
-		echo "$DBFOLDER_SNPEFF/done: $DBFOLDER
+		echo "$DBFOLDER_SNPEFF/done: $DBFOLDER $GENOME
 			$HOWARD databases --assembly='$ASSEMBLY' --download-snpeff=$DBFOLDER_SNPEFF/$DATE --config=$HOWARD_CONFIG
 			-[ ! -s $DBFOLDER_SNPEFF/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_SNPEFF/STARK.database && chmod o+r $DBFOLDER_SNPEFF/STARK.database 
 			[ ! -e $DBFOLDER_SNPEFF/$RELEASE/$ASSEMBLY ] || unlink $DBFOLDER_SNPEFF/$RELEASE/$ASSEMBLY
@@ -646,7 +647,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		';
 		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
 	
-		echo "$DBFOLDER_ANNOVAR/done: $DBFOLDER
+		echo "$DBFOLDER_ANNOVAR/done: $DBFOLDER $GENOME
 			$HOWARD databases --assembly='$ASSEMBLY' --download-annovar=$DBFOLDER_ANNOVAR/$DATE --download-annovar-files='$ANNOVAR_FILES'
 			-[ ! -s $DBFOLDER_ANNOVAR/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_ANNOVAR/STARK.database && chmod o+r $DBFOLDER_ANNOVAR/STARK.database 
 			[ ! -e $DBFOLDER_ANNOVAR/$RELEASE/$ASSEMBLY ] || unlink $DBFOLDER_ANNOVAR/$RELEASE/$ASSEMBLY
@@ -699,7 +700,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		';
 		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
 
-		echo "$DBFOLDER_REFGENE/$RELEASE/$ASSEMBLY: $DBFOLDER
+		echo "$DBFOLDER_REFGENE/$RELEASE/$ASSEMBLY: $DBFOLDER $GENOME
 			$HOWARD databases --assembly='$ASSEMBLY' --download-refseq=$DBFOLDER_REFGENE/$DATE --download-refseq-format-file='ncbiRefSeq.txt' ;
 			cat $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/ncbiRefSeq.txt | awk -F '\t' -v OFS='\t' -f $STARK_FOLDER_BIN/refSeq_to_gtf.awk | sort -k1,1V -k4,4n -k5,5n -k3,3 -S4G > $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/ncbiRefSeq.gtf
 			-[ ! -s $DBFOLDER_REFGENE/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_REFGENE/STARK.database && chmod o+r $DBFOLDER_REFGENE/STARK.database;
@@ -893,7 +894,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		(($VERBOSE)) && echo "#[INFO] ARRIBA URL=$ARRIBA_CURRENT"
 		(($VERBOSE)) && echo "#[INFO] ARRIBA RELEASE=$DBFOLDER_ARRIBA/$DATE/$ASSEMBLY"
 
-		echo "$DBFOLDER_ARRIBA/$RELEASE/$ASSEMBLY: $DBFOLDER
+		echo "$DBFOLDER_ARRIBA/$RELEASE/$ASSEMBLY: $DBFOLDER $GENOME
 			$ARIA_CMD $ARRIBA_CURRENT -d $DB_TMP;
 			mkdir -p $DBFOLDER_ARRIBA/$DATE_RELEASE/$ASSEMBLY;
 			chmod 0775 $DBFOLDER_ARRIBA/$DATE_RELEASE/$ASSEMBLY;
@@ -976,7 +977,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		';
 		echo "$DB_RELEASE_INFOS_JSON" > $DB_TMP/STARK.database.release
 
-		echo "$PFAM_DATABASES/$ASSEMBLY: $DBFOLDER
+		echo "$PFAM_DATABASES/$ASSEMBLY: $DBFOLDER $GENOME
 			mkdir -p $DBFOLDER_PFAM
 			$ARIA_CMD $PFAM_URL/Pfam${PFAM_RELEASE}/Pfam-A.hmm.gz -d $DB_TMP;
 			mkdir -p $DBFOLDER_PFAM/$PFAM_RELEASE/$ASSEMBLY;
@@ -1061,7 +1062,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		';
 		echo "$DB_RELEASE_INFOS_JSON" > $DB_TMP/STARK.database.release
 
-		echo "$DFAM_DATABASES/$ASSEMBLY: $DBFOLDER
+		echo "$DFAM_DATABASES/$ASSEMBLY: $DBFOLDER $GENOME
 			mkdir -p $DBFOLDER_DFAM
 			$ARIA_CMD $DFAM_URL/Dfam_${DFAM_RELEASE}/infrastructure/dfamscan/homo_sapiens_dfam.hmm -d $DB_TMP;
 			$ARIA_CMD $DFAM_URL/Dfam_${DFAM_RELEASE}/infrastructure/dfamscan/homo_sapiens_dfam.hmm.h3f -d $DB_TMP;
@@ -1158,7 +1159,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		
 
 		# Fusion anotation lib preparation
-		echo "$DBFOLDER_CTAT_ROOT/fusion_lib: $DBFOLDER
+		echo "$DBFOLDER_CTAT_ROOT/fusion_lib: $DBFOLDER $GENOME
 			mkdir -p $DBFOLDER_CTAT_ROOT/fusion_lib;
 			$ARIA_CMD $CTAT_LIB_SOURCE -d $DBFOLDER_CTAT_ROOT;
 			tar -xzf $DBFOLDER_CTAT_ROOT/$(basename $CTAT_LIB_SOURCE) -C $DBFOLDER_CTAT_ROOT/fusion_lib --wildcards --no-anchored "fusion_lib.\*gz"  --transform='s:.*/::';
@@ -1378,7 +1379,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		(($VERBOSE)) && echo "#[INFO] GENCODE URL=$GENCODE_CURRENT"
 		(($VERBOSE)) && echo "#[INFO] GENCODE RELEASE=$GENCODE_VERSION"
 
-		echo "$GENCODE_DATABASES/$ASSEMBLY/done: $DBFOLDER
+		echo "$GENCODE_DATABASES/$ASSEMBLY/done: $DBFOLDER $GENOME
 			mkdir -p $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY;
 			chmod 0775 $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY;
 			$ARIA_CMD $GENCODE_CURRENT -d $DB_TMP;

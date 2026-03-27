@@ -79,8 +79,7 @@ services:
             # Docker sock
             - ${DOCKER_STARK_SOCK_MOUNT}
             # Databases folder
-            #- ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_DATABASES}:${DOCKER_STARK_INNER_FOLDER_DATABASES}:rw
-            - /Volumes/LaCie/STARK/databases:${DOCKER_STARK_INNER_FOLDER_DATABASES}:rw
+            - ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_DATABASES}:${DOCKER_STARK_INNER_FOLDER_DATABASES}:rw
             # HOWARD databases defintions (if already exists, need to define DOCKER_STARK_FOLDER_CONFIG_HOWARD and DOCKER_STARK_INNER_FOLDER_CONFIG_HOWARD)
             - ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_CONFIG_HOWARD}:${DOCKER_STARK_INNER_FOLDER_CONFIG_HOWARD}:ro
         depends_on:

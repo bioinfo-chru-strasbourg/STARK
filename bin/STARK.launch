@@ -353,6 +353,8 @@ DEBUG=$(echo $DEBUG | awk '{print $0+0}')
 
 ### APPLICATION
 
+[ "$APP" == "" ] && APP="default.app" 
+
 ENV=$(find_app "$APP" "$STARK_FOLDER_APPS")
 source_app "$APP" "$STARK_FOLDER_APPS" 1
 
@@ -1546,6 +1548,10 @@ for RUU in $RUN_UNIQ; do
 				# No Panel and no Design 
 				else 
 					(($VERBOSE)) && echo "#[WARN] NOT Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' (no Panel and no Design found). Panel will be autodetected."
+					# BEDFILE_GENES_ONE=$RUN_SAMPLE_DIR/$S.full.genes
+					# touch $BEDFILE_GENES_ONE
+					# #cp $REFSEQ_GENES $BEDFILE_GENES_ONE
+					# echo $(basename $BEDFILE_GENES_ONE) > $BEDFILE_GENES_LIST_ONE;
 				fi;
 
 			else
