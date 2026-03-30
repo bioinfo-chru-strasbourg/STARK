@@ -257,6 +257,15 @@ if [ "$LAUNCHER" == "" ]; then
 	LAUNCHER="http://localhost:8000/analysis"
 fi;
 
+# STARK API KEY
+################
+
+# if [ -z "$STARK_API_KEY" ]; then
+# 	echo "#[ERROR] STARK API key is not set. Please set the STARK_API_KEY environment variable or define it in the script."
+# 	exit 1
+# fi
+
+
 
 # DAEMON_PERIODICITY
 ######################
@@ -364,7 +373,9 @@ while ((1)); do
 
 
 						if [ "$COMMAND" == "LAUNCHER" ]; then
-							CMD="curl -s -X POST -H 'Content-Type: application/json' -d '{\"run\":\"$IFA\"}' $LAUNCHER"
+							#CMD="curl -s -X POST -H 'Content-Type: application/json' -d '{\"run\":\"$IFA\"}' $LAUNCHER"
+							#CMD="curl -s -X POST -H 'Content-Type: application/json' -H \"Authorization: Bearer $TOKEN\" -d '{\"run\":\"$IFA\"}' $LAUNCHER"
+							CMD="curl -s -X POST -H 'Content-Type: application/json' -H \"X-API-Key: $STARK_API_KEY\" -d '{\"run\":\"$IFA\"}' $LAUNCHER"
 						elif [ "$COMMAND" == "DOCKER" ]; then
 							CMD="STARK --docker-stark-image=$DOCKER_STARK_IMAGE --docker-parameters='--rm;-d;--name=$ID' --run=$IFA"
 						elif [ "$COMMAND" == "STARK" ]; then
