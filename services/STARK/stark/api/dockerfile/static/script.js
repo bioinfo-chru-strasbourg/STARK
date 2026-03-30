@@ -104,14 +104,15 @@ document.addEventListener('DOMContentLoaded', () => {
     async function getQueue(action = 'list', id = '') {
 
         function formatTime(timesStr) {
-            if (!timesStr || timesStr === 'N/A') return 'N/A';
+            if (!timesStr) return '';
+            if (timesStr === 'N/A') return 'N/A';
             const firstTime = parseFloat(timesStr.split('/')[0]);
             if (isNaN(firstTime)) return 'N/A';
             const h = Math.floor(firstTime / 3600);
             const m = Math.floor((firstTime % 3600) / 60);
             const s = (firstTime % 60).toFixed(1);
-            if (h > 0) return `${h}h ${m}m ${s}s`;
-            if (m > 0) return `${m}m ${s}s`;
+            if (h > 0) return `${h}h${m}m${s}s`;
+            if (m > 0) return `${m}m${s}s`;
             return `${s}s`;
         }
 

@@ -26,7 +26,9 @@ import json
 import random
 import string
 import time
+import datetime
 import re
+import concurrent.futures
 from typing import Optional, Union, List
 
 # --- Configuration ---
@@ -287,7 +289,16 @@ async def stark_launch(
 @app.get("/queue")
 async def queue(
     action: str = Query(
-        "list", enum=["list", "info", "log", "kill", "prioritize", "remove", "swap"]
+        "list",
+        enum=[
+            "list",
+            "info",
+            "log",
+            "kill",
+            "prioritize",
+            "remove",
+            "swap",
+        ],
     ),
     id: Optional[str] = Query(None),
     authorized: Union[User, str] = Depends(get_current_user_or_service),
@@ -343,12 +354,57 @@ async def queue(
                                     if data["elevel"].isdigit()
                                     else "N/A"
                                 ),
-                                "times": (
-                                    data["times"].strip() if data["times"] else "N/A"
-                                ),
+                                "times": "",
                                 "run_name": run_name,
                             }
                         )
+
+            # Enrich running and finished tasks with Time run from ts -i (parallel)
+            def fetch_time(task):
+                state = task["state"].lower()
+                if state not in ("running", "finished"):
+                    return
+                try:
+                    info_result = subprocess.run(
+                        f"{ts_env} {ts} -i {task['id']}",
+                        shell=True,
+                        executable=shell,
+                        capture_output=True,
+                        text=True,
+                        check=False,
+                        timeout=5,
+                    )
+                    stdout = info_result.stdout
+                    if state == "finished":
+                        # ts -i reports "Time run: X.XXXs" once the task is done
+                        time_match = re.search(r"Time run:\s*([\d.]+)s", stdout)
+                        task["times"] = time_match.group(1) if time_match else ""
+                    else:
+                        # For running tasks, compute elapsed = now - Start time
+                        start_match = re.search(r"Start time:\s*(.+)", stdout)
+                        if start_match:
+                            start_str = start_match.group(1).strip()
+                            try:
+                                # Parse "Mon Mar 30 18:24:26 2026" style
+                                start_dt = datetime.datetime.strptime(
+                                    start_str, "%a %b %d %H:%M:%S %Y"
+                                )
+                                elapsed = time.time() - start_dt.timestamp()
+                                task["times"] = f"{elapsed:.1f}"
+                            except ValueError:
+                                task["times"] = ""
+                        else:
+                            task["times"] = ""
+                except Exception:
+                    task["times"] = ""
+
+            tasks_to_enrich = [
+                t for t in tasks if t["state"].lower() in ("running", "finished")
+            ]
+            if tasks_to_enrich:
+                with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+                    executor.map(fetch_time, tasks_to_enrich)
+
             return JSONResponse(content=tasks)
         except FileNotFoundError:
             raise HTTPException(status_code=500, detail=f"Command not found: {ts}")
