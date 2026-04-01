@@ -315,6 +315,91 @@ async def stark_launch(
         return PlainTextResponse(content=f"KO: {e}", status_code=400)
 
 
+@app.get("/list")
+async def list():
+    """
+    List all tasks in the queue.
+
+    Usage:
+
+    # GOOD from external docker container
+    curl -s -X GET -H 'Content-Type: application/json' http://localhost:4200/list | python3 -m json.tool
+    # GOOD from internal docker container
+    curl -s -X GET -H 'Content-Type: application/json' http://stark-module-stark-submodule-stark-service-api:8000/list | python3 -m json.tool
+
+    """
+    command = f"{ts_env} {ts} -l"  # Use -l to get the list of tasks
+    try:
+        result = subprocess.run(
+            command,
+            shell=True,
+            executable=shell,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        if result.returncode != 0 and (
+            "tasks" in result.stderr.lower() or not result.stdout
+        ):
+            return JSONResponse(content=[])
+
+        lines = result.stdout.strip().split("\n")
+        tasks = []
+        if len(lines) > 1:
+            # The header line is not always consistent, so we parse based on column content.
+            # This regex is designed to be more flexible.
+            line_regex = re.compile(
+                r"^(?P<id>\d+)\s+"
+                r"(?P<state>\w+)\s+"
+                r"(?P<output>\S+)\s+"
+                r"(?P<elevel>\S*)\s*"  # Optional E-Level
+                r"(?P<times>[\d./\s-]*)\s+"  # Optional Times
+                r"(?P<command>.*)$"
+            )
+
+            for line in lines[1:]:
+                match = line_regex.match(line)
+                if match:
+                    data = match.groupdict()
+                    run_name_match = re.search(r"-NAME-([^\s\]]+)", data["command"])
+                    run_name = run_name_match.group(1) if run_name_match else "N/A"
+
+                    tasks.append(
+                        {
+                            "id": int(data["id"].strip()),
+                            "state": data["state"].strip(),
+                            # "output": data["output"].strip(),
+                            "elevel": (
+                                int(data["elevel"].strip())
+                                if data["elevel"].isdigit()
+                                else None
+                            ),
+                            # "times": data["times"].strip(),
+                            # "times": (
+                            #     dict(
+                            #         zip(
+                            #             ["r", "u", "s"],
+                            #             map(float, data["times"].strip().split("/")),
+                            #         )
+                            #     )
+                            #     if data["times"] != ""
+                            #     else None
+                            # ),
+                            "times": (
+                                float(data["times"].strip().split("/")[0])
+                                if data["times"] != ""
+                                else None
+                            ),
+                            "run_name": run_name,
+                        }
+                    )
+
+        return JSONResponse(content=tasks)
+    except FileNotFoundError:
+        raise HTTPException(status_code=500, detail=f"Command not found: {ts}")
+
+
 @app.get("/queue")
 async def queue(
     action: str = Query(
@@ -335,6 +420,15 @@ async def queue(
 ):
     """
     Get the task spooler queue or perform an action on a task.
+
+    Usage:
+
+    # GOOD from external docker container
+    curl -s -X GET -H 'Content-Type: application/json' -H "X-API-Key: a_default_super_secret_api_key" http://localhost:4200/queue?action=list | python3 -m json.tool
+    # GOOD from internal docker container
+    curl -s -X GET -H 'Content-Type: application/json' -H "X-API-Key: a_default_super_secret_api_key" http://stark-module-stark-submodule-stark-service-api:8000/queue?action=list | python3 -m json.tool
+
+
     """
     if action == "list":
         command = f"{ts_env} {ts} -l"  # Use -l to get the list of tasks
