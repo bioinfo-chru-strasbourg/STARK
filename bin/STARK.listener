@@ -23,6 +23,10 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 ENV_CONFIG=$(find -L $SCRIPT_DIR/.. -name config.app)
 source $ENV_CONFIG 1>/dev/null 2>/dev/null
 
+# Timestamp
+function timestamp() {
+    date +"%Y-%m-%d %H:%M:%S"
+}
 
 # Header
 function header () {
@@ -86,8 +90,8 @@ ARGS=$(getopt -o "e:vdnh" --long "env:,app:,application:,input:,condition:,days:
 
 if [ $? -ne 0 ]; then
 	:
-	echo "#[ERROR] Error in the argument list:";
-	echo "#[ERROR] $@"
+	echo "["$(timestamp)" | ERROR] Error in the argument list:";
+	echo "["$(timestamp)" | ERROR] $@"
 	echo ""
 	usage;
 	exit;
@@ -190,7 +194,7 @@ done
 # Checking the input parameter
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 if ((0)); then
-	echo "#[ERROR] Required parameter: --analysis, --run, or --reads. For informations --applications_infos, --pipelines_infos, --release_infos, --tools_infos. Use --help to display the help." && echo "" && usage && exit 1;
+	echo "["$(timestamp)" | ERROR] Required parameter: --analysis, --run, or --reads. For informations --applications_infos, --pipelines_infos, --release_infos, --tools_infos. Use --help to display the help." && echo "" && usage && exit 1;
 fi
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -199,7 +203,7 @@ fi
 #########
 
 #echo "APP=$APP"; exit;
-(($VERBOSE)) && [ ! -z "$APP" ] && echo "#[INFO] Search Application '$APP'"
+(($VERBOSE)) && [ ! -z "$APP" ] && echo "["$(timestamp)" | INFO] Search Application '$APP'"
 
 ENV=$(find_app "$APP" "$STARK_FOLDER_APPS")
 source_app "$APP" "$STARK_FOLDER_APPS" 1
@@ -207,8 +211,8 @@ source_app "$APP" "$STARK_FOLDER_APPS" 1
 export ENV
 export APP
 
-(($VERBOSE)) && [ ! -z "$APP" ] && [ ! -z "$ENV" ] && echo "#[INFO] Application '$APP' found ('$ENV')"
-(($VERBOSE)) && [ ! -z "$APP" ] && [ -z "$ENV" ] && echo "#[INFO] Application '$APP' NOT found"
+(($VERBOSE)) && [ ! -z "$APP" ] && [ ! -z "$ENV" ] && echo "["$(timestamp)" | INFO] Application '$APP' found ('$ENV')"
+(($VERBOSE)) && [ ! -z "$APP" ] && [ -z "$ENV" ] && echo "["$(timestamp)" | INFO] Application '$APP' NOT found"
 
 
 # INPUT FOLDER
@@ -219,7 +223,7 @@ if [ "$INPUT_FOLDER" == "" ]; then
 else
 	for IF in $INPUT_FOLDER; do
 		if [ ! -d $IF ]; then
-			echo "#[ERROR] Input folder '$IF' does NOT exists"
+			echo "["$(timestamp)" | ERROR] Input folder '$IF' does NOT exists"
 			exit 0
 		fi;
 	done;
@@ -261,7 +265,7 @@ fi;
 ################
 
 # if [ -z "$STARK_API_KEY" ]; then
-# 	echo "#[ERROR] STARK API key is not set. Please set the STARK_API_KEY environment variable or define it in the script."
+# 	echo "["$(timestamp)" | ERROR] STARK API key is not set. Please set the STARK_API_KEY environment variable or define it in the script."
 # 	exit 1
 # fi
 
@@ -334,30 +338,30 @@ while ((1)); do
 			MD5_LOG="$FOLDER_LOG/$ID.log"
 			if [ -d $IFA ]; then
 				if [ ! -f $MD5_LOG ]; then
-					(($VERBOSE)) && echo "#[INFO] Analysis/Run '$RUN_NAME' - folder '$IFA' [$MD5]"
+					(($VERBOSE)) && echo "["$(timestamp)" | INFO] Analysis/Run '$RUN_NAME' - folder '$IFA' [$MD5]"
 					CONDITION_TEST=0
 					for C in $CONDITION; do
-						(($VERBOSE)) && echo "#[INFO]    condition AND '$C' test"
+						(($VERBOSE)) && echo "["$(timestamp)" | INFO]    condition AND '$C' test"
 						CONDITION_AND=$(echo $C | tr "&" " ")
 						CONDITION_AND_TEST=1
 						for CA in $CONDITION_AND; do
-							(($VERBOSE)) && echo "#[INFO]          condition '$CA' test"
+							(($VERBOSE)) && echo "["$(timestamp)" | INFO]          condition '$CA' test"
 							if (( $(find -L $IFA -mindepth 1 -maxdepth 1 -type f -iname "$CA" -mtime -$DAYS | wc -l) )); then
-								(($VERBOSE)) && echo "#[INFO]          => condition '$CA' OK"
+								(($VERBOSE)) && echo "["$(timestamp)" | INFO]          => condition '$CA' OK"
 							else
-								(($VERBOSE)) && echo "#[INFO]       => condition '$CA' ko"
+								(($VERBOSE)) && echo "["$(timestamp)" | INFO]       => condition '$CA' ko"
 								CONDITION_AND_TEST=0
 								break
 							fi;
 						done;
-						(($VERBOSE)) && echo "#[INFO]    => condition AND test '$CONDITION_AND_TEST'"
+						(($VERBOSE)) && echo "["$(timestamp)" | INFO]    => condition AND test '$CONDITION_AND_TEST'"
 						if (($CONDITION_AND_TEST)); then
 							CONDITION_TEST=1
 							break
 						fi;
 						#CONDITION_TEST=$(($CONDITION_TEST+$CONDITION_AND_TEST))
 					done;
-					(($VERBOSE)) && echo "#[INFO]    Condition '$C' test '$CONDITION_TEST'"
+					(($VERBOSE)) && echo "["$(timestamp)" | INFO]    Condition '$C' test '$CONDITION_TEST'"
 					CMD=""
 					if (( $CONDITION_TEST )); then
 
@@ -388,11 +392,11 @@ while ((1)); do
 
 						#CMD="$COMMAND --run=$IFA"
 						EXEC_DATE=$(date '+%Y%m%d-%H%M%S')
-						(($VERBOSE)) && echo "#[INFO] Analysis/Run '$RUN_NAME' - folder '$IFA' [$ID] TO LAUNCH"
-						(($VERBOSE)) && echo "#[INFO] => Launch analysis '$IFA' with command '$COMMAND'"
-						(($VERBOSE)) && echo "#[INFO]    MD5: $MD5_LOG"
-						(($VERBOSE)) && echo "#[INFO]    CMD: $CMD"
-						(($VERBOSE)) && echo "#[INFO]    EXEC_DATE: $EXEC_DATE"
+						(($VERBOSE)) && echo "["$(timestamp)" | INFO] Analysis/Run '$RUN_NAME' - folder '$IFA' [$ID] TO LAUNCH"
+						(($VERBOSE)) && echo "["$(timestamp)" | INFO] => Launch analysis '$IFA' with command '$COMMAND'"
+						(($VERBOSE)) && echo "["$(timestamp)" | INFO]    MD5: $MD5_LOG"
+						(($VERBOSE)) && echo "["$(timestamp)" | INFO]    CMD: $CMD"
+						(($VERBOSE)) && echo "["$(timestamp)" | INFO]    EXEC_DATE: $EXEC_DATE"
 						if (($EXEC)); then
 							echo "RUN: $RUN_NAME" > $MD5_LOG
 							echo "FOLDER: $IFA" >> $MD5_LOG
@@ -401,21 +405,21 @@ while ((1)); do
 							[ "$COMMAND" == "LAUNCHER" ] && echo -n "ID: " >> $MD5_LOG
 							(($DEBUG)) && cat $MD5_LOG
 							# LAUNCH
-							echo "#[INFO] Analysis/Run '$RUN_NAME' - folder '$IFA' [$MD5] LAUNCHED"
+							echo "["$(timestamp)" | INFO] Analysis/Run '$RUN_NAME' - folder '$IFA' [$MD5] LAUNCHED"
 							eval $CMD 1>> $MD5_LOG 2>> $MD5_LOG
 
 							# If Launcher doesn't respond
-							[ "$COMMAND" == "LAUNCHER" ] && ! (($(cat $MD5_LOG | grep "^ID: .*" -c))) && echo "#[ERROR] LAUNCHER NOT responding!" >> $MD5_LOG
+							[ "$COMMAND" == "LAUNCHER" ] && ! (($(cat $MD5_LOG | grep "^ID: .*" -c))) && echo "["$(timestamp)" | ERROR] LAUNCHER NOT responding!" >> $MD5_LOG
 
 							# chmod
 							chmod og+r $MD5_LOG
 						fi;
 					else
-						(($VERBOSE)) && echo "#[INFO] Analysis/Run '$RUN_NAME' - folder '$IFA' [$MD5] NOT TO LAUNCH"
-						#(($VERBOSE)) && echo "#[INFO] => DO NOT Launch analysis '$IFA' with command '$COMMAND'"
+						(($VERBOSE)) && echo "["$(timestamp)" | INFO] Analysis/Run '$RUN_NAME' - folder '$IFA' [$MD5] NOT TO LAUNCH"
+						#(($VERBOSE)) && echo "["$(timestamp)" | INFO] => DO NOT Launch analysis '$IFA' with command '$COMMAND'"
 					fi;
 				else
-					(($VERBOSE)) && echo "#[INFO] Analysis/Run '$RUN_NAME' - folder '$IFA' [$MD5] ALREADY LAUNCHED"
+					(($VERBOSE)) && echo "["$(timestamp)" | INFO] Analysis/Run '$RUN_NAME' - folder '$IFA' [$MD5] ALREADY LAUNCHED"
 				fi;
 			fi;
 			(($VERBOSE)) && echo "# "

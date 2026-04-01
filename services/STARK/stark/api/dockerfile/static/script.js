@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let token = localStorage.getItem('token');
     let isAdmin = false;
+    const openDetails = new Map(); // taskId -> { action, content }
 
     async function fetchUserInfo() {
         if (!token) return;
@@ -140,15 +141,33 @@ document.addEventListener('DOMContentLoaded', () => {
                         `;
                         const actionTd = document.createElement('td');
                         actionTd.className = 'action-buttons';
-                        [['Info', 'info'], ['Log', 'log'], ['Kill', 'kill'], ['Prioritize', 'prioritize'], ['Remove', 'remove']].forEach(([label, act]) => {
-                            if (['kill', 'prioritize', 'remove'].includes(act) && !isAdmin) return;
+                        const stateButtons = {
+                            'running':  [['Info', 'info'], ['Log', 'log'], ['Analysis', 'analysis'], ['Kill', 'kill']],
+                            'queued':   [['Info', 'info'], ['Log', 'log'], ['Analysis', 'analysis'], ['Prioritize', 'prioritize'], ['Remove', 'remove']],
+                            'finished': [['Info', 'info'], ['Log', 'log'], ['Analysis', 'analysis'], ['Relaunch', 'relaunch']],
+                        };
+                        const buttons = stateButtons[task.state.toLowerCase()] || [['Info', 'info'], ['Log', 'log'], ['Analysis', 'analysis']];
+                        buttons.forEach(([label, act]) => {
+                            if (['kill', 'prioritize', 'remove', 'relaunch'].includes(act) && !isAdmin) return;
                             const btn = document.createElement('button');
                             btn.textContent = label;
-                            if (['kill', 'prioritize', 'remove'].includes(act)) {
+                            if (['kill', 'prioritize', 'remove', 'relaunch'].includes(act)) {
                                 btn.classList.add('btn-danger');
                             }
-                            if (['info', 'log'].includes(act)) {
+                            if (['info', 'analysis', 'log'].includes(act)) {
                                 btn.addEventListener('click', () => toggleInlineDetail(row, act, task.id));
+                            } else if (act === 'relaunch') {
+                                btn.addEventListener('click', async () => {
+                                    btn.disabled = true;
+                                    btn.textContent = 'Launching...';
+                                    const resp = await fetch(`/relaunch/${task.id}`, {
+                                        method: 'POST',
+                                        headers: { 'Authorization': `Bearer ${token}` }
+                                    });
+                                    const text = await resp.text();
+                                    btn.textContent = resp.ok ? '\u2713 Done' : '\u2717 Failed';
+                                    if (resp.ok) setTimeout(() => getQueue('list'), 1500);
+                                });
                             } else {
                                 btn.addEventListener('click', () => getQueue(act, task.id));
                             }
@@ -160,6 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     queueBody.innerHTML = '<tr><td colspan="6">No tasks in the queue.</td></tr>';
                 }
+                restoreOpenDetails();
             } else {
                 // Handle errors
                 const errorText = await response.text();
@@ -185,11 +205,60 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function buildDetailRow(taskId, content) {
+        const detailRow = document.createElement('tr');
+        detailRow.classList.add('detail-row');
+        detailRow.dataset.taskId = String(taskId);
+        const detailTd = document.createElement('td');
+        detailTd.setAttribute('colspan', '6');
+
+        const copyBtn = document.createElement('button');
+        copyBtn.textContent = 'Copy';
+        copyBtn.className = 'btn-copy';
+        copyBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(content).then(() => {
+                copyBtn.textContent = '✓ Copied';
+                setTimeout(() => copyBtn.textContent = 'Copy', 1500);
+            });
+        });
+
+        const pre = document.createElement('pre');
+        pre.className = 'inline-detail';
+        pre.textContent = content;
+
+        detailTd.appendChild(copyBtn);
+        detailTd.appendChild(pre);
+        detailRow.appendChild(detailTd);
+        return detailRow;
+    }
+
+    function restoreOpenDetails() {
+        const taskRows = document.querySelectorAll('#queue-body tr:not(.detail-row)');
+        const toDelete = [];
+        openDetails.forEach((detail, taskId) => {
+            let found = false;
+            for (const row of taskRows) {
+                const idCell = row.querySelector('td:first-child');
+                if (idCell && idCell.textContent.trim() === String(taskId)) {
+                    const next = row.nextElementSibling;
+                    if (!next || !next.classList.contains('detail-row')) {
+                        row.insertAdjacentElement('afterend', buildDetailRow(taskId, detail.content));
+                    }
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) toDelete.push(taskId);
+        });
+        toDelete.forEach(id => openDetails.delete(id));
+    }
+
     async function toggleInlineDetail(row, action, id) {
+        const taskId = String(id);
         const existingDetail = row.nextElementSibling;
-        // If a detail row already exists for this row, toggle it
         if (existingDetail && existingDetail.classList.contains('detail-row')) {
             existingDetail.remove();
+            openDetails.delete(taskId);
             return;
         }
 
@@ -197,15 +266,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const response = await fetch(url, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        const data = await response.text();
+        const content = await response.text();
 
-        const detailRow = document.createElement('tr');
-        detailRow.classList.add('detail-row');
-        const detailTd = document.createElement('td');
-        detailTd.setAttribute('colspan', '6');
-        detailTd.innerHTML = `<pre class="inline-detail">${data}</pre>`;
-        detailRow.appendChild(detailTd);
-        row.insertAdjacentElement('afterend', detailRow);
+        openDetails.set(taskId, { action, content });
+        row.insertAdjacentElement('afterend', buildDetailRow(taskId, content));
     }
 
     // Auto-refresh the queue every 10 seconds

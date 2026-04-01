@@ -8,7 +8,7 @@
 # Arriba need raw alignement, without splitNcigar, to work properly. So we need to use bam without splitNcigar directly from STAR alignments (%$(POST_ALIGNMENT).bam).
 
 %.Arriba$(POST_CALLING).vcf: %.star_raw.bam %.star_raw.bam.bai %.empty.vcf
-	mkdir -p $*.arriba.reports;
+	mkdir -p $*.Arriba.reports;
 	$(ARRIBA) \
 		-x $< \
 		-a $(GENOME) \

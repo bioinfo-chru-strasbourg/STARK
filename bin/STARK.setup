@@ -25,7 +25,10 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 ENV_CONFIG=$(find -L $SCRIPT_DIR/.. -name config.app)
 source $ENV_CONFIG 1>/dev/null 2>/dev/null
 
-
+# Timestamp
+function timestamp() {
+    date +"%Y-%m-%d %H:%M:%S"
+}
 
 # Header
 function header () {
@@ -71,8 +74,8 @@ function usage {
 ARGS=$(getopt -o "vdnh" --long "docker-env-file:,setup-type:,setup-main-folder-pattern:,verbose,debug,release,help" -- "$@" 2> /dev/null)
 if [ $? -ne 0 ]; then
 	:
-	echo "#[ERROR] Error in the argument list:";
-	echo "#[ERROR] $@"
+	echo "["$(timestamp)" | ERROR] Error in the argument list:";
+	echo "["$(timestamp)" | ERROR] $@"
 	echo ""
 	usage;
 	exit;
@@ -132,7 +135,7 @@ done
 # Checking the input parameter
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 #if [ -z "$ANALYSIS" ] && [ -z "$SAMPLE" ] && [ -z "$APP" ] && ((!$DEBUG)); then
-#	echo "#[ERROR] Required parameter: --analysis, --sample, and --application. Use --help to display the help." && echo "" && usage && exit 1;
+#	echo "["$(timestamp)" | ERROR] Required parameter: --analysis, --sample, and --application. Use --help to display the help." && echo "" && usage && exit 1;
 #fi
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -156,42 +159,42 @@ fi;
 ##########
 
 # Source docker-compose env file
-(($VERBOSE)) && echo "#[INFO] Docker Compose env file '$DOCKER_COMPOSE_FILE'"
+(($VERBOSE)) && echo "["$(timestamp)" | INFO] Docker Compose env file '$DOCKER_COMPOSE_FILE'"
 source $DOCKER_COMPOSE_FILE
 
 if [ "$SETUP_TYPE" == "HOST" ]; then
 
 	for var in "${!DOCKER_STARK_FOLDER_@}"; do
-		(($VERBOSE)) && echo "#[INFO] Folder '$DOCKER_STARK_MAIN_FOLDER/${!var}'"
-		[ -e $DOCKER_STARK_MAIN_FOLDER/${!var} ] && echo "#[INFO] Folder '$DOCKER_STARK_MAIN_FOLDER/${!var}' exists"
-		[ ! -e $DOCKER_STARK_MAIN_FOLDER"/"${!var} ] && mkdir -p $DOCKER_STARK_MAIN_FOLDER"/"${!var} && echo "#[INFO] Folder '$DOCKER_STARK_MAIN_FOLDER/${!var}' created"
-		[ ! -e $DOCKER_STARK_MAIN_FOLDER/${!var} ] && echo "#[ERROR] Folder '$DOCKER_STARK_MAIN_FOLDER/${!var}' failed"
+		(($VERBOSE)) && echo "["$(timestamp)" | INFO] Folder '$DOCKER_STARK_MAIN_FOLDER/${!var}'"
+		[ -e $DOCKER_STARK_MAIN_FOLDER/${!var} ] && echo "["$(timestamp)" | INFO] Folder '$DOCKER_STARK_MAIN_FOLDER/${!var}' exists"
+		[ ! -e $DOCKER_STARK_MAIN_FOLDER"/"${!var} ] && mkdir -p $DOCKER_STARK_MAIN_FOLDER"/"${!var} && echo "["$(timestamp)" | INFO] Folder '$DOCKER_STARK_MAIN_FOLDER/${!var}' created"
+		[ ! -e $DOCKER_STARK_MAIN_FOLDER/${!var} ] && echo "["$(timestamp)" | ERROR] Folder '$DOCKER_STARK_MAIN_FOLDER/${!var}' failed"
 	done
 
 	for var in "${!DOCKER_STARK_SERVICE_FOLDER_@}"; do
-		(($VERBOSE)) && echo "#[INFO] Folder '$DOCKER_STARK_MAIN_FOLDER/${!var}'"
-		[ -e $DOCKER_STARK_MAIN_FOLDER/${!var} ] && echo "#[INFO] Folder '$DOCKER_STARK_MAIN_FOLDER/${!var}' exists"
-		[ ! -e $DOCKER_STARK_MAIN_FOLDER"/"${!var} ] && mkdir -p $DOCKER_STARK_MAIN_FOLDER"/"${!var} && echo "#[INFO] Folder '$DOCKER_STARK_MAIN_FOLDER/${!var}' created"
-		[ ! -e $DOCKER_STARK_MAIN_FOLDER/${!var} ] && echo "#[ERROR] Folder '$DOCKER_STARK_MAIN_FOLDER/${!var}' failed"
+		(($VERBOSE)) && echo "["$(timestamp)" | INFO] Folder '$DOCKER_STARK_MAIN_FOLDER/${!var}'"
+		[ -e $DOCKER_STARK_MAIN_FOLDER/${!var} ] && echo "["$(timestamp)" | INFO] Folder '$DOCKER_STARK_MAIN_FOLDER/${!var}' exists"
+		[ ! -e $DOCKER_STARK_MAIN_FOLDER"/"${!var} ] && mkdir -p $DOCKER_STARK_MAIN_FOLDER"/"${!var} && echo "["$(timestamp)" | INFO] Folder '$DOCKER_STARK_MAIN_FOLDER/${!var}' created"
+		[ ! -e $DOCKER_STARK_MAIN_FOLDER/${!var} ] && echo "["$(timestamp)" | ERROR] Folder '$DOCKER_STARK_MAIN_FOLDER/${!var}' failed"
 	done
 
 elif [ "$SETUP_TYPE" == "INNER" ]; then
 
 	for var in "${!DOCKER_STARK_INNER_FOLDER_@}"; do
-		(($VERBOSE)) && echo "#[INFO] Folder '$SETUP_MAIN_FOLDER_PATTERN${!var}'"
+		(($VERBOSE)) && echo "["$(timestamp)" | INFO] Folder '$SETUP_MAIN_FOLDER_PATTERN${!var}'"
 		if [ -d "$SETUP_MAIN_FOLDER_PATTERN"/"${!var}" ] || [ -L "$SETUP_MAIN_FOLDER_PATTERN"/"${!var}" ]; then
-			echo "#[INFO] Folder '${!var}' exists"
+			echo "["$(timestamp)" | INFO] Folder '${!var}' exists"
 		else
-			mkdir -p $SETUP_MAIN_FOLDER_PATTERN${!var} && echo "#[INFO] Folder '${!var}' created"
+			mkdir -p $SETUP_MAIN_FOLDER_PATTERN${!var} && echo "["$(timestamp)" | INFO] Folder '${!var}' created"
 		fi;
 		if [ ! -d $SETUP_MAIN_FOLDER_PATTERN"/"${!var} ] && [ ! -L $SETUP_MAIN_FOLDER_PATTERN"/"${!var} ]; then
-			echo "#[ERROR] Folder '${!var}' failed"
+			echo "["$(timestamp)" | ERROR] Folder '${!var}' failed"
 		fi;
 	done
 
 else
 
-	echo "#[WARNING] Error setup type"
+	echo "["$(timestamp)" | WARNING] Error setup type"
 
 fi;
 
@@ -203,15 +206,15 @@ fi;
 
 # Create HOWARD config folder external for setup if not exists
 if [ "$DOCKER_STARK_INNER_FOLDER_CONFIG_HOWARD" != "" ] && [ ! -d $SETUP_MAIN_FOLDER_PATTERN/$DOCKER_STARK_INNER_FOLDER_CONFIG_HOWARD ] && [ ! -L $SETUP_MAIN_FOLDER_PATTERN/$DOCKER_STARK_INNER_FOLDER_CONFIG_HOWARD ]; then
-	(($VERBOSE)) && echo "#[INFO] Create HOWARD configuration folder (if not exists)"
+	(($VERBOSE)) && echo "["$(timestamp)" | INFO] Create HOWARD configuration folder (if not exists)"
 	mkdir -p $SETUP_MAIN_FOLDER_PATTERN/$DOCKER_STARK_INNER_FOLDER_CONFIG/$HOWARD_SUBFOLDER 
 fi;
 
 # If inner HOWARD folder exists, copy config files to external setup folder
 if [ -d $HOWARD_FOLDER_CONFIG ] || [ -L $HOWARD_FOLDER_CONFIG ]; then
-	echo "#[INFO] HOWARD configuration folder '$HOWARD_FOLDER_CONFIG' exists"
-	(($VERBOSE)) && echo "#[INFO] Copy HOWARD configuration files (if not exists)"
-	(($VERBOSE)) && echo "#[INFO] Copy '$HOWARD_FOLDER_CONFIG/*' to '$DOCKER_STARK_INNER_FOLDER_CONFIG_HOWARD/'"
+	echo "["$(timestamp)" | INFO] HOWARD configuration folder '$HOWARD_FOLDER_CONFIG' exists"
+	(($VERBOSE)) && echo "["$(timestamp)" | INFO] Copy HOWARD configuration files (if not exists)"
+	(($VERBOSE)) && echo "["$(timestamp)" | INFO] Copy '$HOWARD_FOLDER_CONFIG/*' to '$DOCKER_STARK_INNER_FOLDER_CONFIG_HOWARD/'"
 	cp -nr $HOWARD_FOLDER_CONFIG/* $SETUP_MAIN_FOLDER_PATTERN/$DOCKER_STARK_INNER_FOLDER_CONFIG_HOWARD/ 
 fi;
 
@@ -223,32 +226,32 @@ fi;
 
 # Create VARIANTCONVERT config folder external for setup if not exists
 if [ "$DOCKER_STARK_INNER_FOLDER_CONFIG_VARIANTCONVERT" != "" ] && [ ! -d $SETUP_MAIN_FOLDER_PATTERN/$DOCKER_STARK_INNER_FOLDER_CONFIG_VARIANTCONVERT ] && [ ! -L $SETUP_MAIN_FOLDER_PATTERN/$DOCKER_STARK_INNER_FOLDER_CONFIG_VARIANTCONVERT ]; then
-	(($VERBOSE)) && echo "#[INFO] Create VARIANTCONVERT configuration folder (if not exists)"
+	(($VERBOSE)) && echo "["$(timestamp)" | INFO] Create VARIANTCONVERT configuration folder (if not exists)"
 	mkdir -p $SETUP_MAIN_FOLDER_PATTERN/$DOCKER_STARK_INNER_FOLDER_CONFIG/$VARIANTCONVERT_SUBFOLDER 
 fi;
 
 # If inner VARIANTCONVERT folder exists, copy config files to external setup folder
 if [ -d $VARIANTCONVERT_FOLDER_CONFIG ] || [ -L $VARIANTCONVERT_FOLDER_CONFIG ]; then
-	echo "#[INFO] VARIANTCONVERT configuration folder '$VARIANTCONVERT_FOLDER_CONFIG' exists"
-	(($VERBOSE)) && echo "#[INFO] Copy VARIANTCONVERT configuration files (if not exists)"
-	(($VERBOSE)) && echo "#[INFO] Copy '$VARIANTCONVERT_FOLDER_CONFIG/*' to '$DOCKER_STARK_INNER_FOLDER_CONFIG_VARIANTCONVERT/'"
+	echo "["$(timestamp)" | INFO] VARIANTCONVERT configuration folder '$VARIANTCONVERT_FOLDER_CONFIG' exists"
+	(($VERBOSE)) && echo "["$(timestamp)" | INFO] Copy VARIANTCONVERT configuration files (if not exists)"
+	(($VERBOSE)) && echo "["$(timestamp)" | INFO] Copy '$VARIANTCONVERT_FOLDER_CONFIG/*' to '$DOCKER_STARK_INNER_FOLDER_CONFIG_VARIANTCONVERT/'"
 	cp -nr $VARIANTCONVERT_FOLDER_CONFIG/* $SETUP_MAIN_FOLDER_PATTERN/$DOCKER_STARK_INNER_FOLDER_CONFIG_VARIANTCONVERT/ 
 fi;
 
 
 # Docker images pull
-(($VERBOSE)) && echo "#[INFO] Pull Docker images (if not exists)"
+(($VERBOSE)) && echo "["$(timestamp)" | INFO] Pull Docker images (if not exists)"
 for docker_image in $DOCKER_LIST; do
-	(($VERBOSE)) && echo "#[INFO] Pull Docker image '$docker_image'"
+	(($VERBOSE)) && echo "["$(timestamp)" | INFO] Pull Docker image '$docker_image'"
 	if ! docker pull $docker_image; then
-		echo "#[ERROR] Failed to pull Docker image '$docker_image'"
+		echo "["$(timestamp)" | ERROR] Failed to pull Docker image '$docker_image'"
 		exit 1
 	else
-		(($VERBOSE)) && echo "#[INFO] Docker image '$docker_image' pulled successfully"
+		(($VERBOSE)) && echo "["$(timestamp)" | INFO] Docker image '$docker_image' pulled successfully"
 	fi;
 done;
 
 ### Done
-(($VERBOSE)) && echo "#[INFO] STARK Setup done."
+(($VERBOSE)) && echo "["$(timestamp)" | INFO] STARK Setup done."
 
 exit 0

@@ -65,11 +65,88 @@ extract_tag () {
 }
 
 
+# source_app () {
+# # source an env file from an application definition
+# # $1: APP definition
+# # $2: APPS folder
+# # return APP env file or default APP env file or null
+
+# 	[ -z $TMP_SYS_FOLDER ] && TMP_SYS_FOLDER="/tmp"
+
+# 	local APP_LIST=$(echo $1 | tr "," " " | tr "+" " ") FOLDER_APPS=$2 VERBOSE=$3
+
+# 	local TMP_VERBOSE=$TMP_SYS_FOLDER/$RANDOM
+
+# 	if [ "$FOLDER_APPS" == "" ]; then FOLDER_APPS="$STARK_FOLDER_APPS"; fi
+# 	if [ "$FOLDER_APPS" == "" ]; then FOLDER_APPS=".."; fi
+
+# 	if [ "$CONFIG_HEADER" != "" ] && [ -e "$CONFIG_HEADER" ] && source $CONFIG_HEADER 1>>$TMP_VERBOSE 2>>$TMP_VERBOSE; then
+# 		echo "ok" 1>/dev/null 2>/dev/null
+# 	else
+# 		cat $TMP_VERBOSE 2>/dev/null && return 1;
+# 	fi
+
+# 	local ENV=$(find_app "$APP_LIST" "$FOLDER_APPS")
+
+# 	if [ "$ENV" == "" ]; then
+
+# 		# SOURCE
+# 		if [ "$CONFIG_FOOTER" != "" ] && [ -e "$CONFIG_FOOTER" ] && source $CONFIG_FOOTER 1>>$TMP_VERBOSE 2>>$TMP_VERBOSE; then
+# 			echo "ok" 1>/dev/null 2>/dev/null
+# 		else
+# 			cat $TMP_VERBOSE 2>/dev/null && return 1;
+# 		fi
+
+# 	else
+
+# 		for ENV_ONE in $ENV; do
+			
+# 			local APP_FOLDER=$(dirname $ENV_ONE)
+
+# 			if source $ENV_ONE; then
+# 				echo "ok" 1>/dev/null 2>/dev/null
+# 			else
+# 				cat $TMP_VERBOSE 2>/dev/null && return 1;
+# 			fi
+# 			#source $ENV_ONE 1>>$TMP_VERBOSE 2>>$TMP_VERBOSE;
+# 			local APP_TYPE=${ENV_ONE##*.}
+
+# 			# SOURCE
+# 			if [ "$CONFIG_FOOTER" != "" ] && [ -e "$CONFIG_FOOTER" ] && source $CONFIG_FOOTER 1>>$TMP_VERBOSE 2>>$TMP_VERBOSE; then
+# 				echo "ok" 1>/dev/null 2>/dev/null
+# 			else
+# 				cat $TMP_VERBOSE 2>/dev/null && return 1;
+# 			fi
+			
+			
+# 			# if [ "$CONFIG_FOOTER" != "" ] && [ -e "$CONFIG_FOOTER" ]; then
+# 			# 	if source $CONFIG_FOOTER; then
+# 			# 		echo "ok"
+# 			# 	else
+# 			# 		echo "ko"
+# 			# 	fi;
+# 			# fi;
+# 		done
+
+# 	fi;
+
+# 	# VERBOSE
+# 	(($VERBOSE)) && [ -f $TMP_VERBOSE ] && cat $TMP_VERBOSE 2>/dev/null;
+
+# 	# CLEAN
+# 	rm -f $TMP_VERBOSE
+
+# } # source_app
+
+
+
 source_app () {
 # source an env file from an application definition
 # $1: APP definition
 # $2: APPS folder
 # return APP env file or default APP env file or null
+
+	[ -z $TMP_SYS_FOLDER ] && TMP_SYS_FOLDER="/tmp"
 
 	local APP_LIST=$(echo $1 | tr "," " " | tr "+" " ") FOLDER_APPS=$2 VERBOSE=$3
 
@@ -78,64 +155,50 @@ source_app () {
 	if [ "$FOLDER_APPS" == "" ]; then FOLDER_APPS="$STARK_FOLDER_APPS"; fi
 	if [ "$FOLDER_APPS" == "" ]; then FOLDER_APPS=".."; fi
 
-	if [ "$CONFIG_HEADER" != "" ] && [ -e "$CONFIG_HEADER" ] && source $CONFIG_HEADER 1>>$TMP_VERBOSE 2>>$TMP_VERBOSE; then
-		echo "ok" 1>/dev/null 2>/dev/null
-	else
-		cat $TMP_VERBOSE && return 1;
+	FILES_TO_SOURCE=""
+
+	if [ "$CONFIG_HEADER" != "" ] && [ -e "$CONFIG_HEADER" ]; then
+		FILES_TO_SOURCE=$FILES_TO_SOURCE" $CONFIG_HEADER"
 	fi
 
 	local ENV=$(find_app "$APP_LIST" "$FOLDER_APPS")
 
-	if [ "$ENV" == "" ]; then
+	# if [ "$ENV" == "" ]; then
 
-		# SOURCE
-		if [ "$CONFIG_FOOTER" != "" ] && [ -e "$CONFIG_FOOTER" ] && source $CONFIG_FOOTER 1>>$TMP_VERBOSE 2>>$TMP_VERBOSE; then
-			echo "ok" 1>/dev/null 2>/dev/null
-		else
-			cat $TMP_VERBOSE && return 1;
-		fi
+	# 	# SOURCE
+	# 	if [ "$CONFIG_FOOTER" != "" ] && [ -e "$CONFIG_FOOTER" ]; then
+	# 		FILES_TO_SOURCE=$FILES_TO_SOURCE" $CONFIG_FOOTER"
+	# 	fi
 
-	else
+	# else
 
-		for ENV_ONE in $ENV; do
-			
-			local APP_FOLDER=$(dirname $ENV_ONE)
+	for ENV_ONE in $ENV; do
 
-			if source $ENV_ONE; then
-				echo "ok" 1>/dev/null 2>/dev/null
-			else
-				cat $TMP_VERBOSE && return 1;
-			fi
-			#source $ENV_ONE 1>>$TMP_VERBOSE 2>>$TMP_VERBOSE;
-			local APP_TYPE=${ENV_ONE##*.}
+		FILES_TO_SOURCE=$FILES_TO_SOURCE" $ENV_ONE"
 
-			# SOURCE
-			if [ "$CONFIG_FOOTER" != "" ] && [ -e "$CONFIG_FOOTER" ] && source $CONFIG_FOOTER 1>>$TMP_VERBOSE 2>>$TMP_VERBOSE; then
-				echo "ok" 1>/dev/null 2>/dev/null
-			else
-				cat $TMP_VERBOSE && return 1;
-			fi
-			
-			
-			# if [ "$CONFIG_FOOTER" != "" ] && [ -e "$CONFIG_FOOTER" ]; then
-			# 	if source $CONFIG_FOOTER; then
-			# 		echo "ok"
-			# 	else
-			# 		echo "ko"
-			# 	fi;
-			# fi;
-		done
+	done
 
-	fi;
+	# FOOTER
+	if [ "$CONFIG_FOOTER" != "" ] && [ -e "$CONFIG_FOOTER" ]; then
+		FILES_TO_SOURCE=$FILES_TO_SOURCE" $CONFIG_FOOTER"
+	fi
 
-	# VERBOSE
-	(($VERBOSE)) && [ -f $TMP_VERBOSE ] && cat $TMP_VERBOSE;
-
-	# CLEAN
-	rm -f $TMP_VERBOSE
+	# Source
+	#source $FILES_TO_SOURCE
+	for f in $FILES_TO_SOURCE; do
+		[[ -f "$f" ]] || { echo "File not found: $f" >&2; exit 1; }
+		source "$f"
+	done
+	# for FILE_TO_SOURCE in $FILES_TO_SOURCE; do
+	# 	if source $FILE_TO_SOURCE 1>>$TMP_VERBOSE 2>>$TMP_VERBOSE; then
+	# 		echo "ok" 1>/dev/null 2>/dev/null
+	# 	else
+	# 		cat $TMP_VERBOSE 2>/dev/null && return 1;
+	# 	fi
+	# done;
+	
 
 } # source_app
-
 
 name_app () {
 # source an env file from an application definition
@@ -182,6 +245,22 @@ description_app () {
 
 } # source_app
 
+check_app () {
+    APP_TEST="$1"
+
+    # Environment isolation (no source in the parent shell)
+    APP_NAME=$(
+        cd "$(dirname "$APP_TEST")" &&
+        source_app "$APP_TEST" >/dev/null 2>&1
+        echo "$APP_NAME"
+    )
+
+    [[ "$APP" = "$APP_NAME" ]] && echo "$APP_TEST"
+    [[ "$APP_tr" = "$APP_NAME" ]] && echo "$APP_TEST"
+    [[ "$APP_BASENAME" = "$APP_NAME" ]] && echo "$APP_TEST"
+    [[ "$APP_BASENAME_tr" = "$APP_NAME" ]] && echo "$APP_TEST"
+}
+export -f check_app
 
 find_app () {
 # find -L a env file from an application definition
@@ -191,6 +270,10 @@ find_app () {
 # Usage find_app "APP" "FOLDER_APPS"
 
 	local APP_LIST=$(echo $1 | tr "," " "  | tr "+" " ") FOLDER_APPS=$2
+
+	#echo "APP_LIST=$APP_LIST"
+	#>&2 echo "FOLDER_APPS=$FOLDER_APPS"
+	[ -z $TMP_SYS_FOLDER ] && TMP_SYS_FOLDER="/tmp"
 
 	# default APP
 
@@ -229,15 +312,35 @@ find_app () {
 		local FIND_APP_SUB_FILE=$(find -L $FOLDER_APPS/$APP_DIRNAME -name $APP_BASENAME.app -or -name $APP_BASENAME_tr.app -name $APP_BASENAME.plugapp -or -name $APP_BASENAME_tr.plugapp | sort -t'/' -k2.2r -k2.1 | head -n1 )
 		[ ! -z "$FIND_APP_SUB_FILE" ] && echo $FIND_APP_SUB_FILE && return 0
 
-		for APP_TEST in $(find -L $FOLDER_APPS -name *.app -or -name *.plugapp); do
+		# echo "TEST3"
+		# echo "FIND_APP_SUB_FILE=$FIND_APP_SUB_FILE"
+		#>&2 echo "find -L $FOLDER_APPS -name *.app -or -name *.plugapp"
 
-			local APP_NAME=$(source $APP_TEST ; echo $APP_NAME);
-			[[ $APP = $APP_NAME ]] && echo $APP_TEST && return 0
-			[[ $APP_tr = $APP_NAME ]] && echo $APP_TEST && return 0
-			[[ $APP_BASENAME = $APP_NAME ]] && echo $APP_TEST && return 0
-			[[ $APP_BASENAME_tr = $APP_NAME ]] && echo $APP_TEST && return 0
+		# OLD VERSION
+		# for APP_TEST in $(find -L $FOLDER_APPS -name *.app -or -name *.plugapp); do
 
-		done;
+		# 	# echo "TEST4"
+		# 	>&2 echo "APP_TEST=$APP_TEST"
+		# 	# echo "TMP_SYS_FOLDER=$TMP_SYS_FOLDER"
+			
+		# 	# echo "TMP_SYS_FOLDER2=$TMP_SYS_FOLDER"
+		# 	# echo "CONFIG_FOOTER=$CONFIG_FOOTER"
+
+		# 	#local APP_NAME=$(source $APP_TEST ; echo $APP_NAME);
+		# 	#local APP_NAME=$(source_app $APP_TEST ; echo $APP_NAME);
+		# 	local APP_NAME=$(cd $(dirname $APP_TEST) && source_app $APP_TEST ; echo $APP_NAME)
+		# 	[[ $APP = $APP_NAME ]] && echo $APP_TEST && return 0
+		# 	[[ $APP_tr = $APP_NAME ]] && echo $APP_TEST && return 0
+		# 	[[ $APP_BASENAME = $APP_NAME ]] && echo $APP_TEST && return 0
+		# 	[[ $APP_BASENAME_tr = $APP_NAME ]] && echo $APP_TEST && return 0
+
+		# done;
+
+		# NEW VERSION - parallelized
+		find -L "$FOLDER_APPS" \
+			-name '*.app' -or -name '*.plugapp' |
+		xargs -P"$(nproc)" -I{} bash -c 'check_app "$@"' _ {} |
+		head -n1
 
 	fi;
 

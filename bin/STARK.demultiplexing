@@ -7,11 +7,11 @@
 
 SCRIPT_NAME="IlluminaRunDemultiplexing"
 SCRIPT_DESCRIPTION="Demultiplexing of an Illumina Run"
-SCRIPT_RELEASE="0.9.10b"
-SCRIPT_DATE="25/03/2019"
+SCRIPT_RELEASE="0.9.11"
+SCRIPT_DATE="31/03/2026"
 SCRIPT_AUTHOR="Antony Le Bechec"
-SCRIPT_COPYRIGHT="IRC"
-SCRIPT_LICENCE="GNU-AGPL"
+SCRIPT_COPYRIGHT="HUS"
+SCRIPT_LICENCE="GNU GPLA V3"
 
 # Release note
 #RELEASE_NOTES="#\n"
@@ -19,6 +19,7 @@ RELEASE_NOTES=$RELEASE_NOTES"# 0.9.7b-20/11/2015: Creation/ReFormating script\n"
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.8b-26/11/2015: SampleSheet as input option. Add Manifest default folder to find Manifest file defined in SampleSheet\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.9b-26/09/2016: Cleaning Sample Name in the Sample Sheet by removing spaces.\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.10b-25/03/2019: Cleaning Sample Name in the Sample Sheet by removing spaces.\n";
+RELEASE_NOTES=$RELEASE_NOTES"# 0.9.11-31/03/2026: Change log format.\n";
 
 # Script folder
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -27,6 +28,10 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 ENV_CONFIG=$(find -L $SCRIPT_DIR/.. -name config.app)
 source $ENV_CONFIG
 
+# Timestamp
+function timestamp() {
+    date +"%Y-%m-%d %H:%M:%S"
+}
 
 # Header
 function header () {
@@ -171,22 +176,24 @@ then
 	echo "Option --run is required. " "Use -h or --help to display the help." && usage && exit 1;
 fi
 
+echo ""
+
 # APPLICATION
 ENV=$(find_app "$APP" "$STARK_FOLDER_APPS")
 source_app "$APP" "$STARK_FOLDER_APPS"
 
 # RUN FOLDER_RUN
-[ ! -d $RUN ] && echo "#[ERROR] No RUN folder '$RUN'" && exit 0;
-echo "#[INFO] RUN folder: $RUN";
+[ ! -d $RUN ] && echo "["$(timestamp)" | ERROR] No RUN folder '$RUN'" && exit 0;
+echo "["$(timestamp)" | INFO] RUN folder: $RUN";
 RUN_NAME=$(basename $RUN)
-echo "#[INFO] RUN name: $RUN_NAME";
+echo "["$(timestamp)" | INFO] RUN name: $RUN_NAME";
 
 # Demultiplexing folder
 [ "$DEMULTIPLEXING_DIR_INPUT" != "" ] && [ -d $DEMULTIPLEXING_DIR_INPUT ] && DEMULTIPLEXING_DIR=$DEMULTIPLEXING_DIR_INPUT
 [ ! -d $DEMULTIPLEXING_DIR ] && DEMULTIPLEXING_DIR=$DEMULTIPLEXING_FOLDER
 [ ! -d $DEMULTIPLEXING_DIR ] && DEMULTIPLEXING_DIR=$RUN
-[ ! -d $DEMULTIPLEXING_DIR ] && echo "#[ERROR] No Demultiplexing folder" && exit 0;
-echo "#[INFO] Demultiplexing folder: $DEMULTIPLEXING_DIR"
+[ ! -d $DEMULTIPLEXING_DIR ] && echo "["$(timestamp)" | ERROR] No Demultiplexing folder" && exit 0;
+echo "["$(timestamp)" | INFO] Demultiplexing folder: $DEMULTIPLEXING_DIR"
 
 # Find SampleSheet
 RUN_SAMPLESHEET=""
@@ -195,8 +202,8 @@ RUN_SAMPLESHEET=""
 # sampleSheet within the RUN folder
 [ -z $RUN_SAMPLESHEET ] && RUN_SAMPLESHEET=$RUN/SampleSheet.csv
 # Echo
-[ ! -e $RUN_SAMPLESHEET ] && echo "#[ERROR] No SampleSheet for RUN '$RUN'" && exit 0;
-echo "#[INFO] SampleSheet: $RUN_SAMPLESHEET";
+[ ! -e $RUN_SAMPLESHEET ] && echo "["$(timestamp)" | ERROR] No SampleSheet for RUN '$RUN'" && exit 0;
+echo "["$(timestamp)" | INFO] SampleSheet: $RUN_SAMPLESHEET";
 
 # CORES
 CORES=$(nproc)
@@ -211,7 +218,7 @@ fi;
 if [[ $THREADS_INPUT =~ $re ]] && [ "$THREADS_INPUT" != "" ]; then
 	THREADS=$THREADS_INPUT;
 fi;
-echo "#[INFO] Threads processing: $THREADS";
+echo "["$(timestamp)" | INFO] Threads processing: $THREADS";
 
 # THREADS LOADING
 if ! [[ $THREADS_LOADING =~ $re ]] || [ -z "$THREADS_LOADING" ] || [ "$THREADS_LOADING" == "" ] || [ $THREADS_LOADING -gt $CORES ] ; then
@@ -220,7 +227,7 @@ fi;
 if [[ $THREADS_LOADING_INPUT =~ $re ]] && [ "$THREADS_LOADING_INPUT" != "" ]; then
 	THREADS_LOADING=$THREADS_LOADING_INPUT;
 fi;
-echo "#[INFO] Threads loading: $THREADS_LOADING";
+echo "["$(timestamp)" | INFO] Threads loading: $THREADS_LOADING";
 
 # THREADS WRITING
 if ! [[ $THREADS_WRITING =~ $re ]] || [ -z "$THREADS_WRITING" ] || [ "$THREADS_WRITING" == "" ] || [ $THREADS_WRITING -gt $CORES ] ; then
@@ -229,7 +236,7 @@ fi;
 if [[ $THREADS_WRITING_INPUT =~ $re ]] && [ "$THREADS_WRITING_INPUT" != "" ]; then
 	THREADS_WRITING=$THREADS_WRITING_INPUT;
 fi;
-echo "#[INFO] Threads writing: $THREADS_WRITING";
+echo "["$(timestamp)" | INFO] Threads writing: $THREADS_WRITING";
 
 
 # BARCODE_MISMATCHES
@@ -239,7 +246,7 @@ fi;
 if [[ $BARCODE_MISMATCHES_INPUT =~ $re ]] && [ "$BARCODE_MISMATCHES_INPUT" != "" ]; then
 	BARCODE_MISMATCHES=$BARCODE_MISMATCHES_INPUT;
 fi;
-echo "#[INFO] Barcode Mismatches: $BARCODE_MISMATCHES";
+echo "["$(timestamp)" | INFO] Barcode Mismatches: $BARCODE_MISMATCHES";
 
 
 # Config
@@ -257,10 +264,10 @@ ADAPTERS=$OUTPUT_DIR/adapters.txt
 MAKEFILE=$OUTPUT_DIR/Makefile
 
 
-(($DEBUG)) && echo "#[INFO] BCL2FASTQ=$BCL2FASTQ"
-#(($DEBUG)) && echo "#[INFO] RUNFOLDER_DIR=$RUNFOLDER_DIR"
-(($DEBUG)) && echo "#[INFO] OUTPUT_DIR=$OUTPUT_DIR"
-(($DEBUG)) && echo "#[INFO] LOGFILE=$LOGFILE"
+(($DEBUG)) && echo "["$(timestamp)" | INFO] BCL2FASTQ=$BCL2FASTQ"
+#(($DEBUG)) && echo "["$(timestamp)" | INFO] RUNFOLDER_DIR=$RUNFOLDER_DIR"
+(($DEBUG)) && echo "["$(timestamp)" | INFO] OUTPUT_DIR=$OUTPUT_DIR"
+(($DEBUG)) && echo "["$(timestamp)" | INFO] LOGFILE=$LOGFILE"
 #(($DEBUG)) && ls -l $OUTPUT_DIR
 #(($DEBUG)) && ls -l $DEM_SAMPLESHEET
 
@@ -272,7 +279,7 @@ echo "#[`date`] Demultiplexing Configuration log" > $LOGFILE
 
 # Copy and Cleaning SampleSheet SampleName
 # Empty SampleSheet
-(($VERBOSE)) && echo "#[INFO] Copy and Cleaning SampleSheet";
+(($VERBOSE)) && echo "["$(timestamp)" | INFO] Copy and Cleaning SampleSheet";
 > $DEM_SAMPLESHEET
 # Find header before DATA section
 DATA_SECTION_LINE=$(grep "^\[Data\]" $RUN_SAMPLESHEET -n | awk -F: '{print $1}')
@@ -281,23 +288,23 @@ head -n $SAMPLE_SECTION_FIRST_LINE $RUN_SAMPLESHEET > $DEM_SAMPLESHEET
 # print DATA section and the rest
 tail -n $(($SAMPLE_SECTION_FIRST_LINE-$(grep ^ -c $RUN_SAMPLESHEET))) $RUN_SAMPLESHEET | sed '/^[[:space:]]*$/d' | awk -F"," '{gsub(/ /,"_",$1)} {gsub(/ /,"_",$2)} {LINE=$1","$2} {for(i=3;i<=NF;++i)LINE=LINE","$i} {print LINE}' >> $DEM_SAMPLESHEET
 # LOG
-echo "#[`date`] COMMAND: $COMMAND" >> $LOGFILE && $COMMAND >> $LOGFILE
+echo "["$(timestamp)" | `date`] COMMAND: $COMMAND" >> $LOGFILE && $COMMAND >> $LOGFILE
 
 # Manifests_list
-(($VERBOSE)) && echo "#[INFO] Create manifests and indexes list file";
+(($VERBOSE)) && echo "["$(timestamp)" | INFO] Create manifests and indexes list file";
 COMMAND="$PYTHON $SCRIPT_DIR/SampleSheet.py $DEM_SAMPLESHEET $MANIFESTS_LIST manifests_list $RUN"
 # LOG
 echo "#[`date`] COMMAND: $COMMAND" >> $LOGFILE && $COMMAND >> $LOGFILE
 
 # Manifests
-(($VERBOSE)) && echo "#[INFO] Create manifests file and copy all manifests";
+(($VERBOSE)) && echo "["$(timestamp)" | INFO] Create manifests file and copy all manifests";
 COMMAND="$PYTHON $SCRIPT_DIR/SampleSheet.py $DEM_SAMPLESHEET $MANIFESTS manifests $RUN"
 # LOG
 echo "#[`date`] COMMAND: $COMMAND" >> $LOGFILE && $COMMAND >> $LOGFILE
 
 # Copy Manifests
 for M in $(cat $MANIFESTS | tr "," " "); do
-	(($VERBOSE)) && echo "#[INFO] Copy manifests '$M' and related files";
+	(($VERBOSE)) && echo "["$(timestamp)" | INFO] Copy manifests '$M' and related files";
 
 	#echo $FOLDER_MANIFEST/$M
 	#[ -e $FOLDER_MANIFEST/$M ] && cp $FOLDER_MANIFEST/$M $OUTPUT_DIR/$M 2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy manifest '$M' from Manifest folder '$FOLDER_MANIFEST'";
@@ -308,11 +315,11 @@ for M in $(cat $MANIFESTS | tr "," " "); do
 
 	# Manifest File
 	if [ -e $RUN/$M ]; then
-		cp $RUN/$M $OUTPUT_DIR/$M  2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy manifest '$M' from RUN folder '$RUN'";
+		cp $RUN/$M $OUTPUT_DIR/$M  2>/dev/null && (($VERBOSE)) && echo "["$(timestamp)" | INFO] Copy manifest '$M' from RUN folder '$RUN'";
 	elif [ -e $FOLDER_MANIFEST/$M ]; then
-		cp $FOLDER_MANIFEST/$M $OUTPUT_DIR/$M 2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy manifest '$M' from Manifest folder '$FOLDER_MANIFEST'";
+		cp $FOLDER_MANIFEST/$M $OUTPUT_DIR/$M 2>/dev/null && (($VERBOSE)) && echo "["$(timestamp)" | INFO] Copy manifest '$M' from Manifest folder '$FOLDER_MANIFEST'";
 	else
-		echo "#[WARNING] Manifest file NOT found"
+		echo "["$(timestamp)" | WARNING] Manifest file NOT found"
 	fi;
 
 	# Genes
@@ -322,11 +329,11 @@ for M in $(cat $MANIFESTS | tr "," " "); do
 	#cp -f $RUN/$M*.genes $OUTPUT_DIR/ 2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy MANIFEST*.genes '$M*.genes' from Manifest folder '$RUN' (replaced if already copied)";
 
 	if (($(ls $RUN/$M*.genes 2>/dev/null | wc -l))); then
-		cp -f $RUN/$M*.genes $OUTPUT_DIR/ 2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy MANIFEST*.genes '$M*.genes' from Manifest folder '$RUN'";
+		cp -f $RUN/$M*.genes $OUTPUT_DIR/ 2>/dev/null && (($VERBOSE)) && echo "["$(timestamp)" | INFO] Copy MANIFEST*.genes '$M*.genes' from Manifest folder '$RUN'";
 	elif (($(ls $FOLDER_MANIFEST/$M*.genes 2>/dev/null | wc -l))); then
-		cp -f $FOLDER_MANIFEST/$M*.genes $OUTPUT_DIR/ 2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy MANIFEST*.genes '$M*.genes' from Manifest folder '$FOLDER_MANIFEST'";
+		cp -f $FOLDER_MANIFEST/$M*.genes $OUTPUT_DIR/ 2>/dev/null && (($VERBOSE)) && echo "["$(timestamp)" | INFO] Copy MANIFEST*.genes '$M*.genes' from Manifest folder '$FOLDER_MANIFEST'";
 	else
-		echo "#[INFO] Manifest Genes file NOT found"
+		echo "["$(timestamp)" | INFO] Manifest Genes file NOT found"
 	fi;
 
 	# Transcripts
@@ -336,30 +343,30 @@ for M in $(cat $MANIFESTS | tr "," " "); do
 	#cp -f $RUN/$M*.transcripts $OUTPUT_DIR/ 2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy MANIFEST*.transcipts '$M*.transcripts' from Transcripts folder '$RUN' (replaced if already copied)";
 
 	if (($(ls $RUN/$M*.transcripts 2>/dev/null | wc -l))); then
-		cp -f $RUN/$M*.transcripts $OUTPUT_DIR/ 2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy MANIFEST*.transcipts '$M*.transcripts' from Transcripts folder '$RUN' (replaced if already copied)";
+		cp -f $RUN/$M*.transcripts $OUTPUT_DIR/ 2>/dev/null && (($VERBOSE)) && echo "["$(timestamp)" | INFO] Copy MANIFEST*.transcipts '$M*.transcripts' from Transcripts folder '$RUN' (replaced if already copied)";
 	elif (($(ls $FOLDER_MANIFEST/$M*.transcripts 2>/dev/null | wc -l))); then
-		cp -f $FOLDER_MANIFEST/$M*.transcripts $OUTPUT_DIR/ 2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy MANIFEST*.transcripts '$M*.transcripts' from Transcripts folder '$FOLDER_MANIFEST'";
+		cp -f $FOLDER_MANIFEST/$M*.transcripts $OUTPUT_DIR/ 2>/dev/null && (($VERBOSE)) && echo "["$(timestamp)" | INFO] Copy MANIFEST*.transcripts '$M*.transcripts' from Transcripts folder '$FOLDER_MANIFEST'";
 	else
-		echo "#[INFO] Manifest Transcripts file NOT found"
+		echo "["$(timestamp)" | INFO] Manifest Transcripts file NOT found"
 	fi;
 
 
 done;
 
 # Reads Length file
-(($VERBOSE)) && echo "#[INFO] Create Reads Length file";
+(($VERBOSE)) && echo "["$(timestamp)" | INFO] Create Reads Length file";
 COMMAND="$PYTHON $SCRIPT_DIR/SampleSheet.py $DEM_SAMPLESHEET $READS_LENGTH readsLength $RUN"
 # LOG
 echo "#[`date`] COMMAND: $COMMAND" >> $LOGFILE && $COMMAND >> $LOGFILE
 
 # BCL2FASTQ Mask option file
-(($VERBOSE)) && echo "#[INFO] BCL2FASTQ Mask option file";
+(($VERBOSE)) && echo "["$(timestamp)" | INFO] BCL2FASTQ Mask option file";
 COMMAND="$PYTHON $SCRIPT_DIR/SampleSheet.py $DEM_SAMPLESHEET $MASK mask $RUN"
 # LOG
 echo "#[`date`] COMMAND: $COMMAND" >> $LOGFILE && $COMMAND >> $LOGFILE
 
 # BCL2FASTQ Adapters
-(($VERBOSE)) && echo "#[INFO] BCL2FASTQ Adapters file";
+(($VERBOSE)) && echo "["$(timestamp)" | INFO] BCL2FASTQ Adapters file";
 COMMAND="$PYTHON $SCRIPT_DIR/SampleSheet.py $DEM_SAMPLESHEET $ADAPTERS adapters $RUN"
 # LOG
 echo "#[`date`] COMMAND: $COMMAND" >> $LOGFILE && $COMMAND >> $LOGFILE
@@ -384,10 +391,10 @@ if ! [ -z "$STARK_DEMULTIPLEXING_MASK_SHORT_ADAPTATER_READ" ] && [ "$STARK_DEMUL
 	MASK_SHORT_READ=$STARK_DEMULTIPLEXING_MASK_SHORT_ADAPTATER_READ
 	# To avoid space between option and parameter
 	DEMUX_MASK_SHORT_READ=${DEMUX_MASK_SHORT_OPTION}${MASK_SHORT_READ}
-	echo "#[INFO] Mask short read adaptaters : $MASK_SHORT_READ";
+	echo "["$(timestamp)" | INFO] Mask short read adaptaters : $MASK_SHORT_READ";
 else
 	DEMUX_MASK_SHORT_READ=""
-	echo "#[INFO] Using default mask short adapter reads";
+	echo "["$(timestamp)" | INFO] Using default mask short adapter reads";
 fi;
 
 
@@ -405,10 +412,10 @@ if ! [ -z "$STARK_DEMULTIPLEXING_BASES_MASK" ] && [ "$STARK_DEMULTIPLEXING_BASES
 	# To avoid space between option and parameter
 	DEMUX_MASK=${DEMUX_MASK_OPTION}${MASK_INPUT}
 	FINAL_MASK=$STARK_DEMULTIPLEXING_BASES_MASK
-	echo "#[INFO] Mask : $STARK_DEMULTIPLEXING_BASES_MASK";
+	echo "["$(timestamp)" | INFO] Mask : $STARK_DEMULTIPLEXING_BASES_MASK";
 else
 	FINAL_MASK=$(cat $MASK)
-	echo "#[INFO] Using default mask";
+	echo "["$(timestamp)" | INFO] Using default mask";
 fi;
 
 
@@ -434,9 +441,9 @@ if [ "$FINAL_MASK" != "" ]; then
 		fi;
 		echo "$nb$type"
 	done | tr -d "\n")
-	echo "#[INFO] Read structure '$READ_STRUCTURE'";
+	echo "["$(timestamp)" | INFO] Read structure '$READ_STRUCTURE'";
 else
-	echo "#[ERROR] Read structure not valid because Mask empty";
+	echo "["$(timestamp)" | ERROR] Read structure not valid because Mask empty";
 	exit 1
 fi;
 
@@ -446,20 +453,22 @@ fi;
 
 
 
-(($VERBOSE)) && echo "#[INFO] NB_SAMPLE="$NB_SAMPLE
-(($VERBOSE)) && echo "#[INFO] THREADS_LOADING="$THREADS_LOADING
-(($VERBOSE)) && echo "#[INFO] THREADS_WRITING="$THREADS_WRITING
-#(($VERBOSE)) && echo "#[INFO] WRITING_THREADS="$WRITING_THREADS
-(($VERBOSE)) && echo "#[INFO] ADAPTER_STRINGENCY="$ADAPTER_STRINGENCY
-(($VERBOSE)) && echo "#[INFO] FASTQ_DEMULTIPLEXING_COMPRESSION_LEVEL="$FASTQ_DEMULTIPLEXING_COMPRESSION_LEVEL
-(($VERBOSE)) && echo "#[INFO] FASTQ_DEMULTIPLEXING_COMPRESSION_LEVEL="$FASTQ_DEMULTIPLEXING_COMPRESSION_LEVEL
-(($VERBOSE)) && echo "#[INFO] STARK_DEMULTIPLEXING_BCL2FASTQ_OPTIONS="$STARK_DEMULTIPLEXING_BCL2FASTQ_OPTIONS
+(($VERBOSE)) && echo "["$(timestamp)" | INFO] NB_SAMPLE="$NB_SAMPLE
+(($VERBOSE)) && echo "["$(timestamp)" | INFO] THREADS_LOADING="$THREADS_LOADING
+(($VERBOSE)) && echo "["$(timestamp)" | INFO] THREADS_WRITING="$THREADS_WRITING
+#(($VERBOSE)) && echo "["$(timestamp)" | INFO] WRITING_THREADS="$WRITING_THREADS
+(($VERBOSE)) && echo "["$(timestamp)" | INFO] ADAPTER_STRINGENCY="$ADAPTER_STRINGENCY
+(($VERBOSE)) && echo "["$(timestamp)" | INFO] FASTQ_DEMULTIPLEXING_COMPRESSION_LEVEL="$FASTQ_DEMULTIPLEXING_COMPRESSION_LEVEL
+(($VERBOSE)) && echo "["$(timestamp)" | INFO] FASTQ_DEMULTIPLEXING_COMPRESSION_LEVEL="$FASTQ_DEMULTIPLEXING_COMPRESSION_LEVEL
+(($VERBOSE)) && echo "["$(timestamp)" | INFO] STARK_DEMULTIPLEXING_BCL2FASTQ_OPTIONS="$STARK_DEMULTIPLEXING_BCL2FASTQ_OPTIONS
 
 
 #(($DEBUG)) && ls -l $DEM_SAMPLESHEET
-(($DEBUG)) && echo "" && echo "DEBUG"
+(($DEBUG)) && echo "" && echo "["$(timestamp)" | DEBUG] DEBUG"
+(($DEBUG)) && echo "" && echo "["$(timestamp)" | DEBUG] Log file: $LOGFILE"
 (($DEBUG)) && cat $LOGFILE
-(($DEBUG)) && ls -l $OUTPUT_DIR
+#(($DEBUG)) && ls -l $OUTPUT_DIR
+(($DEBUG)) && echo "" && echo "["$(timestamp)" | DEBUG] SampleSheet file: $DEM_SAMPLESHEET"
 (($DEBUG)) && cat $DEM_SAMPLESHEET
 #(($DEBUG)) && cat $MANIFESTS_LIST
 #(($DEBUG)) && cat $MANIFESTS
@@ -467,13 +476,13 @@ fi;
 # Demultiplexing configuration
 COMMAND="$BCL2FASTQ --runfolder-dir $RUN  --output-dir $OUTPUT_DIR --sample-sheet $DEM_SAMPLESHEET --barcode-mismatches $BARCODE_MISMATCHES --fastq-compression-level $FASTQ_DEMULTIPLEXING_COMPRESSION_LEVEL $DEMUX_MASK $DEMUX_MASK_SHORT_READ -r $THREADS_LOADING -p $THREADS -w $THREADS_WRITING $STARK_DEMULTIPLEXING_BCL2FASTQ_OPTIONS"
 echo "#[`date`] COMMAND: " $COMMAND >> $LOGFILE
-(($DEBUG)) && echo "#[INFO] Command: "$COMMAND
+(($DEBUG)) && echo "" && echo "["$(timestamp)" | INFO] Command: "$COMMAND
 
 #$COMMAND 1>>$LOGFILE 2>>$LOGFILE || echo "message" && echo "exit"
 if ! $COMMAND 1>>$LOGFILE 2>>$LOGFILE; then
 	# List of fastq files with size
 	ls -hs1 $OUTPUT_DIR/*fastq.gz 2>/dev/null | awk '{print "#[INFO] FASTQ: "$2"\t"$1}'
-	echo "#[ERROR] Demultiplexing FAILED";
+	echo "["$(timestamp)" | ERROR] Demultiplexing FAILED";
 	tail -n 10 $LOGFILE | awk '{print "#[ERROR] LOG: "$0}'
 	exit 1;
 fi;

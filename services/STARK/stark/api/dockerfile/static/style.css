@@ -167,6 +167,25 @@ pre {
     padding: 0;
     background-color: #f8f9fa;
     border: 1px solid #dddfe2;
+    position: relative;
+}
+
+.btn-copy {
+    position: absolute;
+    top: 6px;
+    right: 10px;
+    padding: 2px 8px;
+    font-size: 0.75em;
+    background-color: #e9ecef;
+    color: #495057;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    cursor: pointer;
+    z-index: 1;
+}
+
+.btn-copy:hover {
+    background-color: #ced4da;
 }
 
 pre.inline-detail {

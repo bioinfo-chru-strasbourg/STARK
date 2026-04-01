@@ -3,3 +3,4 @@ python-jose[cryptography]
 passlib[bcrypt]
 uvicorn
 python-multipart
+jinja2
