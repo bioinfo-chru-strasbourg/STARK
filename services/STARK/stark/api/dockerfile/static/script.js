@@ -273,5 +273,5 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Auto-refresh the queue every 10 seconds
-    setInterval(() => getQueue('list'), 10000);
+    setInterval(() => getQueue('list'), typeof REFRESH_INTERVAL_MS !== 'undefined' ? REFRESH_INTERVAL_MS : 10000);
 });

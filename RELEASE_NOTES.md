@@ -25,6 +25,7 @@
 - Java:17 as default release (available: $JAVA8 and $JAVA17)
 - GATK:4 as default release (available: $GATK3 and GATK4)
 - Manage high consuming rules by sequencializing (e.g. aligners such as bwamem2 and star)
+- Improve API service
 
 ## Fixes
 

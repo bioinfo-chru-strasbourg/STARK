@@ -187,7 +187,12 @@ async def read_root(request: Request):
 
     version = str(int(os.path.getmtime("static/script.js")))
     return templates.TemplateResponse(
-        "index.html", {"request": request, "version": version}
+        "index.html",
+        {
+            "request": request,
+            "version": version,
+            "refresh_interval_ms": refresh_interval_ms,
+        },
     )
 
 
@@ -209,12 +214,85 @@ docker_stark_api_log_folder = os.environ.get(
 docker_stark_api_runs_folder = os.environ.get(
     "DOCKER_STARK_SERVICE_STARK_API_RUNS_FOLDER", "/STARK/input/runs"
 )
+refresh_interval_ms = int(os.environ.get("STARK_API_REFRESH_INTERVAL", "10")) * 1000
 
 
 def randomStringDigits(stringLength=6):
     """Generate a random string of letters and digits"""
     lettersAndDigits = string.ascii_letters + string.digits
     return "".join(random.choice(lettersAndDigits) for i in range(stringLength))
+
+
+def queue_analysis(json_input: dict) -> str:
+    """Build and queue a STARK Docker analysis from a JSON input dict.
+    Returns the analysis IDNAME string on success, or raises RuntimeError."""
+    json_dump = json.dumps(json_input)
+
+    analysesID = randomStringDigits(12)
+    runID = "UNKNOWN"
+    runMD5 = randomStringDigits(41)
+
+    if "run" in json_input:
+        name = json_input["run"].split(":")[0]
+        runID = os.path.basename(name)
+
+        runFolder = ""
+        if os.path.isdir(name):
+            runFolder = name
+        elif os.path.isdir(os.path.join(docker_stark_api_runs_folder, name)):
+            runFolder = os.path.join(docker_stark_api_runs_folder, name)
+
+        if runFolder:
+            myCmd = f"find {runFolder} -maxdepth 1 -type f -print0 | xargs -0 sha1sum | cut -b-40 | sha1sum | awk '{{print $1}}'"
+        else:
+            myCmd = f"echo {name} | sha1sum | awk '{{print $1}}'"
+
+        runMD5 = (
+            subprocess.run(myCmd, shell=True, stdout=subprocess.PIPE)
+            .stdout.decode("utf-8")
+            .strip()
+        )
+
+        if "analysis_name" in json_input:
+            runID = json_input["analysis_name"]
+
+    elif "analysis_name" in json_input:
+        runID = json_input["analysis_name"]
+        runMD5 = randomStringDigits(41)
+
+    analysesRUNNAME = runID
+    analysesNAME = f"ID-{runMD5}-NAME-{runID}"
+    analysisIDNAME = f"STARK.{analysesID}.{analysesNAME}"
+
+    docker_name = f" --name {analysisIDNAME} "
+    docker_parameters = f" --rm {docker_stark_container_mount} {docker_name} "
+
+    analysisFOLDER = docker_stark_api_log_folder
+    analysisFILE = os.path.join(analysisFOLDER, f"{analysisIDNAME}.json")
+    analysisINFOFILE = os.path.join(analysisFOLDER, f"{analysisIDNAME}.info")
+    analysisOUTPUTFILE = os.path.join(analysisFOLDER, f"{analysisIDNAME}.output")
+
+    with open(analysisFILE, "w") as f:
+        f.write(json_dump)
+
+    ts_cmd = f"{ts_env}{ts} -L {analysisIDNAME}" if ts else ""
+    myCmd = (
+        f'{ts_cmd} sh -c "'
+        f"docker run {docker_parameters} {docker_stark} "
+        f"--analysis_name={analysesRUNNAME} --analysis={analysisFILE} "
+        f"> {analysisOUTPUTFILE} 2>&1 "
+        f"&& (echo 'done' > {analysisINFOFILE} && exit 0) "
+        f"|| (echo 'failed' > {analysisINFOFILE} && exit 1)\""
+    )
+
+    task_id = (
+        subprocess.run(myCmd, shell=True, stdout=subprocess.PIPE)
+        .stdout.decode("utf-8")
+        .strip()
+    )
+    if not task_id:
+        raise RuntimeError("task-spooler returned no task ID")
+    return analysisIDNAME
 
 
 @app.post("/analysis")
@@ -230,91 +308,11 @@ async def stark_launch(
                 detail="Admin group required to launch analyses",
             )
     json_input = await request.json()
-    json_dump = json.dumps(json_input)
-
-    analysesID = randomStringDigits(12)
-    analysesRUNNAME = analysesID
-    analysesNAME = analysesID
-
-    runID = ""
-    runMD5 = ""
-
-    if "run" in json_input:
-
-        # run ID is the name of the run without path, but we calculate the md5 based on the content of the run if it's a folder, or on the name of the run for backward compatibility. This allows to have a unique runMD5 for each run even if they have the same name but different content, and also to have a consistent runMD5 for the same run even if it is launched from different paths (as long as the content is the same).
-        name = json_input["run"].split(":")[0]
-        runID = os.path.basename(name)
-
-        # Check if run is a folder, either directly or in the default runs folder, and calculate md5 based on content if it is, or on name for backward compatibility if it's not. This allows to have a unique runMD5 for each run even if they have the same name but different content, and also to have a consistent runMD5 for the same run even if it is launched from different paths (as long as the content is the same).
-        runFolder = ""
-        if os.path.isdir(name):
-            runFolder = name
-        elif os.path.isdir(os.path.join(docker_stark_api_runs_folder, name)):
-            runFolder = os.path.join(docker_stark_api_runs_folder, name)
-
-        # Create command for md5 calculation. If run is a folder, calculate md5 based on content, otherwise on name for backward compatibility. This allows to have a unique runMD5 for each run even if they have the same name but different content, and also to have a consistent runMD5 for the same run even if it is launched from different paths (as long as the content is the same).
-        if runFolder:
-            myCmd = f"find {runFolder} -maxdepth 1 -type f -print0 | xargs -0 sha1sum | cut -b-40 | sha1sum | awk '{{print $1}}'"
-        else:
-            myCmd = f"echo {name} | sha1sum | awk '{{print $1}}'"
-
-        # Calculate md5 using the command. We use the content of the run if it's a folder, otherwise we use the name of the run for backward compatibility. This allows to have a unique runMD5 for each run even if they have the same name but different content, and also to have a consistent runMD5 for the same run even if it is launched from different paths (as long as the content is the same).
-        runMD5 = (
-            subprocess.run(myCmd, shell=True, stdout=subprocess.PIPE)
-            .stdout.decode("utf-8")
-            .strip()
-        )
-
-        # Switch name to analysis name is analysis name provided for backward compatibility, but keep runID for naming consistency with previous versions
-        if "analysis_name" in json_input:
-            runID = json_input["analysis_name"]
-
-    elif "analysis_name" in json_input:
-
-        # For backward compatibility, if no run provided we can still use analysis_name as runID, but we generate a random md5 to ensure uniqueness and avoid conflicts between analyses with the same analysis_name. This allows to have a consistent runID based on analysis_name for backward compatibility, while still ensuring uniqueness of the analysis with a random md5.
-        runID = json_input["analysis_name"]
-
-        # Fallback to random if no run provided for backward compatibility
-        runMD5 = randomStringDigits(41)
-
-    analysesRUNNAME = runID
-    analysesNAME = f"ID-{runMD5}-NAME-{runID}"
-
-    # if runID and runMD5:
-    #     analysesRUNNAME = runID
-    #     analysesNAME = f"ID-{runMD5}-NAME-{runID}"
-
-    # if "analysis_name" in json_input:
-    #     analysesRUNNAME = json_input["analysis_name"]
-    #     # analysesNAME = json.input["analysis_name"]
-    #     analysesNAME = analysesRUNNAME
-    #     analysesNAME = f"ID-{runMD5}-NAME-{analysesRUNNAME}"
-
-    analysisIDNAME = f"STARK.{analysesID}.{analysesNAME}"
-    docker_name = f" --name {analysisIDNAME} "
-    docker_parameters = f" --rm {docker_stark_container_mount} {docker_name} "
-
-    analysisFOLDER = docker_stark_api_log_folder
-    analysisFILE = os.path.join(analysisFOLDER, f"{analysisIDNAME}.json")
-    analysisINFOFILE = os.path.join(analysisFOLDER, f"{analysisIDNAME}.info")
-    analysisOUTPUTFILE = os.path.join(analysisFOLDER, f"{analysisIDNAME}.output")
-
-    with open(analysisFILE, "w") as f:
-        f.write(json_dump)
-
-    ts_cmd = f"{ts_env}{ts} -L {analysisIDNAME}" if ts else ""
-
-    myCmd = f"{ts_cmd} sh -c \"docker run {docker_parameters} {docker_stark} --analysis_name={analysesRUNNAME} --analysis={analysisFILE} > {analysisOUTPUTFILE} 2>&1 && (echo 'done' > {analysisINFOFILE} && exit 0) || (echo 'failed' > {analysisINFOFILE} && exit 1)\""
-
-    getCmd = subprocess.run(myCmd, shell=True, stdout=subprocess.PIPE).stdout.decode(
-        "utf-8"
-    )
-    STARKCmdID = getCmd.strip()
-
-    if STARKCmdID:
+    try:
+        analysisIDNAME = queue_analysis(json_input)
         return PlainTextResponse(content=analysisIDNAME, status_code=200)
-    else:
-        return PlainTextResponse(content="KO", status_code=400)
+    except Exception as e:
+        return PlainTextResponse(content=f"KO: {e}", status_code=400)
 
 
 @app.get("/queue")
@@ -627,60 +625,11 @@ async def relaunch_task(
     except (OSError, json.JSONDecodeError) as e:
         raise HTTPException(status_code=500, detail=f"Error reading JSON file: {e}")
 
-    json_dump = json.dumps(json_input)
-
-    analysesID = randomStringDigits(12)
-    analysesRUNNAME = analysesID
-    analysesNAME = analysesID
-
-    runID = ""
-    runMD5 = ""
-    if "run" in json_input:
-        name = json_input["run"].split(":")[0]
-        runID = os.path.basename(name)
-        runFolder = ""
-        if os.path.isdir(name):
-            runFolder = name
-        elif os.path.isdir(os.path.join(docker_stark_api_runs_folder, name)):
-            runFolder = os.path.join(docker_stark_api_runs_folder, name)
-        if runFolder:
-            myCmd = f"find {runFolder} -maxdepth 1 -type f -print0 | xargs -0 sha1sum | cut -b-40 | sha1sum | awk '{{print $1}}'"
-        else:
-            myCmd = f"echo {name} | sha1sum | awk '{{print $1}}'"
-        runMD5 = (
-            subprocess.run(myCmd, shell=True, stdout=subprocess.PIPE)
-            .stdout.decode("utf-8")
-            .strip()
-        )
-
-    if runID and runMD5:
-        analysesRUNNAME = runID
-        analysesNAME = f"ID-{runMD5}-NAME-{runID}"
-
-    analysisIDNAME = f"STARK.{analysesID}.{analysesNAME}"
-    docker_name = f" --name {analysisIDNAME} "
-    docker_parameters = f" --rm {docker_stark_container_mount} {docker_name} "
-
-    analysisFOLDER = docker_stark_api_log_folder
-    analysisFILE = os.path.join(analysisFOLDER, f"{analysisIDNAME}.json")
-    analysisINFOFILE = os.path.join(analysisFOLDER, f"{analysisIDNAME}.info")
-    analysisOUTPUTFILE = os.path.join(analysisFOLDER, f"{analysisIDNAME}.output")
-
-    with open(analysisFILE, "w") as f:
-        f.write(json_dump)
-
-    ts_cmd = f"{ts_env}{ts} -L {analysisIDNAME}" if ts else ""
-    myCmd = f"{ts_cmd} sh -c \"docker run {docker_parameters} {docker_stark} --analysis_name={analysesRUNNAME} --analysis={analysisFILE} > {analysisOUTPUTFILE} 2>&1 && echo 'done' > {analysisINFOFILE} || echo 'failed' > {analysisINFOFILE}\""
-
-    getCmd = subprocess.run(myCmd, shell=True, stdout=subprocess.PIPE).stdout.decode(
-        "utf-8"
-    )
-    if getCmd.strip():
+    try:
+        analysisIDNAME = queue_analysis(json_input)
         return PlainTextResponse(content=analysisIDNAME, status_code=200)
-    else:
-        raise HTTPException(
-            status_code=500, detail="Relaunch failed: ts returned no task ID"
-        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Relaunch failed: {e}")
 
 
 if __name__ == '__main__':

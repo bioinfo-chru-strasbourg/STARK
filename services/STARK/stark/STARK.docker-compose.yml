@@ -33,7 +33,7 @@ services:
             - ${DOCKER_STARK_MODULE_SUBMODULE_MAIN_CONFIG_HOST_FOLDER_CONFIG_MYAPPS}:${DOCKER_STARK_MODULE_SUBMODULE_MAIN_CONFIG_INNER_FOLDER_CONFIG_MYAPPS}:ro
             - ${DOCKER_STARK_MODULE_SUBMODULE_MAIN_CONFIG_HOST_FOLDER_CONFIG_HOWARD}:${DOCKER_STARK_MODULE_SUBMODULE_MAIN_CONFIG_INNER_FOLDER_CONFIG_HOWARD}:ro
             # Databases
-            #- ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_DATABASES}:${DOCKER_STARK_INNER_FOLDER_DATABASES}:rw
+            - ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_DATABASES}:${DOCKER_STARK_INNER_FOLDER_DATABASES}:rw
             # Input
             - ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_DATA}:${DOCKER_STARK_INNER_FOLDER_DATA}:rw
             - ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_INPUT_RUNS}:${DOCKER_STARK_INNER_FOLDER_INPUT_RUNS}:ro
@@ -47,12 +47,6 @@ services:
             # Activation of Depository/Archives
             #- ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_OUTPUT_DEPOSITORY}:${DOCKER_STARK_INNER_FOLDER_OUTPUT_DEPOSITORY}:rw
             #- ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_OUTPUT_ARCHIVES}:${DOCKER_STARK_INNER_FOLDER_OUTPUT_ARCHIVES}:rw
-            # DEVEL
-            - /Volumes/LaCie/STARK/databases:${DOCKER_STARK_INNER_FOLDER_DATABASES}:rw
-            - /Users/lebechea/BIOINFO/git/STARK:/tool:ro
-            - /Volumes/LaCie/STARK:/devel:rw
-        # ports:
-        #     - ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_CLI_PARAM_PORT_PUBLISHED}:${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_CLI_PARAM_PORT_TARGET}
         networks:
             - stark_stark
         healthcheck:
@@ -194,14 +188,12 @@ services:
             - ${DOCKER_STARK_MODULE_SUBMODULE_MAIN_CONFIG_HOST_FOLDER_CONFIG_MYAPPS}:${DOCKER_STARK_MODULE_SUBMODULE_MAIN_CONFIG_INNER_FOLDER_CONFIG_MYAPPS}:ro
             - ${DOCKER_STARK_MODULE_SUBMODULE_MAIN_CONFIG_HOST_FOLDER_CONFIG_HOWARD}:${DOCKER_STARK_MODULE_SUBMODULE_MAIN_CONFIG_INNER_FOLDER_CONFIG_HOWARD}:ro
             # Databases
-            #- ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_DATABASES}:${DOCKER_STARK_INNER_FOLDER_DATABASES}:ro
+            - ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_DATABASES}:${DOCKER_STARK_INNER_FOLDER_DATABASES}:ro
             # Input
             - ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_DATA}:${DOCKER_STARK_INNER_FOLDER_DATA}:rw
             - ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_INPUT_RUNS}:${DOCKER_STARK_INNER_FOLDER_INPUT_RUNS}:ro
             - ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_INPUT_MANIFESTS}:${DOCKER_STARK_INNER_FOLDER_INPUT_MANIFESTS}:ro
             - ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_INPUT_PEDIGREE}:${DOCKER_STARK_INNER_FOLDER_INPUT_PEDIGREE}:ro
-            # DEVEL
-            - /Volumes/LaCie/STARK/databases:${DOCKER_STARK_INNER_FOLDER_DATABASES}:ro
         depends_on:
             stark-module-stark-submodule-stark-service-listenerclear:
                 condition: service_started
@@ -248,14 +240,9 @@ services:
             context: ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_XTERM_IMAGE_CONTEXT}
             dockerfile: ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_XTERM_IMAGE_CONTEXT_DOCKERFILE}
         container_name: ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_XTERM_CONTAINER_NAME}
-        #entrypoint: ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_XTERM_CONTAINER_ENTRYPOINT}
-        #command: ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_XTERM_CONTAINER_COMMAND}
         restart: ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_XTERM_CONTAINER_RESTART}
         env_file:
             - ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_XTERM_CONTAINER_ENV_FILE}
-        # environment:
-        #     # Sleep time
-        #     - SLEEP=${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_XTERM_PARAM_SLEEP}
         volumes:
             # Docker sock
             - ${DOCKER_STARK_SOCK_MOUNT}
@@ -264,7 +251,6 @@ services:
             - ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_XTERM_PARAM_USERS_CONFIG_HOST}:${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_XTERM_PARAM_USERS_CONFIG_INNER}:rw
         depends_on:
             stark-module-stark-submodule-stark-service-cli:
-                #condition: service_started
                 condition: service_healthy
         ports:
             - ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_XTERM_PARAM_PORT_PUBLISHED}:${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_XTERM_PARAM_PORT_TARGET}
@@ -277,36 +263,14 @@ services:
             retries: 3
             start_period: 5s
             start_interval: 5s
-        # healthcheck:
-        #     test: "STARK --help | head -n5 && /tool/bin/STARK.setup --setup-type=INNER && /tool/bin/get_databases.sh"
-        #     interval: 600s
-        #     timeout: 600s
-        #     retries: 3
 
     
     stark-module-stark-submodule-stark-service-docs:
         image: ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_DOCS_IMAGE}
-        # build:
-        #     context: ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_DOCS_IMAGE_CONTEXT}
-        #     dockerfile: ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_DOCS_IMAGE_CONTEXT_DOCKERFILE}
         container_name: ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_DOCS_CONTAINER_NAME}
         entrypoint: ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_DOCS_CONTAINER_ENTRYPOINT}
         command: ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_DOCS_CONTAINER_COMMAND}
         restart: ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_DOCS_CONTAINER_RESTART}
-        # env_file:
-        #     - ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_DOCS_CONTAINER_ENV_FILE}
-        # environment:
-        #     # Sleep time
-        #     - SLEEP=${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_DOCS_PARAM_SLEEP}
-        # volumes:
-        #     # Docker sock
-        #     - ${DOCKER_STARK_SOCK_MOUNT}
-        #     # Main configuration
-        #     - ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_DOCS_PARAM_USERS_CONFIG_HOST}:${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_DOCS_PARAM_USERS_CONFIG_INNER}:ro
-        # depends_on:
-        #     stark-module-stark-submodule-stark-service-cli:
-        #         #condition: service_started
-        #         condition: service_healthy
         ports:
             - ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_DOCS_PARAM_PORT_PUBLISHED}:${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_DOCS_PARAM_PORT_TARGET}
         networks:
@@ -318,11 +282,6 @@ services:
             retries: 3
             start_period: 5s
             start_interval: 5s
-        # healthcheck:
-        #     test: "STARK --help | head -n5 && /tool/bin/STARK.setup --setup-type=INNER && /tool/bin/get_databases.sh"
-        #     interval: 600s
-        #     timeout: 600s
-        #     retries: 3
 
 
 # NETWORK

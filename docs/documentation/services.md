@@ -67,13 +67,15 @@ STARK Docs provides documentation such as a user guide and many other informatio
 
 ## STARK Application Program Interface (API)
 
-A STARK Application Program Interface (API) is available through URI `http://<ip>:<port>` (default <http://localhost:4200>, help with an internet browser). This service prodives an interface to run STARK analysis with parameters in JSON format through URI (`http://<ip>:<port>/analysis`), and to manage analyses queue (`http://<ip>:<port>/queue`)
+A STARK Application Program Interface (API) is available through URI `http://<ip>:<port>` (default <http://localhost:4200>), and is secured with user accounts and an API Key to connect other services (such as for STARK Listener).
+
+This service prodives an interface to run STARK analysis with run name or parameters in JSON format. The Task Queue list all tasks (run names or analysis name) with state (running, queued and finished), error level (SUCCESS or FAILED with error code), execution time, informations (Info on task, Log of command, Analysis parameters) and actions that depend on task stats (Kill, Prioritize, Remove and Relaunch).
+
+![panel](images/api.png)
 
 ```bash
 # STARK analysis with curl in POST method
-curl -X POST -H 'Content-Type: application/json' -d '{"run":"MY_RUN"}' http://<ip>:<port>/analysis 
-# List of analysis running, queued and finished
-curl http://<ip>:<port>/queue?list 
+curl -s -X POST -H 'Content-Type: application/json' -H 'X-API-Key: <STARK_API_KEY>' -d '{"run":"MY_RUN"}' http://<ip>:<port>/analysis
 ```
 
 ## STARK listener

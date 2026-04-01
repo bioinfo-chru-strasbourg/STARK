@@ -562,7 +562,7 @@ export DEPTH_COVERAGE_THRESHOLD
 
 # COVERAGE HARMONIZATION
 COVERAGE_CRITERIA=$(echo "$SEQUENCING_DEPTH,$MINIMUM_DEPTH,$EXPECTED_DEPTH,$COVERAGE_CRITERIA" | tr "," "\n" | tr " " "\n" | grep -v "^$" | sort -u -n | tr "\n" ","  | sed "s/,$//")
-
+export COVERAGE_CRITERIA
 
 # CLIP_OVERLAPPING_READS (default 1)
 # From PICARD: For paired reads, soft clip the 3' end of each read if necessary so that it does not extend past the 5' end of its mate

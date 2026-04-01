@@ -48,7 +48,11 @@ See [STARK Installation](docs/documentation/installation.md) for more informatio
 
 ## Quick access
 
-STARK CLI (Command Line Interface) is started as a container to execute custom analyses with data and runs, available in STARK main folder (default `${HOME}/STARK`, with `${HOME}/STARK/data` corresponds to `/STARK/data`, with `${HOME}/STARK/input/runs` corresponds to `/STARK/input/runs`, etc.).
+STARK API (Application Program Interface) is available through URI <http://localhost:4200> and is accessible with a user account (default 'stark/password'). This service prodives an interface to run STARK analysis with run name or parameters in JSON format. The Task Queue list all tasks with informations and actions that depend on task stats.
+
+![panel](docs/documentation/images/api.png)
+
+For a command line access, STARK CLI (Command Line Interface) is started as a container to execute custom analyses with data and runs, available in STARK main folder (default `${HOME}/STARK`, with `${HOME}/STARK/data` corresponds to `/STARK/data`, with `${HOME}/STARK/input/runs` corresponds to `/STARK/input/runs`, etc.).
 Connect to STARK CLI with Docker command:
 
 ```bash
