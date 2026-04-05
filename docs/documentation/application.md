@@ -51,31 +51,31 @@ _Application for Exome analysis: From default application, information of applic
 
 Default application name.
 
-- Default Value: `"DEFAULT"`
+- Default: `"DEFAULT"`
 
 ### APP_RELEASE
 
 Application release version.
 
-- Default Value: `"1.2"`
+- Default: `"1.2"`
 
 ### APP_DESCRIPTION
 
 Description of the application.
 
-- Default Value: `"Default application"`
+- Default: `"Default application"`
 
 ### APP_GROUP
 
 Application group.
 
-- Default Value: `""`
+- Default: `""`
 
 ### APP_PROJECT
 
 Application project.
 
-- Default Value: `""`
+- Default: `""`
 
 ## Folders
 
@@ -83,91 +83,91 @@ Application project.
 
 Main STARK folder.
 
-- Default Value: `"/STARK"`
+- Default: `"/STARK"`
 
 ### FOLDER_TOOLS
 
 Folder for all tools needed for STARK, and more, including STARK.
 
-- Default Value: `"$STARK_FOLDER_MAIN/tools"`
+- Default: `"$STARK_FOLDER_MAIN/tools"`
 
 ### FOLDER_DATABASES
 
 Folder for all reference genomes and databases. The format for genomes is `$FOLDER_GENOMES/$ASSEMBLY/$ASSEMBLY.fa`. It also contains mandatory databases for variant calling and recalibration.
 
-- Default Value: `"$STARK_FOLDER_MAIN/databases"`
+- Default: `"$STARK_FOLDER_MAIN/databases"`
 
 ### FOLDER_INPUT
 
 Input folder.
 
-- Default Value: `"$STARK_FOLDER_MAIN/input"`
+- Default: `"$STARK_FOLDER_MAIN/input"`
 
 ### `FOLDER_RUN`
 
 Illumina Sequencer repository Folder. Subfolder as runs.
 
-- Default Value: `"$FOLDER_INPUT/runs"` (Commented out by default)
+- Default: `"$FOLDER_INPUT/runs"` (Commented out by default)
 
 ### `FOLDER_MANIFEST`
 
 Illumina Manifests repository. Files to provide in the SampleSheet of each run.
 
-- Default Value: `"$FOLDER_INPUT/manifests"` (Commented out by default)
+- Default: `"$FOLDER_INPUT/manifests"` (Commented out by default)
 
 ### `FOLDER_PEDIGREE`
 
 Pedigree repository.
 
-- Default Value: `"$FOLDER_INPUT/pedigree"` (Commented out by default)
+- Default: `"$FOLDER_INPUT/pedigree"` (Commented out by default)
 
 ### FOLDER_OUTPUT
 
 Folder where all results will be generated.
 
-- Default Value: `"$STARK_FOLDER_MAIN/output"`
+- Default: `"$STARK_FOLDER_MAIN/output"`
 
 ### `FOLDER_RESULTS`
 
 RUN files such as BAM, VCF, metrics.
 
-- Default Value: `"$FOLDER_OUTPUT/results"` (Commented out by default)
+- Default: `"$FOLDER_OUTPUT/results"` (Commented out by default)
 
 ### `FOLDER_DEMULTIPLEXING`
 
 Demultiplexing folder.
 
-- Default Value: `"$FOLDER_OUTPUT/demulitplexing"` (Commented out by default)
+- Default: `"$FOLDER_OUTPUT/demulitplexing"` (Commented out by default)
 
 ### `FOLDER_LOG`
 
 Log files folder.
 
-- Default Value: `"$FOLDER_OUTPUT/log"` (Commented out by default)
+- Default: `"$FOLDER_OUTPUT/log"` (Commented out by default)
 
 ### `FOLDER_TMP`
 
 Temporary files folder.
 
-- Default Value: `"$FOLDER_OUTPUT/tmp"` (Commented out by default)
+- Default: `"$FOLDER_OUTPUT/tmp"` (Commented out by default)
 
 ### FOLDER_REPOSITORY
 
 Repository folder for results data. Leave blank for no copy.
 
-- Default Value: `"$FOLDER_OUTPUT/repository"`
+- Default: `"$FOLDER_OUTPUT/repository"`
 
 ### FOLDER_ARCHIVES
 
 Archives folder for results data. Leave blank for no copy.
 
-- Default Value: `"$FOLDER_OUTPUT/archives"`
+- Default: `"$FOLDER_OUTPUT/archives"`
 
 ### FOLDER_FAVORITES
 
 Favorites folder for results data.
 
-- Default Value: `""`
+- Default: `""`
 
 - **Configurations**:
   - To NOT use favorites folder: `FOLDER_FAVORITES=`
@@ -180,7 +180,7 @@ Favorites folder for results data.
 
 Add specific rules to load. These files will be added to the list of rules files from APPS folder. For inheritance, use `RULES_APP="$RULES_APP MYGROUP/*.rules.mk"`.
 
-- Default Value: `""`
+- Default: `""`
 
 - Example: `RULES_APP="MYGROUP/*.rules.mk" "$APP_FOLDER/*.rules.mk"`
 
@@ -188,13 +188,13 @@ Add specific rules to load. These files will be added to the list of rules files
 
 Assembly to use (e.g., hg19, hg38). Automatically detected from manifest file if available.
 
-- Default Value: `"hg19"`
+- Default: `"hg19"`
 
 ### PIPELINES
 
 Pipelines to use for the analysis. If variables `ALIGNERS`, `CALLERS`, and `ANNOTATORS` are defined, this variable will be automatically generated. This variable can be an additional pipeline to those defined by the combination of `ALIGNERS`, `CALLERS`, and `ANNOTATORS`. If no pipeline is finally defined, the default pipeline will be applied.
 
-- Default Value: `"bwamem.gatkHC.howard"`
+- Default: `"bwamem.gatkHC.howard"`
 
 - **Format**: `"ALIGNER1.CALLER1.ANNOTATOR ALIGNER1.CALLER2.ANNOTATOR1 ALIGNER2.CALLER1.ANNOTATOR1"`
 
@@ -202,7 +202,7 @@ Pipelines to use for the analysis. If variables `ALIGNERS`, `CALLERS`, and `ANNO
 
 Aligners to use for the analysis.
 
-- Default Value: `""` (Commented out by default)
+- Default: `""` (Commented out by default)
 
 - **Example of available aligners**: `bwamem`, `bwasw`, `bwaaln`
 
@@ -212,7 +212,7 @@ Aligners to use for the analysis.
 
 Callers to use for the analysis.
 
-- Default Value: `""` (Commented out by default)
+- Default: `""` (Commented out by default)
 
 - **Example of available callers**: `gatkHC`, `gatkUG`, `VarScan`, `samtools`
 
@@ -222,7 +222,7 @@ Callers to use for the analysis.
 
 Annotators to use for the analysis.
 
-- Default Value: `""` (Commented out by default)
+- Default: `""` (Commented out by default)
 
 - **Example of available annotators**: `howard`, `snpeff`
 
@@ -232,49 +232,55 @@ Annotators to use for the analysis.
 
 Blank samples used to reject for CNV analysis.
 
-- Default Value: `"BlcADN,blanc,BlcPCR,blcPCR,T_NTC,Z_NTC"`
+- Default: `"BlcADN,blanc,BlcPCR,blcPCR,T_NTC,Z_NTC"`
 
 ### BARCODE_MISMATCHES
 
 Number of mismatches allowed for demultiplexing.
 
-- Default Value: `1`
+- Default: `1`
 
 ### BAM_METRICS
 
 Performs BAM metrics (1/TRUE/YES/Y or 0/FALSE/NO/N). Time and space consuming. Switch off for exome/genome for better performances.
 
-- Default Value: `0`
+- Default: `0`
+
+### BAM GENE COVERAGE METRICS (default 1/TRUE/YES/Y)
+
+Performs BAM GENE COVERAGE METRICS (1/TRUE/YES/Y or 0/FALSE/NO/N) using RNASeQC. Time and space consuming.
+
+- Default: `1`
 
 ### METRICS_MINIMUM_MAPPING_QUALITY
 
 Minimum mapping quality to consider in the BAM metrics.
 
-- Default Value: `10`
+- Default: `10`
 
 ### METRICS_MINIMUM_BASE_QUALITY
 
 Minimum base quality to consider in the BAM metrics.
 
-- Default Value: `10`
+- Default: `10`
 
 ### CLIP_OVERLAPPING_READS
 
 From PICARD: For paired reads, soft clip the 3' end of each read if necessary so that it does not extend past the 5' end of its mate.
 
-- Default Value: `1`
+- Default: `1`
 
 ### METRICS_FLAGS
 
 Flagged reads in the metrics BAM (mpileup format).
 
-- Default Value: `"UNMAP,SECONDARY,QCFAIL,DUP"`
+- Default: `"UNMAP,SECONDARY,QCFAIL,DUP"`
 
 ### `SAMTOOLS_METRICS_FLAG_PARAM`
 
 Flagged reads in the metrics BAM (samtools format). Generated from mpileup format if empty.
 
-- Default Value: `""` (Commented out by default)
+- Default: `""` (Commented out by default)
 
 - Example: `SAMTOOLS_METRICS_FLAG_PARAM=" -F 0x4 -F 0x100 -F 0x200 -F 0x400"`
 
@@ -282,13 +288,13 @@ Flagged reads in the metrics BAM (samtools format). Generated from mpileup forma
 
 Add some “padding” to the intervals used (manifest) in order to include the flanking regions (typically ~100 bp).
 
-- Default Value: `0`
+- Default: `0`
 
 ### COVERAGE_CRITERIA
 
 For gene coverage metrics, the criteria to calculate the percent of bases over X coverage (e.g., 30 for 30X).
 
-- Default Value: `"1,5,10,20,30,50,100,200,300"`
+- Default: `"1,5,10,20,30,50,100,200,300"`
 
 - Example: `"1,30"`
 
@@ -296,79 +302,79 @@ For gene coverage metrics, the criteria to calculate the percent of bases over X
 
 Sequencing depth threshold for gene coverage metrics.
 
-- Default Value: `"1"`
+- Default: `"1"`
 
 ### SEQUENCING_COVERAGE_THRESHOLD
 
 Sequencing coverage threshold for gene coverage metrics.
 
-- Default Value: `"1"`
+- Default: `"1"`
 
 ### MINIMUM_DEPTH
 
 Fail DP threshold for gene coverage metrics.
 
-- Default Value: `"30"`
+- Default: `"30"`
 
 ### EXPECTED_DEPTH
 
 Warn DP threshold for gene coverage metrics.
 
-- Default Value: `"100"`
+- Default: `"100"`
 
 ### DEPTH_COVERAGE_THRESHOLD
 
 Threshold percentage of bases over the DP threshold for gene coverage metrics.
 
-- Default Value: `"0.95"`
+- Default: `"0.95"`
 
 ### NB_BASES_AROUND
 
 For gene coverage metrics, the number of bases to look around the exons from the given bed file.
 
-- Default Value: `0`
+- Default: `0`
 
 ### GENESCOVERAGE_PRECISION
 
 Genes Coverage calculation precision.
 
-- Default Value: `2`
+- Default: `2`
 
 ### BEDFILE_GENES
 
 For gene coverage metrics, the bed file containing the 5'UTR, 3'UTR and genomic coding coordinates.
 
-- Default Value: `""`
+- Default: `""`
 
 ### VARANK_ANALYSIS
 
 Performs VARANK ANALYSIS with Alamut (1 for true or 0 for false).
 
-- Default Value: `0`
+- Default: `0`
 
 ### `VARANK_FOLDER`
 
 If `VARANK_ANALYSIS` is enabled, this defines the folder to store the results.
 
-- Default Value: `"$FOLDER_RESULTS/VARANK"` (Commented out by default)
+- Default: `"$FOLDER_RESULTS/VARANK"` (Commented out by default)
 
 ### BAM_CHECK_STEPS
 
 Check BAM for each manipulation step (clipping, realignment...). Time consuming, but will stop the analysis in case of missing reads. A Metrics on each BAM check the BAM discrepancy in any case.
 
-- Default Value: `0`
+- Default: `0`
 
 ### METRICS_SNPEFF
 
 Generate snpEff variant metrics from VCF. Only for Report final VCF.
 
-- Default Value: `0`
+- Default: `0`
 
 ### PRIORITIZE_PIPELINES_LIST
 
 List of pipelines to prioritize for the report (final.vcf).
 
-- Default Value: `""`
+- Default: `""`
 
 ## FASTQ Processing
 
@@ -376,7 +382,7 @@ List of pipelines to prioritize for the report (final.vcf).
 
 Set mask for demultiplexing.
 
-- Default Value: `""` (auto from SampleSheet)
+- Default: `""` (auto from SampleSheet)
 
 - **Examples**: `"Y150,I10,Y10,Y150"`, `"Y150,I8,Y10,Y150"` (UMI index2)
 
@@ -384,13 +390,13 @@ Set mask for demultiplexing.
 
 Set short read size for demultiplexing. If demultiplexing UMI within a read must be set to 0 for Agilent XTHS kits.
 
-- Default Value: `""` (auto)
+- Default: `""` (auto)
 
 ### STARK_DEMULTIPLEXING_READS_MAPPING
 
 Redefine FASTQ files in order to identify R1, R2, I1 and I2. Order: R1 I1 I2 R2.
 
-- Default Value: `"R1 I1 I2 R2"`
+- Default: `"R1 I1 I2 R2"`
 
 - Example: `"R1 I1 R2 R3"` (UMI index2)
 
@@ -398,55 +404,55 @@ Redefine FASTQ files in order to identify R1, R2, I1 and I2. Order: R1 I1 I2 R2.
 
 Demultiplexing adapter stringency for BCL2FASTQ.
 
-- Default Value: `0.9`
+- Default: `0.9`
 
 ### STARK_DEMULTIPLEXING_BCL2FASTQ_OPTIONS
 
 Demultiplexing options for BCL2FASTQ.
 
-- Default Value: `"--no-lane-splitting --create-fastq-for-index-reads"`
+- Default: `"--no-lane-splitting --create-fastq-for-index-reads"`
 
 ### FASTQ_DEMULTIPLEXING_COMPRESSION_LEVEL
 
 Zlib compression level (1-9) used for FASTQ files during demultiplexing (used by BCL2FASTQ). If `FASTQ_DEMULTIPLEXING_KEEP=1`, a high level of compression (at least 5) is suggested.
 
-- Default Value: `1`
+- Default: `1`
 
 ### FASTQ_COMPRESSION_LEVEL
 
 Zlib compression level (1-9) used for main FASTQ files (used by FASTP).
 
-- Default Value: `1`
+- Default: `1`
 
 ### ENABLE_ADAPTER_TRIMMING
 
 Trim adapter and autodetect adapter for paired end (0 or 1).
 
-- Default Value: `0` (adapter trimming is disabled)
+- Default: `0` (adapter trimming is disabled)
 
 ### FASTQ_QUALITY_FILTERING
 
 Read quality threshold. Reads with quality below this will be removed.
 
-- Default Value: `0` (disabled)
+- Default: `0` (disabled)
 
 ### POLY_G_MIN_LEN
 
 Force polyG tail trimming. By default, trimming is automatically enabled for Illumina NextSeq/NovaSeq data. This is the minimum length to detect polyG in the read tail.
 
-- Default Value: `0` (disabled)
+- Default: `0` (disabled)
 
 ### READ_LENGTH_REQUIRED
 
 Reads shorter than this length will be discarded.
 
-- Default Value: `0` (disabled)
+- Default: `0` (disabled)
 
 ### UMI_LOC
 
 Set the UMI location. If not null, UMI extraction and analysis will be performed. See FASTP/UMI TOOLS documentation for more information.
 
-- Default Value: `""`
+- Default: `""`
 
 - **Available locations**:
   - `index1`: the first index is used as UMI. If the data is PE, this UMI will be used for both read1/read2.
@@ -462,7 +468,7 @@ Set the UMI location. If not null, UMI extraction and analysis will be performed
 
 Set the UMI Barcode pattern. If not null, STARK will prepare fastq containing UMIs +/- cell barcodes for alignment. If `UMI_LOC` is `per_index` or `per_read`, and `UMI_BAR_CODE_PATTERN` is defined as "NNNNN", it will be redefined as "NNNNN-NNNNN". Only the length of the first part of the duplex barcode will be used with FASTP. See FASTP/UMI TOOLS documentation for more information.
 
-- Default Value: `""`
+- Default: `""`
 
 - **Examples**: `UMI_BAR_CODE_PATTERN="NNNNNNNNNN"` (simplex), `UMI_BAR_CODE_PATTERN="NNNNN-NNNNN"` (duplex)
 
@@ -470,7 +476,7 @@ Set the UMI Barcode pattern. If not null, STARK will prepare fastq containing UM
 
 Barcode to use for Mark Duplicates. If not null, Mark Duplicates will consider this tag. See PICARD documentation for more information.
 
-- Default Value: `""`
+- Default: `""`
 
 - **Examples**: `BARCODE_TAG="BC"` (10X Genomics), `BARCODE_TAG="BX"` (UMI)
 
@@ -478,31 +484,31 @@ Barcode to use for Mark Duplicates. If not null, Mark Duplicates will consider t
 
 Set to `"READ_NAME_REGEX=null"` to disable optical deduplication in PICARD MarkDuplicates.
 
-- Default Value: `""`
+- Default: `""`
 
 ### FASTQ_DEMULTIPLEXING_KEEP
 
 Keep demultiplexed FASTQ files or files from input reads/reads2.
 
-- Default Value: `0`
+- Default: `0`
 
 ### SEQUENCING_DEMULTIPLEXING_FOLDER
 
 Folder for demultiplexing FASTQ within `$SAMPLE.sequencing` folder.
 
-- Default Value: `"demultiplexing"`
+- Default: `"demultiplexing"`
 
 ### FASTP_ADDITIONAL_OPTIONS
 
 Additional options for FASTP. See FASTP documentation.
 
-- Default Value: `""`
+- Default: `""`
 
 ### FASTQ_PROCESSING_STEPS
 
 All steps to process input FASTQ files, after sequencing and demultiplexing (if any).
 
-- Default Value: `"fastq_reheader sort fastp fastq_clean_header compress"`
+- Default: `"fastq_reheader sort fastp fastq_clean_header compress"`
 
 - **Available steps**:
   - `fastq_reheader`: FASTQ reheader to integrate index within FASTQ comment Illumina tag (e.g. 1:N:0:xxx). Nothing done if already integrated.
@@ -522,13 +528,13 @@ All steps to process input FASTQ files, after sequencing and demultiplexing (if 
 
 All steps and before alignment. This sequence corresponds to the FASTQ file processing before the alignment (trimming...). The steps are defined as makefiles rules. Check available steps by using the command: `STARK --pipelines_infos`.
 
-- Default Value: `""` (nothing to do)
+- Default: `""` (nothing to do)
 
 ### POST_ALIGNMENT_STEPS
 
 All steps after alignment and before calling. This sequence corresponds to the BAM file generated just after the alignment. The steps are defined as makefiles rules. Check available steps by using the command: `STARK --pipelines_infos`.
 
-- Default Value: `"sorting markduplicates realignment recalibration compress"`
+- Default: `"sorting markduplicates realignment recalibration compress"`
 
 - **Available steps (not up-to-date)**:
   - `sorting`: BAM sorting
@@ -548,7 +554,7 @@ All steps after alignment and before calling. This sequence corresponds to the B
 
 All steps after calling. This sequence corresponds to the VCF file generated just after the calling. The steps are defined as makefiles rules. Check available steps by using the command: `STARK --pipelines_infos`.
 
-- Default Value: `" "`
+- Default: `" "`
 
 - **Available steps (not up-to-date)**:
   - `sorting`: VCF sort
@@ -565,7 +571,7 @@ All steps after calling. This sequence corresponds to the VCF file generated jus
 
 All steps after merging calling VCFs. This sequence corresponds to the VCF file generated after the merge of VCF calling. The steps are defined as makefiles rules. Check available steps by using the command: `STARK --pipelines_infos`.
 
-- Default Value: `"sorting normalization variantrecalibration variantfiltration"`
+- Default: `"sorting normalization variantrecalibration variantfiltration"`
 
 - **Available steps (not up-to-date)**:
   - `sorting`: VCF sort
@@ -581,7 +587,7 @@ All steps after merging calling VCFs. This sequence corresponds to the VCF file 
 
 All steps after annotation. This sequence corresponds to the VCF file generated just after the annotation. The steps are defined as makefiles rules. Check available steps by using the command: `STARK --pipelines_infos`.
 
-- Default Value: `" "`
+- Default: `" "`
 
 - **Available steps (not up-to-date)**:
   - `sorting`: VCF sorting
@@ -596,13 +602,13 @@ All steps after annotation. This sequence corresponds to the VCF file generated 
 
 Final BAM compression level (`ALIGNER.bam`).
 
-- Default Value: `9`
+- Default: `9`
 
 ### BAM_VALIDATION_COMPRESSION
 
 Validation BAM compression level (`ALIGNER.validation.bam`).
 
-- Default Value: `5`
+- Default: `5`
 
 ## Gencore
 
@@ -610,31 +616,31 @@ Validation BAM compression level (`ALIGNER.validation.bam`).
 
 Number of supporting reads to keep clusters. Set to 2 for ultrasensitive filter, 1 to replace Picard Markduplicates.
 
-- Default Value: `""` (corresponds to `--supporting_reads 1`)
+- Default: `""` (corresponds to `--supporting_reads 1`)
 
 ### GENCORE_SCORE_THREESHOLD
 
 Score threshold for deduplication. Set to 8 recommended for dup-rate < 50% if you want to keep all the DNA fragments.
 
-- Default Value: `""` (corresponds to `--score_threshold 6`)
+- Default: `""` (corresponds to `--score_threshold 6`)
 
 ### GENCORE_RATIO_THREESHOLD
 
 If the ratio of the major base in a cluster is less than this threshold, it will be further compared to the reference. Value should be 0.5~1.0.
 
-- Default Value: `""` (corresponds to `--ratio_threshold 0.8`)
+- Default: `""` (corresponds to `--ratio_threshold 0.8`)
 
 ### GENCORE_DIFF_THREESHOLD
 
 If two reads with identical mapping position have UMI difference <= this threshold, they will be merged to generate a consensus read.
 
-- Default Value: `""` (corresponds to `--umi_diff_threshold 2`)
+- Default: `""` (corresponds to `--umi_diff_threshold 2`)
 
 ### GENCORE_QUAL_THREESHOLD
 
 Quality thresholds for base quality (`--high_qual`, `--moderate_qual`, `--low_qual`).
 
-- Default Value: `""` (corresponds to default qualities: Q30, Q20, Q15)
+- Default: `""` (corresponds to default qualities: Q30, Q20, Q15)
 
 - Example: `"--moderate_qual 20"`, `"--high_qual 20 --moderate_qual 15 --low_qual 10"`
 
@@ -642,7 +648,7 @@ Quality thresholds for base quality (`--high_qual`, `--moderate_qual`, `--low_qu
 
 The sampling rate for genome scale coverage statistics. For statistics purpose, can be reduced to gain performance.
 
-- Default Value: `""` (corresponds to `--coverage_sampling=10000`)
+- Default: `""` (corresponds to `--coverage_sampling=10000`)
 
 ## GATK Calling
 
@@ -650,13 +656,13 @@ The sampling rate for genome scale coverage statistics. For statistics purpose, 
 
 Use VCF DBSNP for GATK calling and annotation. This option allows GATK to use the VCF DBSNP if the file is available and not empty.
 
-- Default Value: `0`
+- Default: `0`
 
 ### VCFDBSNP
 
 Path to the dbSNP database as VCF used for GATK calling and annotation. This variable is automatically defined in `databases.app`.
 
-- Default Value: `""`
+- Default: `""`
 
 - Example: `VCFDBSNP=$FOLDER_DATABASES/dbsnp_138.hg19.vcf.gz`
 
@@ -666,7 +672,7 @@ Path to the dbSNP database as VCF used for GATK calling and annotation. This var
 
 Final CRAM options for compression (`archive.cram`).
 
-- Default Value: `"version=3.0,level=9,no_ref"`
+- Default: `"version=3.0,level=9,no_ref"`
 
 - Example: `"version=3.0,level=9,no_ref,use_lzma,use_bzip2,use_fqz,seqs_per_slice=100000"`
 
@@ -674,7 +680,7 @@ Final CRAM options for compression (`archive.cram`).
 
 Final CRAM options for tags to remove (`archive.cram`).
 
-- Default Value: `"BD,BI"`
+- Default: `"BD,BI"`
 
 - Example: `"BD,BI,OQ"`
 
@@ -684,7 +690,7 @@ Final CRAM options for tags to remove (`archive.cram`).
 
 Replace `0/0` or `0|0` genotypes by `./.` and `.|.`.
 
-- Default Value: `"missing_clean"`
+- Default: `"missing_clean"`
 
 - **Options**:
   - `"missing"`: Replace genotypes.
@@ -696,43 +702,43 @@ Replace `0/0` or `0|0` genotypes by `./.` and `.|.`.
 
 Number of threads to use for the analysis. `AUTO` will consider CORE-1 threads. The number is auto-adjusted if the value is incorrect.
 
-- Default Value: `"AUTO"`
+- Default: `"AUTO"`
 
 ### `THREADS_LOADING`
 
 Number of threads used for loading demultiplexed data.
 
-- Default Value: `THREADS` (Commented out by default)
+- Default: `THREADS` (Commented out by default)
 
 ### `THREADS_WRITING`
 
 Number of threads used for writing demultiplexed data.
 
-- Default Value: `THREADS` (Commented out by default)
+- Default: `THREADS` (Commented out by default)
 
 ### `THREADS_COPY`
 
 Number of threads used for copying files in repositories.
 
-- Default Value: `1` (Commented out by default)
+- Default: `1` (Commented out by default)
 
 ### `MEMORY`
 
 Total memory to use by thread. Default is `MemTotal` from `/proc/meminfo` divided by number of threads.
 
-- Default Value: `AUTO` (Commented out by default)
+- Default: `AUTO` (Commented out by default)
 
 ### `JAVA_MEMORY`
 
 Maximum memory to use for Java.
 
-- Default Value: `MEMORY` (Commented out by default)
+- Default: `MEMORY` (Commented out by default)
 
 ### MAX_VALIDATION_BAM_SIZE
 
 If validation bam is smaller than this size (in Kb), launch `CollectHsMetrics` the classic way. Otherwise, increase RAM and limit concurrent launches.
 
-- Default Value: `1000000000`
+- Default: `1000000000`
 
 - Example: `MAX_VALIDATION_BAM_SIZE=2097152` (2Go)
 
@@ -740,7 +746,7 @@ If validation bam is smaller than this size (in Kb), launch `CollectHsMetrics` t
 
 Limit concurrent launches of `CollectHsMetrics`.
 
-- Default Value: `1`
+- Default: `1`
 
 - Example: `MAX_CONCURRENT_HSMETRICS=1` (No concurrence)
 
@@ -748,7 +754,7 @@ Limit concurrent launches of `CollectHsMetrics`.
 
 RAM to allocate for `CollectHsMetrics` when BAM size is large.
 
-- Default Value: `"16g"`
+- Default: `"16g"`
 
 ## HOWARD Configuration
 
@@ -756,61 +762,61 @@ RAM to allocate for `CollectHsMetrics` when BAM size is large.
 
 HOWARD Configuration file for Annotation.
 
-- Default Value: `"$HOWARD_FOLDER_CONFIG/config.annotation.ini"` (Commented out by default)
+- Default: `"$HOWARD_FOLDER_CONFIG/config.annotation.ini"` (Commented out by default)
 
 ### `HOWARD_CONFIG_PRIORITIZATION`
 
 HOWARD Configuration file for Prioritization.
 
-- Default Value: `"$HOWARD_FOLDER_CONFIG/config.prioritization.ini"` (Commented out by default)
+- Default: `"$HOWARD_FOLDER_CONFIG/config.prioritization.ini"` (Commented out by default)
 
 ### `HOWARD_CONFIG_DEJAVU_ANNOTATION`
 
 HOWARD DEJAVU Configuration file for Annotation.
 
-- Default Value: `"$HOWARD_FOLDER_CONFIG/config.annotation.ini"` (Commented out by default)
+- Default: `"$HOWARD_FOLDER_CONFIG/config.annotation.ini"` (Commented out by default)
 
 ### HOWARD_CONFIG
 
 HOWARD configuration file.
 
-- Default Value: `"$HOWARD_FOLDER_CONFIG/config.json"`
+- Default: `"$HOWARD_FOLDER_CONFIG/config.json"`
 
 ### `HOWARD_PARAM`
 
 Default HOWARD parameters.
 
-- Default Value: `"$HOWARD_FOLDER_CONFIG/param.json"` (Commented out by default)
+- Default: `"$HOWARD_FOLDER_CONFIG/param.json"` (Commented out by default)
 
 ### `HOWARD_PARAM_MINIMAL`
 
 Default HOWARD parameters for minimal VCF annotation.
 
-- Default Value: `"$HOWARD_FOLDER_CONFIG/param.json"` (Commented out by default)
+- Default: `"$HOWARD_FOLDER_CONFIG/param.json"` (Commented out by default)
 
 ### HOWARD_PARAM_REPORT
 
 Default HOWARD parameters for report.
 
-- Default Value: `"$HOWARD_FOLDER_CONFIG/param.json"`
+- Default: `"$HOWARD_FOLDER_CONFIG/param.json"`
 
 ### `HOWARD_PARAM_ANALYSIS`
 
 Default HOWARD parameters for whole analysis.
 
-- Default Value: `"$HOWARD_FOLDER_CONFIG/param.json"` (Commented out by default)
+- Default: `"$HOWARD_FOLDER_CONFIG/param.json"` (Commented out by default)
 
 ### HOWARD_PRIORITIZATION_CONFIG
 
 HOWARD prioritization parameters file.
 
-- Default Value: `"$HOWARD_FOLDER_CONFIG/prioritization_profiles.json"`
+- Default: `"$HOWARD_FOLDER_CONFIG/prioritization_profiles.json"`
 
 ### INFO_TO_FORMAT_ANNOTATIONS
 
 Transfers INFO annotation to FORMAT annotation. Useful for annotations on full VCF to final VCF on each sample.
 
-- Default Value: `""`
+- Default: `""`
 
 ## GATK4 Recalibrator and Filtration
 
@@ -818,103 +824,103 @@ Transfers INFO annotation to FORMAT annotation. Useful for annotations on full V
 
 Variant Filtration main option. See documentation guide for more info.
 
-- Default Value: `""` (Commented out by default)
+- Default: `""` (Commented out by default)
 
 ### VARIANTFILTRATION_SNP_FILTER_OPTION
 
 One or more expression used with INFO fields to filter SNP. See documentation guide for more info.
 
-- Default Value: `'--filter-name "SNP_filter_QD" --filter-expression "QD < 2.0" ...'`
+- Default: `'--filter-name "SNP_filter_QD" --filter-expression "QD < 2.0" ...'`
 
 ### VARIANTFILTRATION_SNP_FILTER_EXPRESSION_OPTION
 
 One or more expressions used with FORMAT (sample/genotype-level) fields to filter SNP. See documentation guide for more info.
 
-- Default Value: `'--genotype-filter-expression "GQ == 0" --genotype-filter-name "genotype_GQ_filter_VeryVeryLow" ...'`
+- Default: `'--genotype-filter-expression "GQ == 0" --genotype-filter-name "genotype_GQ_filter_VeryVeryLow" ...'`
 
 ### VARIANTFILTRATION_INDEL_FILTER_OPTION
 
 One or more expressions used with INFO fields to filter INDEL. See documentation guide for more info.
 
-- Default Value: `'--filter-name "INDEL_filter_QD" --filter-expression "QD < 2.0" ...'`
+- Default: `'--filter-name "INDEL_filter_QD" --filter-expression "QD < 2.0" ...'`
 
 ### VARIANTFILTRATION_INDEL_FILTER_EXPRESSION_OPTION
 
 One or more expressions used with FORMAT (sample/genotype-level) fields to filter INDEL. See documentation guide for more info.
 
-- Default Value: `'--genotype-filter-expression "GQ == 0" --genotype-filter-name "genotype_GQ_filter_VeryVeryLow" ...'`
+- Default: `'--genotype-filter-expression "GQ == 0" --genotype-filter-name "genotype_GQ_filter_VeryVeryLow" ...'`
 
 ### VARIANTFILTRATION_INVALIDATE_PREVIOUS_FILTERS
 
 Remove previous filters applied to the VCF.
 
-- Default Value: `1`
+- Default: `1`
 
 ### `VARIANTRECALIBRATOR_OPTIONS`
 
 Variant Recalibrator main option. See documentation guide for more info.
 
-- Default Value: `""` (Commented out by default)
+- Default: `""` (Commented out by default)
 
 ### VARIANTRECALIBRATION_SNP_RESOURCES
 
 Variant Recalibrator SNP resources option. These resources need to be available on STARK Databases folder for GATK.
 
-- Default Value: Depends on `ASSEMBLY`. For hg19: `"-resource:hapmap,known=false,training=true,truth=true,prior=15.0 hapmap_3.3.hg19.sites.vcf.gz ..."`
+- Default: Depends on `ASSEMBLY`. For hg19: `"-resource:hapmap,known=false,training=true,truth=true,prior=15.0 hapmap_3.3.hg19.sites.vcf.gz ..."`
 
 ### VARIANTRECALIBRATION_INDEL_RESOURCES
 
 Variant Recalibrator INDEL resources option. These resources need to be available on STARK Databases folder for GATK.
 
-- Default Value: Depends on `ASSEMBLY`. For hg19: `"-resource:mills,known=false,training=true,truth=true,prior=12.0 Mills_and_1000G_gold_standard.indels.hg19.sites.vcf.gz ..."`
+- Default: Depends on `ASSEMBLY`. For hg19: `"-resource:mills,known=false,training=true,truth=true,prior=12.0 Mills_and_1000G_gold_standard.indels.hg19.sites.vcf.gz ..."`
 
 ### VARIANTRECALIBRATION_SNP_ANNOTATIONS
 
 Variant Recalibrator SNP annotations option.
 
-- Default Value: `"-an QD -an MQ -an MQRankSum -an ReadPosRankSum -an FS -an SOR -an DP"`
+- Default: `"-an QD -an MQ -an MQRankSum -an ReadPosRankSum -an FS -an SOR -an DP"`
 
 ### VARIANTRECALIBRATION_INDEL_ANNOTATIONS
 
 Variant Recalibrator INDEL annotations option.
 
-- Default Value: `"-an QD -an DP -an FS -an SOR -an ReadPosRankSum -an MQRankSum"`
+- Default: `"-an QD -an DP -an FS -an SOR -an ReadPosRankSum -an MQRankSum"`
 
 ### VARIANTRECALIBRATION_SNP_TRANCHES
 
 Variant Recalibrator SNP tranches option.
 
-- Default Value: `"-tranche 100.0 -tranche 99.95 -tranche 99.9 ... -tranche 90.0"`
+- Default: `"-tranche 100.0 -tranche 99.95 -tranche 99.9 ... -tranche 90.0"`
 
 ### VARIANTRECALIBRATION_INDEL_TRANCHES
 
 Variant Recalibrator INDEL tranches option.
 
-- Default Value: `"-tranche 100.0 -tranche 99.95 -tranche 99.9 ... -tranche 90.0"`
+- Default: `"-tranche 100.0 -tranche 99.95 -tranche 99.9 ... -tranche 90.0"`
 
 ### VARIANTRECALIBRATOR_VARIANTFILTRATION_SNP_FILTER_OPTION
 
 Optional Variant Filtration for SNP if Variant Recalibrator failed. Use empty value to switch off.
 
-- Default Value: `$VARIANTFILTRATION_SNP_FILTER_OPTION`
+- Default: `$VARIANTFILTRATION_SNP_FILTER_OPTION`
 
 ### VARIANTRECALIBRATOR_VARIANTFILTRATION_SNP_FILTER_EXPRESSION_OPTION
 
 Optional Variant Filtration for SNP (genotype-level) if Variant Recalibrator failed.
 
-- Default Value: `$VARIANTFILTRATION_SNP_FILTER_EXPRESSION_OPTION`
+- Default: `$VARIANTFILTRATION_SNP_FILTER_EXPRESSION_OPTION`
 
 ### VARIANTRECALIBRATOR_VARIANTFILTRATION_INDEL_FILTER_OPTION
 
 Optional Variant Filtration for INDEL if Variant Recalibrator failed.
 
-- Default Value: `$VARIANTFILTRATION_INDEL_FILTER_OPTION`
+- Default: `$VARIANTFILTRATION_INDEL_FILTER_OPTION`
 
 ### VARIANTRECALIBRATOR_VARIANTFILTRATION_INDEL_FILTER_EXPRESSION_OPTION
 
 Optional Variant Filtration for INDEL (genotype-level) if Variant Recalibrator failed.
 
-- Default Value: `$VARIANTFILTRATION_INDEL_FILTER_EXPRESSION_OPTION`
+- Default: `$VARIANTFILTRATION_INDEL_FILTER_EXPRESSION_OPTION`
 
 ## GATK BAM Realignment and Recalibration
 
@@ -922,13 +928,13 @@ Optional Variant Filtration for INDEL (genotype-level) if Variant Recalibrator f
 
 Known sites for GATK3 BAM realignment. Realignment is a process of correcting misalignments around indels. It is not performed with GATK4 Haplotype Caller and MuTect2 as they perform local realignment during calling.
 
-- Default Value: Dynamically generated from `VARIANTRECALIBRATION_INDEL_RESOURCES`.
+- Default: Dynamically generated from `VARIANTRECALIBRATION_INDEL_RESOURCES`.
 
 ### GATK_RECALIBRATION_KNOWN_OPTIONS
 
 Known sites for GATK4 BAM recalibration. Recalibration is a process of correcting base quality scores.
 
-- Default Value: Dynamically generated from `VARIANTRECALIBRATION_SNP_RESOURCES`.
+- Default: Dynamically generated from `VARIANTRECALIBRATION_SNP_RESOURCES`.
 
 ## Report
 
@@ -936,7 +942,7 @@ Known sites for GATK4 BAM recalibration. Recalibration is a process of correctin
 
 List of sections to show in the report.
 
-- Default Value: `"ALL"`
+- Default: `"ALL"`
 
 - **Sections**: `results_summary`, `sequencing_mapping`, `depth`, `coverage`, `variant_calling`, `variant_stats`
 
@@ -946,7 +952,7 @@ List of sections to show in the report.
 
 Generate variants files from run with full VCF (include all calling information).
 
-- Default Value: `0`
+- Default: `0`
 
 ## Repository and Archives
 
@@ -954,25 +960,25 @@ Generate variants files from run with full VCF (include all calling information)
 
 Repository files patterns to add.
 
-- Default Value: `' $SAMPLE.*.validation.bam $SAMPLE.*.validation.bam.bai $SAMPLE.*.bam.metrics/$SAMPLE.*.validation.flags.Design.bed $SAMPLE.reports/$SAMPLE.full.Design.vcf.gz $SAMPLE.reports/$SAMPLE.full.Design.vcf.gz.tbi $SAMPLE.reports/$SAMPLE.full.Design.tsv '`
+- Default: `' $SAMPLE.*.validation.bam $SAMPLE.*.validation.bam.bai $SAMPLE.*.bam.metrics/$SAMPLE.*.validation.flags.Design.bed $SAMPLE.reports/$SAMPLE.full.Design.vcf.gz $SAMPLE.reports/$SAMPLE.full.Design.vcf.gz.tbi $SAMPLE.reports/$SAMPLE.full.Design.tsv '`
 
 ### REPOSITORY_FILE_SUBFOLDER_PATTERNS
 
 Repository files patterns to exclude on results subfolder (usually 'STARK'). Useful to reduce storage and exclude repeated files.
 
-- Default Value: `' $SAMPLE.*fastq.gz $SAMPLE.*.validation.bam $SAMPLE.*.validation.bam.bai '`
+- Default: `' $SAMPLE.*fastq.gz $SAMPLE.*.validation.bam $SAMPLE.*.validation.bam.bai '`
 
 ### ARCHIVES_FILE_PATTERNS
 
 Archives files patterns to add.
 
-- Default Value: `' $SAMPLE.reports/$SAMPLE.full.vcf.gz $SAMPLE.reports/$SAMPLE.full.vcf.gz.tbi $SAMPLE.reports/$SAMPLE.final.tsv $SAMPLE.*.bam.metrics/$SAMPLE.*.validation.flags.*.bed '`
+- Default: `' $SAMPLE.reports/$SAMPLE.full.vcf.gz $SAMPLE.reports/$SAMPLE.full.vcf.gz.tbi $SAMPLE.reports/$SAMPLE.final.tsv $SAMPLE.*.bam.metrics/$SAMPLE.*.validation.flags.*.bed '`
 
 ### FAVORITES_FILE_PATTERNS
 
 Favorites files patterns to add.
 
-- Default Value: `''`
+- Default: `''`
 
 ## IGV Session
 
@@ -1002,7 +1008,7 @@ The IGV session XML file (`*igv_session.xml`) is generated with Samples and Runs
 
 IGV Display mode for BAM files.
 
-- Default Value: `"SQUISHED"`
+- Default: `"SQUISHED"`
 
 - **Options**: `SQUISHED`, `COLLAPSED`, `EXPANDED`
 
@@ -1010,48 +1016,48 @@ IGV Display mode for BAM files.
 
 IGV display mode for VCF files.
 
-- Default Value: `"COLLAPSED"`
+- Default: `"COLLAPSED"`
 
 ### DISPLAYMODE_BED
 
 IGV display mode for BED files.
 
-- Default Value: `"COLLAPSED"`
+- Default: `"COLLAPSED"`
 
 ### IGV_SESSION_RESSOURCES
 
 Additional databases for IGV session (see IGV doc).
 
-- Default Value: `'<Resource index="https://s3.amazonaws.com/igv.org.genomes/hg19/ncbiRefSeq.sorted.txt.gz.tbi" name="Refseq Genes" path="https://s3.amazonaws.com/igv.org.genomes/hg19/ncbiRefSeq.sorted.txt.gz" type="refgene"/>'`
+- Default: `'<Resource index="https://s3.amazonaws.com/igv.org.genomes/hg19/ncbiRefSeq.sorted.txt.gz.tbi" name="Refseq Genes" path="https://s3.amazonaws.com/igv.org.genomes/hg19/ncbiRefSeq.sorted.txt.gz" type="refgene"/>'`
 
 ### IGV_SESSION_DATAPANEL
 
 Additional data panel for IGV session.
 
-- Default Value: `''`
+- Default: `''`
 
 ### IGV_SESSION_FEATUREPANEL
 
 Additional feature panel for IGV session.
 
-- Default Value: `'<Track attributeKey="Refseq Genes" .../>'`
+- Default: `'<Track attributeKey="Refseq Genes" .../>'`
 
 ### IGV_SESSION_DAS
 
 Data as a service URL for IGV session.
 
-- Default Value: `"http://localhost:4201/static/data/public/repositories"`
+- Default: `"http://localhost:4201/static/data/public/repositories"`
 
 ### IGV_SESSION_DAS_REPOSITORIES
 
 DAS repositories for IGV session.
 
-- Default Value: `"$IGV_SESSION_DAS/Repository $IGV_SESSION_DAS/Archives $IGV_SESSION_DAS/Favorites"`
+- Default: `"$IGV_SESSION_DAS/Repository $IGV_SESSION_DAS/Archives $IGV_SESSION_DAS/Favorites"`
 
 ### `IGV_SESSION_JSON_TRACKS_ADDITIONAL`
 
 Additional tracks for IGV session in JSON format.
 
-- Default Value: `""`
+- Default: `""`
 
 - Example: `'{ "type": "bed", "url": "...", "name": "Gencode V18" }'`

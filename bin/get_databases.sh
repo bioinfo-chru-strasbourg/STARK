@@ -375,17 +375,6 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		fi;	
 	fi;
 
-	# ## STAR index # cf CTAT
-	# if [ ! -e $(dirname $GENOME)/$(basename $GENOME).star.idx ]; then
-	# 	if [ "$STAR" != "" ]; then
-	# 		echo "$(dirname $GENOME)/$(basename $GENOME).star.idx/done: $GENOME $DBFOLDER_GENCODE/$RELEASE/$ASSEMBLY/gencode.v$GENCODE_VERSION.annotation.gtf
-	# 			mkdir -p $(dirname $GENOME)/$(basename $GENOME).star.idx;
-	# 			STAR --runThreadN $THREADS --runMode genomeGenerate --genomeDir $(dirname $GENOME)/$(basename $GENOME).star.idx --genomeFastaFiles $GENOME --sjdbGTFfile $DBFOLDER_GENCODE/$RELEASE/$ASSEMBLY/gencode.v$GENCODE_VERSION.annotation.gtf;
-	# 		" >> $MK
-	# 		MK_ALL="$MK_ALL $(dirname $GENOME)/$(basename $GENOME).star.idx/done"
-	# 	fi;
-	# fi;
-
 fi;
 
 ###############################
@@ -702,7 +691,8 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 
 		echo "$DBFOLDER_REFGENE/$RELEASE/$ASSEMBLY: $DBFOLDER $GENOME
 			$HOWARD databases --assembly='$ASSEMBLY' --download-refseq=$DBFOLDER_REFGENE/$DATE --download-refseq-format-file='ncbiRefSeq.txt' ;
-			cat $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/ncbiRefSeq.txt | awk -F '\t' -v OFS='\t' -f $STARK_FOLDER_BIN/refSeq_to_gtf.awk | sort -k1,1V -k4,4n -k5,5n -k3,3 -S4G > $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/ncbiRefSeq.gtf
+			#cat $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/ncbiRefSeq.txt | awk -F '\t' -v OFS='\t' -f $STARK_FOLDER_BIN/refSeq_to_gtf.awk | sort -k1,1V -k4,4n -k5,5n -k3,3 -S4G > $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/ncbiRefSeq.gtf
+			awk -F '\t' -v OFS='\t' -f $STARK_FOLDER_BIN/refSeq_to_gtf.awk $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/ncbiRefSeq.txt > $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/ncbiRefSeq.gtf
 			-[ ! -s $DBFOLDER_REFGENE/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_REFGENE/STARK.database && chmod o+r $DBFOLDER_REFGENE/STARK.database;
 			[ ! -e $DBFOLDER_REFGENE/$RELEASE/$ASSEMBLY ] || unlink $DBFOLDER_REFGENE/$RELEASE/$ASSEMBLY;
 			ln -snf ../$DATE/$ASSEMBLY $DBFOLDER_REFGENE/$RELEASE/$ASSEMBLY;
@@ -1150,7 +1140,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		if [ "$CTAT_DATABASES_GENE_SOURCE" == "refgene" ]; then
 			CTAT_REF_GENE_SOURCE=$REFGENE_DATABASES/$ASSEMBLY/ncbiRefSeq.gtf
 		elif [ "$CTAT_DATABASES_GENE_SOURCE" == "gencode" ]; then
-			CTAT_REF_GENE_SOURCE=$GENCODE_DATABASES/$ASSEMBLY/gencode.v$GENCODE_VERSION.annotation.gtf
+			CTAT_REF_GENE_SOURCE=$GENCODE_DATABASES/$ASSEMBLY/gencode.gtf
 		else
 			echo "ERROR: CTAT_DATABASES_GENE_SOURCE '$CTAT_DATABASES_GENE_SOURCE' not supported for CTAT database preparation"
 			exit 1;
@@ -1179,58 +1169,6 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		" >> $MK
 
 		MK_ALL="$MK_ALL $DBFOLDER_CTAT"
-
-		# # refGene preparation genome lib
-		# echo "$DBFOLDER_CTAT/refgene: $DBFOLDER $GENOME $DFAM_DATABASES/$ASSEMBLY $PFAM_DATABASES/$ASSEMBLY $REFGENE_DATABASES/$ASSEMBLY $DBFOLDER_CTAT/fusion_lib
-		# 	mkdir -p $DBFOLDER_CTAT/refgene;
-		# 	# Prepare annotation GTF
-		# 	awk 'NR==FNR {chroms[\$\$1]; next} \$\$1 in chroms' <(cut -f1 $GENOME.fai) $REFGENE_DATABASES/$ASSEMBLY/ncbiRefSeq.gtf > $DBFOLDER_CTAT/refgene/refgene.gtf;
-		# 	# Prepare genome lib
-		# 	$DOCKER_RUN --rm --name ctat_prep_genome_lib_refgene_$ASSEMBLY trinityctat/starfusion /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/prep_genome_lib.pl --genome_fa $GENOME --gtf $DBFOLDER_CTAT/refgene/refgene.gtf --fusion_annot_lib=\$\$(ls $DBFOLDER_CTAT/fusion_lib/*gz | head -n1) --dfam_db $DFAM_DATABASES/$ASSEMBLY/homo_sapiens_dfam.hmm --pfam_db $PFAM_DATABASES/$ASSEMBLY/Pfam-A.hmm --output_dir $DBFOLDER_CTAT/refgene --CPU $THREADS;
-		# 	$JAVA -jar $PICARD CreateSequenceDictionary -REFERENCE $DBFOLDER_CTAT/refgene/ref_genome.fa -OUTPUT $DBFOLDER_CTAT/refgene/ref_genome.dict;
-		# 	echo "CTAT for refGene generated" > $DBFOLDER_CTAT/refgene/done
-		# " >> $MK
-
-		# # Gencode preparation genome lib (sequentialized)
-		# echo "$DBFOLDER_CTAT/gencode: $DBFOLDER $GENOME $DFAM_DATABASES/$ASSEMBLY $PFAM_DATABASES/$ASSEMBLY $GENCODE_DATABASES/$ASSEMBLY $DBFOLDER_CTAT/fusion_lib $DBFOLDER_CTAT/refgene
-		# 	mkdir -p $DBFOLDER_CTAT/gencode;
-		# 	# Prepare annotation GTF
-		# 	awk 'NR==FNR {chroms[\$\$1]; next} \$\$1 in chroms' <(cut -f1 $GENOME.fai) $GENCODE_DATABASES/$ASSEMBLY/gencode.v$GENCODE_VERSION.annotation.gtf > $DBFOLDER_CTAT/gencode/gencode.gtf;
-		# 	# Prepare genome lib
-		# 	$DOCKER_RUN --rm --name ctat_prep_genome_lib_gencode_$ASSEMBLY trinityctat/starfusion /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/prep_genome_lib.pl --genome_fa $GENOME --gtf $DBFOLDER_CTAT/gencode/gencode.gtf --fusion_annot_lib=\$\$(ls $DBFOLDER_CTAT/fusion_lib/*gz | head -n1) --dfam_db $DFAM_DATABASES/$ASSEMBLY/homo_sapiens_dfam.hmm --pfam_db $PFAM_DATABASES/$ASSEMBLY/Pfam-A.hmm --output_dir $DBFOLDER_CTAT/gencode --CPU $THREADS;
-		# 	$JAVA -jar $PICARD CreateSequenceDictionary -REFERENCE $DBFOLDER_CTAT/gencode/ref_genome.fa -OUTPUT $DBFOLDER_CTAT/gencode/ref_genome.dict;
-		# 	echo "CTAT for gencode generated" > $DBFOLDER_CTAT/gencode/done
-		# " >> $MK
-
-		# echo "$DBFOLDER_CTAT: $DBFOLDER_CTAT/refgene $DBFOLDER_CTAT/gencode 
-		# 	echo "CTAT for refGene and gencode generated" > $DBFOLDER_CTAT/done
-		# " >> $MK
-
-		# MK_ALL="$MK_ALL $DBFOLDER_CTAT"
-
-
-
-		# #echo "$DBFOLDER_CTAT/done: $DBFOLDER $GENOME $DFAM_DATABASES/$ASSEMBLY/done $PFAM_DATABASES/$ASSEMBLY/done $GENCODE_DATABASES/$ASSEMBLY/done $REFGENE_DATABASES/$ASSEMBLY/done
-		# echo "$DBFOLDER_CTAT/done: $DBFOLDER $GENOME $DFAM_DATABASES/$ASSEMBLY $PFAM_DATABASES/$ASSEMBLY $GENCODE_DATABASES/$ASSEMBLY $REFGENE_DATABASES/$ASSEMBLY
-		# 	mkdir -p $DBFOLDER_CTAT
-		# 	# Prepare annotation GTF
-		# 	#cat $REFGENE_DATABASES/$ASSEMBLY/ncbiRefSeq.gtf | cut -f1 | sort -u
-		# 	awk 'NR==FNR {chroms[\$\$1]; next} \$\$1 in chroms' <(cut -f1 $GENOME.fai) $REFGENE_DATABASES/$ASSEMBLY/ncbiRefSeq.gtf > $DBFOLDER_CTAT/ncbiRefSeq.gtf
-		# 	awk 'NR==FNR {chroms[\$\$1]; next} \$\$1 in chroms' <(cut -f1 $GENOME.fai) $GENCODE_DATABASES/$ASSEMBLY/gencode.v$GENCODE_VERSION.annotation.gtf > $DBFOLDER_CTAT/gencode.v$GENCODE_VERSION.annotation.gtf
-		# 	#head $DBFOLDER_CTAT/ncbiRefSeq.gtf
-		# 	#cat $DBFOLDER_CTAT/ncbiRefSeq.gtf | cut -f1 | sort -u
-		# 	# Prepare CTAT genome lib for fusion lib
-		# 	$ARIA_CMD $CTAT_LIB_SOURCE -d $DBFOLDER_CTAT;
-		# 	mkdir -p $DBFOLDER_CTAT/fusion_lib
-		# 	tar -xzf $DBFOLDER_CTAT/"$(dirname $CTAT_LIB_SOURCE)" -C $DBFOLDER_CTAT/fusion_lib --wildcards --no-anchored "fusion_lib.\*gz"  --transform='s:.*/::'
-		# 	#$DOCKER_RUN --rm --name ctat_prep_genome_lib_$ASSEMBLY trinityctat/starfusion /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/prep_genome_lib.pl --genome_fa $GENOME --gtf $DBFOLDER_CTAT/gencode.v$GENCODE_VERSION.annotation.gtf --fusion_annot_lib=\$\$(ls $DBFOLDER_CTAT/fusion_lib | head -n1) --dfam_db $DFAM_DATABASES/$ASSEMBLY/homo_sapiens_dfam.hmm --pfam_db $PFAM_DATABASES/$ASSEMBLY/Pfam-A.hmm --output_dir $DBFOLDER_CTAT/gencode --CPU $THREADS
-		# 	$DOCKER_RUN --rm --name ctat_prep_genome_lib_$ASSEMBLY trinityctat/starfusion /usr/local/src/STAR-Fusion/ctat-genome-lib-builder/prep_genome_lib.pl --genome_fa $GENOME --gtf $DBFOLDER_CTAT/ncbiRefSeq.gtf --fusion_annot_lib=\$\$(ls $DBFOLDER_CTAT/fusion_lib | head -n1) --dfam_db $DFAM_DATABASES/$ASSEMBLY/homo_sapiens_dfam.hmm --pfam_db $PFAM_DATABASES/$ASSEMBLY/Pfam-A.hmm --output_dir $DBFOLDER_CTAT/refgene --CPU $THREADS
-		# 	$JAVA -jar $PICARD CreateSequenceDictionary -REFERENCE $DBFOLDER_CTAT/ref_genome.fa -OUTPUT $DBFOLDER_CTAT/ref_genome.dict;
-		# 	touch $DBFOLDER_CTAT/done;
-		# " >> $MK
-
-		# MK_ALL="$MK_ALL $DBFOLDER_CTAT/done"
-
 
 	fi;
 fi;
@@ -1383,8 +1321,9 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 			mkdir -p $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY;
 			chmod 0775 $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY;
 			$ARIA_CMD $GENCODE_CURRENT -d $DB_TMP;
-			cp $DB_TMP/$(basename $GENCODE_CURRENT) $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY/gencode.v$GENCODE_VERSION.annotation.gtf.gz;
-			gzip -d $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY/gencode.v$GENCODE_VERSION.annotation.gtf.gz;
+			cp $DB_TMP/$(basename $GENCODE_CURRENT) $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY/gencode.gtf.gz;
+			gzip -d $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY/gencode.gtf.gz;
+			$PYTHON $STARK_FOLDER_BIN/collapse_annotation.py $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY/gencode.gtf $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY/gencode.collapsed.gtf;
 			-[ ! -s $DBFOLDER_GENCODE/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_GENCODE/STARK.database && chmod o+r $DBFOLDER_GENCODE/STARK.database;
 			-[ ! -s $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY/STARK.database.release ] && cp $DB_TMP/STARK.database.release $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY/STARK.database.release && chmod o+r $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY/STARK.database.release;
 			[ ! -e $DBFOLDER_GENCODE/$RELEASE/$ASSEMBLY ] || unlink $DBFOLDER_GENCODE/$RELEASE/$ASSEMBLY;

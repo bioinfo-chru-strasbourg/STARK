@@ -140,7 +140,8 @@ WORKDIR $WORKDIR
 ENV PACKAGES_INSTALL="autoconf automake htop tree bc bzip2 bzip2-devel curl gcc gcc-c++ git make mlocate ncurses-devel tbb-devel unzip rsync wget which xz xz-devel zlib zlib-devel java-21 java-1.8.0 curl-devel openssl-devel diffutils parallel aria2 jq"
 #ENV YUM_REMOVE="autoconf automake bzip2-devel lzma-devel ncurses-devel tbb-devel xz-devel zlib-devel zlib2-devel python3-devel curl-devel openssl-devel"
 
-ENV PYTHON_MODULE=" pathos numpy scipy argparse"
+#ENV PYTHON_MODULE=" pathos=0.3.5 numpy=2.2.6 scipy=1.15.3 argparse=1.1 bx-python=0.14.0 pandas=2.3.3"
+ENV PYTHON_MODULE=" pathos numpy scipy argparse pandas bx-python"
 ENV PERL_INSTALL=" perl perl-Switch perl-Time-HiRes perl-Data-Dumper perl-Digest-MD5 perl-Tk perl-devel"
 
 ENV REPO_SYSTEM_GIT="$REPO/sources.system.tar.gz?path=sources/system"
@@ -1275,35 +1276,36 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	for variantconvert_assembly in $CONFIGS_VARIANTCONVERT_FOLDER/*; do \
 		$TOOL_DEST/bin/variantconvert config -c $variantconvert_assembly/* --set GENOME.path=$GENOMES/$(basename $variantconvert_assembly)/$(basename $variantconvert_assembly).fa; \
 	done && \
-	$MAMBA clean -y --all
-
-
-
-##########
-# HOWARD #
-##########
-
-# TOOL INFO
-ENV TOOL_NAME="howard"
-ENV TOOL_VERSION="0.9.15.6"
-ENV TOOL_TARBALL="$TOOL_VERSION.tar.gz"
-ENV TOOL_SOURCE_EXTERNAL="https://github.com/bioinfo-chru-strasbourg/howard/archive/refs/heads/$TOOL_TARBALL"
-ENV PATH=$PATH:$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin
-# TOOL PARAMETERS
-ENV TOOL_PARAM_DATABASE_FOLDER_LINK=$DATABASES
-ENV TOOL_PARAM_DATABASE_FOLDER=/databases
-
-
-# TOOL INSTALLATION
-RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-	source $TOOL_INIT && \
-	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
-	cp -R $TOOL_SOURCE_BUILD/*/* $TOOL_DEST/ && \
-	chmod a+x $TOOL_DEST/* -R && \
-	mkdir -p $TOOL_PARAM_DATABASE_FOLDER_LINK && \
-	mkdir -p $TOOL_PARAM_DATABASE_FOLDER && \
-	ln -s $DATABASES $TOOL_DATABASE_FOLDER && \
+	$MAMBA clean -y --all && \
 	$TOOL_CHECK ;
+
+
+
+# ##########
+# # HOWARD #
+# ##########
+
+# # TOOL INFO
+# ENV TOOL_NAME="howard"
+# ENV TOOL_VERSION="0.9.15.6"
+# ENV TOOL_TARBALL="$TOOL_VERSION.tar.gz"
+# ENV TOOL_SOURCE_EXTERNAL="https://github.com/bioinfo-chru-strasbourg/howard/archive/refs/heads/$TOOL_TARBALL"
+# ENV PATH=$PATH:$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin
+# # TOOL PARAMETERS
+# ENV TOOL_PARAM_DATABASE_FOLDER_LINK=$DATABASES
+# ENV TOOL_PARAM_DATABASE_FOLDER=/databases
+
+
+# # TOOL INSTALLATION
+# RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+# 	source $TOOL_INIT && \
+# 	tar xf $TOOL_SOURCE -C $TOOL_SOURCE_BUILD && \
+# 	cp -R $TOOL_SOURCE_BUILD/*/* $TOOL_DEST/ && \
+# 	chmod a+x $TOOL_DEST/* -R && \
+# 	mkdir -p $TOOL_PARAM_DATABASE_FOLDER_LINK && \
+# 	mkdir -p $TOOL_PARAM_DATABASE_FOLDER && \
+# 	ln -s $DATABASES $TOOL_DATABASE_FOLDER && \
+# 	$TOOL_CHECK ;
 
 
 
@@ -1339,7 +1341,8 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python -m pip install -e $TOOL_DEST && \
 	$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python -m pip install polars-lts-cpu && \
 	$MAMBA clean -y --all && \
-	howard query --input=$TOOL_DEST/tests/data/example.vcf --query="SELECT 1"
+	howard query --input=$TOOL_DEST/tests/data/example.vcf --query="SELECT 1" && \
+	$TOOL_CHECK ;
 	
 
 ##########
@@ -1356,9 +1359,32 @@ ENV PATH=$PATH:$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin
 # TOOL PARAMETERS
 
 RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
-	$MAMBA create -y -p $TOOLS/$TOOL_NAME/$TOOL_VERSION mkdocs python=3.10 && \
-	$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python -m pip install mkdocs mkdocs-material pymdown-extensions plotly mkdocs-macros-plugin mkdocs-include-dir-to-nav mkdocs-include-markdown-plugin "markdown-exec[ansi]"
+	$MAMBA create -y -p $TOOLS/$TOOL_NAME/$TOOL_VERSION mkdocs=$TOOL_VERSION python=3.10 && \
+	$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python -m pip install mkdocs mkdocs-material pymdown-extensions plotly mkdocs-macros-plugin mkdocs-include-dir-to-nav mkdocs-include-markdown-plugin "markdown-exec[ansi]" && \
+	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current && \
+	$MAMBA clean -y --all
 
+
+
+###########
+# RNASeQC #
+###########
+
+
+# TOOL INFO
+ENV TOOL_NAME="rnaseqc"
+ENV TOOL_VERSION="2.4.2"
+# ENV TOOL_TARBALL="$TOOL_VERSION.zip"
+# ENV TOOL_SOURCE_EXTERNAL="https://github.com/bioinfo-chru-strasbourg/howard/archive/refs/heads/$TOOL_TARBALL"
+ENV PATH=$PATH:$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin
+# TOOL PARAMETERS
+
+RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
+	$MAMBA create -y -p $TOOLS/$TOOL_NAME/$TOOL_VERSION  -c bioconda rna-seqc=$TOOL_VERSION bx-python=0.14.0 pandas=2.3.3 numpy=2.2.6 ucsc-genepredtogtf=482-0 python=3.10 && \
+	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current && \
+	$MAMBA clean -y --all
+
+# mamba create -y -p /STARK/tools/rnaseqc/current -c bioconda rna-seqc=2.4.2 bx-python=0.14.0 pandas=2.3.3 numpy=2.2.6 ucsc-genepredtogtf=482-0 python=3.10
 
 
 #########

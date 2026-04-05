@@ -118,6 +118,10 @@ BARCODE_MISMATCHES=1
 # Performs BAM METRICS (1/TRUE/YES/Y or 0/FALSE/NO/N). Time and space consuming. Switch off for exome/genome for better perfomances
 BAM_METRICS=0
 
+# BAM GENE COVERAGE METRICS (default 1/TRUE/YES/Y)
+# Performs BAM GENE COVERAGE METRICS (1/TRUE/YES/Y or 0/FALSE/NO/N) using RNASeQC. Time and space consuming.
+BAM_GENE_COVERAGE_METRICS=1
+
 # GLOBAL METRICS VARIABLES
 # Values for BAM metrics
 # Minimum mapping quality to consider in the metrics BAM

@@ -19,6 +19,7 @@
 
 # OPTIONS
 BAM_METRICS?=1
+BAM_GENE_COVERAGE_METRICS?=1
 FULL_COVERAGE?=0
 CAP_TMP_FOLDER?=$(TMP_FOLDER_TMP)
 METRICS_SNPEFF?=0
@@ -69,6 +70,9 @@ CAP_METRICS_OPTIONS_CLIP_OVERLAPPING_READS?=$(shell if (( $(CLIP_OVERLAPPING_REA
 CAP_METRICS_OPTIONS_HSMETRICS_PARAMETERS?=--hsmetrics_parameters="MINIMUM_MAPPING_QUALITY=$(PICARD_CollectHsMetrics_MINIMUM_MAPPING_QUALITY);SAMPLE_SIZE=$(PICARD_CollectHsMetrics_SAMPLE_SIZE);MINIMUM_BASE_QUALITY=$(PICARD_CollectHsMetrics_MINIMUM_BASE_QUALITY)"
 CAP_METRICS_OPTIONS?=$(CAP_METRICS_OPTIONS_CLIP_OVERLAPPING_READS) $(CAP_METRICS_OPTIONS_HSMETRICS_PARAMETERS)
 GENESCOVERAGE_PRECISION?=2
+
+# RNASEQC
+RNASEQC_PARAM?=--coverage --detection-threshold=1 --mapping-quality=1 --verbose
 
 
 ################################
@@ -183,7 +187,7 @@ BAM_VALIDATION_COMPRESSION?=4
 # ALL METRICS
 ###############
 
-%.bam.metrics/metrics: %.bam.metrics/metrics.design %.bam.metrics/metrics.gatk %.bam.metrics/metrics.picard %.bam.metrics/metrics.samtools %.bam.metrics/metrics.regions_coverage %.bam.metrics/metrics.per_amplicon_coverage %.bam.metrics/metrics.post_alignment
+%.bam.metrics/metrics: %.bam.metrics/metrics.design %.bam.metrics/metrics.genes_coverage %.bam.metrics/metrics.gatk %.bam.metrics/metrics.picard %.bam.metrics/metrics.samtools %.bam.metrics/metrics.regions_coverage %.bam.metrics/metrics.per_amplicon_coverage %.bam.metrics/metrics.post_alignment
 	mkdir -p $(@D)
 	cat $^ > $@
 	echo "#[INFO] BAM Metrics done" >> $@
@@ -196,8 +200,8 @@ BAM_VALIDATION_COMPRESSION?=4
 
 %.bam.metrics/metrics.design: %.list.genes %.design.bed
 	# Create directory
-	mkdir -p $(@D)
-	touch $@
+	mkdir -p $(@D);
+	touch $@;
 	# Foreach design and genes files
 	for one_bed in $$(cat $*.list.genes) $*.design.bed; do \
 		if [ -s $$one_bed ]; then \
@@ -210,6 +214,34 @@ BAM_VALIDATION_COMPRESSION?=4
 		fi; \
 	done;
 	[ ! -z $@ ] && echo "#[INFO] COPY of design/genes not done because not bed/genes files. " >> $@;
+
+
+
+# Genes coverage
+##################
+
+%.bam.metrics/metrics.genes_coverage: %.validation.bam %.bam.bai %.list.genes %.design.bed
+	# Create directory
+	mkdir -p $(@D);
+	touch $@;
+	touch $@.mk;
+	list_of_rnaseqc_cmds="";
+	# Foreach design and genes files
+	+if (($(BAM_GENE_COVERAGE_METRICS))); then \
+		for one_bed in $$(cat $*.list.genes) $*.design.bed; do \
+			if [ -s $$one_bed ]; then \
+				bed_subname="Design"; \
+				[ "$$one_bed" != "$*.design.bed" ] && bed_subname="Panel."$$(basename $$one_bed); \
+				echo "$(@D)/$(*F).validation.genes_coverage.$$bed_subname.log:" >> $@.mk; \
+				echo "	$(RNASEQC) $$(dirname $(GENOME_RNA))/ref_annot.gtf $< $(@D) --sample=$(*F).validation.genes_coverage.$$bed_subname --bed $$one_bed $(RNASEQC_PARAM) 1>$(@D)/$(*F).validation.genes_coverage.$$bed_subname.log 2>$(@D)/$(*F).validation.genes_coverage.$$bed_subname.err" >> $@.mk; \
+				echo "" >> $@.mk; \
+				list_of_rnaseqc_cmds=$$list_of_rnaseqc_cmds" $(@D)/$(*F).validation.genes_coverage.$$bed_subname.log"; \
+			fi; \
+		done; \
+		make -f $@.mk $$list_of_rnaseqc_cmds; \
+	fi;
+	rm -f $@.mk;
+	echo "#[INFO] BAM Genes Coverage Metrics done" > $@;
 
 
 

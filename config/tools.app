@@ -17,17 +17,17 @@ export GZIP=""				# PARAM GZIP
 
 
 # JAVA
-export JAVA_VERSION=21 							# VER
+export JAVA_VERSION=21 									# VER
 export JAVA=$NGS_TOOLS/java/$JAVA_VERSION/bin/java		# BIN
 export JAVA_PATH=$NGS_TOOLS/java/$JAVA_VERSION/bin		# BIN
-export JAVA_VERSION=current							# VER
+export JAVA_VERSION=current								# VER
 export JAVA_DESCRIPTION="A high-level programming language developed by Sun Microsystems"
 export JAVA_REF="http://java.com"
 TOOLS_LIST=$TOOLS_LIST" JAVA"
 
 
 # JAVA8 (for GATK3)
-export JAVA8_VERSION=1.8.0 							# VER
+export JAVA8_VERSION=1.8.0 										# VER
 export JAVA8=$NGS_TOOLS/java/$JAVA8_VERSION/bin/java			# BIN
 export JAVA8_PATH=$NGS_TOOLS/java/$JAVA8_VERSION/bin			# BIN
 export JAVA8_DESCRIPTION="A high-level programming language developed by Sun Microsystems"
@@ -35,7 +35,7 @@ export JAVA8_REF="http://java.com"
 TOOLS_LIST=$TOOLS_LIST" JAVA8"
 
 # JAVA7 (for MuTect)
-export JAVA7_VERSION=1.7.0 							# VER
+export JAVA7_VERSION=1.7.0 										# VER
 export JAVA7=$NGS_TOOLS/java/$JAVA7_VERSION/bin/java			# BIN
 export JAVA7_PATH=$NGS_TOOLS/java/$JAVA7_VERSION/bin			# BIN
 export JAVA7_DESCRIPTION="A high-level programming language developed by Sun Microsystems"
@@ -53,7 +53,7 @@ TOOLS_LIST=$TOOLS_LIST" JAVA7"
 
 
 # PYTHON
-export PYTHON_VERSION=3.10						# VER
+export PYTHON_VERSION=3.10									# VER
 export PYTHON=$NGS_TOOLS/python/$PYTHON_VERSION/bin/python	# BIN
 export PYTHON_DESCRIPTION="Python is a programming language that lets you work quickly and integrate systems more efficiently"
 export PYTHON_REF="http://python.com"
@@ -61,7 +61,7 @@ TOOLS_LIST=$TOOLS_LIST" PYTHON"
 
 
 # PYTHON3
-export PYTHON3_VERSION=3.10						# VER
+export PYTHON3_VERSION=3.10											# VER
 export PYTHON3=$NGS_TOOLS/python/$PYTHON3_VERSION/bin/python		# BIN
 export PYTHON3_DESCRIPTION="Python is a programming language that lets you work quickly and integrate systems more efficiently"
 export PYTHON3_REF="http://python.com"
@@ -117,7 +117,7 @@ TOOLS_LIST=$TOOLS_LIST" BGZIP"
 # BCFTOOLS
 export BCFTOOLS_VERSION=1.23								# VER
 export BCFTOOLS=$NGS_TOOLS/bcftools/current/bin/bcftools	# BIN $NGS_TOOLS/bcftools/current/bin/ 
-export BCFTOOLS_DOCKER=dceoy/bcftools:latest					# DOCKER
+export BCFTOOLS_DOCKER=dceoy/bcftools:latest				# DOCKER
 export BCFTOOLS_DESCRIPTION="Reading/writing BCF2/VCF/gVCF files and calling/filtering/summarising SNP and short indel sequence variants"
 export BCFTOOLS_REF=$HTSLIB_REF
 TOOLS_LIST=$TOOLS_LIST" BCFTOOLS"
@@ -125,7 +125,7 @@ DOCKER_LIST=$DOCKER_LIST" $BCFTOOLS_DOCKER"
 
 
 # PICARD
-export PICARD_VERSION=3.4.0															# VER
+export PICARD_VERSION=3.4.0									# VER
 export PICARD=$NGS_TOOLS/picard/current/bin/picard.jar		# BIN
 export PICARD_DESCRIPTION="Java command line tools for manipulating high-throughput sequencing data (HTS) data and formats"
 export PICARDLIB=$NGS_TOOLS/picard/$PICARD_VERSION/bin				# DIR
@@ -142,8 +142,8 @@ TOOLS_LIST=$TOOLS_LIST" IGVTOOLS"
 
 
 # GATK3
-export GATK3_VERSION=3.8												# VER
-export GATK3=$NGS_TOOLS/gatk/current/bin/GenomeAnalysisTK.jar	# BIN-JAR
+export GATK3_VERSION=3.8											# VER
+export GATK3=$NGS_TOOLS/gatk/current/bin/GenomeAnalysisTK.jar		# BIN-JAR
 export GATK3_DESCRIPTION="The toolkit offers a wide variety of tools, with a primary focus on variant discovery and genotyping as well as strong emphasis on data quality assurance."
 export GATK3_REF="The Genome Analysis Toolkit: a MapReduce framework for analyzing next-generation DNA sequencing data. McKenna A, Hanna M, Banks E, Sivachenko A, Cibulskis K, Kernytsky A, Garimella K, Altshuler D, Gabriel S, Daly M, DePristo MA, 2010 GENOME RESEARCH 20:1297-303"
 TOOLS_LIST=$TOOLS_LIST" GATK3"
@@ -159,8 +159,8 @@ TOOLS_LIST=$TOOLS_LIST" GATK4"
 
 
 # GATK (default)
-export GATK=$GATK4						# BIN-JAR
-export GATK_VERSION=$GATK4_VERSION		# VER
+export GATK=$GATK4								# BIN-JAR
+export GATK_VERSION=$GATK4_VERSION				# VER
 export GATK_DESCRIPTION=$GATK4_DESCRIPTION
 export GATK_REF=$GATK4_REF
 TOOLS_LIST=$TOOLS_LIST" GATK"
@@ -174,7 +174,7 @@ export GENCORE_REF="Chen, S., Zhou, Y., Chen, Y. et al. Gencore: an efficient to
 TOOLS_LIST=$TOOLS_LIST" GENCORE"
 
 # MUTECT
-export MUTECT_VERSION=1.1.6								# VER
+export MUTECT_VERSION=1.1.6									# VER
 export MUTECT=$NGS_TOOLS/mutect/current/bin/muTect.jar		# BIN-JAR
 export MUTECT_DESCRIPTION="MuTect is a method developed at the Broad Institute for the reliable and accurate identification of somatic point mutations in next generation sequencing data of cancer genomes."
 export MUTECT_REF="Cibulskis, K. et al. Sensitive detection of somatic point mutations in impure and heterogeneous cancer samples. Nat Biotechnology (2013).doi:10.1038/nbt.2514"
@@ -182,8 +182,8 @@ TOOLS_LIST=$TOOLS_LIST" MUTECT"
 
 
 # OUTLYZER
-export OUTLYZER_VERSION=3.2											# VER
-export OUTLYZER=$NGS_TOOLS/outlyzer/current/bin/outLyzer_V$OUTLYZER_VERSION.py	# BIN
+export OUTLYZER_VERSION=3.2															# VER
+export OUTLYZER=$NGS_TOOLS/outlyzer/current/bin/outLyzer_V$OUTLYZER_VERSION.py		# BIN
 export OUTLYZER_DESCRIPTION="outLyzer is a computer program whose purpose is to detect variations, specifically low allele frequency variation, in next generation sequencing data (tumor samples, mosaïc mutation)."
 export OUTLYZER_REF="https://github.com/EtieM/outLyzer"
 TOOLS_LIST=$TOOLS_LIST" OUTLYZER"
@@ -206,8 +206,8 @@ TOOLS_LIST=$TOOLS_LIST" FASTP"
 
 
 # UMI TOOLS
-export UMITOOLS_VERSION=1.1.6					# VER
-export UMITOOLS=$NGS_TOOLS/umi_tools/current/bin/umi_tools						# BIN
+export UMITOOLS_VERSION=1.1.6									# VER
+export UMITOOLS=$NGS_TOOLS/umi_tools/current/bin/umi_tools		# BIN
 export UMITOOLS_DESCRIPTION="UMI-tools contains tools for dealing with Unique Molecular Identifiers (UMIs)/Random Molecular Tags (RMTs) and single cell RNA-Seq cell barcodes."
 export UMITOOLS_REF="https://github.com/CGATOxford/UMI-tools"
 TOOLS_LIST=$TOOLS_LIST" UMITOOLS"
@@ -230,15 +230,15 @@ TOOLS_LIST=$TOOLS_LIST" BWA2"
 
 
 # BWA
-export BWA=$BWA1						# BIN
-export BWA_VERSION=$BWA1_VERSION		# VER
+export BWA=$BWA1							# BIN
+export BWA_VERSION=$BWA1_VERSION			# VER
 export BWA_DESCRIPTION=$BWA1_DESCRIPTION
 export BWA_REF=$BWA1_REF
 TOOLS_LIST=$TOOLS_LIST" BWA"
 
 
 # STAR
-export STAR_VERSION=2.7.11b													# VER
+export STAR_VERSION=2.7.11b										# VER
 export STAR=$NGS_TOOLS/star-fusion/current/bin/STAR-plain		# BIN
 export STAR_DESCRIPTION="Spliced Transcripts Alignment to a Reference"
 export STAR_REF="https://github.com/alexdobin/STAR"
@@ -286,17 +286,17 @@ export ITDSEEK_REF="Chun Hang Au, Anna Wa, Dona N. Ho, Tsun Leung Chan and Edmon
 TOOLS_LIST=$TOOLS_LIST" ITDSEEK"
 
 
-# # TRIMMOMATIC - deprecated
-# export TRIMMOMATIC_VERSION=0.35											# VER
-# export TRIMMOMATIC=$NGS_TOOLS/trimmomatic/current/bin/trimmomatic.jar	# BIN-JAR
-# export TRIMMOMATIC_DESCRIPTION="A flexible read trimming tool for Illumina NGS data"
-# export TRIMMOMATIC_REF="Cingolani P, Platts A, Wang le L, Coon M, Nguyen T, Wang L, Land SJ, Lu X, Ruden DM. Fly (2014). Trimmomatic: A flexible trimmer for Illumina Sequence Data. Bioinformatics, btu170.     A program for annotating and predicting the effects of single nucleotide polymorphisms, SnpEff: SNPs in the genome of Drosophila melanogaster strain w1118; iso-2; iso-3.,  (Austin). 2012 Apr-Jun;6(2):80-92."
-# TOOLS_LIST=$TOOLS_LIST" TRIMMOMATIC"
+# RNASeQC
+export RNASEQC_VERSION=2.4.2								# VER
+export RNASEQC=$NGS_TOOLS/rnaseqc/current/bin/rnaseqc		# BIN-JAR
+export RNASEQC_DESCRIPTION="RNA-SeQC is a tool for evaluating the quality of RNA-Seq data."
+export RNASEQC_REF="DeLuca DS, Levin JZ, Sivachenko A, Fennell T, Nazaire M-D, Williams C, Reich M, Winckler W, Getz G. RNA-SeQC: RNA-seq metrics for quality control and process optimization. Bioinformatics. 2012;28(11):1530-1532. doi:10.1093/bioinformatics/bts196 PMID: 22539670"
+TOOLS_LIST=$TOOLS_LIST" RNASEQC"
 
 
 # RSCRIPT
 export RSCRIPT_VERSION=4.5.2										# VER
-export RSCRIPT=$NGS_TOOLS/r-base/current/bin/Rscript										# BIN-JAR
+export RSCRIPT=$NGS_TOOLS/r-base/current/bin/Rscript				# BIN-JAR
 export RSCRIPT_DESCRIPTION="R is a free software environment for statistical computing and graphics. "
 export RSCRIPT_REF="https://www.r-project.org/ "
 TOOLS_LIST=$TOOLS_LIST" RSCRIPT"
@@ -305,10 +305,11 @@ TOOLS_LIST=$TOOLS_LIST" RSCRIPT"
 # SNPEFF
 export SNPEFF_VERSION=5.3.0a-0							# VER - 5.3.0a
 export SNPEFF_FOLDER=$NGS_TOOLS/snpeff/current			# FOLDER
-export SNPEFF=$SNPEFF_FOLDER/bin/snpEff.jar					# BIN-JAR
+export SNPEFF=$SNPEFF_FOLDER/bin/snpEff.jar				# BIN-JAR
 export SNPEFF_DESCRIPTION="Genetic variant annotation and effect prediction toolbox. It annotates and predicts the effects of variants on genes (such as amino acid changes)"
 export SNPEFF_REF="A program for annotating and predicting the effects of single nucleotide polymorphisms, SnpEff: SNPs in the genome of Drosophila melanogaster strain w1118; iso-2; iso-3., Cingolani P, Platts A, Wang le L, Coon M, Nguyen T, Wang L, Land SJ, Lu X, Ruden DM. Fly (Austin). 2012 Apr-Jun;6(2):80-92 "
 TOOLS_LIST=$TOOLS_LIST" SNPEFF"
+
 
 # ARRIBA
 export ARRIBA_VERSION=2.5.1							# VER
@@ -317,6 +318,7 @@ export ARRIBA_DESCRIPTION="Arriba is a command-line tool for the detection of ge
 export ARRIBA_REF="https://github.com/suhrig/arriba"
 TOOLS_LIST=$TOOLS_LIST" ARRIBA"
 
+
 # STARFUSION
 export STARFUSION_VERSION=1.15.1												# VER
 export STARFUSION=$NGS_TOOLS/star-fusion/$STARFUSION_VERSION/bin/STAR-Fusion	# BIN
@@ -324,6 +326,7 @@ export STARFUSION_ENV=$NGS_TOOLS/star-fusion/$STARFUSION_VERSION				# ENV
 export STARFUSION_DESCRIPTION="STAR-Fusion uses the STAR aligner to identify candidate fusion transcripts supported by Illumina reads. STAR-Fusion further processes the output generated by the STAR aligner to map junction reads and spanning reads to a reference annotation set."
 export STARFUSION_REF="https://github.com/STAR-Fusion/STAR-Fusion"
 TOOLS_LIST=$TOOLS_LIST" STARFUSION"
+
 
 # VARIANTCONVERT
 export VARIANTCONVERT_VERSION=2.0.1															# VER
@@ -334,6 +337,7 @@ export VARIANTCONVERT_ENV=$NGS_TOOLS/variantconvert/$VARIANTCONVERT_VERSION					
 export VARIANTCONVERT_DESCRIPTION="VariantConvert is a tool for converting variant call formats."
 export VARIANTCONVERT_REF="https://github.com/SamuelNicaise/variantconvert"
 TOOLS_LIST=$TOOLS_LIST" VARIANTCONVERT"
+
 
 # DEEPVARIANT
 export DEEPVARIANT_VERSION=1.10.0										# VER
@@ -387,11 +391,12 @@ TOOLS_LIST=$TOOLS_LIST" CAP"
 # TOOLS_LIST=$TOOLS_LIST" HOWARD"
 
 # HOWARD (devel)
-export HOWARD=howard						# BIN-JAR
-export HOWARD_VERSION=devel				# VER
+export HOWARD_VERSION=devel								# VER
+export HOWARD=$NGS_TOOLS/howard/current/bin/howard		# BIN
 export HOWARD_DESCRIPTION="Highly Open and Valuable tool for Variant Annotation & Ranking"
 export HOWARD_REF="inhouse"
 TOOLS_LIST=$TOOLS_LIST" HOWARD"
+
 
 # SCRIPTS
 export STARK_BED_NORMALIZATION=$STARK_FOLDER_BIN/bed_normalization.awk
@@ -399,6 +404,7 @@ export FASTQ_CLEAN_HEADER=$STARK_FOLDER_BIN/fastq_clean_header.awk
 export FASTQ_REHEADER=$STARK_FOLDER_BIN/fastq_reheader.awk
 export RELOCATE_UMI=$STARK_FOLDER_BIN/relocate_umi.awk
 export STARK_RUN_METRICS=$STARK_FOLDER_BIN/runmetrics.py
+
 
 # PERL5LIB
 ENV_PERLLIB=$NGS_FOLDER/tools/perl/lib
@@ -419,11 +425,8 @@ export DOCKER_MOUNTS
 export DOCKER_RUN="$DOCKER run $DOCKER_MOUNTS"								# RUN
 
 
-
-
 # PATH
 ########
-
 
 # ADD JAVA
 export PATH=$PATH:$TABIX_PATH:$JAVA_PATH
