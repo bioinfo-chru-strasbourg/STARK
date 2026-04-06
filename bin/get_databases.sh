@@ -690,9 +690,43 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
 
 		echo "$DBFOLDER_REFGENE/$RELEASE/$ASSEMBLY: $DBFOLDER $GENOME
+			# Download ncbiRefSeq TXT and BED
 			$HOWARD databases --assembly='$ASSEMBLY' --download-refseq=$DBFOLDER_REFGENE/$DATE --download-refseq-format-file='ncbiRefSeq.txt' ;
-			#cat $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/ncbiRefSeq.txt | awk -F '\t' -v OFS='\t' -f $STARK_FOLDER_BIN/refSeq_to_gtf.awk | sort -k1,1V -k4,4n -k5,5n -k3,3 -S4G > $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/ncbiRefSeq.gtf
+			# Convert into GTF
 			awk -F '\t' -v OFS='\t' -f $STARK_FOLDER_BIN/refSeq_to_gtf.awk $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/ncbiRefSeq.txt > $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/ncbiRefSeq.gtf
+			# Download refSeq in GTF
+			$PYTHON $STARK_FOLDER_BIN/get_refGene.py -a $ASSEMBLY -o $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/refSeq.gtf
+			# Collapse GTF
+			$PYTHON $STARK_FOLDER_BIN/collapse_annotation.py $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/refSeq.gtf $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/refSeq.collapsed.gtf;
+			# README.md
+			echo '# refSeq files' > $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/README.md;
+			echo '' >> $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/README.md;
+			echo '## ncbiRefSeq.txt' >> $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/README.md;
+			echo '' >> $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/README.md;
+			echo '- Source: NCBI RefSeq database downloaded by HOWARD' >> $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/README.md;
+			echo '- URL: https://www.ncbi.nlm.nih.gov/refseq/' >> $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/README.md;
+			echo '- Downloaded file: ncbiRefSeq.txt' >> $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/README.md;
+			echo '- Download date: '$DATE >> $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/README.md;
+			echo '' >> $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/README.md;
+			echo '## ncbiRefSeq.bed' >> $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/README.md;
+			echo '' >> $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/README.md;
+			echo '- Source: NCBI RefSeq database converted by HOWARD' >> $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/README.md;
+			echo '' >> $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/README.md;
+			echo '## ncbiRefSeq.gtf' >> $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/README.md;
+			echo '' >> $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/README.md;
+			echo '- Source: NCBI RefSeq database converted by STARK refSeq_to_gtf.awk script' >> $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/README.md;
+			echo '' >> $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/README.md;
+			echo '## refSeq.gtf' >> $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/README.md;
+			echo '' >> $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/README.md;
+			echo '- Source: NCBI RefSeq database in GTF downloaded by get_refGene.py' >> $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/README.md;
+			echo '- URL: https://ftp.ncbi.nlm.nih.gov/genomes/refseq/vertebrate_mammalian/Homo_sapiens/all_assembly_versions' >> $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/README.md;
+			echo '- Release: latest' >> $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/README.md;
+			echo '- Download date: '$DATE >> $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/README.md;
+			echo '' >> $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/README.md;
+			echo '## refSeq.collapsed.gtf' >> $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/README.md;
+			echo '' >> $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/README.md;
+			echo '- Source: NCBI RefSeq database in GTF converted by collapse_annotation.py' >> $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/README.md;
+			# Links
 			-[ ! -s $DBFOLDER_REFGENE/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_REFGENE/STARK.database && chmod o+r $DBFOLDER_REFGENE/STARK.database;
 			[ ! -e $DBFOLDER_REFGENE/$RELEASE/$ASSEMBLY ] || unlink $DBFOLDER_REFGENE/$RELEASE/$ASSEMBLY;
 			ln -snf ../$DATE/$ASSEMBLY $DBFOLDER_REFGENE/$RELEASE/$ASSEMBLY;
