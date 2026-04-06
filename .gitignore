@@ -3,3 +3,6 @@ __pycache__/
 *.py[cod]
 *$py.class
 sources_old
+tmp/
+misc/
+*.DS_Store

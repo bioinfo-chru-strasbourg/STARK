@@ -1,0 +1,53 @@
+{
+  "annotations": "ALL:format=parquet:release=current",
+  "annotation": {
+    "parquet": {
+    },
+    "snpeff": {
+      "options": "-lof -hgvs -oicr -noShiftHgvs -spliceSiteSize 3 ",
+      "stats": "OUTPUT.html",
+      "csvStats": "OUTPUT.csv"
+    },
+    "annovar": {
+      "annotations": {
+        "refGene": {
+          "INFO": null
+        }
+      },
+      "options": {
+        "genebase": "-hgvs -splicing_threshold 3 ",
+        "intronhgvs": 10
+      }
+    }
+  },
+  "calculation": {
+    "calculations": {
+      "vartype": null,
+      "snpeff_hgvs": null,
+      "NOMEN": {
+        "options": {
+          "hgvs_field": "snpeff_hgvs"
+        }
+      },
+      "VAF": ""
+    }
+  },
+  "prioritization": {
+    "profiles": ["default"],
+    "pzfields": ["PZScore", "PZFlag", "PZComment"],
+    "prioritization_score_mode": "HOWARD"
+  },
+  "stats": {
+    "stats_md": null,
+    "stats_json": null
+  },
+  "explode_infos": {
+    "explode_infos": false,
+    "explode_infos_prefix": ""
+  },
+  "export": {
+    "header_in_output": false,
+    "parquet_partitions": null,
+    "order_by": null
+  }
+}
