@@ -15,9 +15,14 @@ A **FastAPI**-based web service for launching and monitoring [STARK](https://git
 - **Three task modes** — STARK analysis, raw shell command, or custom Docker container command
 - **Multiple named queues** — independent task-spooler daemons, each with its own concurrency setting, configurable via `config/queues.json`
 - **Live queue** — auto-refreshing task table (running → queued → finished) with per-queue context on every action
+- **State colour coding** — running (orange), queued (grey), finished success (green), finished failed (red)
+- **Filter bar** — combined State dropdown (Running / Queued / Finished / Failed only) and Queue multi-select dropdown; instant client-side filtering with Reset button
 - **Inline detail panels** — Info / Log / Analysis JSON displayed inline, persisted across auto-refreshes, with one-click copy
 - **Time tracking** — elapsed time for running tasks (computed from `Start time`), final duration for finished tasks (from `Time run`)
+- **Confirmation dialogs** — danger actions (Kill, Prioritize, Remove, Relaunch) require explicit confirmation before executing
+- **Visual feedback** — danger buttons show `✓ Done` / `✗ Failed` with colour flash after each action
 - **Relaunch** — re-queue a finished task from its original JSON parameters on its original queue
+- **Username display** — logged-in username shown next to the Logout button; group membership visible on hover
 
 ---
 
@@ -491,24 +496,43 @@ The dashboard is accessible at `http://localhost:8000/`.
 
 | Section | Description |
 |---|---|
+| **Header** | STARK API title, logged-in username (hover for groups), Logout button |
 | **Launch Analysis** | Run name field + Advanced JSON textarea. Visible to admins only. |
+| **Filter bar** | State dropdown (Running / Queued / Finished + **Failed only**) and Queue multi-select dropdown. Filters are client-side and instant. A **✕ Reset** button restores all defaults. |
 | **Task Queue** | Auto-refreshing table. Tasks sorted: running → queued → finished. |
 
-**Queue table columns:** ID, State, Queue, E-Level, Time, Run Name, Actions.
+**Queue table columns:** ID, State, Queue, E-Level, Time, Analysis Name, Actions.
+
+**State colour coding:**
+
+| State | Colour |
+|---|---|
+| `running` | Orange |
+| `queued` | Grey |
+| `finished` (success) | Green |
+| `finished` (failed) | Red |
 
 **Action buttons per state:**
 
 | State | Buttons |
 |---|---|
-| `running` | Info, Log, Analysis, **Kill** |
-| `queued` | Info, Log, Analysis, **Prioritize**, **Remove** |
-| `finished` | Info, Log, Analysis, **Relaunch** |
+| `running` | I (Info), L (Log), A (Analysis), **K (Kill)** |
+| `queued` | I (Info), L (Log), A (Analysis), **P (Prioritize)**, **X (Remove)** |
+| `finished` | I (Info), L (Log), A (Analysis), **R (Relaunch)** |
 
-Red buttons (Kill, Prioritize, Remove, Relaunch) are only visible to `admin` users.
+Red buttons (K, P, X, R) are only visible to `admin` users and require a confirmation dialog before executing. After the action completes, the button briefly shows `✓ Done` (green) or `✗ Failed` (red) before restoring its label.
 
-All action buttons automatically include the task's queue context — clicking **Kill** on a task from the `light` queue will correctly target the `light` daemon, not the default one.
+Clicking **I**, **L**, or **A** opens an inline detail panel below the row. The panel persists across auto-refreshes and includes a **Copy** button. Panels from tasks in different queues with the same numeric ID are tracked independently.
 
-Clicking **Info**, **Log**, or **Analysis** opens an inline detail panel below the row. The panel persists across auto-refreshes and includes a **Copy** button. Panels from tasks in different queues with the same numeric ID are handled independently.
+**Filter bar — State dropdown options:**
+
+| Option | Effect |
+|---|---|
+| Running | Show/hide running tasks |
+| Queued | Show/hide queued tasks |
+| Finished | Show/hide all finished tasks |
+| ─── | |
+| Failed only | Show **only** finished tasks with a non-zero exit code (overrides other filters) |
 
 ---
 

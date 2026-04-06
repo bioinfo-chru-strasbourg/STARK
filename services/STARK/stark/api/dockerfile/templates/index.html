@@ -18,7 +18,10 @@
     <div id="dashboard-container" style="display: none;">
         <div class="header">
             <h1>STARK API</h1>
-            <button id="logout-btn">Logout</button>
+            <div class="header-user">
+                <span id="current-user"></span>
+                <button id="logout-btn">Logout</button>
+            </div>
         </div>
 
         <div id="action-container">
@@ -26,7 +29,7 @@
                 <h2>Launch Analysis</h2>
                 <form id="analysis-form">
                     <div class="form-row">
-                        <label for="run-name-input">Run name</label>
+                        <label for="run-name-input">STARK Run name</label>
                         <input type="text" id="run-name-input" placeholder="MY_RUN">
                     </div>
                     <details>
@@ -34,13 +37,24 @@
                         <textarea id="json-input" placeholder='{"run":"MY_RUN"}'></textarea>
                     </details>
                     <div class="launch-row">
-                        <button type="submit">Launch</button>
+                        <button type="submit" title="Launch Analysis">Launch</button>
                         <span id="analysis-response"></span>
                     </div>
                 </form>
             </div>
             <div id="queue-container">
                 <h2>Task Queue</h2>
+                <div id="queue-filters">
+                    <div class="filter-group" id="filter-states-group">
+                        <span class="filter-label">State</span>
+                        <span id="filter-states-container"></span>
+                    </div>
+                    <div class="filter-group" id="filter-queues-group">
+                        <span class="filter-label">Queue</span>
+                        <span id="filter-queues-checkboxes"></span>
+                    </div>
+                    <button id="filter-reset" title="Reset all filters">✕ Reset</button>
+                </div>
                 <div id="queue-table-container">
                     <table id="queue-table">
                         <thead>
@@ -51,7 +65,7 @@
                                 <!-- <th>Output</th> -->
                                 <th>E-Level</th>
                                 <th>Time</th>
-                                <th>Run Name</th>
+                                <th>Analysis Name</th>
                                 <th>Actions</th>                            
                             </tr>
                         </thead>

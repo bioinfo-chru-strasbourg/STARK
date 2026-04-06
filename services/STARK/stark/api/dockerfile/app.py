@@ -39,7 +39,7 @@ from typing import Optional, Union, List
 # This will create an analysis with name "test_cmd" and run "echo hello world" directly in the shell (no Docker isolation).
 # Example: {"command": "echo hello world", "analysis_name": "test_cmd"}
 # This will run "echo hello from docker" inside a new container based on "alpine" (with predefined mounts).
-# Example: {"command_docker": "sleep 10 && echo hello from docker", "image": "alpine", "analysis_name": "test_cmd_docker", "queue": "other"}
+# Example: {"command_docker": "sleep 10 && echo hello from docker", "image": "alpine", "analysis_name": "test_cmd_docker", "queue": "medium"}
 #
 # All three modes accept an optional "queue" key to target a specific task-spooler queue
 # defined in config/queues.json. When omitted, the first (default) queue is used.
@@ -787,7 +787,11 @@ async def list_task():
                     if match:
                         data = match.groupdict()
                         run_name_match = re.search(r"-NAME-([^\s\]]+)", data["command"])
-                        run_name = run_name_match.group(1) if run_name_match else "N/A"
+                        run_name = re.sub(
+                            r"\.(output|json|info)$",
+                            "",
+                            run_name_match.group(1) if run_name_match else "N/A",
+                        )
                         all_tasks.append(
                             {
                                 "id": int(data["id"].strip()),
@@ -900,8 +904,10 @@ async def queue(
                             run_name_match = re.search(
                                 r"-NAME-([^\s\]]+)", data["command"]
                             )
-                            run_name = (
-                                run_name_match.group(1) if run_name_match else "N/A"
+                            run_name = re.sub(
+                                r"\.(output|json|info)$",
+                                "",
+                                run_name_match.group(1) if run_name_match else "N/A",
                             )
                             all_tasks.append(
                                 {
