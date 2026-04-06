@@ -102,7 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
         getQueue();
     });
 
-    async function getQueue(action = 'list', id = '') {
+    async function getQueue(action = 'list', id = '', queue = '') {
 
         function formatTime(timesStr) {
             if (!timesStr) return '';
@@ -127,6 +127,12 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (response.ok) {
                 const tasks = await response.json();
+                const stateOrder = { 'running': 0, 'queued': 1, 'finished': 2 };
+                tasks.sort((a, b) => {
+                    const oa = stateOrder[a.state.toLowerCase()] ?? 3;
+                    const ob = stateOrder[b.state.toLowerCase()] ?? 3;
+                    return oa - ob;
+                });
                 queueBody.innerHTML = ''; // Clear table
                 if (tasks.length > 0) {
                     document.getElementById('queue-table-container').style.display = 'block';
@@ -135,9 +141,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         row.innerHTML = `
                             <td>${task.id}</td>
                             <td>${task.state}</td>
+                            <td>${task.queue || ''}</td>
                             <td>${task.elevel}</td>
                             <td>${formatTime(task.times)}</td>
-                            <td>${task.run_name}</td>
+                            <td>${task.run_name}</td>  
                         `;
                         const actionTd = document.createElement('td');
                         actionTd.className = 'action-buttons';
@@ -155,12 +162,13 @@ document.addEventListener('DOMContentLoaded', () => {
                                 btn.classList.add('btn-danger');
                             }
                             if (['info', 'analysis', 'log'].includes(act)) {
-                                btn.addEventListener('click', () => toggleInlineDetail(row, act, task.id));
+                                btn.addEventListener('click', () => toggleInlineDetail(row, act, task.id, task.queue));
                             } else if (act === 'relaunch') {
                                 btn.addEventListener('click', async () => {
                                     btn.disabled = true;
                                     btn.textContent = 'Launching...';
-                                    const resp = await fetch(`/relaunch/${task.id}`, {
+                                    const qParam = task.queue ? `?queue=${encodeURIComponent(task.queue)}` : '';
+                                    const resp = await fetch(`/relaunch/${task.id}${qParam}`, {
                                         method: 'POST',
                                         headers: { 'Authorization': `Bearer ${token}` }
                                     });
@@ -169,7 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     if (resp.ok) setTimeout(() => getQueue('list'), 1500);
                                 });
                             } else {
-                                btn.addEventListener('click', () => getQueue(act, task.id));
+                                btn.addEventListener('click', () => getQueue(act, task.id, task.queue));
                             }
                             actionTd.appendChild(btn);
                         });
@@ -177,7 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         queueBody.appendChild(row);
                     });
                 } else {
-                    queueBody.innerHTML = '<tr><td colspan="6">No tasks in the queue.</td></tr>';
+                    queueBody.innerHTML = '<tr><td colspan="7">No tasks in the queue.</td></tr>';
                 }
                 restoreOpenDetails();
             } else {
@@ -190,9 +198,8 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             // For other actions (kill, remove, prioritize)
             let url = `/queue?action=${action}`;
-            if (id) {
-                url += `&id=${id}`;
-            }
+            if (id) url += `&id=${id}`;
+            if (queue) url += `&queue=${encodeURIComponent(queue)}`;
             const response = await fetch(url, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -210,7 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
         detailRow.classList.add('detail-row');
         detailRow.dataset.taskId = String(taskId);
         const detailTd = document.createElement('td');
-        detailTd.setAttribute('colspan', '6');
+        detailTd.setAttribute('colspan', '7');
 
         const copyBtn = document.createElement('button');
         copyBtn.textContent = 'Copy';
@@ -235,41 +242,47 @@ document.addEventListener('DOMContentLoaded', () => {
     function restoreOpenDetails() {
         const taskRows = document.querySelectorAll('#queue-body tr:not(.detail-row)');
         const toDelete = [];
-        openDetails.forEach((detail, taskId) => {
+        openDetails.forEach((detail, key) => {
+            const sep = key.indexOf('::');
+            const keyQueue = key.substring(0, sep);
+            const keyId = key.substring(sep + 2);
             let found = false;
             for (const row of taskRows) {
                 const idCell = row.querySelector('td:first-child');
-                if (idCell && idCell.textContent.trim() === String(taskId)) {
+                const queueCell = row.querySelector('td:nth-child(3)');
+                if (idCell && idCell.textContent.trim() === keyId &&
+                    queueCell && queueCell.textContent.trim() === keyQueue) {
                     const next = row.nextElementSibling;
                     if (!next || !next.classList.contains('detail-row')) {
-                        row.insertAdjacentElement('afterend', buildDetailRow(taskId, detail.content));
+                        row.insertAdjacentElement('afterend', buildDetailRow(key, detail.content));
                     }
                     found = true;
                     break;
                 }
             }
-            if (!found) toDelete.push(taskId);
+            if (!found) toDelete.push(key);
         });
-        toDelete.forEach(id => openDetails.delete(id));
+        toDelete.forEach(k => openDetails.delete(k));
     }
 
-    async function toggleInlineDetail(row, action, id) {
-        const taskId = String(id);
+    async function toggleInlineDetail(row, action, id, queue = '') {
+        const key = `${queue}::${id}`;
         const existingDetail = row.nextElementSibling;
         if (existingDetail && existingDetail.classList.contains('detail-row')) {
             existingDetail.remove();
-            openDetails.delete(taskId);
+            openDetails.delete(key);
             return;
         }
 
-        const url = `/queue?action=${action}&id=${id}`;
+        const queueParam = queue ? `&queue=${encodeURIComponent(queue)}` : '';
+        const url = `/queue?action=${action}&id=${id}${queueParam}`;
         const response = await fetch(url, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const content = await response.text();
 
-        openDetails.set(taskId, { action, content });
-        row.insertAdjacentElement('afterend', buildDetailRow(taskId, content));
+        openDetails.set(key, { action, queue, content });
+        row.insertAdjacentElement('afterend', buildDetailRow(key, content));
     }
 
     // Auto-refresh the queue every 10 seconds

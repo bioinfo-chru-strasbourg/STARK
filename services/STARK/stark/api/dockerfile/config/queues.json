@@ -1,0 +1,25 @@
+{
+  "stark": {
+    "savelist": "/ts-tmp",
+    "slots": 1,
+    "description": "Default STARK analysis queue"
+  },
+  "light": {
+    "savelist": "/ts-tmp-light",
+    "slots": 4,
+    "socket": "/tmp/ts-light.socket",
+    "description": "Light STARK analysis queue"
+  },
+  "medium": {
+    "savelist": "/ts-tmp-medium",
+    "slots": 2,
+    "socket": "/tmp/ts-medium.socket",
+    "description": "Medium STARK analysis queue"
+  },
+  "gpu": {
+    "savelist": "/ts-tmp-gpu",
+    "slots": 1,
+    "socket": "/tmp/ts-gpu.socket",
+    "description": "GPU STARK analysis queue"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "stark": {
+    "password": "password",
+    "groups": [
+      "admin"
+    ]
+  },
+  "guest": {
+    "password": "guest",
+    "groups": []
+  }
+}
