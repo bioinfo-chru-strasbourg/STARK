@@ -644,9 +644,17 @@ def queue_analysis(json_input: dict) -> str:
     _ts_env, _max_slots = _prepare_queue_for_submission(json_input.get("queue"))
     _task_slots = _resolve_task_slots(json_input, _max_slots)
 
+    # Ensure the 'threads' key is set in the JSON input for the Docker container to read, using the same logic as _resolve_task_slots.
+    threads = (_task_slots == 0) and _max_slots or _task_slots
+    json_input["threads"] = threads
+
     # Write the .json as-is — STARK reads this file; 'threads' is a recognised key.
     with open(analysisFILE, "w") as f:
         f.write(json.dumps(json_input))
+
+    # CPU for docker
+    if "--cpus" not in docker_parameters:
+        docker_parameters += f" --cpus={threads} "
 
     ts_cmd = f"{_ts_env}{ts} -N {_task_slots} -L {analysisIDNAME}" if ts else ""
     myCmd = (
@@ -745,8 +753,20 @@ def queue_command_docker(json_input: dict) -> str:
     _ts_env, _max_slots = _prepare_queue_for_submission(json_input.get("queue"))
     _task_slots = _resolve_task_slots(json_input, _max_slots)
 
+    # with open(analysisFILE, "w") as f:
+    #     f.write(json.dumps(json_input))
+
+    # Ensure the 'threads' key is set in the JSON input for the Docker container to read, using the same logic as _resolve_task_slots.
+    threads = (_task_slots == 0) and _max_slots or _task_slots
+    json_input["threads"] = threads
+
+    # Write the .json as-is — STARK reads this file; 'threads' is a recognised key.
     with open(analysisFILE, "w") as f:
         f.write(json.dumps(json_input))
+
+    # CPU for docker
+    if "--cpus" not in docker_parameters:
+        docker_parameters += f" --cpus={threads} "
 
     ts_cmd = f"{_ts_env}{ts} -N {_task_slots} -L {analysisIDNAME}" if ts else ""
     myCmd = (

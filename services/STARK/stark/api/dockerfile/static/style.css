@@ -10,6 +10,7 @@ body {
     border-radius: 5px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     min-width: 1000px;
+    min-width: 1000px;
     max-width: 1000px;
     margin: auto;
 }
@@ -43,6 +44,7 @@ body {
 
 #analysis-form-container, #queue-container {
     flex: 1;
+    width: 1000px;
     min-width: 1000px;
     max-width: 1000px;
 }
@@ -256,6 +258,18 @@ pre {
     width: 160px;
     min-width: 160px;
     max-width: 160px;
+}
+
+#queue-table th:nth-child(6),
+#queue-table td:nth-child(6) {
+    min-width: 300px;
+}
+
+#analysis-name {
+    width: 400px;
+    min-width: 400px;
+    max-width: 400px;
+    background-color: #f80000;
 }
 
 #queue-table th, #queue-table td {

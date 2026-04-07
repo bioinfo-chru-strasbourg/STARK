@@ -171,13 +171,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 let stateClass = '';
                 if (stateLC === 'running') stateClass = 'state-running';
                 else if (stateLC === 'queued') stateClass = 'state-queued';
-                else if (stateLC === 'finished') stateClass = task.elevel && task.elevel.startsWith('FAILED') ? 'state-finished-failed' : 'state-finished-success';
+                // else if (stateLC === 'finished') stateClass = task.elevel && task.elevel.startsWith('FAILED') ? 'state-finished-failed' : 'state-finished-success';
+                else if (stateLC === 'finished') stateClass = !task.elevel || task.elevel.startsWith('FAILED') ? 'state-finished-failed' : 'state-finished-success';
+                // Killed command
+                if (stateLC === 'finished' && !task.elevel) task.elevel = 'KILLED';
                 row.innerHTML = `
                     <td>${task.id}</td>
-                    <td class="${stateClass}">${task.state}</td>
+                    <td class="${stateClass}" title="${task.elevel != '' ? 'Error level: ' + task.elevel : ''}">${task.state}</td>
                     <td>${task.queue || ''}</td>
                     <td class="task-slots-cell" title="${task.task_slots != null ? 'Uses ' + task.task_slots + ' / ' + task.queue_slots + ' slots' : 'Slot info unavailable'}">${task.task_slots != null ? task.task_slots + ' / ' + task.queue_slots : '\u2014'}</td>
-                    <td>${task.elevel}</td>
+                    <!-- <td>${task.elevel}</td> -->
                     <td>${formatTime(task.times)}</td>
                     <td>${task.run_name}</td>
                 `;
@@ -193,7 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (['kill', 'prioritize', 'remove', 'relaunch'].includes(act) && !isAdmin) return;
                     const btn = document.createElement('button');
                     btn.textContent = label;
-                    btn.title = `${label} for task ${task.id} on queue ${task.queue || 'default'}`;
+                    btn.title = `${act.toUpperCase()} task #${task.id} [${task.queue || 'default'}]`;
                     if (['kill', 'prioritize', 'remove', 'relaunch'].includes(act)) {
                         btn.classList.add('btn-danger');
                     }
@@ -203,7 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else if (['kill', 'prioritize', 'remove', 'relaunch'].includes(act)) {
                         btn.addEventListener('click', async () => {
                             const actionName = actionLabels[act] || act;
-                            if (!confirm(`${actionName} task #${task.id} on queue "${task.queue || 'default'}" ?`)) return;
+                            if (!confirm(`${actionName.toUpperCase()} task #${task.id} [${task.queue || 'default'}] ?`)) return;
                             btn.disabled = true;
                             const originalText = btn.textContent;
                             btn.textContent = '…';
