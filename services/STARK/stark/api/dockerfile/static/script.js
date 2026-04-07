@@ -176,6 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td>${task.id}</td>
                     <td class="${stateClass}">${task.state}</td>
                     <td>${task.queue || ''}</td>
+                    <td class="task-slots-cell" title="${task.task_slots != null ? 'Uses ' + task.task_slots + ' / ' + task.queue_slots + ' slots' : 'Slot info unavailable'}">${task.task_slots != null ? task.task_slots + ' / ' + task.queue_slots : '\u2014'}</td>
                     <td>${task.elevel}</td>
                     <td>${formatTime(task.times)}</td>
                     <td>${task.run_name}</td>
@@ -185,7 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const stateButtons = {
                     'running':  [['I', 'info'], ['L', 'log'], ['A', 'analysis'], ['K', 'kill']],
                     'queued':   [['I', 'info'], ['L', 'log'], ['A', 'analysis'], ['P', 'prioritize'], ['X', 'remove']],
-                    'finished': [['I', 'info'], ['L', 'log'], ['A', 'analysis'], ['R', 'relaunch']],
+                    'finished': [['I', 'info'], ['L', 'log'], ['A', 'analysis'], ['R', 'relaunch'], ['X', 'remove']],
                 };
                 const buttons = stateButtons[task.state.toLowerCase()] || [['I', 'info'], ['L', 'log'], ['A', 'analysis']];
                 buttons.forEach(([label, act]) => {
@@ -379,11 +380,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (response.ok) {
                 const tasks = await response.json();
+                // const stateOrder = { 'running': 0, 'queued': 1, 'finished': 2 };
+                // tasks.sort((a, b) => {
+                //     const oa = stateOrder[a.state.toLowerCase()] ?? 3;
+                //     const ob = stateOrder[b.state.toLowerCase()] ?? 3;
+                //     return oa - ob;
+                // });
                 const stateOrder = { 'running': 0, 'queued': 1, 'finished': 2 };
                 tasks.sort((a, b) => {
                     const oa = stateOrder[a.state.toLowerCase()] ?? 3;
                     const ob = stateOrder[b.state.toLowerCase()] ?? 3;
-                    return oa - ob;
+                    if (oa !== ob) return oa - ob;
+                    return Number(a.id) - Number(b.id);
                 });
                 allTasks = tasks;
                 rebuildQueueCheckboxes(tasks);

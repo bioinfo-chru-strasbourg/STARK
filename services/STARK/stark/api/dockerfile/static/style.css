@@ -316,6 +316,15 @@ pre {
 .state-finished-success { color: #28a745; font-weight: bold; }
 .state-finished-failed  { color: #dc3545; font-weight: bold; }
 
+.task-slots-cell {
+    text-align: center;
+    font-size: 0.82em;
+    color: #777;
+    white-space: nowrap;
+    width: 58px;
+    min-width: 58px;
+}
+
 .detail-row td {
     padding: 0;
     background-color: #f8f9fa;

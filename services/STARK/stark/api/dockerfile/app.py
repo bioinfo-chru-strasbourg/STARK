@@ -39,12 +39,21 @@ from typing import Optional, Union, List
 # This will create an analysis with name "test_cmd" and run "echo hello world" directly in the shell (no Docker isolation).
 # Example: {"command": "echo hello world", "analysis_name": "test_cmd"}
 # This will run "echo hello from docker" inside a new container based on "alpine" (with predefined mounts).
-# Example: {"command_docker": "sleep 10 && echo hello from docker", "image": "alpine", "analysis_name": "test_cmd_docker", "queue": "medium"}
+# Example: {"command_docker": "sleep 10 && echo hello from docker", "image": "alpine", "analysis_name": "test_cmd_docker", "queue": "medium", "threads": 2}
 #
 # All three modes accept an optional "queue" key to target a specific task-spooler queue
 # defined in config/queues.json. When omitted, the first (default) queue is used.
 # Example: {"run": "MY_RUN", "queue": "light"}
 # Example: {"command": "python3 /scripts/heavy.py", "queue": "gpu", "analysis_name": "my_job"}
+#
+# All three modes also accept an optional "threads" key (integer) to declare how many
+# task-spooler slots this task should occupy (-N flag). This allows multi-threaded tasks to
+# block the appropriate number of slots so they are not over-scheduled.
+# Rules:
+#   - Absent or invalid value --> uses the queue's total slot count (safe conservative default).
+#   - Value > queue slots --> clamped to queue slots (prevents a task that would never start).
+#   - Valid range: 1 ≤ threads ≤ queue slots.
+# Example: {"command": "bwa mem -t 4 ...", "queue": "light", "threads": 4, "analysis_name": "bwa_job"}
 #
 # config/queues.json is auto-created on first start from TS_SAVELIST/TS_SLOTS env vars.
 # To configure multiple queues, edit it manually, e.g.:
@@ -173,31 +182,29 @@ _VALID_IMAGE_RE = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_.:\-/@]*$")
 # --- Functions ---
 
 
-# This function checks the API key provided in the "X-API-Key" header against the expected value. If the key is valid, it returns the key; otherwise, it returns None, allowing the request to proceed to user authentication if no valid API key is provided. This way, both service calls with a valid API key and user-authenticated calls can access the API, while invalid API keys are rejected.
-# Note: In a production environment, you would typically want to implement a more robust API key management system, possibly with multiple keys, expiration, and revocation capabilities. This example uses a single static key for simplicity.
 def get_api_key(api_key: str = Security(api_key_header)):
+    """
+    This function checks the API key provided in the "X-API-Key" header against the expected value. If the key is valid, it returns the key; otherwise, it returns None, allowing the request to proceed to user authentication if no valid API key is provided. This way, both service calls with a valid API key and user-authenticated calls can access the API, while invalid API keys are rejected.
+    # Note: In a production environment, you would typically want to implement a more robust API key management system, possibly with multiple keys, expiration, and revocation capabilities. This example uses a single static key for simplicity.
+    """
     if api_key == STARK_API_KEY:
         return api_key
     else:
         return None
 
-# This function loads users from a JSON file, supporting both a new format (where each user is an object with "password" and "groups" fields) and a legacy format (where each user is just a plain password string). If the users file does not exist or is invalid, it creates it with a default user ("stark" with password "password" and admin group) and a guest user. This allows for flexible user management while maintaining backward compatibility with older configurations.
-# The expected format of the users JSON file is:
-# {
-#     "stark": {"password": "secret", "groups": ["admin", "users"]},
-#     "john":  {"password": "pass",   "groups": ["users"]}
-# }
+
 def load_users():
     """Loads users from the JSON file.
-    
+
+    This function loads users from a JSON file, supporting both a new format (where each user is an object with "password" and "groups" fields) and a legacy format (where each user is just a plain password string). If the users file does not exist or is invalid, it creates it with a default user ("stark" with password "password" and admin group) and a guest user. This allows for flexible user management while maintaining backward compatibility with older configurations.
+
     Expected format:
     {
         "stark": {"password": "secret", "groups": ["admin", "users"]},
-        "john":  {"password": "pass",   "groups": ["users"]}
+        "guest":  {"password": "guest",   "groups": ["users"]}
     }
     Legacy format (plain password string) is also supported.
     """
-    # default = {"stark": {"password": "password", "groups": ["admin"]}}
     default = {
         "stark": {"password": "password", "groups": ["admin"]},
         "guest": {"password": "guest", "groups": []},
@@ -212,9 +219,10 @@ def load_users():
     except (FileNotFoundError, json.JSONDecodeError):
         return default
 
-
 def load_queues() -> dict:
     """Load queue definitions from config/queues.json.
+
+    This function loads queue definitions from a JSON file, supporting auto-creation from environment variables if the file is missing. Each queue definition includes a savelist path, slot count, and description, with an optional socket path for daemon isolation. The first entry in the file is treated as the default queue. This design allows for flexible queue configurations while maintaining backward compatibility with a single default queue defined by environment variables.
 
     Each entry: {"savelist": "/ts-tmp", "slots": 1, "description": "..."}
     The first entry is the default queue used when no 'queue' key is provided.
@@ -242,19 +250,19 @@ def load_queues() -> dict:
         },
         "light": {
             "savelist": "/ts-tmp-light",
-            "slots": 4,
+            "slots": 2,
             "socket": "/tmp/ts-light.socket",
             "description": "Light STARK analysis queue",
         },
         "medium": {
             "savelist": "/ts-tmp-medium",
-            "slots": 2,
+            "slots": 4,
             "socket": "/tmp/ts-medium.socket",
             "description": "Medium STARK analysis queue",
         },
         "gpu": {
             "savelist": "/ts-tmp-gpu",
-            "slots": 1,
+            "slots": 4,
             "socket": "/tmp/ts-gpu.socket",
             "description": "GPU STARK analysis queue",
         },
@@ -269,9 +277,10 @@ def load_queues() -> dict:
     except (FileNotFoundError, json.JSONDecodeError):
         return default
 
-
 def _resolve_queue_socket(name: str, cfg: dict, is_default: bool) -> str:
     """Return the TS_SOCKET path for this queue, or '' to not override TS_SOCKET.
+
+    This function determines the appropriate TS_SOCKET path for a given queue based on its configuration and whether it is the default queue. For the default queue, it returns an empty string to indicate that TS_SOCKET should not be overridden and the container's value should be used. For non-default queues, it checks if a "socket" key is explicitly defined in the configuration; if so, it uses that value. If not, it auto-derives a socket path in /tmp using a sanitized version of the queue name to ensure that each non-default queue has its own isolated daemon. This design allows for flexible queue configurations while maintaining backward compatibility for the default queue.
 
     - Default queue: never override TS_SOCKET; let ts use whatever TS_SOCKET is
       already set in the container environment (backward compatible).
@@ -286,9 +295,10 @@ def _resolve_queue_socket(name: str, cfg: dict, is_default: bool) -> str:
     safe_name = re.sub(r"[^A-Za-z0-9._-]", "_", name)
     return f"/tmp/ts-{safe_name}.socket"
 
-
 def get_queue_env(queue_name: Optional[str] = None) -> str:
     """Return the env prefix (TS_SOCKET + TS_SAVELIST + TS_SLOTS) for the given queue.
+
+    This function constructs the environment variable prefix for task-spooler based on the specified queue. It loads the queue configuration, determines the appropriate TS_SOCKET for the queue (ensuring isolation for non-default queues), and builds the environment variable string with TS_SAVELIST and TS_SLOTS. This prefix can then be used when submitting tasks to ensure they are scheduled in the correct queue with the appropriate settings.
 
     Each non-default queue gets a unique TS_SOCKET so its daemon is fully isolated.
     The default queue never overrides TS_SOCKET — it uses the container's env value.
@@ -308,13 +318,19 @@ def get_queue_env(queue_name: Optional[str] = None) -> str:
     return f"{socket_part}TS_SAVELIST={cfg['savelist']} TS_SLOTS={cfg['slots']} "
 
 
-def _prepare_queue_for_submission(queue_name: Optional[str] = None) -> str:
-    """Return the env prefix for the queue AND enforce the slot count on the ts daemon.
+def _prepare_queue_for_submission(queue_name: Optional[str] = None) -> tuple:
+    """Return (ts_env_prefix, max_slots) for the queue AND enforce the slot count on the ts daemon.
+
+    This function prepares the environment variables for submitting a task to a specific queue and enforces the configured slot count on the task-spooler daemon. It loads the queue configuration, determines the appropriate TS_SOCKET for the queue, constructs the environment variable prefix, and then calls 'ts -S <slots>' to set the slot count for the daemon. This ensures that the concurrency limits defined in the queue configuration are respected at all times, even if they are changed dynamically. The function returns the environment variable prefix to be used when submitting tasks and the maximum slot count for the queue, which can be used to clamp the '-N' value for individual tasks.
 
     task-spooler identifies daemons by TS_SOCKET. Each non-default queue gets its
     own TS_SOCKET path so its daemon is fully isolated from other queues.
     Because TS_SLOTS is only read at daemon startup, we call 'ts -S <slots>' on
     every submission to enforce the configured concurrency at all times.
+
+    Returns:
+        ts_env  (str): shell env prefix to prepend to every ts command.
+        max_slots (int): configured slot count for the queue (used to clamp -N values).
     """
     queues = load_queues()
     default_name = next(iter(queues))
@@ -338,11 +354,59 @@ def _prepare_queue_for_submission(queue_name: Optional[str] = None) -> str:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         )
-    return _ts_env
+    return _ts_env, slots
+
+
+def _resolve_task_slots(json_input: dict, max_slots: int) -> int:
+    """Return the number of ts slots (-N) a task should consume.
+
+    Rules:
+    - "threads": 0  --> pass -N 0 to ts: the task bypasses slot accounting and
+      starts immediately regardless of how many slots are in use.
+    - "threads": 1..max_slots --> use that value.
+    - "threads" > max_slots --> clamp to max_slots (a task requesting more slots
+      than the queue has would never start).
+    - "threads" absent, non-integer, or negative --> use max_slots (conservative
+      default that serialises tasks when slots=1).
+    """
+    raw = json_input.get("threads")
+    if raw is None:
+        return max_slots
+    try:
+        n = int(raw)
+        if 0 <= n <= max_slots:
+            return n
+        return max_slots
+    except (ValueError, TypeError):
+        return max_slots
+
+
+def _read_task_slots(command_str: str, max_slots: int) -> Optional[int]:
+    """Resolve the effective slot count for a task from its stored JSON.
+
+    This function attempts to read the effective slot count for a task from its stored JSON file, which is referenced in the command string. It looks for the output redirection pattern to find the corresponding .json file, then reads the "threads" key from that JSON and applies the same clamping logic as _resolve_task_slots. If the JSON file is unavailable (e.g., for legacy tasks that don't have it), it returns None, allowing the caller to fall back to other methods of determining the slot count.
+
+    Reads the 'threads' key from the task's .json file (present for all three
+    task modes: STARK analysis, command, command_docker) and applies the same
+    clamping logic as _resolve_task_slots.
+    Returns None if the JSON is unavailable (e.g. legacy tasks).
+    """
+    m = re.search(r">\s*(\S+)\.output\s+2>&1", command_str)
+    if not m:
+        return None
+    json_path = m.group(1) + ".json"
+    try:
+        with open(json_path) as f:
+            data = json.load(f)
+        return _resolve_task_slots(data, max_slots)
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return None
 
 
 def _queue_daemon_is_active(name: str, cfg: dict, is_default: bool) -> bool:
     """Return True if the ts daemon for this queue is running.
+
+    This function checks if the task-spooler daemon for a given queue is active by verifying the existence of its TS_SOCKET file. For the default queue, which does not override TS_SOCKET, it checks the ts_socket_env if available, or assumes the daemon is active since it should always be running in the container. For non-default queues, it checks the auto-derived or configured socket file to determine if the daemon is active. This allows the API to provide accurate status information about each queue and prevent task submissions to inactive queues.
 
     The daemon is identifed by its TS_SOCKET file. For the default queue (which
     does not override TS_SOCKET), we check ts_socket_env if known, or assume
@@ -358,9 +422,12 @@ def _queue_daemon_is_active(name: str, cfg: dict, is_default: bool) -> bool:
     return os.path.exists(socket)
 
 
-# This function authenticates a user by checking the provided username and password against the loaded users. It supports both the new format (where each user is an object with "password" and "groups") and the legacy format (where each user is just a plain password string). If authentication is successful, it returns a User object with the username and groups; otherwise, it returns False. This allows for flexible authentication while maintaining compatibility with older user configurations.
 def authenticate_user(username: str, password: str):
-    """Authenticates a user. Supports both legacy (plain string) and new (dict) formats."""
+    """Authenticates a user. Supports both legacy (plain string) and new (dict) formats.
+
+    This function authenticates a user by checking the provided username and password against the loaded users. It supports both the new format (where each user is an object with "password" and "groups") and the legacy format (where each user is just a plain password string). If authentication is successful, it returns a User object with the username and groups; otherwise, it returns False. This allows for flexible authentication while maintaining compatibility with older user configurations.
+
+    """
     users_db = load_users()
     if username not in users_db:
         return False
@@ -374,14 +441,22 @@ def authenticate_user(username: str, password: str):
         return User(username=username, groups=[])
     return False
 
-# This function creates a JWT access token containing the provided data (e.g., username and groups) and signs it with the secret key. The token can then be used for authenticated requests to the API. In a production environment, you would typically want to include an expiration time in the token and possibly other claims, but this example focuses on the basic functionality of encoding user information in a JWT.
 def create_access_token(data: dict):
+    """Creates a JWT access token with the provided data.
+
+    This function creates a JWT access token containing the provided data (e.g., username and groups) and signs it with the secret key. The token can then be used for authenticated requests to the API. In a production environment, you would typically want to include an expiration time in the token and possibly other claims, but this example focuses on the basic functionality of encoding user information in a JWT.
+
+    """
     to_encode = data.copy()
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-# This function retrieves the current user based on the provided JWT token in the "Authorization" header. It decodes the token, extracts the username, and checks it against the loaded users. If the token is valid and the user exists, it returns a User object with the username and groups; otherwise, it raises an HTTP 401 Unauthorized exception. This function is used as a dependency in routes that require user authentication.
 async def get_current_user(token: str = Depends(oauth2_scheme)):
+    """Retrieves the current user based on the JWT token in the "Authorization" header.
+
+    This function retrieves the current user based on the provided JWT token in the "Authorization" header. It decodes the token, extracts the username, and checks it against the loaded users. If the token is valid and the user exists, it returns a User object with the username and groups; otherwise, it raises an HTTP 401 Unauthorized exception. This function is used as a dependency in routes that require user authentication.
+
+    """
     if not token:
         return None
     credentials_exception = HTTPException(
@@ -404,10 +479,14 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
     groups = entry.get("groups", []) if isinstance(entry, dict) else []
     return User(username=username, groups=groups)
 
-# This function checks for a valid API key in the "X-API-Key" header and returns "service" if the key is valid, allowing service calls to access the API without user authentication. If no valid API key is provided, it falls back to user authentication using the JWT token. If the user is authenticated successfully, it returns the User object; otherwise, it raises an HTTP 401 Unauthorized exception. This allows both service calls with a valid API key and user-authenticated calls to access the API, while rejecting invalid API keys.
 async def get_current_user_or_service(
     api_key: str = Security(api_key_header), user: User = Depends(get_current_user)
 ):
+    """Retrieves the current user or service based on API key or JWT token.
+
+    This function checks for a valid API key in the "X-API-Key" header and returns "service" if the key is valid, allowing service calls to access the API without user authentication. If no valid API key is provided, it falls back to user authentication using the JWT token. If the user is authenticated successfully, it returns the User object; otherwise, it raises an HTTP 401 Unauthorized exception. This allows both service calls with a valid API key and user-authenticated calls to access the API, while rejecting invalid API keys.
+
+    """
     if api_key and api_key == STARK_API_KEY:
         return "service"
     if user:
@@ -416,17 +495,20 @@ async def get_current_user_or_service(
         status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated"
     )
 
-
-# This function generates a random string of letters and digits of a specified length (default is 6). It is used to create unique identifiers for analyses and runs, ensuring that each analysis has a distinct IDNAME even if the same analysis name is used multiple times. The generated string consists of uppercase and lowercase letters and digits, providing a large pool of possible combinations to minimize the risk of collisions.
 def randomStringDigits(stringLength=6):
-    """Generate a random string of letters and digits"""
+    """Generate a random string of letters and digits
+
+    This function generates a random string of letters and digits of a specified length (default is 6). It is used to create unique identifiers for analyses and runs, ensuring that each analysis has a distinct IDNAME even if the same analysis name is used multiple times. The generated string consists of uppercase and lowercase letters and digits, providing a large pool of possible combinations to minimize the risk of collisions.
+
+    """
     lettersAndDigits = string.ascii_letters + string.digits
     return "".join(random.choice(lettersAndDigits) for i in range(stringLength))
 
-
-# This function attempts to extract the analysisIDNAME from the output of the 'ts -i' command, which provides information about a scheduled task. It looks for patterns that indicate the analysisIDNAME, either from the Docker container name (if the task is a Docker-based analysis) or from the output file path (if the task is a plain-command analysis). If it finds a match, it returns the extracted analysisIDNAME; otherwise, it returns None. This function is useful for correlating tasks in the task spooler with their corresponding analyses based on their IDNAME.
 def _extract_analysis_name(ts_info_stdout: str) -> Optional[str]:
     """Extract analysisIDNAME from 'ts -i' output.
+
+    This function attempts to extract the analysisIDNAME from the output of the 'ts -i' command, which provides information about a scheduled task. It looks for patterns that indicate the analysisIDNAME, either from the Docker container name (if the task is a Docker-based analysis) or from the output file path (if the task is a plain-command analysis). If it finds a match, it returns the extracted analysisIDNAME; otherwise, it returns None. This function is useful for correlating tasks in the task spooler with their corresponding analyses based on their IDNAME.
+
     Works for docker-based tasks (--name flag) and plain-command tasks (output file path).
     """
     # Docker-based tasks: docker run --name <analysisIDNAME>
@@ -441,53 +523,68 @@ def _extract_analysis_name(ts_info_stdout: str) -> Optional[str]:
         return m.group(1)
     return None
 
-
-# This function validates a shell command by checking it against a list of known destructive patterns. If the command matches any of the patterns, it raises a ValueError with a message indicating that the command is rejected and specifying which pattern was matched. This provides a basic layer of protection against potentially harmful commands being executed through the API, while still allowing a wide range of safe commands to be used.
-# Note: The patterns used for validation are best-effort and may not catch all possible destructive commands, so it's important to review and test the patterns to ensure they fit your specific use case and threat model. Additionally, consider implementing further security measures such as running commands in a restricted environment or using containerization to mitigate risks.
 def _validate_command(command: str) -> None:
-    """Raise ValueError if the command matches a known destructive pattern."""
+    """Raise ValueError if the command matches a known destructive pattern.
+
+    This function validates a shell command by checking it against a list of known destructive patterns. If the command matches any of the patterns, it raises a ValueError with a message indicating that the command is rejected and specifying which pattern was matched. This provides a basic layer of protection against potentially harmful commands being executed through the API, while still allowing a wide range of safe commands to be used.
+
+    Note: The patterns used for validation are best-effort and may not catch all possible destructive commands, so it's important to review and test the patterns to ensure they fit your specific use case and threat model. Additionally, consider implementing further security measures such as running commands in a restricted environment or using containerization to mitigate risks.
+
+    """
     for pattern in _DANGEROUS_COMMAND_PATTERNS:
         if pattern.search(command):
             raise ValueError(
                 f"Command rejected: matches a dangerous pattern ({pattern.pattern!r})"
             )
 
-
-# This function validates the extra parameters provided for the Docker run command by checking them against a list of known dangerous patterns that could grant elevated privileges or access to the host system. If any of the dangerous patterns are detected in the provided parameters, it raises a ValueError with a message indicating that the parameters are rejected and specifying which pattern was matched. This helps to ensure that only safe and controlled Docker parameters are allowed when launching analyses through the API.
-# Note: The patterns used for validation are best-effort and may not catch all possible dangerous parameters, so it's important to review and test the patterns to ensure they fit your specific use case and threat model. Additionally, consider implementing further security measures such as running Docker containers with a restricted set of capabilities or using container security profiles to mitigate risks.
 def _validate_docker_extra_params(params: str) -> None:
-    """Raise ValueError if docker_extra_params contains privilege-escalation flags."""
+    """Raise ValueError if docker_extra_params contains privilege-escalation flags.
+
+    This function validates the extra parameters provided for the Docker run command by checking them against a list of known dangerous patterns that could grant elevated privileges or access to the host system. If any of the dangerous patterns are detected in the provided parameters, it raises a ValueError with a message indicating that the parameters are rejected and specifying which pattern was matched. This helps to ensure that only safe and controlled Docker parameters are allowed when launching analyses through the API.
+
+    Note: The patterns used for validation are best-effort and may not catch all possible dangerous parameters, so it's important to review and test the patterns to ensure they fit your specific use case and threat model. Additionally, consider implementing further security measures such as running Docker containers with a restricted set of capabilities or using container security profiles to mitigate risks.
+
+    """
     for pattern in _DANGEROUS_DOCKER_PARAMS_PATTERNS:
         if pattern.search(params):
             raise ValueError(
                 f"docker_extra_params rejected: dangerous flag detected ({pattern.pattern!r})"
             )
 
-
-# This function validates a Docker image name by checking it against a regex pattern that allows only alphanumeric characters, underscores, dots, colons, dashes, slashes, and at signs. If the image name contains any characters that do not match this pattern, it raises a ValueError with a message indicating that the image name is invalid. This helps to prevent command injection vulnerabilities by ensuring that only well-formed image names are accepted when launching analyses through the API.
-# Note: The regex pattern used for validation is a basic check and may not cover all valid Docker image name formats, but it provides a reasonable level of protection against common injection patterns. Always review and test the pattern to ensure it fits your specific use case and threat model. Additionally, consider implementing further security measures such as running Docker containers with a restricted set of capabilities or using container security profiles to mitigate risks.
 def _validate_image(image: str) -> None:
-    """Raise ValueError if the Docker image name contains shell metacharacters."""
+    """Raise ValueError if the Docker image name contains shell metacharacters.
+
+    This function validates a Docker image name by checking it against a regex pattern that allows only alphanumeric characters, underscores, dots, colons, dashes, slashes, and at signs. If the image name contains any characters that do not match this pattern, it raises a ValueError with a message indicating that the image name is invalid. This helps to prevent command injection vulnerabilities by ensuring that only well-formed image names are accepted when launching analyses through the API.
+
+    Note: The regex pattern used for validation is a basic check and may not cover all valid Docker image name formats, but it provides a reasonable level of protection against common injection patterns. Always review and test the pattern to ensure it fits your specific use case and threat model. Additionally, consider implementing further security measures such as running Docker containers with a restricted set of capabilities or using container security profiles to mitigate risks.
+
+    """
     if not _VALID_IMAGE_RE.match(image):
         raise ValueError(
             f"Invalid image name: {image!r}. Only alphanumeric, '_', '.', ':', '-', '/' characters are allowed."
         )
 
-
-# This function sanitizes an analysis name by replacing any characters that are not alphanumeric, underscores, dots, or dashes with underscores. It also truncates the sanitized name to 64 characters to comply with Docker container name limits. If the resulting sanitized name is empty, it returns "UNKNOWN". This ensures that analysis names used in Docker container names are valid and do not contain characters that could cause issues when creating containers.
-# Note: The choice of allowed characters and the truncation length are based on Docker's naming rules, but you may want to adjust the sanitization logic to fit your specific requirements or constraints. Always review and test the sanitization function to ensure it behaves as expected in your use case.
 def _sanitize_analysis_name(name: str) -> str:
     """Sanitize an analysis name: keep only [A-Za-z0-9._-], replace anything else with '_'.
-    Truncated to 64 characters to satisfy Docker container name limits."""
+    Truncated to 64 characters to satisfy Docker container name limits.
+
+    This function sanitizes an analysis name by replacing any characters that are not alphanumeric, underscores, dots, or dashes with underscores. It also truncates the sanitized name to 64 characters to comply with Docker container name limits. If the resulting sanitized name is empty, it returns "UNKNOWN". This ensures that analysis names used in Docker container names are valid and do not contain characters that could cause issues when creating containers.
+    Note: The choice of allowed characters and the truncation length are based on Docker's naming rules, but you may want to adjust the sanitization logic to fit your specific requirements or constraints. Always review and test the sanitization function to ensure it behaves as expected in your use case.
+
+    """
     sanitized = re.sub(r"[^A-Za-z0-9._-]", "_", name)
     return sanitized[:64] if sanitized else "UNKNOWN"
 
 
-# This function builds the analysisIDNAME and analysesRUNNAME based on the provided JSON input. It generates a unique analysisID using a random string, and determines the runID and runMD5 based on the "run" parameter in the input. If the "run" parameter points to an existing file or directory, it computes a hash of its contents to create a unique identifier. If an "analysis_name" is provided in the input, it uses that as the runID after sanitization. Finally, it constructs the analysisIDNAME in the format "STARK.{analysisID}.ID-{runMD5}-NAME-{runID}" and returns both the analysisIDNAME and analysesRUNNAME. This function is crucial for ensuring that each analysis has a unique and descriptive identifier based on its input parameters, which helps with tracking and managing analyses in the system.
-# Note: The hashing of the run input is designed to create a unique identifier for the analysis based on the content of the input, which can help with caching and avoiding duplicate analyses. However, be mindful of the performance implications of hashing large files or directories, and consider implementing additional checks or limits if necessary. Additionally, the sanitization of the analysis name ensures that it can be safely used in Docker container names, but you may want to further customize the naming scheme to fit your specific requirements or constraints. Always review and test the function to ensure it behaves as expected in your use case.
 def _build_analysis_idname(json_input: dict) -> tuple:
     """Build analysisIDNAME and analysesRUNNAME from json_input.
-    Returns (analysisIDNAME, analysesRUNNAME)."""
+    Returns (analysisIDNAME, analysesRUNNAME).
+
+    This function builds the analysisIDNAME and analysesRUNNAME based on the provided JSON input. It generates a unique analysisID using a random string, and determines the runID and runMD5 based on the "run" parameter in the input. If the "run" parameter points to an existing file or directory, it computes a hash of its contents to create a unique identifier. If an "analysis_name" is provided in the input, it uses that as the runID after sanitization. Finally, it constructs the analysisIDNAME in the format "STARK.{analysisID}.ID-{runMD5}-NAME-{runID}" and returns both the analysisIDNAME and analysesRUNNAME. This function is crucial for ensuring that each analysis has a unique and descriptive identifier based on its input parameters, which helps with tracking and managing analyses in the system.
+
+    Note: The hashing of the run input is designed to create a unique identifier for the analysis based on the content of the input, which can help with caching and avoiding duplicate analyses. However, be mindful of the performance implications of hashing large files or directories, and consider implementing additional checks or limits if necessary. Additionally, the sanitization of the analysis name ensures that it can be safely used in Docker container names, but you may want to further customize the naming scheme to fit your specific requirements or constraints. Always review and test the function to ensure it behaves as expected in your use case.
+
+    """
     analysesID = randomStringDigits(12)
     runID = "UNKNOWN"
     runMD5 = randomStringDigits(41)
@@ -526,13 +623,15 @@ def _build_analysis_idname(json_input: dict) -> tuple:
     return analysisIDNAME, analysesRUNNAME
 
 
-# This function builds and queues a STARK Docker analysis based on the provided JSON input. It first converts the input to a JSON string, then generates a unique analysisIDNAME and analysesRUNNAME using the _build_analysis_idname function. It prepares the Docker run parameters, including mounts and container name, and creates file paths for storing the analysis input, output, and status information. The function writes the JSON input to a file that will be used by the Docker container. It then constructs a shell command to run the Docker container with the specified parameters, redirecting output to a file and writing status information upon completion. Finally, it executes the command using subprocess and returns the analysisIDNAME if successful, or raises a RuntimeError if no task ID is returned by task-spooler. This function is central to launching analyses through the API in a controlled and trackable manner.
-# Note: The function assumes that the Docker image specified in the configuration is set up to read the analysis input from the provided JSON file and write its output and status to the specified locations. Ensure that the Docker image and the API are configured correctly to allow for this interaction. Additionally, consider implementing error handling and logging to capture any issues that may arise during the execution of the Docker container or the task scheduling process. Always review and test the function to ensure it behaves as expected in your use case.
 def queue_analysis(json_input: dict) -> str:
     """Build and queue a STARK Docker analysis from a JSON input dict.
-    Returns the analysis IDNAME string on success, or raises RuntimeError."""
-    json_dump = json.dumps(json_input)
+        Returns the analysis IDNAME string on success, or raises RuntimeError.
 
+    This function builds and queues a STARK Docker analysis based on the provided JSON input. It first converts the input to a JSON string, then generates a unique analysisIDNAME and analysesRUNNAME using the _build_analysis_idname function. It prepares the Docker run parameters, including mounts and container name, and creates file paths for storing the analysis input, output, and status information. The function writes the JSON input to a file that will be used by the Docker container. It then constructs a shell command to run the Docker container with the specified parameters, redirecting output to a file and writing status information upon completion. Finally, it executes the command using subprocess and returns the analysisIDNAME if successful, or raises a RuntimeError if no task ID is returned by task-spooler. This function is central to launching analyses through the API in a controlled and trackable manner.
+
+    Note: The function assumes that the Docker image specified in the configuration is set up to read the analysis input from the provided JSON file and write its output and status to the specified locations. Ensure that the Docker image and the API are configured correctly to allow for this interaction. Additionally, consider implementing error handling and logging to capture any issues that may arise during the execution of the Docker container or the task scheduling process. Always review and test the function to ensure it behaves as expected in your use case.
+
+    """
     analysisIDNAME, analysesRUNNAME = _build_analysis_idname(json_input)
 
     docker_name = f" --name {analysisIDNAME} "
@@ -542,12 +641,14 @@ def queue_analysis(json_input: dict) -> str:
     analysisFILE = os.path.join(analysisFOLDER, f"{analysisIDNAME}.json")
     analysisINFOFILE = os.path.join(analysisFOLDER, f"{analysisIDNAME}.info")
     analysisOUTPUTFILE = os.path.join(analysisFOLDER, f"{analysisIDNAME}.output")
+    _ts_env, _max_slots = _prepare_queue_for_submission(json_input.get("queue"))
+    _task_slots = _resolve_task_slots(json_input, _max_slots)
 
+    # Write the .json as-is — STARK reads this file; 'threads' is a recognised key.
     with open(analysisFILE, "w") as f:
-        f.write(json_dump)
+        f.write(json.dumps(json_input))
 
-    _ts_env = _prepare_queue_for_submission(json_input.get("queue"))
-    ts_cmd = f"{_ts_env}{ts} -L {analysisIDNAME}" if ts else ""
+    ts_cmd = f"{_ts_env}{ts} -N {_task_slots} -L {analysisIDNAME}" if ts else ""
     myCmd = (
         f'{ts_cmd} sh -c "'
         f"docker run {docker_parameters} {docker_stark} "
@@ -566,12 +667,15 @@ def queue_analysis(json_input: dict) -> str:
         raise RuntimeError("task-spooler returned no task ID")
     return analysisIDNAME
 
-
-# This function queues a raw shell command for execution, based on the "command" key in the provided JSON input. It first validates the command against known destructive patterns to ensure it is safe to execute. It then generates a unique analysisIDNAME using the _build_analysis_idname function, and prepares file paths for storing the command input, output, and status information. The function writes the JSON input to a file that can be used by the command if needed. It constructs a shell command to execute the provided command, redirecting output to a file and writing status information upon completion. Finally, it executes the command using subprocess and returns the analysisIDNAME if successful, or raises a RuntimeError if no task ID is returned by task-spooler. This function allows for flexible execution of arbitrary shell commands while maintaining a level of safety through validation and controlled execution.
-# Note: Executing raw shell commands can be dangerous, so it's crucial to ensure that the validation function is robust and that the API is properly secured to prevent unauthorized access. Additionally, consider implementing further security measures such as running commands in a restricted environment or using containerization to mitigate risks. Always review and test the function to ensure it behaves as expected in your use case.
 def queue_command(json_input: dict) -> str:
     """Queue a raw shell command (json key 'command').
-    Returns the analysisIDNAME string on success, or raises RuntimeError."""
+        Returns the analysisIDNAME string on success, or raises RuntimeError.
+
+    This function queues a raw shell command for execution, based on the "command" key in the provided JSON input. It first validates the command against known destructive patterns to ensure it is safe to execute. It then generates a unique analysisIDNAME using the _build_analysis_idname function, and prepares file paths for storing the command input, output, and status information. The function writes the JSON input to a file that can be used by the command if needed. It constructs a shell command to execute the provided command, redirecting output to a file and writing status information upon completion. Finally, it executes the command using subprocess and returns the analysisIDNAME if successful, or raises a RuntimeError if no task ID is returned by task-spooler. This function allows for flexible execution of arbitrary shell commands while maintaining a level of safety through validation and controlled execution.
+
+    Note: Executing raw shell commands can be dangerous, so it's crucial to ensure that the validation function is robust and that the API is properly secured to prevent unauthorized access. Additionally, consider implementing further security measures such as running commands in a restricted environment or using containerization to mitigate risks. Always review and test the function to ensure it behaves as expected in your use case.
+
+    """
     command = json_input["command"]
     _validate_command(command)
     analysisIDNAME, _ = _build_analysis_idname(json_input)
@@ -581,11 +685,13 @@ def queue_command(json_input: dict) -> str:
     analysisINFOFILE = os.path.join(analysisFOLDER, f"{analysisIDNAME}.info")
     analysisOUTPUTFILE = os.path.join(analysisFOLDER, f"{analysisIDNAME}.output")
 
+    _ts_env, _max_slots = _prepare_queue_for_submission(json_input.get("queue"))
+    _task_slots = _resolve_task_slots(json_input, _max_slots)
+
     with open(analysisFILE, "w") as f:
         f.write(json.dumps(json_input))
 
-    _ts_env = _prepare_queue_for_submission(json_input.get("queue"))
-    ts_cmd = f"{_ts_env}{ts} -L {analysisIDNAME}" if ts else ""
+    ts_cmd = f"{_ts_env}{ts} -N {_task_slots} -L {analysisIDNAME}" if ts else ""
     myCmd = (
         f'{ts_cmd} sh -c "'
         f"{command} "
@@ -603,11 +709,13 @@ def queue_command(json_input: dict) -> str:
         raise RuntimeError("task-spooler returned no task ID")
     return analysisIDNAME
 
-
-# This function queues a Docker command for execution, based on the "command_docker" key in the provided JSON input. It validates the Docker image name and any extra parameters to ensure they are safe to use. It generates a unique analysisIDNAME using the _build_analysis_idname function, and prepares file paths for storing the command input, output, and status information. The function writes the JSON input to a file that can be used by the Docker container if needed. It constructs a shell command to run the specified Docker command with the provided parameters, redirecting output to a file and writing status information upon completion. Finally, it executes the command using subprocess and returns the analysisIDNAME if successful, or raises a RuntimeError if no task ID is returned by task-spooler. This function allows for flexible execution of commands within Docker containers while maintaining a level of safety through validation and controlled execution.
-# Note: Running commands in Docker containers can provide an additional layer of isolation, but it's still important to ensure that the validation functions are robust and that the API is properly secured to prevent unauthorized access. Additionally, consider implementing further security measures such as running Docker containers with a restricted set of capabilities or using container security profiles to mitigate risks. Always review and test the function to ensure it behaves as expected in your use case.
 def queue_command_docker(json_input: dict) -> str:
     """Queue a docker command with predefined mount parameters (json key 'command_docker').
+
+    This function queues a Docker command for execution, based on the "command_docker" key in the provided JSON input. It validates the Docker image name and any extra parameters to ensure they are safe to use. It generates a unique analysisIDNAME using the _build_analysis_idname function, and prepares file paths for storing the command input, output, and status information. The function writes the JSON input to a file that can be used by the Docker container if needed. It constructs a shell command to run the specified Docker command with the provided parameters, redirecting output to a file and writing status information upon completion. Finally, it executes the command using subprocess and returns the analysisIDNAME if successful, or raises a RuntimeError if no task ID is returned by task-spooler. This function allows for flexible execution of commands within Docker containers while maintaining a level of safety through validation and controlled execution.
+
+    Note: Running commands in Docker containers can provide an additional layer of isolation, but it's still important to ensure that the validation functions are robust and that the API is properly secured to prevent unauthorized access. Additionally, consider implementing further security measures such as running Docker containers with a restricted set of capabilities or using container security profiles to mitigate risks. Always review and test the function to ensure it behaves as expected in your use case.
+
     JSON keys:
       - command_docker      (required): command to run inside the container
       - image               (required): docker image to use
@@ -634,11 +742,13 @@ def queue_command_docker(json_input: dict) -> str:
     analysisINFOFILE = os.path.join(analysisFOLDER, f"{analysisIDNAME}.info")
     analysisOUTPUTFILE = os.path.join(analysisFOLDER, f"{analysisIDNAME}.output")
 
+    _ts_env, _max_slots = _prepare_queue_for_submission(json_input.get("queue"))
+    _task_slots = _resolve_task_slots(json_input, _max_slots)
+
     with open(analysisFILE, "w") as f:
         f.write(json.dumps(json_input))
 
-    _ts_env = _prepare_queue_for_submission(json_input.get("queue"))
-    ts_cmd = f"{_ts_env}{ts} -L {analysisIDNAME}" if ts else ""
+    ts_cmd = f"{_ts_env}{ts} -N {_task_slots} -L {analysisIDNAME}" if ts else ""
     myCmd = (
         f'{ts_cmd} sh -c "'
         f"docker run {docker_parameters} {image} {command_docker} "
@@ -660,10 +770,15 @@ def queue_command_docker(json_input: dict) -> str:
 # --- Routes ---
 
 
-# The /token route allows users to obtain a JWT access token by providing their username and password. It uses the OAuth2PasswordRequestForm to parse the credentials from the request, authenticates the user, and if successful, creates and returns an access token that can be used for authenticated requests to the API. If authentication fails, it raises an HTTP 401 Unauthorized exception with a message indicating that the username or password is incorrect. This route is essential for enabling user authentication and securing the API endpoints that require a valid token.
-# Note: In a production environment, you would typically want to include additional claims in the JWT token (such as an expiration time) and implement a more robust authentication and token management system. Always review and test the authentication flow to ensure it behaves as expected in your use case.
 @app.post("/token", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
+    """Authenticate user and return a JWT access token.
+
+    The /token route allows users to obtain a JWT access token by providing their username and password. It uses the OAuth2PasswordRequestForm to parse the credentials from the request, authenticates the user, and if successful, creates and returns an access token that can be used for authenticated requests to the API. If authentication fails, it raises an HTTP 401 Unauthorized exception with a message indicating that the username or password is incorrect. This route is essential for enabling user authentication and securing the API endpoints that require a valid token.
+
+    Note: In a production environment, you would typically want to include additional claims in the JWT token (such as an expiration time) and implement a more robust authentication and token management system. Always review and test the authentication flow to ensure it behaves as expected in your use case.
+
+    """
     user = authenticate_user(form_data.username, form_data.password)
     if not user:
         raise HTTPException(
@@ -676,23 +791,30 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
-
-# The /me route returns the current user's information, including their username and groups. It uses the get_current_user dependency to retrieve the authenticated user based on the provided JWT token. If the user is not authenticated, it raises an HTTP 401 Unauthorized exception with a message indicating that authentication is required. This route allows users to verify their authentication status and view their associated information.
-# Note: This route requires a valid JWT token in the "Authorization" header to access the user's information. Always review and test the authentication flow to ensure it behaves as expected in your use case.
 @app.get("/me")
 async def get_me(user: User = Depends(get_current_user)):
-    """Returns the current user's info (username and groups)."""
+    """Returns the current user's info (username and groups).
+
+    The /me route returns the current user's information, including their username and groups. It uses the get_current_user dependency to retrieve the authenticated user based on the provided JWT token. If the user is not authenticated, it raises an HTTP 401 Unauthorized exception with a message indicating that authentication is required. This route allows users to verify their authentication status and view their associated information.
+
+    Note: This route requires a valid JWT token in the "Authorization" header to access the user's information. Always review and test the authentication flow to ensure it behaves as expected in your use case.
+
+    """
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated"
         )
     return {"username": user.username, "groups": user.groups}
 
-
-# The root route ("/") serves the main HTML page of the application. It uses the Jinja2Templates to render the "index.html" template, passing in the request object, a version string based on the modification time of the "static/script.js" file (to help with cache busting), and a refresh interval in milliseconds. This route provides the user interface for interacting with the API and viewing analysis results.
-# Note: Ensure that the "index.html" template and the associated static files are properly set up in the "templates" and "static" directories, respectively. The versioning mechanism for the script.js file helps to ensure that users receive the latest version of the JavaScript code when it changes, which can be important for functionality and security updates. Always review and test the route to ensure it behaves as expected in your use case.
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
+    """Serve the main HTML page with versioning for cache busting.
+
+    The root route ("/") serves the main HTML page of the application. It uses the Jinja2Templates to render the "index.html" template, passing in the request object, a version string based on the modification time of the "static/script.js" file (to help with cache busting), and a refresh interval in milliseconds. This route provides the user interface for interacting with the API and viewing analysis results.
+
+    Note: Ensure that the "index.html" template and the associated static files are properly set up in the "templates" and "static" directories, respectively. The versioning mechanism for the script.js file helps to ensure that users receive the latest version of the JavaScript code when it changes, which can be important for functionality and security updates. Always review and test the route to ensure it behaves as expected in your use case.
+
+    """
     import os
 
     version = str(int(os.path.getmtime("static/script.js")))
@@ -705,14 +827,18 @@ async def read_root(request: Request):
         },
     )
 
-
-# The /analysis route allows authorized users to launch a new analysis by providing a JSON payload with the necessary parameters. It checks if the user is authorized (either an admin user or a service call with a valid API key) and then processes the input to queue the analysis using one of the queue functions (queue_command, queue_command_docker, or queue_analysis) based on the keys present in the input. If the analysis is successfully queued, it returns the analysisIDNAME; otherwise, it returns an error message with a 400 status code. This route is central to enabling users to launch analyses through the API while enforcing access control and input validation.
-# Note: Ensure that the input JSON is properly structured and that the necessary keys are included for the type of analysis being launched. The access control checks help to ensure that only authorized users can launch analyses, which is important for maintaining the security and integrity of the system. Always review and test the route to ensure it behaves as expected in your use case.
 @app.post("/analysis")
 async def stark_launch(
     request: Request,
     authorized: Union[User, str] = Depends(get_current_user_or_service),
 ):
+    """Launch a STARK analysis or a raw command based on the JSON input.
+
+    The /analysis route allows authorized users to launch a new analysis by providing a JSON payload with the necessary parameters. It checks if the user is authorized (either an admin user or a service call with a valid API key) and then processes the input to queue the analysis using one of the queue functions (queue_command, queue_command_docker, or queue_analysis) based on the keys present in the input. If the analysis is successfully queued, it returns the analysisIDNAME; otherwise, it returns an error message with a 400 status code. This route is central to enabling users to launch analyses through the API while enforcing access control and input validation.
+
+    Note: Ensure that the input JSON is properly structured and that the necessary keys are included for the type of analysis being launched. The access control checks help to ensure that only authorized users can launch analyses, which is important for maintaining the security and integrity of the system. Always review and test the route to ensure it behaves as expected in your use case.
+
+    """
     # Restrict launch to admin users (service calls are always allowed)
     if authorized != "service":
         if not isinstance(authorized, User) or "admin" not in authorized.groups:
@@ -732,13 +858,14 @@ async def stark_launch(
     except Exception as e:
         return PlainTextResponse(content=f"KO: {e}", status_code=400)
 
-
-# The /list route retrieves the list of all tasks currently in the task spooler queue. It executes the 'ts -l' command to get the list of tasks, parses the output to extract relevant information about each task (such as ID, state, E-Level, times, and run name), and returns this information as a JSON response. If there are no tasks or if an error occurs while executing the command, it returns an empty list. This route allows users to monitor the status of their queued analyses and commands.
-# Note: The parsing of the 'ts -l' output is designed to be flexible to accommodate variations in the output format, but it may need adjustments if the output structure changes significantly. Always review and test the route to ensure it behaves as expected in your use case, especially with different versions of task spooler that may have different output formats. Additionally, consider implementing error handling and logging to capture any issues that may arise during the execution of the command or the parsing of its output.
 @app.get("/list")
 async def list_task():
     """
     List all tasks from all configured queues.
+
+    The /list route retrieves the list of all tasks currently in the task spooler queue. It executes the 'ts -l' command to get the list of tasks, parses the output to extract relevant information about each task (such as ID, state, E-Level, times, and run name), and returns this information as a JSON response. If there are no tasks or if an error occurs while executing the command, it returns an empty list. This route allows users to monitor the status of their queued analyses and commands.
+
+    Note: The parsing of the 'ts -l' output is designed to be flexible to accommodate variations in the output format, but it may need adjustments if the output structure changes significantly. Always review and test the route to ensure it behaves as expected in your use case, especially with different versions of task spooler that may have different output formats. Additionally, consider implementing error handling and logging to capture any issues that may arise during the execution of the command or the parsing of its output.
 
     Usage:
 
@@ -792,6 +919,9 @@ async def list_task():
                             "",
                             run_name_match.group(1) if run_name_match else "N/A",
                         )
+                        task_slots = _read_task_slots(
+                            data["command"], int(cfg.get("slots", 1))
+                        )
                         all_tasks.append(
                             {
                                 "id": int(data["id"].strip()),
@@ -808,15 +938,14 @@ async def list_task():
                                 ),
                                 "run_name": run_name,
                                 "queue": queue_name,
+                                "task_slots": task_slots,
+                                "queue_slots": int(cfg.get("slots", 1)),
                             }
                         )
         except FileNotFoundError:
             raise HTTPException(status_code=500, detail=f"Command not found: {ts}")
     return JSONResponse(content=all_tasks)
 
-
-# The /queue route allows authorized users to either retrieve the current task spooler queue or perform various actions on individual tasks (such as getting info, logs, analysis details, killing, prioritizing, removing, or swapping tasks). The specific action is determined by the "action" query parameter, and the target task is specified by the "id" query parameter when applicable. This route provides a flexible interface for managing tasks in the task spooler while enforcing access control to ensure that only authorized users can perform potentially destructive actions.
-# Note: The implementation of the various actions (info, log, analysis, kill, prioritize, remove, swap) is not included in the provided code snippet, so you would need to implement the logic for each action based on the task spooler commands and the structure of your system. Additionally, ensure that the access control checks are properly enforced to prevent unauthorized users from performing destructive actions on tasks. Always review and test the route to ensure it behaves as expected in your use case, especially with regard to the different actions and their effects on the task spooler queue.
 @app.get("/queue")
 async def queue(
     action: str = Query(
@@ -840,6 +969,10 @@ async def queue(
 ):
     """
     Get the task spooler queue or perform an action on a task.
+
+    The /queue route allows authorized users to either retrieve the current task spooler queue or perform various actions on individual tasks (such as getting info, logs, analysis details, killing, prioritizing, removing, or swapping tasks). The specific action is determined by the "action" query parameter, and the target task is specified by the "id" query parameter when applicable. This route provides a flexible interface for managing tasks in the task spooler while enforcing access control to ensure that only authorized users can perform potentially destructive actions.
+
+    Note: The implementation of the various actions (info, log, analysis, kill, prioritize, remove, swap) is not included in the provided code snippet, so you would need to implement the logic for each action based on the task spooler commands and the structure of your system. Additionally, ensure that the access control checks are properly enforced to prevent unauthorized users from performing destructive actions on tasks. Always review and test the route to ensure it behaves as expected in your use case, especially with regard to the different actions and their effects on the task spooler queue.
 
     The optional 'queue' parameter selects which queue to operate on.
     When omitted, the default (first) queue from config/queues.json is used,
@@ -909,6 +1042,9 @@ async def queue(
                                 "",
                                 run_name_match.group(1) if run_name_match else "N/A",
                             )
+                            task_slots = _read_task_slots(
+                                data["command"], int(cfg.get("slots", 1))
+                            )
                             all_tasks.append(
                                 {
                                     "id": data["id"].strip(),
@@ -926,6 +1062,8 @@ async def queue(
                                     "times": "",
                                     "run_name": run_name,
                                     "queue": queue_name,
+                                    "task_slots": task_slots,
+                                    "queue_slots": int(cfg.get("slots", 1)),
                                     "_ts_env": _q_env,
                                 }
                             )
@@ -1117,9 +1255,6 @@ async def queue(
         except FileNotFoundError:
             return PlainTextResponse(f"Command not found: {ts}", status_code=500)
 
-
-# The /relaunch/{ts_id} route allows authorized users to re-queue a finished task using its original JSON file. It retrieves the analysis name from the task spooler information for the specified task ID, locates the corresponding JSON file in the log folder, and then uses the queue_analysis function to launch a new analysis with the same parameters. This route is useful for quickly re-running analyses without having to manually prepare the input again, while still enforcing access control to ensure that only authorized users can perform this action.
-# Note: Ensure that the task ID provided in the URL corresponds to a finished task and that the original JSON file is still available in the log folder. The access control checks help to ensure that only authorized users can relaunch analyses, which is important for maintaining the security and integrity of the system. Always review and test the route to ensure it behaves as expected in your use case, especially with regard to the retrieval of task information and the handling of the JSON file for relaunching the analysis. Additionally, consider implementing error handling and logging to capture any issues that may arise during the retrieval of task information or the relaunching of the analysis.
 @app.post("/relaunch/{ts_id}")
 async def relaunch_task(
     ts_id: str,
@@ -1130,7 +1265,13 @@ async def relaunch_task(
     authorized: Union[User, str] = Depends(get_current_user_or_service),
 ):
     """Re-queue a finished task using its original JSON file.
-    Pass the same 'queue' parameter used when the task was launched."""
+    Pass the same 'queue' parameter used when the task was launched.
+
+    The /relaunch/{ts_id} route allows authorized users to re-queue a finished task using its original JSON file. It retrieves the analysis name from the task spooler information for the specified task ID, locates the corresponding JSON file in the log folder, and then uses the queue_analysis function to launch a new analysis with the same parameters. This route is useful for quickly re-running analyses without having to manually prepare the input again, while still enforcing access control to ensure that only authorized users can perform this action.
+
+    Note: Ensure that the task ID provided in the URL corresponds to a finished task and that the original JSON file is still available in the log folder. The access control checks help to ensure that only authorized users can relaunch analyses, which is important for maintaining the security and integrity of the system. Always review and test the route to ensure it behaves as expected in your use case, especially with regard to the retrieval of task information and the handling of the JSON file for relaunching the analysis. Additionally, consider implementing error handling and logging to capture any issues that may arise during the retrieval of task information or the relaunching of the analysis.
+
+    """
     if authorized != "service":
         if not isinstance(authorized, User) or "admin" not in authorized.groups:
             raise HTTPException(

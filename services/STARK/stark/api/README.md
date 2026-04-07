@@ -8,21 +8,21 @@ A **FastAPI**-based web service for launching and monitoring [STARK](https://git
 
 ## Features
 
-- **Web UI** — browser-based dashboard to launch analyses, monitor the task queue, inspect logs and results
-- **REST API** — JSON endpoints consumable by external services (e.g. `STARK.listener`)
-- **Dual authentication** — JWT bearer tokens for human users + static API key (`X-API-Key`) for service-to-service calls
-- **Role-based access** — `admin` group required for destructive actions (kill, remove, prioritize, relaunch) and for launching new analyses
-- **Three task modes** — STARK analysis, raw shell command, or custom Docker container command
-- **Multiple named queues** — independent task-spooler daemons, each with its own concurrency setting, configurable via `config/queues.json`
-- **Live queue** — auto-refreshing task table (running → queued → finished) with per-queue context on every action
-- **State colour coding** — running (orange), queued (grey), finished success (green), finished failed (red)
-- **Filter bar** — combined State dropdown (Running / Queued / Finished / Failed only) and Queue multi-select dropdown; instant client-side filtering with Reset button
-- **Inline detail panels** — Info / Log / Analysis JSON displayed inline, persisted across auto-refreshes, with one-click copy
-- **Time tracking** — elapsed time for running tasks (computed from `Start time`), final duration for finished tasks (from `Time run`)
-- **Confirmation dialogs** — danger actions (Kill, Prioritize, Remove, Relaunch) require explicit confirmation before executing
-- **Visual feedback** — danger buttons show `✓ Done` / `✗ Failed` with colour flash after each action
-- **Relaunch** — re-queue a finished task from its original JSON parameters on its original queue
-- **Username display** — logged-in username shown next to the Logout button; group membership visible on hover
+- **Web UI** - browser-based dashboard to launch analyses, monitor the task queue, inspect logs and results
+- **REST API** - JSON endpoints consumable by external services (e.g. `STARK.listener`)
+- **Dual authentication** - JWT bearer tokens for human users + static API key (`X-API-Key`) for service-to-service calls
+- **Role-based access** - `admin` group required for destructive actions (kill, remove, prioritize, relaunch) and for launching new analyses
+- **Three task modes** - STARK analysis, raw shell command, or custom Docker container command
+- **Multiple named queues** - independent task-spooler daemons, each with its own concurrency setting, configurable via `config/queues.json`
+- **Live queue** - auto-refreshing task table (running -> queued -> finished) with per-queue context on every action
+- **State colour coding** - running (orange), queued (grey), finished success (green), finished failed (red)
+- **Filter bar** - combined State dropdown (Running / Queued / Finished / Failed only) and Queue multi-select dropdown; instant client-side filtering with Reset button
+- **Inline detail panels** - Info / Log / Analysis JSON displayed inline, persisted across auto-refreshes, with one-click copy
+- **Time tracking** - elapsed time for running tasks (computed from `Start time`), final duration for finished tasks (from `Time run`)
+- **Confirmation dialogs** - danger actions (Kill, Prioritize, Remove, Relaunch) require explicit confirmation before executing
+- **Visual feedback** - danger buttons show `✓ Done` / `✗ Failed` with colour flash after each action
+- **Relaunch** - re-queue a finished task from its original JSON parameters on its original queue
+- **Username display** - logged-in username shown next to the Logout button; group membership visible on hover
 
 ---
 
@@ -101,10 +101,10 @@ Each queue entry has the following fields:
 |---|---|---|
 | `savelist` | Yes | Path to the directory where task-spooler stores output files |
 | `slots` | Yes | Maximum number of tasks running in parallel in this queue |
-| `socket` | No | Explicit `TS_SOCKET` path. Omitted → auto-derived as `/tmp/ts-<name>.socket`. The **default** (first) queue never overrides `TS_SOCKET`, using the container's env value instead |
+| `socket` | No | Explicit `TS_SOCKET` path. Omitted -> auto-derived as `/tmp/ts-<name>.socket`. The **default** (first) queue never overrides `TS_SOCKET`, using the container's env value instead |
 | `description` | No | Human-readable label |
 
-**The first entry in the file is always the default queue** — used when no `"queue"` key is provided in the request body.
+**The first entry in the file is always the default queue** - used when no `"queue"` key is provided in the request body.
 
 Example `config/queues.json`:
 
@@ -138,13 +138,13 @@ Example `config/queues.json`:
 
 **Queue isolation mechanism:**
 
-- Each non-default queue uses a unique `TS_SOCKET` path → its `ts` daemon is completely independent.
+- Each non-default queue uses a unique `TS_SOCKET` path -> its `ts` daemon is completely independent.
 - `TS_SAVELIST` stores output files and does **not** isolate daemons (a common misconception).
 - `TS_SLOTS` is enforced on every job submission via `ts -S <slots>` (because task-spooler only reads `TS_SLOTS` at daemon startup).
 - Queues whose daemon is not yet active (no socket file) are silently skipped in list responses.
 - Requesting a queue name not present in `queues.json` returns an HTTP 400 error listing available queues.
 
-**Choosing the target queue** — add a `"queue"` key to any `/analysis` request body:
+**Choosing the target queue** - add a `"queue"` key to any `/analysis` request body:
 
 Command
 
@@ -224,10 +224,10 @@ X-API-Key: <STARK_API_KEY>
 | Method | Path | Auth | Description |
 |---|---|---|---|
 | `GET` | `/` | JWT | Web dashboard |
-| `POST` | `/token` | — | Obtain JWT token |
+| `POST` | `/token` | - | Obtain JWT token |
 | `GET` | `/me` | JWT | Current user info |
 | `POST` | `/analysis` | JWT / API-Key (admin) | Launch a task |
-| `GET` | `/list` | — | List all tasks (all queues, no auth) |
+| `GET` | `/list` | - | List all tasks (all queues, no auth) |
 | `GET` | `/queue` | JWT / API-Key | Query or act on a queue |
 | `POST` | `/relaunch/{ts_id}` | JWT / API-Key (admin) | Re-queue a finished task |
 
@@ -278,12 +278,13 @@ The task type is determined by which key is present in the JSON body. An optiona
 |---|---|
 | `analysis_name` | Human-readable task label (sanitised, max 64 chars, defaults to `UNKNOWN`) |
 | `queue` | Target queue name. Must exist in `config/queues.json`. Defaults to first queue. |
+| `threads` | Number of task-spooler slots (`-N`) the task should occupy. Valid range: `0` to the queue's slot count. `0` is a special value that bypasses slot accounting - the task starts immediately regardless of queue load. Absent, invalid, or out-of-range values fall back to the queue's total slot count (conservative default, prevents over-scheduling). |
 
 **Response:** `STARK.<ID>.<analysisIDNAME>` (plain text, 200) or `KO: <reason>` (400/403).
 
 ---
 
-#### Mode 1 — STARK analysis (`run`)
+#### Mode 1 - STARK analysis (`run`)
 
 Runs the configured `DOCKER_STARK_IMAGE` Docker image for the given run directory.
 
@@ -301,9 +302,16 @@ curl -s -X POST "http://localhost:8000/analysis" \
   -d '{"run": "MY_RUN", "analysis_name": "MY_RUN_analysis"}'
 ```
 
+```bash
+curl -s -X POST "<http://localhost:8000/analysis>" \
+  -H 'Content-Type: application/json' \
+  -H "X-API-Key: $STARK_API_KEY" \
+  -d '{"run": "MY_RUN", "analysis_name": "MY_RUN_analysis"}' 
+```
+
 ---
 
-#### Mode 2 — Shell command (`command`)
+#### Mode 2 - Shell command (`command`)
 
 Runs a shell command **directly inside the API container**. Has access to all mounted volumes and binaries available in the container.
 
@@ -322,12 +330,19 @@ curl -s -X POST "http://localhost:8000/analysis" \
   -d '{"command": "echo hello world", "analysis_name": "test_cmd", "queue": "light"}'
 ```
 
+```bash
+curl -s -X POST "<http://localhost:8000/analysis>" \
+  -H 'Content-Type: application/json' \
+  -H "X-API-Key: $STARK_API_KEY" \
+  -d '{"command": "echo hello world", "analysis_name": "test_cmd", "queue": "light"}' 
+```
+
 > **Security:** Commands matching known destructive patterns are rejected:
 > `rm -rf /`, `dd of=/dev/…`, `:(){:|:&};:` (fork bomb), `mkfs`, `> /dev/…`, etc.
 
 ---
 
-#### Mode 3 — Docker command (`command_docker`)
+#### Mode 3 - Docker command (`command_docker`)
 
 Runs a command inside a **new ephemeral Docker container** (`docker run --rm`). The container receives the predefined volume mounts from `DOCKER_STARK_SERVICE_STARK_API_CONTAINER_MOUNT` and a generated `--name` for identification and cleanup.
 
@@ -338,6 +353,7 @@ Runs a command inside a **new ephemeral Docker container** (`docker run --rm`). 
 | `docker_extra_params` | No | Additional `docker run` flags (e.g. `-e MY_VAR=value`, `--entrypoint /bin/sh`) |
 | `analysis_name` | No | Human-readable task label |
 | `queue` | No | Target queue (defaults to first queue) |
+| `threads` | No | Slots consumed (`-N`); see common optional keys above |
 
 ```json
 {
@@ -358,7 +374,7 @@ curl -s -X POST "http://localhost:8000/analysis" \
 
 > **Security:**
 >
-> - `image` must match `[a-zA-Z0-9_.:/\-/@]` — shell metacharacters are rejected.
+> - `image` must match `[a-zA-Z0-9_.:/\-/@]` - shell metacharacters are rejected.
 > - `docker_extra_params` is validated against a blocklist: `--privileged`, high-privilege `--cap-add` values (`SYS_ADMIN`, `SYS_PTRACE`, `NET_ADMIN`, `ALL`), `--pid host`, `--network host`, host-root mounts (`-v /:`), sensitive path mounts (`-v /etc:`, `-v /root:`, `-v /proc:`, etc.) are all rejected.
 
 ---
@@ -408,7 +424,7 @@ curl -s http://localhost:8000/list | python3 -m json.tool
 ]
 ```
 
-> Note: task IDs are per-queue counters — ID `1` in `stark` and ID `1` in `light` are different tasks. Always use both `id` and `queue` together to identify a task.
+> Note: task IDs are per-queue counters - ID `1` in `stark` and ID `1` in `light` are different tasks. Always use both `id` and `queue` together to identify a task.
 
 ---
 
@@ -499,7 +515,7 @@ The dashboard is accessible at `http://localhost:8000/`.
 | **Header** | STARK API title, logged-in username (hover for groups), Logout button |
 | **Launch Analysis** | Run name field + Advanced JSON textarea. Visible to admins only. |
 | **Filter bar** | State dropdown (Running / Queued / Finished + **Failed only**) and Queue multi-select dropdown. Filters are client-side and instant. A **✕ Reset** button restores all defaults. |
-| **Task Queue** | Auto-refreshing table. Tasks sorted: running → queued → finished. |
+| **Task Queue** | Auto-refreshing table. Tasks sorted: running -> queued -> finished. |
 
 **Queue table columns:** ID, State, Queue, E-Level, Time, Analysis Name, Actions.
 
@@ -524,7 +540,7 @@ Red buttons (K, P, X, R) are only visible to `admin` users and require a confirm
 
 Clicking **I**, **L**, or **A** opens an inline detail panel below the row. The panel persists across auto-refreshes and includes a **Copy** button. Panels from tasks in different queues with the same numeric ID are tracked independently.
 
-**Filter bar — State dropdown options:**
+**Filter bar - State dropdown options:**
 
 | Option | Effect |
 |---|---|
