@@ -242,7 +242,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 queueBody.appendChild(row);
             });
         } else {
-            queueBody.innerHTML = '<tr><td colspan="7">No tasks match the current filters.</td></tr>';
+            queueBody.innerHTML = '<tr><td colspan="8">No tasks match the current filters.</td></tr>';
         }
         restoreOpenDetails();
     }
@@ -391,6 +391,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     const oa = stateOrder[a.state.toLowerCase()] ?? 3;
                     const ob = stateOrder[b.state.toLowerCase()] ?? 3;
                     if (oa !== ob) return oa - ob;
+                    // Queued: preserve ts -l order so the Prioritize button has a visible
+                    // effect (ts -u moves the task first in ts -l output).
+                    if (a.state.toLowerCase() === 'queued') return 0;
+                    // Running / Finished: stable ID-ascending order.
                     return Number(a.id) - Number(b.id);
                 });
                 allTasks = tasks;
