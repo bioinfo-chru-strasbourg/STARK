@@ -131,6 +131,13 @@ def main():
     )
 
     parser.add_argument(
+        "-u",
+        "--url",
+        default=None,
+        help="URL of file to download (default: None)",
+    )
+
+    parser.add_argument(
         "-a",
         "--assembly",
         default="hg19",
@@ -156,21 +163,33 @@ def main():
 
     args = parser.parse_args()
 
+    args.patch = None if args.patch.lower() == "latest" else args.patch
+
+    print(f"[INFO] URL: {args.url}")
     print(f"[INFO] Assembly: {args.assembly}")
     print(f"[INFO] Patch: {args.patch or 'latest'}")
 
-    # Step 1: discover directories
-    directories = list_assembly_directories()
+    if args.url:
 
-    # Step 2: filter
-    filtered = filter_assemblies(directories, args.assembly)
+        # Step 0: Use provided URL
+        print(f"[INFO] Using provided URL: {args.url}")
+        url = args.url
 
-    # Step 3: select best match
-    selected = select_best_match(filtered, args.patch)
-    print(f"[INFO] Selected: {selected}")
+    else:
 
-    # Step 4: build URL
-    url = build_gtf_url(selected)
+        # Step 1: discover directories
+        directories = list_assembly_directories()
+
+        # Step 2: filter
+        filtered = filter_assemblies(directories, args.assembly)
+
+        # Step 3: select best match
+        selected = select_best_match(filtered, args.patch)
+        print(f"[INFO] Selected: {selected}")
+
+        # Step 4: build URL
+        url = build_gtf_url(selected)
+
     print(f"[INFO] Downloading: {url}")
 
     gz_filename = url.split("/")[-1]

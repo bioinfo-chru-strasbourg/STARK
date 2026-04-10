@@ -176,13 +176,15 @@ export GENOME_RNA
 
 # for hg19 the last gencode version is v19
 if [ $ASSEMBLY == "hg19" ] ; then
-	GENCODE_VERSION="19"
-	GENCODE_CURRENT="https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_$GENCODE_VERSION/gencode.v$GENCODE_VERSION.annotation.gtf.gz";
+	# GENCODE_VERSION="19"
+	# GENCODE_CURRENT="https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_$GENCODE_VERSION/gencode.v$GENCODE_VERSION.annotation.gtf.gz";
+	GENCODE_VERSION="49"
+	GENCODE_CURRENT="https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_${GENCODE_VERSION}/GRCh37_mapping/gencode.v${GENCODE_VERSION}lift37.annotation.gtf.gz"; #gencode.v$GENCODE_VERSION.annotation.gtf.gz";
 fi;
 # for hg38 the first gencode version is v20 ; current version (10/2023) is v44
 if [ $ASSEMBLY == "hg38" ] ; then 
-	GENCODE_VERSION="44"
-	GENCODE_CURRENT="https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_$GENCODE_VERSION/gencode.v$GENCODE_VERSION.primary_assembly.annotation.gtf.gz";
+	GENCODE_VERSION="49"
+	GENCODE_CURRENT="https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_${GENCODE_VERSION}/gencode.v${GENCODE_VERSION}.primary_assembly.annotation.gtf.gz";
 fi;
 export GENCODE_VERSION
 export GENCODE_CURRENT

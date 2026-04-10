@@ -695,7 +695,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 			# Convert into GTF
 			awk -F '\t' -v OFS='\t' -f $STARK_FOLDER_BIN/refSeq_to_gtf.awk $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/ncbiRefSeq.txt > $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/ncbiRefSeq.gtf
 			# Download refSeq in GTF
-			$PYTHON $STARK_FOLDER_BIN/get_refGene.py -a $ASSEMBLY -o $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/refSeq.gtf
+			$PYTHON $STARK_FOLDER_BIN/get_refGene.py --assembly $ASSEMBLY --patch latest --output $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/refSeq.gtf
 			# Collapse GTF
 			$PYTHON $STARK_FOLDER_BIN/collapse_annotation.py $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/refSeq.gtf $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/refSeq.collapsed.gtf;
 			# README.md
@@ -736,6 +736,87 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		MK_ALL="$MK_ALL $DBFOLDER_REFGENE/$RELEASE/$ASSEMBLY"
 	fi;
 fi;
+
+
+###########
+# GENCODE #
+###########
+DATABASE="gencode"
+DATABASE_NAME="gencode"
+DATABASE_FULLNAME="GENCODE"
+DATABASE_WEBSITE="https://www.gencodegenes.org/"
+DATABASE_DESCRIPTION=" The goal of the GENCODE project is to identify and classify all gene features in the human and mouse genomes with high accuracy based on biological evidence, and to release these annotations for the benefit of biomedical research and genome interpretation"
+
+if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
+
+	DBFOLDER_GENCODE=$(dirname $GENCODE_DATABASES)
+	if [ ! -e $DBFOLDER_GENCODE/$RELEASE ]; then
+		mkdir -p $DBFOLDER_GENCODE/$RELEASE;
+	fi;
+
+	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$GENCODE_VERSION
+	mkdir -p $DB_TMP
+	chmod 0775 $DB_TMP;
+
+	if [ ! -e $DBFOLDER_GENCODE/$RELEASE/$ASSEMBLY ] || (($UPDATE)); then
+		(($VERBOSE)) && echo ""
+		(($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME' release '$GENCODE_VERSION' for [$ASSEMBLY]"
+
+		GENCODE_DATE=$(curl -s -I $GENCODE_CURRENT | grep "Last-Modified: " | sed "s/Last-Modified: //g" | sed "s/\r$//g");
+		GENCODE_DATE_RELEASE=$(date -d "$GENCODE_DATE");
+
+		if (($UPDATE)); then
+			if [ -e $DBFOLDER_GENCODE/$RELEASE/$ASSEMBLY ]; then mv -f $DBFOLDER_GENCODE/$RELEASE/$ASSEMBLY $DBFOLDER_GENCODE.V$DATE; fi;
+		fi;
+		
+		DB_INFOS_JSON='
+		{
+			"code": "'$DATABASE'",
+			"name": "'$DATABASE_NAME'",
+			"fullname": "'$DATABASE_FULLNAME'",
+			"website": "'$DATABASE_WEBSITE'",
+			"description": "'$DATABASE_DESCRIPTION'"
+		}
+		';
+		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
+
+		DB_RELEASE_INFOS_JSON='
+		{
+			"release": "'$GENCODE_VERSION'",
+			"date": "'$GENCODE_DATE_RELEASE'",
+			"files": [ "'$(basename $GENCODE_CURRENT)'" ],
+			"assembly": [ "'$ASSEMBLY'" ],
+			"download": {
+				"methode": "'$DOWNLOAD_METHOD'",
+				"URL": "'$(dirname $GENCODE_CURRENT)'",
+				"file": "'$(basename $GENCODE_CURRENT)'",
+				"date": "'$GENCODE_DATE_RELEASE'"
+			}
+		}
+		';
+		echo "$DB_RELEASE_INFOS_JSON" > $DB_TMP/STARK.database.release
+
+		(($VERBOSE)) && echo "#[INFO] GENCODE URL=$GENCODE_CURRENT"
+		(($VERBOSE)) && echo "#[INFO] GENCODE RELEASE=$GENCODE_VERSION"
+
+		echo "$GENCODE_DATABASES/$ASSEMBLY/done: $DBFOLDER $GENOME
+			mkdir -p $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY;
+			chmod 0775 $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY;
+			$ARIA_CMD $GENCODE_CURRENT -d $DB_TMP;
+			cp $DB_TMP/$(basename $GENCODE_CURRENT) $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY/gencode.gtf.gz;
+			gzip -d $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY/gencode.gtf.gz;
+			$PYTHON $STARK_FOLDER_BIN/collapse_annotation.py $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY/gencode.gtf $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY/gencode.collapsed.gtf;
+			-[ ! -s $DBFOLDER_GENCODE/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_GENCODE/STARK.database && chmod o+r $DBFOLDER_GENCODE/STARK.database;
+			-[ ! -s $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY/STARK.database.release ] && cp $DB_TMP/STARK.database.release $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY/STARK.database.release && chmod o+r $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY/STARK.database.release;
+			[ ! -e $DBFOLDER_GENCODE/$RELEASE/$ASSEMBLY ] || unlink $DBFOLDER_GENCODE/$RELEASE/$ASSEMBLY;
+			ln -snf ../$GENCODE_VERSION/$ASSEMBLY $DBFOLDER_GENCODE/$RELEASE/$ASSEMBLY;
+			rm -rf $DB_TMP;
+			touch $GENCODE_DATABASES/$ASSEMBLY/done;
+		" >> $MK
+		MK_ALL="$MK_ALL $GENCODE_DATABASES/$ASSEMBLY/done"
+	fi;
+fi;
+
 
 #########
 # dbSNP #
@@ -1289,85 +1370,6 @@ fi;
 # 		MK_ALL="$MK_ALL $DBFOLDER_CTAT/done"
 # 	fi;
 # fi;
-
-###########
-# GENCODE #
-###########
-DATABASE="gencode"
-DATABASE_NAME="gencode"
-DATABASE_FULLNAME="GENCODE"
-DATABASE_WEBSITE="https://www.gencodegenes.org/"
-DATABASE_DESCRIPTION=" The goal of the GENCODE project is to identify and classify all gene features in the human and mouse genomes with high accuracy based on biological evidence, and to release these annotations for the benefit of biomedical research and genome interpretation"
-
-if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPUT; then
-
-	DBFOLDER_GENCODE=$(dirname $GENCODE_DATABASES)
-	if [ ! -e $DBFOLDER_GENCODE/$RELEASE ]; then
-		mkdir -p $DBFOLDER_GENCODE/$RELEASE;
-	fi;
-
-	DB_TMP=$TMP_DATABASES_DOWNLOAD_FOLDER/$DATABASE/$GENCODE_VERSION
-	mkdir -p $DB_TMP
-	chmod 0775 $DB_TMP;
-
-	if [ ! -e $DBFOLDER_GENCODE/$RELEASE/$ASSEMBLY ] || (($UPDATE)); then
-		(($VERBOSE)) && echo ""
-		(($VERBOSE)) && echo "#[INFO] DATABASE '$DATABASE_NAME' release '$GENCODE_VERSION' for [$ASSEMBLY]"
-
-		GENCODE_DATE=$(curl -s -I $GENCODE_CURRENT | grep "Last-Modified: " | sed "s/Last-Modified: //g" | sed "s/\r$//g");
-		GENCODE_DATE_RELEASE=$(date -d "$GENCODE_DATE");
-
-		if (($UPDATE)); then
-			if [ -e $DBFOLDER_GENCODE/$RELEASE/$ASSEMBLY ]; then mv -f $DBFOLDER_GENCODE/$RELEASE/$ASSEMBLY $DBFOLDER_GENCODE.V$DATE; fi;
-		fi;
-		
-		DB_INFOS_JSON='
-		{
-			"code": "'$DATABASE'",
-			"name": "'$DATABASE_NAME'",
-			"fullname": "'$DATABASE_FULLNAME'",
-			"website": "'$DATABASE_WEBSITE'",
-			"description": "'$DATABASE_DESCRIPTION'"
-		}
-		';
-		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
-
-		DB_RELEASE_INFOS_JSON='
-		{
-			"release": "'$GENCODE_VERSION'",
-			"date": "'$GENCODE_DATE_RELEASE'",
-			"files": [ "'$(basename $GENCODE_CURRENT)'" ],
-			"assembly": [ "'$ASSEMBLY'" ],
-			"download": {
-				"methode": "'$DOWNLOAD_METHOD'",
-				"URL": "'$(dirname $GENCODE_CURRENT)'",
-				"file": "'$(basename $GENCODE_CURRENT)'",
-				"date": "'$GENCODE_DATE_RELEASE'"
-			}
-		}
-		';
-		echo "$DB_RELEASE_INFOS_JSON" > $DB_TMP/STARK.database.release
-
-		(($VERBOSE)) && echo "#[INFO] GENCODE URL=$GENCODE_CURRENT"
-		(($VERBOSE)) && echo "#[INFO] GENCODE RELEASE=$GENCODE_VERSION"
-
-		echo "$GENCODE_DATABASES/$ASSEMBLY/done: $DBFOLDER $GENOME
-			mkdir -p $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY;
-			chmod 0775 $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY;
-			$ARIA_CMD $GENCODE_CURRENT -d $DB_TMP;
-			cp $DB_TMP/$(basename $GENCODE_CURRENT) $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY/gencode.gtf.gz;
-			gzip -d $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY/gencode.gtf.gz;
-			$PYTHON $STARK_FOLDER_BIN/collapse_annotation.py $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY/gencode.gtf $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY/gencode.collapsed.gtf;
-			-[ ! -s $DBFOLDER_GENCODE/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_GENCODE/STARK.database && chmod o+r $DBFOLDER_GENCODE/STARK.database;
-			-[ ! -s $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY/STARK.database.release ] && cp $DB_TMP/STARK.database.release $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY/STARK.database.release && chmod o+r $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY/STARK.database.release;
-			[ ! -e $DBFOLDER_GENCODE/$RELEASE/$ASSEMBLY ] || unlink $DBFOLDER_GENCODE/$RELEASE/$ASSEMBLY;
-			ln -snf ../$GENCODE_VERSION/$ASSEMBLY $DBFOLDER_GENCODE/$RELEASE/$ASSEMBLY;
-			rm -rf $DB_TMP;
-			touch $GENCODE_DATABASES/$ASSEMBLY/done;
-		" >> $MK
-		MK_ALL="$MK_ALL $GENCODE_DATABASES/$ASSEMBLY/done"
-	fi;
-fi;
 
 if [ ! -z "$MK_ALL" ]; then
 	echo "$DBFOLDER:
