@@ -1,0 +1,41 @@
+site_name: STARK
+theme:
+  name: material
+  highlightjs: true
+  language: fr
+  features:
+    - search.suggestions
+    - search.highlight
+    - toc.integrated
+    - content.code.annotated
+    - content.code.copy
+    - navigation.tabs
+    #- header.autohide
+# nav:
+#   - Home: index.md
+#   - About: about.md
+plugins:
+  #- mkdocs-pyscript
+  - markdown-exec
+  - include-markdown
+  #- mkdocs-macros
+  #- mkdocs-macros-plugin
+  - search
+  #- tags
+  - include_dir_to_nav:
+      file_pattern: '.*\.md$'
+markdown_extensions:
+  - pymdownx.superfences
+  - attr_list
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+nav:
+  - Accueil: 'index.md'
+  - Get Started: 'get_started.md'
+  - User Guides: 'user_guides/'
+  - Documentation: 'documentation/'
+  #- Installation: 'INSTALL.md'
+  #- Activity: 'Activity/'
+  #- Activity: 'activity.md'
+  - Contact: 'contact.md'

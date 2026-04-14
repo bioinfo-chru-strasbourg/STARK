@@ -23,6 +23,10 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 ENV_CONFIG=$(find -L $SCRIPT_DIR/.. -name config.app)
 source $ENV_CONFIG 1>/dev/null 2>/dev/null
 
+# Timestamp
+function timestamp() {
+    date +"%Y-%m-%d %H:%M:%S"
+}
 
 # Header
 function header () {
@@ -72,8 +76,8 @@ function usage {
 ARGS=$(getopt -o "vdnh" --long "docker-env-file:,listener:,launcher:,clear,verbose,debug,release,help" -- "$@" 2> /dev/null)
 if [ $? -ne 0 ]; then
 	:
-	echo "#[ERROR] Error in the argument list:";
-	echo "#[ERROR] $@"
+	echo "["$(timestamp)" | ERROR] Error in the argument list:";
+	echo "["$(timestamp)" | ERROR] $@"
 	echo ""
 	usage;
 	exit;
@@ -138,7 +142,7 @@ done
 # Checking the input parameter
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # if [ -z "$LISTENER_FOLDER" ] && [ -z "$LAUNCHER_FOLDER" ] && ((!$DEBUG)); then
-# 	echo "#[ERROR] Required parameter: --listener and --launcher. Use --help to display the help." && echo "" && usage && exit 1;
+# 	echo "["$(timestamp)" | ERROR] Required parameter: --listener and --launcher. Use --help to display the help." && echo "" && usage && exit 1;
 # fi
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -187,9 +191,9 @@ EXEC_DATE=$(date '+%Y%m%d-%H%M%S')
 
 
 
-(($VERBOSE)) && echo "#[INFO] Docker environment file: $DOCKER_ENV_FILE"
-(($VERBOSE)) && echo "#[INFO] Listener log folder: $LISTENER_FOLDER"
-(($VERBOSE)) && echo "#[INFO] Launcher log folder: $LAUNCHER_FOLDER"
+(($VERBOSE)) && echo "["$(timestamp)" | INFO] Docker environment file: $DOCKER_ENV_FILE"
+(($VERBOSE)) && echo "["$(timestamp)" | INFO] Listener log folder: $LISTENER_FOLDER"
+(($VERBOSE)) && echo "["$(timestamp)" | INFO] Launcher log folder: $LAUNCHER_FOLDER"
 
 
 
@@ -197,7 +201,7 @@ EXEC_DATE=$(date '+%Y%m%d-%H%M%S')
 ###############
 
 if [ -z "$LISTENER_FOLDER" ] || [ ! -d "$LISTENER_FOLDER" ] || [ -z "$LAUNCHER_FOLDER" ] || [ ! -d "$LAUNCHER_FOLDER" ]; then
-	echo "#[ERROR] Required parameter: --listener and --launcher. Use --help to display the help." && echo "" && usage && exit 1;
+	echo "["$(timestamp)" | ERROR] Required parameter: --listener and --launcher. Use --help to display the help." && echo "" && usage && exit 1;
 fi;
 
 
@@ -211,27 +215,27 @@ for ANALYSIS_LOG in $(find -L $LISTENER_FOLDER -mindepth 1 -maxdepth 1 -name "ID
 
 	ANALYSIS_NAME=$(echo $(basename $ANALYSIS_LOG) | sed 's/.log//g')
 
-	(($VERBOSE)) && echo "#[INFO] STARK ANALYSIS '$ANALYSIS_NAME' "
+	(($VERBOSE)) && echo "["$(timestamp)" | INFO] STARK ANALYSIS '$ANALYSIS_NAME' "
 
 	# finished
 	if (($(ls $LAUNCHER_FOLDER/STARK.*.$ANALYSIS_NAME.json 2>/dev/null | wc -l))) && (($(ls $LAUNCHER_FOLDER/STARK.*.$ANALYSIS_NAME.info 2>/dev/null | wc -l))); then
-		(($VERBOSE)) && echo "#[INFO] STARK ANALYSIS '$ANALYSIS_NAME' launched "
+		(($VERBOSE)) && echo "["$(timestamp)" | INFO] STARK ANALYSIS '$ANALYSIS_NAME' launched "
 	else
-		(($VERBOSE)) && echo "#[INFO] STARK ANALYSIS '$ANALYSIS_NAME' NOT launched "
+		(($VERBOSE)) && echo "["$(timestamp)" | INFO] STARK ANALYSIS '$ANALYSIS_NAME' NOT launched "
 	fi;
 
 	# Not finished
 	#if (($(ls $LAUNCHER_FOLDER/STARK.*.$ANALYSIS_NAME.json 2>/dev/null | wc -l))) && ! (($(ls $LAUNCHER_FOLDER/STARK.*.$ANALYSIS_NAME.info 2>/dev/null | wc -l))); then
 	if (($(ls $LAUNCHER_FOLDER/STARK.*.$ANALYSIS_NAME.info 2>/dev/null | wc -l))); then
-		(($VERBOSE)) && echo "#[INFO] STARK ANALYSIS '$ANALYSIS_NAME' finished "
+		(($VERBOSE)) && echo "["$(timestamp)" | INFO] STARK ANALYSIS '$ANALYSIS_NAME' finished "
 	else
-		(($VERBOSE)) && echo "#[INFO] STARK ANALYSIS '$ANALYSIS_NAME' NOT finished "
+		(($VERBOSE)) && echo "["$(timestamp)" | INFO] STARK ANALYSIS '$ANALYSIS_NAME' NOT finished "
 		if (($RELAUNCHED_NOT_FINISHED)); then
-			echo "#[INFO] STARK ANALYSIS '$ANALYSIS_NAME' relaunched"
+			echo "["$(timestamp)" | INFO] STARK ANALYSIS '$ANALYSIS_NAME' relaunched"
 			mv $ANALYSIS_LOG $ANALYSIS_LOG.$EXEC_DATE
 		else
-			echo "#[INFO] STARK ANALYSIS '$ANALYSIS_NAME' need to be relaunched"
-			(($DEBUG)) && echo "#[INFO] $ANALYSIS_LOG > $ANALYSIS_LOG.$EXEC_DATE "
+			echo "["$(timestamp)" | INFO] STARK ANALYSIS '$ANALYSIS_NAME' need to be relaunched"
+			(($DEBUG)) && echo "["$(timestamp)" | INFO] $ANALYSIS_LOG > $ANALYSIS_LOG.$EXEC_DATE "
 		fi;
 	fi;
 

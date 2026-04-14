@@ -180,7 +180,7 @@ export NGS_TOOLS=$FOLDER_TOOLS				# TOOLS
 export DBFOLDER=$FOLDER_DATABASES			# DB
 export NGS_GENOMES=$DBFOLDER/genomes			# GENOMES folder
 export APPS=$STARK_FOLDER_APPS				# APPS
-export GENOMES=$NGS_GENOMES				# Genomes folder in NGS folder
+#export GENOMES=$NGS_GENOMES				# Genomes folder in NGS folder
 export TMP_SYS_FOLDER=/tmp				# TEMPORARY SYSTEM folder (tmpfs)
 export NGS_FOLDER=$FOLDER_TOOLS
 export NGS_SCRIPTS=$STARK_FOLDER_BIN			#"$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd -P )"
@@ -370,58 +370,6 @@ done;
 #echo $APP_GROUP
 #echo $APP_PROJECT
 
-
-# ASSEMBLY & REF
-################
-# default Assembly
-if [ -z $ASSEMBLY ] || [ "$ASSEMBLY" == "" ]; then
-	ASSEMBLY=hg19
-fi;
-export ASSEMBLY
-
-if [ "$REF" == "" ]; then
-	# default REF
-	if [ -s $GENOMES/$ASSEMBLY/$ASSEMBLY.fa ]; then
-		REF=$GENOMES/$ASSEMBLY/$ASSEMBLY.fa
-	elif [ -s $GENOMES/current/$ASSEMBLY.fa ]; then
-		REF=$GENOMES/current/$ASSEMBLY.fa
-	fi;
-	if [ ! -s $REF ] || [ "$REF" == "" ]; then
-		REF=$GENOMES/current/$ASSEMBLY.fa
-	fi;
-	export REF
-fi;
-
-
-# REF_CACHE_FOLDER and REF_CACHE and REF_PATH
-
-if [ -z $REF_PATH ] || [ "$REF_PATH" == "" ]; then
-	REF_PATH="http://www.ebi.ac.uk/ena/cram/md5/%s"
-fi;
-
-if [ -z $REF_CACHE_FOLDER ] || [ "$REF_CACHE_FOLDER" == "" ] || [ ! -d $REF_CACHE_FOLDER ]; then
-	if [ -d $REF.hts-ref ] && [ "$(ls -A $REF.hts-ref 2>/dev/null)" ]; then
-		REF_CACHE_FOLDER=$REF.hts-ref
-	elif mkdir -p $REF.hts-ref 2>/dev/null; then
-		REF_CACHE_FOLDER=$REF.hts-ref
-	else
-		REF_CACHE_FOLDER=$HOME/.cache/hts-ref
-		mkdir -p $REF_CACHE_FOLDER
-	fi;
-else
-	REF_CACHE="$REF_CACHE_FOLDER/%2s/%2s/%s"
-fi;
-
-if [ ! "$(ls -A $REF_CACHE_FOLDER 2>/dev/null)" ] && [ -w $REF_CACHE_FOLDER ] && [ "$(whereis samtools | cut -d' ' -f2)" ]; then \
-	perl $(dirname $(whereis samtools | cut -d' ' -f2))/seq_cache_populate.pl -root $REF_CACHE_FOLDER $REF ; \
-fi;
-
-export REF_CACHE_FOLDER
-export REF_PATH
-export REF_CACHE="$REF_CACHE_FOLDER/%2s/%2s/%s"
-
-
-
 # TOOLS
 #########
 
@@ -509,6 +457,16 @@ else
 fi;
 export BAM_METRICS
 
+# BAM GENE COVERAGE METRICS (default 1/TRUE/YES/Y)
+# Performs BAM GENE COVERAGE METRICS (1/TRUE/YES/Y or 0/FALSE/NO/N) using RNASeQC. Time and space consuming.
+if [ "${BAM_GENE_COVERAGE_METRICS^^}" == "FALSE" ] || [ "${BAM_GENE_COVERAGE_METRICS^^}" == "NO" ] || [ "${BAM_GENE_COVERAGE_METRICS^^}" == "N" ] || [ "$BAM_GENE_COVERAGE_METRICS" == "0" ]; then
+	BAM_GENE_COVERAGE_METRICS=0
+elif [ -z $BAM_GENE_COVERAGE_METRICS ] || [ "${BAM_GENE_COVERAGE_METRICS^^}" == "TRUE" ] || [ "${BAM_GENE_COVERAGE_METRICS^^}" == "YES" ] || [ "${BAM_GENE_COVERAGE_METRICS^^}" == "Y" ] || [ "$BAM_GENE_COVERAGE_METRICS" == "1" ]; then
+	BAM_GENE_COVERAGE_METRICS=1
+else
+	BAM_GENE_COVERAGE_METRICS=1
+fi;
+export BAM_GENE_COVERAGE_METRICS
 
 # GLOBAL METRICS VARIABLES
 # Values for BAM metrics
@@ -614,7 +572,7 @@ export DEPTH_COVERAGE_THRESHOLD
 
 # COVERAGE HARMONIZATION
 COVERAGE_CRITERIA=$(echo "$SEQUENCING_DEPTH,$MINIMUM_DEPTH,$EXPECTED_DEPTH,$COVERAGE_CRITERIA" | tr "," "\n" | tr " " "\n" | grep -v "^$" | sort -u -n | tr "\n" ","  | sed "s/,$//")
-
+export COVERAGE_CRITERIA
 
 # CLIP_OVERLAPPING_READS (default 1)
 # From PICARD: For paired reads, soft clip the 3' end of each read if necessary so that it does not extend past the 5' end of its mate
@@ -1015,6 +973,36 @@ fi;
 export BAM_VALIDATION_COMPRESSION
 
 
+### BWA MEM ALIGNER
+
+# Memory management
+
+# Use a minimum of 6 Go per BWA MEM process
+if [ -z $BWAMEM_MIN_MEM ] || ! [[ $BWAMEM_MIN_MEM =~ ^[0-9]$ ]]; then
+	BWAMEM_MIN_MEM=6
+fi;
+export BWAMEM_MIN_MEM
+
+# The calculation of MAX_CONCURRENT_ALIGNMENTS_BWAMEM is automatically done to avoid overloading the system memory
+export MAX_CONCURRENT_ALIGNMENTS_BWAMEM
+
+### STAR ALIGNMENT
+
+# Memory management
+
+# Use a minimum of 36 Go per STAR process
+if [ -z $STAR_MIN_MEM ] || ! [[ $STAR_MIN_MEM =~ ^[0-9]$ ]]; then
+	STAR_MIN_MEM=36
+fi;
+export STAR_MIN_MEM
+
+# The calculation of MAX_CONCURRENT_ALIGNMENTS_STAR is automatically done to avoid overloading the system memory
+export MAX_CONCURRENT_ALIGNMENTS_STAR
+
+# Option to keep raw BAM file from STAR (with splitNcigar for SNV calling). This option is useful to keep BAM without post-alignment steps (e.g. realignment, recalibration...).
+# Default: False (0)
+export STAR_KEEP_RAW_BAM
+
 
 ### GENCORE
 
@@ -1056,6 +1044,29 @@ export GENCORE_QUAL_THREESHOLD
 export GENCORE_COVERAGE_SAMPLING
 
 
+### GATK CALLING
+
+# VCF DBSNP for GATK Calling and annotation
+# dbSNP database as VCF is used to annotate variant ID in ID VCF field and to provide known variants for GATK calling and annotation (if any)
+# https://gatk.broadinstitute.org/hc/en-us/articles/360046786692-VariantAnnotator#--dbsnp
+# This option allow GATK to use the VCF DBSNP for calling and annotation, if the file is available and not empty. If not, GATK will be used without DBSNP for calling and annotation.
+# See rules that use GATK for calling and annotation (e.g. "gatk_calling", "gatk_annotation", "gatk_calling_annotation") for more information about the use of VCF DBSNP for GATK calling and annotation.
+# See VCFDBSNP variable for the VCF DBSNP file path (in databases.app)
+# Default False
+# Example: 
+# - USE_VCFDBSNP_WITH_GATK=1
+# - USE_VCFDBSNP_WITH_GATK=0
+export USE_VCFDBSNP_WITH_GATK
+
+# VCF DBSNP path
+# Path to the dbSNP database as VCF used for GATK calling and annotation (if any)
+# This file need to be available and not empty for GATK to use it for calling and annotation, if USE_VCFDBSNP_WITH_GATK=1
+# This variable is automatically defined in default configuration in databases.app
+# Default: "" (corresponding to default VCF DBSNP defined in databases.app, depending on ASSEMBLY)
+# Example: VCF_DBSNP_GATK_CALLING=$FOLDER_DATABASES/dbsnp_138.hg19.vcf.gz
+export VCFDBSNP
+
+
 ### CRAM
 
 # CRAM OPTIONS
@@ -1068,6 +1079,14 @@ export CRAM_OPTIONS
 # Final CRAM options for tags (archive.cram)
 # example: CRAM_REMOVE_TAGS="BD,BI,OQ"
 export CRAM_REMOVE_TAGS
+
+
+### VCF Report
+
+# VCF genotype missing
+# "missing": Replace 0/0 or 0|0 genotypes by ./. and .|.
+# "missing_clean": Replace 0/0 or 0|0 genotypes by ./. and .|. and clean by removing other FORMAT fields
+export VCF_MISSING_GENOTYPE
 
 
 # ANNOTATION
@@ -1210,112 +1229,169 @@ export HOWARD_PRIORITIZATION_DEFAULT
 # export HOWARD_PRIORITIZATION_MINIMAL
 
 
-# Report
-# Default filter to prioritize/rank variant for Report
-if [ -z "$HOWARD_PRIORITIZATION_REPORT" ]; then
-	HOWARD_PRIORITIZATION_REPORT=$HOWARD_PRIORITIZATION_DEFAULT
-fi;
-if [ ! -z "$APP_NAME" ] && [ ${APP_NAME^^} != "DEFAULT" ]; then
-	HOWARD_PRIORITIZATION_REPORT="$APP_NAME,$HOWARD_PRIORITIZATION_REPORT"
-fi;
-# Keep fist as first and sort the rest
-HOWARD_PRIORITIZATION_REPORT=$(echo $(echo $HOWARD_PRIORITIZATION_REPORT | tr "," " " | cut -d" " -f1 | tr " " "," && echo $HOWARD_PRIORITIZATION_REPORT | tr "," " " | tr " " "\n" | sort -u | grep -v "^$(echo $HOWARD_PRIORITIZATION_REPORT | tr "," " " | cut -d" " -f1)$" | tr "\n" "," | sed s/,$//) | tr " " "," )
-export HOWARD_PRIORITIZATION_REPORT
+# # Report
+# # Default filter to prioritize/rank variant for Report
+# if [ -z "$HOWARD_PRIORITIZATION_REPORT" ]; then
+# 	HOWARD_PRIORITIZATION_REPORT=$HOWARD_PRIORITIZATION_DEFAULT
+# fi;
+# if [ ! -z "$APP_NAME" ] && [ ${APP_NAME^^} != "DEFAULT" ]; then
+# 	HOWARD_PRIORITIZATION_REPORT="$APP_NAME,$HOWARD_PRIORITIZATION_REPORT"
+# fi;
+# # Keep fist as first and sort the rest
+# HOWARD_PRIORITIZATION_REPORT=$(echo $(echo $HOWARD_PRIORITIZATION_REPORT | tr "," " " | cut -d" " -f1 | tr " " "," && echo $HOWARD_PRIORITIZATION_REPORT | tr "," " " | tr " " "\n" | sort -u | grep -v "^$(echo $HOWARD_PRIORITIZATION_REPORT | tr "," " " | cut -d" " -f1)$" | tr "\n" "," | sed s/,$//) | tr " " "," )
+# export HOWARD_PRIORITIZATION_REPORT
 
 
-# ANALYSIS
-# Default filter to prioritize/rank variant for whole analysis (calculation forced)
-if [ -z "$HOWARD_PRIORITIZATION_ANALYSIS" ]; then
-	HOWARD_PRIORITIZATION_ANALYSIS=$HOWARD_PRIORITIZATION_DEFAULT
-fi;
-if [ ! -z "$APP_NAME" ] && [ ${APP_NAME^^} != "DEFAULT" ]; then
-	HOWARD_PRIORITIZATION_ANALYSIS="$APP_NAME,$HOWARD_PRIORITIZATION_ANALYSIS"
-fi;
-# Keep fist as first and sort the rest
-HOWARD_PRIORITIZATION_ANALYSIS=$(echo $(echo $HOWARD_PRIORITIZATION_ANALYSIS | tr "," " " | cut -d" " -f1 | tr " " "," && echo $HOWARD_PRIORITIZATION_ANALYSIS | tr "," " " | tr " " "\n" | sort -u | grep -v "^$(echo $HOWARD_PRIORITIZATION_ANALYSIS | tr "," " " | cut -d" " -f1)$" | tr "\n" "," | sed s/,$//) | tr " " "," )
-export HOWARD_PRIORITIZATION_ANALYSIS
+# # ANALYSIS
+# # Default filter to prioritize/rank variant for whole analysis (calculation forced)
+# if [ -z "$HOWARD_PRIORITIZATION_ANALYSIS" ]; then
+# 	HOWARD_PRIORITIZATION_ANALYSIS=$HOWARD_PRIORITIZATION_DEFAULT
+# fi;
+# if [ ! -z "$APP_NAME" ] && [ ${APP_NAME^^} != "DEFAULT" ]; then
+# 	HOWARD_PRIORITIZATION_ANALYSIS="$APP_NAME,$HOWARD_PRIORITIZATION_ANALYSIS"
+# fi;
+# # Keep fist as first and sort the rest
+# HOWARD_PRIORITIZATION_ANALYSIS=$(echo $(echo $HOWARD_PRIORITIZATION_ANALYSIS | tr "," " " | cut -d" " -f1 | tr " " "," && echo $HOWARD_PRIORITIZATION_ANALYSIS | tr "," " " | tr " " "\n" | sort -u | grep -v "^$(echo $HOWARD_PRIORITIZATION_ANALYSIS | tr "," " " | cut -d" " -f1)$" | tr "\n" "," | sed s/,$//) | tr " " "," )
+# export HOWARD_PRIORITIZATION_ANALYSIS
 
 
-# VARANK
-# Default prioritization with HOWARD for VaRank score mode
-if [ -z "$HOWARD_PRIORITIZATION_VARANK" ]; then
-	HOWARD_PRIORITIZATION_VARANK=$HOWARD_PRIORITIZATION_DEFAULT
-fi;
-if [ ! -z "$APP_NAME" ] && [ ${APP_NAME^^} != "DEFAULT" ]; then
-	HOWARD_PRIORITIZATION_VARANK="$APP_NAME,$HOWARD_PRIORITIZATION_VARANK"
-fi;
-# Keep fist as first and sort the rest
-HOWARD_PRIORITIZATION_VARANK=$(echo $(echo $HOWARD_PRIORITIZATION_VARANK | tr "," " " | cut -d" " -f1 | tr " " "," && echo $HOWARD_PRIORITIZATION_VARANK | tr "," " " | tr " " "\n" | sort -u | grep -v "^$(echo $HOWARD_PRIORITIZATION_VARANK | tr "," " " | cut -d" " -f1)$" | tr "\n" "," | sed s/,$//) | tr " " "," )
-export HOWARD_PRIORITIZATION_VARANK
+# # VARANK
+# # Default prioritization with HOWARD for VaRank score mode
+# if [ -z "$HOWARD_PRIORITIZATION_VARANK" ]; then
+# 	HOWARD_PRIORITIZATION_VARANK=$HOWARD_PRIORITIZATION_DEFAULT
+# fi;
+# if [ ! -z "$APP_NAME" ] && [ ${APP_NAME^^} != "DEFAULT" ]; then
+# 	HOWARD_PRIORITIZATION_VARANK="$APP_NAME,$HOWARD_PRIORITIZATION_VARANK"
+# fi;
+# # Keep fist as first and sort the rest
+# HOWARD_PRIORITIZATION_VARANK=$(echo $(echo $HOWARD_PRIORITIZATION_VARANK | tr "," " " | cut -d" " -f1 | tr " " "," && echo $HOWARD_PRIORITIZATION_VARANK | tr "," " " | tr " " "\n" | sort -u | grep -v "^$(echo $HOWARD_PRIORITIZATION_VARANK | tr "," " " | cut -d" " -f1)$" | tr "\n" "," | sed s/,$//) | tr " " "," )
+# export HOWARD_PRIORITIZATION_VARANK
 
 
-# TRANSLATION
-################
-# List of fields to show in the TXT file
-# use ALL to show ALL "other" annotations
+# # TRANSLATION
+# ################
+# # List of fields to show in the TXT file
+# # use ALL to show ALL "other" annotations
 
-# DEFAULT
-# Fields to show after translation
-if [ -z $HOWARD_FIELDS ]; then
-	HOWARD_FIELDS="NOMEN,PZFlag,PZScore,PZComment,CNOMEN,PNOMEN,location,outcome,snpeff_impact,VAF_average,dbSNP,dbSNPNonFlagged,popfreq,ALL"
-fi;
-export HOWARD_FIELDS
-# Sort variant in the TXT using 2 fields
-if [ -z $HOWARD_SORT_BY ]; then
-	HOWARD_SORT_BY="PZFlag,PZScore"
-fi;
-export HOWARD_SORT_BY
-# Order fields in variant ranking
-if [ -z $HOWARD_ORDER_BY ]; then
-	HOWARD_ORDER_BY="DESC,DESC"
-fi;
-export HOWARD_ORDER_BY
+# # DEFAULT
+# # Fields to show after translation
+# if [ -z $HOWARD_FIELDS ]; then
+# 	HOWARD_FIELDS="NOMEN,PZFlag,PZScore,PZComment,CNOMEN,PNOMEN,location,outcome,snpeff_impact,VAF_average,dbSNP,dbSNPNonFlagged,popfreq,ALL"
+# fi;
+# export HOWARD_FIELDS
+# # Sort variant in the TXT using 2 fields
+# if [ -z $HOWARD_SORT_BY ]; then
+# 	HOWARD_SORT_BY="PZFlag,PZScore"
+# fi;
+# export HOWARD_SORT_BY
+# # Order fields in variant ranking
+# if [ -z $HOWARD_ORDER_BY ]; then
+# 	HOWARD_ORDER_BY="DESC,DESC"
+# fi;
+# export HOWARD_ORDER_BY
 
-# MINIMAL
-# Fields to show after minimal translation
-if [ -z $HOWARD_FIELDS_MINIMAL ]; then
-	#HOWARD_FIELDS_MINIMAL=$HOWARD_FIELDS
-	HOWARD_FIELDS_MINIMAL=$(echo $HOWARD_FIELDS | sed "s/ALL//")
-fi;
-export HOWARD_FIELDS_MINIMAL
-# Sort variant in the TXT using 2 fields
-if [ -z $HOWARD_SORT_BY_MINIMAL ]; then
-	HOWARD_SORT_BY_MINIMAL=$HOWARD_SORT_BY
-fi;
-export HOWARD_SORT_BY_MINIMAL
-# Order fields in variant ranking
-if [ -z $HOWARD_ORDER_BY_MINIMAL ]; then
-	HOWARD_ORDER_BY_MINIMAL=$HOWARD_ORDER_BY
-fi;
-export HOWARD_ORDER_BY_MINIMAL
+# # MINIMAL
+# # Fields to show after minimal translation
+# if [ -z $HOWARD_FIELDS_MINIMAL ]; then
+# 	HOWARD_FIELDS_MINIMAL=$(echo $HOWARD_FIELDS | sed "s/ALL//")
+# fi;
+# export HOWARD_FIELDS_MINIMAL
+# # Sort variant in the TXT using 2 fields
+# if [ -z $HOWARD_SORT_BY_MINIMAL ]; then
+# 	HOWARD_SORT_BY_MINIMAL=$HOWARD_SORT_BY
+# fi;
+# export HOWARD_SORT_BY_MINIMAL
+# # Order fields in variant ranking
+# if [ -z $HOWARD_ORDER_BY_MINIMAL ]; then
+# 	HOWARD_ORDER_BY_MINIMAL=$HOWARD_ORDER_BY
+# fi;
+# export HOWARD_ORDER_BY_MINIMAL
 
-# REPORT
-# Fields to show after minimal translation
-if [ -z $HOWARD_FIELDS_REPORT ]; then
-	#HOWARD_FIELDS_REPORT=$HOWARD_FIELDS
-	HOWARD_FIELDS_REPORT=$(echo $HOWARD_FIELDS | sed "s/ALL//")
-fi;
-export HOWARD_FIELDS_REPORT
-# Sort variant in the TXT using 2 fields
-if [ -z $HOWARD_SORT_BY_REPORT ]; then
-	HOWARD_SORT_BY_REPORT=$HOWARD_SORT_BY
-fi;
-export HOWARD_SORT_BY_REPORT
-# Order fields in variant ranking
-if [ -z $HOWARD_ORDER_BY_REPORT ]; then
-	HOWARD_ORDER_BY_REPORT=$HOWARD_ORDER_BY
-fi;
-export HOWARD_ORDER_BY_REPORT
+# # REPORT
+# # Fields to show after minimal translation
+# if [ -z $HOWARD_FIELDS_REPORT ]; then
+# 	HOWARD_FIELDS_REPORT=$(echo $HOWARD_FIELDS | sed "s/ALL//")
+# fi;
+# export HOWARD_FIELDS_REPORT
+# # Sort variant in the TXT using 2 fields
+# if [ -z $HOWARD_SORT_BY_REPORT ]; then
+# 	HOWARD_SORT_BY_REPORT=$HOWARD_SORT_BY
+# fi;
+# export HOWARD_SORT_BY_REPORT
+# # Order fields in variant ranking
+# if [ -z $HOWARD_ORDER_BY_REPORT ]; then
+# 	HOWARD_ORDER_BY_REPORT=$HOWARD_ORDER_BY
+# fi;
+# export HOWARD_ORDER_BY_REPORT
+
+# # INFO to FORMAT
+# # Transfers INFO annotation to FORMAT annotation
+# # Useful for annotations on full VCF to final VCF on each sample
+# if [ -z $INFO_TO_FORMAT_ANNOTATIONS ]; then
+# 	INFO_TO_FORMAT_ANNOTATIONS=""
+# fi;
+# export INFO_TO_FORMAT_ANNOTATIONS
 
 
+# HOWARD
+##########
 
-# INFO to FORMAT
-# Transfers INFO annotation to FORMAT annotation
-# Useful for annotations on full VCF to final VCF on each sample
-if [ -z $INFO_TO_FORMAT_ANNOTATIONS ]; then
-	INFO_TO_FORMAT_ANNOTATIONS=""
+
+# HOWARD CONFIG
+
+#HOWARD_CONFIG=$HOWARD_FOLDER_CONFIG/config.json
+#HOWARD_CONFIG={}
+if [ -z "$HOWARD_CONFIG" ]; then
+	HOWARD_CONFIG='{}'
 fi;
-export INFO_TO_FORMAT_ANNOTATIONS
+export HOWARD_CONFIG
+
+
+# HOWARD PARAM
+# Use $HOWARD_FOLDER_CONFIG if necessary
+# default: $HOWARD_FOLDER_CONFIG/param.json
+# Example: HOWARD_PARAM=$APP_FOLDER/param.json
+# Example: HOWARD_PARAM=$STARK_FOLDER_APPS/MY_APP_GROUP/param.json
+
+# Default HOWARD parameters
+#HOWARD_PARAM=$HOWARD_FOLDER_CONFIG/param.json
+#HOWARD_PARAM='{}'
+if [ -z $HOWARD_PARAM ]; then
+	HOWARD_PARAM='{}'
+fi;
+export HOWARD_PARAM
+
+# Default HOWARD parameters for minimal VCF annotation (rule howard_minimal)
+#HOWARD_PARAM_MINIMAL=$HOWARD_FOLDER_CONFIG/param.json
+#HOWARD_MINIMALPARAM='{}'
+if [ -z $HOWARD_MINIMALPARAM ]; then
+	HOWARD_MINIMALPARAM='{}'
+fi;
+export HOWARD_MINIMALPARAM
+
+# Default HOWARD parameters for report (rule howard)
+#HOWARD_PARAM_REPORT=$HOWARD_FOLDER_CONFIG/param.json
+#HOWARD_PARAM_REPORT='{}'
+if [ -z $HOWARD_PARAM_REPORT ]; then
+	HOWARD_PARAM_REPORT='{}'
+fi;
+export HOWARD_PARAM_REPORT
+
+# Default HOWARD parameters for whole analysis (rule howard)
+#HOWARD_PARAM_ANALYSIS=$HOWARD_FOLDER_CONFIG/param.json
+#HOWARD_PARAM_ANALYSIS='{}'
+if [ -z $HOWARD_PARAM_ANALYSIS ]; then
+	HOWARD_PARAM_ANALYSIS='{}'
+fi;
+export HOWARD_PARAM_ANALYSIS
+
+
+# HOWARD prioritization config
+if [ -z $HOWARD_PRIORITIZATION_CONFIG ]; then
+	HOWARD_PRIORITIZATION_CONFIG=''
+fi;
+export HOWARD_PRIORITIZATION_CONFIG
+
 
 
 # Recalibration and Filtration
@@ -1384,34 +1460,46 @@ export VARIANTRECALIBRATOR_OPTIONS
 # Variant Recalibrator SNP resources option (see documentation guide for more info)
 # These resources need to be available on STARK Databases folder for GATK
 # default:
-# VARIANTRECALIBRATION_SNP_RESOURCES="
-#   -resource:hapmap,known=false,training=true,truth=true,prior=15.0 hapmap_3.3.b37.vcf.gz
-#   -resource:omni,known=false,training=true,truth=true,prior=12.0 1000G_omni2.5.b37.vcf.gz
-#   -resource:1000G,known=false,training=true,truth=false,prior=10.0 1000G_phase1.snps.high_confidence.b37.vcf.gz 
-#   -resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.b37.vcf.gz
-# "
-if [ -z "$VARIANTRECALIBRATION_SNP_RESOURCES" ]; then
-	VARIANTRECALIBRATION_SNP_RESOURCES="
-		-resource:hapmap,known=false,training=true,truth=true,prior=15.0 hapmap_3.3.b37.vcf.gz
-		-resource:omni,known=false,training=true,truth=true,prior=12.0 1000G_omni2.5.b37.vcf.gz
-		-resource:1000G,known=false,training=true,truth=false,prior=10.0 1000G_phase1.snps.high_confidence.b37.vcf.gz 
-		-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.b37.vcf.gz
-	"
+VARIANTRECALIBRATION_SNP_RESOURCES_DEFAULT_HG19="
+	-resource:hapmap,known=false,training=true,truth=true,prior=15.0 hapmap_3.3.hg19.sites.vcf.gz
+	-resource:omni,known=false,training=true,truth=true,prior=12.0 1000G_omni2.5.hg19.sites.vcf.gz
+	-resource:1000G,known=false,training=true,truth=false,prior=10.0 1000G_phase1.snps.high_confidence.hg19.sites.vcf.gz
+	-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.hg19.vcf.gz
+"
+VARIANTRECALIBRATION_SNP_RESOURCES_DEFAULT_HG38="
+	-resource:hapmap,known=false,training=true,truth=true,prior=15.0 hapmap_3.3.hg38.vcf.gz
+	-resource:omni,known=false,training=true,truth=true,prior=12.0 1000G_omni2.5.hg38.vcf.gz
+	-resource:1000G,known=false,training=true,truth=false,prior=10.0 1000G_phase1.snps.high_confidence.hg38.vcf.gz
+	-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.hg38.vcf.gz
+"
+if [ -z "$VARIANTRECALIBRATION_SNP_RESOURCES" ] || [ "$VARIANTRECALIBRATION_SNP_RESOURCES" == "$VARIANTRECALIBRATION_SNP_RESOURCES_DEFAULT_HG19" ] || [ "$VARIANTRECALIBRATION_SNP_RESOURCES" == "$VARIANTRECALIBRATION_SNP_RESOURCES_DEFAULT_HG38" ]; then
+	if [ "$ASSEMBLY" == 'hg19' ]; then
+		VARIANTRECALIBRATION_SNP_RESOURCES=$VARIANTRECALIBRATION_SNP_RESOURCES_DEFAULT_HG19
+	fi;
+	if [ "$ASSEMBLY" == 'hg38' ]; then
+		VARIANTRECALIBRATION_SNP_RESOURCES=$VARIANTRECALIBRATION_SNP_RESOURCES_DEFAULT_HG38
+	fi;
 fi;
 export VARIANTRECALIBRATION_SNP_RESOURCES
 
 # Variant Recalibrator INDEL resources option (see documentation guide for more info)
 # These resources need to be available on STARK Databases folder for GATK
 # default:
-# VARIANTRECALIBRATION_INDEL_RESOURCES="
-#   -resource:mills,known=false,training=true,truth=true,prior=12.0 Mills_and_1000G_gold_standard.indels.b37.vcf.gz
-#   -resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.b37.vcf.gz
-# "
-if [ -z "$VARIANTRECALIBRATION_INDEL_RESOURCES" ]; then
-	VARIANTRECALIBRATION_INDEL_RESOURCES="
-		 -resource:mills,known=false,training=true,truth=true,prior=12.0 Mills_and_1000G_gold_standard.indels.b37.vcf.gz
-    	-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.b37.vcf.gz
-	"
+VARIANTRECALIBRATION_INDEL_RESOURCES_DEFAULT_HG19="
+	-resource:mills,known=false,training=true,truth=true,prior=12.0 Mills_and_1000G_gold_standard.indels.hg19.sites.vcf.gz
+	-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.hg19.vcf.gz
+"
+VARIANTRECALIBRATION_INDEL_RESOURCES_DEFAULT_HG38="
+	-resource:mills,known=false,training=true,truth=true,prior=12.0 Mills_and_1000G_gold_standard.indels.hg38.vcf.gz
+	-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.hg38.vcf.gz
+"
+if [ -z "$VARIANTRECALIBRATION_INDEL_RESOURCES" ] || [ "$VARIANTRECALIBRATION_INDEL_RESOURCES" == "$VARIANTRECALIBRATION_INDEL_RESOURCES_DEFAULT_HG19" ] || [ "$VARIANTRECALIBRATION_INDEL_RESOURCES" == "$VARIANTRECALIBRATION_INDEL_RESOURCES_DEFAULT_HG38" ]; then
+	if [ "$ASSEMBLY" == 'hg19' ]; then
+		VARIANTRECALIBRATION_INDEL_RESOURCES=$VARIANTRECALIBRATION_INDEL_RESOURCES_DEFAULT_HG19
+	fi;
+	if [ "$ASSEMBLY" == 'hg38' ]; then
+		VARIANTRECALIBRATION_INDEL_RESOURCES=$VARIANTRECALIBRATION_INDEL_RESOURCES_DEFAULT_HG38
+	fi;
 fi;
 export VARIANTRECALIBRATION_INDEL_RESOURCES
 
@@ -1473,6 +1561,42 @@ fi;
 export VARIANTRECALIBRATOR_VARIANTFILTRATION_INDEL_FILTER_EXPRESSION_OPTION
 
 
+# GATK BAM Realignment and Recalibration
+#####################################
+
+# GATK BAM Realignment
+# Realignment is a process of correcting misalignments around indels. It is recommended to perform realignment before variant calling, especially for indel calling, to improve the accuracy of variant calling (not for GATK4 Haplotype Caller and MuTect2).
+# This option allow GATK to perform realignment, if the file is available and not empty. If not, GATK will be used without realignment.
+# Realignemnt is performed with GATK3 RealignerTargetCreator and IndelRealigner, and not performed with GATK4 (GATK4 Haplotype Caller and MuTect2 perform local realignment during calling, so GATK4 do not include Realignemnt tools).
+# This option is used with the GATK3 RealignerTargetCreator command to identify regions to realign, and with the GATK3 IndelRealigner command to perform realignment.
+# The VCF files include Indels and can be the same as for VCF recalibration (see VARIANTRECALIBRATION_INDEL_RESOURCES).
+# Exemple:
+# - GATK_REALIGNMENT_KNOWN_OPTIONS="--known $VCFDBSNP"
+# default:
+GATK_REALIGNMENT_KNOWN_OPTIONS_DEFAULT_HG19=$(echo -e "$VARIANTRECALIBRATION_INDEL_RESOURCES_DEFAULT_HG19" | sed "s#-resource.* \(.*\)#-known "$DBFOLDER"/gatk/current/hg19/\1#gi" | xargs echo)
+GATK_REALIGNMENT_KNOWN_OPTIONS_DEFAULT_HG38=$(echo -e "$VARIANTRECALIBRATION_INDEL_RESOURCES_DEFAULT_HG38" | sed "s#-resource.* \(.*\)#-known "$DBFOLDER"/gatk/current/hg38/\1#gi" | xargs echo)
+if [ -z "$GATK_REALIGNMENT_KNOWN_OPTIONS" ] || [ "$GATK_REALIGNMENT_KNOWN_OPTIONS" == "$GATK_REALIGNMENT_KNOWN_OPTIONS_DEFAULT_HG19" ] || [ "$GATK_REALIGNMENT_KNOWN_OPTIONS" == "$GATK_REALIGNMENT_KNOWN_OPTIONS_DEFAULT_HG38" ]; then
+	GATK_REALIGNMENT_KNOWN_OPTIONS=$(echo -e "$VARIANTRECALIBRATION_INDEL_RESOURCES" | sed "s#-resource.* \(.*\)#-known "$DBFOLDER"/gatk/current/"$ASSEMBLY"/\1#gi" | xargs echo)
+fi;
+export GATK_REALIGNMENT_KNOWN_OPTIONS
+
+# GATK BAM Recalibration
+# Recalibration is a process of correcting base quality scores. It is recommended to perform recalibration before variant calling to improve the accuracy of variant calling.
+# This option allow GATK to perform recalibration, if the file is available and not empty. If not, GATK will be used without recalibration.
+# Recalibration is performed with GATK4 BaseRecalibrator and PrintReads
+# This option is used with the GATK4 BaseRecalibrator command to identify covariates to recalibrate, and with the GATK4 PrintReads command to perform recalibration.
+# The VCF files include SNPs and can be the same as for VCF recalibration (see VARIANTRECALIBRATION_SNP_RESOURCES).
+# Exemple:
+# - GATK_RECALIBRATION_KNOWN_OPTIONS="--known-sites $VCFDBSNP"
+# default:
+GATK_RECALIBRATION_KNOWN_OPTIONS_DEFAULT_HG19=$(echo -e "$VARIANTRECALIBRATION_SNP_RESOURCES_DEFAULT_HG19" | sed "s#-resource.* \(.*\)#-known "$DBFOLDER"/gatk/current/hg19/\1#gi" | xargs echo)
+GATK_RECALIBRATION_KNOWN_OPTIONS_DEFAULT_HG38=$(echo -e "$VARIANTRECALIBRATION_SNP_RESOURCES_DEFAULT_HG38" | sed "s#-resource.* \(.*\)#-known "$DBFOLDER"/gatk/current/hg38/\1#gi" | xargs echo)
+if [ -z "$GATK_RECALIBRATION_KNOWN_OPTIONS" ] || [ "$GATK_RECALIBRATION_KNOWN_OPTIONS" == "$GATK_RECALIBRATION_KNOWN_OPTIONS_DEFAULT_HG19" ] || [ "$GATK_RECALIBRATION_KNOWN_OPTIONS" == "$GATK_RECALIBRATION_KNOWN_OPTIONS_DEFAULT_HG38" ]; then
+	GATK_RECALIBRATION_KNOWN_OPTIONS=$(echo -e "$VARIANTRECALIBRATION_SNP_RESOURCES" | sed "s#-resource.* \(.*\)#--known-sites "$DBFOLDER"/gatk/current/"$ASSEMBLY"/\1#gi" | xargs echo)
+fi;
+export GATK_RECALIBRATION_KNOWN_OPTIONS
+
+
 
 # DAEMON CONFIG
 ##########
@@ -1483,10 +1607,6 @@ export LOG_FILE=analysis.log
 export RUN_ANALYSIS_CONDITIONS="RTAComplete.txt SampleSheet.csv"
 
 
-# DATABASE PEPPER CONFIG (depreciated)
-########################################
-
-CONFIG=$PEPPER_CONFIG
 
 # RELEASE
 ###########
@@ -1559,9 +1679,11 @@ export THREADS_COPY
 
 # MEMORY
 MEMTOTAL=$(cat /proc/meminfo 2>/dev/null | grep MemTotal | awk '{print $2}')	# MEMORY in octet
-#export MEMORY=$(($MEMTOTAL/$THREADS/1024/1024))			# MEMORY in Go
+export MEMTOTAL
+MEMTOTAL_IN_GO=$(($MEMTOTAL/1024/1024))	# MEMORY in Go
+export MEMTOTAL_IN_GO
 
-if [ "$MEMORY" == "" ] || [ $MEMORY -lt 1 ]; then MEMORY=$(($MEMTOTAL/$CORES_TO_USE/1024/1024)); fi;
+if [ "$MEMORY" == "" ] || [ $MEMORY -lt 1 ]; then MEMORY=$(($MEMTOTAL_IN_GO/$CORES_TO_USE)); fi;
 if [ "$MEMORY" == "" ] || [ $MEMORY -lt 1 ]; then MEMORY=1; fi;
 export MEMORY				# MEMORY in Go
 
@@ -1579,36 +1701,59 @@ if ((1)); then
 	[ "$NB_PIPELINES" == "" ] && NB_PIPELINES=1
 	[ "$NB_ALIGNERS" == "" ] && NB_ALIGNERS=1
 	[ "$NB_CALLERS" == "" ] && NB_CALLERS=1
-	# NB_SAMPLE=1
-	# NB_PIPELINES=1
-	# NB_ALIGNERS=1
-	# NB_CALLERS=1
+	export NB_SAMPLE
+	export NB_PIPELINES
+	export NB_ALIGNERS
+	export NB_CALLERS
+
+	# # Default
+	# JAVA_MEMORY_BY_SAMPLE=$JAVA_MEMORY
+	# JAVA_MEMORY_BY_CALLER=$JAVA_MEMORY
+
+	# # Calcul
+	# JAVA_MEMORY_BY_SAMPLE=$(($MEMTOTAL/$NB_SAMPLE/1024/1024))				# Number of threads by sample
+	# JAVA_MEMORY_BY_PIPELINE=$(($JAVA_MEMORY_BY_SAMPLE/$NB_PIPELINES))	# Number of threads for a pipeline's command
+	# JAVA_MEMORY_BY_ALIGNER=$(($JAVA_MEMORY_BY_SAMPLE/$NB_ALIGNERS))	# Number of threads for a aligner's command
+	# JAVA_MEMORY_BY_CALLER=$(($JAVA_MEMORY_BY_SAMPLE/$NB_CALLERS))		# Number of threads for a caller's command
+
+	# # Test
+	# if [ "$JAVA_MEMORY_BY_SAMPLE" == "" ] || [ $JAVA_MEMORY_BY_SAMPLE -lt 1 ]; then JAVA_MEMORY_BY_SAMPLE=1; fi;
+	# if [ "$JAVA_MEMORY_BY_PIPELINE" == "" ] || [ $JAVA_MEMORY_BY_PIPELINE -lt 1 ]; then JAVA_MEMORY_BY_PIPELINE=1; fi;
+	# if [ "$JAVA_MEMORY_BY_ALIGNER" == "" ] || [ $JAVA_MEMORY_BY_ALIGNER -lt 1 ]; then JAVA_MEMORY_BY_ALIGNER=1; fi;
+	# if [ "$JAVA_MEMORY_BY_CALLER" == "" ] || [ $JAVA_MEMORY_BY_CALLER -lt 1 ]; then JAVA_MEMORY_BY_CALLER=1; fi;
 
 	# Default
-	JAVA_MEMORY_BY_SAMPLE=$JAVA_MEMORY
-	JAVA_MEMORY_BY_CALLER=$JAVA_MEMORY
+	MEMORY_BY_SAMPLE=$MEMORY
+	MEMORY_BY_CALLER=$MEMORY
 
 	# Calcul
-	JAVA_MEMORY_BY_SAMPLE=$(($MEMTOTAL/$NB_SAMPLE/1024/1024))				# Number of threads by sample
-	JAVA_MEMORY_BY_PIPELINE=$(($JAVA_MEMORY_BY_SAMPLE/$NB_PIPELINES))	# Number of threads for a pipeline's command
-	JAVA_MEMORY_BY_ALIGNER=$(($JAVA_MEMORY_BY_SAMPLE/$NB_ALIGNERS))	# Number of threads for a aligner's command
-	JAVA_MEMORY_BY_CALLER=$(($JAVA_MEMORY_BY_SAMPLE/$NB_CALLERS))		# Number of threads for a caller's command
+	MEMORY_BY_SAMPLE=$(($MEMTOTAL/$NB_SAMPLE/1024/1024))				# Number of threads by sample
+	MEMORY_BY_PIPELINE=$(($MEMORY_BY_SAMPLE/$NB_PIPELINES))	# Number of threads for a pipeline's command
+	MEMORY_BY_ALIGNER=$(($MEMORY_BY_SAMPLE/$NB_ALIGNERS))	# Number of threads for a aligner's command
+	MEMORY_BY_CALLER=$(($MEMORY_BY_SAMPLE/$NB_CALLERS))		# Number of threads for a caller's command
 
 	# Test
-	if [ "$JAVA_MEMORY_BY_SAMPLE" == "" ] || [ $JAVA_MEMORY_BY_SAMPLE -lt 1 ]; then JAVA_MEMORY_BY_SAMPLE=1; fi;
-	if [ "$JAVA_MEMORY_BY_PIPELINE" == "" ] || [ $JAVA_MEMORY_BY_PIPELINE -lt 1 ]; then JAVA_MEMORY_BY_PIPELINE=1; fi;
-	if [ "$JAVA_MEMORY_BY_ALIGNER" == "" ] || [ $JAVA_MEMORY_BY_ALIGNER -lt 1 ]; then JAVA_MEMORY_BY_ALIGNER=1; fi;
-	if [ "$JAVA_MEMORY_BY_CALLER" == "" ] || [ $JAVA_MEMORY_BY_CALLER -lt 1 ]; then JAVA_MEMORY_BY_CALLER=1; fi;
+	if [ "$MEMORY_BY_SAMPLE" == "" ] || [ $MEMORY_BY_SAMPLE -lt 1 ]; then MEMORY_BY_SAMPLE=1; fi;
+	if [ "$MEMORY_BY_PIPELINE" == "" ] || [ $MEMORY_BY_PIPELINE -lt 1 ]; then MEMORY_BY_PIPELINE=1; fi;
+	if [ "$MEMORY_BY_ALIGNER" == "" ] || [ $MEMORY_BY_ALIGNER -lt 1 ]; then MEMORY_BY_ALIGNER=1; fi;
+	if [ "$MEMORY_BY_CALLER" == "" ] || [ $MEMORY_BY_CALLER -lt 1 ]; then MEMORY_BY_CALLER=1; fi;
+
 
 fi;
 
+# MEMORY FLAGS
+################
+export MEMORY_BY_SAMPLE
+export MEMORY_BY_PIPELINE
+export MEMORY_BY_ALIGNER
+export MEMORY_BY_CALLER
 
 # JAVA FLAGS
 ##############
-export JAVA_MEMORY_BY_SAMPLE
-export JAVA_MEMORY_BY_PIPELINE
-export JAVA_MEMORY_BY_ALIGNER
-export JAVA_MEMORY_BY_CALLER
+export JAVA_MEMORY_BY_SAMPLE=MEMORY_BY_SAMPLE
+export JAVA_MEMORY_BY_PIPELINE=MEMORY_BY_PIPELINE
+export JAVA_MEMORY_BY_ALIGNER=MEMORY_BY_ALIGNER
+export JAVA_MEMORY_BY_CALLER=MEMORY_BY_CALLER
 export JAVA_FLAGS_TMP_FOLDER=" -Dorg.xerial.snappy.tempdir=$TMP_FOLDER_TMP -Djava.io.tmpdir=$TMP_FOLDER_TMP";
 export JAVA_FLAGS_OTHER_PARAM=" -Dsnappy.disable=true -Dsamjdk.try_use_intel_deflater=false ";
 export JAVA_FLAGS_DEFAULT=" -Xmx"$JAVA_MEMORY"g $JAVA_FLAGS_OTHER_PARAM $JAVA_FLAGS_TMP_FOLDER";

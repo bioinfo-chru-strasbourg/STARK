@@ -3,8 +3,8 @@
 # Author: Antony Le Bechec
 ############################
 # Release
-MK_RELEASE="0.9.4.2"
-MK_DATE="13/04/2021"
+MK_RELEASE="0.9.5.0"
+MK_DATE="25/06/2025"
 
 ## Release note
 # 10/07/2015-V0.9b: Create HOWARD annotation and VCF translation
@@ -14,11 +14,15 @@ MK_DATE="13/04/2021"
 # 02/10/2018-V0.9.4b: Modification of the HOWARD annotation
 # 27/09/2019-V0.9.4.1b: Add HOWARD NOMEN field option
 # 13/04/2021-V0.9.4.2: Add HOWARD_CONFIG_OPTIONS
+# 25/06/2025-V0.9.5.0: STARK release 19 compatibility
 
 
 # HOWARD Variables
 ####################
 
+HOWARD_ANNOTATION?="core,frequency,score,annotation,prediction,snpeff,snpeff_hgvs"
+HOWARD_CALCULATION?=VAF,NOMEN,VAF_STATS,DP_STATS,VARTYPE
+HOWARD_NOMEN_FIELDS?="hgvs"
 
 HOWARD_ANNOTATION?="core,frequency,score,annotation,prediction,snpeff,snpeff_hgvs"
 HOWARD_CALCULATION?=VAF,NOMEN,VAF_STATS,DP_STATS,VARTYPE
@@ -28,54 +32,18 @@ HOWARD_NOMEN_FIELDS?="hgvs"
 # RULES
 ########
 
-
 # HOWARD ANNOTATION
-# %.howard$(POST_ANNOTATION).vcf: %.vcf %.empty.vcf %.transcripts %.genome
-# 	# Prevent comma in description in vcf header;
-# 	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$< --output=$@.tmp0 --threads=$(THREADS_BY_CALLER) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
-# 	# Annotation step DEJAVU (deprecated)
-# 	# +if [ "$(HOWARD_DEJAVU_ANNOTATION)" != "" ]; then \
-# 	# 	$(HOWARD) $(HOWARD_DEJAVU_CONFIG_OPTIONS) --input=$@.tmp0 --output=$@.tmp1 --annotation=$(HOWARD_DEJAVU_ANNOTATION) --norm=$$(cat $*.genome); \
-# 	#	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp1 --output=$@.tmp1 --threads=$(THREADS_BY_CALLER) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option); \
-# 	#	mv $@.tmp1 $@.tmp0; \
-# 	# fi;
-# 	# Annotation calculation step HOWARD
-# 	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp0 --output=$@ --annotation=$(HOWARD_ANNOTATION) --calculation=$(HOWARD_CALCULATION) --transcripts=$*.transcripts --nomen_fields=$(HOWARD_NOMEN_FIELDS) --norm=$$(cat $*.genome);
-# 	# Prevent comma in description in vcf header
-# 	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@ --output=$@ --threads=$(THREADS_BY_CALLER) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
-# 	# Clear
-# 	-if [ ! -e $@ ]; then cp $*.empty.vcf $@; fi;
-# 	# Downgrading VCF format 4.2 to 4.1
-# 	-cat $@ | sed "s/##fileformat=VCFv4.2/##fileformat=VCFv4.1/" > $@.dowgrade.4.2.to.4.1.tmp;
-# 	-rm -f $@;
-# 	-mv $@.dowgrade.4.2.to.4.1.tmp $@;
-# 	# clean
-# 	rm -rf $@.tmp*
-
-
-# HOWARD ANNOTATION
-%.howard$(POST_ANNOTATION).vcf: %.vcf %.empty.vcf %.transcripts %.genome
-	# Prevent comma in description in vcf header;
-	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$< --output=$@.tmp0 --threads=$(THREADS_BY_CALLER) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
-	# Annotation step DEJAVU (deprecated)
-	# +if [ "$(HOWARD_DEJAVU_ANNOTATION)" != "" ]; then \
-	# 	$(HOWARD) $(HOWARD_DEJAVU_CONFIG_OPTIONS) --input=$@.tmp0 --output=$@.tmp1 --annotation=$(HOWARD_DEJAVU_ANNOTATION) --norm=$$(cat $*.genome); \
-	#	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@.tmp1 --output=$@.tmp1 --threads=$(THREADS_BY_CALLER) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option); \
-	#	mv $@.tmp1 $@.tmp0; \
-	# fi;
+%.howard$(POST_ANNOTATION).vcf: %.vcf %.empty.vcf %.transcripts 
 	# Annotation calculation step HOWARD
-	+$(HOWARD) $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp0 --output=$@ --annotation=$(HOWARD_ANNOTATION) --calculation=$(HOWARD_CALCULATION) --transcripts=$*.transcripts --nomen_fields=$(HOWARD_NOMEN_FIELDS) --norm=$$(cat $*.genome);
-	cp $@.tmp0 $@
-	# Prevent comma in description in vcf header
-	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$@ --output=$@ --threads=$(THREADS_BY_CALLER) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
-	# Clear
+	if (( $$(grep -v "^#" $< | head -n1 | wc -l) )); then \
+		$(HOWARD) process $(HOWARD_CONFIG_OPTIONS) --input=$< --output=$@ --param=$(HOWARD_PARAM); \
+	else \
+		cp $< $@; \
+	fi;
+	# Clean INFO spaces
+	$(STARK_FOLDER_BIN)/clean_vcf_info_spaces.sh --input=$@
+	# Empty
 	-if [ ! -e $@ ]; then cp $*.empty.vcf $@; fi;
-	# Downgrading VCF format 4.2 to 4.1
-	-cat $@ | sed "s/##fileformat=VCFv4.2/##fileformat=VCFv4.1/" > $@.dowgrade.4.2.to.4.1.tmp;
-	-rm -f $@;
-	-mv $@.dowgrade.4.2.to.4.1.tmp $@;
-	# clean
-	rm -rf $@.tmp*
 
 
 

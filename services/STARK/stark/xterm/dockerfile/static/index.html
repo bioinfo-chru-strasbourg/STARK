@@ -1,0 +1,142 @@
+<!doctype html>
+<html>
+  <head>
+    <title>STARK Web Terminal</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@4.18.0/css/xterm.css" />
+    <script src="https://cdn.jsdelivr.net/npm/xterm@4.18.0/lib/xterm.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.5.0/lib/xterm-addon-fit.js"></script>
+    <style>
+      body, html {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden; /* Prevent scrollbars */
+        background-color: #000;
+        color: #fff;
+        font-family: monospace;
+      }
+      #login-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+      }
+      #terminal-container {
+        display: none;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+      }
+      #terminal {
+          width: 100%;
+          height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>STARK Web Terminal</h1>
+
+    <div id="login-container">
+        <h2>Login</h2>
+        <input type="text" id="username" placeholder="Username" value="stark"><br>
+        <input type="password" id="password" placeholder="Password" value="password"><br>
+        <button onclick="login()">Login</button>
+        <p id="login-error" style="color: red;"></p>
+    </div>
+
+    <div id="terminal-container" style="display: none;">
+        <div id="terminal"></div>
+    </div>
+
+    <script>
+        let token = null;
+        const term = new Terminal({ cursorBlink: true, theme: { background: '#1e1e1e' } });
+
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorP = document.getElementById('login-error');
+            errorP.textContent = '';
+
+            const formData = new FormData();
+            formData.append('username', username);
+            formData.append('password', password);
+
+            try {
+                const response = await fetch('/token', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Login failed');
+                }
+
+                const data = await response.json();
+                token = data.access_token;
+                
+                document.getElementById('login-container').style.display = 'none';
+                document.getElementById('terminal-container').style.display = 'block';
+                
+                initializeTerminal();
+
+            } catch (error) {
+                errorP.textContent = error.message;
+            }
+        }
+
+        function initializeTerminal() {
+            if (!token) {
+                console.error("No token available.");
+                return;
+            }
+
+            const terminalContainer = document.getElementById('terminal');
+            const fitAddon = new FitAddon.FitAddon();
+            term.loadAddon(fitAddon);
+            term.open(terminalContainer);
+            fitAddon.fit();
+            window.addEventListener('resize', () => fitAddon.fit());
+            
+            const wsProtocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+            const wsUrl = `${wsProtocol}${window.location.host}/ws`;
+            
+            // We need to pass the token. A common way is via a query parameter,
+            // but FastAPI's Depends(oauth2_scheme) expects it in the header.
+            // For WebSockets, we'll pass it as a subprotocol or query param.
+            // Let's adjust the backend to accept it from a query param for websockets.
+            // For simplicity here, we'll assume the backend is modified to check a query param.
+            // Let's create a new websocket connection with the token.
+            const socket = new WebSocket(`${wsUrl}?token=${token}`);
+
+            socket.onopen = () => {
+                term.write("# Connected to STARK XTerm\r\n");
+                term.write("# Use command 'STARK --help' for assistance\r\n");
+                term.write("\r\n");
+                term.onData(data => {
+                    socket.send(data);
+                });
+            };
+
+            socket.onmessage = event => {
+                term.write(event.data);
+            };
+
+
+
+            socket.onclose = () => {
+                term.write('\r\nConnection closed.\r\n');
+            };
+
+            socket.onerror = (error) => {
+                term.write(`\r\nError: ${error.message}\r\n`);
+                console.error('WebSocket Error:', error);
+            };
+        }
+    </script>
+  </body>
+</html>

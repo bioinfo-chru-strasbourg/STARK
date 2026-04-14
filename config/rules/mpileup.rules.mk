@@ -31,11 +31,11 @@
 MPILEUP_OPTIONS?= -E -d 10000000 -C 50 -Q 10 -q 1
 
 
-%.bam.mpileup: %.bam %.bam.bai %.genome %.design.bed
+%.bam.mpileup: %.bam %.bam.bai %.design.bed
 	if (( $$(grep -v "^#" -c $*.design.bed) )); then \
-		$(SAMTOOLS) view $< -L $*.design.bed -h | perl $(CAP_SOFTCLIPTOQ0) -v1 | $(SAMTOOLS) mpileup - -f $$(cat $*.genome) -l $*.design.bed $(MPILEUP_OPTIONS) > $@; \
+		$(SAMTOOLS) view $< -L $*.design.bed -h | perl $(CAP_SOFTCLIPTOQ0) -v1 | $(SAMTOOLS) mpileup - -f $(GENOME) -l $*.design.bed $(MPILEUP_OPTIONS) > $@; \
 	else \
-		$(SAMTOOLS) view $< -h | perl $(CAP_SOFTCLIPTOQ0) -v1 | $(SAMTOOLS) mpileup - -f $$(cat $*.genome) $(MPILEUP_OPTIONS) > $@; \
+		$(SAMTOOLS) view $< -h | perl $(CAP_SOFTCLIPTOQ0) -v1 | $(SAMTOOLS) mpileup - -f $(GENOME) $(MPILEUP_OPTIONS) > $@; \
 	fi;
 
 

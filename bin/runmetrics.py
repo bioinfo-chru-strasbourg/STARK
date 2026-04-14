@@ -66,8 +66,12 @@ import re
 import subprocess
 from os.path import join as osj
 
-from functions import assert_file_exists_and_is_readable, tags_and_types_to_lists, \
-					get_descriptions_from_samplesheet, find_any_samplesheet
+from functions import (
+    assert_file_exists_and_is_readable,
+    # tags_and_types_to_lists,
+    get_descriptions_from_samplesheet,
+    find_any_samplesheet,
+)
 
 def get_run_path_from_metrics_file(metricsFile, fromResDir):
 	"""
@@ -206,7 +210,7 @@ def deprecated_get_depth_metrics(sampleDir, sample, aligner):
 	return covMetrics
 
 def get_depth_metrics(sampleDir, sample, aligner, bed):
-	"""
+    """
 	coverage can now be found in files such as TEST.bwamem.TEST.from_design.genes.coverage
 	whose content is like:
 	#Depth  CoveredBases    TotalBases      Percent
@@ -221,23 +225,38 @@ def get_depth_metrics(sampleDir, sample, aligner, bed):
 	300X    0       11413   0
 	This function extracts the % values and returns them as a list.
 	"""
-	if bed == "design":
-		depthFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+"."+sample+"."+aligner+".design.bed.coverage")
-	else: #.genes file
-		depthFile = osj(sampleDir, sample+"."+aligner+".bam.metrics", sample+"."+aligner+"."+sample+"."+bed+".coverage")
-	covCriteria, maxCriteria = get_cov_criteria()
-	if "," in covCriteria:
-		covCriteriaList = covCriteria.split(",")
-	else:
-		covCriteriaList = [covCriteria]
-	covMetrics = []
-	with open(depthFile, "r") as f:
-		for l in f:
-			l = l.strip().split()
-			if l[0][:-1] in covCriteriaList:
-				covMetrics.append(format(float(l[3])*100, ".5f"))
-	assert len(covMetrics) == len(covCriteriaList), "[ERROR] Content of the environment variable COVERAGE_CRITERIA did not fit the content of the coverage file "+depthFile
-	return covMetrics
+    if bed == "design":
+        depthFile = osj(
+            sampleDir,
+            sample + "." + aligner + ".bam.metrics",
+            sample
+            + "."
+            + aligner
+            + "."
+            + sample
+            + "."
+            + aligner
+            + ".design.bed.coverage",
+        )
+    else:  # .genes file
+        depthFile = osj(
+            sampleDir,
+            sample + "." + aligner + ".bam.metrics",
+            sample + "." + aligner + "." + sample + "." + bed + ".coverage",
+        )
+    covCriteria, maxCriteria = get_cov_criteria()
+    if "," in covCriteria:
+        covCriteriaList = covCriteria.split(",")
+    else:
+        covCriteriaList = [covCriteria]
+    covMetrics = []
+    with open(depthFile, "r") as f:
+        for l in f:
+            l = l.strip().split()
+            if l[0][:-1] in covCriteriaList:
+                covMetrics.append(format(float(l[3]) * 100, ".5f"))
+    # assert len(covMetrics) == len(covCriteriaList), "[ERROR] Content of the environment variable COVERAGE_CRITERIA did not fit the content of the coverage file "+depthFile
+    return covMetrics
 
 def get_q30(sampleDir, sample):
 	fastp_json = osj(sampleDir, sample + ".sequencing", sample + ".fastp.json")

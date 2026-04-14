@@ -7,8 +7,8 @@
 
 SCRIPT_NAME="STARKLaunch"
 SCRIPT_DESCRIPTION="STARK launch RUN or FASTQ/BAM analysis"
-SCRIPT_RELEASE="0.9.2.2"
-SCRIPT_DATE="19/10/2021"
+SCRIPT_RELEASE="0.9.3.0"
+SCRIPT_DATE="25/06/2025"
 SCRIPT_AUTHOR="Antony Le Bechec"
 SCRIPT_COPYRIGHT="IRC"
 SCRIPT_LICENCE="GNU-AGPL"
@@ -19,6 +19,7 @@ RELEASE_NOTES=$RELEASE_NOTES"# 0.9.1.0-23/04/2021: Completely recoded\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.2.0-19/09/2021: add parameters\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.2.1-19/09/2021: add favorites parameter\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.2.2-19/10/2021: add pedigree parameter\n";
+RELEASE_NOTES=$RELEASE_NOTES"# 0.9.3.0-25/06/2025: STARK release 19 compatibility\n";
 
 # Script folder
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -27,22 +28,19 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 ENV_CONFIG=$(find -L $SCRIPT_DIR/.. -name config.app)
 source $ENV_CONFIG 1>/dev/null 2>/dev/null
 
+# Timestamp
+function timestamp() {
+    date +"%Y-%m-%d %H:%M:%S"
+}
 
 # Header
 function header () {
 	cat $STARK_FOLDER_DOCS/HEADER
-	#echo "#######################################";
-	#echo "# $SCRIPT_NAME [$SCRIPT_RELEASE-$SCRIPT_DATE]";
-	#echo "# $SCRIPT_DESCRIPTION ";
-	#echo "# $SCRIPT_AUTHOR @ $SCRIPT_COPYRIGHT © $SCRIPT_LICENCE";
-	#echo "#######################################";
 }
 
 # Release
 function release () {
 	cat $STARK_FOLDER_DOCS/RELEASE_NOTES
-	#echo "# RELEASE NOTES:";
-	#echo -e $RELEASE_NOTES
 }
 
 # Usage
@@ -50,11 +48,6 @@ function usage {
 	echo "# USAGE: $(basename $0) --analysis=<FILE>|--reads=<FASTQ>|--run=<RUN> [options...]";
 	echo "";
 	echo "### Launch an analysis through (by order of priority):";
-	#echo "# --analysis a configuration file ";
-	#echo "# --reads a list of sample files ";
-	#echo "# --runs a list of runs folders ";
-	#echo "";
-	#echo "### Analysis configuration file ###";
 	echo "# --analysis=<FILE1,FILE2...>              List of configuration file in JSON format defining options (see below).";
 	echo "#                                          Format: { \"option1\":\"value1\", \"option2\":\"value2\"...}";
 	echo "# --reads=<FILE1,FILE2...>                 List of Reads files";
@@ -67,18 +60,7 @@ function usage {
 	echo "#                                          Analysis name of each RUN can be defined using ':' after each RUN (default: run folder name)";
 	echo "#                                          Format: RUN1:RUN1_ANALYSIS_NAME,RUN2:RUN2_ANALYSIS_NAME...";
 	echo "#                                          Example: /path_of_my_runs/my_run:my_run1,run_name_folder_in_configured_runs_folder:my_run2";
-	#echo "#                                          Examples:";
-	#echo "#                                          - SAMPLE Analysis";
-	#echo "#                                          { \"fastq\":\"sample1.R1.fastq,sample2.bam\",";
-	#echo "#                                            \"fastq_R2\":\"sample1.R2.fastq,\",";
-	#echo "#                                            \"bed\":\"sample1.manifest,sample2.bed\",";
-	#echo "#                                            \"application\":\"APP2\" }";
-	#echo "#                                          - RUN Analysis";
-	#echo "#                                          { \"run\":\"/path_of_my_runs/my_run:my_run1,run_name_folder_in_configured_runs_folder:my_run2\",";
-	#echo "#                                            \"bed\":\"my_run.bed,my_other_run.manifest\",";
-	#echo "#                                            \"application\":\"APP2\" }";
 	echo ""
-
 	echo "### SAMPLE Analysis options";
 	echo "# --sample=<STRING1,STRING2...>            List of corresponding SAMPLE Name";
 	echo "#                                          Automatically detected from input files.";
@@ -95,7 +77,6 @@ function usage {
 	echo "#                                          *fastq.gz|*fq.gz";
 	echo "# --other_files=<FILE1,FILE2...>           List of corresponding other files (beware of correspondance).";
 	echo "#                                          Files will be copied into each SAMPLE folder";
-	#echo "# --adapters=<STRING>                      Adapters to trim.";
 	echo ""
 
 	echo "### RUN Analysis options";
@@ -201,8 +182,8 @@ ARGS=$(getopt -o "a:b:e:r:f:q:g:j:m:l:s:w:t:o:u:iygxvdnh" --long "env:,app:,appl
 
 if [ $? -ne 0 ]; then
 	:
-	echo "#[ERROR] Error in the argument list:";
-	echo "#[ERROR] $@"
+	echo "["$(timestamp)" | ERROR] Error in the argument list:";
+	echo "["$(timestamp)" | ERROR] $@"
 	echo ""
 	usage;
 	exit 1;
@@ -212,11 +193,6 @@ fi;
 PARAM=$@
 DEBUG=0
 VERBOSE=0
-#PARAM=$(echo $@ | tr "\n" " ")
-#echo $PARAM;
-#echo $ARGS;
-#PARAM=$(echo $ARGS | sed s/--//gi);
-#exit 0;
 
 eval set -- "$ARGS"
 while true
@@ -465,7 +441,7 @@ if [ -z "$FASTQ" ] && \
 	[ -z "$DOCKER_STARK_IMAGE_INPUT" ] && \
 	[ -z "$DOCKER_STARK_CONTAINER" ] && \
 	((!$DEBUG)); then
-	echo "#[ERROR] Required parameter: --analysis, --run, or --reads. For informations --applications_infos, --applications_infos_all, --pipelines_infos, --release_infos, --tools_infos. Use --help to display the help." && echo "" && usage && exit 1;
+	echo "["$(timestamp)" | ERROR] Required parameter: --analysis, --run, or --reads. For informations --applications_infos, --applications_infos_all, --pipelines_infos, --release_infos, --tools_infos. Use --help to display the help." && echo "" && usage && exit 1;
 fi
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -498,23 +474,36 @@ in_array ()
 }
 
 
-# ENV
-#########
+# APPLICATION
+##############
 
-#echo "APP=$APP"; exit;
-(($VERBOSE)) && [ ! -z "$APP" ] && echo "#[INFO] Search Application '$APP'"
+echo ""
 
-ENV=$(find_app "$APP" "$STARK_FOLDER_APPS")
-if ! source_app "$APP" "$STARK_FOLDER_APPS" 1; then
-	echo "#[ERROR] Application '$APP' error ('$ENV')";
+
+(($VERBOSE)) && [ ! -z "$APP" ] && echo "["$(timestamp)" | INFO] Search Application '$APP'"
+
+# Init forlder apps with STARK configuration if not defined in the environment file
+[ -z "$FOLDER_APPS" ] && FOLDER_APPS=$STARK_FOLDER_APPS
+
+# Search application
+ENV=$(cd $SCRIPT_DIR && CONFIG_APP=$CONFIG_APP && find_app "$APP" "$STARK_FOLDER_APPS")
+
+# Debug
+(($DEBUG)) && echo "["$(timestamp)" | DEBUG] Application '$APP' configuration loaded from '$ENV' environment file.";
+
+# Error if application not found
+if [ "$ENV" == "" ] && [ "$APP" != "" ]; then
+	echo ""
+	echo "["$(timestamp)" | ERROR] Application '$APP' configuration file not found!";
 	exit 1
+elif [ "$ENV" != "" ] && [ "$APP" != "" ]; then
+	echo "["$(timestamp)" | INFO] Application '$APP' found and loading ('$ENV')";
+	source_app "$APP" "$STARK_FOLDER_APPS" 1
 fi
 
 export ENV
 export APP
 
-(($VERBOSE)) && [ ! -z "$APP" ] && [ ! -z "$ENV" ] && echo "#[INFO] Application '$APP' found ('$ENV')"
-(($VERBOSE)) && [ ! -z "$APP" ] && [ -z "$ENV" ] && echo "#[INFO] Application '$APP' NOT found"
 
 
 
@@ -531,8 +520,6 @@ fi;
 if [[ $THREADS_INPUT =~ $re ]] && [ "$THREADS_INPUT" != "" ]; then
 	THREADS=$THREADS_INPUT;
 fi;
-#echo "#[INFO] Threads processing: $THREADS";
-
 
 
 # DEBUG
@@ -588,18 +575,8 @@ SAMPLESHEET_INPUT_ARRAY=($(echo $SAMPLESHEET_INPUT | tr "," " "))
 
 if (($APPLICATIONS_INFOS)); then
 
-	#if [ ! -e $SAMPLESHEET_INPUT ]; then
-	#	echo "#[ERROR] SampleSheet '$SAMPLESHEET_INPUT' does NOT exists."
-	#	#exit 0;
-	#fi;
-	#  (env -i bash -c "export APP=default && source /tool/config/config.app && source_app $APP && env | grep "APP"")
-
-	#SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-
 	RUNS_TEST=$RUNS
-
 	APP_TEST=$APP
-	#APP_TEST_NAME=$(source_app "$APP" "$STARK_FOLDER_APPS" 2>/dev/null; echo $APP_NAME)
 	APP_TEST_NAME=$(name_app "$APP" "$STARK_FOLDER_APPS" 2>/dev/null)
 	APP_TEST_ENV=$ENV
 
@@ -779,9 +756,6 @@ if (($APPLICATIONS_INFOS)); then
 
 		done;
 
-	# else
-	# 	echo "";
-	# 	echo "#[INFO] USE $(basename $0) --applications_infos --runs=<RUN> to detect RAW FOLDER and APPLICATION of RUN";
 	fi;
 	echo "";
 
@@ -856,10 +830,7 @@ if (($DATABASES_INFOS)); then
 	#echo "$ENV"
 	for D in $DATABASES_LIST; do
 		VAR_D=$D; #echo ${!VAR_VERSION};
-		#VAR_DESCRIPTION=$T"_DESCRIPTION"; #echo ${!VAR_DESCRIPTION};
-		#VAR_REF=$T"_REF"; #echo ${!VAR_REF};
 		echo "## $D: "${!VAR_D}"";
-		#echo ""
 	done
 
 	echo ""
@@ -869,10 +840,7 @@ if (($DATABASES_INFOS)); then
 	#echo ""
 	for DC in $DATABASES_CONFIG_LIST; do
 		VAR_DC=$DC; #echo ${!VAR_VERSION};
-		#VAR_DESCRIPTION=$T"_DESCRIPTION"; #echo ${!VAR_DESCRIPTION};
-		#VAR_REF=$T"_REF"; #echo ${!VAR_REF};
 		echo "## $DC: "${!VAR_DC}"";
-		#echo ""
 	done
 
 	EXIT=1
@@ -895,7 +863,6 @@ if (($RELEASE_INFOS)); then
 	touch $RELEASE_INFOS $MAKEFILE_PARAM
 
 	#source $ENV;
-	#make -e -f $STARK_FOLDER_BIN/NGSWorkflow.mk PARAM=$MAKEFILE_PARAM RELEASE_INFOS=$RELEASE_INFOS $RELEASE_INFOS 1>/dev/null 2>/dev/null;
 	make -e -f $STARK_FOLDER_BIN/STARK.launch.analysis.mk PARAM=$MAKEFILE_PARAM RELEASE_INFOS=$RELEASE_INFOS $RELEASE_INFOS 1>/dev/null 2>/dev/null;
 	
 	cat $RELEASE_INFOS | sed "s/^## /\n## /"
@@ -930,17 +897,17 @@ if [ -s "$DOCKER_COMPOSE_FILE" ] || [ -s "$DOCKER_ENV_FILE" ] || [ "$DOCKER_STAR
 	## DOCKER
 	# Test if Docker is installed
 
-	! (( $(docker -v 2>/dev/null | grep "^Docker version" -c ) )) && echo "#[ERROR] Docker NOT found" && exit 1
+	! (( $(docker -v 2>/dev/null | grep "^Docker version" -c ) )) && echo "["$(timestamp)" | ERROR] Docker NOT found" && exit 1
 
 	## DOCKER COMPOSE
 	# Check docker compose file
 
-	(($VERBOSE)) && echo "#[INFO] Docker compose file '$DOCKER_COMPOSE_FILE'"
+	(($VERBOSE)) && echo "["$(timestamp)" | INFO] Docker compose file '$DOCKER_COMPOSE_FILE'"
 
 	if [ -s "$DOCKER_COMPOSE_FILE" ]; then
-		(($VERBOSE)) && echo "#[INFO] Compose build with file '$DOCKER_COMPOSE_FILE' to build image (if necessary)"
+		(($VERBOSE)) && echo "["$(timestamp)" | INFO] Compose build with file '$DOCKER_COMPOSE_FILE' to build image (if necessary)"
 		DOCKER_CMD="docker-compose -f $DOCKER_COMPOSE_FILE --project-directory=$(dirname $DOCKER_COMPOSE_FILE) $DOCKER_STARK_IMAGE_ENV up --no-start stark stark-databases"
-		(($DEBUG)) && echo "#[INFO] DOCKER CMD: $DOCKER_CMD"
+		(($DEBUG)) && echo "["$(timestamp)" | INFO] DOCKER CMD: $DOCKER_CMD"
 		eval $DOCKER_CMD
 	fi;
 
@@ -948,8 +915,8 @@ if [ -s "$DOCKER_COMPOSE_FILE" ] || [ -s "$DOCKER_ENV_FILE" ] || [ "$DOCKER_STAR
 	# Check docker env file
 
 	[ ! -s "$DOCKER_ENV_FILE" ] || [ ! -f "$DOCKER_ENV_FILE" ] && [ -s $(dirname "$DOCKER_COMPOSE_FILE")"/.env" ] && [ "$DOCKER_COMPOSE_FILE" != "" ] && DOCKER_ENV_FILE=$(dirname "$DOCKER_COMPOSE_FILE")"/.env";
-	[ "$DOCKER_ENV_FILE" != "" ] && [ ! -f $DOCKER_ENV_FILE ] && (($VERBOSE)) && echo "#[ERROR] Input Docker env file '$DOCKER_ENV_FILE' NOT found" && exit 1
-	(($VERBOSE)) && echo "#[INFO] Docker env file '$DOCKER_ENV_FILE'"
+	[ "$DOCKER_ENV_FILE" != "" ] && [ ! -f $DOCKER_ENV_FILE ] && (($VERBOSE)) && echo "["$(timestamp)" | ERROR] Input Docker env file '$DOCKER_ENV_FILE' NOT found" && exit 1
+	(($VERBOSE)) && echo "["$(timestamp)" | INFO] Docker env file '$DOCKER_ENV_FILE'"
 
 	if [ "$DOCKER_ENV_FILE" != "" ] && [ -s $DOCKER_ENV_FILE ]; then
 		source $DOCKER_ENV_FILE
@@ -964,9 +931,9 @@ if [ -s "$DOCKER_COMPOSE_FILE" ] || [ -s "$DOCKER_ENV_FILE" ] || [ "$DOCKER_STAR
 	[ -z $DOCKER_STARK_IMAGE_INPUT ] && DOCKER_STARK_IMAGE_INPUT="stark:latest"
 	if [ "$DOCKER_STARK_IMAGE_INPUT" != "" ]; then
 		if [[ "$(docker images -q $DOCKER_STARK_IMAGE_INPUT | wc -l | tr -d " ")" != "1" ]]; then
-			echo "#[WARN] Docker STARK image '$DOCKER_STARK_IMAGE_INPUT' NOT found" #&& exit 1
+			echo "["$(timestamp)" | WARN] Docker STARK image '$DOCKER_STARK_IMAGE_INPUT' NOT found" #&& exit 1
 		fi
-		(($VERBOSE)) && echo "#[INFO] Docker STARK image '$DOCKER_STARK_IMAGE_INPUT'"
+		(($VERBOSE)) && echo "["$(timestamp)" | INFO] Docker STARK image '$DOCKER_STARK_IMAGE_INPUT'"
 	fi;
 
 
@@ -976,12 +943,12 @@ if [ -s "$DOCKER_COMPOSE_FILE" ] || [ -s "$DOCKER_ENV_FILE" ] || [ "$DOCKER_STAR
 	DOCKER_MOUNT=""
 	for var in "${!DOCKER_STARK_FOLDER_@}"; do
 		ONE_DOCKER_STARK_FOLDER_CONTAINER=$(echo ${var} | sed "s/^DOCKER_STARK_FOLDER_//g" | sed "s/_/\//g" | tr '[:upper:]' '[:lower:]' )
-		[ ! -d $DOCKER_STARK_MAIN_FOLDER"/"${!var} ] && mkdir -p $DOCKER_STARK_MAIN_FOLDER"/"${!var} && echo "#[INFO] Folder '$DOCKER_STARK_MAIN_FOLDER/${!var}' created" # ???
+		[ ! -d $DOCKER_STARK_MAIN_FOLDER"/"${!var} ] && mkdir -p $DOCKER_STARK_MAIN_FOLDER"/"${!var} && echo "["$(timestamp)" | INFO] Folder '$DOCKER_STARK_MAIN_FOLDER/${!var}' created" # ???
 		[ -d $DOCKER_STARK_MAIN_FOLDER"/"${!var} ] && [ "$DOCKER_STARK_MAIN_FOLDER/${!var}" != "" ] && DOCKER_MOUNT=$DOCKER_MOUNT" -v "$DOCKER_STARK_MAIN_FOLDER"/"${!var}":/STARK/"$ONE_DOCKER_STARK_FOLDER_CONTAINER #  echo "$var = ${!var}"
 	done
 	DOCKER_CMD_PARAMETERS=$DOCKER_CMD_PARAMETERS" $DOCKER_MOUNT "
 
-	(($VERBOSE)) && echo "#[INFO] Docker mount '$DOCKER_MOUNT'"
+	(($VERBOSE)) && echo "["$(timestamp)" | INFO] Docker mount '$DOCKER_MOUNT'"
 
 
 	## DOCKER SOCK
@@ -992,14 +959,14 @@ if [ -s "$DOCKER_COMPOSE_FILE" ] || [ -s "$DOCKER_ENV_FILE" ] || [ "$DOCKER_STAR
 		DOCKER_CMD_PARAMETERS=$DOCKER_CMD_PARAMETERS" $DOCKER_MOUNT_SOCK "
 	fi;
 
-	(($VERBOSE)) && echo "#[INFO] Docker sock linked"
+	(($VERBOSE)) && echo "["$(timestamp)" | INFO] Docker sock linked"
 
 
 	## DOCKER PARAMETERS
 	# Create parameters
 
 	DOCKER_PARAMETERS=$(echo $DOCKER_PARAMETERS | tr ";" " ")
-	(($VERBOSE)) && echo "#[INFO] Docker parameters '$DOCKER_PARAMETERS'"
+	(($VERBOSE)) && echo "["$(timestamp)" | INFO] Docker parameters '$DOCKER_PARAMETERS'"
 
 	DOCKER_CMD_PARAMETERS=$DOCKER_CMD_PARAMETERS" $DOCKER_PARAMETERS "
 
@@ -1008,33 +975,33 @@ if [ -s "$DOCKER_COMPOSE_FILE" ] || [ -s "$DOCKER_ENV_FILE" ] || [ "$DOCKER_STAR
 
 	if [ "$DOCKER_STARK_CONTAINER" != "" ]; then
 
-		(($VERBOSE)) && echo "#[INFO] Docker container '$DOCKER_STARK_CONTAINER'"
+		(($VERBOSE)) && echo "["$(timestamp)" | INFO] Docker container '$DOCKER_STARK_CONTAINER'"
 
 		# Test container status
 		# If container stopped
 		if [ $(docker ps -a --filter="status=exited" --filter="name="$DOCKER_STARK_CONTAINER | wc -l) == "2" ]; then
-			(($VERBOSE)) && echo "#[INFO] Start Docker container '$DOCKER_STARK_CONTAINER'"
+			(($VERBOSE)) && echo "["$(timestamp)" | INFO] Start Docker container '$DOCKER_STARK_CONTAINER'"
 			DOCKER_CMD="docker start $DOCKER_STARK_CONTAINER"
 			eval $DOCKER_CMD
 		# If container not created
 		elif [ $(docker ps -a --filter="status=running" --filter="name="$DOCKER_STARK_CONTAINER | wc -l) == "1" ]; then
-			(($VERBOSE)) && echo "#[INFO] Create Docker container '$DOCKER_STARK_CONTAINER'"
+			(($VERBOSE)) && echo "["$(timestamp)" | INFO] Create Docker container '$DOCKER_STARK_CONTAINER'"
 			DOCKER_CMD="docker run $DOCKER_CMD_PARAMETERS --entrypoint=bash --name='$DOCKER_STARK_CONTAINER' -d -ti $DOCKER_STARK_IMAGE_INPUT -c 'while true; do sleep 60; done'"
 			eval $DOCKER_CMD
 		# Container started
 		else
-			(($VERBOSE)) && echo "#[INFO] Docker container '$DOCKER_STARK_CONTAINER' already created, started and running"
+			(($VERBOSE)) && echo "["$(timestamp)" | INFO] Docker container '$DOCKER_STARK_CONTAINER' already created, started and running"
 		fi;
 
 		# RUN with container
 		if [ $(docker ps --filter="name="$DOCKER_STARK_CONTAINER | grep " $DOCKER_STARK_CONTAINER$" | wc -l) == "1" ]; then
-			(($VERBOSE)) && echo "#[INFO] Docker execute command on docker container '$DOCKER_STARK_CONTAINER'"
+			(($VERBOSE)) && echo "["$(timestamp)" | INFO] Docker execute command on docker container '$DOCKER_STARK_CONTAINER'"
 			echo ""
 			DOCKER_CMD="docker exec $DOCKER_STARK_CONTAINER STARK $PARAM_CMD"
-			(($DEBUG)) && echo "#[INFO] DOCKER CMD: $DOCKER_CMD"
+			(($DEBUG)) && echo "["$(timestamp)" | INFO] DOCKER CMD: $DOCKER_CMD"
 			eval $DOCKER_CMD || exit 1
 			# if $DOCKER_CMD; then
-			# 	(($DEBUG)) && echo "#[INFO] DOCKER CMD: OK"
+			# 	(($DEBUG)) && echo "["$(timestamp)" | INFO] DOCKER CMD: OK"
 			# else
 			# 	exit 1
 			# fi;
@@ -1047,11 +1014,11 @@ if [ -s "$DOCKER_COMPOSE_FILE" ] || [ -s "$DOCKER_ENV_FILE" ] || [ "$DOCKER_STAR
 	# Create and execute command
 
 	DOCKER_CMD="docker run $DOCKER_CMD_PARAMETERS $DOCKER_STARK_IMAGE_INPUT $PARAM_CMD"
-	(($DEBUG)) && echo "#[INFO] DOCKER CMD: $DOCKER_CMD"
+	(($DEBUG)) && echo "["$(timestamp)" | INFO] DOCKER CMD: $DOCKER_CMD"
 	echo ""
 
 	if $DOCKER_CMD; then
-		(($VERBOSE)) && echo "#[INFO] DOCKER CMD: OK"
+		(($VERBOSE)) && echo "["$(timestamp)" | INFO] DOCKER CMD: OK"
 	else
 		exit 1
 	fi;
@@ -1066,15 +1033,15 @@ fi;
 
 if [ "$ANALYSIS" != "" ]; then
 
-	echo "#[INFO] Test Analysis Configuration files"
+	echo "["$(timestamp)" | INFO] Analysis Configuration files"
 
-	(($DEBUG)) && echo "#[INFO] Config files '$ANALYSIS'"
+	(($DEBUG)) && echo "["$(timestamp)" | INFO] Config files '$ANALYSIS'"
 
 	for J in $(echo $ANALYSIS | tr "," " "); do
 
 		if [ -f $J ]; then
 
-			echo "#[INFO] Config file '$J' does exists."
+			echo "["$(timestamp)" | INFO] Config file '$J' does exists."
 
  			(($DEBUG)) && cat $J
 
@@ -1083,30 +1050,34 @@ if [ "$ANALYSIS" != "" ]; then
 			PARAM_STARK_TEST=0
 			PARAM_STARK="$($PYTHON $STARK_FOLDER_BIN/json_to_options.py $J)" && PARAM_STARK_TEST=1
 
-			! (($PARAM_STARK_TEST)) && echo "#[ERROR] Config file '$J' malformed " && cat $J && exit 1;
+			! (($PARAM_STARK_TEST)) && echo "["$(timestamp)" | ERROR] Config file '$J' malformed " && cat $J && exit 1;
 
 			ANALYSIS_DIR=$(cd "$( dirname $J )" && pwd)
 			PARAM_STARK_ANALYSIS_DIR=" --analysis_dir=$ANALYSIS_DIR"
 			if [ $? -eq 0 ]; then
-			    (($DEBUG)) && echo "#[INFO] PARAM_STARK=$PARAM_STARK"
-			    (($DEBUG)) && echo "#[INFO] PARAM_ANALYSIS=$PARAM_ANALYSIS"
-			    (($DEBUG)) && echo "#[INFO] PARAM_STARK_ANALYSIS_DIR=$PARAM_STARK_ANALYSIS_DIR"
+			    (($DEBUG)) && echo "["$(timestamp)" | INFO] PARAM_STARK=$PARAM_STARK"
+			    (($DEBUG)) && echo "["$(timestamp)" | INFO] PARAM_ANALYSIS=$PARAM_ANALYSIS"
+			    (($DEBUG)) && echo "["$(timestamp)" | INFO] PARAM_STARK_ANALYSIS_DIR=$PARAM_STARK_ANALYSIS_DIR"
 			else
-			    echo "#[ERROR] Analysis configuration file '$J' failed"
+			    echo "["$(timestamp)" | ERROR] Analysis configuration file '$J' failed"
 			    exit 1;
 			fi
 
 			CMD=$(echo "$0 $PARAM_STARK $PARAM_ANALYSIS $PARAM_STARK_ANALYSIS_DIR --no_header " | tr "\n" " ")
-			(($VERBOSE)) && echo "#[INFO] CMD=$CMD"
+			(($VERBOSE)) && echo "["$(timestamp)" | INFO] CMD=$CMD"
 			(($VERBOSE)) && echo ""
 
-			(($EXEC)) && eval $CMD || exit 1;
+			if ! eval $CMD; then
+				echo "["$(timestamp)" | ERROR] Analysis failed with errors"
+				exit 1
+			fi;
+			#(($EXEC)) && eval $CMD || exit 1;
 
 			EXIT=1
 
 		elif [ "$J" != "" ]; then
 
-			echo "#[WARN] Analysis configuration file '$J' does NOT exist"
+			echo "["$(timestamp)" | WARN] Analysis configuration file '$J' does NOT exist"
 
 		fi;
 
@@ -1127,30 +1098,35 @@ fi;
 if [ ! -z "$FASTQ" ]; then # && [ -e "$FASTQ" ]; then
 	# TEST FASTQs if exist
 
-	echo "#[INFO] Check Samples Analysis"
+	echo "["$(timestamp)" | INFO] Check Samples Analysis"
 
 	FASTQ_EXISTS=1
 
 	for F in $(echo "$FASTQ" | tr "," " " | tr "+" " "); do
 		if (($(ls $F $ANALYSIS_DIR/$F 2>/dev/null | wc -w))); then
-			echo "#[INFO] Input File '$F' exists"
+			echo "["$(timestamp)" | INFO] Input File '$F' exists"
 		else
-			echo "#[WARN] Input File '$F' does NOT exist"
+			echo "["$(timestamp)" | WARN] Input File '$F' does NOT exist"
 			FASTQ_EXISTS=0;
 		fi;
 	done;
 
 	# Launch FASTQs analmysis if all FASTQs exist
 	if (($FASTQ_EXISTS)); then
-		echo "#[INFO] Start Samples Analysis"
+		echo "["$(timestamp)" | INFO] Start Samples Analysis"
 		echo ""
 		CMD="$STARK_FOLDER_BIN/STARK.launch $PARAM"
-		(($VERBOSE)) && echo "#[INFO] $CMD"
-		eval $CMD || exit 1
+		(($VERBOSE)) && echo "["$(timestamp)" | INFO] $CMD"
+		(($VERBOSE)) && echo ""
+		if ! eval $CMD; then
+			echo "["$(timestamp)" | ERROR] Analysis failed with errors"
+			exit 1
+		fi;
+		#eval $CMD || exit 1
 		echo ""
 		EXIT=1
 	else
-		echo "#[ERROR] Input file(s) error"
+		echo "["$(timestamp)" | ERROR] Input file(s) error"
 		exit 1
 	fi;
 
@@ -1168,11 +1144,11 @@ fi;
 ##############################
 
 
-(($DEBUG)) && echo "#[INFO] RUN folders: $FOLDER_RUN"
+(($DEBUG)) && echo "["$(timestamp)" | INFO] RUN folders: $FOLDER_RUN"
 
 if [ ! -z "$RUNS" ]; then
 
-	echo "#[INFO] Test Runs Analysis"
+	echo "["$(timestamp)" | INFO] Test Runs Analysis"
 
 
 	# Check RUN folders
@@ -1185,7 +1161,7 @@ if [ ! -z "$RUNS" ]; then
 		RUN_PATH=""
 		if [ "$R" != "" ]; then
 			# test if RUN full PATH
-			(($DEBUG)) && echo "#[INFO] Search for RUN '$R' ";
+			(($DEBUG)) && echo "["$(timestamp)" | INFO] Search for RUN '$R' ";
 			# Run as a folder path
 			[ -d $R ] && RUN_PATH=$R;
 			# Run as a TARBALL
@@ -1193,22 +1169,22 @@ if [ ! -z "$RUNS" ]; then
 			if [ -f $R ] && [[ $R =~ .tar.gz$ ]]; then
 				R_ID=$RANDOM$RANDOM
 				RUN_NAME=$(echo $RUN_NAME | sed s/.tar.gz//)
-				(($VERBOSE)) && echo "#[INFO] TARBALL '$(basename $R)' RUN '$RUN_NAME' detected ";
+				(($VERBOSE)) && echo "["$(timestamp)" | INFO] TARBALL '$(basename $R)' RUN '$RUN_NAME' detected ";
 				R_PATH=$TMP_FOLDER_TMP/$R_ID
 				mkdir -p $R_PATH
 				if tar -xvf $R -C $R_PATH 1>/dev/null 2>/dev/null; then
-					(($VERBOSE)) && echo "#[INFO] TARBALL '$(basename $R)' RUN '$RUN_NAME' uncompressed ";
+					(($VERBOSE)) && echo "["$(timestamp)" | INFO] TARBALL '$(basename $R)' RUN '$RUN_NAME' uncompressed ";
 					RUN_PATH=$R_PATH
 				fi;
 			fi;
 			# Run in Input/Runs folder(s) - Search
 			[ "$RUN_PATH" == "" ] && \
 			for FR in $(echo $FOLDER_RUN | tr "," " "); do
-				(($DEBUG)) && echo "#[INFO] Search for RUN '$R' in RUN folder '$FR' ";
-				[ -d $FR/$R ] && RUN_PATH="$RUN_PATH$FR/$R" && echo "#[INFO] Input RUN '$R' found in RUN folder '$FR'"
+				(($DEBUG)) && echo "["$(timestamp)" | INFO] Search for RUN '$R' in RUN folder '$FR' ";
+				[ -d $FR/$R ] && RUN_PATH="$RUN_PATH$FR/$R" && echo "["$(timestamp)" | INFO] Input RUN '$R' found in RUN folder '$FR'"
 			done;
 			# Test multifolder run path (error if found in multiple input/Runs folder(s))
-			[ $(echo $RUN_PATH | wc -w) -gt 1 ] && echo "#[ERROR] Input Run '$R' found in multiple RUN folders: $RUN_PATH" && echo "" && exit 1;
+			[ $(echo $RUN_PATH | wc -w) -gt 1 ] && echo "["$(timestamp)" | ERROR] Input Run '$R' found in multiple RUN folders: $RUN_PATH" && echo "" && exit 1;
 			# Add Run to RUNS_TO_LAUNCH
 			[ ! -z "$RUN_PATH" ] && RUNS_TO_LAUNCH="$RUNS_TO_LAUNCH$RUN_PATH:$RUN_NAME "
 		fi;
@@ -1219,7 +1195,7 @@ if [ ! -z "$RUNS" ]; then
 	# Launch FASTQs analmysis if all FASTQs exist
 	if (($(echo $RUNS_TO_LAUNCH | wc -w))); then
 
-		echo "#[INFO] Input RUN to launch: $RUNS_TO_LAUNCH";
+		echo "["$(timestamp)" | INFO] Input RUN to launch: $RUNS_TO_LAUNCH";
 		echo ""
 
 		RI_NUM=0
@@ -1235,7 +1211,7 @@ if [ ! -z "$RUNS" ]; then
 			TMP_FOLDER_TMP_R=$TMP_FOLDER_TMP/$R$RANDOM
 			mkdir -p $TMP_FOLDER_TMP_R
 
-			echo "#[INFO] Start Analysis for RUN '$R_NAME'"
+			echo "["$(timestamp)" | INFO] Start Analysis for RUN '$R_NAME'"
 
 			CMD=""
 
@@ -1246,8 +1222,8 @@ if [ ! -z "$RUNS" ]; then
 			#if (($(find -L $R -name '*analysis.json' | wc -l))); then
 			if (($(echo $ANALYSIS_JSON_CONFIG | wc -w))); then
 
-				echo "#[INFO] RUN '$R_NAME' contains configuration files *analysis.json"
-				(($VERBOSE)) && echo "#[INFO] RUN '$R_NAME' contains configuration files: "$(echo $ANALYSIS_JSON_CONFIG)
+				echo "["$(timestamp)" | INFO] RUN '$R_NAME' contains configuration files *analysis.json"
+				(($VERBOSE)) && echo "["$(timestamp)" | INFO] RUN '$R_NAME' contains configuration files: "$(echo $ANALYSIS_JSON_CONFIG)
 
 				CMD="$STARK_FOLDER_BIN/STARK $PARAM --analysis="$(echo $ANALYSIS_JSON_CONFIG | tr "\n" "," | tr " " "," | sed s/,$//)
 				#CMD=""
@@ -1255,7 +1231,7 @@ if [ ! -z "$RUNS" ]; then
 			elif [ -s $R/RTAComplete.txt ]; then
 
 				# RUN is a RAW RUN (BCL)
-				echo "#[INFO] RUN '$R_NAME' is a RAW folder (BCL) including a file RTAComplete.txt";
+				echo "["$(timestamp)" | INFO] RUN '$R_NAME' is a RAW folder (BCL) including a file RTAComplete.txt";
 
 				# APP DEM
 				APP_DEMULTIPLEXING=$APP
@@ -1267,8 +1243,8 @@ if [ ! -z "$RUNS" ]; then
 				# sampleSheet within the RUN folder
 				[ -z $RUN_SAMPLESHEET ] && RUN_SAMPLESHEET=$R/SampleSheet.csv
 				# Echo
-				[ ! -e $RUN_SAMPLESHEET ] && echo "#[ERROR] No SampleSheet for RUN '$R'" && exit 1;
-				echo "#[INFO] SampleSheet found for RUN '$R': $RUN_SAMPLESHEET";
+				[ ! -e $RUN_SAMPLESHEET ] && echo "["$(timestamp)" | ERROR] No SampleSheet for RUN '$R'" && exit 1;
+				echo "["$(timestamp)" | INFO] SampleSheet found for RUN '$R': $RUN_SAMPLESHEET";
 
 				# FOUND demultiplexing folder
 				if [ "$DEMULTIPLEXING" != "" ]; then
@@ -1289,7 +1265,7 @@ if [ ! -z "$RUNS" ]; then
 					
 					# If OLD APP folder
 					if [ "$MAIN_APP" == "" ]; then
-						(($VERBOSE)) && echo "#[INFO] Check old format of APP definition";
+						(($VERBOSE)) && echo "["$(timestamp)" | INFO] Check old format of APP definition";
 						# Main application OLD format
 						MAIN_APP_OLD=$(grep "Investigator Name" $RUN_SAMPLESHEET | awk -F, '{print $2}' | awk -F"-" '{print $1"."$2}')
 						ENV_OLD=$(find_app "$MAIN_APP_OLD" "$STARK_FOLDER_APPS" 2>/dev/null)
@@ -1304,7 +1280,7 @@ if [ ! -z "$RUNS" ]; then
 
 					if [ "$MAIN_APP" != ""  ]; then
 						if ! DEMULTIPLEXING_FOLDER=$(source_app "$MAIN_APP" 2>/dev/null; echo $FOLDER_DEMULTIPLEXING); then
-							echo "#[ERROR] Application '$MAIN_APP' error";
+							echo "["$(timestamp)" | ERROR] Application '$MAIN_APP' error";
 							exit 1
 						fi
 						APP_DEMULTIPLEXING=$MAIN_APP
@@ -1326,7 +1302,7 @@ if [ ! -z "$RUNS" ]; then
 
 							if [ "$SAMPLE_APP" != "" ]; then
 								if ! SAMPLE_APP_FOLDER_DEMULTIPLEXING=$(source_app "$SAMPLE_APP" 2>/dev/null; echo $FOLDER_DEMULTIPLEXING); then
-									echo "#[ERROR] Application '$SAMPLE_APP' error";
+									echo "["$(timestamp)" | ERROR] Application '$SAMPLE_APP' error";
 									exit 1
 								fi
 								if [ "$SAMPLE_APP_FOLDER_DEMULTIPLEXING" != "" ]; then
@@ -1348,17 +1324,16 @@ if [ ! -z "$RUNS" ]; then
 
 				# DEMULTIPLEXING_FOLDER
 				mkdir -p $DEMULTIPLEXING_FOLDER;
-				(($VERBOSE)) && echo "#[INFO] Main Demultiplexing APP: $APP_DEMULTIPLEXING"
+				(($VERBOSE)) && echo "["$(timestamp)" | INFO] Main Demultiplexing APP: $APP_DEMULTIPLEXING"
 				if [ ! -d $DEMULTIPLEXING_FOLDER ]; then
-					echo "#[ERROR] No demultiplexing folder '$DEMULTIPLEXING_FOLDER'.";
+					echo "["$(timestamp)" | ERROR] No demultiplexing folder '$DEMULTIPLEXING_FOLDER'.";
 					exit 1;
 				else
-					echo "#[INFO] Demultiplexing folder for RUN '$R': $DEMULTIPLEXING_FOLDER";
+					echo "["$(timestamp)" | INFO] Demultiplexing folder for RUN '$R': $DEMULTIPLEXING_FOLDER";
 				fi;
 
 				DEM_SAMPLESHEET=$DEMULTIPLEXING_FOLDER/$R_BASENAME/SampleSheet.csv
 				DEM_STARKCOMPLETE=$DEMULTIPLEXING_FOLDER/$R_BASENAME/STARKComplete.txt
-				#DEM_MANIFEST_LIST=$DEMULTIPLEXING_FOLDER/$R_BASENAME/STARKComplete.txt
 
 
 				# Test DEM_TODO
@@ -1380,10 +1355,10 @@ if [ ! -z "$RUNS" ]; then
 				
 
 				# Launch demultiplexing
-				(($DEM_TODO)) && echo "#[INFO] Start Demultiplexing for RUN '$R'" && echo "" && \
+				(($DEM_TODO)) && echo "["$(timestamp)" | INFO] Start Demultiplexing for RUN '$R'" && echo "" && \
 				$SCRIPT_DIR/STARK.demultiplexing $DEM_PARAM
 
-				[ -e $DEM_STARKCOMPLETE ] && [ -e $DEM_SAMPLESHEET ] && echo "#[INFO] Demultiplexing completed" || exit 1 
+				[ -e $DEM_STARKCOMPLETE ] && [ -e $DEM_SAMPLESHEET ] && echo "["$(timestamp)" | INFO] Demultiplexing completed" || exit 1 
 
 				# Change RUN folder from RAW to DEM
 				RI="$DEMULTIPLEXING_FOLDER/$R_BASENAME:$R_NAME"
@@ -1394,20 +1369,14 @@ if [ ! -z "$RUNS" ]; then
 				else
 					CMD=""
 				fi;
-				#CMD=""
 
-				#echo "CMD=$CMD"; exit 0
 
-			#fi;
 			elif [ -s $R/SampleSheet.csv ] || [ -s "$SAMPLESHEET_INPUT_RI" ]; then
 
-				echo "#[INFO] RUN '$R_NAME' is a demultiplexed folder (Fastq) including configuration file SampleSheet"
+				echo "["$(timestamp)" | INFO] RUN '$R_NAME' is a demultiplexed folder (Fastq) including configuration file SampleSheet"
 
-				#RUN_SAMPLESHEET_TEST=$RUN_SAMPLESHEET
 				# RUN is a DEM RUN (FASTQ)
-				#echo "#[INFO] RUN analysis as a DEM folder (Fastq)";
 				CONFIG_FILE_TAB_LIST=""
-				#RUN_CONFIG_FILE_LIST=""
 
 				# Find SampleSheet
 				RUN_SAMPLESHEET=""
@@ -1416,14 +1385,12 @@ if [ ! -z "$RUNS" ]; then
 				# sampleSheet within the RUN folder
 				[ -z $RUN_SAMPLESHEET ] && RUN_SAMPLESHEET=$R/SampleSheet.csv
 				# Echo
-				#(($DEBUG)) && echo "#[INFO] [ -f $R/SampleSheet.csv ] || [ -f $SAMPLESHEET_INPUT_RI ]";
-				[ ! -e $RUN_SAMPLESHEET ] && echo "#[ERROR] No SampleSheet for RUN '$R'" && exit 1;
-				echo "#[INFO] SampleSheet found for RUN '$R': $RUN_SAMPLESHEET";
+				[ ! -e $RUN_SAMPLESHEET ] && echo "["$(timestamp)" | ERROR] No SampleSheet for RUN '$R'" && exit 1;
+				echo "["$(timestamp)" | INFO] SampleSheet found for RUN '$R': $RUN_SAMPLESHEET";
 
 				# RUN_ANALYSIS_NAME
 				RUN_ANALYSIS_NAME=$R_NAME
 				[ ! -z $ANALYSIS_NAME ] && RUN_ANALYSIS_NAME=$ANALYSIS_NAME
-				#echo " R_NAME=$R_NAME ANALYSIS_NAME=$ANALYSIS_NAME RUN_ANALYSIS_NAME=$RUN_ANALYSIS_NAME"; exit 0;
 
 
 				ANALYSIS_TAG_SAMPLESHEET=$(grep "^Description" $RUN_SAMPLESHEET | cut -d, -f2- | tr "," "!" | tr " " "!"  | tr -d '\r')
@@ -1438,8 +1405,8 @@ if [ ! -z "$RUNS" ]; then
 				MAIN_PLUGAPP=$(extract_tag "$ANALYSIS_TAG" "PLUGAPP" | tr " " "+")
 				[ "$MAIN_PLUGAPP" != "" ] && MAIN_APP=$MAIN_APP"+"$MAIN_PLUGAPP
 
-				(($DEBUG)) && echo "MAIN_APP=$MAIN_APP"
-				(($DEBUG)) && echo "MAIN_PLUGAPP=$MAIN_PLUGAPP"
+				(($DEBUG)) && echo "["$(timestamp)" | DEBUG] MAIN_APP=$MAIN_APP"
+				(($DEBUG)) && echo "["$(timestamp)" | DEBUG] MAIN_PLUGAPP=$MAIN_PLUGAPP"
 
 
 				# If OLD APP folder
@@ -1457,25 +1424,19 @@ if [ ! -z "$RUNS" ]; then
 
 				[ "$MAIN_APP" == "" ] && MAIN_APP="default"
 
-				(($VERBOSE)) && echo "#[INFO] Main APP: $MAIN_APP"
+				(($VERBOSE)) && echo "["$(timestamp)" | INFO] Main APP: $MAIN_APP"
 
 				# LIST of samples
 				SAMPLE_LIST_IN_SAMPLESHEET=$(cat $RUN_SAMPLESHEET | awk '/\[Data\]/,/\[[^Data]/' | grep "^\[" -v | sed '/^[[:space:]]*$/d' | tail -n +2 | cut -d, -f1 | tr "\n" " ")
-				(($VERBOSE)) && echo "#[INFO] List of samples: $SAMPLE_LIST_IN_SAMPLESHEET";
+				(($VERBOSE)) && echo "["$(timestamp)" | INFO] List of samples: $SAMPLE_LIST_IN_SAMPLESHEET";
 
 				SAMPLE_ID_FIELD=1;
 				SAMPLE_NAME_FIELD=1;
 				MANIFEST_INDEX_FIELD=2;
 				SAMPLE_DESCRIPTION_FIELD=3;
 				SAMPLE_PROJECT_FIELD=3;
-				# SAMPLE_ID_FIELD=0;
-				# SAMPLE_NAME_FIELD=0;
-				# MANIFEST_INDEX_FIELD=0;
-				# SAMPLE_DESCRIPTION_FIELD=0;
-				# SAMPLE_PROJECT_FIELD=0;
 
 				C=1
-				#for i in $(awk '/Data/{y=1;next}y' $DEM_SAMPLESHEET | tr -d '\r' | sed 's/,/\t/g' | head -n 1) ; do
 				for i in $(cat $RUN_SAMPLESHEET | awk '/\[Data\]/,/\[[^Data]/' | grep "^\[" -v | sed '/^[[:space:]]*$/d' | tr -d '\r' | sed 's/,/\t/g' | head -n 1) ; do
 					[ $i == "Sample_ID" ] && SAMPLE_ID_FIELD=$C
 					[ $i == "Sample_Name" ] && SAMPLE_NAME_FIELD=$C
@@ -1488,18 +1449,16 @@ if [ ! -z "$RUNS" ]; then
 				# Create config
 				APP_LIST=""
 				for L in $(cat $RUN_SAMPLESHEET | awk '/\[Data\]/,/\[[^Data]/' | grep "^\[" -v | sed '/^[[:space:]]*$/d' | tail -n +2 | tr -d '\r'); do
-					# SAMPLE ID/NAME
-					# SAMPLE_ID=$(echo $L | cut -d, -f1)
-					# SAMPLE_NAME=$(echo $L | cut -d, -f2)
 					SAMPLE_ID=$(echo $L | cut -d, -f$SAMPLE_ID_FIELD)
 					SAMPLE_NAME=$(echo $L | cut -d, -f$SAMPLE_NAME_FIELD)
 					[ -z $SAMPLE_NAME ] && SAMPLE_NAME=$SAMPLE_ID
 
 					if [ "$SAMPLE_LIST" == "" ] || $(list_include_item "$SAMPLE_LIST" "$SAMPLE_NAME"); then #
 
+						(($VERBOSE)) && echo ""
+						(($VERBOSE)) && echo "["$(timestamp)" | INFO] Check informations for sample '$SAMPLE_NAME'"
+
 						# APP
-						#SAMPLE_APP="$(echo $L | cut -d, -f$SAMPLE_PROJECT_FIELD | awk -F[$TAG_DELIMITER ] '{print $1}' | tr " " "+" | tr "," "+")"
-						# NEW APP extraction format
 						SAMPLE_DESCRIPTION_FIELD_VALUE=$(echo $L | cut -d, -f$SAMPLE_DESCRIPTION_FIELD)
 						SAMPLE_TAG=$(echo $L | cut -d, -f$SAMPLE_DESCRIPTION_FIELD | tr " " "!")"!"
 						SAMPLE_APP=$(extract_tag "$SAMPLE_DESCRIPTION_FIELD_VALUE" "APP" | tr " " "+")
@@ -1507,50 +1466,58 @@ if [ ! -z "$RUNS" ]; then
 
 						SAMPLE_PLUGAPP=$(extract_tag "$SAMPLE_DESCRIPTION_FIELD_VALUE" "PLUGAPP" | tr " " "+")
 						[ "$SAMPLE_PLUGAPP" != "" ] && SAMPLE_APP=$SAMPLE_APP"+"$SAMPLE_PLUGAPP
-						(($DEBUG)) && echo "SAMPLE_APP=$SAMPLE_APP"
-						(($DEBUG)) && echo "SAMPLE_PLUGAPP=$SAMPLE_PLUGAPP"
+						(($VERBOSE)) && echo "["$(timestamp)" | INFO] Application found for sample '$SAMPLE_NAME': $SAMPLE_APP"
+						(($DEBUG)) && echo "["$(timestamp)" | DEBUG] SAMPLE_APP=$SAMPLE_APP"
+						(($DEBUG)) && echo "["$(timestamp)" | DEBUG] SAMPLE_PLUGAPP=$SAMPLE_PLUGAPP"
 
-						[ ! -z $APP ] && SAMPLE_APP=$(echo $APP | tr " " "+" | tr "," "+") && echo "#[INFO] APP forced '$SAMPLE_APP'" # Force APP if in parameters
+						[ ! -z $APP ] && SAMPLE_APP=$(echo $APP | tr " " "+" | tr "," "+") && echo "["$(timestamp)" | INFO] APP forced '$SAMPLE_APP'" # Force APP if in parameters
 
 						if ! APP_INFOS=$(source_app "$SAMPLE_APP" "$STARK_FOLDER_APPS/"; echo -e "$APP_GROUP\t$APP_PROJECT"); then
-							echo "#[ERROR] Application '$SAMPLE_APP' error";
+							echo "["$(timestamp)" | ERROR] Application '$SAMPLE_APP' error";
 							exit 1
 						fi
 						SAMPLE_APP_GROUP=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $1}')
 						SAMPLE_APP_PROJECT=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $2}')
 
+						# read SAMPLE_APP_GROUP SAMPLE_APP_PROJECT <<< "$(
+						# 	(
+						# 		source_app "$SAMPLE_APP" "$STARK_FOLDER_APPS/"
+						# 		printf "%s %s" "$APP_GROUP" "$APP_PROJECT"
+						# 	)
+						# )"
+
 						# SAMPLE FASTQ R1/R2
 
 						# Reads mapping
 						STARK_DEMULTIPLEXING_READS_MAPPING=$(source_app "$SAMPLE_APP" "$STARK_FOLDER_APPS/"; echo -e "$STARK_DEMULTIPLEXING_READS_MAPPING")
+						# read STARK_DEMULTIPLEXING_READS_MAPPING <<< "$(
+						# 	(
+						# 		source_app "$SAMPLE_APP" "$STARK_FOLDER_APPS/"
+						# 		printf "%s %s" "$STARK_DEMULTIPLEXING_READS_MAPPING"
+						# 	)
+						# )"
 						if [ "$STARK_DEMULTIPLEXING_READS_MAPPING" == "" ]; then
 							STARK_DEMULTIPLEXING_READS_MAPPING="R1 I1 I2 R2";
 						fi;
-						# $(echo $READS_MAPPING | tr "," " " | cut -d' ' -f1)
 
 						# Patterns for Fastq R1
 						FASTQ_PATTERN_ILLUMINA='_S*_'$(echo $STARK_DEMULTIPLEXING_READS_MAPPING | tr "," " " | cut -d' ' -f1)'_*.fastq.gz';
 						FASTQ_PATTERN_GENERIC='.*'$(echo $STARK_DEMULTIPLEXING_READS_MAPPING | tr "," " " | cut -d' ' -f1)'*.fastq.gz';
 
-						# Check Fastq R1 with pattern Illumina
-						# SAMPLE_FASTQ_R1_PATTERN=$SAMPLE_NAME'_S*_R1_*.fastq.gz'
-						# SAMPLE_FASTQ_R2_PATTERN=$SAMPLE_NAME'_S*_R2_*.fastq.gz'
-						# SAMPLE_FASTQ_I1_PATTERN=$SAMPLE_NAME'_S*_I1_*.fastq.gz'
-						# SAMPLE_FASTQ_I2_PATTERN=$SAMPLE_NAME'_S*_I2_*.fastq.gz'
 						SAMPLE_FASTQ_R1_PATTERN=$SAMPLE_NAME'_S*_'$(echo $STARK_DEMULTIPLEXING_READS_MAPPING | tr "," " " | cut -d' ' -f1)'_*.fastq.gz'
 						SAMPLE_FASTQ_R2_PATTERN=$SAMPLE_NAME'_S*_'$(echo $STARK_DEMULTIPLEXING_READS_MAPPING | tr "," " " | cut -d' ' -f4)'_*.fastq.gz'
 						SAMPLE_FASTQ_I1_PATTERN=$SAMPLE_NAME'_S*_'$(echo $STARK_DEMULTIPLEXING_READS_MAPPING | tr "," " " | cut -d' ' -f2)'_*.fastq.gz'
 						SAMPLE_FASTQ_I2_PATTERN=$SAMPLE_NAME'_S*_'$(echo $STARK_DEMULTIPLEXING_READS_MAPPING | tr "," " " | cut -d' ' -f3)'_*.fastq.gz'
 						SAMPLE_FASTQ_R1=$(find -L $R -name "$SAMPLE_FASTQ_R1_PATTERN" | tr "\n" "+" | sed s/+$//)
 						if [ "$SAMPLE_FASTQ_R1" == "" ]; then
-							(($VERBOSE)) && echo "#[WARN] No Reads for sample '$SAMPLE_NAME' with pattern '$FASTQ_PATTERN_ILLUMINA'. Check with generic parrtern '$FASTQ_PATTERN_GENERIC'";
+							(($VERBOSE)) && echo "["$(timestamp)" | WARN] No Reads for sample '$SAMPLE_NAME' with pattern '$FASTQ_PATTERN_ILLUMINA'. Check with generic parrtern '$FASTQ_PATTERN_GENERIC'";
 							SAMPLE_FASTQ_R1_PATTERN=$SAMPLE_NAME'.*'$(echo $STARK_DEMULTIPLEXING_READS_MAPPING | tr "," " " | cut -d' ' -f1)'*.fastq.gz'
 							SAMPLE_FASTQ_R2_PATTERN=$SAMPLE_NAME'.*'$(echo $STARK_DEMULTIPLEXING_READS_MAPPING | tr "," " " | cut -d' ' -f4)'*.fastq.gz'
 							SAMPLE_FASTQ_I1_PATTERN=$SAMPLE_NAME'.*'$(echo $STARK_DEMULTIPLEXING_READS_MAPPING | tr "," " " | cut -d' ' -f2)'*.fastq.gz'
 							SAMPLE_FASTQ_I2_PATTERN=$SAMPLE_NAME'.*'$(echo $STARK_DEMULTIPLEXING_READS_MAPPING | tr "," " " | cut -d' ' -f3)'*.fastq.gz'
 							SAMPLE_FASTQ_R1=$(find -L $R -name "$SAMPLE_FASTQ_R1_PATTERN" | tr "\n" "+" | sed s/+$//)
 						fi;
-						[ "$SAMPLE_FASTQ_R1" == "" ] && echo "#[ERROR] No Reads for sample '$SAMPLE_NAME'" && exit 1;
+						[ "$SAMPLE_FASTQ_R1" == "" ] && echo "["$(timestamp)" | ERROR] No Reads for sample '$SAMPLE_NAME'" && exit 1;
 
 						# Fastq others
 						SAMPLE_FASTQ_R2=$(find -L $R -name "$SAMPLE_FASTQ_R2_PATTERN" | tr "\n" "+" | sed s/+$//)
@@ -1576,36 +1543,34 @@ if [ ! -z "$RUNS" ]; then
 
 							# Manifest File
 							if [ -f $R/$MANIFEST_FILENAME ]; then
-								MANIFEST_FILE=$R/$MANIFEST_FILENAME && (($VERBOSE)) && echo "#[INFO] Manifest file found for sample '$SAMPLE_NAME': $MANIFEST_FILE"
+								MANIFEST_FILE=$R/$MANIFEST_FILENAME && (($VERBOSE)) && echo "["$(timestamp)" | INFO] Manifest file found for sample '$SAMPLE_NAME': $MANIFEST_FILE"
 							elif [ -f $FOLDER_MANIFEST/$MANIFEST_FILENAME ]; then
-								MANIFEST_FILE=$FOLDER_MANIFEST/$MANIFEST_FILENAME && (($VERBOSE)) && echo "#[INFO] Manifest file found for sample '$SAMPLE_NAME': $MANIFEST_FILE"
+								MANIFEST_FILE=$FOLDER_MANIFEST/$MANIFEST_FILENAME && (($VERBOSE)) && echo "["$(timestamp)" | INFO] Manifest file found for sample '$SAMPLE_NAME': $MANIFEST_FILE"
 							else
 								MANIFEST_FILE=""
-								#echo "#[WARN] Manifest file NOT found"
-								echo "#[ERROR] Manifest file NOT found: $MANIFEST_FILENAME"
+								echo "["$(timestamp)" | ERROR] Manifest file NOT found: $MANIFEST_FILENAME"
 								exit 1
 							fi;
 
 							# Genes File
 							if (($(ls $R/$MANIFEST_FILENAME*.genes 2>/dev/null | wc -l))); then
-								MANIFEST_GENES_FILE=$(ls $R/$MANIFEST_FILENAME*.genes 2>/dev/null | tr "\n" "+" | sed "s/+$//" | sed "s/^+//") && (($VERBOSE)) &&  echo "#[INFO] Manifest Genes file found for sample '$SAMPLE_NAME': $MANIFEST_GENES_FILE"
+								MANIFEST_GENES_FILE=$(ls $R/$MANIFEST_FILENAME*.genes 2>/dev/null | tr "\n" "+" | sed "s/+$//" | sed "s/^+//") && (($VERBOSE)) &&  echo "["$(timestamp)" | INFO] Manifest Genes file found for sample '$SAMPLE_NAME': $MANIFEST_GENES_FILE"
 							elif (($(ls $FOLDER_MANIFEST/$MANIFEST_FILENAME*.genes 2>/dev/null | wc -l))); then
-								MANIFEST_GENES_FILE=$(ls $FOLDER_MANIFEST/$MANIFEST_FILENAME*.genes 2>/dev/null | tr "\n" "+" | sed "s/+$//" | sed "s/^+//") && (($VERBOSE)) &&  echo "#[INFO] Manifest Genes file found for sample '$SAMPLE_NAME': $MANIFEST_GENES_FILE"
+								MANIFEST_GENES_FILE=$(ls $FOLDER_MANIFEST/$MANIFEST_FILENAME*.genes 2>/dev/null | tr "\n" "+" | sed "s/+$//" | sed "s/^+//") && (($VERBOSE)) &&  echo "["$(timestamp)" | INFO] Manifest Genes file found for sample '$SAMPLE_NAME': $MANIFEST_GENES_FILE"
 							else
 								MANIFEST_GENES_FILE=""
-								(($VERBOSE)) && echo "#[INFO] Manifest Genes file NOT found"
+								(($VERBOSE)) && echo "["$(timestamp)" | INFO] Manifest Genes file NOT found"
 							fi;
 							MANIFEST_GENES_FILE=$(echo $MANIFEST_GENES_FILE | sed "s/+$//")
 
 							# Transcripts File
-							#MANIFEST_TRANSCRIPTS_FILE=$(ls "$R/$MANIFEST_FILENAME*.transcripts" 2>/dev/null | tr "\n" "+") && (($VERBOSE)) &&  echo "#[INFO] Manifest Transcripts file found for sample '$SAMPLE_NAME': $MANIFEST_TRANSCRIPTS_FILE"
 							if (($(ls $R/$MANIFEST_FILENAME*.transcripts 2>/dev/null | wc -l))); then
-								MANIFEST_TRANSCRIPTS_FILE=$(ls $R/$MANIFEST_FILENAME*.transcripts 2>/dev/null | tr "\n" "+" | sed "s/+$//" | sed "s/^+//") && (($VERBOSE)) &&  echo "#[INFO] Manifest Transcripts file found for sample '$SAMPLE_NAME': $MANIFEST_TRANSCRIPTS_FILE"
+								MANIFEST_TRANSCRIPTS_FILE=$(ls $R/$MANIFEST_FILENAME*.transcripts 2>/dev/null | tr "\n" "+" | sed "s/+$//" | sed "s/^+//") && (($VERBOSE)) &&  echo "["$(timestamp)" | INFO] Manifest Transcripts file found for sample '$SAMPLE_NAME': $MANIFEST_TRANSCRIPTS_FILE"
 							elif (($(ls $FOLDER_MANIFEST/$MANIFEST_FILENAME*.transcripts 2>/dev/null | wc -l))); then
-								MANIFEST_TRANSCRIPTS_FILE=$(ls $FOLDER_MANIFEST/$MANIFEST_FILENAME*.transcripts 2>/dev/null | tr "\n" "+" | sed "s/+$//" | sed "s/^+//") && (($VERBOSE)) &&  echo "#[INFO] Manifest Transcripts file found for sample '$SAMPLE_NAME': $MANIFEST_TRANSCRIPTS_FILE"
+								MANIFEST_TRANSCRIPTS_FILE=$(ls $FOLDER_MANIFEST/$MANIFEST_FILENAME*.transcripts 2>/dev/null | tr "\n" "+" | sed "s/+$//" | sed "s/^+//") && (($VERBOSE)) &&  echo "["$(timestamp)" | INFO] Manifest Transcripts file found for sample '$SAMPLE_NAME': $MANIFEST_TRANSCRIPTS_FILE"
 							else
 								MANIFEST_TRANSCRIPTS_FILE=""
-								(($VERBOSE)) && echo "#[WARN] Manifest Transcripts file NOT found"
+								(($VERBOSE)) && echo "["$(timestamp)" | WARN] Manifest Transcripts file NOT found"
 							fi;
 							MANIFEST_TRANSCRIPTS_FILE=$(echo $MANIFEST_TRANSCRIPTS_FILE | sed "s/+$//")
 
@@ -1614,73 +1579,49 @@ if [ ! -z "$RUNS" ]; then
 						# PEDIGREE File
 						PEDIGREE_FILE=
 						if [ "$PEDIGREE_INPUT" != "" ] && [ -f $R/$PEDIGREE_INPUT ]; then
-							PEDIGREE_FILE=$R/$PEDIGREE_INPUT && (($VERBOSE)) && echo "#[INFO] Pedigree file found for sample '$SAMPLE_NAME': $PEDIGREE_FILE"
+							PEDIGREE_FILE=$R/$PEDIGREE_INPUT && (($VERBOSE)) && echo "["$(timestamp)" | INFO] Pedigree file found for sample '$SAMPLE_NAME': $PEDIGREE_FILE"
 						elif [ -f $FOLDER_PEDIGREE/$SAMPLE_APP_GROUP.$SAMPLE_APP_PROJECT.ped ]; then
-							PEDIGREE_FILE=$FOLDER_PEDIGREE/$SAMPLE_APP_GROUP.$SAMPLE_APP_PROJECT.ped && (($VERBOSE)) && echo "#[INFO] Manifest file found for sample '$SAMPLE_NAME': $PEDIGREE_FILE"
+							PEDIGREE_FILE=$FOLDER_PEDIGREE/$SAMPLE_APP_GROUP.$SAMPLE_APP_PROJECT.ped && (($VERBOSE)) && echo "["$(timestamp)" | INFO] Manifest file found for sample '$SAMPLE_NAME': $PEDIGREE_FILE"
 						else
 							PEDIGREE_FILE=""
-							#echo "#[WARN] Manifest file NOT found"
-							echo "#[WARN] Pediree file NOT found"
+							echo "["$(timestamp)" | WARN] Pedigree file NOT found"
 						fi;
 						
-						# echo "FOLDER_PEDIGREE=$FOLDER_PEDIGREE"
-						# echo "SAMPLE_APP_GROUP=$SAMPLE_APP_GROUP"
-						# echo "SAMPLE_APP_PROJECT=$SAMPLE_APP_PROJECT"
-						# cat $PEDIGREE_FILE
-						# exit 0
-
-						# OTHER FILES
 						OTHER_FILES="";
 						if [ -d $R/Stats ]; then
-							(($DEBUG)) && echo "#[INFO] $R/Stats added to Others Files"
+							(($DEBUG)) && echo "["$(timestamp)" | DEBUG] $R/Stats added to Others Files"
 							OTHER_FILES="$R/Stats:$SAMPLE_NAME.demultiplexing/Stats+"
 						else
-							(($DEBUG)) && echo "#[WARN] $R/Stats added to Others Files"
+							(($DEBUG)) && echo "["$(timestamp)" | WARN] $R/Stats NOT added to Others Files"
 						fi;
 						if [ -d $R/Reports ]; then
-							(($DEBUG)) && echo "#[INFO] $R/Reports added to Others Files"
+							(($DEBUG)) && echo "["$(timestamp)" | DEBUG] $R/Reports added to Others Files"
 							OTHER_FILES="$R/Reports:$SAMPLE_NAME.demultiplexing/Reports+"
 						else
-							(($DEBUG)) && echo "#[WARN] $R/Stats added to Others Files"
+							(($DEBUG)) && echo "["$(timestamp)" | WARN] $R/Reports NOT added to Others Files"
 						fi;
-						#echo "OTHER_FILES=$OTHER_FILES"
-						#exit 0
-
-						#OTHER_FILES="$R/Stats:$SAMPLE_NAME.demultiplexing/Stats+$R/Reports:$SAMPLE_NAME.demultiplexing/Reports"
-
-						#	echo "SAMPLE_LIST '$SAMPLE_NAME' found in the list '$SAMPLE_LIST'"
 						APP_LIST=$(echo "$APP_LIST $SAMPLE_APP" | tr " " "\n" | sort -u | tr "\n" " ")
 						echo "$SAMPLE_APP,$SAMPLE_ID,$SAMPLE_NAME,$SAMPLE_FASTQ_R1,$SAMPLE_FASTQ_R2,$SAMPLE_FASTQ_I1,$SAMPLE_FASTQ_I2,$MANIFEST_FILE,$MANIFEST_GENES_FILE,$MANIFEST_TRANSCRIPTS_FILE,$PEDIGREE_FILE,$SAMPLE_TAG,$OTHER_FILES" >> $CONFIG_FILE_TAB
-						#echo "$SAMPLE_APP,$SAMPLE_ID,$SAMPLE_NAME,$SAMPLE_FASTQ_R1,$SAMPLE_FASTQ_R2,$SAMPLE_FASTQ_I1,$SAMPLE_FASTQ_I2,$MANIFEST_FILE,$MANIFEST_GENES_FILE,$MANIFEST_TRANSCRIPTS_FILE,$SAMPLE_TAG,$OTHER_FILES >> $CONFIG_FILE_TAB"
 					fi;
 
 				done;
 
-				#(($DEBUG)) && cat $CONFIG_FILE_TAB | column -t
-				#(($DEBUG)) && ls -l  $TMP_FOLDER_TMP_R/*.config.tab
-				#(($DEBUG)) && cat $TMP_FOLDER_TMP_R/*.config.tab | sort -u
-				(($DEBUG)) && for T in $TMP_FOLDER_TMP_R/*.config.tab; do echo ""; echo $T; cat $T | sort -u; done;
-
-				(($DEBUG)) && echo "#[INFO] CONFIG_FILE_TAB_LIST=$CONFIG_FILE_TAB_LIST"; #exit 0;
-
-				(($DEBUG)) && for APP_ONE_RUN_CONFIG_FILE in $(echo $CONFIG_FILE_TAB_LIST | tr " " "\n"); do cat $APP_ONE_RUN_CONFIG_FILE; done;
+				# (($DEBUG)) && for T in $TMP_FOLDER_TMP_R/*.config.tab; do echo ""; echo $T; cat $T | sort -u; done;
+				# (($DEBUG)) && echo "["$(timestamp)" | INFO] CONFIG_FILE_TAB_LIST=$CONFIG_FILE_TAB_LIST"; #exit 0;
+				# (($DEBUG)) && for APP_ONE_RUN_CONFIG_FILE in $(echo $CONFIG_FILE_TAB_LIST | tr " " "\n"); do echo "["$(timestamp)" | INFO] $APP_ONE_RUN_CONFIG_FILE"; cat $APP_ONE_RUN_CONFIG_FILE; done;
 
 				# Create config
 				ANALYSIS_FILES=""
 
-
-				#for APP_ONE_RUN_CONFIG_FILE in $R/*.config.tab; do
 				for APP_ONE_RUN_CONFIG_FILE in $(echo $CONFIG_FILE_TAB_LIST | tr " " "\n"); do
-					#echo "APP_ONE_RUN_CONFIG_FILE=$APP_ONE_RUN_CONFIG_FILE"
 					APP_ONE=$(basename $APP_ONE_RUN_CONFIG_FILE | sed s/.config.tab//)
-
-
 					SAMPLE_TEST=$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u | awk -F"," -v APP=$APP_ONE '$1==APP{print $3}' | tr '\n' ',' | sed s/,$//)
 
 					if ! APP_INFOS=$(source_app "$APP_ONE" "$STARK_FOLDER_APPS/"; echo -e "$APP_RELEASE\t$APP_DESCRIPTION\t$APP_GROUP\t$APP_PROJECT\t$FOLDER_RUN\t$FOLDER_RESULTS\t$FOLDER_REPOSITORY\t$FOLDER_ARCHIVES\t$FOLDER_FAVORITES\t$PIPELINES\t$POST_ALIGNMENT_STEPS\t$HOWARD_ANNOTATION_REPORT"); then
-						echo "#[ERROR] Application '$APP_ONE' error";
+						echo "["$(timestamp)" | ERROR] Application '$APP_ONE' error";
 						exit 1
 					fi
+
 					#APP_RELEASE_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $1}')
 					#APP_DESCRIPTION_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $2}')
 					#APP_GROUP_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $3}')
@@ -1690,29 +1631,15 @@ if [ ! -z "$RUNS" ]; then
 					FOLDER_REPOSITORY_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $7}')
 					FOLDER_ARCHIVES_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $8}')
 					FOLDER_FAVORITES_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $9}')
-					#PIPELINES_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $10}')
-					#POST_ALIGNMENT_STEPS_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $11}')
-					#HOWARD_ANNOTATION_REPORT_ONE=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $12}')
-
-					#echo APP_ONE=$APP_ONE
-					#echo APP_INFOS=$APP_INFOS
-					#echo FOLDER_REPOSITORY_ONE=$FOLDER_REPOSITORY_ONE
-					#exit 0
-
-					#echo "SAMPLE_TEST="$SAMPLE_TEST
-					#echo "APP_ONE=$APP_ONE"
-					#RUN_CONFIG_FILE=$R/$APP_ONE.analysis.json
 					RUN_CONFIG_FILE=$TMP_FOLDER_TMP_R/$APP_ONE.analysis.json
-					#RUN_CONFIG_FILE_LIST="$RUN_CONFIG_FILE_LIST$RUN_CONFIG_FILE"
+
 					> $RUN_CONFIG_FILE
 					echo "{" >> $RUN_CONFIG_FILE
 					# APP
-					#echo "\"app\":\"$APP_ONE\"," >> $RUN_CONFIG_FILE
 					echo "\"app\":\"$APP_ONE\"," >> $RUN_CONFIG_FILE
 					# RUN
 					echo "\"analysis_name\":\"$RUN_ANALYSIS_NAME\"," >> $RUN_CONFIG_FILE
 					# ANALYSIS TAG
-					#echo ${ANALYSIS_TAG}; exit 0;
 					echo "\"analysis_tag\":\"${ANALYSIS_TAG}\"," >> $RUN_CONFIG_FILE
 					# SAMPLE NAME
 					echo "\"sample\":\""$(cat $APP_ONE_RUN_CONFIG_FILE | sort -u | awk -F"," -v APP=$APP_ONE '$1==APP{print $3}' | tr '\n' ',' | sed s/,$//)"\"," >> $RUN_CONFIG_FILE
@@ -1746,9 +1673,9 @@ if [ ! -z "$RUNS" ]; then
 					#echo "\"comment\":\"Analysis for APP $APP_ONE\"" >> $RUN_CONFIG_FILE
 					echo "}" >> $RUN_CONFIG_FILE
 
-					(($DEBUG)) && echo "#[INFO] " && cat $RUN_CONFIG_FILE
-					#(($DEBUG)) && echo "#[INFO] " && $PYTHON2 $STARK_FOLDER_BIN/json_to_options.py $RUN_CONFIG_FILE
-					(($DEBUG)) && echo "#[INFO] " && $PYTHON $STARK_FOLDER_BIN/json_to_options.py $RUN_CONFIG_FILE
+					(($DEBUG)) && echo "["$(timestamp)" | INFO] RUN config file '$RUN_CONFIG_FILE' in JSON" && cat $RUN_CONFIG_FILE
+					#(($DEBUG)) && echo "["$(timestamp)" | INFO] " && $PYTHON2 $STARK_FOLDER_BIN/json_to_options.py $RUN_CONFIG_FILE
+					(($DEBUG)) && echo "["$(timestamp)" | INFO] RUN config file '$RUN_CONFIG_FILE' to options" && $PYTHON $STARK_FOLDER_BIN/json_to_options.py $RUN_CONFIG_FILE
 
 					ANALYSIS_FILES="$ANALYSIS_FILES,$RUN_CONFIG_FILE"
 
@@ -1759,49 +1686,42 @@ if [ ! -z "$RUNS" ]; then
 				if [ "$ANALYSIS_FILES" != "" ]; then
 					CMD="$STARK_FOLDER_BIN/STARK $PARAM --analysis=$ANALYSIS_FILES " #$APP_ONE_RUN_CONFIG_FILE_JSON " # --repository=$FOLDER_REPOSITORY
 				else
-					echo "#[ERROR] No Samples to analyse " && exit 1;
+					echo "["$(timestamp)" | ERROR] No Samples to analyse " && exit 1;
 				fi;
-				#CMD=""
-				#echo "CMD=$CMD"; exit 0
 
 			elif (($(find -L $R -name '*R1*fastq.gz' -or -name '*.sam' -or -name '*.bam' -or -name '*.cram' | wc -l))); then
 
-				echo "#[INFO] RUN '$R_NAME' is a samples folder (Fastq/bam/cram)"
+				echo "["$(timestamp)" | INFO] RUN '$R_NAME' is a samples folder (Fastq/bam/cram)"
 
 				FASTQ_R1=""
 				FASTQ_R2=""
 
-				(($VERBOSE)) && echo "#[INFO] Search FASTQ Read1 (*R1*fastq.gz)"
+				(($VERBOSE)) && echo "["$(timestamp)" | INFO] Search FASTQ Read1 (*R1*fastq.gz)"
 				for R1 in $(find -L $R -name '*R1*fastq.gz'); do
-					(($VERBOSE)) && echo "#[INFO] FASTQ Read1 found: $R1";
-					# find R2
-					#echo $R1 | sed s/[._-]R1[._-]/R2/gi
+					(($VERBOSE)) && echo "["$(timestamp)" | INFO] FASTQ Read1 found: $R1";
 
-					(($VERBOSE)) && echo "#[INFO] Search for *R2*fastq.gz"
+					(($VERBOSE)) && echo "["$(timestamp)" | INFO] Search for *R2*fastq.gz"
 					re='(.*[._-])R1([._-].*)'
-					#if [[ $R1 =~ $re ]]; then
 					R2=""
 					if [[ $R1 =~ $re ]]; then
 						R2=${BASH_REMATCH[1]}"R2"${BASH_REMATCH[2]}
 				  	fi;
-			  		[ "$R2" != "" ] && [ -f $R2 ] && (($VERBOSE)) && echo "#[INFO] Corresponding FASTQ Read2 found: $R2"
-					#echo $R2
+			  		[ "$R2" != "" ] && [ -f $R2 ] && (($VERBOSE)) && echo "["$(timestamp)" | INFO] Corresponding FASTQ Read2 found: $R2"
+
 
 					FASTQ_R1="$FASTQ_R1$R1,"
 					[ "$R2" != "" ] && [ -f $R2 ] && FASTQ_R2="$FASTQ_R2$R2"
 					FASTQ_R2="$FASTQ_R2,"
 
 				done;
-				#FASTQ_R1=$(echo $FASTQ_R1 | sed s/,$//)
-				#FASTQ_R2=$(echo $FASTQ_R2 | sed s/,$//)
-				(($DEBUG)) && echo "#[INFO] List FASTQ_R1: $FASTQ_R1"
-				(($DEBUG)) && echo "#[INFO] List FASTQ_R2: $FASTQ_R2"
+				(($DEBUG)) && echo "["$(timestamp)" | INFO] List FASTQ_R1: $FASTQ_R1"
+				(($DEBUG)) && echo "["$(timestamp)" | INFO] List FASTQ_R2: $FASTQ_R2"
 
 
-				(($VERBOSE)) && echo "#[INFO] Find *sam/*bam.*cram"
+				(($VERBOSE)) && echo "["$(timestamp)" | INFO] Find *sam/*bam.*cram"
 
 				for R1 in $(find -L $R -name '*.sam' -or -name '*.bam' -or -name '*.cram'); do
-					(($VERBOSE)) && echo "#[INFO] SAM/BAM/CRAM found: $R1";
+					(($VERBOSE)) && echo "["$(timestamp)" | INFO] SAM/BAM/CRAM found: $R1";
 
 					FASTQ_R1="$FASTQ_R1$R1,"
 					FASTQ_R2="$FASTQ_R2,"
@@ -1809,27 +1729,17 @@ if [ ! -z "$RUNS" ]; then
 				done;
 				FASTQ_R1=$(echo $FASTQ_R1 | sed s/,$//)
 				FASTQ_R2=$(echo $FASTQ_R2 | sed s/,$//)
-				(($DEBUG)) && echo "#[INFO] List FASTQ_R1: $FASTQ_R1"
-				(($DEBUG)) && echo "#[INFO] List FASTQ_R2: $FASTQ_R2"
+				(($DEBUG)) && echo "["$(timestamp)" | INFO] List FASTQ_R1: $FASTQ_R1"
+				(($DEBUG)) && echo "["$(timestamp)" | INFO] List FASTQ_R2: $FASTQ_R2"
 
 				CMD="$STARK_FOLDER_BIN/STARK $PARAM --reads=$FASTQ_R1 --fastq_R2=$FASTQ_R2 "
-				#CMD=""
 
 			fi
 
 			((RI_NUM++))
 
-			(($DEBUG)) && echo "#[INFO] CMD=$CMD"
+			(($DEBUG)) && echo "["$(timestamp)" | INFO] CMD=$CMD"
 			[ "$CMD" != "" ] && eval $CMD --no_header || exit 1
-			# if [ "$CMD" != "" ]; then
-			# 	if $CMD --no_header; then
-			# 		(($DEBUG)) && echo "#[INFO] CMD OK"
-			# 	else
-			# 		exit 1
-			# 	fi;
-			# fi;
-
-
 			echo ""
 
 		done;
@@ -1839,13 +1749,12 @@ if [ ! -z "$RUNS" ]; then
 
 	else
 
-		echo "#[WARN] NO Input RUN to launch";
+		echo "["$(timestamp)" | ERROR] NO Input RUN to launch";
+		exit 1;
 
 	fi;
 
 
-
-	#exit 0;
 fi;
 
 # Break analysis

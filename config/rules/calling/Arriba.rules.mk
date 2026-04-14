@@ -5,27 +5,40 @@
 # Author: Samuel Nicaise, Thomas Lavaux
 ############################
 
-%.Arriba$(POST_CALLING).vcf: %.bam %.empty.vcf %.genome
-	mkdir -p $*.arriba.reports;
-	arriba \
+# Arriba need raw alignement, without splitNcigar, to work properly. So we need to use bam without splitNcigar directly from STAR alignments (%$(POST_ALIGNMENT).bam).
+
+%.Arriba$(POST_CALLING).vcf: %.star_raw.bam %.star_raw.bam.bai %.empty.vcf
+	mkdir -p $*.Arriba.reports;
+	$(ARRIBA) \
 		-x $< \
-		-a $$(cat $*.genome) \
-		-g $$(cat $*.genome | xargs -0 dirname)/ref_annot.gtf \
-		-k $$(ls $(ARRIBA_DATABASES)/known_fusions_$(ASSEMBLY)_*.tsv.gz) \
-		-b $$(ls $(ARRIBA_DATABASES)/blacklist_$(ASSEMBLY)_*.tsv.gz) \
-		-p $$(ls $(ARRIBA_DATABASES)/protein_domains_$(ASSEMBLY)_*.gff3) \
-		-o $*.arriba.reports/arriba.fusions.tsv \
-		-O $*.arriba.reports/arriba.fusions.discarded.tsv;
-	# rename ...reports/arriba.fusions.tsv to ...reports/<sample>.arriba.fusions.tsv
-	mv $*.arriba.reports/arriba.fusions.tsv $*.arriba.reports/$$(echo $(@F) | rev | cut -d"." -f4-  | rev).arriba.fusions.tsv
-	mv $*.arriba.reports/arriba.fusions.discarded.tsv $*.arriba.reports/$$(echo $(@F) | rev | cut -d"." -f4-  | rev).arriba.fusions.discarded.tsv
-	# convert to vcf
-	variantconvert convert \
-		-i $*.arriba.reports/$$(echo $(@F) | rev | cut -d"." -f4-  | rev).arriba.fusions.tsv \
+		-a $(GENOME) \
+		-g $$(dirname $(GENOME_RNA))/ref_annot.gtf \
+		-k $$(ls $(ARRIBA_DATABASES)/$(ASSEMBLY)/known_fusions_$(ASSEMBLY)_*.tsv.gz) \
+		-b $$(ls $(ARRIBA_DATABASES)/$(ASSEMBLY)/blacklist_$(ASSEMBLY)_*.tsv.gz) \
+		-p $$(ls $(ARRIBA_DATABASES)/$(ASSEMBLY)/protein_domains_$(ASSEMBLY)_*.gff3) \
+		-o $*.Arriba.reports/arriba.fusions.tsv \
+		-O $*.Arriba.reports/arriba.fusions.discarded.tsv;
+	mv $*.Arriba.reports/arriba.fusions.tsv $*.Arriba.reports/$$(echo $(@F) | rev | cut -d"." -f4-  | rev).arriba.fusions.tsv
+	mv $*.Arriba.reports/arriba.fusions.discarded.tsv $*.Arriba.reports/$$(echo $(@F) | rev | cut -d"." -f4-  | rev).arriba.fusions.discarded.tsv
+	# VariantConvert
+	# Need to create a specific config for variantconvert with the path to the genome fasta and the assembly name to be able to convert Arriba output to vcf with correct header (configuration file is in config/variantconvert/GENOME/arriba.json)
+	cp $(VARIANTCONVERT_FOLDER_CONFIG)/$(ASSEMBLY)/arriba.json $@.variantconvert.config.json
+	$(VARIANTCONVERT) config -c $@.variantconvert.config.json --set GENOME.path=$(GENOME_RNA) --fill_genome_header
+	# Convert to vcf
+	$(VARIANTCONVERT) convert \
+		-i $*.Arriba.reports/$$(echo $(@F) | rev | cut -d"." -f4-  | rev).arriba.fusions.tsv \
 		-o $@ \
-		-fi breakpoints \
-		-fo vcf \
-		-c $(ASSEMBLY)/arriba.json
+		-c $@.variantconvert.config.json
+	# Clean
+	-rm $@.variantconvert.config.json
+
+# -g $$(dirname $(GENOME_RNA))/ref_annot.gtf \
+# -g $(REFSEQ_GENES_GTF) \
+
+# VARIANTCONVERT_FOLDER_CONFIG
+
+# -fi breakpoints \
+# -fo vcf \
 
 # CONFIG/RELEASE
 RELEASE_COMMENT := "\#\# CALLING Arriba '$(MK_RELEASE)': Tool to detect fusions based on RNA-Seq data"

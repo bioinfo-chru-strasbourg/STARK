@@ -1,0 +1,7 @@
+fastapi
+python-jose[cryptography]
+uvicorn
+websockets
+python-multipart
+aiofiles
+passlib[bcrypt] # For form data in login

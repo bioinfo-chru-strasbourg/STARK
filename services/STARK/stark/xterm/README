@@ -1,0 +1,15 @@
+# STARK XTerm
+
+STARK XTerm is a web interface providing a terminal to launch STARK command within STARK CLI service (Docker container)
+
+## Build
+
+```bash
+docker build -t stark-xterm .
+```
+
+## Launch 
+
+```bash
+docker run --rm -p 8000:8000 -v /var/run/docker.sock:/var/run/docker.sock -v ./users.json:/app/users.json stark-xterm
+```

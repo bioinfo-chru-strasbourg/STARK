@@ -1,15 +1,11 @@
 ##############################
 # CONFIGURATION Rules
-# Release: 0.9.2
-# Date: 02/02/2015
+# Release: 0.9.3
+# Date: 25/06/2025
 # Author: Antony Le Bechec
 ##############################
 
 
-#MK_PATH=$(abspath $(lastword $(MAKEFILE_LIST)))
-#MK_DIR_PATH=$(shell dirname $(MK_PATH))
-
-#NGS_SCRIPTS?=$(MK_DIR_PATH)
 NGSscripts?=$(NGS_SCRIPTS)
 NGSEnv?=/tool/
 STARK_FOLDER_ROOT?=/tool
@@ -18,9 +14,6 @@ STARK_FOLDER_BIN?=$(STARK_FOLDER_ROOT)/bin
 STARK_FOLDER_APPS?=$(STARK_FOLDER_CONFIG)/apps
 STARK_FOLDER_RULES?=$(STARK_FOLDER_CONFIG)/rules
 ENV?=$(STARK_FOLDER_CONFIG)/default.app
-
-
-
 
 # RELEASE FILE
 RELEASE_FILE?=$(shell source $(STARK_FOLDER_CONFIG)/config.app; source_app $(ENV); echo $$RELEASE_FILE)
@@ -34,8 +27,6 @@ THREADS_BY_CALLER?=$(THREADS)
 THREADS_BWA?=$(THREADS_BY_SAMPLE)
 THREADS_SAMTOOLS?=$(THREADS_BY_SAMPLE)
 
-
-
 # FOLDERS
 MISEQDIR?=$(MISEQ_FOLDER)
 INPUTDIR?=$(DEMULTIPLEXING_FOLDER)
@@ -44,10 +35,6 @@ TMP_FOLDER_TMP?=/tmp				# NGS Temporary folder
 TMP_SYS_FOLDER?=/tmp				# System Temporary folder
 ASSEMBLY?=hg19					# Default assembly
 GENOMES?=genomes				# Genomes folder
-#REF?=$(GENOMES)/$(ASSEMBLY)/$(ASSEMBLY).fa	# Default Reference genome FASTA file
-REF?=$(GENOMES)/current/$(ASSEMBLY).fa	# Default Reference genome FASTA file
-
-
 
 ### TOOLS
 BWA?=bwa
@@ -58,15 +45,14 @@ GATK?=GenomeAnalysisTK.jar
 IGVTOOLS?=igvtools
 JAVA?=java
 TABIX?=tabix
-FASTQC?=fastqc
 BGZIP?=bgzip
 GZ?=gzip
-HOWARD?=HOWARD
+#HOWARD?=HOWARD
+HOWARD?=howard
 SNPEFF?=snpEff.jar
-VARSCAN?=$(NGSbin)/varscan.jar
+VARSCAN?=varscan.jar
 CAP?=CAP
 CAP_SOFTCLIPTOQ0?=CAP.SoftClipToQ0.pl
-
 
 
 # JAVA OPTIONS
@@ -77,6 +63,12 @@ JAVA_FLAGS_OTHER_PARAM?=-Dsnappy.disable=true
 JAVA_FLAGS?= -Xmx$(JAVA_MEMORY)g $(JAVA_FLAGS_TMP_FOLDER) $(JAVA_FLAGS_OTHER_PARAM)
 JAVA_FLAGS_BY_SAMPLE?= -Xmx$(JAVA_MEMORY_BY_SAMPLE)g $(JAVA_FLAGS_TMP_FOLDER) $(JAVA_FLAGS_OTHER_PARAM)
 
+# MEMORY OPTIONS
+MEMORY?=4
+MEMORY_BY_SAMPLE?=4
+MEMORY_BY_PIPELINE?=4
+MEMORY_BY_ALIGNER?=4
+MEMORY_BY_CALLER?=4
 
 # PICARD
 PICARD?=picard.jar
@@ -88,18 +80,21 @@ PICARD_UNALIGNED_NAME_FLAGS?=-LIBRARY_NAME 001 -PLATFORM ILLUMINA -PLATFORM_UNIT
 # DATABASES
 DBFOLDER?=/STARK/databases
 VCFDBSNP?=$(DBFOLDER)/snp138.vcf.gz
-VCFDBSNP137VCF?=$(DBFOLDER)/dbsnp_137.hg19.vcf
-VCF1000G?=$(DBFOLDER)/1000G_phase1.indels.hg19.vcf
-VCFMILLS1000G?=$(DBFOLDER)/Mills_and_1000G_gold_standard.indels.hg19.sites.vcf
-COSMIC?=$(DBFOLDER)/COSMIC.CodingMuts.vcf
-KNOWN_ALLELES?=$(VCFMILLS1000G)
-HAPMAP?=$(DBFOLDER)/hapmap_3.3.hg19.sites.vcf
-OMNI?=$(DBFOLDER)/1000G_omni2.5.hg19.vcf
-PHASE1_1000G?=$(DBFOLDER)/1000G_phase1.snps.high_confidence.hg19.sites.vcf
+VCFDBSNP_WITH_GATK?=$(shell if (( $(USE_VCFDBSNP_WITH_GATK) )); then echo " --dbsnp $(VCFDBSNP) "; fi;)
+KNOWN_SITES?=$(VCFDBSNP)
+# VCFDBSNP137VCF?=$(DBFOLDER)/dbsnp_137.hg19.vcf
+# VCF1000G?=$(DBFOLDER)/1000G_phase1.indels.hg19.vcf
+# VCFMILLS1000G?=$(DBFOLDER)/Mills_and_1000G_gold_standard.indels.hg19.sites.vcf
+# COSMIC?=$(DBFOLDER)/COSMIC.CodingMuts.vcf
+# KNOWN_ALLELES?=$(VCFMILLS1000G)
+# HAPMAP?=$(DBFOLDER)/hapmap_3.3.hg19.sites.vcf
+# OMNI?=$(DBFOLDER)/1000G_omni2.5.hg19.vcf
+# PHASE1_1000G?=$(DBFOLDER)/1000G_phase1.snps.high_confidence.hg19.sites.vcf
 
 # HOWARD
-HOWARD_CONFIG_OPTIONS?=--config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --annovar_folder=$(ANNOVAR) --annovar_databases=$(ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --java=$(JAVA)
-HOWARD_DEJAVU_CONFIG_OPTIONS?=--config=$(HOWARD_CONFIG) --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --config_annotation=$(HOWARD_CONFIG_DEJAVU_ANNOTATION) --annovar_folder=$(ANNOVAR) --annovar_databases=$(DEJAVU_ANNOVAR_DATABASES) --snpeff_jar=$(SNPEFF) --snpeff_databases=$(SNPEFF_DATABASES) --multithreading --threads=$(THREADS) --tmp=$(TMP_FOLDER_TMP) --env=$(CONFIG_TOOLS) --java=$(JAVA)
+HOWARD_CONFIG_OPTIONS?=--config=$(HOWARD_CONFIG) --threads=$(THREADS) --verbosity=DEBUG
+HOWARD_DEJAVU_CONFIG_OPTIONS?=--config=$(HOWARD_CONFIG) --threads=$(THREADS) --verbosity=DEBUG
+
 
 # FIX_VCF_HEADER_REFORMAT
 FIX_VCF_HEADER_REFORMAT_option?=$(shell if (( $(FIX_VCF_HEADER_REFORMAT) )); then echo "--reformat"; fi;)
@@ -133,8 +128,6 @@ POST_ANNOTATION?=
 #.normalization.sorting
 #.filtration.recalibration
 
-
-
 # COLORS RGB
 PASS_COLOR_RGB?=0,255,0
 WARN_COLOR_RGB?=252,161,6
@@ -142,15 +135,7 @@ FAIL_COLOR_RGB?=255,0,0
 MISS_COLOR_RGB?=139,0,0
 FILTERED_COLOR_RGB?=252,161,6
 
-
-
 # HEADER
-#RELEASE_CMD := $(shell echo "\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#" >> $(RELEASE_INFOS) )
-#RELEASE_CMD := $(shell echo "\# $(ENV_NAME) - $(ENV_DESCRIPTION)" >> $(RELEASE_INFOS) )
-#RELEASE_CMD := $(shell echo "\# RELEASE $(ENV_RELEASE) - $(ENV_DATE) - COPYRIGHT © $(ENV_COPYRIGHT) - $(ENV_AUTHOR) ($(ENV_LICENCE) licence)" >> $(RELEASE_INFOS) )
-#RELEASE_CMD := $(shell echo "\# CONFIG  Scripts '$(NGSscripts)' - ENV '$(ENV)' - TOOLS '$(NGSEnv)'" >> $(RELEASE_INFOS) )
-#RELEASE_CMD := $(shell echo "\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#" >> $(RELEASE_INFOS) )
-
 RELEASE_CMD := $(shell echo "\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#" >> $(RELEASE_INFOS) )
 RELEASE_CMD := $(shell echo "\# $(ENV_NAME) - $(ENV_DESCRIPTION)" >> $(RELEASE_INFOS) )
 RELEASE_CMD := $(shell echo "\# RELEASE $(ENV_RELEASE) [$(ENV_DATE)]" >> $(RELEASE_INFOS) )

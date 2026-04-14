@@ -33,13 +33,19 @@ MBQ_HC_ONCOGENET=17
 MINPRUNING_ONCOGENET?=20
 THREADS_GATKHC_ONCOGENET?=$(THREADS_BY_CALLER)
 maxReadsInRegionPerSample_ONCOGENET=8000
-GATKHC_ONCOGENET_FLAGS= -nct $(THREADS_GATKHC_ONCOGENET) -stand_call_conf 10 -dfrac $(DFRAC_HC_ONCOGENET) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample_ONCOGENET) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC_ONCOGENET) -minPruning $(MINPRUNING_ONCOGENET)  $(GATKHC_FLAGS_SHARED)
+GATKHC_ONCOGENET_FLAGS= -nct $(THREADS_GATKHC_ONCOGENET) \
+	-stand_call_conf 10 \
+	-dfrac $(DFRAC_HC_ONCOGENET) \
+	--maxReadsInRegionPerSample $(maxReadsInRegionPerSample_ONCOGENET) \
+	$(VCFDBSNP_WITH_GATK) \
+	-mbq $(MBQ_HC_ONCOGENET) \
+	-minPruning $(MINPRUNING_ONCOGENET) \
+	$(GATK3HC_FLAGS_SHARED)
 
-%.gatkHC_ONCOGENET$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.genome %.design.bed.interval_list
-	#
+%.gatkHC_ONCOGENET$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed.interval_list
 	$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) $(GATKHC_ONCOGENET_FLAGS) \
 		-T HaplotypeCaller \
-		-R `cat $*.genome` \
+		-R $(GENOME) \
 		$$(if [ "`grep ^ -c $*.design.bed.interval_list`" == "0" ]; then echo ""; else echo "-L $*.design.bed.interval_list"; fi;) \
 		-I $< \
 		-ip $(INTERVAL_PADDING) \

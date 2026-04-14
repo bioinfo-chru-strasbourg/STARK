@@ -33,13 +33,19 @@ MINPRUNING_SOLIDTUMOR?=20
 THREADS_GATKHC_SOLIDTUMOR?=$(THREADS_BY_CALLER)
 maxReadsInRegionPerSample_SOLIDTUMOR=1000
 MBQ_HC_SOLIDTUMOR=17
-GATKHC_SOLIDTUMOR_FLAGS= -nct $(THREADS_GATKHC_SOLIDTUMOR) -stand_call_conf 10 -dfrac $(DFRAC_HC_SOLIDTUMOR) --maxReadsInRegionPerSample $(maxReadsInRegionPerSample_SOLIDTUMOR) --dbsnp $(VCFDBSNP) -mbq $(MBQ_HC_SOLIDTUMOR) -minPruning $(MINPRUNING_SOLIDTUMOR)  $(GATKHC_FLAGS_SHARED)
+GATKHC_SOLIDTUMOR_FLAGS= -nct $(THREADS_GATKHC_SOLIDTUMOR) \
+	-stand_call_conf 10 \
+	-dfrac $(DFRAC_HC_SOLIDTUMOR) \
+	--maxReadsInRegionPerSample $(maxReadsInRegionPerSample_SOLIDTUMOR) \
+	$(VCFDBSNP_WITH_GATK) \
+	-mbq $(MBQ_HC_SOLIDTUMOR) \
+	-minPruning $(MINPRUNING_SOLIDTUMOR) \
+	$(GATK3HC_FLAGS_SHARED)
 
-%.gatkHC_SOLIDTUMOR$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.genome %.design.bed.interval_list 
-	#
+%.gatkHC_SOLIDTUMOR$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed.interval_list 
 	$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) $(GATKHC_SOLIDTUMOR_FLAGS) \
 		-T HaplotypeCaller \
-		-R `cat $*.genome` \
+		-R $(GENOME) \
 		$$(if [ "`grep ^ -c $*.design.bed.interval_list`" == "0" ]; then echo ""; else echo "-L $*.design.bed.interval_list"; fi;) \
 		-I $< \
 		-ip $(INTERVAL_PADDING) \

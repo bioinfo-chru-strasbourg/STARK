@@ -1,0 +1,62 @@
+{
+  "annotations": "ALL:format=parquet:release=disabled",
+  "annotation": {
+    "parquet": {
+      "annotations": {
+        "/STARK/databases/dbnsfp/current/hg19/dbNSFP5.1a.INTERPRO.partition.parquet": {"INFO": null},
+        "/STARK/databases/dbnsfp/current/hg19/dbNSFP5.1a.GNOMAD4.partition.parquet": {"INFO": null},
+        "/STARK/databases/dbnsfp/current/hg19/dbNSFP5.1a.CADD.partition.parquet": {"INFO": null},
+        "/STARK/databases/dbnsfp/current/hg19/dbNSFP5.1a.FATHMM.partition.parquet": {"INFO": null},
+        "/STARK/databases/dbnsfp/current/hg19/dbNSFP5.1a.POLYPHEN2.partition.parquet": {"INFO": null},
+        "/STARK/databases/dbnsfp/current/hg19/dbNSFP5.1a.SIFT.partition.parquet": {"INFO": null},
+        "/STARK/databases/dbnsfp/current/hg19/dbNSFP5.1a.VEP.partition.parquet": {"INFO": null}
+      }
+    },
+    "snpeff": {
+      "options": "-lof -hgvs -oicr -noShiftHgvs -spliceSiteSize 3 ",
+      "stats": "OUTPUT.html",
+      "csvStats": "OUTPUT.csv"
+    },
+    "annovar": {
+      "annotations": {
+        "refGene": {
+          "INFO": null
+        }
+      },
+      "options": {
+        "genebase": "-hgvs -splicing_threshold 3 ",
+        "intronhgvs": 10
+      }
+    }
+  },
+  "calculation": {
+    "calculations": {
+      "vartype": null,
+      "snpeff_hgvs": null,
+      "NOMEN": {
+        "options": {
+          "hgvs_field": "snpeff_hgvs"
+        }
+      },
+      "VAF": ""
+    }
+  },
+  "prioritization": {
+    "profiles": ["default"],
+    "pzfields": ["PZScore", "PZFlag", "PZComment"],
+    "prioritization_score_mode": "HOWARD"
+  },
+  "stats": {
+    "stats_md": null,
+    "stats_json": null
+  },
+  "explode_infos": {
+    "explode_infos": false,
+    "explode_infos_prefix": ""
+  },
+  "export": {
+    "header_in_output": false,
+    "parquet_partitions": null,
+    "order_by": null
+  }
+}

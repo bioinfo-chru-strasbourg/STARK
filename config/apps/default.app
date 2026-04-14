@@ -8,7 +8,7 @@
 # APPLICATION INFOS
 #####################
 APP_NAME="DEFAULT"
-APP_RELEASE="1.1"
+APP_RELEASE="1.2"
 APP_DESCRIPTION="Default application"
 APP_GROUP=""
 APP_PROJECT=""
@@ -118,6 +118,10 @@ BARCODE_MISMATCHES=1
 # Performs BAM METRICS (1/TRUE/YES/Y or 0/FALSE/NO/N). Time and space consuming. Switch off for exome/genome for better perfomances
 BAM_METRICS=0
 
+# BAM GENE COVERAGE METRICS (default 1/TRUE/YES/Y)
+# Performs BAM GENE COVERAGE METRICS (1/TRUE/YES/Y or 0/FALSE/NO/N) using RNASeQC. Time and space consuming.
+BAM_GENE_COVERAGE_METRICS=1
+
 # GLOBAL METRICS VARIABLES
 # Values for BAM metrics
 # Minimum mapping quality to consider in the metrics BAM
@@ -191,7 +195,7 @@ BAM_CHECK_STEPS=0
 # METRICS SNPEFF (default 0)
 # Generate snpEff variant metrics from VCF
 # Only for Report final VCF
-METRICS_SNPEFF=1
+METRICS_SNPEFF=0
 
 # PIPELINES PRIORITIZATION
 # List of pipelines to prioritize for the report (final.vcf)
@@ -409,7 +413,7 @@ POST_CALLING_STEPS=" "
 # Usually:
 #    "sorting normalization variantrecalibration" for exome or genome
 #    "sorting normalization variantfiltration" for gene panel
-POST_CALLING_MERGING_STEPS="sorting normalization variantrecalibration"
+POST_CALLING_MERGING_STEPS="sorting normalization variantrecalibration variantfiltration"
 
 
 
@@ -481,6 +485,29 @@ GENCORE_QUAL_THREESHOLD=""
 GENCORE_COVERAGE_SAMPLING=""
 
 
+### GATK CALLING
+
+# VCF DBSNP for GATK Calling and annotation
+# dbSNP database as VCF is used to annotate variant ID in ID VCF field and to provide known variants for GATK calling and annotation (if any)
+# https://gatk.broadinstitute.org/hc/en-us/articles/360046786692-VariantAnnotator#--dbsnp
+# This option allow GATK to use the VCF DBSNP for calling and annotation, if the file is available and not empty. If not, GATK will be used without DBSNP for calling and annotation.
+# See rules that use GATK for calling and annotation (e.g. "gatk_calling", "gatk_annotation", "gatk_calling_annotation") for more information about the use of VCF DBSNP for GATK calling and annotation.
+# See VCFDBSNP variable for the VCF DBSNP file path (in databases.app)
+# Default False
+# Example: 
+# - USE_VCFDBSNP_WITH_GATK=1
+# - USE_VCFDBSNP_WITH_GATK=0
+USE_VCFDBSNP_WITH_GATK=0
+
+# VCF DBSNP path
+# Path to the dbSNP database as VCF used for GATK calling and annotation (if any)
+# This file need to be available and not empty for GATK to use it for calling and annotation, if USE_VCFDBSNP_WITH_GATK=1
+# This variable is automatically defined in default configuration in databases.app
+# Default: "" (corresponding to default VCF DBSNP defined in databases.app, depending on ASSEMBLY)
+# Example: VCF_DBSNP_GATK_CALLING=$FOLDER_DATABASES/dbsnp_138.hg19.vcf.gz
+VCFDBSNP=
+
+
 ### CRAM
 
 # CRAM OPTIONS
@@ -494,6 +521,13 @@ CRAM_OPTIONS="version=3.0,level=9,no_ref"
 # example: CRAM_REMOVE_TAGS="BD,BI,OQ"
 CRAM_REMOVE_TAGS="BD,BI"
 
+
+### VCF Report
+
+# VCF genotype missing
+# "missing": Replace 0/0 or 0|0 genotypes by ./. and .|.
+# "missing_clean": Replace 0/0 or 0|0 genotypes by ./. and .|. and clean by removing other FORMAT fields
+VCF_MISSING_GENOTYPE="missing_clean"
 
 
 # THREADS (default AUTO)
@@ -575,66 +609,96 @@ MAX_CONCURRENT_HSMETRICS_RAM=16g
 #HOWARD_CONFIG_DEJAVU_ANNOTATION=$HOWARD_FOLDER_CONFIG/config.annotation.ini
 
 
-# ANNOTATION
-# Default annotation with HOWARD for intermediate VCF (for each caller) used by default with annotation rule "howard"
-#ANNOTATION_TYPE="core,frequency,score,annotation,prediction,snpeff,snpeff_hgvs" "core,symbol,location,outcome,hgvs,snpeff,snpeff_hgvs,snpeff_split"
-HOWARD_ANNOTATION="symbol,location,outcome,hgvs"
-# Default annotation with HOWARD for minimal VCF annotation (rule howard_minimal)
-HOWARD_ANNOTATION_MINIMAL="core,snpeff_split"
-# Default annotation with HOWARD for report
-HOWARD_ANNOTATION_REPORT="core,frequency,score,annotation,prediction,snpeff,snpeff_hgvs,snpeff_split"
-# Default annotation with HOWARD for whole analysis
-HOWARD_ANNOTATION_ANALYSIS="null" # no more annotation
+# HOWARD CONFIG
+HOWARD_CONFIG=$HOWARD_FOLDER_CONFIG/config.json
+#HOWARD_CONFIG={}
+
+# HOWARD PARAM
+# Use $HOWARD_FOLDER_CONFIG if necessary
+# default: $HOWARD_FOLDER_CONFIG/param.json
+# Example: HOWARD_PARAM=$APP_FOLDER/param.json
+# Example: HOWARD_PARAM=$STARK_FOLDER_APPS/MY_APP_GROUP/param.json
+
+# Default HOWARD parameters
+#HOWARD_PARAM=$HOWARD_FOLDER_CONFIG/param.json
+#HOWARD_PARAM='{}'
+
+# Default HOWARD parameters for minimal VCF annotation (rule howard_minimal)
+#HOWARD_PARAM_MINIMAL=$HOWARD_FOLDER_CONFIG/param.json
+#HOWARD_PARAM_MINIMAL='{}'
+
+# Default HOWARD parameters for report (rule howard)
+HOWARD_PARAM_REPORT=$HOWARD_FOLDER_CONFIG/param.json
+#HOWARD_PARAM_REPORT='{}'
+
+# Default HOWARD parameters for whole analysis (rule howard)
+#HOWARD_PARAM_ANALYSIS=$HOWARD_FOLDER_CONFIG/param.json
+#HOWARD_PARAM_ANALYSIS='{}'
+
+# HOWARD prioritization parameters
+HOWARD_PRIORITIZATION_CONFIG="$HOWARD_FOLDER_CONFIG/prioritization_profiles.json" # default prioritization rule
 
 
-# CALCULATION
-# Default calculation with HOWARD for all VCF/pipelines
-HOWARD_CALCULATION="VAF_STATS,DP_STATS,VARTYPE,NOMEN,BARCODE"
-# Default minimal calculation with HOWARD for final VCF report
-HOWARD_CALCULATION_MINIMAL="VAF_STATS,DP_STATS,VARTYPE,NOMEN,BARCODE"
-# Default calculation with HOWARD for final VCF report
-HOWARD_CALCULATION_REPORT="FindByPipelines,GenotypeConcordance,VAF,VAF_STATS,DP_STATS,VARTYPE,NOMEN,BARCODE"
-# Default calculation with HOWARD for whole analysis (calculation forced, no transcripts list available)
-HOWARD_CALCULATION_ANALYSIS="VAF_STATS,DP_STATS,BARCODE"
-# List of annotation fields to extract NOMEN annotation (default 'hgvs', see HOWARD docs)
-HOWARD_NOMEN_FIELDS="hgvs"
+# # ANNOTATION
+# # Default annotation with HOWARD for intermediate VCF (for each caller) used by default with annotation rule "howard"
+# #ANNOTATION_TYPE="core,frequency,score,annotation,prediction,snpeff,snpeff_hgvs" "core,symbol,location,outcome,hgvs,snpeff,snpeff_hgvs,snpeff_split"
+# HOWARD_ANNOTATION="symbol,location,outcome,hgvs"
+# # Default annotation with HOWARD for minimal VCF annotation (rule howard_minimal)
+# HOWARD_ANNOTATION_MINIMAL="core,snpeff_split"
+# # Default annotation with HOWARD for report
+# HOWARD_ANNOTATION_REPORT="core,frequency,score,annotation,prediction,snpeff,snpeff_hgvs,snpeff_split"
+# # Default annotation with HOWARD for whole analysis
+# HOWARD_ANNOTATION_ANALYSIS="null" # no more annotation
 
 
-# PRIORITIZATION
-# Default filter to prioritize/rank variant.
-# This option create ranking scores in VCF and comment in TXT (after translation).
-# Scores can be used to sort variant in the TXT
-# HOWARD_FILTER_DEFAULT="default" # in env_header.sh
-# Default prioritization with HOWARD (deprecated)
-#HOWARD_PRIORITIZATION=$HOWARD_PRIORITIZATION_DEFAULT # "default"
-# Minimal prioritization with HOWARD (deprecated)
-#HOWARD_PRIORITIZATION_MINIMAL=$HOWARD_PRIORITIZATION_DEFAULT # "default"
-# Default prioritization with HOWARD for Report (full/final VCF)
-HOWARD_PRIORITIZATION_REPORT=$HOWARD_PRIORITIZATION_DEFAULT # "default"
-# Default prioritization with HOWARD for whole analysis (prioritization forced)
-HOWARD_PRIORITIZATION_ANALYSIS="" # "none"
-# Default prioritization with HOWARD for VaRank score mode
-HOWARD_PRIORITIZATION_VARANK=VaRank # "default"
+# # CALCULATION
+# # Default calculation with HOWARD for all VCF/pipelines
+# HOWARD_CALCULATION="VAF_STATS,DP_STATS,VARTYPE,NOMEN,BARCODE"
+# # Default minimal calculation with HOWARD for final VCF report
+# HOWARD_CALCULATION_MINIMAL="VAF_STATS,DP_STATS,VARTYPE,NOMEN,BARCODE"
+# # Default calculation with HOWARD for final VCF report
+# HOWARD_CALCULATION_REPORT="FindByPipelines,GenotypeConcordance,VAF,VAF_STATS,DP_STATS,VARTYPE,NOMEN,BARCODE"
+# # Default calculation with HOWARD for whole analysis (calculation forced, no transcripts list available)
+# HOWARD_CALCULATION_ANALYSIS="VAF_STATS,DP_STATS,BARCODE"
+# # List of annotation fields to extract NOMEN annotation (default 'hgvs', see HOWARD docs)
+# HOWARD_NOMEN_FIELDS="hgvs"
 
 
-# TRANSLATION
-# List of fields to show in the TSV file
-# use ALL to show ALL "other" annotations
-# Default filter to prioritize/rank variant, Sort variant in the TXT using 2 fields, Order fields in variant ranking
-HOWARD_FIELDS="NOMEN,PZFlag,PZScore,PZComment,CNOMEN,PNOMEN,location,outcome,snpeff_impact,VAF_average,dbSNP,dbSNPNonFlagged,popfreq,ALL"
-HOWARD_SORT="PZFlag::DESC,PZScore:n:DESC"
-HOWARD_SORT_BY="PZFlag,PZScore"
-HOWARD_ORDER_BY="DESC,DESC"
-# Minimal
-HOWARD_FIELDS_MINIMAL="NOMEN,PZFlag,PZScore,PZComment,CNOMEN,PNOMEN,location,outcome,snpeff_impact,VAF_average,dbSNP,dbSNPNonFlagged,popfreq"
-HOWARD_SORT_MINIMAL="PZFlag::DESC,PZScore:n:DESC"
-HOWARD_SORT_BY_MINIMAL="PZFlag,PZScore"
-HOWARD_ORDER_BY_MINIMAL="DESC,DESC"
-# REPORT
-HOWARD_FIELDS_REPORT="NOMEN,PZFlag,PZScore,PZComment,CNOMEN,PNOMEN,location,outcome,snpeff_impact,VAF_average,dbSNP,dbSNPNonFlagged,popfreq"
-HOWARD_SORT_REPORT="PZFlag::DESC,PZScore:n:DESC"
-HOWARD_SORT_BY_REPORT="PZFlag,PZScore"
-HOWARD_ORDER_BY_REPORT="DESC,DESC"
+# # PRIORITIZATION
+# # Default filter to prioritize/rank variant.
+# # This option create ranking scores in VCF and comment in TXT (after translation).
+# # Scores can be used to sort variant in the TXT
+# # HOWARD_FILTER_DEFAULT="default" # in env_header.sh
+# # Default prioritization with HOWARD (deprecated)
+# #HOWARD_PRIORITIZATION=$HOWARD_PRIORITIZATION_DEFAULT # "default"
+# # Minimal prioritization with HOWARD (deprecated)
+# #HOWARD_PRIORITIZATION_MINIMAL=$HOWARD_PRIORITIZATION_DEFAULT # "default"
+# # Default prioritization with HOWARD for Report (full/final VCF)
+# HOWARD_PRIORITIZATION_REPORT=$HOWARD_PRIORITIZATION_DEFAULT # "default"
+# # Default prioritization with HOWARD for whole analysis (prioritization forced)
+# HOWARD_PRIORITIZATION_ANALYSIS="" # "none"
+# # Default prioritization with HOWARD for VaRank score mode
+# HOWARD_PRIORITIZATION_VARANK=VaRank # "default"
+
+
+# # TRANSLATION
+# # List of fields to show in the TSV file
+# # use ALL to show ALL "other" annotations
+# # Default filter to prioritize/rank variant, Sort variant in the TXT using 2 fields, Order fields in variant ranking
+# HOWARD_FIELDS="NOMEN,PZFlag,PZScore,PZComment,CNOMEN,PNOMEN,location,outcome,snpeff_impact,VAF_average,dbSNP,dbSNPNonFlagged,popfreq,ALL"
+# HOWARD_SORT="PZFlag::DESC,PZScore:n:DESC"
+# HOWARD_SORT_BY="PZFlag,PZScore"
+# HOWARD_ORDER_BY="DESC,DESC"
+# # Minimal
+# HOWARD_FIELDS_MINIMAL="NOMEN,PZFlag,PZScore,PZComment,CNOMEN,PNOMEN,location,outcome,snpeff_impact,VAF_average,dbSNP,dbSNPNonFlagged,popfreq"
+# HOWARD_SORT_MINIMAL="PZFlag::DESC,PZScore:n:DESC"
+# HOWARD_SORT_BY_MINIMAL="PZFlag,PZScore"
+# HOWARD_ORDER_BY_MINIMAL="DESC,DESC"
+# # REPORT
+# HOWARD_FIELDS_REPORT="NOMEN,PZFlag,PZScore,PZComment,CNOMEN,PNOMEN,location,outcome,snpeff_impact,VAF_average,dbSNP,dbSNPNonFlagged,popfreq"
+# HOWARD_SORT_REPORT="PZFlag::DESC,PZScore:n:DESC"
+# HOWARD_SORT_BY_REPORT="PZFlag,PZScore"
+# HOWARD_ORDER_BY_REPORT="DESC,DESC"
 
 
 # INFO to FORMAT
@@ -691,30 +755,42 @@ VARIANTFILTRATION_INVALIDATE_PREVIOUS_FILTERS=1
 # Variant Recalibrator SNP resources option (see documentation guide for more info)
 # These resources need to be available on STARK Databases folder for GATK
 # default:
-# VARIANTRECALIBRATION_SNP_RESOURCES="
-#   -resource:hapmap,known=false,training=true,truth=true,prior=15.0 hapmap_3.3.b37.vcf.gz
-#   -resource:omni,known=false,training=true,truth=true,prior=12.0 1000G_omni2.5.b37.vcf.gz
-#   -resource:1000G,known=false,training=true,truth=false,prior=10.0 1000G_phase1.snps.high_confidence.b37.vcf.gz 
-#   -resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.b37.vcf.gz
-# "
-VARIANTRECALIBRATION_SNP_RESOURCES="
-    -resource:hapmap,known=false,training=true,truth=true,prior=15.0 hapmap_3.3.b37.vcf.gz
-    -resource:omni,known=false,training=true,truth=true,prior=12.0 1000G_omni2.5.b37.vcf.gz
-    -resource:1000G,known=false,training=true,truth=false,prior=10.0 1000G_phase1.snps.high_confidence.b37.vcf.gz 
-    -resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.b37.vcf.gz
+VARIANTRECALIBRATION_SNP_RESOURCES_DEFAULT_HG19="
+	-resource:hapmap,known=false,training=true,truth=true,prior=15.0 hapmap_3.3.hg19.sites.vcf.gz
+	-resource:omni,known=false,training=true,truth=true,prior=12.0 1000G_omni2.5.hg19.sites.vcf.gz
+	-resource:1000G,known=false,training=true,truth=false,prior=10.0 1000G_phase1.snps.high_confidence.hg19.sites.vcf.gz
+	-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.hg19.vcf.gz
 "
+VARIANTRECALIBRATION_SNP_RESOURCES_DEFAULT_HG38="
+	-resource:hapmap,known=false,training=true,truth=true,prior=15.0 hapmap_3.3.hg38.vcf.gz
+	-resource:omni,known=false,training=true,truth=true,prior=12.0 1000G_omni2.5.hg38.vcf.gz
+	-resource:1000G,known=false,training=true,truth=false,prior=10.0 1000G_phase1.snps.high_confidence.hg38.vcf.gz
+	-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.hg38.vcf.gz
+"
+if [ "$ASSEMBLY" == 'hg19' ]; then
+    VARIANTRECALIBRATION_SNP_RESOURCES=$VARIANTRECALIBRATION_SNP_RESOURCES_DEFAULT_HG19
+fi;
+if [ "$ASSEMBLY" == 'hg38' ]; then
+    VARIANTRECALIBRATION_SNP_RESOURCES=$VARIANTRECALIBRATION_SNP_RESOURCES_DEFAULT_HG38
+fi;
 
 # Variant Recalibrator INDEL resources option (see documentation guide for more info)
 # These resources need to be available on STARK Databases folder for GATK
 # default:
-# VARIANTRECALIBRATION_INDEL_RESOURCES="
-#   -resource:mills,known=false,training=true,truth=true,prior=12.0 Mills_and_1000G_gold_standard.indels.b37.vcf.gz
-#   -resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.b37.vcf.gz
-# "
-VARIANTRECALIBRATION_INDEL_RESOURCES="
-    -resource:mills,known=false,training=true,truth=true,prior=12.0 Mills_and_1000G_gold_standard.indels.b37.vcf.gz
-    -resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.b37.vcf.gz
+VARIANTRECALIBRATION_INDEL_RESOURCES_DEFAULT_HG19="
+	-resource:mills,known=false,training=true,truth=true,prior=12.0 Mills_and_1000G_gold_standard.indels.hg19.sites.vcf.gz
+	-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.hg19.vcf.gz
 "
+VARIANTRECALIBRATION_INDEL_RESOURCES_DEFAULT_HG38="
+	-resource:mills,known=false,training=true,truth=true,prior=12.0 Mills_and_1000G_gold_standard.indels.hg38.vcf.gz
+	-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.hg38.vcf.gz
+"
+if [ "$ASSEMBLY" == 'hg19' ]; then
+    VARIANTRECALIBRATION_INDEL_RESOURCES=$VARIANTRECALIBRATION_INDEL_RESOURCES_DEFAULT_HG19
+fi;
+if [ "$ASSEMBLY" == 'hg38' ]; then
+    VARIANTRECALIBRATION_INDEL_RESOURCES=$VARIANTRECALIBRATION_INDEL_RESOURCES_DEFAULT_HG38
+fi;
 
 # Variant Recalibrator SNP annotations option (see documentation guide for more info)
 # default: VARIANTRECALIBRATION_SNP_ANNOTATIONS="-an QD -an MQ -an MQRankSum -an ReadPosRankSum -an FS -an SOR -an DP"
@@ -751,6 +827,33 @@ VARIANTRECALIBRATOR_VARIANTFILTRATION_SNP_FILTER_OPTION=$VARIANTFILTRATION_SNP_F
 VARIANTRECALIBRATOR_VARIANTFILTRATION_SNP_FILTER_EXPRESSION_OPTION=$VARIANTFILTRATION_SNP_FILTER_EXPRESSION_OPTION
 VARIANTRECALIBRATOR_VARIANTFILTRATION_INDEL_FILTER_OPTION=$VARIANTFILTRATION_INDEL_FILTER_OPTION
 VARIANTRECALIBRATOR_VARIANTFILTRATION_INDEL_FILTER_EXPRESSION_OPTION=$VARIANTFILTRATION_INDEL_FILTER_EXPRESSION_OPTION
+
+
+
+# GATK BAM Realignment and Recalibration
+#####################################
+
+# GATK BAM Realignment
+# Realignment is a process of correcting misalignments around indels. It is recommended to perform realignment before variant calling, especially for indel calling, to improve the accuracy of variant calling (not for GATK4 Haplotype Caller and MuTect2).
+# This option allow GATK to perform realignment, if the file is available and not empty. If not, GATK will be used without realignment.
+# Realignemnt is performed with GATK3 RealignerTargetCreator and IndelRealigner, and not performed with GATK4 (GATK4 Haplotype Caller and MuTect2 perform local realignment during calling, so GATK4 do not include Realignemnt tools).
+# This option is used with the GATK3 RealignerTargetCreator command to identify regions to realign, and with the GATK3 IndelRealigner command to perform realignment.
+# The VCF files include Indels and can be the same as for VCF recalibration (see VARIANTRECALIBRATION_INDEL_RESOURCES).
+# Exemple:
+# - GATK_REALIGNMENT_KNOWN_OPTIONS="--known $VCFDBSNP"
+# default:
+GATK_REALIGNMENT_KNOWN_OPTIONS=$(echo -e "$VARIANTRECALIBRATION_INDEL_RESOURCES" | sed "s#-resource.* \(.*\)#-known "$DBFOLDER"/gatk/current/"$ASSEMBLY"/\1#gi" | xargs echo)
+
+# GATK BAM Recalibration
+# Recalibration is a process of correcting base quality scores. It is recommended to perform recalibration before variant calling to improve the accuracy of variant calling.
+# This option allow GATK to perform recalibration, if the file is available and not empty. If not, GATK will be used without recalibration.
+# Recalibration is performed with GATK4 BaseRecalibrator and PrintReads
+# This option is used with the GATK4 BaseRecalibrator command to identify covariates to recalibrate, and with the GATK4 PrintReads command to perform recalibration.
+# The VCF files include SNPs and can be the same as for VCF recalibration (see VARIANTRECALIBRATION_SNP_RESOURCES).
+# Exemple:
+# - GATK_RECALIBRATION_KNOWN_OPTIONS="--known-sites $VCFDBSNP"
+# default:
+GATK_RECALIBRATION_KNOWN_OPTIONS=$(echo -e "$VARIANTRECALIBRATION_SNP_RESOURCES" | sed "s#-resource.* \(.*\)#--known-sites "$DBFOLDER"/gatk/current/"$ASSEMBLY"/\1#gi" | xargs echo)
 
 
 

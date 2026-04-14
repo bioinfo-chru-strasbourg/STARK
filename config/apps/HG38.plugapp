@@ -18,3 +18,69 @@ APP_DESCRIPTION="PlugAPP to use hg38 genome reference"
 #############
 
 ASSEMBLY=hg38
+
+
+# Variant Recalibrator
+######################
+
+# Variant Recalibrator main option (see documentation guide for more info)
+# default: VARIANTRECALIBRATOR_OPTIONS=
+#VARIANTRECALIBRATOR_OPTIONS=
+
+# Variant Recalibrator SNP resources option (see documentation guide for more info)
+# These resources need to be available on STARK Databases folder for GATK
+# default:
+# VARIANTRECALIBRATION_SNP_RESOURCES_DEFAULT_HG19="
+# 	-resource:hapmap,known=false,training=true,truth=true,prior=15.0 hapmap_3.3.hg19.sites.vcf.gz
+# 	-resource:omni,known=false,training=true,truth=true,prior=12.0 1000G_omni2.5.hg19.sites.vcf.gz
+# 	-resource:1000G,known=false,training=true,truth=false,prior=10.0 1000G_phase1.snps.high_confidence.hg19.sites.vcf.gz
+# 	-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.hg19.vcf.gz
+# "
+VARIANTRECALIBRATION_SNP_RESOURCES_DEFAULT_HG38="
+	-resource:hapmap,known=false,training=true,truth=true,prior=15.0 hapmap_3.3.hg38.vcf.gz
+	-resource:omni,known=false,training=true,truth=true,prior=12.0 1000G_omni2.5.hg38.vcf.gz
+	-resource:1000G,known=false,training=true,truth=false,prior=10.0 1000G_phase1.snps.high_confidence.hg38.vcf.gz
+	-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.hg38.vcf.gz
+"
+VARIANTRECALIBRATION_SNP_RESOURCES=$VARIANTRECALIBRATION_SNP_RESOURCES_DEFAULT_HG38
+
+# Variant Recalibrator INDEL resources option (see documentation guide for more info)
+# These resources need to be available on STARK Databases folder for GATK
+# default:
+# VARIANTRECALIBRATION_INDEL_RESOURCES_DEFAULT_HG19="
+# 	-resource:mills,known=false,training=true,truth=true,prior=12.0 Mills_and_1000G_gold_standard.indels.hg19.sites.vcf.gz
+# 	-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.hg19.vcf.gz
+# "
+VARIANTRECALIBRATION_INDEL_RESOURCES_DEFAULT_HG38="
+	-resource:mills,known=false,training=true,truth=true,prior=12.0 Mills_and_1000G_gold_standard.indels.hg38.vcf.gz
+	-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.hg38.vcf.gz
+"
+VARIANTRECALIBRATION_INDEL_RESOURCES=$VARIANTRECALIBRATION_INDEL_RESOURCES_DEFAULT_HG38
+
+
+# GATK BAM Realignment and Recalibration
+########################################
+
+# GATK BAM Realignment
+# Realignment is a process of correcting misalignments around indels. It is recommended to perform realignment before variant calling, especially for indel calling, to improve the accuracy of variant calling (not for GATK4 Haplotype Caller and MuTect2).
+# This option allow GATK to perform realignment, if the file is available and not empty. If not, GATK will be used without realignment.
+# Realignemnt is performed with GATK3 RealignerTargetCreator and IndelRealigner, and not performed with GATK4 (GATK4 Haplotype Caller and MuTect2 perform local realignment during calling, so GATK4 do not include Realignemnt tools).
+# This option is used with the GATK3 RealignerTargetCreator command to identify regions to realign, and with the GATK3 IndelRealigner command to perform realignment.
+# The VCF files include Indels and can be the same as for VCF recalibration (see VARIANTRECALIBRATION_INDEL_RESOURCES).
+# Exemple:
+# - GATK_REALIGNMENT_KNOWN_OPTIONS="--known $VCFDBSNP"
+# default:
+GATK_REALIGNMENT_KNOWN_OPTIONS=$(echo -e "$VARIANTRECALIBRATION_INDEL_RESOURCES" | sed "s#-resource.* \(.*\)#-known "$DBFOLDER"/gatk/current/"$ASSEMBLY"/\1#gi" | xargs echo)
+
+
+# GATK BAM Recalibration
+# Recalibration is a process of correcting base quality scores. It is recommended to perform recalibration before variant calling to improve the accuracy of variant calling.
+# This option allow GATK to perform recalibration, if the file is available and not empty. If not, GATK will be used without recalibration.
+# Recalibration is performed with GATK4 BaseRecalibrator and PrintReads
+# This option is used with the GATK4 BaseRecalibrator command to identify covariates to recalibrate, and with the GATK4 PrintReads command to perform recalibration.
+# The VCF files include SNPs and can be the same as for VCF recalibration (see VARIANTRECALIBRATION_SNP_RESOURCES).
+# Exemple:
+# - GATK_RECALIBRATION_KNOWN_OPTIONS="--known-sites $VCFDBSNP"
+# default:
+GATK_RECALIBRATION_KNOWN_OPTIONS=$(echo -e "$VARIANTRECALIBRATION_SNP_RESOURCES" | sed "s#-resource.* \(.*\)#--known-sites "$DBFOLDER"/gatk/current/"$ASSEMBLY"/\1#gi" | xargs echo)
+

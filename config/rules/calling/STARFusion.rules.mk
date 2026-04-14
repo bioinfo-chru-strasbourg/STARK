@@ -5,22 +5,32 @@
 # Author: Samuel Nicaise, Thomas Lavaux
 ############################
 
-%.STARFusion$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.genome %.junction
+
+# STARFusion need raw alignement, without splitNcigar, to work properly. So we need to use bam without splitNcigar directly from STAR alignments (%$(POST_ALIGNMENT).bam).
+
+#%.STARFusion$(POST_CALLING).vcf: %$(POST_ALIGNMENT).bam %$(POST_ALIGNMENT).bam.bai %.empty.vcf %.junction
+%.STARFusion$(POST_CALLING).vcf: %.star_raw.bam %.star_raw.bam.bai %.empty.vcf #%.junction
 	mkdir -p $*.fusion.reports;
-	STAR-Fusion \
+	$(MAMBA) run -p $(STARFUSION_ENV) $(STARFUSION) \
 		--chimeric_junction $*.junction \
-		--genome_lib_dir $$CTAT_DATABASES \
+		--genome_lib_dir $$(dirname $(GENOME_RNA)) \
 		--output_dir $*.fusion.reports;
-	# rename ...reports/star-fusion.fusion_predictions.tsv to ...reports/<sample>.star-fusion.tsv
 	mv $*.fusion.reports/star-fusion.fusion_predictions.tsv $*.fusion.reports/$$(echo $(@F) | rev | cut -d"." -f4-  | rev).star-fusion.tsv
 	mv $*.fusion.reports/star-fusion.fusion_predictions.abridged.tsv $*.fusion.reports/$$(echo $(@F) | rev | cut -d"." -f4-  | rev).star-fusion.abridged.tsv
-	# convert to vcf
-	variantconvert convert \
+	# VariantConvert
+	# Need to create a specific config for variantconvert with the path to the genome fasta and the assembly name to be able to convert STARFusion output to vcf with correct header (configuration file is in config/variantconvert/GENOME/starfusion.json)
+	cp $(VARIANTCONVERT_FOLDER_CONFIG)/$(ASSEMBLY)/starfusion.json $@.variantconvert.config.json
+	$(VARIANTCONVERT) config -c $@.variantconvert.config.json --set GENOME.path=$(GENOME_RNA) --fill_genome_header
+	# Convert to vcf
+	$(VARIANTCONVERT) convert \
 		-i $*.fusion.reports/$$(echo $(@F) | rev | cut -d"." -f4-  | rev).star-fusion.abridged.tsv \
 		-o $@ \
-		-fi breakpoints \
-		-fo vcf \
-		-c $(ASSEMBLY)/starfusion.json;
+		-c $@.variantconvert.config.json;
+	# Clean
+	-rm $@.variantconvert.config.json
+
+# -fi breakpoints \
+# -fo vcf \
 
 # CONFIG/RELEASE
 RELEASE_COMMENT := "\#\# CALLING STARFusion '$(MK_RELEASE)': CTAT Tool to detect fusions based on RNA-Seq data"

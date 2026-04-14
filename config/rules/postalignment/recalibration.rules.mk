@@ -1,27 +1,39 @@
 ############################
 # GATK Recalibration Rules
-# Release: 0.9.2
-# Date: 29/07/2022
+# Release: 0.9.3
+# Date: 31/10/2025
 # Author: Antony Le Bechec
 ############################
 
 # Release note
 # 10/03/2015-0.9.0: Creation, BAM recalibration and variant recalibration
 # 29/07/2022-0.9.2: Remove variant recalibration
+# 31/10/2025-0.9.3: Change GATK3 to GATK4 for recalibration
 
 
 # BAM RECALIBRATION
 
-%.bam.grp: %.bam %.bam.bai %.from_manifest.interval_list %.genome
+%.bam.grp: %.bam %.bam.bai %.from_manifest.interval_list
 	# Generate BaseRecalibrator grp file for recalibration
-	$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) -T BaseRecalibrator -R $$(cat $*.genome) -knownSites $(VCFDBSNP) -I $< -o $@ -L $*.from_manifest.interval_list -nct $(THREADS_BY_SAMPLE) -U -compress 0
+	$(JAVA) $(JAVA_FLAGS_GATK4) -XX:ParallelGCThreads=2 -jar $(GATK4) \
+		BaseRecalibrator \
+		-I $< \
+		-R $(GENOME) \
+		$(GATK_RECALIBRATION_KNOWN_OPTIONS) \
+		--use-original-qualities \
+		-L $*.from_manifest.interval_list \
+		-O $@
 
-%.bam: %.recalibration.bam %.genome %.recalibration.bam.bai %.recalibration.bam.grp #%.recalibration.bam.bai %.from_manifest.intervals %.recalibration.from_manifest.intervals
+
+%.bam: %.recalibration.bam %.recalibration.bam.bai %.recalibration.bam.grp 
 	# Recalibrate BAM with BaseRecalibrator grp file
-	#$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) -T PrintReads -R $$(cat $*.genome) -I $< -BQSR $*.recalibration.bam.grp -o $@ -L $*.recalibration.from_manifest.intervals -nct $(THREADS_BY_SAMPLE) -U
-	$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) -T PrintReads -R $$(cat $*.genome) -I $< -BQSR $*.recalibration.bam.grp -o $@ -nct $(THREADS_BY_SAMPLE) -U -EOQ
-	# clean
-	#-rm -f $<;
+	$(JAVA) $(JAVA_FLAGS_GATK4) -XX:ParallelGCThreads=$(THREADS_BY_SAMPLE) -jar $(GATK4) \
+		ApplyBQSR \
+		-R $(GENOME) \
+		-I $< \
+		--bqsr-recal-file $*.recalibration.bam.grp \
+		--use-original-qualities \
+		-O $@
 	-rm -f $*.recalibration.*;
 
 

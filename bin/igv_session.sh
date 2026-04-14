@@ -253,8 +253,10 @@ fi;
 
 ### FOLDER PATTERNS
 if [ ! -z "$FOLDER" ] && [ ! -z "$PATTERNS" ]; then
-	PATTERNS_PARAM='-name '$(echo $PATTERNS | sed "s/ / -or -name /gi")
-	FILES=$(find $FOLDER -mindepth $FOLDER_MINDEPTH -maxdepth $FOLDER_MAXDEPTH $PATTERNS_PARAM | tac | sed "s#$FOLDER/\(.*\)#\1:$FOLDER/\1#gi" | tr "\n" " ")
+	PATTERNS_PARAM="-name '"$(echo "$PATTERNS" | sed "s/ /' -or -name '/gi")"'"
+	FIND_CMD="find $FOLDER -mindepth $FOLDER_MINDEPTH -maxdepth $FOLDER_MAXDEPTH $PATTERNS_PARAM"
+	#FILES=$(find $FOLDER -mindepth $FOLDER_MINDEPTH -maxdepth $FOLDER_MAXDEPTH $PATTERNS_PARAM | tac | sed "s#$FOLDER/\(.*\)#\1:$FOLDER/\1#gi" | tr "\n" " ")
+	FILES=$(eval $FIND_CMD | tac | sed "s#$FOLDER/\(.*\)#\1:$FOLDER/\1#gi" | tr "\n" " ")
 fi;
 
 ### FILES
@@ -269,6 +271,13 @@ fi;
 if [ -z "$IGV_SESSION" ]; then
 	IGV_SESSION="igv_session.xml"
 fi;
+
+if [ "$DAS_URL" == "" ]; then
+	IGV_SESSION_JSON=""
+# elif [ -z "$IGV_SESSION_JSON" ]; then
+# 	IGV_SESSION_JSON="igv_session.json"
+fi;
+
 if (($VERBOSE)); then
 	echo "#[INFO] IGV session XML:    $IGV_SESSION"
 	echo "#[INFO] IGV session JSON:   $IGV_SESSION_JSON"

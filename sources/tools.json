@@ -1,0 +1,26 @@
+{
+  "tools": [
+    {"name": "htslib", "version": "1.23", "type": "shared"},
+    {"name": "bcftools", "version": "1.23", "type": "shared"},
+    {"name": "samtools", "version": "1.23", "type": "shared"},
+    {"name": "bedtools", "version": "2.31.1", "type": "shared"},
+    {"name": "bowtie2", "version": "2.5.4", "type": "shared"},
+    {"name": "bwa", "version": "0.7.19", "type": "shared"},
+    {"name": "bwa-mem2", "version": "2.3", "type": "shared"},
+    {"name": "fastp", "version": "1.1.0", "type": "shared"},
+    {"name": "gatk4", "version": "4.6.1.0-0", "type": "shared"},
+    {"name": "igvtools", "version": "2.17.3-0", "type": "shared"},
+    {"name": "mutect", "version": "1.1.6", "type": "shared"},
+    {"name": "picard", "version": "3.4.0-0", "type": "shared"},
+    {"name": "varscan", "version": "2.4.6-0", "type": "shared"},
+    {"name": "fgbio", "version": "3.1.1", "type": "shared"},
+    {"name": "gencore", "version": "0.17.2", "type": "shared"},
+    {"name": "umi_tools", "version": "1.1.6", "type": "shared"},
+    {"name": "snpeff", "version": "5.4.0a-0", "type": "mamba"},
+    {"name": "gatk", "version": "3.8", "type": "mamba"},
+    {"name": "r-base", "version": "4.5.2", "type": "mamba"},
+    {"name": "arriba", "version": "2.5.1", "type": "mamba"},
+    {"name": "star-fusion", "version": "1.15.1", "type": "mamba"},
+    {"name": "star", "version": "2.7.11b", "type": "none"}
+  ]
+}

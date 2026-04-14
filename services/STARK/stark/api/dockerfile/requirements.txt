@@ -1,1 +1,6 @@
-Flask>=0.9
+fastapi
+python-jose[cryptography]
+passlib[bcrypt]
+uvicorn
+python-multipart
+jinja2

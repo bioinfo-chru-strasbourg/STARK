@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>STARK API</title>
+    <link rel="stylesheet" type="text/css" href="/static/style.css">
+</head>
+<body>
+    <div id="login-container">
+        <h2>Login</h2>
+        <form id="login-form">
+            <input type="text" id="username" placeholder="Username" required>
+            <input type="password" id="password" placeholder="Password" required>
+            <button type="submit">Login</button>
+        </form>
+        <p id="login-error" class="error"></p>
+    </div>
+
+    <div id="dashboard-container" style="display: none;">
+        <div class="header">
+            <h1>STARK API</h1>
+            <div class="header-user">
+                <span id="current-user"></span>
+                <button id="logout-btn">Logout</button>
+            </div>
+        </div>
+
+        <div id="action-container">
+            <div id="analysis-form-container">
+                <h2>Launch Analysis</h2>
+                <form id="analysis-form">
+                    <div class="form-row">
+                        <label for="run-name-input">STARK Run name</label>
+                        <input type="text" id="run-name-input" placeholder="MY_RUN">
+                    </div>
+                    <details>
+                        <summary>Advanced (raw JSON)</summary>
+                        <textarea id="json-input" placeholder='{"run":"MY_RUN"}'></textarea>
+                    </details>
+                    <div class="launch-row">
+                        <button type="submit" title="Launch Analysis">Launch</button>
+                        <span id="analysis-response"></span>
+                    </div>
+                </form>
+            </div>
+            <div id="queue-container">
+                <h2>Task Queue</h2>
+                <div id="queue-filters">
+                    <div class="filter-group" id="filter-states-group">
+                        <span class="filter-label">State</span>
+                        <span id="filter-states-container"></span>
+                    </div>
+                    <div class="filter-group" id="filter-queues-group">
+                        <span class="filter-label">Queue</span>
+                        <span id="filter-queues-checkboxes"></span>
+                    </div>
+                    <button id="filter-reset" title="Reset all filters">✕ Reset</button>
+                </div>
+                <div id="queue-table-container">
+                    <table id="queue-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>State</th>
+                                <th>Queue</th>
+                                <th>Slots</th>
+                                <!-- <th>Output</th> -->
+                                <!-- <th>E-Level</th> -->
+                                <th>Time</th>
+                                <th class="analysis-name">Analysis Name</th>
+                                <th>Actions</th>                            
+                            </tr>
+                        </thead>
+                        <tbody id="queue-body">
+                        </tbody>
+                    </table>
+                </div>
+                <pre id="queue-output"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/script.js?v={{ version }}"></script>
+    <script>const REFRESH_INTERVAL_MS = {{ refresh_interval_ms }};</script>
+</body>
+</html>

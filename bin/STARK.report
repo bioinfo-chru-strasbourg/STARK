@@ -7,8 +7,8 @@
 
 SCRIPT_NAME="STARKReport"
 SCRIPT_DESCRIPTION="STARK Report"
-SCRIPT_RELEASE="0.9.1b"
-SCRIPT_DATE="01/04/2021"
+SCRIPT_RELEASE="0.9.2"
+SCRIPT_DATE="17/06/2025"
 SCRIPT_AUTHOR="Antony Le Bechec"
 SCRIPT_COPYRIGHT="HUS"
 SCRIPT_LICENCE="GNU-AGPL"
@@ -16,6 +16,7 @@ SCRIPT_LICENCE="GNU-AGPL"
 # Realse note
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9b-19/06/2019: Script creation\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.1b-01/04/2021: Create links to downloaded files\n";
+RELEASE_NOTES=$RELEASE_NOTES"# 0.9.1-17/06/2025: Update for STARK release 19, and new HOWARD release\n";
 
 # Script folder
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
@@ -1135,8 +1136,6 @@ GENES_BASES_HTML=$(echo $GENES_BASES_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
 
 # VARIANTS count
 FINAL_VCF="$SAMPLE_FOLDER/$SAMPLE.reports/$SAMPLE.final.vcf.gz"
-#FINAL_TSV="$SAMPLE_FOLDER/$SAMPLE.reports/$SAMPLE.final.tsv"
-#VARIANT_NUMBER=$(grep -cv "^#" $FINAL_VCF)
 VARIANT_NUMBER=$(zcat $FINAL_VCF | grep -cv "^#" )
 FINAL_VCF_PZFLAG_HEADER=$(zcat $FINAL_VCF | grep  "^##INFO=<ID=PZFlag")
 
@@ -1151,7 +1150,6 @@ ALIGNERS_CALLERS_ANNOTATORS_HTML="($ALIGNERS_HTML, $CALLERS_HTML, $ANNOTATORS_HT
 HOWARD_PRIORITIZATION_PARAM=$(FIRST=$(echo $HOWARD_PRIORITIZATION_REPORT,$HOWARD_PRIORITIZATION,$HOWARD_PRIORITIZATION_VARANK | tr "," " " | cut -d" " -f1) && echo $FIRST","$(echo $HOWARD_PRIORITIZATION_REPORT,$HOWARD_PRIORITIZATION,$HOWARD_PRIORITIZATION_VARANK | tr "," " " | tr " " "\n" | sort -u | grep -v "^$FIRST" | tr "\n" "," | sed s/,$//) | tr "," " ")
 HOWARD_PRIORITIZATION_LIST=""
 for HOWARD_P in $(echo "$HOWARD_PRIORITIZATION_PARAM" | tr " " "\n"); do
-	#if (($(head -n1 $FINAL_TSV | tr "\t" "\n" | grep "^PZFlag-$HOWARD_P$" | wc -l))); then
 	if (($(echo "$FINAL_VCF_PZFLAG_HEADER" | grep "^##INFO=<ID=PZFlag-$HOWARD_P," | wc -l))); then
 		HOWARD_PRIORITIZATION_LIST=$HOWARD_PRIORITIZATION_LIST" "$HOWARD_P
 	fi;
@@ -1165,7 +1163,6 @@ if (($SEQUENCING_ARCHIVE_METRICS_CRAM_VALIDATION)); then
 else
 	SEQUENCING_ARCHIVE_METRICS_CRAM_MESSAGE=" (<span style='color:red;'>NOT validated</span>)"
 fi;
-# grep "CRAM_cram_source" $SEQUENCING_ARCHIVE_METRICS  | cut -d$'\t' -f2 | xargs basename
 
 
 if [ "$AFTER_TOTAL_SEQUENCES" != "$BEFORE_TOTAL_SEQUENCES" ]; then
@@ -1285,14 +1282,7 @@ SECTION_NAME="Sequencing &amp; Mapping"
 SECTION_ID="sequencing_mapping"
 
 # FILES
-#FASTQCDATA="$SAMPLE_FOLDER/$SAMPLE.sequencing/metrics.fastqc.txt"
-#FASTQCIMAGESDIR="$SAMPLE_FOLDER/$SAMPLE.sequencing/"$SAMPLE"_fastqc/Images"
-
-#PER_BASE_QUALITY_FILE="$FASTQCIMAGESDIR/per_base_quality.png"
-#cp $PER_BASE_QUALITY_FILE $HTMLDIR/$(basename $PER_BASE_QUALITY_FILE)
 HTML_LOGO="$HTMLFOLDER/$(basename $LOGO)"
-#PER_BASE_QUALITY_FILE_HTML="$HTMLFOLDER/$(basename $PER_BASE_QUALITY_FILE)"
-
 
 echo '
 <div class="progress1 pb-4" style="border-style: solid none none none ; border-color: rgb(20, 157, 204); border-radius: 0px;">
@@ -2612,6 +2602,29 @@ if ((1)); then
 			#BCFTOOLS_STATS=$(ls $SAMPLE_FOLDER/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics*$GENES_PANEL*.bcftools.stats 2>/dev/null)
 			BCFTOOLS_STATS=$(ls $SAMPLE_FOLDER/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.Panel.$GENES_PANEL.report.bcftools.stats.tsv 2>/dev/null)
 		fi;
+		BCFTOOLS_STATS_HTML_LINK=""
+		if [ "$BCFTOOLS_STATS" != "" ] && [ -s $BCFTOOLS_STATS ]; then
+			BCFTOOLS_STATS_HTML_LINK="<a href='$SAMPLE.final.vcf.metrics/"$(basename $BCFTOOLS_STATS)"' target='"$(basename $BCFTOOLS_STATS)"'>BCFTools Statistics</a>"
+		else
+			BCFTOOLS_STATS_HTML_LINK="<span class='text-danger'>BCFTools Statistics not available</span>"
+		fi;
+
+		# HOWARD STATS
+		HOWARD_STATS_HTML=""
+		if [ "$GENES_PANEL" == "Target Design" ]; then
+			#BCFTOOLS_STATS=$SAMPLE_FOLDER/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.bcftools.stats.tsv
+			HOWARD_STATS_HTML=$SAMPLE_FOLDER/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.Design.stats.html
+		else
+			#ls $SAMPLE_FOLDER/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics*$GENES_PANEL*.bcftools.stats
+			#BCFTOOLS_STATS=$(ls $SAMPLE_FOLDER/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics*$GENES_PANEL*.bcftools.stats 2>/dev/null)
+			HOWARD_STATS_HTML=$(ls $SAMPLE_FOLDER/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.Panel.$GENES_PANEL.stats.html 2>/dev/null)
+		fi;
+		HOWARD_STATS_HTML_LINK=""
+		if [ "$HOWARD_STATS_HTML" != "" ] && [ -s $HOWARD_STATS_HTML ]; then
+			HOWARD_STATS_HTML_LINK="<a href='$SAMPLE.final.vcf.metrics/"$(basename $HOWARD_STATS_HTML)"' target='$(basename $HOWARD_STATS_HTML)'>HOWARD Statistics</a>"
+		else
+			HOWARD_STATS_HTML_LINK="<span class='text-danger'>HOWARD Statistics not available</span>"
+		fi;
 
 
 		if [ "$BCFTOOLS_STATS" != "" ] && [ -s $BCFTOOLS_STATS ]; then
@@ -2672,7 +2685,9 @@ if ((1)); then
 					'$GENE_PANEL_NAME_HTML'
 				</h3>
 				<p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
-
+					'$BCFTOOLS_STATS_HTML_LINK'
+					<br>
+					'$HOWARD_STATS_HTML_LINK'
 				</p>
 
 				<div class="container pt-4 mt-2">
@@ -2818,6 +2833,10 @@ if ((1)); then
 				</div>
 
 			' >> $HTMLFILE_VARIANTS_STATS_GENES_PANEL
+
+		else
+
+			(($DEBUG)) && echo "# Error with report file '$BCFTOOLS_STATS' for genes panel '$GENES_PANEL'"
 
 		fi;
 
@@ -3961,6 +3980,7 @@ GENES_PANEL_NUM=0
 		GENES_PANEL_REPORT_TSV="$SAMPLE_FOLDER/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.$GENE_PANEL_TYPE_NAME.report.tsv"
 		GENES_PANEL_INFO_FIELD_STATS="$SAMPLE_FOLDER/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.$GENE_PANEL_TYPE_NAME.report.info_field.stats.tsv"
 		GENES_PANEL_BCFTOOLS_STATS="$SAMPLE_FOLDER/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.$GENE_PANEL_TYPE_NAME.report.bcftools.stats.tsv"
+		GENES_PANEL_HOWARD_STATS="$SAMPLE_FOLDER/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.$GENE_PANEL_TYPE_NAME.stats.html"
 		GENES_PANEL_SNPEFF_STATS="$SAMPLE_FOLDER/$SAMPLE.reports/$SAMPLE.final.vcf.metrics/metrics.$GENE_PANEL_TYPE_NAME.snpeff.html"
 
 
@@ -3968,6 +3988,7 @@ GENES_PANEL_NUM=0
 		# COPY
 
 		# GENES_PANEL_VCF
+		(($DEBUG)) && echo "GENES_PANEL_VCF...";
 		#GENES_PANEL_VCF_DOWNLOAD_FILENAME=$(basename $GENES_PANEL_VCF).gz
 		GENES_PANEL_VCF_DOWNLOAD_FILENAME=$RANDOM$RANDOM.vcf.gz
 		#$GZ $GENES_PANEL_VCF -c > $OUTPUT_FILES_HTMLDIR/$GENES_PANEL_VCF_DOWNLOAD_FILENAME
@@ -3976,6 +3997,7 @@ GENES_PANEL_NUM=0
 		GENES_PANEL_VCF_DOWNLOAD_FILE_HTML="<a href='$GENES_PANEL_VCF_DOWNLOAD_FILE' download>VCF</a>"
 
 		# GENES_PANEL_TSV
+		(($DEBUG)) && echo "GENES_PANEL_TSV...";
 		#GENES_PANEL_TSV_DOWNLOAD_FILENAME=$(basename $GENES_PANEL_TSV).gz
 		GENES_PANEL_TSV_DOWNLOAD_FILENAME=$RANDOM$RANDOM.tsv.gz
 		$GZ $GENES_PANEL_TSV -c > $OUTPUT_FILES_HTMLDIR/$GENES_PANEL_TSV_DOWNLOAD_FILENAME
@@ -3983,24 +4005,36 @@ GENES_PANEL_NUM=0
 		GENES_PANEL_TSV_DOWNLOAD_FILE_HTML="<a href='$GENES_PANEL_TSV_DOWNLOAD_FILE' download>TSV</a>"
 
 		# GENES_PANEL_REPORT_TSV
+		(($DEBUG)) && echo "GENES_PANEL_REPORT_TSV...";
 		#GENES_PANEL_REPORT_TSV_DOWNLOAD_FILENAME=$(basename $GENES_PANEL_REPORT_TSV).gz
 		GENES_PANEL_REPORT_TSV_DOWNLOAD_FILENAME=$RANDOM$RANDOM.report.tsv.gz
 		$GZ $GENES_PANEL_REPORT_TSV -c > $OUTPUT_FILES_HTMLDIR/$GENES_PANEL_REPORT_TSV_DOWNLOAD_FILENAME
 		GENES_PANEL_REPORT_TSV_DOWNLOAD_FILE=$OUTPUT_FILES_HTMLFOLDER/$GENES_PANEL_REPORT_TSV_DOWNLOAD_FILENAME
 		GENES_PANEL_REPORT_TSV_DOWNLOAD_FILE_HTML="<a href='$GENES_PANEL_REPORT_TSV_DOWNLOAD_FILE' download>REPORT</a>"
 
-		# GENES_PANEL_INFO_FIELD_STATS
-		#GENES_PANEL_INFO_FIELD_STATS_DOWNLOAD_FILENAME=$(basename $GENES_PANEL_INFO_FIELD_STATS).gz
-		GENES_PANEL_INFO_FIELD_STATS_DOWNLOAD_FILENAME=$RANDOM$RANDOM.report.info_field.stats.tsv.gz
-		$GZ $GENES_PANEL_INFO_FIELD_STATS -c > $OUTPUT_FILES_HTMLDIR/$GENES_PANEL_INFO_FIELD_STATS_DOWNLOAD_FILENAME
-		GENES_PANEL_INFO_FIELD_STATS_DOWNLOAD_FILE=$OUTPUT_FILES_HTMLFOLDER/$GENES_PANEL_INFO_FIELD_STATS_DOWNLOAD_FILENAME
-		GENES_PANEL_INFO_FIELD_STATS_DOWNLOAD_FILE_HTML="<a href='$GENES_PANEL_INFO_FIELD_STATS_DOWNLOAD_FILE' download>$DOWNLOAD_FILE_MSG</a>"
+		# # GENES_PANEL_INFO_FIELD_STATS
+		# (($DEBUG)) && echo "GENES_PANEL_INFO_FIELD_STATS...";
+		# #GENES_PANEL_INFO_FIELD_STATS_DOWNLOAD_FILENAME=$(basename $GENES_PANEL_INFO_FIELD_STATS).gz
+		# GENES_PANEL_INFO_FIELD_STATS_DOWNLOAD_FILENAME=$RANDOM$RANDOM.report.info_field.stats.tsv.gz
+		# $GZ $GENES_PANEL_INFO_FIELD_STATS -c > $OUTPUT_FILES_HTMLDIR/$GENES_PANEL_INFO_FIELD_STATS_DOWNLOAD_FILENAME
+		# GENES_PANEL_INFO_FIELD_STATS_DOWNLOAD_FILE=$OUTPUT_FILES_HTMLFOLDER/$GENES_PANEL_INFO_FIELD_STATS_DOWNLOAD_FILENAME
+		# GENES_PANEL_INFO_FIELD_STATS_DOWNLOAD_FILE_HTML="<a href='$GENES_PANEL_INFO_FIELD_STATS_DOWNLOAD_FILE' download>$DOWNLOAD_FILE_MSG</a>"
 
 		# GENES_PANEL_BCFTOOLS_STATS
+		(($DEBUG)) && echo "GENES_PANEL_BCFTOOLS_STATS...";
 		GENES_PANEL_BCFTOOLS_STATS_DOWNLOAD_FILENAME=$RANDOM$RANDOM.bcftools.stats.txt.gz
 		$GZ $GENES_PANEL_BCFTOOLS_STATS -c > $OUTPUT_FILES_HTMLDIR/$GENES_PANEL_BCFTOOLS_STATS_DOWNLOAD_FILENAME
 		GENES_PANEL_BCFTOOLS_STATS_DOWNLOAD_FILE=$OUTPUT_FILES_HTMLFOLDER/$GENES_PANEL_BCFTOOLS_STATS_DOWNLOAD_FILENAME
 		GENES_PANEL_BCFTOOLS_STATS_DOWNLOAD_FILE_HTML="<a href='$GENES_PANEL_BCFTOOLS_STATS_DOWNLOAD_FILE' download>BCFTools Statistics</a>"
+
+		# GENES_PANEL_HOWARD_STATS
+		(($DEBUG)) && echo "GENES_PANEL_HOWARD_STATS...";
+		GENES_PANEL_HOWARD_STATS_DOWNLOAD_FILENAME=$RANDOM$RANDOM.howard.stats.html
+		#$GZ $GENES_PANEL_HOWARD_STATS -c > $OUTPUT_FILES_HTMLDIR/$GENES_PANEL_HOWARD_STATS_DOWNLOAD_FILENAME
+		cp $GENES_PANEL_HOWARD_STATS $OUTPUT_FILES_HTMLDIR/$GENES_PANEL_HOWARD_STATS_DOWNLOAD_FILENAME
+		GENES_PANEL_HOWARD_STATS_DOWNLOAD_FILE=$OUTPUT_FILES_HTMLFOLDER/$GENES_PANEL_HOWARD_STATS_DOWNLOAD_FILENAME
+		GENES_PANEL_HOWARD_STATS_DOWNLOAD_FILE_HTML="<a href='$GENES_PANEL_HOWARD_STATS_DOWNLOAD_FILE' target='$GENES_PANEL_HOWARD_STATS_DOWNLOAD_FILE'>HOWARD Statistics</a>"
+		GENES_PANEL_HOWARD_ANNOTATIONS_STATS_DOWNLOAD_FILE_HTML="<a href='$GENES_PANEL_HOWARD_STATS_DOWNLOAD_FILE#annotations' target='$GENES_PANEL_HOWARD_STATS_DOWNLOAD_FILE.annotations'>HOWARD Annotations</a>"
 
 		# GENES_PANEL_SNPEFF_STATS
 		if [ -e $GENES_PANEL_SNPEFF_STATS ]; then
@@ -4047,20 +4081,11 @@ GENES_PANEL_NUM=0
 			# HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV
 			if [ -s $GENES_PANEL_VCF ]; then
 
-				# Create TSV if not exists
-				if [ ! -s $GENES_PANEL_REPORT_TSV ] || ((0)); then
-					if [ "$HOWARD_FIELDS_REPORT" == "" ]; then
-						HOWARD_FIELDS_REPORT=$(echo $HOWARD_FIELDS | sed "s/ALL//")
-					fi;
-					$HOWARD --config=$HOWARD_CONFIG --config=$HOWARD_CONFIG --config_prioritization=$HOWARD_CONFIG_PRIORITIZATION --config_annotation=$HOWARD_CONFIG_ANNOTATION --pzfields="PZScore,PZFlag,PZComment,PZInfos" --format=tab  --fields="$HOWARD_FIELDS_REPORT" --sort=$HOWARD_SORT --sort_by="$HOWARD_SORT_BY" --order_by="$HOWARD_ORDER_BY" --multithreading --threads=$THREADS --snpeff_threads=$THREADS_BY_SAMPLE --tmp=$TMP_FOLDER_TMP --env=$CONFIG_TOOLS --input=$GENES_PANEL_VCF --output=$HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.tmp --force;
-					GENES_PANEL_REPORT_TSV=$HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.tmp
-				fi;
+				# Generate GENES_PANEL_REPORT_TSV
+				# $HOWARD convert --input=$GENES_PANEL_VCF --output=$GENES_PANEL_REPORT_TSV --explode_infos --explode_infos_fields=NOMEN,PZFlag,PZScore;
+				$HOWARD query --config=$HOWARD_CONFIG --threads=1 --input=$GENES_PANEL_VCF --output=$GENES_PANEL_REPORT_TSV --explode_infos --explode_infos_fields=NOMEN,PZFlag,PZScore --query="SELECT v.NOMEN, vv.SAMPLES.\"$SAMPLE\".GT, v.FILTER, v.PZFlag, v.PZScore, concat(v.\"#CHROM\", '-', v.POS, '-', v.REF, '-', v.ALT) AS ID FROM variants AS v JOIN variants_view AS vv ON (v.\"#CHROM\"=vv.\"#CHROM\" AND v.POS=vv.POS AND v.REF=vv.REF AND v.ALT=vv.ALT) ORDER BY v.PZFlag DESC, v.PZScore DESC LIMIT $TABLE_LIMIT_CUT" 1>/dev/null 2>/dev/null;
 
-				# Formating to create table
-				cut -f 8- $GENES_PANEL_REPORT_TSV | rev | cut -f 3- | rev >$HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.INFO
-				cut -f -7 $GENES_PANEL_REPORT_TSV >$HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.CHROMPOSREFALT
-				rev $GENES_PANEL_REPORT_TSV | cut -f -2 | rev >$HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.FORMATSAMPLE
-				paste $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.INFO $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.CHROMPOSREFALT $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV.FORMATSAMPLE > $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV
+				cp $GENES_PANEL_REPORT_TSV $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV
 
 				# HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV
 				#HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV_DOWNLOAD_FILENAME=$(basename $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS_TSV).gz
@@ -4081,21 +4106,21 @@ GENES_PANEL_NUM=0
 
 			fi;
 
-			# GENES_PANEL_INFO_FIELD_STATS
+			# # GENES_PANEL_INFO_FIELD_STATS
 
 
-			# Contruct file
-			echo -e "Annotation\tValue\tCount" > $HTMLFILE_ANNEX_GENES_PANEL_ANNOTATIONS.tmp
-			cat $GENES_PANEL_INFO_FIELD_STATS | grep "^#" -v >> $HTMLFILE_ANNEX_GENES_PANEL_ANNOTATIONS.tmp
+			# # Contruct file
+			# echo -e "Annotation\tValue\tCount" > $HTMLFILE_ANNEX_GENES_PANEL_ANNOTATIONS.tmp
+			# cat $GENES_PANEL_INFO_FIELD_STATS | grep "^#" -v >> $HTMLFILE_ANNEX_GENES_PANEL_ANNOTATIONS.tmp
 
-			# NB lines/variants
-			GENES_PANEL_INFO_FIELD_STATS_LINES=$(echo $(cat $HTMLFILE_ANNEX_GENES_PANEL_ANNOTATIONS.tmp | wc -l)" - 1" | bc)
+			# # NB lines/variants
+			# GENES_PANEL_INFO_FIELD_STATS_LINES=$(echo $(cat $HTMLFILE_ANNEX_GENES_PANEL_ANNOTATIONS.tmp | wc -l)" - 1" | bc)
 
-			if (( $GENES_PANEL_INFO_FIELD_STATS_LINES > $TABLE_LIMIT )); then
-				GENES_PANEL_INFO_FIELD_STATS_HTML=$TABLE_LIMIT_MSG_HTML
-			else
-				GENES_PANEL_INFO_FIELD_STATS_HTML=$(cat $HTMLFILE_ANNEX_GENES_PANEL_ANNOTATIONS.tmp | tr "," " " | $STARK_FOLDER_BIN/csv_to_html.awk -v limit=$TABLE_LIMIT_CUT -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
-			fi
+			# if (( $GENES_PANEL_INFO_FIELD_STATS_LINES > $TABLE_LIMIT )); then
+			# 	GENES_PANEL_INFO_FIELD_STATS_HTML=$TABLE_LIMIT_MSG_HTML
+			# else
+			# 	GENES_PANEL_INFO_FIELD_STATS_HTML=$(cat $HTMLFILE_ANNEX_GENES_PANEL_ANNOTATIONS.tmp | tr "," " " | $STARK_FOLDER_BIN/csv_to_html.awk -v limit=$TABLE_LIMIT_CUT -v tag_row_head_plus="class='table-heads'" -v tag_col_head_plus=" class=\"head-item mbr-fonts-style display-7\"" -v tag_row_body_plus="" -v tag_col_body_plus=" class=\"body-item mbr-fonts-style display-7\"")
+			# fi
 
 
 			# BREAK
@@ -4124,6 +4149,10 @@ GENES_PANEL_NUM=0
 					'$GENES_PANEL_VCF_DOWNLOAD_FILE_HTML' '$GENES_PANEL_TSV_DOWNLOAD_FILE_HTML'
 					<br>
 					'$GENES_PANEL_BCFTOOLS_STATS_DOWNLOAD_FILE_HTML'
+					<br>
+					'$GENES_PANEL_HOWARD_STATS_DOWNLOAD_FILE_HTML'
+					<br>
+					'$GENES_PANEL_HOWARD_ANNOTATIONS_STATS_DOWNLOAD_FILE_HTML'
 					<br>
 					'$GENES_PANEL_SNPEFF_STATS_DOWNLOAD_FILE_HTML'
 	  			  </p>
@@ -4172,64 +4201,64 @@ GENES_PANEL_NUM=0
 			' >> $HTMLFILE_ANNEX_GENES_PANEL_VARIANTS
 
 
-			echo '
+			# echo '
 
-			<section class="section-table cid-ruiBoanIwc" id="ANNOTATIONS_'$GENES_PANEL'" >
-
-
-			  <div class="container container-table">
-
-				  <h3 class="mbr-section-subtitle mbr-fonts-style align-center mbr-light display-5" '$GENES_PANEL_BREAK'>
-				  <br>
-					'$GENE_PANEL_NAME_HTML'
-				  </h3>
-
-				  <p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
-				    '$GENES_PANEL_INFO_FIELD_STATS_DOWNLOAD_FILE_HTML'
-				  </p>
-
-				  <div class="table-wrapper">
-					<div class="container">
-					  <div class="row search">
-						<div class="col-md-6"></div>
-						<div class="col-md-6">
-							<div class="dataTables_filter">
-							  <label class="searchInfo mbr-fonts-style display-7">Search:</label>
-							  <input class="form-control input-sm" disabled="">
-							</div>
-						</div>
-					  </div>
-					</div>
-
-					<div class="container scroll">
-						<table class="table isSearch" cellspacing="0">
-							'$GENES_PANEL_INFO_FIELD_STATS_HTML'
-						</table>
-					</div>
-
-					<div class="container table-info-container">
-					  <div class="row info">
-						<div class="col-md-6">
-						  <div class="dataTables_info mbr-fonts-style display-7">
-							<span class="infoBefore">Showing</span>
-							<span class="inactive infoRows"></span>
-							<span class="infoAfter">entries</span>
-							<span class="infoFilteredBefore">(filtered from</span>
-							<span class="inactive infoRows"></span>
-							<span class="infoFilteredAfter"> total entries)</span>
-						  </div>
-						</div>
-						<div class="col-md-6"></div>
-					  </div>
-					</div>
+			# <section class="section-table cid-ruiBoanIwc" id="ANNOTATIONS_'$GENES_PANEL'" >
 
 
-				  </div>
-				</div>
+			#   <div class="container container-table">
 
-			</section>
+			# 	  <h3 class="mbr-section-subtitle mbr-fonts-style align-center mbr-light display-5" '$GENES_PANEL_BREAK'>
+			# 	  <br>
+			# 		'$GENE_PANEL_NAME_HTML'
+			# 	  </h3>
 
-			' >> $HTMLFILE_ANNEX_GENES_PANEL_ANNOTATIONS
+			# 	  <p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
+			# 	    '$GENES_PANEL_INFO_FIELD_STATS_DOWNLOAD_FILE_HTML'
+			# 	  </p>
+
+			# 	  <div class="table-wrapper">
+			# 		<div class="container">
+			# 		  <div class="row search">
+			# 			<div class="col-md-6"></div>
+			# 			<div class="col-md-6">
+			# 				<div class="dataTables_filter">
+			# 				  <label class="searchInfo mbr-fonts-style display-7">Search:</label>
+			# 				  <input class="form-control input-sm" disabled="">
+			# 				</div>
+			# 			</div>
+			# 		  </div>
+			# 		</div>
+
+			# 		<div class="container scroll">
+			# 			<table class="table isSearch" cellspacing="0">
+			# 				'$GENES_PANEL_INFO_FIELD_STATS_HTML'
+			# 			</table>
+			# 		</div>
+
+			# 		<div class="container table-info-container">
+			# 		  <div class="row info">
+			# 			<div class="col-md-6">
+			# 			  <div class="dataTables_info mbr-fonts-style display-7">
+			# 				<span class="infoBefore">Showing</span>
+			# 				<span class="inactive infoRows"></span>
+			# 				<span class="infoAfter">entries</span>
+			# 				<span class="infoFilteredBefore">(filtered from</span>
+			# 				<span class="inactive infoRows"></span>
+			# 				<span class="infoFilteredAfter"> total entries)</span>
+			# 			  </div>
+			# 			</div>
+			# 			<div class="col-md-6"></div>
+			# 		  </div>
+			# 		</div>
+
+
+			# 	  </div>
+			# 	</div>
+
+			# </section>
+
+			# ' >> $HTMLFILE_ANNEX_GENES_PANEL_ANNOTATIONS
 
 
 
@@ -4296,57 +4325,57 @@ fi;
 
 
 
-SECTION_NAME="Annotations Report"
-SECTION_ID="annex_annotations"
+# SECTION_NAME="Annotations Report"
+# SECTION_ID="annex_annotations"
 
-if in_array $SECTION_ID $SECTIONS || in_array ALL $SECTIONS ; then
-	(($DEBUG)) && echo "show section $SECTION_ID"
+# if in_array $SECTION_ID $SECTIONS || in_array ALL $SECTIONS ; then
+# 	(($DEBUG)) && echo "show section $SECTION_ID"
 
-	# PLAN
-	echo '<a class="btn btn-primary-outline display-4" href="#'$SECTION_ID'">'$SECTION_NAME'</a>' >> $HTMLFILE_ANNEX_PLAN_LINKS
+# 	# PLAN
+# 	echo '<a class="btn btn-primary-outline display-4" href="#'$SECTION_ID'">'$SECTION_NAME'</a>' >> $HTMLFILE_ANNEX_PLAN_LINKS
 
-	echo '
+# 	echo '
 
-		<section class="cid-ruiBoanIwc" id="'$SECTION_ID'" '$PAGE_BREAK_BEFORE'>
-		<br>
+# 		<section class="cid-ruiBoanIwc" id="'$SECTION_ID'" '$PAGE_BREAK_BEFORE'>
+# 		<br>
 
-			<div class="container">
-				<h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">
-					'$SECTION_NAME'
-				</h2>
+# 			<div class="container">
+# 				<h2 class="mbr-section-title pb-3 align-center mbr-fonts-style display-2">
+# 					'$SECTION_NAME'
+# 				</h2>
 
-				<p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
-					Annotations from '$PIPELINES_NUMBER' pipelines
-					<br>
-					'$(echo $ALIGNERS_CALLERS_ANNOTATORS | sed "s/ /<br>/gi")'
-					'$([ "$POST_CALLING_STEPS" != "" ] && echo "<br>with post calling steps <strong>"$POST_CALLING_STEPS"</strong>")'
-					'$([ "$POST_ANNOTATION_STEPS" != "" ] && echo "<br>with post annotation steps <strong>"$POST_ANNOTATION_STEPS"</strong>")'
-					'$([ "$HOWARD_PRIORITIZATION_LIST" != "" ] && echo "<br>with post prioritization steps <strong>"$HOWARD_PRIORITIZATION_LIST"</strong>")'
-					<br>
+# 				<p class="mbr-section-subtitle mbr-fonts-style display-6 align-center">
+# 					Annotations from '$PIPELINES_NUMBER' pipelines
+# 					<br>
+# 					'$(echo $ALIGNERS_CALLERS_ANNOTATORS | sed "s/ /<br>/gi")'
+# 					'$([ "$POST_CALLING_STEPS" != "" ] && echo "<br>with post calling steps <strong>"$POST_CALLING_STEPS"</strong>")'
+# 					'$([ "$POST_ANNOTATION_STEPS" != "" ] && echo "<br>with post annotation steps <strong>"$POST_ANNOTATION_STEPS"</strong>")'
+# 					'$([ "$HOWARD_PRIORITIZATION_LIST" != "" ] && echo "<br>with post prioritization steps <strong>"$HOWARD_PRIORITIZATION_LIST"</strong>")'
+# 					<br>
 
-				</p>
+# 				</p>
 
-				<section class="mbr-section content8 cid-ruitEAjBmu" id="content8-1z">
-					<div class="container">
-						<div class="media-container-row title">
-							<div class="col-12 col-md-40">
-								<div class="mbr-section-btn align-center">
-								'$(cat $HTMLFILE_ANNEX_PLAN_LINKS_ANNOTATIONS)'
-							</div>
-						</div>
-					</div>
-				</section>
+# 				<section class="mbr-section content8 cid-ruitEAjBmu" id="content8-1z">
+# 					<div class="container">
+# 						<div class="media-container-row title">
+# 							<div class="col-12 col-md-40">
+# 								<div class="mbr-section-btn align-center">
+# 								'$(cat $HTMLFILE_ANNEX_PLAN_LINKS_ANNOTATIONS)'
+# 							</div>
+# 						</div>
+# 					</div>
+# 				</section>
 
-				'"$(cat $HTMLFILE_ANNEX_GENES_PANEL_ANNOTATIONS)"'
+# 				'"$(cat $HTMLFILE_ANNEX_GENES_PANEL_ANNOTATIONS)"'
 
 
 
-		</div>
-		</section>
+# 		</div>
+# 		</section>
 
-	' > $HTMLFILE_ANNEX_ANNOTATIONS
+# 	' > $HTMLFILE_ANNEX_ANNOTATIONS
 
-fi;
+# fi;
 
 
 

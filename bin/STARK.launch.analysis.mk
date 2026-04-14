@@ -160,19 +160,17 @@ all: $(FINAL) $(FINAL_REPORT) $(FINAL_REPORT_FILES) $(FINAL_REPORT).variants $(F
 
 
 $(RELEASE): $(RELEASE).empty.vcf
-	#echo "RELEASE" > $@
 	echo "" > $@
 	$(STARK_FOLDER_BIN)/STARK --applications_infos_all --app="$(ENV)" >> $@
 	$(STARK_FOLDER_BIN)/STARK --tools_infos --app="$(ENV)" >> $@
 	$(STARK_FOLDER_BIN)/STARK --databases_infos --app="$(ENV)" >> $@
-	$(HOWARD_FOLDER_BIN)/VCFannotation.pl --show_annotations_full --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --input=$< >> $@
-	echo "" >> $@;
-	echo "################################" >> $@;
-	echo "# PRIORITIZATION CONFIGURATION #" >> $@;
-	echo "################################" >> $@;
-	$(STARK_FOLDER_BIN)/parse_config_prioritization_ini.pl --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --applications=$(HOWARD_PRIORITIZATION_REPORT)  --no_header | sort -u -f | sort -k1,2 -f | column -s$$'\t' -t >> $@;
-	#$(STARK_FOLDER_BIN)/STARK --applications_infos_all --app="$(ENV)" >> $@
-	echo "" >> $@
+	#$(HOWARD_FOLDER_BIN)/VCFannotation.pl --show_annotations_full --config_annotation=$(HOWARD_CONFIG_ANNOTATION) --input=$< >> $@
+	#echo "" >> $@;
+	#echo "################################" >> $@;
+	#echo "# PRIORITIZATION CONFIGURATION #" >> $@;
+	#echo "################################" >> $@;
+	#$(STARK_FOLDER_BIN)/parse_config_prioritization_ini.pl --config_prioritization=$(HOWARD_CONFIG_PRIORITIZATION) --applications=$(HOWARD_PRIORITIZATION_REPORT)  --no_header | sort -u -f | sort -k1,2 -f | column -s$$'\t' -t >> $@;
+	#echo "" >> $@
 	cat $(RELEASE_INFOS) >> $@
 
 

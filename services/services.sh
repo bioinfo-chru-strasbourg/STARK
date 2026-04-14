@@ -615,7 +615,7 @@ else
 							else
 								echo "#[ERROR] docker-compose error - docker compose command error";
 								cat $TMP_FOLDER/docker-compose.log $TMP_FOLDER/docker-compose.err;
-								exit 1;
+								#exit 1;
 							fi;
 							
 						else

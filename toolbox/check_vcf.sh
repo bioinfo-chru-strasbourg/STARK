@@ -38,11 +38,11 @@ function release () {
 function usage {
 	echo "# USAGE: $(basename $0) --vcf=<VCF>|--ref=<VCF_REF> [options...]";
 	echo "# -f/--vcf            VCF to compare with the referecen VCF";
-	echo "# -r/--ref            Refrence VCF";
-	echo "# -v/--verbose          VERBOSE option";
-	echo "# -d/--debug            DEBUG option";
-	echo "# -n/--release          RELEASE option";
-	echo "# -h/--help             HELP option";
+	echo "# -r/--ref            Reference VCF";
+	echo "# -v/--verbose        VERBOSE option";
+	echo "# -d/--debug          DEBUG option";
+	echo "# -n/--release        RELEASE option";
+	echo "# -h/--help           HELP option";
 	echo "#";
 }
 
@@ -105,7 +105,7 @@ if [ ! -e $VCF ]; then
 	usage;
 	exit;
 fi
-if [ ! -e $REF ]; then
+if [ ! -e $GENOME ]; then
 	echo "#[ERROR] NO REF";
 	usage;
 	exit;
@@ -115,10 +115,10 @@ TMP=/tmp
 
 
 echo "# VCF: $VCF"
-echo "# REF: $REF"
+echo "# GENOME: $GENOME"
 
 NBVARIANT_VCF=$(grep -cv ^# $VCF) 
-NBVARIANT_REF=$(grep -cv ^# $REF) 
+NBVARIANT_REF=$(grep -cv ^# $GENOME) 
 
 if [ "$NBVARIANT_VCF" -eq "$NBVARIANT_REF" ]; then
 	echo "#[OK] VCF and REF have same number of variants: $NBVARIANT_VCF";
@@ -129,7 +129,7 @@ if [ "$NBVARIANT_VCF" -eq "$NBVARIANT_REF" ]; then
 
 	# Variants REF
 	VARIANTS_REF=$TMP/$RANDOM$RANDOM
-	grep -v ^# $REF | cut -f1-5 > $VARIANTS_REF
+	grep -v ^# $GENOME | cut -f1-5 > $VARIANTS_REF
 	
 	DIFF=$(diff $VARIANTS_VCF $VARIANTS_REF);
 	

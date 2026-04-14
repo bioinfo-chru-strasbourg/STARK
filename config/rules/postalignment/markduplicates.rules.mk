@@ -32,7 +32,6 @@ BARCODE_TAG?=
 		$(PICARD_MARKDUP_OPTICAL_DEDUP) \
 		1>$<.metrics/$(*F).markDuplicates.metrics.log 2>$<.metrics/$(*F).markDuplicates.metrics.err  || (echo "WARNING : picard.jar MarkDuplicates failed !"); \
 		test -s $@ || (echo "WARNING : $@ is empty after MarkDuplicates step !" ); \
-		#rm $<; \
 	else \
 		echo "Markduplicate not created" ; \
 	fi;
