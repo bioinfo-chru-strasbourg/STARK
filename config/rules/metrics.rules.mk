@@ -226,6 +226,8 @@ BAM_VALIDATION_COMPRESSION?=4
 	touch $@;
 	touch $@.mk;
 	list_of_rnaseqc_cmds="";
+	# Collapse GTF file
+	$(PYTHON) $(STARK_FOLDER_BIN)/collapse_annotation.py $$(dirname $(GENOME_RNA))/ref_annot.gtf $@.collapsed.gtf;
 	# Foreach design and genes files
 	+if (($(BAM_GENE_COVERAGE_METRICS))); then \
 		for one_bed in $$(cat $*.list.genes) $*.design.bed; do \
@@ -233,14 +235,14 @@ BAM_VALIDATION_COMPRESSION?=4
 				bed_subname="Design"; \
 				[ "$$one_bed" != "$*.design.bed" ] && bed_subname="Panel."$$(basename $$one_bed); \
 				echo "$(@D)/$(*F).validation.genes_coverage.$$bed_subname.log:" >> $@.mk; \
-				echo "	$(RNASEQC) $$(dirname $(GENOME_RNA))/ref_annot.gtf $< $(@D) --sample=$(*F).validation.genes_coverage.$$bed_subname --bed $$one_bed $(RNASEQC_PARAM) 1>$(@D)/$(*F).validation.genes_coverage.$$bed_subname.log 2>$(@D)/$(*F).validation.genes_coverage.$$bed_subname.err" >> $@.mk; \
+				echo "	$(RNASEQC) $@.collapsed.gtf $< $(@D) --sample=$(*F).validation.genes_coverage.$$bed_subname --bed $$one_bed $(RNASEQC_PARAM) 1>$(@D)/$(*F).validation.genes_coverage.$$bed_subname.log 2>$(@D)/$(*F).validation.genes_coverage.$$bed_subname.err" >> $@.mk; \
 				echo "" >> $@.mk; \
 				list_of_rnaseqc_cmds=$$list_of_rnaseqc_cmds" $(@D)/$(*F).validation.genes_coverage.$$bed_subname.log"; \
 			fi; \
 		done; \
 		make -f $@.mk $$list_of_rnaseqc_cmds; \
 	fi;
-	rm -f $@.mk;
+	rm -f $@.mk $@.collapsed.gtf;
 	echo "#[INFO] BAM Genes Coverage Metrics done" > $@;
 
 
