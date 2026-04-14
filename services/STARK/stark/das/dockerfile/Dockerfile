@@ -1,10 +1,11 @@
 # Dockerfile
-FROM centos:7
+FROM almalinux:9
 
 EXPOSE 5000
 WORKDIR /app
 
 RUN yum install python3 python3-pip git -y && \
+    pip install mysql-connector==2.1.7 && \
     git clone https://github.com/igvteam/igv.js-flask.git . && \
     rm -rf /app/test /app/test_IGV.py && \
     rm -rf /app/igvjs/static/data/public/gstt1_sample.bam /app/igvjs/static/data/public/gstt1_sample.bam.bai && \
