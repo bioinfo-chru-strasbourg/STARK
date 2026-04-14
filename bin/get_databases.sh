@@ -689,6 +689,22 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 		';
 		echo "$DB_INFOS_JSON" > $DB_TMP/STARK.database
 
+		DB_RELEASE_INFOS_JSON='
+		{
+			"release": "'$DATE'",
+			"date": "'$DATE'",
+			"files": [ "ncbiRefSeq.*" ],
+			"assembly": [ "'$ASSEMBLY'" ],
+			"download": {
+				"methode": "HOWARD and STARK scripts",
+				"URL": "http://hgdownload.soe.ucsc.edu/goldenPath",
+				"file": "ncbiRefSeq.*",
+				"date": "'$DATE'"
+			}
+		}
+		';
+		echo "$DB_RELEASE_INFOS_JSON" > $DB_TMP/STARK.database.release
+
 		echo "$DBFOLDER_REFGENE/$RELEASE/$ASSEMBLY: $DBFOLDER $GENOME
 			# Download ncbiRefSeq TXT and BED
 			$HOWARD databases --assembly='$ASSEMBLY' --download-refseq=$DBFOLDER_REFGENE/$DATE --download-refseq-format-file='ncbiRefSeq.txt' ;
@@ -728,6 +744,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 			echo '- Source: NCBI RefSeq database in GTF converted by collapse_annotation.py' >> $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/README.md;
 			# Links
 			-[ ! -s $DBFOLDER_REFGENE/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_REFGENE/STARK.database && chmod o+r $DBFOLDER_REFGENE/STARK.database;
+			-[ ! -s $DBFOLDER_REFGENE/$RELEASE/$ASSEMBLY/STARK.database.release ] && cp $DB_TMP/STARK.database.release $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/STARK.database.release && chmod o+r $DBFOLDER_REFGENE/$DATE/$ASSEMBLY/STARK.database.release;
 			[ ! -e $DBFOLDER_REFGENE/$RELEASE/$ASSEMBLY ] || unlink $DBFOLDER_REFGENE/$RELEASE/$ASSEMBLY;
 			ln -snf ../$DATE/$ASSEMBLY $DBFOLDER_REFGENE/$RELEASE/$ASSEMBLY;
 			touch $DBFOLDER_REFGENE/$RELEASE/$ASSEMBLY
