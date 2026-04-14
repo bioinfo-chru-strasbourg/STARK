@@ -2065,7 +2065,7 @@ for RUU in $RUN_UNIQ; do
 							fi;
 
 							# PATTERNS PARAM
-							IGV_SESSION_PATTERNS_PARAM=$(echo $IGV_SESSION_PATTERNS | sed 's/$SAMPLE/'$S'/gi' | tr ' ' ',')
+							IGV_SESSION_PATTERNS_PARAM=$(echo "$IGV_SESSION_PATTERNS" | sed 's/$SAMPLE/'$S'/gi' | tr ' ' ',')
 
 							# MK
 							echo "$RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$S.igv_session.xml: $RES_MK_ALL_RUU_S
@@ -2132,7 +2132,7 @@ for RUU in $RUN_UNIQ; do
 					fi;
 
 					# PATTERNS PARAM
-					IGV_SESSION_PATTERNS_PARAM=$(echo $IGV_SESSION_PATTERNS | sed 's/$SAMPLE/'$S'/gi' | tr ' ' ',')
+					IGV_SESSION_PATTERNS_PARAM=$(echo "$IGV_SESSION_PATTERNS" | sed 's/$SAMPLE/'$S'/gi' | tr ' ' ',')
 
 					# MK
 					echo "$RESULTS_FOLDER_COPY_FOLDER/$RUU/$ANALYSIS_PREFIX.variants.igv_session.xml: $RES_MK_ALL
