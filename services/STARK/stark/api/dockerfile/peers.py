@@ -37,6 +37,7 @@ logger = logging.getLogger(__name__)
 
 from config import PEERS_FILE, STARK_API_KEY, STARK_API_SELF_URL, shell, ts
 from queues import _queue_daemon_is_active, _resolve_queue_socket, load_queues
+from tasks import _read_task_slots
 
 # ---------------------------------------------------------------------------
 # Self-identity
@@ -176,10 +177,15 @@ def get_local_metrics() -> dict:
                 if len(parts) < 2:
                     continue
                 state = parts[1].lower()
+                # Count slot consumption, not task count:
+                # a task submitted with -N k occupies k slots.
+                slot_cost = _read_task_slots(line, configured)
+                if slot_cost is None or slot_cost == 0:
+                    slot_cost = 1  # fallback: unknown → assume 1 slot
                 if state == "running":
-                    running += 1
+                    running += slot_cost
                 elif state == "queued":
-                    queued += 1
+                    queued += slot_cost
         except Exception:
             pass
 
@@ -207,7 +213,13 @@ async def get_peers_metrics() -> dict:
         return {}
 
     headers = {"X-API-Key": STARK_API_KEY}
-    urls = [p["url"] for p in peers if p.get("url")]
+    # Exclude self to avoid double-counting when this node is in peers.json
+    self_url = get_self_url()
+    urls = [
+        p["url"]
+        for p in peers
+        if p.get("url") and (not self_url or p["url"] != self_url)
+    ]
 
     logger.debug("Collecting metrics from peers: %s", urls)
 
@@ -289,3 +301,51 @@ async def forward_request(target_url: str, request):
         status_code=resp.status_code,
         media_type=resp.headers.get("content-type", "text/plain"),
     )
+
+
+# ---------------------------------------------------------------------------
+# Peer tasks (async)
+# ---------------------------------------------------------------------------
+
+
+async def get_peers_tasks() -> dict:
+    """Collect /list (task list) from all configured peers concurrently.
+
+    Returns {peer_url: tasks_list}, where each tasks_list is the same
+    structure returned by the local GET /list endpoint.
+    Unreachable peers are silently skipped.
+
+    The name of each peer (from peers.json) is included so callers can
+    map a URL back to a human-readable name.
+    """
+    peers = load_peers()
+    if not peers:
+        return {}
+
+    headers = {"X-API-Key": STARK_API_KEY}
+    # Exclude self to avoid duplicate tasks when this node is in peers.json
+    self_url = get_self_url()
+    peer_entries = [
+        (p.get("name", p.get("url", "")), p["url"])
+        for p in peers
+        if p.get("url") and (not self_url or p["url"] != self_url)
+    ]
+
+    async with httpx.AsyncClient(timeout=5.0) as client:
+        responses = await asyncio.gather(
+            *[client.get(f"{url}/list", headers=headers) for _, url in peer_entries],
+            return_exceptions=True,
+        )
+
+    result: dict = {}
+    for (name, url), resp in zip(peer_entries, responses):
+        if isinstance(resp, Exception):
+            logger.debug("Peer %s (%s) unreachable for tasks: %s", name, url, resp)
+            continue
+        if resp.status_code == 200:
+            try:
+                result[url] = {"name": name, "tasks": resp.json()}
+            except Exception:
+                continue
+
+    return result

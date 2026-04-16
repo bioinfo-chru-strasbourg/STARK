@@ -34,6 +34,7 @@ A **FastAPI**-based web service for launching and monitoring [STARK](https://git
 | Jinja2 | HTML templating (index.html) |
 | python-jose | JWT encoding/decoding |
 | passlib[bcrypt] | Password hashing |
+| httpx | Async HTTP client (inter-node communication) |
 | task-spooler (`ts`) | Job queue daemon per queue |
 | Docker | STARK analysis and command runtime |
 
@@ -43,19 +44,34 @@ A **FastAPI**-based web service for launching and monitoring [STARK](https://git
 
 ```
 dockerfile/
-├── app.py               # FastAPI application
+├── app.py               # FastAPI entry point (router wiring only)
+├── config.py            # All constants and environment variables
+├── models.py            # Pydantic models (Token, User)
+├── security.py          # Input validation (command, image, docker_extra_params)
+├── authentication.py    # JWT + API key auth, user loading
+├── queues.py            # task-spooler queue management
+├── tasks.py             # Task build & submission logic
+├── peers.py             # Cluster/orchestrator logic (peer discovery, routing, metrics)
 ├── requirements.txt
 ├── Dockerfile
 ├── config/
 │   ├── users.json       # User database (auto-created on first run)
-│   └── queues.json      # Queue definitions (auto-created on first run)
+│   ├── queues.json      # Queue definitions (auto-created on first run)
+│   └── peers.json       # Cluster peer list (auto-created on first run)
+├── routers/
+│   ├── auth.py          # POST /token, GET /me
+│   ├── ui.py            # GET / (dashboard)
+│   ├── analysis.py      # POST /analysis, POST /relaunch/{id}
+│   ├── queue.py         # GET /list, GET /queue
+│   └── cluster.py       # GET /whoami, /metrics, /peers, /cluster/summary, /cluster/tasks
 ├── static/
-│   ├── script.js        # Frontend logic
+│   ├── script.js        # Frontend logic (Local + Cluster tabs)
 │   └── style.css
 └── templates/
     └── index.html       # Dashboard template
 images/
-    └── api.png
+    ├── api.png
+    └── cluster.png
 STARK.env                # Environment variable defaults
 README.md
 ```
@@ -81,6 +97,7 @@ All settings are passed as **environment variables** (e.g. via `docker-compose` 
 | `DOCKER_STARK_SERVICE_STARK_API_CONTAINER_MOUNT` | _(empty)_ | Extra Docker volume mounts injected into all `command_docker` containers |
 | `DOCKER_STARK_SERVICE_STARK_API_LOG_FOLDER` | `/STARK/services/stark/stark/api` | Folder where `.json`, `.info` and `.output` files are written |
 | `DOCKER_STARK_SERVICE_STARK_API_RUNS_FOLDER` | `/STARK/input/runs` | Default folder scanned for run directories |
+| `STARK_API_SELF_URL` | _(empty)_ | This node's own public URL (e.g. `http://node1:4200`). Used by the cluster orchestrator to identify which peer is self, avoid forwarding loops, and display the correct node in the cluster view. If not set, the node tries to auto-discover itself by querying each peer's `/whoami` endpoint. **Strongly recommended when using a multi-node setup.** |
 
 Example `STARK.env`:
 ```env
@@ -168,7 +185,108 @@ If omitted, the first queue in `queues.json` is used.
 
 ---
 
-## User management
+## Cluster / Multi-node orchestration
+
+Several STARK API instances can be linked together into a lightweight cluster. Each node keeps its own queues and task-spooler daemons; the cluster layer adds **peer discovery**, **intelligent routing**, and **aggregated monitoring** — without any external coordinator.
+
+![STARK API cluster view](images/cluster.png)
+
+### How it works
+
+1. Each node holds a `config/peers.json` listing all known nodes (including itself, optionally).
+2. When a `POST /analysis` request arrives and the node is **not** already handling a forwarded request, it collects queue metrics from all reachable peers and from itself.
+3. It picks the **best peer** — the one with the most available slots for the requested queue — using the score formula:
+
+   ```
+   score = configured_slots − running_slots − queued_slots
+   ```
+
+4. If the best peer is a remote node, the request is **transparently forwarded** (`httpx`) with the `X-STARK-Forwarded: 1` header to prevent routing loops.
+5. If the best peer cannot be reached, the node falls back to **local execution**.
+
+> No external message broker, no shared database, no Kubernetes required.
+
+---
+
+### Peer configuration (`config/peers.json`)
+
+Auto-created with an empty template on first start. Add one entry per node:
+
+```json
+{
+  "peers": [
+    { "name": "node1", "url": "http://node1:4200" },
+    { "name": "node2", "url": "http://node2:4210" },
+    { "name": "node3", "url": "http://node3:4211" }
+  ]
+}
+```
+
+- `name` — display name (used in the cluster UI)
+- `url` — base URL reachable from other nodes (Docker network hostname or IP)
+
+If the file is empty or contains no peers, the node operates in **standalone mode** and all requests are executed locally.
+
+---
+
+### Self-identification
+
+Set `STARK_API_SELF_URL` in each container's environment to its own URL:
+
+```env
+# node1
+STARK_API_SELF_URL=http://node1:4200
+
+# node2
+STARK_API_SELF_URL=http://node2:4210
+```
+
+This is used to:
+
+- Exclude self from remote HTTP calls (avoids counting local tasks twice)
+- Prevent infinite-forwarding loops
+- Mark the correct node as "online" in the cluster summary
+
+Without `STARK_API_SELF_URL`, the node attempts auto-discovery by probing each peer's `/whoami` endpoint and comparing hostnames (slower, less reliable).
+
+---
+
+### Docker Compose example (3-node cluster)
+
+```yaml
+services:
+  stark-api-node1:
+    image: stark-api
+    ports: ["4200:4200"]
+    environment:
+      STARK_API_SELF_URL: http://node1:4200
+      STARK_API_KEY: shared_secret
+    volumes:
+      - ./config:/app/config
+
+  stark-api-node2:
+    image: stark-api
+    ports: ["4210:4200"]
+    environment:
+      STARK_API_SELF_URL: http://node2:4210
+      STARK_API_KEY: shared_secret
+    volumes:
+      - ./config:/app/config
+
+  stark-api-node3:
+    image: stark-api
+    ports: ["4211:4200"]
+    environment:
+      STARK_API_SELF_URL: http://node3:4211
+      STARK_API_KEY: shared_secret
+    volumes:
+      - ./config:/app/config
+```
+
+All three nodes share the same `config/peers.json` via the mounted volume. Any node can accept requests and route them to the least-loaded peer.
+
+---
+
 
 Users are stored in `config/users.json` (auto-created with default accounts on first start).
 
@@ -226,10 +344,15 @@ X-API-Key: <STARK_API_KEY>
 | `GET` | `/` | JWT | Web dashboard |
 | `POST` | `/token` | - | Obtain JWT token |
 | `GET` | `/me` | JWT | Current user info |
-| `POST` | `/analysis` | JWT / API-Key (admin) | Launch a task |
+| `POST` | `/analysis` | JWT / API-Key (admin) | Launch a task (with intelligent cluster routing) |
 | `GET` | `/list` | - | List all tasks (all queues, no auth) |
 | `GET` | `/queue` | JWT / API-Key | Query or act on a queue |
 | `POST` | `/relaunch/{ts_id}` | JWT / API-Key (admin) | Re-queue a finished task |
+| `GET` | `/whoami` | - | Returns this node's hostname (used for peer self-discovery) |
+| `GET` | `/metrics` | - | Returns local queue metrics (used by peer nodes) |
+| `GET` | `/peers` | - | Returns the configured peer list |
+| `GET` | `/cluster/summary` | - | Aggregated resources table for all nodes |
+| `GET` | `/cluster/tasks` | - | Consolidated task list from all nodes |
 
 ---
 
@@ -517,6 +640,13 @@ The dashboard is accessible at `http://localhost:8000/`.
 | **Filter bar** | State dropdown (Running / Queued / Finished + **Failed only**) and Queue multi-select dropdown. Filters are client-side and instant. A **✕ Reset** button restores all defaults. |
 | **Task Queue** | Auto-refreshing table. Tasks sorted: running -> queued -> finished. |
 
+The dashboard has two top-level tabs:
+
+- **Local** — the standard task queue for this node (filter bar, task table, inline panels)
+- **Cluster** — aggregated view across all nodes (see below)
+
+### Local tab
+
 **Queue table columns:** ID, State, Queue, E-Level, Time, Analysis Name, Actions.
 
 **State colour coding:**
@@ -549,6 +679,97 @@ Clicking **I**, **L**, or **A** opens an inline detail panel below the row. The 
 | Finished | Show/hide all finished tasks |
 | ─── | |
 | Failed only | Show **only** finished tasks with a non-zero exit code (overrides other filters) |
+
+### Cluster tab
+
+![STARK API cluster view](images/cluster.png)
+
+Displays aggregated information from all nodes defined in `config/peers.json`.
+
+**Cluster Resources table** — one row per (node × queue). Columns: Node, Queue, Config, Running, Queued, Available, Usage.
+
+- The **Usage** bar is colour-coded: green (< 70%), yellow (≥ 70%), red (≥ 100%).
+- Offline nodes (unreachable) are shown with a red `offline` badge and empty metric cells.
+- A **TOTAL** row aggregates each queue across all online nodes.
+
+**Cluster Tasks table** — all running and queued tasks from all nodes. Includes a **Node** column to identify the origin. The table auto-refreshes on the same interval as the Local tab.
+
+---
+
+### Cluster endpoints
+
+#### `GET /whoami`
+
+Returns this node's hostname. Used by peers during self-discovery when `STARK_API_SELF_URL` is not set.
+
+**Response:** `{ "id": "node1" }`
+
+---
+
+#### `GET /metrics`
+
+Returns the local queue metrics. Called by other nodes to compute routing scores.
+
+**Response:**
+
+```json
+{
+  "stark": { "configured": 8, "running": 0, "queued": 0, "available": 8 },
+  "light": { "configured": 2, "running": 2, "queued": 11, "available": 0 }
+}
+```
+
+---
+
+#### `GET /peers`
+
+Returns the list of configured peers from `config/peers.json`.
+
+**Response:** `{ "peers": [{ "name": "node1", "url": "http://node1:4200" }, ...] }`
+
+---
+
+#### `GET /cluster/summary`
+
+Aggregates queue metrics from all reachable nodes and returns a single object with per-node details and cluster-wide totals.
+
+**Response:**
+
+```json
+{
+  "nodes": [
+    {
+      "name": "node1",
+      "url": "http://node1:4200",
+      "status": "online",
+      "queues": {
+        "light": { "configured": 2, "running": 2, "queued": 11, "available": 0 }
+      }
+    },
+    {
+      "name": "node2",
+      "url": "http://node2:4210",
+      "status": "offline",
+      "queues": {}
+    }
+  ],
+  "totals": {
+    "light": { "configured": 4, "running": 4, "queued": 22, "available": 0 }
+  }
+}
+```
+
+Offline nodes (unreachable within 1 second) appear with `"status": "offline"` and empty queues.
+
+---
+
+#### `GET /cluster/tasks`
+
+Returns a consolidated task list from all reachable nodes. Each task is enriched with `node` and `node_url` fields to identify its origin.
+
+```bash
+curl -s http://localhost:4200/cluster/tasks | python3 -m json.tool
+```
 
 ---
 

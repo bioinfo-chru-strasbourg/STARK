@@ -17,13 +17,20 @@
 
     <div id="dashboard-container" style="display: none;">
         <div class="header">
-            <h1>STARK API</h1>
+            <h1>STARK API devel</h1>
             <div class="header-user">
                 <span id="current-user"></span>
                 <button id="logout-btn">Logout</button>
             </div>
         </div>
 
+        <div class="view-tabs">
+            <button class="tab-btn active" id="tab-local">Local</button>
+            <button class="tab-btn" id="tab-cluster">Cluster</button>
+        </div>
+
+        <!-- ── Local view ──────────────────────────────────────────────── -->
+        <div id="view-local">
         <div id="action-container">
             <div id="analysis-form-container">
                 <h2>Launch Analysis</h2>
@@ -77,6 +84,27 @@
                 <pre id="queue-output"></pre>
             </div>
         </div>
+        </div><!-- /view-local -->
+
+        <!-- ── Cluster view ────────────────────────────────────────────── -->
+        <div id="view-cluster" style="display:none">
+
+            <div id="cluster-summary-container">
+                <h2>Cluster Resources</h2>
+                <div id="cluster-summary-content">
+                    <p class="cluster-loading">Loading…</p>
+                </div>
+            </div>
+
+            <div id="cluster-tasks-container">
+                <h2>Cluster Tasks</h2>
+                <div id="cluster-tasks-content">
+                    <p class="cluster-loading">Loading…</p>
+                </div>
+            </div>
+
+        </div><!-- /view-cluster -->
+
     </div>
 
     <script src="/static/script.js?v={{ version }}"></script>
