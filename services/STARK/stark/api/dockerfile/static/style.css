@@ -379,3 +379,154 @@ pre.inline-detail {
     min-width: 100%;
     box-sizing: border-box;
 }
+
+/* ── View tabs ─────────────────────────────────────────────────────────────── */
+.view-tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 2px solid #dee2e6;
+    margin-bottom: 1.2rem;
+}
+
+.tab-btn {
+    padding: 7px 22px;
+    font-size: 0.92em;
+    background: #f5f6f7;
+    color: #555;
+    border: 1px solid #dee2e6;
+    border-bottom: none;
+    border-radius: 4px 4px 0 0;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.tab-btn:hover  { background: #e9ecef; color: #333; }
+.tab-btn.active { background: #fff; color: #007bff; font-weight: 700; border-color: #dee2e6; }
+
+/* ── Cluster view container (wider than local) ────────────────────────────── */
+#view-cluster {
+    max-width: 1400px;
+}
+
+#cluster-summary-container,
+#cluster-tasks-container {
+    margin-bottom: 2rem;
+}
+
+.cluster-loading {
+    color: #888;
+    font-style: italic;
+}
+
+/* ── Cluster resources table ───────────────────────────────────────────────── */
+.cluster-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88em;
+    margin-top: 0.6rem;
+}
+
+.cluster-table th,
+.cluster-table td {
+    padding: 0.55rem 0.8rem;
+    border: 1px solid #dddfe2;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.cluster-table th {
+    background: #f5f6f7;
+    font-weight: 700;
+}
+
+.cluster-table tr:hover td { background: #f0f4f8; }
+
+/* Node header row (spans all columns) */
+.cluster-node-header td {
+    background: #e8f0fe;
+    font-weight: 700;
+    color: #1a56db;
+    border-top: 2px solid #c5d8f6;
+}
+
+.cluster-node-offline td {
+    background: #fff4f4;
+    color: #999;
+    font-style: italic;
+}
+
+/* Status badge */
+.node-status {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 10px;
+    font-size: 0.78em;
+    font-weight: 700;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+.node-status.online  { background: #d4edda; color: #155724; }
+.node-status.offline { background: #f8d7da; color: #721c24; }
+
+/* Slot capacity bar */
+.slot-bar-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.slot-bar {
+    display: inline-block;
+    width: 70px;
+    height: 9px;
+    background: #e0e0e0;
+    border-radius: 4px;
+    overflow: hidden;
+    vertical-align: middle;
+}
+
+.slot-bar-fill {
+    display: block;
+    height: 100%;
+    border-radius: 4px;
+    background: #28a745;
+    transition: width 0.3s;
+}
+.slot-bar-fill.warn { background: #ffc107; }
+.slot-bar-fill.full { background: #dc3545; }
+
+.slot-num { font-size: 0.82em; color: #555; }
+
+/* ── Cluster tasks table ───────────────────────────────────────────────────── */
+.cluster-tasks-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88em;
+    margin-top: 0.6rem;
+}
+
+.cluster-tasks-table th,
+.cluster-tasks-table td {
+    padding: 0.55rem 0.8rem;
+    border: 1px solid #dddfe2;
+    text-align: left;
+}
+
+.cluster-tasks-table th {
+    background: #f5f6f7;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.cluster-tasks-table tr:hover td { background: #f0f4f8; }
+
+.cluster-no-peers {
+    padding: 1rem;
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 4px;
+    font-size: 0.9em;
+    color: #856404;
+    margin-top: 0.5rem;
+}
+}

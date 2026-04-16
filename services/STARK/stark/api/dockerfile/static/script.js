@@ -501,5 +501,205 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Auto-refresh the queue every 10 seconds
-    setInterval(() => getQueue('list'), typeof REFRESH_INTERVAL_MS !== 'undefined' ? REFRESH_INTERVAL_MS : 10000);
+    const REFRESH_MS = typeof REFRESH_INTERVAL_MS !== 'undefined' ? REFRESH_INTERVAL_MS : 10000;
+    setInterval(() => {
+        if (document.getElementById('view-local').style.display !== 'none') {
+            getQueue('list');
+        } else {
+            fetchClusterData();
+        }
+    }, REFRESH_MS);
+
+    // ── Tab switching ──────────────────────────────────────────────────────────
+    document.getElementById('tab-local').addEventListener('click', () => {
+        document.getElementById('view-local').style.display = '';
+        document.getElementById('view-cluster').style.display = 'none';
+        document.getElementById('tab-local').classList.add('active');
+        document.getElementById('tab-cluster').classList.remove('active');
+        getQueue('list');
+    });
+
+    document.getElementById('tab-cluster').addEventListener('click', () => {
+        document.getElementById('view-local').style.display = 'none';
+        document.getElementById('view-cluster').style.display = '';
+        document.getElementById('tab-local').classList.remove('active');
+        document.getElementById('tab-cluster').classList.add('active');
+        fetchClusterData();
+    });
+
+    // ── Cluster: fetch both summary + tasks ────────────────────────────────────
+    async function fetchClusterData() {
+        await Promise.all([fetchClusterSummary(), fetchClusterTasks()]);
+    }
+
+    // ── Cluster summary ────────────────────────────────────────────────────────
+    async function fetchClusterSummary() {
+        const el = document.getElementById('cluster-summary-content');
+        try {
+            const resp = await fetch('/cluster/summary', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!resp.ok) { el.innerHTML = `<p class="error">Error ${resp.status}</p>`; return; }
+            const data = await resp.json();
+            renderClusterSummary(data, el);
+        } catch (e) {
+            el.innerHTML = `<p class="error">Could not reach /cluster/summary: ${e}</p>`;
+        }
+    }
+
+    function renderClusterSummary(data, el) {
+        const nodes = data.nodes || {};
+        const totals = data.totals || {};
+
+        if (!Object.keys(nodes).length) {
+            el.innerHTML = '<div class="cluster-no-peers">No peers configured. Add entries to <code>config/peers.json</code> to enable cluster view.</div>';
+            return;
+        }
+
+        const table = document.createElement('table');
+        table.className = 'cluster-table';
+        table.innerHTML = `<thead><tr>
+            <th>Node</th><th>Queue</th>
+            <th title="Total configured slots">Config</th>
+            <th title="Currently running tasks">Running</th>
+            <th title="Tasks waiting in queue">Queued</th>
+            <th title="Free slots (config - running - queued)">Available</th>
+            <th title="Slot usage">Usage</th>
+        </tr></thead>`;
+        const tbody = document.createElement('tbody');
+
+        for (const [name, node] of Object.entries(nodes)) {
+            const statusCls = node.status === 'online' ? 'online' : 'offline';
+            const urlStr = node.url ? `<span style="font-weight:400;font-size:0.82em;color:#888;margin-left:6px">${node.url}</span>` : '';
+
+            if (node.status !== 'online') {
+                const tr = document.createElement('tr');
+                tr.className = 'cluster-node-offline';
+                tr.innerHTML = `<td colspan="7">${name}${urlStr} <span class="node-status offline">offline</span></td>`;
+                tbody.appendChild(tr);
+                continue;
+            }
+
+            const queues = node.queues || {};
+            const queueNames = Object.keys(queues);
+            queueNames.forEach((qname, i) => {
+                const q = queues[qname];
+                const tr = document.createElement('tr');
+                if (i === 0) {
+                    // Node header merged cell
+                    const nodeTd = document.createElement('td');
+                    nodeTd.rowSpan = queueNames.length;
+                    nodeTd.innerHTML = `<strong>${name}</strong>${urlStr}<span class="node-status online">online</span>`;
+                    tr.appendChild(nodeTd);
+                }
+                const used = (q.running || 0) + (q.queued || 0);
+                const pct = q.configured > 0 ? Math.round(used / q.configured * 100) : 0;
+                const barCls = pct >= 100 ? 'full' : pct >= 70 ? 'warn' : '';
+                tr.innerHTML += `
+                    <td>${qname}</td>
+                    <td>${q.configured}</td>
+                    <td class="state-running">${q.running}</td>
+                    <td class="state-queued">${q.queued}</td>
+                    <td>${q.available}</td>
+                    <td>
+                        <div class="slot-bar-wrap">
+                            <span class="slot-bar"><span class="slot-bar-fill ${barCls}" style="width:${Math.min(pct,100)}%"></span></span>
+                            <span class="slot-num">${pct}%</span>
+                        </div>
+                    </td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Totals row
+        if (Object.keys(totals).length) {
+            for (const [qname, t] of Object.entries(totals)) {
+                const used = (t.running || 0) + (t.queued || 0);
+                const pct = t.configured > 0 ? Math.round(used / t.configured * 100) : 0;
+                const barCls = pct >= 100 ? 'full' : pct >= 70 ? 'warn' : '';
+                const tr = document.createElement('tr');
+                tr.style.cssText = 'font-weight:700;background:#f5f6f7;border-top:2px solid #aaa';
+                tr.innerHTML = `
+                    <td>TOTAL</td>
+                    <td>${qname}</td>
+                    <td>${t.configured}</td>
+                    <td class="state-running">${t.running}</td>
+                    <td class="state-queued">${t.queued}</td>
+                    <td>${t.available}</td>
+                    <td>
+                        <div class="slot-bar-wrap">
+                            <span class="slot-bar"><span class="slot-bar-fill ${barCls}" style="width:${Math.min(pct,100)}%"></span></span>
+                            <span class="slot-num">${pct}%</span>
+                        </div>
+                    </td>`;
+                tbody.appendChild(tr);
+            }
+        }
+
+        table.appendChild(tbody);
+        el.innerHTML = '';
+        el.appendChild(table);
+    }
+
+    // ── Cluster tasks ──────────────────────────────────────────────────────────
+    async function fetchClusterTasks() {
+        const el = document.getElementById('cluster-tasks-content');
+        try {
+            const resp = await fetch('/cluster/tasks', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!resp.ok) { el.innerHTML = `<p class="error">Error ${resp.status}</p>`; return; }
+            const tasks = await resp.json();
+            renderClusterTasks(tasks, el);
+        } catch (e) {
+            el.innerHTML = `<p class="error">Could not reach /cluster/tasks: ${e}</p>`;
+        }
+    }
+
+    function renderClusterTasks(tasks, el) {
+        if (!tasks.length) {
+            el.innerHTML = '<p style="color:#888;font-style:italic">No tasks across the cluster.</p>';
+            return;
+        }
+
+        const _stateOrder = { running: 0, queued: 1, waiting: 2, finished: 3 };
+        tasks.sort((a, b) => {
+            const oa = _stateOrder[a.state?.toLowerCase()] ?? 4;
+            const ob = _stateOrder[b.state?.toLowerCase()] ?? 4;
+            return oa !== ob ? oa - ob : (Number(a.id) || 0) - (Number(b.id) || 0);
+        });
+
+        const table = document.createElement('table');
+        table.className = 'cluster-tasks-table';
+        table.innerHTML = `<thead><tr>
+            <th>Node</th><th>ID</th><th>State</th>
+            <th>Queue</th><th>Slots</th><th>Time</th><th>Analysis Name</th>
+        </tr></thead>`;
+        const tbody = document.createElement('tbody');
+
+        tasks.forEach(task => {
+            const stateLC = task.state?.toLowerCase() || '';
+            let stateClass = '';
+            if (stateLC === 'running')  stateClass = 'state-running';
+            else if (stateLC === 'queued') stateClass = 'state-queued';
+            else if (stateLC === 'finished') stateClass = (!task.elevel || task.elevel.startsWith('FAILED')) ? 'state-finished-failed' : 'state-finished-success';
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td title="${task.node_url || ''}">${task.node || '—'}</td>
+                <td>${task.id}</td>
+                <td class="${stateClass}">${task.state}</td>
+                <td>${task.queue || ''}</td>
+                <td class="task-slots-cell">${task.task_slots != null ? task.task_slots + ' / ' + task.queue_slots : '—'}</td>
+                <td>${formatTime(task.times)}</td>
+                <td>${task.run_name || ''}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        table.appendChild(tbody);
+        el.innerHTML = '';
+        el.appendChild(table);
+    }
+
 });
