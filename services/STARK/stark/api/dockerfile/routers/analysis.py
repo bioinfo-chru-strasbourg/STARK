@@ -11,7 +11,15 @@ from fastapi.responses import PlainTextResponse  # pyright: ignore[reportMissing
 from authentication import get_current_user_or_service
 from config import docker_stark_api_log_folder, ts
 from models import User
-from queues import get_queue_env
+from peers import (
+    compute_best_peer,
+    forward_request,
+    get_local_metrics,
+    get_peers_metrics,
+    get_self_url,
+    load_peers,
+)
+from queues import get_queue_env, load_queues
 from tasks import (
     _extract_analysis_name,
     queue_analysis,
@@ -22,26 +30,88 @@ from tasks import (
 router = APIRouter()
 
 
+async def _run_locally(json_input: dict) -> str:
+    """Dispatch json_input to the appropriate queue function and return the IDNAME."""
+    if "command" in json_input:
+        return queue_command(json_input)
+    elif "command_docker" in json_input:
+        return queue_command_docker(json_input)
+    else:
+        return queue_analysis(json_input)
+
+
 @router.post("/analysis")
 async def stark_launch(
     request: Request,
     authorized: Union[User, str] = Depends(get_current_user_or_service),
 ):
+    """Launch a STARK analysis, command, or docker-command.
+
+    Routing logic (transparent to the caller):
+      1. If the request carries X-STARK-Forwarded (already routed once) →
+         run locally immediately to prevent loops.
+      2. If no peers are configured → run locally.
+      3. Collect metrics from all peers + self asynchronously.
+      4. Select the peer with the most available capacity for the requested queue.
+      5. If the best peer is this node (or self-URL is unknown) → run locally.
+      6. Otherwise → forward the request transparently to the best peer.
+    """
     if authorized != "service":
         if not isinstance(authorized, User) or "admin" not in authorized.groups:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Admin group required to launch analyses",
             )
-    json_input = await request.json()
+
+    # --- Anti-loop guard: already forwarded once → run locally ---
+    already_forwarded = request.headers.get("X-STARK-Forwarded", "0") == "1"
+
+    # --- Routing ---
+    if not already_forwarded and load_peers():
+        json_input = await request.json()
+
+        # Determine the requested queue (fall back to default)
+        queues = load_queues()
+        default_queue = next(iter(queues))
+        queue_name = json_input.get("queue") or default_queue
+
+        # Gather metrics: peers + self
+        peers_metrics = await get_peers_metrics()
+        self_url = get_self_url()
+        if self_url:
+            peers_metrics[self_url] = get_local_metrics()
+
+        best_peer = compute_best_peer(queue_name, peers_metrics)
+
+        # # DEVEL
+        # print(f"Peers metrics: {peers_metrics}")
+        # print(f"Best peer for queue '{queue_name}': {best_peer}")
+
+        # Forward if a better (or equally-best) peer is not ourselves
+        if best_peer is not None and best_peer != self_url:
+            try:
+                return await forward_request(best_peer, request)
+            except Exception:
+                # Forward failed → fall through to local execution
+                pass
+
+        # Run locally
+        try:
+            analysis_id_name = await _run_locally(json_input)
+            return PlainTextResponse(content=analysis_id_name, status_code=200)
+        except Exception as e:
+            return PlainTextResponse(content=f"KO: {e}", status_code=400)
+
+    # --- No peers or already forwarded: run locally ---
+    # Re-parse body only if we haven't already done so above
     try:
-        if "command" in json_input:
-            analysisIDNAME = queue_command(json_input)
-        elif "command_docker" in json_input:
-            analysisIDNAME = queue_command_docker(json_input)
-        else:
-            analysisIDNAME = queue_analysis(json_input)
-        return PlainTextResponse(content=analysisIDNAME, status_code=200)
+        json_input = await request.json()
+    except Exception:
+        json_input = {}
+
+    try:
+        analysis_id_name = await _run_locally(json_input)
+        return PlainTextResponse(content=analysis_id_name, status_code=200)
     except Exception as e:
         return PlainTextResponse(content=f"KO: {e}", status_code=400)
 

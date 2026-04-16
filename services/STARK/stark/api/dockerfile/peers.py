@@ -1,0 +1,291 @@
+#!/usr/bin/env python
+"""
+peers.py — Cluster / mini-orchestrator logic.
+
+Responsibilities:
+  - Load peers from config/peers.json (auto-created empty on first start).
+  - Resolve this node's own URL (env var → /whoami scan → None = local-only).
+  - Compute local task-spooler metrics per queue.
+  - Collect metrics from all peers asynchronously (httpx).
+  - Score peers and select the best one for a given queue.
+  - Forward an /analysis request transparently to a target peer.
+
+If no peers are configured, or if self-URL cannot be determined, all analyses
+are run locally — the cluster logic is entirely transparent / opt-in.
+
+peers.json format (auto-created in config/ on first start):
+{
+  "peers": [
+    {"name": "node1", "url": "http://192.168.1.10:8001"},
+    {"name": "node2", "url": "http://192.168.1.10:8002"},
+    {"name": "node3", "url": "http://192.168.1.11:8001"}
+  ]
+}
+"""
+
+import asyncio
+import json
+import logging
+import os
+import socket
+import subprocess
+from typing import Optional
+
+import httpx  # pyright: ignore[reportMissingImports]
+
+logger = logging.getLogger(__name__)
+
+from config import PEERS_FILE, STARK_API_KEY, STARK_API_SELF_URL, shell, ts
+from queues import _queue_daemon_is_active, _resolve_queue_socket, load_queues
+
+# ---------------------------------------------------------------------------
+# Self-identity
+# ---------------------------------------------------------------------------
+
+_self_hostname: str = socket.gethostname()
+_self_url_cache: Optional[str] = None  # populated lazily
+
+
+def get_self_hostname() -> str:
+    return _self_hostname
+
+
+def get_self_url() -> Optional[str]:
+    """Return the URL at which *this* node is reachable.
+
+    Resolution order:
+      1. STARK_API_SELF_URL environment variable (explicit, recommended).
+      2. Lazy scan of configured peers: POST /whoami to each peer; if the
+         returned hostname matches ours, that peer entry is our own URL.
+      3. None — self-URL unknown; analyses will always run locally.
+
+    The result is cached after the first successful resolution.
+    """
+    global _self_url_cache
+
+    # 1. Explicit env var
+    if STARK_API_SELF_URL:
+        return STARK_API_SELF_URL
+
+    # Return cached value if already resolved
+    if _self_url_cache is not None:
+        return _self_url_cache
+
+    # 2. Scan peers to find which one is us
+    peers = load_peers()
+    for p in peers:
+        url = p.get("url", "")
+        if not url:
+            continue
+        try:
+            r = httpx.get(f"{url}/whoami", timeout=1.0)
+            if r.is_success and r.json().get("id") == _self_hostname:
+                _self_url_cache = url
+                return url
+        except Exception:
+            continue
+
+    # 3. Unknown — local-only mode
+    return None
+
+
+# ---------------------------------------------------------------------------
+# Peers config
+# ---------------------------------------------------------------------------
+
+def load_peers() -> list:
+    """Load peers from config/peers.json.
+
+    If the file does not exist it is auto-created with an empty peers list so
+    the user has a ready-to-fill template. Returns [] if file is absent,
+    malformed, or contains no peers — in all those cases analyses run locally.
+
+    Expected format:
+    {
+      "peers": [
+        {"name": "node1", "url": "http://192.168.1.10:8001"},
+        {"name": "node2", "url": "http://192.168.1.11:8001"}
+      ]
+    }
+    """
+    default: dict = {"peers": []}
+
+    if not os.path.exists(PEERS_FILE):
+        try:
+            os.makedirs(os.path.dirname(PEERS_FILE), exist_ok=True)
+            with open(PEERS_FILE, "w") as f:
+                json.dump(default, f, indent=2)
+        except OSError:
+            pass
+        return []
+
+    try:
+        with open(PEERS_FILE, "r") as f:
+            data = json.load(f)
+        return data.get("peers", [])
+    except (FileNotFoundError, json.JSONDecodeError):
+        return []
+
+
+# ---------------------------------------------------------------------------
+# Local metrics
+# ---------------------------------------------------------------------------
+
+def get_local_metrics() -> dict:
+    """Return task-spooler slot metrics for every configured queue.
+
+    Format:
+        {
+            "stark":  {"configured": 1, "running": 0, "queued": 0},
+            "light":  {"configured": 4, "running": 2, "queued": 1},
+        }
+
+    Counts are derived from 'ts -l' output.  If a queue daemon is inactive,
+    running/queued default to 0 (the queue is considered free but offline).
+    """
+    queues = load_queues()
+    default_name = next(iter(queues))
+    metrics: dict = {}
+
+    for queue_name, cfg in queues.items():
+        is_default = queue_name == default_name
+        configured = int(cfg.get("slots", 1))
+
+        if not _queue_daemon_is_active(queue_name, cfg, is_default):
+            metrics[queue_name] = {"configured": configured, "running": 0, "queued": 0}
+            continue
+
+        socket_path = _resolve_queue_socket(queue_name, cfg, is_default)
+        socket_part = f"TS_SOCKET={socket_path} " if socket_path else ""
+        q_env = f"{socket_part}TS_SAVELIST={cfg['savelist']} TS_SLOTS={cfg['slots']} "
+
+        running = 0
+        queued = 0
+        try:
+            result = subprocess.run(
+                f"{q_env} {ts} -l",
+                shell=True,
+                executable=shell,
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=5,
+            )
+            for line in result.stdout.strip().split("\n")[1:]:
+                parts = line.split()
+                if len(parts) < 2:
+                    continue
+                state = parts[1].lower()
+                if state == "running":
+                    running += 1
+                elif state == "queued":
+                    queued += 1
+        except Exception:
+            pass
+
+        metrics[queue_name] = {
+            "configured": configured,
+            "running": running,
+            "queued": queued,
+        }
+
+    return metrics
+
+
+# ---------------------------------------------------------------------------
+# Peer metrics (async)
+# ---------------------------------------------------------------------------
+
+async def get_peers_metrics() -> dict:
+    """Collect /metrics from all configured peers concurrently.
+
+    Returns {peer_url: queues_dict}, where queues_dict has the same structure
+    as get_local_metrics().  Unreachable peers are silently skipped.
+    """
+    peers = load_peers()
+    if not peers:
+        return {}
+
+    headers = {"X-API-Key": STARK_API_KEY}
+    urls = [p["url"] for p in peers if p.get("url")]
+
+    logger.debug("Collecting metrics from peers: %s", urls)
+
+    async with httpx.AsyncClient(timeout=1.0) as client:
+        responses = await asyncio.gather(
+            *[client.get(f"{url}/metrics", headers=headers) for url in urls],
+            return_exceptions=True,
+        )
+
+    result: dict = {}
+    for url, resp in zip(urls, responses):
+        if isinstance(resp, Exception):
+            logger.debug("Peer %s unreachable: %s", url, resp)
+            continue
+        if resp.status_code == 200:
+            try:
+                data = resp.json()
+                result[url] = data.get("queues", {})
+            except Exception:
+                continue
+
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Scoring
+# ---------------------------------------------------------------------------
+
+def compute_best_peer(queue_name: str, all_metrics: dict) -> Optional[str]:
+    """Return the URL of the node with the most capacity for queue_name.
+
+    Score = configured - running - queued  (higher → more slots available).
+    Returns None if all_metrics is empty.
+    """
+    if not all_metrics:
+        return None
+
+    best_url: Optional[str] = None
+    best_score: Optional[int] = None
+
+    for url, queues in all_metrics.items():
+        q = queues.get(queue_name, {})
+        score = q.get("configured", 0) - q.get("running", 0) - q.get("queued", 0)
+        if best_score is None or score > best_score:
+            best_score = score
+            best_url = url
+
+    return best_url
+
+
+# ---------------------------------------------------------------------------
+# Forward
+# ---------------------------------------------------------------------------
+
+async def forward_request(target_url: str, request):
+    """Transparently forward an /analysis request to target_url.
+
+    Adds X-STARK-Forwarded: 1 to prevent routing loops (a forwarded request is
+    always executed locally on the receiving node).
+    """
+    from fastapi.responses import Response  # pyright: ignore[reportMissingImports]
+
+    headers = {
+        k: v
+        for k, v in request.headers.items()
+        if k.lower() not in ("host", "content-length")
+    }
+    headers["X-STARK-Forwarded"] = "1"
+
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        resp = await client.post(
+            f"{target_url}/analysis",
+            content=await request.body(),
+            headers=headers,
+        )
+
+    return Response(
+        content=resp.content,
+        status_code=resp.status_code,
+        media_type=resp.headers.get("content-type", "text/plain"),
+    )
