@@ -14,7 +14,7 @@ from fastapi import (
 )  # pyright: ignore[reportMissingImports]
 
 from authentication import get_current_user_or_service
-from config import STARK_API_KEY
+from config import STARK_API_KEY, local_port
 from models import User
 from peers import (
     get_local_metrics,
@@ -101,6 +101,9 @@ async def cluster_summary():
     )
     local_queues_raw = get_local_metrics()
 
+    if not self_url:
+        self_url = "http://" + get_self_hostname() + f":{local_port}"
+
     nodes: dict = {}
 
     # Self node
@@ -180,6 +183,9 @@ async def cluster_tasks():
         else get_self_hostname()
     )
 
+    if not self_url:
+        self_url = "http://" + get_self_hostname() + f":{local_port}"
+
     # Local tasks
     local_response = await list_task()
     local_tasks = _json.loads(local_response.body)
@@ -230,6 +236,10 @@ async def cluster_proxy_queue(
                 detail="Admin group required for this action",
             )
 
+    # get URL
+    if not node_url or node_url is None or node_url == "null":
+        node_url = "http://" + get_self_hostname() + f":{local_port}"
+
     params = f"action={action}"
     if id:
         params += f"&id={id}"
@@ -263,6 +273,10 @@ async def cluster_proxy_relaunch(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Admin group required for relaunch",
             )
+
+    # get URL
+    if not node_url or node_url is None or node_url == "null":
+        node_url = "http://" + get_self_hostname() + f":{local_port}"
 
     q = f"?queue={queue}" if queue else ""
     url = f"{node_url}/relaunch/{ts_id}{q}"
@@ -299,6 +313,9 @@ async def cluster_archives():
         if self_url
         else get_self_hostname()
     )
+
+    if not self_url:
+        self_url = "http://" + get_self_hostname() + f":{local_port}"
 
     # Local archives
     local_response = await list_archives()

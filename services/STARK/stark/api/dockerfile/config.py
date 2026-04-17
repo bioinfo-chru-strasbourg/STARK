@@ -16,6 +16,8 @@ PEERS_FILE = "config/peers.json"
 # If not set, the node tries to self-identify by scanning peers via /whoami.
 # If self-URL cannot be determined, the node always runs analyses locally.
 STARK_API_SELF_URL = os.environ.get("STARK_API_SELF_URL", "")
+STARK_API_SELF_PORT = int(os.environ.get("STARK_API_SELF_PORT", 8000))
+local_port = STARK_API_SELF_PORT if STARK_API_SELF_URL else 8000
 
 # --- Task Spooler ---
 ts = os.environ.get("TS", "")

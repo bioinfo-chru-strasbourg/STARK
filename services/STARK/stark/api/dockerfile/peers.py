@@ -38,6 +38,7 @@ logger = logging.getLogger(__name__)
 from config import PEERS_FILE, STARK_API_KEY, STARK_API_SELF_URL, shell, ts
 from queues import _queue_daemon_is_active, _resolve_queue_socket, load_queues
 from tasks import _read_task_slots
+# from routers.cluster import whoami  # pyright: ignore[reportMissingImports]
 
 # ---------------------------------------------------------------------------
 # Self-identity
@@ -78,6 +79,8 @@ def get_self_url() -> Optional[str]:
         url = p.get("url", "")
         if not url:
             continue
+        if not url.startswith("http"):
+            url = f"http://{url}"
         try:
             r = httpx.get(f"{url}/whoami", timeout=1.0)
             if r.is_success and r.json().get("id") == _self_hostname:
@@ -87,6 +90,7 @@ def get_self_url() -> Optional[str]:
             continue
 
     # 3. Unknown — local-only mode
+    # return "http://localhost"
     return None
 
 
