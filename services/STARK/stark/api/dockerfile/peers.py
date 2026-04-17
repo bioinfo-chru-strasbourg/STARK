@@ -265,8 +265,14 @@ def compute_best_peer(queue_name: str, all_metrics: dict) -> Optional[str]:
     best_score: Optional[int] = None
 
     for url, queues in all_metrics.items():
+        # Get metrics for the requested queue
         q = queues.get(queue_name, {})
+        # If queue not configured on that peer, consider it unavailable for that peer (score = -inf)
+        if not q:
+            continue
+        # Calculate score based on configured slots minus running and queued slots
         score = q.get("configured", 0) - q.get("running", 0) - q.get("queued", 0)
+        # check if this peer has a better score than the best one found so far
         if best_score is None or score > best_score:
             best_score = score
             best_url = url
