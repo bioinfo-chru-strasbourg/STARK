@@ -20,7 +20,7 @@ STARK_API_SELF_URL = os.environ.get("STARK_API_SELF_URL", "")
 # --- Task Spooler ---
 ts = os.environ.get("TS", "")
 ts_savelist = os.environ.get("TS_SAVELIST", "/ts-tmp")
-ts_slots = os.environ.get("TS_SLOTS", "1")
+ts_slots = int(os.environ.get("TS_SLOTS", os.cpu_count()))
 ts_socket_env = os.environ.get("TS_SOCKET", "")
 
 # --- Shell ---

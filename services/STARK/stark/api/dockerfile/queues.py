@@ -10,30 +10,37 @@ from config import QUEUES_FILE, ts, ts_savelist, ts_slots, ts_socket_env
 
 
 def load_queues() -> dict:
+    # default = {
+    #     "stark": {
+    #         "savelist": ts_savelist,
+    #         "slots": int(ts_slots),
+    #         "description": "Default STARK analysis queue",
+    #     },
+    #     "light": {
+    #         "savelist": "/ts-tmp-light",
+    #         "slots": 2,
+    #         "socket": "/tmp/ts-light.socket",
+    #         "description": "Light STARK analysis queue",
+    #     },
+    #     "medium": {
+    #         "savelist": "/ts-tmp-medium",
+    #         "slots": 4,
+    #         "socket": "/tmp/ts-medium.socket",
+    #         "description": "Medium STARK analysis queue",
+    #     },
+    #     "gpu": {
+    #         "savelist": "/ts-tmp-gpu",
+    #         "slots": 4,
+    #         "socket": "/tmp/ts-gpu.socket",
+    #         "description": "GPU STARK analysis queue",
+    #     },
+    # }
     default = {
         "stark": {
             "savelist": ts_savelist,
             "slots": int(ts_slots),
             "description": "Default STARK analysis queue",
-        },
-        "light": {
-            "savelist": "/ts-tmp-light",
-            "slots": 2,
-            "socket": "/tmp/ts-light.socket",
-            "description": "Light STARK analysis queue",
-        },
-        "medium": {
-            "savelist": "/ts-tmp-medium",
-            "slots": 4,
-            "socket": "/tmp/ts-medium.socket",
-            "description": "Medium STARK analysis queue",
-        },
-        "gpu": {
-            "savelist": "/ts-tmp-gpu",
-            "slots": 4,
-            "socket": "/tmp/ts-gpu.socket",
-            "description": "GPU STARK analysis queue",
-        },
+        }
     }
     if not os.path.exists(QUEUES_FILE):
         os.makedirs(os.path.dirname(QUEUES_FILE), exist_ok=True)
