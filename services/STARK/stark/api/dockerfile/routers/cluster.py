@@ -1,9 +1,21 @@
 #!/usr/bin/env python
 
 import json as _json
+from typing import Optional, Union
 
-from fastapi import APIRouter  # pyright: ignore[reportMissingImports]
+import httpx  # pyright: ignore[reportMissingImports]
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Query,
+    Response,
+    status,
+)  # pyright: ignore[reportMissingImports]
 
+from authentication import get_current_user_or_service
+from config import STARK_API_KEY
+from models import User
 from peers import (
     get_local_metrics,
     get_peers_metrics,
@@ -184,13 +196,148 @@ async def cluster_tasks():
             t["node_url"] = url
             all_tasks.append(t)
 
-    # Sort: running first, then queued, then others, then finished
-    _state_order = {"running": 0, "queued": 1, "waiting": 2, "finished": 3}
-    all_tasks.sort(
-        key=lambda t: (
-            _state_order.get(t.get("state", "").lower(), 4),
-            t.get("id") or 0,
-        )
-    )
+    # # Sort: running first, then queued, then others, then finished
+    # _state_order = {"running": 0, "queued": 1, "waiting": 2, "finished": 3}
+    # all_tasks.sort(
+    #     key=lambda t: (
+    #         _state_order.get(t.get("state", "").lower(), 4),
+    #         t.get("id") or 0,
+    #     )
+    # )
 
     return all_tasks
+
+
+@router.get("/cluster/proxy/queue")
+async def cluster_proxy_queue(
+    node_url: str = Query(..., description="Target node base URL"),
+    action: str = Query(...),
+    id: Optional[str] = Query(None),
+    queue: Optional[str] = Query(None),
+    authorized: Union[User, str] = Depends(get_current_user_or_service),
+):
+    """Proxy a /queue action to a specific cluster node.
+
+    Used by the cluster tasks UI to forward Info / Log / Analysis / Kill /
+    Prioritize / Remove actions to the node that owns the task.
+    Destructive actions require admin or service key on this node.
+    """
+    restricted = {"kill", "prioritize", "remove", "swap"}
+    if action in restricted and authorized != "service":
+        if not isinstance(authorized, User) or "admin" not in authorized.groups:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Admin group required for this action",
+            )
+
+    params = f"action={action}"
+    if id:
+        params += f"&id={id}"
+    if queue:
+        params += f"&queue={queue}"
+    url = f"{node_url}/queue?{params}"
+
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(url, headers={"X-API-Key": STARK_API_KEY})
+        return Response(
+            content=resp.content,
+            status_code=resp.status_code,
+            media_type=resp.headers.get("content-type", "text/plain"),
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Node unreachable: {exc}") from exc
+
+
+@router.post("/cluster/proxy/relaunch/{ts_id}")
+async def cluster_proxy_relaunch(
+    ts_id: str,
+    node_url: str = Query(..., description="Target node base URL"),
+    queue: Optional[str] = Query(None),
+    authorized: Union[User, str] = Depends(get_current_user_or_service),
+):
+    """Proxy a /relaunch request to a specific cluster node."""
+    if authorized != "service":
+        if not isinstance(authorized, User) or "admin" not in authorized.groups:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Admin group required for relaunch",
+            )
+
+    q = f"?queue={queue}" if queue else ""
+    url = f"{node_url}/relaunch/{ts_id}{q}"
+
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.post(url, headers={"X-API-Key": STARK_API_KEY})
+        return Response(
+            content=resp.content,
+            status_code=resp.status_code,
+            media_type=resp.headers.get("content-type", "text/plain"),
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Node unreachable: {exc}") from exc
+
+
+@router.get("/cluster/archives")
+async def cluster_archives():
+    """Return the aggregated archives from all nodes (self + peers).
+
+    Each entry is enriched with 'node' and 'node_url' fields.
+    Results are sorted by mtime descending (newest first).
+    """
+    import asyncio
+
+    from routers.queue import list_archives  # local import to avoid circular deps
+
+    peer_name_map = {
+        p["url"]: p.get("name", p["url"]) for p in load_peers() if p.get("url")
+    }
+    self_url = get_self_url()
+    self_name = (
+        peer_name_map.get(self_url, get_self_hostname())
+        if self_url
+        else get_self_hostname()
+    )
+
+    # Local archives
+    local_response = await list_archives()
+    local_archives = _json.loads(local_response.body)
+    for a in local_archives:
+        a["node"] = self_name
+        a["node_url"] = self_url
+
+    # Peer archives
+    peers = load_peers()
+    peer_entries = [
+        (p.get("name", p.get("url", "")), p["url"])
+        for p in peers
+        if p.get("url") and (not self_url or p["url"] != self_url)
+    ]
+
+    all_archives = list(local_archives)
+
+    if peer_entries:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            responses = await asyncio.gather(
+                *[
+                    client.get(f"{url}/archives", headers={"X-API-Key": STARK_API_KEY})
+                    for _, url in peer_entries
+                ],
+                return_exceptions=True,
+            )
+        for (name, url), resp in zip(peer_entries, responses):
+            if isinstance(resp, Exception):
+                continue
+            if resp.status_code == 200:
+                try:
+                    archives = resp.json()
+                    for a in archives:
+                        a["node"] = name
+                        a["node_url"] = url
+                    all_archives.extend(archives)
+                except Exception:
+                    pass
+
+    all_archives.sort(key=lambda a: a.get("mtime", 0), reverse=True)
+    return all_archives

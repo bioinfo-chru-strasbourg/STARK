@@ -2,7 +2,7 @@
 
 A **FastAPI**-based web service for launching and monitoring [STARK](https://github.com/bioinfo-chru-strasbourg/STARK) bioinformatics analyses via a task queue ([task-spooler](https://github.com/thomaspreece/task-spooler)) and Docker.
 
-![STARK API dashboard](images/api.png)
+![STARK API dashboard](images/analyses.png)
 
 ---
 
@@ -12,8 +12,9 @@ A **FastAPI**-based web service for launching and monitoring [STARK](https://git
 - **REST API** - JSON endpoints consumable by external services (e.g. `STARK.listener`)
 - **Dual authentication** - JWT bearer tokens for human users + static API key (`X-API-Key`) for service-to-service calls
 - **Role-based access** - `admin` group required for destructive actions (kill, remove, prioritize, relaunch) and for launching new analyses
-- **Three task modes** - STARK analysis, raw shell command, or custom Docker container command
+- **Three task modes** - STARK analysis, custom Docker container command or raw shell command
 - **Multiple named queues** - independent task-spooler daemons, each with its own concurrency setting, configurable via `config/queues.json`
+- **Multiple node cluster** - independent nodes on multiple servers, configurable via `config/peers.json`
 - **Live queue** - auto-refreshing task table (running -> queued -> finished) with per-queue context on every action
 - **State colour coding** - running (orange), queued (grey), finished success (green), finished failed (red)
 - **Filter bar** - combined State dropdown (Running / Queued / Finished / Failed only) and Queue multi-select dropdown; instant client-side filtering with Reset button
@@ -23,6 +24,34 @@ A **FastAPI**-based web service for launching and monitoring [STARK](https://git
 - **Visual feedback** - danger buttons show `✓ Done` / `✗ Failed` with colour flash after each action
 - **Relaunch** - re-queue a finished task from its original JSON parameters on its original queue
 - **Username display** - logged-in username shown next to the Logout button; group membership visible on hover
+
+---
+
+## Screenshots
+
+### Analyses
+
+Show activity, with all analyses launched in nodes and queues, with requested number of slots, state of the analysis, and available actions.  
+
+![STARK API Analyses](images/analyses.png)
+
+### Launch
+
+Launch an analysis, through STARK run name or a JSON parmeter.
+
+![STARK API Launch](images/launch.png)
+
+### Cluster
+
+Summary of cluster resources, with all nodes (online or offline), available queues and associated slots.
+
+![STARK API Cluster](images/cluster.png)
+
+### Archives
+
+List of archived analyses, with information about queue, requested slots and date of request.
+
+![STARK API Archives](images/archives.png)
 
 ---
 
@@ -68,8 +97,8 @@ dockerfile/
 │   ├── script.js        # Frontend logic (Local + Cluster tabs)
 │   └── style.css
 └── templates/
-    └── index.html       # Dashboard template
-images/
+│   └── index.html       # Dashboard template
+├── images/
     ├── api.png
     └── cluster.png
 STARK.env                # Environment variable defaults

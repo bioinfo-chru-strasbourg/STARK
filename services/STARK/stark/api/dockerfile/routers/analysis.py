@@ -8,8 +8,10 @@ from typing import Optional, Union
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status  # pyright: ignore[reportMissingImports]
 from fastapi.responses import PlainTextResponse  # pyright: ignore[reportMissingImports]
 
+import httpx  # pyright: ignore[reportMissingImports]
+
 from authentication import get_current_user_or_service
-from config import docker_stark_api_log_folder, ts
+from config import STARK_API_KEY, docker_stark_api_log_folder, ts
 from models import User
 from peers import (
     compute_best_peer,
@@ -40,6 +42,34 @@ async def _run_locally(json_input: dict) -> str:
         return queue_analysis(json_input)
 
 
+# async def _pick_best_peer(queue_name: str) -> Optional[str]:
+#     """Return the URL of the best remote peer, or None to run locally.
+
+#     Local node is always included using a sentinel key so it participates in
+#     the comparison even when STARK_API_SELF_URL is not configured.  Local wins
+#     on ties (prefer fewer network hops); a remote peer is only selected when it
+#     has STRICTLY more available slots than the local node.
+#     """
+#     peers_metrics = await get_peers_metrics()
+#     self_url = get_self_url()
+#     _local = self_url or "__local__"
+#     # Always add (or overwrite) local metrics so self participates in scoring.
+#     peers_metrics[_local] = get_local_metrics()
+
+#     best_peer = compute_best_peer(queue_name, peers_metrics)
+#     if best_peer is None or best_peer == _local:
+#         return None
+
+#     # Forward only when the remote peer is STRICTLY better.
+#     def _avail(m: dict) -> int:
+#         q = m.get(queue_name, {})
+#         return q.get("configured", 0) - q.get("running", 0) - q.get("queued", 0)
+
+#     if _avail(peers_metrics.get(best_peer, {})) > _avail(peers_metrics[_local]):
+#         return best_peer
+#     return None
+
+
 @router.post("/analysis")
 async def stark_launch(
     request: Request,
@@ -63,52 +93,36 @@ async def stark_launch(
                 detail="Admin group required to launch analyses",
             )
 
-    # --- Anti-loop guard: already forwarded once → run locally ---
+    # --- Anti-loop guard: already forwarded once → run locally immediately ---
     already_forwarded = request.headers.get("X-STARK-Forwarded", "0") == "1"
 
-    # --- Routing ---
-    if not already_forwarded and load_peers():
+    try:
         json_input = await request.json()
+    except Exception:
+        json_input = {}
 
-        # Determine the requested queue (fall back to default)
+    # --- Routing (only on first hop when peers are configured) ---
+    if not already_forwarded and load_peers():
         queues = load_queues()
         default_queue = next(iter(queues))
         queue_name = json_input.get("queue") or default_queue
+
+        # target = await _pick_best_peer(queue_name)
 
         # Gather metrics: peers + self
         peers_metrics = await get_peers_metrics()
         self_url = get_self_url()
         if self_url:
             peers_metrics[self_url] = get_local_metrics()
+        target = compute_best_peer(queue_name, peers_metrics)
 
-        best_peer = compute_best_peer(queue_name, peers_metrics)
-
-        # # DEVEL
-        # print(f"Peers metrics: {peers_metrics}")
-        # print(f"Best peer for queue '{queue_name}': {best_peer}")
-
-        # Forward if a better (or equally-best) peer is not ourselves
-        if best_peer is not None and best_peer != self_url:
+        if target:
             try:
-                return await forward_request(best_peer, request)
+                return await forward_request(target, request)
             except Exception:
-                # Forward failed → fall through to local execution
-                pass
+                pass  # forward failed → fall through to local execution
 
-        # Run locally
-        try:
-            analysis_id_name = await _run_locally(json_input)
-            return PlainTextResponse(content=analysis_id_name, status_code=200)
-        except Exception as e:
-            return PlainTextResponse(content=f"KO: {e}", status_code=400)
-
-    # --- No peers or already forwarded: run locally ---
-    # Re-parse body only if we haven't already done so above
-    try:
-        json_input = await request.json()
-    except Exception:
-        json_input = {}
-
+    # --- Run locally ---
     try:
         analysis_id_name = await _run_locally(json_input)
         return PlainTextResponse(content=analysis_id_name, status_code=200)
@@ -158,6 +172,36 @@ async def relaunch_task(
     except (OSError, json.JSONDecodeError) as e:
         raise HTTPException(status_code=500, detail=f"Error reading JSON file: {e}")
 
+    # Route to the best peer (same logic as a new analysis submission).
+    if load_peers():
+        queues = load_queues()
+        default_queue = next(iter(queues))
+        queue_name = json_input.get("queue") or default_queue
+
+        # target = await _pick_best_peer(queue_name)
+
+        # Gather metrics: peers + self
+        peers_metrics = await get_peers_metrics()
+        self_url = get_self_url()
+        if self_url:
+            peers_metrics[self_url] = get_local_metrics()
+        target = compute_best_peer(queue_name, peers_metrics)
+
+        if target:
+            try:
+                async with httpx.AsyncClient(timeout=15.0) as client:
+                    resp = await client.post(
+                        f"{target}/analysis",
+                        json=json_input,
+                        headers={"X-API-Key": STARK_API_KEY, "X-STARK-Forwarded": "1"},
+                    )
+                return PlainTextResponse(
+                    content=resp.text, status_code=resp.status_code
+                )
+            except Exception:
+                pass  # forward failed → run locally
+
+    # Run locally
     try:
         if "command" in json_input:
             analysisIDNAME = queue_command(json_input)
