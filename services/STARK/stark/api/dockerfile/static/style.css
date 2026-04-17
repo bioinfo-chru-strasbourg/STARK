@@ -227,7 +227,17 @@ pre {
     margin: 4px 0;
 }
 
-#filter-reset {
+#analyses-header-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.2rem;
+}
+#analyses-header-row h2 { margin: 0; }
+
+#filter-reset,
+#tasks-filter-reset,
+#archives-filter-reset {
     margin-left: auto;
     padding: 3px 10px;
     font-size: 0.8em;
@@ -238,7 +248,9 @@ pre {
     color: #555;
 }
 
-#filter-reset:hover {
+#filter-reset:hover,
+#tasks-filter-reset:hover,
+#archives-filter-reset:hover {
     background: #eee;
 }
 
@@ -329,6 +341,7 @@ pre {
 .state-queued   { color: #6c757d; }
 .state-finished-success { color: #28a745; font-weight: bold; }
 .state-finished-failed  { color: #dc3545; font-weight: bold; }
+.state-unknown  { color: #6c757d;}
 
 .task-slots-cell {
     text-align: center;
@@ -407,6 +420,29 @@ pre.inline-detail {
 #view-cluster {
     max-width: 1400px;
 }
+
+/* ── Cluster sub-tabs (Resources | Tasks) ─────────────────────────────────── */
+.cluster-sub-tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 2px solid #dee2e6;
+    margin-bottom: 1.2rem;
+}
+
+.cluster-sub-tab-btn {
+    padding: 5px 18px;
+    font-size: 0.88em;
+    background: #f5f6f7;
+    color: #555;
+    border: 1px solid #dee2e6;
+    border-bottom: none;
+    border-radius: 4px 4px 0 0;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.cluster-sub-tab-btn:hover  { background: #e9ecef; color: #333; }
+.cluster-sub-tab-btn.active { background: #fff; color: #007bff; font-weight: 700; border-color: #dee2e6; }
 
 #cluster-summary-container,
 #cluster-tasks-container {
@@ -528,5 +564,122 @@ pre.inline-detail {
     font-size: 0.9em;
     color: #856404;
     margin-top: 0.5rem;
+}
+
+/* ── Sort icons ────────────────────────────────────────────────────────────── */
+.sort-icon {
+    font-style: normal;
+    font-size: 0.8em;
+    color: #999;
+    cursor: pointer;
+    user-select: none;
+}
+
+/* ── Tasks & archives filter bars ─────────────────────────────────────────── */
+#tasks-filters,
+#archives-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+    padding: 0.6rem 0;
+    margin-bottom: 0.5rem;
+}
+
+.tasks-search-input {
+    height: 34px;
+    padding: 0 0.6rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.88em;
+    min-width: 200px;
+}
+.tasks-search-input:focus { outline: 2px solid #007bff; border-color: #007bff; }
+
+/* ── Archives header row ───────────────────────────────────────────────────── */
+#archives-header-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.2rem;
+}
+#archives-header-row h2 { margin: 0; }
+
+/* #archives-refresh-btn {
+    padding: 0.3rem 0.8rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #f8f9fa;
+    cursor: pointer;
+    font-size: 0.9em;
+    color: #555;
+}
+#archives-refresh-btn:hover { background: #e9ecef; } */
+#archives-refresh-btn {
+    margin-left: auto;
+    padding: 3px 10px;
+    font-size: 0.8em;
+    background: #fff;
+    border: 1px solid #aaa;
+    border-radius: 3px;
+    cursor: pointer;
+    color: #555;
+}
+/* #archives-refresh-btn:hover { background: #e9ecef; } */
+#archives-refresh-btn:hover { background: #eee; }
+
+/* ── Launch Analysis sub-tabs ──────────────────────────────────────────────── */
+.launch-sub-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid #dee2e6;
+    margin-bottom: 1.2rem;
+}
+
+.launch-sub-tab-btn {
+    padding: 0.45rem 1.2rem;
+    border: 1px solid transparent;
+    border-bottom: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 0.9em;
+    color: #495057;
+    border-radius: 4px 4px 0 0;
+    margin-bottom: -2px;
+}
+.launch-sub-tab-btn:hover  { background: #e9ecef; color: #333; }
+.launch-sub-tab-btn.active {
+    background: #fff; color: #007bff;
+    font-weight: 700;
+    border-color: #dee2e6;
+    border-bottom-color: #fff;
+}
+
+/* ── Launch result box ─────────────────────────────────────────────────────── */
+#launch-result { margin-top: 1.5rem; }
+
+.launch-result-ok {
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    border-radius: 4px;
+    padding: 0.9rem 1.2rem;
+}
+.launch-result-err {
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+    padding: 0.9rem 1.2rem;
+}
+.launch-result-row {
+    display: flex;
+    gap: 1rem;
+    align-items: baseline;
+    margin-bottom: 0.4rem;
+}
+.lr-label {
+    font-weight: 600;
+    min-width: 100px;
+    color: #555;
+    flex-shrink: 0;
 }
 }

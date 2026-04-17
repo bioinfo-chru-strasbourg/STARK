@@ -136,11 +136,12 @@ def queue_analysis(json_input: dict) -> str:
 
     ts_cmd = f"{_ts_env}{ts} -N {_task_slots} -L {analysis_id_name}" if ts else ""
     my_cmd = (
-        f'{ts_cmd} sh -c "'
+        f'{ts_cmd} bash -c "'
+        f"trap 'docker stop {analysis_id_name} 2>/dev/null; echo failed > {analysis_info_file}' TERM INT; "
         f"docker run {docker_parameters} {docker_stark} "
         f"--analysis_name={analyses_run_name} --analysis={analysis_file} "
         f"> {analysis_output_file} 2>&1 "
-        f"&& (echo 'done' > {analysis_info_file} && exit 0) "
+        f"&& (echo 'finished' > {analysis_info_file} && exit 0) "
         f"|| (echo 'failed' > {analysis_info_file} && exit 1)\""
     )
 
@@ -173,10 +174,11 @@ def queue_command(json_input: dict) -> str:
 
     ts_cmd = f"{_ts_env}{ts} -N {_task_slots} -L {analysis_id_name}" if ts else ""
     my_cmd = (
-        f'{ts_cmd} sh -c "'
+        f'{ts_cmd} bash -c "'
+        f"trap 'echo failed > {analysis_info_file}' TERM INT; "
         f"{command} "
         f"> {analysis_output_file} 2>&1 "
-        f"&& (echo 'done' > {analysis_info_file} && exit 0) "
+        f"&& (echo 'finished' > {analysis_info_file} && exit 0) "
         f"|| (echo 'failed' > {analysis_info_file} && exit 1)\""
     )
 
@@ -228,10 +230,11 @@ def queue_command_docker(json_input: dict) -> str:
 
     ts_cmd = f"{_ts_env}{ts} -N {_task_slots} -L {analysis_id_name}" if ts else ""
     my_cmd = (
-        f'{ts_cmd} sh -c "'
+        f'{ts_cmd} bash -c "'
+        f"trap 'docker stop {analysis_id_name} 2>/dev/null; echo failed > {analysis_info_file}' TERM INT; "
         f"docker run {docker_parameters} {image} {command_docker} "
         f"> {analysis_output_file} 2>&1 "
-        f"&& (echo 'done' > {analysis_info_file} && exit 0) "
+        f"&& (echo 'finished' > {analysis_info_file} && exit 0) "
         f"|| (echo 'failed' > {analysis_info_file} && exit 1)\""
     )
 

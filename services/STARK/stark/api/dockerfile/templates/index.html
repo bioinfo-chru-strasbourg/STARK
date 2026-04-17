@@ -17,7 +17,7 @@
 
     <div id="dashboard-container" style="display: none;">
         <div class="header">
-            <h1>STARK API devel</h1>
+            <h1>STARK API</h1>
             <div class="header-user">
                 <span id="current-user"></span>
                 <button id="logout-btn">Logout</button>
@@ -25,85 +25,132 @@
         </div>
 
         <div class="view-tabs">
-            <button class="tab-btn active" id="tab-local">Local</button>
+            <button class="tab-btn active" id="tab-tasks">Analyses</button>
+            <button class="tab-btn" id="tab-launch" style="display:none">Launch</button>
             <button class="tab-btn" id="tab-cluster">Cluster</button>
+            <button class="tab-btn" id="tab-archives">Archives</button>
         </div>
 
-        <!-- ── Local view ──────────────────────────────────────────────── -->
-        <div id="view-local">
-        <div id="action-container">
-            <div id="analysis-form-container">
-                <h2>Launch Analysis</h2>
-                <form id="analysis-form">
-                    <div class="form-row">
-                        <label for="run-name-input">STARK Run name</label>
-                        <input type="text" id="run-name-input" placeholder="MY_RUN">
-                    </div>
-                    <details>
-                        <summary>Advanced (raw JSON)</summary>
-                        <textarea id="json-input" placeholder='{"run":"MY_RUN"}'></textarea>
-                    </details>
-                    <div class="launch-row">
-                        <button type="submit" title="Launch Analysis">Launch</button>
-                        <span id="analysis-response"></span>
-                    </div>
-                </form>
+        <!-- ── Tasks view ──────────────────────────────────────────── -->
+        <div id="view-tasks">
+            <div id="analyses-header-row">
+                <h2>Analyses</h2>
             </div>
-            <div id="queue-container">
-                <h2>Task Queue</h2>
-                <div id="queue-filters">
-                    <div class="filter-group" id="filter-states-group">
-                        <span class="filter-label">State</span>
-                        <span id="filter-states-container"></span>
-                    </div>
-                    <div class="filter-group" id="filter-queues-group">
-                        <span class="filter-label">Queue</span>
-                        <span id="filter-queues-checkboxes"></span>
-                    </div>
-                    <button id="filter-reset" title="Reset all filters">✕ Reset</button>
+            <div id="tasks-filters">
+                <div class="filter-group" id="tasks-filter-nodes-group" style="display:none">
+                    <span class="filter-label">Node</span>
+                    <span id="tasks-filter-nodes-container"></span>
                 </div>
-                <div id="queue-table-container">
-                    <table id="queue-table">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>State</th>
-                                <th>Queue</th>
-                                <th>Slots</th>
-                                <!-- <th>Output</th> -->
-                                <!-- <th>E-Level</th> -->
-                                <th>Time</th>
-                                <th class="analysis-name">Analysis Name</th>
-                                <th>Actions</th>                            
-                            </tr>
-                        </thead>
-                        <tbody id="queue-body">
-                        </tbody>
-                    </table>
+                <div class="filter-group" id="tasks-filter-queues-group" style="display:none">
+                    <span class="filter-label">Queue</span>
+                    <span id="tasks-filter-queues-container"></span>
                 </div>
-                <pre id="queue-output"></pre>
+                <div class="filter-group" id="tasks-filter-states-group">
+                    <span class="filter-label">State</span>
+                    <span id="tasks-filter-states-container"></span>
+                </div>
+                <div class="filter-group">
+                    <input type="text" id="tasks-search" placeholder="Search analysis name…" class="tasks-search-input">
+                </div>
+                <div class="filter-group">
+                    <button id="tasks-filter-reset" title="Reset all filters">Reset</button>
+                </div>
             </div>
-        </div>
-        </div><!-- /view-local -->
+            <div id="tasks-table-container">
+                <table id="tasks-table" class="cluster-tasks-table">
+                    <thead>
+                        <tr>
+                            <th data-col="node">Node <span class="sort-icon"></span></th>
+                            <th data-col="id">ID <span class="sort-icon"></span></th>
+                            <th data-col="queue">Queue <span class="sort-icon"></span></th>
+                            <th data-col="task_slots">Slots <span class="sort-icon"></span></th>
+                            <th data-col="state">State <span class="sort-icon"></span></th>
+                            <th data-col="times">Time <span class="sort-icon"></span></th>
+                            <th data-col="run_name">Analysis Name <span class="sort-icon"></span></th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tasks-body"></tbody>
+                </table>
+            </div>
+        </div><!-- /view-tasks -->
 
-        <!-- ── Cluster view ────────────────────────────────────────────── -->
+        <!-- ── Cluster view ────────────────────────────────────────── -->
         <div id="view-cluster" style="display:none">
-
             <div id="cluster-summary-container">
                 <h2>Cluster Resources</h2>
                 <div id="cluster-summary-content">
                     <p class="cluster-loading">Loading…</p>
                 </div>
             </div>
+        </div><!-- /view-cluster -->
 
-            <div id="cluster-tasks-container">
-                <h2>Cluster Tasks</h2>
-                <div id="cluster-tasks-content">
-                    <p class="cluster-loading">Loading…</p>
-                </div>
+        <!-- ── Launch Analysis view ────────────────────────────────── -->
+        <div id="view-launch" style="display:none">
+            <h2>Launch Analysis</h2>
+            <div class="launch-sub-tabs">
+                <button class="launch-sub-tab-btn active" id="launch-tab-run">Run</button>
+                <button class="launch-sub-tab-btn" id="launch-tab-advanced">Advanced (JSON)</button>
             </div>
 
-        </div><!-- /view-cluster -->
+            <div id="launch-view-run">
+                <form id="analysis-form-run">
+                    <div class="form-row">
+                        <label for="run-name-input">STARK Run name</label>
+                        <input type="text" id="run-name-input" placeholder="MY_RUN">
+                    </div>
+                    <div class="launch-row">
+                        <button type="submit">Launch</button>
+                    </div>
+                </form>
+            </div>
+
+            <div id="launch-view-advanced" style="display:none">
+                <form id="analysis-form-advanced">
+                    <textarea id="json-input" placeholder='{"run":"MY_RUN", "queue":"light", "threads":2}'></textarea>
+                    <div class="launch-row">
+                        <button type="submit">Launch</button>
+                    </div>
+                </form>
+            </div>
+
+            <div id="launch-result" style="display:none">
+                <div id="launch-result-content"></div>
+            </div>
+        </div><!-- /view-launch -->
+
+        <!-- ── Archives view ───────────────────────────────────────── -->
+        <div id="view-archives" style="display:none">
+            <div id="archives-header-row">
+                <h2>Archives</h2>
+            </div>
+            <div id="archives-filters">
+                <div class="filter-group" id="archives-filter-nodes-group" style="display:none">
+                    <span class="filter-label">Node</span>
+                    <span id="archives-filter-nodes-container"></span>
+                </div>
+                <div class="filter-group" id="archives-filter-queues-group" style="display:none">
+                    <span class="filter-label">Queue</span>
+                    <span id="archives-filter-queues-container"></span>
+                </div>
+                <div class="filter-group" id="archives-filter-status-group">
+                    <span class="filter-label">Status</span>
+                    <span id="archives-filter-status-container"></span>
+                </div>
+                <div class="filter-group">
+                    <input type="text" id="archives-search" placeholder="Search analysis name…" class="tasks-search-input">
+                </div>
+                <div class="filter-group">
+                    <button id="archives-filter-reset" title="Reset all filters">Reset</button>
+                </div>
+                <div class="filter-group">
+                    <button id="archives-refresh-btn" title="Refresh archives">Refresh</button>
+                </div>
+            </div>
+            <div id="archives-content">
+                <p class="cluster-loading">Loading…</p>
+            </div>
+        </div><!-- /view-archives -->
 
     </div>
 

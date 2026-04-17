@@ -82,7 +82,9 @@ def _iter_queue_tasks(queue_name: str, cfg: dict, is_default: bool) -> list:
                     if data["elevel"].strip() == "0"
                     else (
                         "FAILED: " + data["elevel"].strip()
-                        if data["elevel"].isdigit()
+                        if data[
+                            "elevel"
+                        ].strip()  # any non-zero, non-empty → failed (handles "signal:15" etc.)
                         else ""
                     )
                 ),
@@ -144,26 +146,101 @@ async def list_task():
         if not _queue_daemon_is_active(queue_name, cfg, is_default):
             continue
         tasks = _iter_queue_tasks(queue_name, cfg, is_default)
-        for t in tasks:
-            all_tasks.append(
-                {
-                    "id": int(t["id"]),
-                    "state": t["state"],
-                    "elevel": (
-                        int(t["elevel"])
-                        if t["elevel"].isdigit()
-                        else None
-                    ),
-                    "times": (
-                        float(t["times"].split("/")[0]) if t["times"] != "" else None
-                    ),
-                    "run_name": t["run_name"],
-                    "queue": t["queue"],
-                    "task_slots": t["task_slots"],
-                    "queue_slots": t["queue_slots"],
-                }
-            )
-    return JSONResponse(content=all_tasks)
+        all_tasks.extend(tasks)
+
+    # Enrich times for running/finished tasks (same as /queue?action=list)
+    tasks_to_enrich = [
+        t for t in all_tasks if t["state"].lower() in ("running", "finished")
+    ]
+    if tasks_to_enrich:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+            executor.map(_enrich_task_times, tasks_to_enrich)
+
+    result = []
+    for t in all_tasks:
+        result.append(
+            {
+                "id": int(t["id"]),
+                "state": t["state"],
+                # elevel is already "SUCCESS" / "FAILED: X" / "" from _iter_queue_tasks
+                "elevel": t["elevel"] or None,
+                "times": (float(t["times"].split("/")[0]) if t["times"] else None),
+                "run_name": t["run_name"],
+                "queue": t["queue"],
+                "task_slots": t["task_slots"],
+                "queue_slots": t["queue_slots"],
+            }
+        )
+    return JSONResponse(content=result)
+
+
+@router.get("/archives")
+async def list_archives():
+    """List all historical tasks based on .json parameter files in the log folder.
+
+    Each entry is built from the `.json` parameter file written at task submission
+    time and the companion `.info` file written at task completion.
+
+    Returns up to 1000 most recent entries (by file modification time, newest first).
+    """
+    import glob as _glob
+
+    pattern = os.path.join(docker_stark_api_log_folder, "STARK.*.json")
+    files = sorted(_glob.glob(pattern), key=os.path.getmtime, reverse=True)
+
+    max_entries = 1000
+
+    result = []
+    for json_path in files[:max_entries]:
+        base = os.path.splitext(os.path.basename(json_path))[0]
+        info_path = json_path.replace(".json", ".info")
+
+        # Parse run_name from filename (-NAME-<run_name>)
+        m = re.search(r"-NAME-(.+)$", base)
+        run_name = m.group(1) if m else base
+
+        # Read original parameters
+        try:
+            with open(json_path, "r", errors="replace") as f:
+                params = json.load(f)
+        except Exception:
+            params = {}
+
+        # Queue
+        queues_all = load_queues()
+        default_name_q = next(iter(queues_all))
+        queue = params.get("queue", default_name_q)
+
+        # Threads
+        threads = params.get("threads")
+
+        # Determine status from .info file
+        status = "unknown"
+        if os.path.exists(info_path):
+            try:
+                with open(info_path, "r", errors="replace") as f:
+                    info_content = f.read().strip()
+                if info_content == "finished":
+                    status = "finished"
+                elif info_content == "failed":
+                    status = "failed"
+                else:
+                    status = info_content
+            except Exception:
+                status = "unknown"
+
+        result.append(
+            {
+                "analysis_id_name": base,
+                "run_name": run_name,
+                "queue": queue,
+                "threads": threads,
+                "status": status,
+                "mtime": os.path.getmtime(json_path),
+            }
+        )
+
+    return JSONResponse(content=result)
 
 
 @router.get("/queue")
@@ -312,7 +389,14 @@ async def queue_action(
             check=False,
             timeout=10,
         )
-        return PlainTextResponse(result.stdout if result.stdout else result.stderr)
+        if result.returncode != 0:
+            return PlainTextResponse(
+                result.stderr or f"Command failed (exit {result.returncode})",
+                status_code=500,
+            )
+        return PlainTextResponse(
+            result.stdout or f"OK ({action}#{id})", status_code=200
+        )
     except subprocess.TimeoutExpired:
         return PlainTextResponse("Command timed out.", status_code=504)
     except FileNotFoundError:
