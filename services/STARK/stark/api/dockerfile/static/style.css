@@ -357,6 +357,7 @@ pre {
     background-color: #f8f9fa;
     border: 1px solid #dddfe2;
     position: relative;
+    display: block !important;
 }
 
 .btn-copy {
@@ -420,6 +421,19 @@ pre.inline-detail {
 #view-cluster {
     max-width: 1400px;
 }
+
+#cluster-refresh-btn {
+    margin-left: auto;
+    padding: 3px 10px;
+    font-size: 0.8em;
+    background: #fff;
+    border: 1px solid #aaa;
+    border-radius: 3px;
+    cursor: pointer;
+    color: #555;
+}
+#cluster-refresh-btn:hover { background: #eee; }
+
 
 /* ── Cluster sub-tabs (Resources | Tasks) ─────────────────────────────────── */
 .cluster-sub-tabs {
@@ -596,6 +610,18 @@ pre.inline-detail {
 }
 .tasks-search-input:focus { outline: 2px solid #007bff; border-color: #007bff; }
 
+#tasks-refresh-btn {
+    margin-left: auto;
+    padding: 3px 10px;
+    font-size: 0.8em;
+    background: #fff;
+    border: 1px solid #aaa;
+    border-radius: 3px;
+    cursor: pointer;
+    color: #555;
+}
+#tasks-refresh-btn:hover { background: #eee; }
+
 /* ── Archives header row ───────────────────────────────────────────────────── */
 #archives-header-row {
     display: flex;
@@ -605,16 +631,6 @@ pre.inline-detail {
 }
 #archives-header-row h2 { margin: 0; }
 
-/* #archives-refresh-btn {
-    padding: 0.3rem 0.8rem;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    background: #f8f9fa;
-    cursor: pointer;
-    font-size: 0.9em;
-    color: #555;
-}
-#archives-refresh-btn:hover { background: #e9ecef; } */
 #archives-refresh-btn {
     margin-left: auto;
     padding: 3px 10px;
@@ -625,7 +641,6 @@ pre.inline-detail {
     cursor: pointer;
     color: #555;
 }
-/* #archives-refresh-btn:hover { background: #e9ecef; } */
 #archives-refresh-btn:hover { background: #eee; }
 
 /* ── Launch Analysis sub-tabs ──────────────────────────────────────────────── */
@@ -682,4 +697,87 @@ pre.inline-detail {
     color: #555;
     flex-shrink: 0;
 }
+
+/* ── Modal styles ─────────────────────────────────────────────────────────── */
+
+#detailModal {
+    position: fixed;
+    top: 0; 
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.45);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 0px;
+    z-index: 9999;
+}
+
+/* --- MODAL BOX --- */
+#detailModal .modal-content {
+    background-color: white;
+    padding: 10px;
+    
+    width: 800px;
+    max-width: 90vw;
+
+    /* limit vertical height to avoid going off-screen */
+    max-height: 90vh;
+
+    display: flex;
+    flex-direction: column;
+}
+
+/* --- CLOSE BUTTON --- */
+#detailModal .close {
+    align-self: flex-end;
+    cursor: pointer;
+    font-size: 24px;
+}
+
+/* --- CONTENT WRAPPER --- */
+#detailBody {
+    width: 100%;
+    margin-top: 0px;
+}
+
+.detail-modal {
+    padding: 0;
+    background-color: #f8f9fa;
+    border: 0px solid #dddfe2;
+    position: relative;
+    display: block !important;
+}
+
+.btn-copy-modal {
+    position: absolute;
+    top: 6px;
+    right: 10px;
+    padding: 2px 8px;
+    font-size: 0.75em;
+    background-color: #e9ecef;
+    color: #1e1e1e;
+    border: 1px solid #ced4da;
+    cursor: pointer;
+    z-index: 1;
+}
+
+.btn-copy-modal:hover {
+    background-color: #ced4da;
+}
+
+/* --- TERMINAL STYLE --- */
+
+.terminal {
+    background-color: #1e1e1e;
+    color: #d4d4d4;
+    font-family: "Fira Code", "Consolas", monospace;
+    font-size: 10px;
+    padding: 10px;
+
+    max-height: 60vh;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
 }

@@ -28,6 +28,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ── Utilities ─────────────────────────────────────────────────────────────
 
+    function capitalize(s) {
+        return s && s.length > 0
+            ? s[0].toUpperCase() + s.slice(1)
+            : s;
+    }
+
     function formatTime(v) {
         if (v == null || v === '') return '';
         const secs = typeof v === 'number' ? v : parseFloat(String(v).split('/')[0]);
@@ -50,9 +56,17 @@ document.addEventListener('DOMContentLoaded', () => {
     function stateClass(stateLC, elevel) {
         if (stateLC === 'running')  return 'state-running';
         if (stateLC === 'queued')   return 'state-queued';
+        if (stateLC === 'failed')   return 'state-finished-failed';
         if (stateLC === 'finished')
             return (elevel && elevel.startsWith('FAILED')) ? 'state-finished-failed' : 'state-finished-success';
         return '';
+    }
+
+    function stateAdjust(stateLC, elevel) {
+        if (stateLC === 'finished' && elevel && elevel.startsWith('FAILED'))
+            return 'failed';
+        else
+            return stateLC;
     }
 
     // ── Reusable multi-select dropdown ────────────────────────────────────────
@@ -125,17 +139,74 @@ document.addEventListener('DOMContentLoaded', () => {
         return row;
     }
 
+    function buildDetailContent(key, content) {
+        const container = document.createElement('div');
+        container.classList.add('detail-modal');
+
+        // Lisible width + padding for better readability, especially on large screens
+        container.style.maxWidth = '80vw';
+        container.style.padding = '0px';
+
+        const copyBtn = document.createElement('button');
+        copyBtn.textContent = 'Copy';
+        copyBtn.className = 'btn-copy-modal';
+        copyBtn.style.marginBottom = '10px';
+
+        copyBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(content).then(() => {
+                copyBtn.textContent = '\u2713 Copied';
+                setTimeout(() => copyBtn.textContent = 'Copy', 1500);
+            });
+        });
+
+        const pre = document.createElement('pre');
+        pre.className = 'terminal';
+        pre.textContent = content;
+
+        // Scroll + word break and wrap for long content
+        pre.style.maxHeight = '60vh';
+        pre.style.overflow = 'auto';
+        pre.style.whiteSpace = 'pre-wrap';
+        pre.style.wordBreak = 'break-word';
+
+        container.appendChild(copyBtn);
+        container.appendChild(pre);
+
+        return container;
+    }
+
+    function openModal(contentNode) {
+        const modal = document.getElementById('detailModal');
+        const body = document.getElementById('detailBody');
+
+        body.innerHTML = ''; // reset
+        body.appendChild(contentNode);
+
+        modal.style.display = 'flex';
+    }
+
+    document.getElementById('detailClose').onclick = () => {
+        document.getElementById('detailModal').style.display = 'none';
+    };
+
     async function toggleDetail(openMap, row, fetchUrl, key) {
-        const existing = row.nextElementSibling;
-        if (existing && existing.classList.contains('detail-row')) {
-            existing.remove(); openMap.delete(key); return;
+        if (openMap.has(key)) {
+            openMap.delete(key);
+            document.getElementById('detailModal').style.display = 'none';
+            return;
         }
+
         try {
             const resp = await fetch(fetchUrl, { headers: { Authorization: `Bearer ${token}` } });
             const content = await resp.text();
             openMap.set(key, content);
-            row.insertAdjacentElement('afterend', buildDetailRow(key, content));
-        } catch (_) {}
+
+            // 👉 ici tu réutilises ta logique existante
+            openModal(buildDetailContent(key, content));
+
+        } catch (err) {
+            console.error(err);
+        }
     }
 
     // ── Sort helpers ──────────────────────────────────────────────────────────
@@ -143,7 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return [...tasks].sort((a, b) => {
             let va = a[col], vb = b[col];
             if (col === 'state') {
-                const ord = { running: 0, queued: 1, waiting: 2, finished: 3 };
+                const ord = { running: 0, queued: 1, waiting: 2, finished: 3, failed: 4 };
                 va = ord[String(va).toLowerCase()] ?? 4;
                 vb = ord[String(vb).toLowerCase()] ?? 4;
             } else if (['id', 'task_slots', 'times'].includes(col)) {
@@ -284,13 +355,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 tasksQueueDd = buildDropdown('tasks-filter-queues-container', queues, null, renderTasksTable, 'All queues');
         }
         if (!tasksStateDd)
-            tasksStateDd = buildDropdown('tasks-filter-states-container', ['running', 'queued', 'finished'], null, renderTasksTable, 'All states');
+            tasksStateDd = buildDropdown('tasks-filter-states-container', ['running', 'queued', 'finished', 'failed'], null, renderTasksTable, 'All states');
     }
 
     function applyTasksFilters(tasks) {
         const nodes  = tasksNodeDd  ? tasksNodeDd.getSelected()  : null;
         const queues = tasksQueueDd ? tasksQueueDd.getSelected() : null;
-        const states = tasksStateDd ? tasksStateDd.getSelected() : ['running', 'queued', 'finished'];
+        const states = tasksStateDd ? tasksStateDd.getSelected() : ['running', 'queued', 'finished', 'failed'];
         const search = (document.getElementById('tasks-search')?.value || '').toLowerCase();
         return tasks.filter(t => {
             if (nodes  && !nodes.includes(t.node  || ''))                      return false;
@@ -324,15 +395,23 @@ document.addEventListener('DOMContentLoaded', () => {
         sorted.forEach(task => {
             const stateLC = (task.state || '').toLowerCase();
             const cls     = stateClass(stateLC, task.elevel);
+            task.state = stateAdjust(stateLC, task.elevel);
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td title="${task.node_url || ''}">${task.node || '\u2014'}</td>
+                <!-- <td title="${task.node} - ${task.node_url || ''}">${task.node || '\u2014'}</td> -->
+                <td title="${task.node} - ${task.node_url || ''}">
+                    ${task.node
+                        ? (task.node.length > 10 ? task.node.slice(0, 7) + '...' : task.node)
+                        : '\u2014'}
+                </td>
                 <td>${task.id ?? ''}</td>
                 <td>${task.queue || ''}</td>
                 <td class="task-slots-cell">${task.task_slots != null ? task.task_slots + ' / ' + task.queue_slots : '\u2014'}</td>
                 <td class="${cls}" title="${task.elevel || ''}">${task.state || ''}</td>
                 <td>${formatTime(task.times)}</td>
-                <td>${task.run_name || ''}</td>
+                <td title="${task.run_name || ''}">
+                    ${task.run_name ? (task.run_name.length > 50 ? task.run_name.slice(0, 47) + '...' : task.run_name) : '\u2014'}
+                </td>
             `;
             const actionTd = document.createElement('td');
             actionTd.className = 'action-buttons';
@@ -340,15 +419,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 running:  [['I', 'info'], ['L', 'log'], ['A', 'analysis'], ['K', 'kill']],
                 queued:   [['I', 'info'], ['L', 'log'], ['A', 'analysis'], ['P', 'prioritize'], ['X', 'remove']],
                 finished: [['I', 'info'], ['L', 'log'], ['A', 'analysis'], ['R', 'relaunch'], ['X', 'remove']],
+                failed:   [['I', 'info'], ['L', 'log'], ['A', 'analysis'], ['R', 'relaunch'], ['X', 'remove']],
             };
             (btnDefs[stateLC] || [['I', 'info'], ['L', 'log'], ['A', 'analysis']]).forEach(([label, act]) => {
                 const isDanger = ['kill', 'prioritize', 'remove', 'relaunch'].includes(act);
                 if (isDanger && !isAdmin) return;
                 const btn = document.createElement('button');
                 btn.textContent = label;
-                btn.title = `${act} #${task.id} [${task.queue || 'default'}] on ${task.node || task.node_url}`;
+                btn.title = `${capitalize(act)} '${task.run_name}'`;
                 if (isDanger) btn.classList.add('btn-danger');
                 if (['info', 'log', 'analysis'].includes(act)) {
+                    btn.title += ` [#${task.id}] on node '${task.node || task.node_url}' and queue '${task.queue || 'default'}'`;
                     btn.addEventListener('click', () => {
                         const key    = `${task.node_url}::${task.queue}::${task.id}::${act}`;
                         const params = new URLSearchParams({ node_url: task.node_url, action: act, id: String(task.id) });
@@ -356,8 +437,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         toggleDetail(tasksOpenDetails, tr, `/cluster/proxy/queue?${params}`, key);
                     });
                 } else {
+                    if (act === 'relaunch') {
+                        btn.title += ` on queue '${task.queue || 'default'}'`;
+                    } else {
+                        btn.title += ` [#${task.id}] on node '${task.node || task.node_url}' and queue '${task.queue || 'default'}'`;
+                    }
                     btn.addEventListener('click', async () => {
-                        if (!confirm(`${act.toUpperCase()} task #${task.id} [${task.queue || 'default'}] on ${task.node}?`)) return;
+                        if (!confirm(`${capitalize(act)} '${task.run_name}' [#${task.id}] on queue '${task.queue || 'default'}' on node '${task.node || task.node_url}'?`)) return;
                         btn.disabled = true; btn.textContent = '\u2026';
                         let ok = false;
                         try {
@@ -652,6 +738,13 @@ document.addEventListener('DOMContentLoaded', () => {
         el.innerHTML = ''; el.appendChild(table);
     }
 
+    // Attach event listeners for archives tab
+    document.getElementById('tasks-refresh-btn')?.addEventListener('click', fetchAllTasks);
+
+    // Cluster summary is less volatile, so no auto-refresh, only manual
+    document.getElementById('cluster-refresh-btn')?.addEventListener('click', fetchClusterSummary);
+
+    // Archives can be heavy to load, so no auto-refresh, only manual
     document.getElementById('archives-refresh-btn')?.addEventListener('click', fetchArchives);
     document.getElementById('archives-filter-reset')?.addEventListener('click', () => {
         archivesNodeDd?.resetAll(); archivesQueueDd?.resetAll(); archivesStatusDd?.resetAll();

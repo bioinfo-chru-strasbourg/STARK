@@ -156,12 +156,21 @@ async def list_task():
         with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
             executor.map(_enrich_task_times, tasks_to_enrich)
 
+    # return (elevel && elevel.startsWith('FAILED')) ? 'state-finished-failed' : 'state-finished-success';
+
     result = []
     for t in all_tasks:
         result.append(
             {
                 "id": int(t["id"]),
-                "state": t["state"],
+                # "state": t["state"],
+                "state": (
+                    "failed"
+                    if t["state"].lower() == "finished"
+                    and t["elevel"]
+                    and t["elevel"].startswith("FAILED")
+                    else t["state"].lower()
+                ),
                 # elevel is already "SUCCESS" / "FAILED: X" / "" from _iter_queue_tasks
                 "elevel": t["elevel"] or None,
                 "times": (float(t["times"].split("/")[0]) if t["times"] else None),

@@ -55,6 +55,9 @@
                 <div class="filter-group">
                     <button id="tasks-filter-reset" title="Reset all filters">Reset</button>
                 </div>
+                <div class="filter-group">
+                    <button id="tasks-refresh-btn" title="Refresh tasks">Refresh</button>
+                </div>
             </div>
             <div id="tasks-table-container">
                 <table id="tasks-table" class="cluster-tasks-table">
@@ -79,6 +82,9 @@
         <div id="view-cluster" style="display:none">
             <div id="cluster-summary-container">
                 <h2>Cluster Resources</h2>
+                <div class="filter-group">
+                    <button id="cluster-refresh-btn" title="Refresh cluster">Refresh</button>
+                </div>
                 <div id="cluster-summary-content">
                     <p class="cluster-loading">Loading…</p>
                 </div>
@@ -122,7 +128,7 @@
         <!-- ── Archives view ───────────────────────────────────────── -->
         <div id="view-archives" style="display:none">
             <div id="archives-header-row">
-                <h2>Archives</h2>
+                <h2>Archived Analyses</h2>
             </div>
             <div id="archives-filters">
                 <div class="filter-group" id="archives-filter-nodes-group" style="display:none">
@@ -152,6 +158,13 @@
             </div>
         </div><!-- /view-archives -->
 
+    </div>
+
+    <div id="detailModal" style="display:none;">
+    <div class="modal-content">
+        <span id="detailClose" class="close">X</span>
+        <div id="detailBody"></div>
+    </div>
     </div>
 
     <script src="/static/script.js?v={{ version }}"></script>
