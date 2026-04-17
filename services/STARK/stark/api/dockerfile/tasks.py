@@ -128,6 +128,9 @@ def queue_analysis(json_input: dict) -> str:
     threads = (_task_slots == 0) and _max_slots or _task_slots
     json_input["threads"] = threads
 
+    # Remove "queue" from the JSON passed to the container, as it's only relevant for the host-side task scheduling.
+    json_input.pop("queue", None)
+
     with open(analysis_file, "w") as f:
         f.write(json.dumps(json_input))
 
