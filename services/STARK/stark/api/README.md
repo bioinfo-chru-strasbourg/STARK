@@ -235,11 +235,13 @@ Several STARKUB instances can be linked together into a lightweight cluster. Eac
 
 1. Each node holds a `config/peers.json` listing all known nodes (including itself, optionally).
 2. When a `POST /analysis` request arrives and the node is **not** already handling a forwarded request, it collects queue metrics from all reachable peers and from itself.
-3. It picks the **best peer** — the one with the most available slots for the requested queue — using the score formula:
+3. It picks the **best peer** — the one with the most available slots for the requested queue — using the prioritize method:
 
-    ```py
-    score = configured_slots − running_slots − queued_slots - requested
-    ```
+    - calculate delta as overload distance: `delta = available - requested`
+    - First classify peers by capability: can this peer satisfy the request (delta >= 0) or not (delta < 0)?
+    - Among capable peers, prefer those that are not overloaded (delta < 0) over those that are (delta >= 0).
+    - Then minimize overload (negative delta) or waste (positive delta).
+    - Penalize overload more heavily than waste by making it a primary sorting key.
 
 4. If the best peer is a remote node, the request is **transparently forwarded** (`httpx`) with the `X-STARK-Forwarded: 1` header to prevent routing loops.
 5. If the best peer cannot be reached, the node falls back to **local execution**.
