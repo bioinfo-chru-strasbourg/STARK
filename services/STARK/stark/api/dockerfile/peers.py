@@ -262,31 +262,77 @@ def compute_best_peer(
     Score = configured - running - queued  (higher → more slots available).
     Returns None if all_metrics is empty.
     """
+
+    # If no metrics, return None to run locally
     if not all_metrics:
         return None
 
+    # Extract requested slots from input, default to 0 (no specific requirement)
+    requested_slots = json_input.get("threads")
+
+    # Determine max_slots across cluster for this queue to use as a fallback when requested_slots is not specified or exceeds max capacity.
+    max_slots = max(
+        q.get(queue_name, {}).get("configured", 0) for q in all_metrics.values()
+    )
+
+    # fallback = max capacity across cluster
+    if requested_slots is None or requested_slots > max_slots:
+        requested_slots = max_slots
+
+    # Track best peer and its priority tuple for comparison
     best_url: Optional[str] = None
-    best_score: Optional[int] = None
+    best_priority: Optional[tuple] = None
 
     for url, queues in all_metrics.items():
+
         # Get metrics for the requested queue
         q = queues.get(queue_name, {})
+
         # If queue not configured on that peer, consider it unavailable for that peer (score = -inf)
         if not q or q.get("configured", 0) <= 0:
             continue
-        # Calculate score based on configured slots minus running and queued slots
-        score = q.get("configured", 0) - q.get("running", 0) - q.get("queued", 0)
-        # Score considering threads / requested slots
-        # lower distance => better because it means the peer has just enough free slots for the task, without much overprovisioning
-        requested_slots = _resolve_task_slots(json_input, q.get("configured", 0))
-        score_distance = score - requested_slots
-        # Priority : positifs > negatifs, then closer to 0
-        # priority = (score_distance <= 0, abs(score_distance))
-        priority = (score_distance < 0, abs(score_distance))
 
-        if best_score is None or priority < best_score:
-            best_score = priority
+        # Extract metrics for easier readability
+        configured = q.get("configured", 0)
+        running = q.get("running", 0)
+        queued = q.get("queued", 0)
+
+        # Calculate score based on configured slots minus running and queued slots
+        available = configured - running - queued
+
+        # overload distance (can be negative)
+        delta = available - requested_slots
+
+        # PRIORITY DESIGN
+        # 1. First classify peers by capability: can this peer satisfy the request (delta >= 0) or not (delta < 0)?
+        # 2. Among capable peers, prefer those that are not overloaded (delta < 0) over those that are (delta >= 0).
+        # 3. Then minimize overload (negative delta) or waste (positive delta).
+        # 4. Penalize overload more heavily than waste by making it a primary sorting key.
+
+        is_capable = configured >= requested_slots
+        is_overloaded = delta < 0
+        overload_penalty = abs(delta) if is_overloaded else 0
+        slack_penalty = delta if delta > 0 else 0
+
+        # final score:
+        priority = (
+            not is_capable,  # True (good) > False (bad)
+            is_overloaded,  # False (good) < True (bad)
+            overload_penalty,  # minimize overload
+            slack_penalty,  # minimize wasted slots
+        )
+
+        if best_priority is None or priority < best_priority:
+            best_priority = priority
             best_url = url
+
+    if best_url is None:
+        # Choose first peer with the queue configured, even if it has no free slots (best effort)
+        for url, queues in all_metrics.items():
+            q = queues.get(queue_name, {})
+            if q and q.get("configured", 0) > 0:
+                best_url = url
+                break
 
     return best_url
 
