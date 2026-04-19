@@ -1,8 +1,8 @@
-# STARK API
+# STARKUB
 
 A **FastAPI**-based web service for launching and monitoring [STARK](https://github.com/bioinfo-chru-strasbourg/STARK) bioinformatics analyses via a task queue ([task-spooler](https://github.com/thomaspreece/task-spooler)) and Docker.
 
-![STARK API dashboard](images/analyses.png)
+![STARKUB dashboard](images/analyses.png)
 
 ---
 
@@ -33,25 +33,25 @@ A **FastAPI**-based web service for launching and monitoring [STARK](https://git
 
 Show activity, with all analyses launched in nodes and queues, with requested number of slots, state of the analysis, and available actions.  
 
-![STARK API Analyses](images/analyses.png)
+![STARKUB Analyses](images/analyses.png)
 
 ### Launch
 
 Launch an analysis, through STARK run name or a JSON parmeter.
 
-![STARK API Launch](images/launch.png)
+![STARKUB Launch](images/launch.png)
 
 ### Cluster
 
 Summary of cluster resources, with all nodes (online or offline), available queues and associated slots.
 
-![STARK API Cluster](images/cluster.png)
+![STARKUB Cluster](images/cluster.png)
 
 ### Archives
 
 List of archived analyses, with information about queue, requested slots and date of request.
 
-![STARK API Archives](images/archives.png)
+![STARKUB Archives](images/archives.png)
 
 ---
 
@@ -71,7 +71,7 @@ List of archived analyses, with information about queue, requested slots and dat
 
 ## Directory layout
 
-```
+```bash
 dockerfile/
 ├── app.py               # FastAPI entry point (router wiring only)
 ├── config.py            # All constants and environment variables
@@ -101,7 +101,6 @@ dockerfile/
 ├── images/
     ├── api.png
     └── cluster.png
-STARK.env                # Environment variable defaults
 README.md
 ```
 
@@ -129,6 +128,7 @@ All settings are passed as **environment variables** (e.g. via `docker-compose` 
 | `STARK_API_SELF_URL` | _(empty)_ | This node's own public URL (e.g. `http://node1:4200`). Used by the cluster orchestrator to identify which peer is self, avoid forwarding loops, and display the correct node in the cluster view. If not set, the node tries to auto-discover itself by querying each peer's `/whoami` endpoint. **Strongly recommended when using a multi-node setup.** |
 
 Example `STARK.env`:
+
 ```env
 STARK_API_KEY=my_secret_key
 STARK_API_REFRESH_INTERVAL=60
@@ -195,19 +195,30 @@ Example `config/queues.json`:
 Command
 
 ```json
-{ "command": "sleep 10 && echo 'Hello World!'", "queue": "light" }
+{ 
+  "command": "sleep 10 && echo 'Hello World!'",
+  "queue": "light" 
+}
 ```
 
 Command with Docker
 
 ```json
-{"command_docker": "sleep 10 && echo 'Hello Wolrd! From docker...", "image": "alpine", "analysis_name": "cmd_docker", "queue": "medium"}
+{
+  "command_docker": "sleep 10 && echo 'Hello Wolrd! From docker...", 
+  "image": "alpine", 
+  "analysis_name": "cmd_docker",
+  "queue": "medium"
+}
 ```
 
 STARK command does not need queue, the first queue is selected.
 
 ```json
-{"run": "MY_TEST", "analysis_name": "MY_TEST_analysis"}
+{
+  "run": "MY_TEST",
+  "analysis_name": "MY_TEST_analysis"
+}
 ```
 
 If omitted, the first queue in `queues.json` is used.
@@ -216,9 +227,9 @@ If omitted, the first queue in `queues.json` is used.
 
 ## Cluster / Multi-node orchestration
 
-Several STARK API instances can be linked together into a lightweight cluster. Each node keeps its own queues and task-spooler daemons; the cluster layer adds **peer discovery**, **intelligent routing**, and **aggregated monitoring** — without any external coordinator.
+Several STARKUB instances can be linked together into a lightweight cluster. Each node keeps its own queues and task-spooler daemons; the cluster layer adds **peer discovery**, **intelligent routing**, and **aggregated monitoring** — without any external coordinator.
 
-![STARK API cluster view](images/cluster.png)
+![STARKUB cluster view](images/cluster.png)
 
 ### How it works
 
@@ -226,9 +237,9 @@ Several STARK API instances can be linked together into a lightweight cluster. E
 2. When a `POST /analysis` request arrives and the node is **not** already handling a forwarded request, it collects queue metrics from all reachable peers and from itself.
 3. It picks the **best peer** — the one with the most available slots for the requested queue — using the score formula:
 
-   ```
-   score = configured_slots − running_slots − queued_slots
-   ```
+    ```py
+    score = configured_slots − running_slots − queued_slots - requested
+    ```
 
 4. If the best peer is a remote node, the request is **transparently forwarded** (`httpx`) with the `X-STARK-Forwarded: 1` header to prevent routing loops.
 5. If the best peer cannot be reached, the node falls back to **local execution**.
@@ -312,7 +323,9 @@ services:
       - ./config:/app/config
 ```
 
-All three nodes share the same `config/peers.json` via the mounted volume. Any node can accept requests and route them to the least-loaded peer.
+All three nodes share the same `config/peers.json` and `config/queues.json` via the mounted volume. Any node can accept requests and route them to the least-loaded peer considered the queues.
+Theses nodes can be configured separatly, especially to configure queues with differents `config/queues.json`.
+Theses services can be run on multiple servers (e.g. each noe on a different server to manage a cluster).
 
 ---
 
@@ -664,7 +677,7 @@ The dashboard is accessible at `http://localhost:8000/`.
 
 | Section | Description |
 |---|---|
-| **Header** | STARK API title, logged-in username (hover for groups), Logout button |
+| **Header** | STARKUB title, logged-in username (hover for groups), Logout button |
 | **Launch Analysis** | Run name field + Advanced JSON textarea. Visible to admins only. |
 | **Filter bar** | State dropdown (Running / Queued / Finished + **Failed only**) and Queue multi-select dropdown. Filters are client-side and instant. A **✕ Reset** button restores all defaults. |
 | **Task Queue** | Auto-refreshing table. Tasks sorted: running -> queued -> finished. |
@@ -711,7 +724,7 @@ Clicking **I**, **L**, or **A** opens an inline detail panel below the row. The 
 
 ### Cluster tab
 
-![STARK API cluster view](images/cluster.png)
+![STARKUB cluster view](images/cluster.png)
 
 Displays aggregated information from all nodes defined in `config/peers.json`.
 

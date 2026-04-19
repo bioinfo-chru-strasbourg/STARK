@@ -2,6 +2,7 @@
 
 from fastapi import FastAPI  # pyright: ignore[reportMissingImports]
 from fastapi.staticfiles import StaticFiles  # pyright: ignore[reportMissingImports]
+from fastapi.responses import FileResponse  # pyright: ignore[reportMissingImports]
 
 from routers import auth, ui, analysis, cluster
 from routers import queue as queue_router
@@ -9,6 +10,13 @@ from config import local_port
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+
+# Temporary route for favicon
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    return FileResponse("static/favicon.ico")
+
 
 app.include_router(auth.router)
 app.include_router(ui.router)
