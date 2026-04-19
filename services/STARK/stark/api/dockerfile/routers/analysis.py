@@ -114,7 +114,7 @@ async def stark_launch(
         self_url = get_self_url()
         if self_url:
             peers_metrics[self_url] = get_local_metrics()
-        target = compute_best_peer(queue_name, peers_metrics)
+        target = compute_best_peer(queue_name, peers_metrics, json_input)
 
         if target:
             try:
@@ -185,7 +185,7 @@ async def relaunch_task(
         self_url = get_self_url()
         if self_url:
             peers_metrics[self_url] = get_local_metrics()
-        target = compute_best_peer(queue_name, peers_metrics)
+        target = compute_best_peer(queue_name, peers_metrics, json_input)
 
         if target:
             try:

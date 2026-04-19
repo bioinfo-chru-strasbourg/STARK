@@ -37,7 +37,8 @@ logger = logging.getLogger(__name__)
 
 from config import PEERS_FILE, STARK_API_KEY, STARK_API_SELF_URL, shell, ts
 from queues import _queue_daemon_is_active, _resolve_queue_socket, load_queues
-from tasks import _read_task_slots
+from tasks import _read_task_slots, _resolve_task_slots
+
 # from routers.cluster import whoami  # pyright: ignore[reportMissingImports]
 
 # ---------------------------------------------------------------------------
@@ -252,7 +253,10 @@ async def get_peers_metrics() -> dict:
 # Scoring
 # ---------------------------------------------------------------------------
 
-def compute_best_peer(queue_name: str, all_metrics: dict) -> Optional[str]:
+
+def compute_best_peer(
+    queue_name: str, all_metrics: dict, json_input: dict
+) -> Optional[str]:
     """Return the URL of the node with the most capacity for queue_name.
 
     Score = configured - running - queued  (higher → more slots available).
@@ -268,13 +272,20 @@ def compute_best_peer(queue_name: str, all_metrics: dict) -> Optional[str]:
         # Get metrics for the requested queue
         q = queues.get(queue_name, {})
         # If queue not configured on that peer, consider it unavailable for that peer (score = -inf)
-        if not q:
+        if not q or q.get("configured", 0) <= 0:
             continue
         # Calculate score based on configured slots minus running and queued slots
         score = q.get("configured", 0) - q.get("running", 0) - q.get("queued", 0)
-        # check if this peer has a better score than the best one found so far
-        if best_score is None or score > best_score:
-            best_score = score
+        # Score considering threads / requested slots
+        # lower distance => better because it means the peer has just enough free slots for the task, without much overprovisioning
+        requested_slots = _resolve_task_slots(json_input, q.get("configured", 0))
+        score_distance = score - requested_slots
+        # Priority : positifs > negatifs, then closer to 0
+        # priority = (score_distance <= 0, abs(score_distance))
+        priority = (score_distance < 0, abs(score_distance))
+
+        if best_score is None or priority < best_score:
+            best_score = priority
             best_url = url
 
     return best_url
