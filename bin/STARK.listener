@@ -66,6 +66,7 @@ function usage {
 	echo "#                                          Default: 'DOCKER'";
 	echo "# --launcher=<STRING>                      Launcher URI (for command 'LAUNCH')";
 	echo "#                                          Default: 'http://localhost:8000/analysis'";
+	echo "# --default_threads=<INT>                  Default number of threads";
 	echo "# --docker-stark-image=<STRING>            Docker STARK image (for command 'DOCKER')";
 	echo "#                                          Default: environment";
 	echo "# --exec                                   Execute command";
@@ -86,7 +87,7 @@ function usage {
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
-ARGS=$(getopt -o "e:vdnh" --long "env:,app:,application:,input:,condition:,days:,log:,command:,launcher:,docker-stark-image:,exec,daemon,daemon-periodicity:,no_header,verbose,debug,release,help" -- "$@" 2> /dev/null)
+ARGS=$(getopt -o "e:vdnh" --long "env:,app:,application:,input:,condition:,days:,log:,command:,launcher:,default-threads:,docker-stark-image:,exec,daemon,daemon-periodicity:,no_header,verbose,debug,release,help" -- "$@" 2> /dev/null)
 
 if [ $? -ne 0 ]; then
 	:
@@ -137,6 +138,10 @@ do
 			;;
 		--launcher)
 			LAUNCHER="$2"
+			shift 2
+			;;
+		--default-threads)
+			DEFAULT_THREADS="$2"
 			shift 2
 			;;
 		--docker-stark-image)
@@ -293,8 +298,7 @@ if ((1)) && (($DEBUG)); then
 	echo "INPUT_FOLDER:$INPUT_FOLDER"
 	echo "CONDITION:$CONDITION"
 	echo "FOLDER_LOG:$FOLDER_LOG"
-	echo ""
-	echo ""
+	echo "DEFAULT_THREADS:$DEFAULT_THREADS"
 	echo ""
 	echo ""
 	echo "APP:$APP"
@@ -338,6 +342,7 @@ while ((1)); do
 			MD5_LOG="$FOLDER_LOG/$ID.log"
 			if [ -d $IFA ]; then
 				if [ ! -f $MD5_LOG ]; then
+					echo "LOCK: '$RUN_NAME' - folder '$IFA' [$MD5]" > $MD5_LOG # Lockfile
 					(($VERBOSE)) && echo "["$(timestamp)" | INFO] Analysis/Run '$RUN_NAME' - folder '$IFA' [$MD5]"
 					CONDITION_TEST=0
 					for C in $CONDITION; do
@@ -379,7 +384,12 @@ while ((1)); do
 						if [ "$COMMAND" == "LAUNCHER" ]; then
 							#CMD="curl -s -X POST -H 'Content-Type: application/json' -d '{\"run\":\"$IFA\"}' $LAUNCHER"
 							#CMD="curl -s -X POST -H 'Content-Type: application/json' -H \"Authorization: Bearer $TOKEN\" -d '{\"run\":\"$IFA\"}' $LAUNCHER"
-							CMD="curl -s -X POST -H 'Content-Type: application/json' -H \"X-API-Key: $STARK_API_KEY\" -d '{\"run\":\"$IFA\"}' $LAUNCHER"
+							JSON="{\"run\":\"$IFA\"}"
+							if [ ! -z "$DEFAULT_THREADS" ]; then
+								JSON="{\"run\":\"$IFA\", \"threads\":$DEFAULT_THREADS}"
+							fi;
+							#CMD="curl -s -X POST -H 'Content-Type: application/json' -H \"X-API-Key: $STARK_API_KEY\" -d '{\"run\":\"$IFA\"}' $LAUNCHER"
+							CMD="curl -s -X POST -H 'Content-Type: application/json' -H \"X-API-Key: $STARK_API_KEY\" -d '$JSON' $LAUNCHER"
 						elif [ "$COMMAND" == "DOCKER" ]; then
 							CMD="STARK --docker-stark-image=$DOCKER_STARK_IMAGE --docker-parameters='--rm;-d;--name=$ID' --run=$IFA"
 						elif [ "$COMMAND" == "STARK" ]; then
@@ -413,10 +423,13 @@ while ((1)); do
 
 							# chmod
 							chmod og+r $MD5_LOG
+						else
+							rm $MD5_LOG # UnLockfile
 						fi;
 					else
 						(($VERBOSE)) && echo "["$(timestamp)" | INFO] Analysis/Run '$RUN_NAME' - folder '$IFA' [$MD5] NOT TO LAUNCH"
 						#(($VERBOSE)) && echo "["$(timestamp)" | INFO] => DO NOT Launch analysis '$IFA' with command '$COMMAND'"
+						rm $MD5_LOG # UnLockfile
 					fi;
 				else
 					(($VERBOSE)) && echo "["$(timestamp)" | INFO] Analysis/Run '$RUN_NAME' - folder '$IFA' [$MD5] ALREADY LAUNCHED"

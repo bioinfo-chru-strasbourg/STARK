@@ -590,13 +590,112 @@ if (($APPLICATIONS_INFOS)); then
 	RAW_LIST="";
 	FOLDER_RUN_ORIGINAL=$FOLDER_RUN
 
+	# Specific Run
+	if [ "$RUNS_TEST" != "" ]; then
 
-	# Find APP list
-	if [ "$APP_TEST" == "" ]; then
-		FIND_APP_LIST=$(find -L $STARK_FOLDER_APPS -name '*.app' -type f | sed "s#$STARK_FOLDER_APPS/##" | sort -f -t'/' -k2.3 -k2.2 -k2.1)" "$(find -L $STARK_FOLDER_APPS -name '*.plugapp' -type f | sed "s#$STARK_FOLDER_APPS/##" | sort -f -t'/' -k2.3 -k2.2 -k2.1)
+		for RUN_TEST in $(echo $RUNS_TEST | tr "," " "); do
+
+		echo "";
+		echo "#[INFO] ### RUN '$RUN_TEST' ####";
+		RUN_TEST_FOUND=0;
+		MISEQ_FOLDER_FOUND="";
+
+		# Run as a path
+		if [ -d $RUN_TEST ]; then
+			RUN_TEST_FOUND=1;
+			MISEQ_FOLDER_FOUND=$(dirname $RUN_TEST);
+			RUN_TEST=$(basename $RUN_TEST)
+		fi;
+
+		# Run in SEQUENCER folder
+		if ((!$RUN_TEST_FOUND)); then
+			if [ -d $FOLDER_RUN_ORIGINAL/$RUN_TEST ]; then
+				RUN_TEST_FOUND=1;
+				MISEQ_FOLDER_FOUND=$FOLDER_RUN_ORIGINAL;
+			fi;
+		fi;
+
+		if ((!$RUN_TEST_FOUND)); then
+			for RAW_LIST_ONE in $RAW_LIST; do
+				if [ -d $RAW_LIST_ONE/$RUN_TEST ] && ((!$RUN_TEST_FOUND)); then
+					RUN_TEST_FOUND=1;
+					MISEQ_FOLDER_FOUND=$RAW_LIST_ONE;
+				fi;
+			done;
+		fi;
+
+		if ((!$RUN_TEST_FOUND)); then
+			echo "#[ERROR] RUN not found";
+			exit 1;
+		else
+			echo "#[INFO] RAW FOLDER $MISEQ_FOLDER_FOUND";
+		fi;
+
+		# Test SampleSheet to determine RUN_TEST possible Application/ENV
+		if [ -z $SAMPLESHEET_INPUT ]; then
+			SAMPLESHEET_INPUT=$MISEQ_FOLDER_FOUND/$RUN_TEST/SampleSheet.csv
+		fi;
+
+		if [ -e $SAMPLESHEET_INPUT ]; then
+
+			# Main informations
+			RUN_GROUP=`grep -i 'Investigator Name' $SAMPLESHEET_INPUT | tr -d '\r\n' | cut -d \, -f 2 | cut -d \- -f 1`
+			RUN_PROJECT=`grep -i 'Investigator Name' $SAMPLESHEET_INPUT | tr -d '\r\n' | cut -d \, -f 2 | cut -d \- -f 2`
+			RUN_USER=`grep -i 'Investigator Name' $SAMPLESHEET_INPUT | tr -d '\r\n' | cut -d \, -f 2 | cut -d \- -f 3`
+
+			# Check if in APP
+			# ANALYSIS TAG
+			ANALYSIS_TAG_SAMPLESHEET=$(grep "^Description" $SAMPLESHEET_INPUT | cut -d, -f2- | tr "," "!" | tr " " "!"  | tr -d '\r')
+			if [ "$ANALYSIS_TAG" == "" ]; then
+				ANALYSIS_TAG=$ANALYSIS_TAG_SAMPLESHEET
+			fi;
+
+			# MAIN APP extraction
+			MAIN_APP=$(extract_tag "$ANALYSIS_TAG" "APP" | tr " " "+")
+			# MAIN PLUGAPP extraction
+			MAIN_PLUGAPP=$(extract_tag "$ANALYSIS_TAG" "PLUGAPP" | tr " " "+")
+			[ "$MAIN_PLUGAPP" != "" ] && MAIN_APP=$MAIN_APP"+"$MAIN_PLUGAPP
+
+			# Main RUN APP NAME
+			RUN_APP_NAME="$MAIN_APP"
+
+			# RUN ENV
+			# ENV-AUTO in ENV allows looking for ENV depending on GROUP/PROJECT/USER
+			if [ -z "$RUN_APP_NAME" ]; then
+				RUN_APP_NAME="$RUN_GROUP-$RUN_PROJECT"
+			fi;
+			RUN_APP_NAME="$MAIN_APP"
+
+			# SOURCE ENV if exists
+			RUN_ENV=$(find_app "$RUN_APP_NAME" "$STARK_FOLDER_APPS")
+			if ! source_app "$RUN_APP_NAME" "$STARK_FOLDER_APPS"; then
+				echo "#[ERROR] Application '$RUN_APP_NAME' error";
+				exit 1
+			fi
+
+			RUN_APP=$(source $RUN_ENV; echo $APP_NAME)
+			if [ "$RUN_APP" == "" ]; then RUN_APP="default"; fi
+
+			echo "#[INFO] DEFAULT APPLICATION detection $RUN_APP";
+			FIND_APP_LIST=$(basename "$RUN_ENV")
+
+		else
+			echo "#[WARNNING] SAMPLESHEET '$SAMPLESHEET_INPUT' not found";
+		fi;
+
+		done;
+
 	else
-		FIND_APP_LIST=$(echo $APP_TEST_ENV | sed "s#$STARK_FOLDER_APPS/##gi")
+
+		# Find APP list
+		if [ "$APP_TEST" == "" ]; then
+			FIND_APP_LIST=$(find -L $STARK_FOLDER_APPS -name '*.app' -type f | sed "s#$STARK_FOLDER_APPS/##" | sort -f -t'/' -k2.3 -k2.2 -k2.1)" "$(find -L $STARK_FOLDER_APPS -name '*.plugapp' -type f | sed "s#$STARK_FOLDER_APPS/##" | sort -f -t'/' -k2.3 -k2.2 -k2.1)
+		else
+			FIND_APP_LIST=$(echo $APP_TEST_ENV | sed "s#$STARK_FOLDER_APPS/##gi")
+		fi;
+
 	fi;
+
 
 	# For each APP found
 	for ENV_DEF in $FIND_APP_LIST; do
@@ -687,76 +786,6 @@ if (($APPLICATIONS_INFOS)); then
 	done;
 	RAW_LIST=$(echo $RAW_LIST | sed "s/ /\n/gi" | sort | uniq | sed "s/\n/ /gi" );
 
-	if [ "$RUNS_TEST" != "" ]; then
-
-		for RUN_TEST in $(echo $RUNS_TEST | tr "," " "); do
-
-		echo "";
-		echo "#[INFO] ### RUN '$RUN_TEST' ####";
-		RUN_TEST_FOUND=0;
-		MISEQ_FOLDER_FOUND="";
-		if [ -d $FOLDER_RUN_ORIGINAL/$RUN_TEST ]; then
-			RUN_TEST_FOUND=1;
-			MISEQ_FOLDER_FOUND=$FOLDER_RUN_ORIGINAL;
-		fi;
-
-		if ((!$RUN_TEST_FOUND)); then
-		for RAW_LIST_ONE in $RAW_LIST; do
-			if [ -d $RAW_LIST_ONE/$RUN_TEST ] && ((!$RUN_TEST_FOUND)); then
-				RUN_TEST_FOUND=1;
-				MISEQ_FOLDER_FOUND=$RAW_LIST_ONE;
-			fi;
-		done;
-		fi;
-
-		if ((!$RUN_TEST_FOUND)); then
-			echo "#[ERROR] RUN not found";
-			exit 1;
-		else
-			echo "#[INFO] RAW FOLDER $MISEQ_FOLDER_FOUND";
-		fi;
-
-		# Test SampleSheet to determine RUN_TEST possible Application/ENV
-		if [ -z $SAMPLESHEET_INPUT ]; then
-			SAMPLESHEET_INPUT=$MISEQ_FOLDER_FOUND/$RUN_TEST/SampleSheet.csv
-		fi;
-
-		if [ -e $SAMPLESHEET_INPUT ]; then
-			RUN_GROUP=`grep -i 'Investigator Name' $SAMPLESHEET_INPUT | tr -d '\r\n' | cut -d \, -f 2 | cut -d \- -f 1`
-			RUN_PROJECT=`grep -i 'Investigator Name' $SAMPLESHEET_INPUT | tr -d '\r\n' | cut -d \, -f 2 | cut -d \- -f 2`
-			RUN_USER=`grep -i 'Investigator Name' $SAMPLESHEET_INPUT | tr -d '\r\n' | cut -d \, -f 2 | cut -d \- -f 3`
-			RUN_APP_NAME="$RUN_GROUP-$RUN_PROJECT"
-
-			# RUN ENV
-			# ENV-AUTO in ENV allows looking for ENV depending on GROUP/PROJECT/USER
-			RUN_ENV=$ENV;
-
-			# SOURCE ENV if exists
-			RUN_ENV=$(find_app "$RUN_APP_NAME" "$STARK_FOLDER_APPS")
-			if ! source_app "$RUN_APP_NAME" "$STARK_FOLDER_APPS"; then
-				echo "#[ERROR] Application '$RUN_APP_NAME' error";
-				exit 1
-			fi
-
-			RUN_APP=$(source $RUN_ENV; echo $APP_NAME)
-			if [ "$RUN_APP" == "" ]; then RUN_APP="default"; fi
-
-			echo "#[INFO] DEFAULT APPLICATION detection $RUN_APP";
-
-			awk '/Data/{y=1;next}y' $SAMPLESHEET_INPUT | tr -d '\r' | sed 's/,/\t/g' > $TMP_FOLDER_TMP/$RUN'_SampleSheet.csv_tmp'
-			SAMPLES_PROJECT_LIST=$( C=1; for i in $(head $TMP_FOLDER_TMP/$RUN'_SampleSheet.csv_tmp' -n 1) ; do if [ $i == "Sample_Project" ] ; then break ; else C=$(( $C + 1 )) ; fi ; done ; cut -f $C $TMP_FOLDER_TMP/$RUN'_SampleSheet.csv_tmp' | sort -u | sed 's/Sample_Project//' );
-			rm $TMP_FOLDER_TMP/$RUN'_SampleSheet.csv_tmp'
-			echo "#[INFO] List of APPLICATION: "$(echo $SAMPLES_PROJECT_LIST);
-			for SPL in $SAMPLES_PROJECT_LIST; do
-				echo "#[INFO] - '$SPL' ["$(find_app "$SPL" "$STARK_FOLDER_APPS" | sed s#$STARK_FOLDER_APPS#APP#)"]";
-			done;
-		else
-			echo "#[WARNNING] SAMPLESHEET '$SAMPLESHEET_INPUT' not found";
-		fi;
-
-		done;
-
-	fi;
 	echo "";
 
 	EXIT=1
