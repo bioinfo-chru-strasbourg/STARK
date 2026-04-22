@@ -2,70 +2,140 @@
 
 A **FastAPI**-based web service for launching and monitoring [STARK](https://github.com/bioinfo-chru-strasbourg/STARK) bioinformatics analyses via a task queue ([task-spooler](https://github.com/thomaspreece/task-spooler)) and Docker.
 
-![STARKUB dashboard](images/analyses.png)
-
 ---
 
 ## Features
 
 - **Web UI** - browser-based dashboard to launch analyses, monitor the task queue, inspect logs and results
-- **REST API** - JSON endpoints consumable by external services (e.g. `STARK.listener`)
+- **REST API** - JSON endpoints consumable by external services (e.g. listeners)
 - **Dual authentication** - JWT bearer tokens for human users + static API key (`X-API-Key`) for service-to-service calls
-- **Role-based access** - `admin` group required for destructive actions (kill, remove, prioritize, relaunch) and for launching new analyses
-- **Three task modes** - STARK analysis, custom Docker container command or raw shell command
+- **Role-based access** - `admin` group required for destructive or modification actions (kill, remove, prioritize, relaunch) and for launching new analyses
+- **Four task modes** - STARK analysis, custom Docker container command, custom Docker compose command or raw shell command
 - **Multiple named queues** - independent task-spooler daemons, each with its own concurrency setting, configurable via `config/queues.json`
 - **Multiple node cluster** - independent nodes on multiple servers, configurable via `config/peers.json`
-- **Live queue** - auto-refreshing task table (running -> queued -> finished) with per-queue context on every action
+- **Live queue** - auto-refreshing task table (running -> queued -> finished) with per-node and per-queue context on every action
 - **State colour coding** - running (orange), queued (grey), finished success (green), finished failed (red)
-- **Filter bar** - combined State dropdown (Running / Queued / Finished / Failed only) and Queue multi-select dropdown; instant client-side filtering with Reset button
-- **Inline detail panels** - Info / Log / Analysis JSON displayed inline, persisted across auto-refreshes, with one-click copy
-- **Time tracking** - elapsed time for running tasks (computed from `Start time`), final duration for finished tasks (from `Time run`)
+- **Filter bar** - combined State dropdown (Running / Queued / Finished / Failed only), and Node and Queue multi-select dropdown (and with Reset button)
+- **Inline detail panels** - Info / Log / Analysis JSON displayed, persisted across auto-refreshes, with one-click copy
+- **Time tracking** - elapsed time for running tasks, final duration for finished tasks
 - **Confirmation dialogs** - danger actions (Kill, Prioritize, Remove, Relaunch) require explicit confirmation before executing
-- **Visual feedback** - danger buttons show `✓ Done` / `✗ Failed` with colour flash after each action
-- **Relaunch** - re-queue a finished task from its original JSON parameters on its original queue
+- **Visual feedback** - danger buttons show `Done` / `Failed` with colour flash after each action
+- **Relaunch** - re-queue a finished task from its original JSON parameters on its original queue (but different node possible)
 - **Username display** - logged-in username shown next to the Logout button; group membership visible on hover
+- **Cluster monitoring** - cluster resources dashboard, showing usage and running, queued and available queues on online nodes
+- **Archives** - list of previous analyses stored as configuration files (not in live spooler), with status, date, queue and requested slots
 
 ---
 
-## Screenshots
+## Web UI
 
-### Analyses
+The dashboard is accessible at `http://server:8000/`, for any nodes.
 
-Show activity, with all analyses launched in nodes and queues, with requested number of slots, state of the analysis, and available actions.  
+The dashboard has four top-level tabs:
+
+- **Analyses** — Show activity, with all analyses launched in nodes and queues, with requested number of slots, state of the analysis, and available actions.
+- **Launch** — Launch an analysis, through STARK run name or a JSON parmeter.
+- **Cluster** — Summary of cluster resources, with all nodes (online or offline), available queues and associated slots.
+- **Archives** — List of archived analyses, with information about queue, requested slots and date of request.
+
+### Analysis tab
+
+Displays aggregated of all tasks from all nodes defined in `config/peers.json`.
 
 ![STARKUB Analyses](images/analyses.png)
 
-### Launch
+**State colour coding:**
 
-Launch an analysis, through STARK run name or a JSON parmeter.
+| State | Colour |
+| --- | --- |
+| `running` | Orange |
+| `queued` | Grey |
+| `finished` | Green |
+| `failed` | Red |
+
+**Action buttons per state:**
+
+| State | Buttons |
+| --- | --- |
+| `running` | I (Info), L (Log), A (Analysis), **K (Kill)** |
+| `queued` | I (Info), L (Log), A (Analysis), **P (Prioritize)**, **X (Remove)** |
+| `finished` | I (Info), L (Log), A (Analysis), **R (Relaunch)** |
+
+Red buttons (K, P, X, R) are only visible to `admin` users and require a confirmation dialog before executing. After the action completes, the button briefly shows `Done` (green) or `Failed` (red) before restoring its label.
+
+Clicking **I**, **L**, or **A** opens an modal detail panel. The panel persists across auto-refreshes and includes a **Copy** button. Panels from tasks in different queues with the same numeric ID are tracked independently.
+
+**Filter bar - State dropdown options:**
+
+Tasks can be filtered by Node, Queue or States. A search bar filter on analysis name. A reset button remove all filters.
+
+Filters on states:
+
+| Option | Effect |
+| --- | --- |
+| Running | Show/hide running tasks |
+| Queued | Show/hide queued tasks |
+| Finished | Show/hide all finished tasks |
+| Failed | Show/hide all failed tasks |
+
+### Launch tab
+
+Provide two tabs to launch an analysis, through STARK run name or a JSON parmeter.
 
 ![STARKUB Launch](images/launch.png)
 
-### Cluster
+Response show the analysis ID and Name (available in Analysis tab), with green color if success, red if failed (with reason, such as `Invalid JSON payload`).
 
-Summary of cluster resources, with all nodes (online or offline), available queues and associated slots.
+### Cluster tab
 
-![STARKUB Cluster](images/cluster.png)
+Displays aggregated information from all nodes defined in `config/peers.json`.
 
-### Archives
+![STARKUB cluster view](images/cluster.png)
 
-List of archived analyses, with information about queue, requested slots and date of request.
+**Cluster Resources table** — one row per (node x queue). Columns: Node, Queue, Config, Running, Queued, Available, Usage.
+
+- The **Usage** bar is colour-coded: green (< 70%), yellow (≥ 70%), red (≥ 100%).
+- Offline nodes (unreachable) are shown with a red `offline` badge and empty metric cells.
+- A **TOTAL** row aggregates each queue across all online nodes.
+
+### Archives tab
+
+Show a list of previous analyses.
 
 ![STARKUB Archives](images/archives.png)
+
+For each analysis, information are provided:
+
+- **Queue**: original queue requested
+- **Slots**: number of slot used
+- **Status**: if the analysis is steel procesed (`unknown`), finished (`finished`) or failed (`failed`)
+- **Date**: Date of the request (when the analysis had been requested, not start running)
+- **Analysis Name**: Name of the analysis
+
+Analyses can be filtered by Queue or Status. A search bar filter on analysis name. A reset button remove all filters, and a refresh button refresh the list.
+
+**Status colour coding:**
+
+| State | Colour |
+| --- | --- |
+| `unknown` | Grey |
+| `finished` | Green |
+| `failed` | Red |
 
 ---
 
 ## Stack
 
 | Component | Role |
-|---|---|
+| --- | --- |
 | FastAPI + Uvicorn | HTTP server |
 | Jinja2 | HTML templating (index.html) |
 | python-jose | JWT encoding/decoding |
 | passlib[bcrypt] | Password hashing |
 | httpx | Async HTTP client (inter-node communication) |
 | task-spooler (`ts`) | Job queue daemon per queue |
-| Docker | STARK analysis and command runtime |
+| Docker | STARK analysis and Docker container command runtime |
+| Docker Compose | Docker compose command runtime |
 
 ---
 
@@ -74,33 +144,37 @@ List of archived analyses, with information about queue, requested slots and dat
 ```bash
 dockerfile/
 ├── app.py               # FastAPI entry point (router wiring only)
-├── config.py            # All constants and environment variables
-├── models.py            # Pydantic models (Token, User)
-├── security.py          # Input validation (command, image, docker_extra_params)
 ├── authentication.py    # JWT + API key auth, user loading
-├── queues.py            # task-spooler queue management
-├── tasks.py             # Task build & submission logic
-├── peers.py             # Cluster/orchestrator logic (peer discovery, routing, metrics)
-├── requirements.txt
+├── config.py            # All constants and environment variables
 ├── Dockerfile
+├── models.py            # Pydantic models (Token, User)
+├── peers.py             # Cluster/orchestrator logic (peer discovery, routing, metrics)
+├── queues.py            # task-spooler queue management
+├── requirements.txt
+├── security.py          # Input validation (command, image, docker_extra_params)
+├── tasks.py             # Task build & submission logic
 ├── config/
-│   ├── users.json       # User database (auto-created on first run)
+│   ├── peers.json       # Cluster peer list (auto-created on first run)
 │   ├── queues.json      # Queue definitions (auto-created on first run)
-│   └── peers.json       # Cluster peer list (auto-created on first run)
+│   └── users.json       # User database (auto-created on first run)
 ├── routers/
-│   ├── auth.py          # POST /token, GET /me
-│   ├── ui.py            # GET / (dashboard)
 │   ├── analysis.py      # POST /analysis, POST /relaunch/{id}
+│   ├── auth.py          # POST /token, GET /me
+│   ├── cluster.py       # GET /whoami, /metrics, /peers, /cluster/summary, /cluster/tasks
 │   ├── queue.py         # GET /list, GET /queue
-│   └── cluster.py       # GET /whoami, /metrics, /peers, /cluster/summary, /cluster/tasks
+│   └── ui.py            # GET / (dashboard)
 ├── static/
+│   ├── favicon.ico
 │   ├── script.js        # Frontend logic (Local + Cluster tabs)
 │   └── style.css
-└── templates/
+├── templates/
 │   └── index.html       # Dashboard template
-├── images/
+└── images/
     ├── api.png
-    └── cluster.png
+    ├── analyses.png
+    ├── archives.png
+    ├── cluster.png
+    └── launch.png
 README.md
 ```
 
@@ -113,13 +187,13 @@ README.md
 All settings are passed as **environment variables** (e.g. via `docker-compose` or a `.env` file).
 
 | Variable | Default | Description |
-|---|---|---|
+| --- | --- | --- |
 | `STARK_API_KEY` | `a_default_super_secret_api_key` | Static API key for service-to-service auth (`X-API-Key` header) |
 | `STARK_API_REFRESH_INTERVAL` | `10` | Queue auto-refresh interval **in seconds** |
 | `DOCKER_STARK_IMAGE` | `stark` | Docker image used to run STARK analyses |
 | `TS` | _(empty)_ | Path to the `ts` binary |
 | `TS_SAVELIST` | `/ts-tmp` | task-spooler save directory for the **default** queue |
-| `TS_SLOTS` | `1` | Number of parallel slots for the **default** queue |
+| `TS_SLOTS` | (max core) | Number of parallel slots for the **default** queue |
 | `TS_SOCKET` | _(empty)_ | TS_SOCKET path for the **default** queue (set by container) |
 | `SHELL` | `/bin/ash` | Shell used to run queued commands |
 | `DOCKER_STARK_SERVICE_STARK_API_CONTAINER_MOUNT` | _(empty)_ | Extra Docker volume mounts injected into all `command_docker` containers |
@@ -129,13 +203,60 @@ All settings are passed as **environment variables** (e.g. via `docker-compose` 
 
 Example `STARK.env`:
 
-```env
+```bash
 STARK_API_KEY=my_secret_key
 STARK_API_REFRESH_INTERVAL=60
 TS_SLOTS=2
 ```
 
----
+Example of `docker-compose.yml`:
+
+```yml
+    # STARK API
+    starkub:
+        image: starkub:1.0
+        build:
+            context: ./dockerfile
+            dockerfile: Dockerfile
+        container_name: starkub
+        restart: always
+        env_file:
+            - STARK.env
+        environment:
+            # Task Spooler parameters
+            - TS=ts
+            - TS_SAVELIST=/ts-tmp
+            # Shell
+            - SHELL=/bin/bash
+            # Docker STARK image
+            - DOCKER_STARK_IMAGE=stark/stark:19.0.0
+            # Docker STARK container mount parameters - databases config data input repository archives services
+            - DOCKER_STARK_SERVICE_STARK_API_CONTAINER_MOUNT=-v /var/run/docker.sock:/var/run/docker.sock -v /home/stark/STARK/databases:/STARK/databases:ro -v /home/stark/STARK/config/myapps:/STARK/config/myapps:ro -v /home/stark/STARK/config/howard:/STARK/config/howard:ro -v /home/stark/STARK/data:/STARK/data:rw -v /home/stark/STARK/input/runs:/STARK/input/runs:ro -v /home/stark/STARK/input/manifests:/STARK/input/manifests:ro -v /home/stark/STARK/input/pedigree:/STARK/input/pedigree:ro -v /home/stark/STARK/output/repository:/STARK/output/repository:rw -v /home/stark/STARK/output/archives:/STARK/output/archives:rw -v /home/stark/STARK/output/favorites:/STARK/output/favorites:rw -v /home/stark/STARK/services/stark/stark/api:/STARK/services/stark/stark/api -v /STARK/output/results -v /STARK/output/demultiplexing
+            # Inner log folder (default "/STARK/services/stark/stark/api")
+            - DOCKER_STARK_SERVICE_STARK_API_LOG_FOLDER=/STARK/services/stark/stark/api
+            # Inner runs folder (default "/STARK/input/runs")
+            - DOCKER_STARK_SERVICE_STARK_API_RUNS_FOLDER=/STARK/input/runs 
+        ports:
+            - 4200:8000
+        volumes:
+            # Docker sock
+            - /var/run/docker.sock:/var/run/docker.sock
+            # Main configuration
+            - /home/stark/STARK/config/stark/stark:/STARK/config/stark/stark:ro
+            # User configuration
+            - /home/stark/STARK/config/stark/stark/api:/STARK/config/stark/stark/api:rw
+            # User services
+            - /home/stark/STARK/services/stark/stark/api:/STARK/services/stark/stark/api:rw
+            # Task spooler
+            - /home/stark/STARK/services/stark/stark/api:/ts-tmp:rw
+            # Inner runs folder
+            - /Users/lebechea/STARK/input/runs:/STARK/input/runs:ro
+        healthcheck:
+            test: "curl -f http://0.0.0.0:8000 || exit 1"
+            interval: 60s
+            timeout: 10s
+            retries: 3
+```
 
 ### Queue configuration (`config/queues.json`)
 
@@ -144,7 +265,7 @@ The API supports **multiple independent task queues**, each backed by a dedicate
 Each queue entry has the following fields:
 
 | Field | Required | Description |
-|---|---|---|
+| --- | --- | --- |
 | `savelist` | Yes | Path to the directory where task-spooler stores output files |
 | `slots` | Yes | Maximum number of tasks running in parallel in this queue |
 | `socket` | No | Explicit `TS_SOCKET` path. Omitted -> auto-derived as `/tmp/ts-<name>.socket`. The **default** (first) queue never overrides `TS_SOCKET`, using the container's env value instead |
@@ -233,22 +354,21 @@ Several STARKUB instances can be linked together into a lightweight cluster. Eac
 
 ### How it works
 
-1. Each node holds a `config/peers.json` listing all known nodes (including itself, optionally).
+1. Each node holds a `config/peers.json` listing all known nodes (including itself).
 2. When a `POST /analysis` request arrives and the node is **not** already handling a forwarded request, it collects queue metrics from all reachable peers and from itself.
-3. It picks the **best peer** — the one with the most available slots for the requested queue — using the prioritize method:
+3. It picks the **best peer** using the prioritize method:
 
     - calculate delta as overload distance: `delta = available - requested`
     - First classify peers by capability: can this peer satisfy the request (delta >= 0) or not (delta < 0)?
-    - Among capable peers, prefer those that are not overloaded (delta < 0) over those that are (delta >= 0).
+    - Among capable peers, prefer those that are not overloaded (delta >= 0) over those that are overload (delta < 0).
     - Then minimize overload (negative delta) or waste (positive delta).
     - Penalize overload more heavily than waste by making it a primary sorting key.
 
 4. If the best peer is a remote node, the request is **transparently forwarded** (`httpx`) with the `X-STARK-Forwarded: 1` header to prevent routing loops.
 5. If the best peer cannot be reached, the node falls back to **local execution**.
+6. Number of threads is adjusted if the queue can not reach the request number (i.e. threads = max(slots) for the queue if threads > max(slots))
 
 > No external message broker, no shared database, no Kubernetes required.
-
----
 
 ### Peer configuration (`config/peers.json`)
 
@@ -267,18 +387,30 @@ Auto-created with an empty template on first start. Add one entry per node:
 - `name` — display name (used in the cluster UI)
 - `url` — base URL reachable from other nodes (Docker network hostname or IP)
 
-If the file is empty or contains no peers, the node operates in **standalone mode** and all requests are executed locally.
+Nodes can be deployed on same server, with different port (see `docker-compose.yml`)
 
----
+```json
+{
+  "peers": [
+    { "name": "server1-node1", "url": "http://server1:4200" },
+    { "name": "server2-node1", "url": "http://server2:4200" },
+    { "name": "server2-node2", "url": "http://server2:4201" }
+  ]
+}
+```
+
+If the file is empty or contains no peers, the node operates in **standalone mode** and all requests are executed locally.
 
 ### Self-identification
 
 Set `STARK_API_SELF_URL` in each container's environment to its own URL:
 
-```env
+```bash
 # node1
 STARK_API_SELF_URL=http://node1:4200
+```
 
+```bash
 # node2
 STARK_API_SELF_URL=http://node2:4210
 ```
@@ -291,46 +423,88 @@ This is used to:
 
 Without `STARK_API_SELF_URL`, the node attempts auto-discovery by probing each peer's `/whoami` endpoint and comparing hostnames (slower, less reliable).
 
----
-
-### Docker Compose example (3-node cluster)
+### Docker Compose example (3-nodes on same server)
 
 ```yaml
 services:
-  stark-api-node1:
-    image: stark-api
-    ports: ["4200:4200"]
+  starkub-node1:
+    image: starkub
+    ports: ["4200:8000"]
     environment:
-      STARK_API_SELF_URL: http://node1:4200
+      STARK_API_SELF_URL: http://server:4200
       STARK_API_KEY: shared_secret
     volumes:
       - ./config:/app/config
 
-  stark-api-node2:
-    image: stark-api
-    ports: ["4210:4200"]
+  starkub-node2:
+    image: starkub
+    ports: ["4210:8000"]
     environment:
-      STARK_API_SELF_URL: http://node2:4210
+      STARK_API_SELF_URL: http://server:4210
       STARK_API_KEY: shared_secret
     volumes:
       - ./config:/app/config
 
-  stark-api-node3:
-    image: stark-api
-    ports: ["4211:4200"]
+  starkub-node3:
+    image: starkub
+    ports: ["4211:8000"]
     environment:
-      STARK_API_SELF_URL: http://node3:4211
+      STARK_API_SELF_URL: http://server:4211
       STARK_API_KEY: shared_secret
     volumes:
       - ./config:/app/config
 ```
 
 All three nodes share the same `config/peers.json` and `config/queues.json` via the mounted volume. Any node can accept requests and route them to the least-loaded peer considered the queues.
-Theses nodes can be configured separatly, especially to configure queues with differents `config/queues.json`.
-Theses services can be run on multiple servers (e.g. each noe on a different server to manage a cluster).
+Theses nodes can be configured separatly, especially to configure queues with differents `queues.json` (e.g. `config/node1/queue.json`, `config/node2/queue.json`, `config/node3/queue.json`).
 
----
+Theses services can be run on multiple servers (e.g. each node on a different server to manage a cluster). This configuration to launch docker compose in each server.
 
+Example of multi-server and multi-nodes configuration, with common peers and users configuration:
+
+```yaml
+# Server1
+services:
+  starkub-node1:
+    image: starkub
+    ports: ["4200:8000"]
+    environment:
+      STARK_API_SELF_URL: http://server:4200
+      STARK_API_KEY: shared_secret
+    volumes:
+      - ./config/peers.json:/app/config/peers.json
+      - ./config/users.json:/app/config/users.json
+      - ./config/server1/node1/queue.json:/app/config/queue.json
+```
+
+On server2:
+
+```yaml
+services:
+  starkub-node1:
+    image: starkub
+    ports: ["4200:8000"]
+    environment:
+      STARK_API_SELF_URL: http://server:4200
+      STARK_API_KEY: shared_secret
+    volumes:
+      - ./config/peers.json:/app/config/peers.json
+      - ./config/users.json:/app/config/users.json
+      - ./config/server2/node1/queue.json:/app/config/queue.json
+
+  starkub-node2:
+    image: starkub
+    ports: ["4210:8000"]
+    environment:
+      STARK_API_SELF_URL: http://server:4201
+      STARK_API_KEY: shared_secret
+    volumes:
+      - ./config/peers.json:/app/config/peers.json
+      - ./config/users.json:/app/config/users.json
+      - ./config/server2/node2/queue.json:/app/config/queue.json
+```
+
+### Users configuration
 
 Users are stored in `config/users.json` (auto-created with default accounts on first start).
 
@@ -369,22 +543,20 @@ TOKEN=$(curl -s -X POST "http://localhost:8000/token" \
 
 All subsequent requests use:
 
-```
+```text
 Authorization: Bearer $TOKEN
 ```
 
 Service-to-service calls use instead:
 
-```
+```text
 X-API-Key: <STARK_API_KEY>
 ```
-
----
 
 ### Endpoints summary
 
 | Method | Path | Auth | Description |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `GET` | `/` | JWT | Web dashboard |
 | `POST` | `/token` | - | Obtain JWT token |
 | `GET` | `/me` | JWT | Current user info |
@@ -397,35 +569,28 @@ X-API-Key: <STARK_API_KEY>
 | `GET` | `/peers` | - | Returns the configured peer list |
 | `GET` | `/cluster/summary` | - | Aggregated resources table for all nodes |
 | `GET` | `/cluster/tasks` | - | Consolidated task list from all nodes |
-
----
+| `GET` | `/cluster/archives` | - | Consolidated task list from archived configured files |
 
 ### `GET /`
 
 Returns the web dashboard (HTML).
-
----
 
 ### `POST /token`
 
 Obtain a JWT access token.
 
 | Field | Type | Description |
-|---|---|---|
+| --- | --- | --- |
 | `username` | form | Username |
 | `password` | form | Password |
 
 **Response:** `{ "access_token": "...", "token_type": "bearer" }`
-
----
 
 ### `GET /me`
 
 Returns the current user's username and groups.
 
 **Response:** `{ "username": "stark", "groups": ["admin"] }`
-
----
 
 ### `POST /analysis`
 
@@ -434,22 +599,21 @@ Launch a new task. **Admin or service key only.**
 The task type is determined by which key is present in the JSON body. An optional `"queue"` key routes the task to any configured queue.
 
 | Key present | Mode | Description |
-|---|---|---|
+| --- | --- | --- |
 | `run` | **STARK analysis** | Runs a full STARK Docker analysis for the given run name |
 | `command` | **Shell command** | Runs a raw shell command inside the API container |
 | `command_docker` | **Docker command** | Runs a command in a new ephemeral Docker container |
+| `command_docker_compose` | **Docker compose command** | Runs a command in a Docker container using a Docker compose configuration |
 
 **Common optional keys (all modes):**
 
 | Key | Description |
-|---|---|
+| --- | --- |
 | `analysis_name` | Human-readable task label (sanitised, max 64 chars, defaults to `UNKNOWN`) |
-| `queue` | Target queue name. Must exist in `config/queues.json`. Defaults to first queue. |
+| `queue` | Target queue name. Must exist in at least one `queues.json` of a node. Defaults to first queue. |
 | `threads` | Number of task-spooler slots (`-N`) the task should occupy. Valid range: `0` to the queue's slot count. `0` is a special value that bypasses slot accounting - the task starts immediately regardless of queue load. Absent, invalid, or out-of-range values fall back to the queue's total slot count (conservative default, prevents over-scheduling). |
 
-**Response:** `STARK.<ID>.<analysisIDNAME>` (plain text, 200) or `KO: <reason>` (400/403).
-
----
+**Response:** `STARK.<ID>.<analysisIDNAME>` (plain text, 200) or `KO: <reason>` (400/403/500).
 
 #### Mode 1 - STARK analysis (`run`)
 
@@ -475,8 +639,6 @@ curl -s -X POST "<http://localhost:8000/analysis>" \
   -H "X-API-Key: $STARK_API_KEY" \
   -d '{"run": "MY_RUN", "analysis_name": "MY_RUN_analysis"}' 
 ```
-
----
 
 #### Mode 2 - Shell command (`command`)
 
@@ -507,17 +669,16 @@ curl -s -X POST "<http://localhost:8000/analysis>" \
 > **Security:** Commands matching known destructive patterns are rejected:
 > `rm -rf /`, `dd of=/dev/…`, `:(){:|:&};:` (fork bomb), `mkfs`, `> /dev/…`, etc.
 
----
-
 #### Mode 3 - Docker command (`command_docker`)
 
 Runs a command inside a **new ephemeral Docker container** (`docker run --rm`). The container receives the predefined volume mounts from `DOCKER_STARK_SERVICE_STARK_API_CONTAINER_MOUNT` and a generated `--name` for identification and cleanup.
 
 | JSON key | Required | Description |
-|---|---|---|
+| --- | --- | --- |
 | `command_docker` | Yes | Command to run inside the container |
 | `image` | Yes | Docker image name (e.g. `alpine`, `myregistry/myimage:1.0`) |
 | `docker_extra_params` | No | Additional `docker run` flags (e.g. `-e MY_VAR=value`, `--entrypoint /bin/sh`) |
+| `docker_stark_container_mount` | No | Additional predefined volume mounts (e.g. `true`, `false`, default `true`) |
 | `analysis_name` | No | Human-readable task label |
 | `queue` | No | Target queue (defaults to first queue) |
 | `threads` | No | Slots consumed (`-N`); see common optional keys above |
@@ -543,8 +704,51 @@ curl -s -X POST "http://localhost:8000/analysis" \
 >
 > - `image` must match `[a-zA-Z0-9_.:/\-/@]` - shell metacharacters are rejected.
 > - `docker_extra_params` is validated against a blocklist: `--privileged`, high-privilege `--cap-add` values (`SYS_ADMIN`, `SYS_PTRACE`, `NET_ADMIN`, `ALL`), `--pid host`, `--network host`, host-root mounts (`-v /:`), sensitive path mounts (`-v /etc:`, `-v /root:`, `-v /proc:`, etc.) are all rejected.
+>
+> **Note:**
+>
+> - `threads` is defined to select slots in queue, and constrain the resources themselves, using `--cpus` parameter. To constrain memory, use `--memory` parameter within `docker_extra_params` parameter.
 
----
+#### Mode 4 - Docker compose command (`command_docker_compose`)
+
+Runs a command inside a **new ephemeral Docker container** with a docker compose configuration (`docker -f docker-compose.yml run --rm`). The container receives the predefined volume mounts from `DOCKER_STARK_SERVICE_STARK_API_CONTAINER_MOUNT` and a generated `--name` for identification and cleanup.
+
+| JSON key | Required | Description |
+| --- | --- | --- |
+| `command_docker_compose` | Yes | Command to run inside the container |
+| `docker_compose_file` | Yes | Docker compose configuration file (e.g. `docker-compose.yml`) |
+| `service` | Yes | Docker compose configuration file (e.g. `my_service`) |
+| `docker_extra_params` | No | Additional `docker compose run` flags (e.g. `-e MY_VAR=value`, `--entrypoint /bin/sh`) |
+| `docker_stark_container_mount` | No | Additional predefined volume mounts (e.g. `true`, `false`, default `true`) |
+| `analysis_name` | No | Human-readable task label |
+| `queue` | No | Target queue (defaults to first queue) |
+| `threads` | No | Slots consumed (`-N`); see common optional keys above |
+
+```json
+{
+  "command_docker_compose": "python3 /scripts/run.py --input /data/sample.vcf",
+  "docker_compose_file": "docker-compose.yml",
+  "service": "my_service",
+  "docker_extra_params": "-e MY_VAR=value",
+  "analysis_name": "my_pipeline",
+  "queue": "medium"
+}
+```
+
+```bash
+curl -s -X POST "http://localhost:8000/analysis" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"command_docker_compose": "echo hello", "docker_compose_file": "docker-compose.yml", "service": "my_service", "analysis_name": "test_docker", "queue": "light"}'
+```
+
+> **Security:**
+>
+> - `docker_extra_params` is validated against a blocklist: `--privileged`, high-privilege `--cap-add` values (`SYS_ADMIN`, `SYS_PTRACE`, `NET_ADMIN`, `ALL`), `--pid host`, `--network host`, host-root mounts (`-v /:`), sensitive path mounts (`-v /etc:`, `-v /root:`, `-v /proc:`, etc.) are all rejected.
+>
+> **Note:**
+>
+> - `threads` is defined to select slots in queue, but do not constrain the resources themselves, because docker-compose do not allow this parameter. Ensure that `docker-compose.yml` defines resources parameters (e.g. `cpus` and `memory`).
 
 #### `analysis_name` sanitisation
 
@@ -553,8 +757,6 @@ In all modes, `analysis_name` is sanitised before use as a task label and Docker
 - Characters outside `[A-Za-z0-9._-]` are replaced with `_`
 - Truncated to 64 characters (Docker container name limit)
 - Defaults to `UNKNOWN` if absent or empty
-
----
 
 ### `GET /list`
 
@@ -593,20 +795,18 @@ curl -s http://localhost:8000/list | python3 -m json.tool
 
 > Note: task IDs are per-queue counters - ID `1` in `stark` and ID `1` in `light` are different tasks. Always use both `id` and `queue` together to identify a task.
 
----
-
 ### `GET /queue`
 
 Query or act on tasks in a specific queue. The optional `queue` parameter selects the target queue (defaults to the first queue). **Authentication required.**
 
 | Parameter | Type | Description |
-|---|---|---|
+| --- | --- | --- |
 | `action` | string | One of: `list`, `info`, `log`, `analysis`, `kill`, `prioritize`, `remove`, `swap` |
 | `id` | string | Task ID (required for all actions except `list`) |
 | `queue` | string | Queue name (optional, defaults to first queue) |
 
 | `action` | Admin required | Description |
-|---|---|---|
+| --- | --- | --- |
 | `list` | No | Returns the queue as a JSON array (all queues aggregated if no `queue` param) |
 | `info` | No | `ts -i <id>`: raw task-spooler task info |
 | `log` | No | Contents of the `.output` log file |
@@ -644,8 +844,6 @@ curl -s "http://localhost:8000/queue?action=prioritize&id=2" \
 
 > **Important:** Always pass `&queue=<name>` when acting on a task from a non-default queue, otherwise the action targets the wrong daemon.
 
----
-
 ### `POST /relaunch/{ts_id}`
 
 Re-queue a finished task using its original JSON parameters. **Admin or service key only.**
@@ -653,7 +851,7 @@ Re-queue a finished task using its original JSON parameters. **Admin or service 
 The `queue` parameter must match the queue the task originally ran in (used to find the correct `ts` daemon and retrieve the `.json` file).
 
 | Parameter | Type | Description |
-|---|---|---|
+| --- | --- | --- |
 | `ts_id` | path | Task ID to relaunch |
 | `queue` | query | Queue the task belongs to (optional, defaults to first queue) |
 
@@ -671,86 +869,13 @@ curl -s -X POST "http://localhost:8000/relaunch/7?queue=light" \
 
 The relaunched task is re-submitted to the same queue as the original (queue information is read from the original JSON file's `queue` field if present).
 
----
-
-## Web UI
-
-The dashboard is accessible at `http://localhost:8000/`.
-
-| Section | Description |
-|---|---|
-| **Header** | STARKUB title, logged-in username (hover for groups), Logout button |
-| **Launch Analysis** | Run name field + Advanced JSON textarea. Visible to admins only. |
-| **Filter bar** | State dropdown (Running / Queued / Finished + **Failed only**) and Queue multi-select dropdown. Filters are client-side and instant. A **✕ Reset** button restores all defaults. |
-| **Task Queue** | Auto-refreshing table. Tasks sorted: running -> queued -> finished. |
-
-The dashboard has two top-level tabs:
-
-- **Local** — the standard task queue for this node (filter bar, task table, inline panels)
-- **Cluster** — aggregated view across all nodes (see below)
-
-### Local tab
-
-**Queue table columns:** ID, State, Queue, E-Level, Time, Analysis Name, Actions.
-
-**State colour coding:**
-
-| State | Colour |
-|---|---|
-| `running` | Orange |
-| `queued` | Grey |
-| `finished` (success) | Green |
-| `finished` (failed) | Red |
-
-**Action buttons per state:**
-
-| State | Buttons |
-|---|---|
-| `running` | I (Info), L (Log), A (Analysis), **K (Kill)** |
-| `queued` | I (Info), L (Log), A (Analysis), **P (Prioritize)**, **X (Remove)** |
-| `finished` | I (Info), L (Log), A (Analysis), **R (Relaunch)** |
-
-Red buttons (K, P, X, R) are only visible to `admin` users and require a confirmation dialog before executing. After the action completes, the button briefly shows `✓ Done` (green) or `✗ Failed` (red) before restoring its label.
-
-Clicking **I**, **L**, or **A** opens an inline detail panel below the row. The panel persists across auto-refreshes and includes a **Copy** button. Panels from tasks in different queues with the same numeric ID are tracked independently.
-
-**Filter bar - State dropdown options:**
-
-| Option | Effect |
-|---|---|
-| Running | Show/hide running tasks |
-| Queued | Show/hide queued tasks |
-| Finished | Show/hide all finished tasks |
-| ─── | |
-| Failed only | Show **only** finished tasks with a non-zero exit code (overrides other filters) |
-
-### Cluster tab
-
-![STARKUB cluster view](images/cluster.png)
-
-Displays aggregated information from all nodes defined in `config/peers.json`.
-
-**Cluster Resources table** — one row per (node × queue). Columns: Node, Queue, Config, Running, Queued, Available, Usage.
-
-- The **Usage** bar is colour-coded: green (< 70%), yellow (≥ 70%), red (≥ 100%).
-- Offline nodes (unreachable) are shown with a red `offline` badge and empty metric cells.
-- A **TOTAL** row aggregates each queue across all online nodes.
-
-**Cluster Tasks table** — all running and queued tasks from all nodes. Includes a **Node** column to identify the origin. The table auto-refreshes on the same interval as the Local tab.
-
----
-
-### Cluster endpoints
-
-#### `GET /whoami`
+### `GET /whoami`
 
 Returns this node's hostname. Used by peers during self-discovery when `STARK_API_SELF_URL` is not set.
 
 **Response:** `{ "id": "node1" }`
 
----
-
-#### `GET /metrics`
+### `GET /metrics`
 
 Returns the local queue metrics. Called by other nodes to compute routing scores.
 
@@ -763,17 +888,13 @@ Returns the local queue metrics. Called by other nodes to compute routing scores
 }
 ```
 
----
-
-#### `GET /peers`
+### `GET /peers`
 
 Returns the list of configured peers from `config/peers.json`.
 
 **Response:** `{ "peers": [{ "name": "node1", "url": "http://node1:4200" }, ...] }`
 
----
-
-#### `GET /cluster/summary`
+### `GET /cluster/summary`
 
 Aggregates queue metrics from all reachable nodes and returns a single object with per-node details and cluster-wide totals.
 
@@ -805,9 +926,7 @@ Aggregates queue metrics from all reachable nodes and returns a single object wi
 
 Offline nodes (unreachable within 1 second) appear with `"status": "offline"` and empty queues.
 
----
-
-#### `GET /cluster/tasks`
+### `GET /cluster/tasks`
 
 Returns a consolidated task list from all reachable nodes. Each task is enriched with `node` and `node_url` fields to identify its origin.
 
@@ -820,7 +939,7 @@ curl -s http://localhost:4200/cluster/tasks | python3 -m json.tool
 ## Security notes
 
 | Concern | Mitigation |
-|---|---|
+| --- | --- |
 | Credential exposure | Passwords in `config/users.json` should be changed from defaults before deployment |
 | JWT secret | Set a strong `SECRET_KEY` env var; default is an insecure placeholder |
 | API key | Change `STARK_API_KEY` from its default before deployment |
