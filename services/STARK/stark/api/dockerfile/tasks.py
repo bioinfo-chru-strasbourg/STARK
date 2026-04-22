@@ -197,7 +197,7 @@ def queue_command(json_input: dict) -> str:
 
 def queue_command_docker(json_input: dict) -> str:
     """Queue a docker command with predefined mount parameters (json key 'command_docker').
-    Returns analysisIDNAME or raises RuntimeError."""
+    Returns analysis_id_name or raises RuntimeError."""
     command_docker = json_input["command_docker"]
     image = json_input.get("image")
     if not image:
@@ -210,9 +210,9 @@ def queue_command_docker(json_input: dict) -> str:
     analysis_id_name, _ = _build_analysis_idname(json_input)
 
     docker_name = f"--name {analysis_id_name}"
-    docker_parameters = (
-        f"--rm {docker_stark_container_mount} {docker_name} {docker_extra_params}"
-    )
+    docker_parameters = f"--rm {docker_name} {docker_extra_params}"
+    if json_input.get("docker_stark_container_mount", True):
+        docker_parameters += f" {docker_stark_container_mount}"
 
     analysis_folder = docker_stark_api_log_folder
     analysis_file = os.path.join(analysis_folder, f"{analysis_id_name}.json")
@@ -236,6 +236,79 @@ def queue_command_docker(json_input: dict) -> str:
         f'{ts_cmd} bash -c "'
         f"trap 'docker stop {analysis_id_name} 2>/dev/null; echo failed > {analysis_info_file}' TERM INT; "
         f"docker run {docker_parameters} {image} {command_docker} "
+        f"> {analysis_output_file} 2>&1 "
+        f"&& (echo 'finished' > {analysis_info_file} && exit 0) "
+        f"|| (echo 'failed' > {analysis_info_file} && exit 1)\""
+    )
+
+    task_id = (
+        subprocess.run(my_cmd, shell=True, stdout=subprocess.PIPE)
+        .stdout.decode("utf-8")
+        .strip()
+    )
+    if not task_id:
+        raise RuntimeError("task-spooler returned no task ID")
+    return analysis_id_name
+
+
+def queue_command_docker_compose(json_input: dict) -> str:
+    """Queue a docker-compose command with predefined parameters (json key 'command_docker_compose').
+    Returns analysis_id_name or raises RuntimeError."""
+
+    # Command
+    command_docker_compose = json_input["command_docker_compose"]
+
+    # Service
+    service = json_input.get("service", json_input.get("image"))
+    if not service:
+        raise ValueError("'service' is required when using 'command_docker_compose'")
+    # _validate_image(service)
+
+    # docker configuration file
+    docker_compose_file = json_input.get("docker_compose_file")
+    if not docker_compose_file:
+        raise ValueError(
+            "'docker_compose_file' is required when using 'command_docker_compose'"
+        )
+    if not os.path.isfile(docker_compose_file):
+        raise ValueError(f"'docker_compose_file' does not exist: {docker_compose_file}")
+
+    # Extra docker parameters
+    docker_extra_params = json_input.get("docker_extra_params", "")
+    if docker_extra_params:
+        _validate_docker_extra_params(docker_extra_params)
+
+    analysis_id_name, _ = _build_analysis_idname(json_input)
+
+    docker_name = f"--name {analysis_id_name}"
+    docker_parameters = f"--rm {docker_name} {docker_extra_params}"
+    if json_input.get("docker_stark_container_mount", True):
+        docker_parameters += f" {docker_stark_container_mount}"
+
+    analysis_folder = docker_stark_api_log_folder
+    analysis_file = os.path.join(analysis_folder, f"{analysis_id_name}.json")
+    analysis_info_file = os.path.join(analysis_folder, f"{analysis_id_name}.info")
+    analysis_output_file = os.path.join(analysis_folder, f"{analysis_id_name}.output")
+
+    # Touch output
+    with open(analysis_output_file, "w") as f:
+        f.write("")
+
+    _ts_env, _max_slots = _prepare_queue_for_submission(json_input.get("queue"))
+    _task_slots = _resolve_task_slots(json_input, _max_slots)
+
+    threads = (_task_slots == 0) and _max_slots or _task_slots
+    json_input["threads"] = threads
+
+    with open(analysis_file, "w") as f:
+        f.write(json.dumps(json_input))
+
+    ts_cmd = f"{_ts_env}{ts} -N {_task_slots} -L {analysis_id_name}" if ts else ""
+
+    my_cmd = (
+        f'{ts_cmd} bash -c "'
+        f"trap 'docker stop {analysis_id_name} 2>/dev/null; echo failed > {analysis_info_file}' TERM INT; "
+        f"docker-compose -f {docker_compose_file} run {docker_parameters} {service} {command_docker_compose} "
         f"> {analysis_output_file} 2>&1 "
         f"&& (echo 'finished' > {analysis_info_file} && exit 0) "
         f"|| (echo 'failed' > {analysis_info_file} && exit 1)\""
