@@ -177,4 +177,4 @@ async def relaunch_task(
         analysis_id_name = await _run_locally(json_input)
         return PlainTextResponse(content=analysis_id_name, status_code=200)
     except Exception as e:
-        return PlainTextResponse(content=f"Relaunch failed: {e}", status_code=500)
+        return PlainTextResponse(content=f"Launch failed: {e}", status_code=500)

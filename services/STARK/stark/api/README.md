@@ -34,13 +34,13 @@ The dashboard is accessible at `http://server:8000/`, for any nodes.
 The dashboard has four top-level tabs:
 
 - **Analyses** — Show activity, with all analyses launched in nodes and queues, with requested number of slots, state of the analysis, and available actions.
-- **Launch** — Launch an analysis, through STARK run name or a JSON parmeter.
+- **Launch** — Launch an analysis, through STARK run name or a JSON parameter.
 - **Cluster** — Summary of cluster resources, with all nodes (online or offline), available queues and associated slots.
 - **Archives** — List of archived analyses, with information about queue, requested slots and date of request.
 
 ### Analysis tab
 
-Displays aggregated of all tasks from all nodes defined in `config/peers.json`.
+Displays an aggregation of all tasks from all nodes defined in `config/peers.json`.
 
 ![STARKUB Analyses](images/analyses.png)
 
@@ -108,7 +108,7 @@ For each analysis, information are provided:
 
 - **Queue**: original queue requested
 - **Slots**: number of slot used
-- **Status**: if the analysis is steel procesed (`unknown`), finished (`finished`) or failed (`failed`)
+- **Status**: whether the analysis is still procesing (`unknown`), finished (`finished`) or failed (`failed`)
 - **Date**: Date of the request (when the analysis had been requested, not start running)
 - **Analysis Name**: Name of the analysis
 
@@ -456,7 +456,8 @@ services:
 ```
 
 All three nodes share the same `config/peers.json` and `config/queues.json` via the mounted volume. Any node can accept requests and route them to the least-loaded peer considered the queues.
-Theses nodes can be configured separatly, especially to configure queues with differents `queues.json` (e.g. `config/node1/queue.json`, `config/node2/queue.json`, `config/node3/queue.json`).
+
+Theses nodes can be configured separatly, especially to configure queues with differents `queues.json` (e.g. `config/node1/queues.json`, `config/node2/queues.json`, `config/node3/queues.json`).
 
 Theses services can be run on multiple servers (e.g. each node on a different server to manage a cluster). This configuration to launch docker compose in each server.
 
@@ -474,7 +475,7 @@ services:
     volumes:
       - ./config/peers.json:/app/config/peers.json
       - ./config/users.json:/app/config/users.json
-      - ./config/server1/node1/queue.json:/app/config/queue.json
+      - ./config/server1/node1/queues.json:/app/config/queues.json
 ```
 
 On server2:
@@ -490,7 +491,7 @@ services:
     volumes:
       - ./config/peers.json:/app/config/peers.json
       - ./config/users.json:/app/config/users.json
-      - ./config/server2/node1/queue.json:/app/config/queue.json
+      - ./config/server2/node1/queues.json:/app/config/queues.json
 
   starkub-node2:
     image: starkub
@@ -501,7 +502,7 @@ services:
     volumes:
       - ./config/peers.json:/app/config/peers.json
       - ./config/users.json:/app/config/users.json
-      - ./config/server2/node2/queue.json:/app/config/queue.json
+      - ./config/server2/node2/queues.json:/app/config/queues.json
 ```
 
 ### Users configuration
@@ -612,19 +613,56 @@ The task type is determined by which key is present in the JSON body. An optiona
 | `analysis_name` | Human-readable task label (sanitised, max 64 chars, defaults to `UNKNOWN`) |
 | `queue` | Target queue name. Must exist in at least one `queues.json` of a node. Defaults to first queue. |
 | `threads` | Number of task-spooler slots (`-N`) the task should occupy. Valid range: `0` to the queue's slot count. `0` is a special value that bypasses slot accounting - the task starts immediately regardless of queue load. Absent, invalid, or out-of-range values fall back to the queue's total slot count (conservative default, prevents over-scheduling). |
+| `memory` | Amount of memory requested for the task, for the docker container. |
 
-**Response:** `STARK.<ID>.<analysisIDNAME>` (plain text, 200) or `KO: <reason>` (400/403/500).
+**Response:** `STARK.<ID>.<analysisIDNAME>` (plain text, 200) or `Launch failed: <reason>` (400/500/403).
 
 #### Mode 1 - STARK analysis (`run`)
 
-Runs the configured `DOCKER_STARK_IMAGE` Docker image for the given run directory.
+Runs the configured `DOCKER_STARK_IMAGE` Docker image for the given run directory. See STARK parameters for more informations about how to launch a STARK analysis.
+
+Extended parameters can control STARK analysis and docker container.
+
+| JSON key | Required | Description |
+| --- | --- | --- |
+| `analysis_name` | No | Human-readable task label |
+| `docker_extra_params` | No | Additional `docker run` flags (e.g. `-e MY_VAR=value`, `--entrypoint /bin/sh`) |
+| `queue` | No | Target queue (defaults to first queue) |
+| `threads` | No | Slots consumed (`-N`); see common optional keys above |
+| `memory` | No | Memory limit for docker container |
+
+Example of standard RUN analysis:
+
+```json
+{
+  "run": "MY_RUN"
+}
+```
+
+Example of RUN analysis with specific resources:
 
 ```json
 {
   "run": "MY_RUN",
-  "analysis_name": "MY_RUN_analysis"
+  "threads": 8,
+  "memory": "32G"
 }
 ```
+
+Example of a RUN analysis with more parameters (run folder is in `${HOME}/data/external_runs`):
+
+```json
+{
+  "run": "/STARK/input/external_runs/MY_RUN",
+  "analysis_name": "MY_RUN_analysis",
+  "docker_extra_params": " -e PARAM1=value1 -v ${HOME}/data/external_runs:/STARK/input/external_runs ",
+  "queue": "stark",
+  "threads": 8,
+  "memory": "32G"
+}
+```
+
+Examples of request with curl (using token or API key):
 
 ```bash
 curl -s -X POST "http://localhost:8000/analysis" \
@@ -644,6 +682,8 @@ curl -s -X POST "<http://localhost:8000/analysis>" \
 
 Runs a shell command **directly inside the API container**. Has access to all mounted volumes and binaries available in the container.
 
+Example of a simple shell command:
+
 ```json
 {
   "command": "echo hello world && sleep 2",
@@ -651,6 +691,8 @@ Runs a shell command **directly inside the API container**. Has access to all mo
   "queue": "light"
 }
 ```
+
+Example of request with curl (using token or API key):
 
 ```bash
 curl -s -X POST "http://localhost:8000/analysis" \
@@ -678,20 +720,43 @@ Runs a command inside a **new ephemeral Docker container** (`docker run --rm`). 
 | `command_docker` | Yes | Command to run inside the container |
 | `image` | Yes | Docker image name (e.g. `alpine`, `myregistry/myimage:1.0`) |
 | `docker_extra_params` | No | Additional `docker run` flags (e.g. `-e MY_VAR=value`, `--entrypoint /bin/sh`) |
-| `docker_stark_container_mount` | No | Additional predefined volume mounts (e.g. `true`, `false`, default `true`) |
+| `use_stark_container_mount` | No | Additional predefined volume mounts (e.g. `true`, `false`, default `true`) |
 | `analysis_name` | No | Human-readable task label |
 | `queue` | No | Target queue (defaults to first queue) |
 | `threads` | No | Slots consumed (`-N`); see common optional keys above |
+| `memory` | No | Memory limit for docker container |
+
+Exemple of custom docker command:
 
 ```json
 {
   "command_docker": "python3 /scripts/run.py --input /data/sample.vcf",
   "image": "myregistry/mypipeline:1.0",
-  "docker_extra_params": "-e MY_VAR=value",
+  "docker_extra_params": " -v ${HOME}/data:/data/ -e MY_VAR=value",
+  "use_stark_container_mount": false,
   "analysis_name": "my_pipeline",
-  "queue": "medium"
+  "queue": "medium",
+  "threads": 2,
+  "queue": "4G"
 }
 ```
+
+Exemple of docker command with STARK data automatically mounted:
+
+```json
+{
+  "command_docker": "python3 /scripts/run.py --input /STARK/data/sample.vcf",
+  "image": "myregistry/mypipeline:1.0",
+  "docker_extra_params": "-e MY_VAR=value",
+  "use_stark_container_mount": true,
+  "analysis_name": "my_pipeline",
+  "queue": "stark",
+  "threads": 4,
+  "queue": "12G"
+}
+```
+
+Example of request with curl:
 
 ```bash
 curl -s -X POST "http://localhost:8000/analysis" \
@@ -711,7 +776,7 @@ curl -s -X POST "http://localhost:8000/analysis" \
 
 #### Mode 4 - Docker compose command (`command_docker_compose`)
 
-Runs a command inside a **new ephemeral Docker container** with a docker compose configuration (`docker -f docker-compose.yml run --rm`). The container receives the predefined volume mounts from `DOCKER_STARK_SERVICE_STARK_API_CONTAINER_MOUNT` and a generated `--name` for identification and cleanup.
+Runs a command inside a **new ephemeral Docker container** with a docker compose configuration (`docker-compose -f docker-compose.yml run --rm`). The container receives the predefined volume mounts from `DOCKER_STARK_SERVICE_STARK_API_CONTAINER_MOUNT` and a generated `--name` for identification and cleanup.
 
 | JSON key | Required | Description |
 | --- | --- | --- |
@@ -719,10 +784,12 @@ Runs a command inside a **new ephemeral Docker container** with a docker compose
 | `docker_compose_file` | Yes | Docker compose configuration file (e.g. `docker-compose.yml`) |
 | `service` | Yes | Docker compose configuration file (e.g. `my_service`) |
 | `docker_extra_params` | No | Additional `docker compose run` flags (e.g. `-e MY_VAR=value`, `--entrypoint /bin/sh`) |
-| `docker_stark_container_mount` | No | Additional predefined volume mounts (e.g. `true`, `false`, default `true`) |
+| `use_stark_container_mount` | No | Additional predefined volume mounts (e.g. `true`, `false`, default `true`) |
 | `analysis_name` | No | Human-readable task label |
 | `queue` | No | Target queue (defaults to first queue) |
 | `threads` | No | Slots consumed (`-N`); see common optional keys above |
+
+Example of docker compose command:
 
 ```json
 {
@@ -734,6 +801,8 @@ Runs a command inside a **new ephemeral Docker container** with a docker compose
   "queue": "medium"
 }
 ```
+
+Example of request with curl:
 
 ```bash
 curl -s -X POST "http://localhost:8000/analysis" \
@@ -748,7 +817,7 @@ curl -s -X POST "http://localhost:8000/analysis" \
 >
 > **Note:**
 >
-> - `threads` is defined to select slots in queue, but do not constrain the resources themselves, because docker-compose do not allow this parameter. Ensure that `docker-compose.yml` defines resources parameters (e.g. `cpus` and `memory`).
+> - `threads` is defined to select slots in queue, but do not constrain the resources themselves, because docker compose do not allow this parameter. Ensure that `docker-compose.yml` defines resources parameters (e.g. `cpus` and `memory`).
 
 #### `analysis_name` sanitisation
 

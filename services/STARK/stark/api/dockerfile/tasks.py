@@ -114,8 +114,22 @@ def queue_analysis(json_input: dict) -> str:
     """Build and queue a STARK Docker analysis. Returns analysisIDNAME or raises RuntimeError."""
     analysis_id_name, analyses_run_name = _build_analysis_idname(json_input)
 
+    # Docker parameters
+
+    # Use analysis_id_name as Docker container name to be able to identify the container corresponding to a task-spooler task, and stop it if needed when the task is killed.
     docker_name = f" --name {analysis_id_name} "
-    docker_parameters = f" --rm {docker_stark_container_mount} {docker_name} "
+
+    # Extra docker parameters
+    docker_extra_params = json_input.get("docker_extra_params", "")
+    if docker_extra_params:
+        _validate_docker_extra_params(docker_extra_params)
+
+    # Combine Docker parameters, ensuring --name is included and --rm is set for cleanup.
+    docker_parameters = (
+        f"--rm {docker_name} {docker_extra_params} {docker_stark_container_mount}"
+    )
+    # if json_input.get("use_stark_container_mount", True):
+    #     docker_parameters += f" {docker_stark_container_mount}"
 
     analysis_folder = docker_stark_api_log_folder
     analysis_file = os.path.join(analysis_folder, f"{analysis_id_name}.json")
@@ -128,14 +142,27 @@ def queue_analysis(json_input: dict) -> str:
     threads = (_task_slots == 0) and _max_slots or _task_slots
     json_input["threads"] = threads
 
-    # Remove "queue" from the JSON passed to the container, as it's only relevant for the host-side task scheduling.
-    json_input.pop("queue", None)
-
-    with open(analysis_file, "w") as f:
-        f.write(json.dumps(json_input))
-
+    # CPU/Threads
     if "--cpus" not in docker_parameters:
         docker_parameters += f" --cpus={threads} "
+
+    # Memory
+    if (
+        "--memory" not in docker_parameters
+        and "memory" in json_input
+        and json_input.get("memory", None)
+    ):
+        docker_parameters += f" --memory={json_input.get('memory', '')} "
+
+    # Remove host-side task scheduling parameters from the JSON passed to the container.
+    json_input.pop("queue", None)
+    json_input.pop("docker_extra_params", None)
+    # json_input.pop("use_stark_container_mount", None)
+    json_input.pop("memory", None)
+
+    # Write the final JSON input for the container, which may be used for metrics and debugging.
+    with open(analysis_file, "w") as f:
+        f.write(json.dumps(json_input))
 
     ts_cmd = f"{_ts_env}{ts} -N {_task_slots} -L {analysis_id_name}" if ts else ""
     my_cmd = (
@@ -211,7 +238,7 @@ def queue_command_docker(json_input: dict) -> str:
 
     docker_name = f"--name {analysis_id_name}"
     docker_parameters = f"--rm {docker_name} {docker_extra_params}"
-    if json_input.get("docker_stark_container_mount", True):
+    if json_input.get("use_stark_container_mount", True):
         docker_parameters += f" {docker_stark_container_mount}"
 
     analysis_folder = docker_stark_api_log_folder
@@ -228,8 +255,17 @@ def queue_command_docker(json_input: dict) -> str:
     with open(analysis_file, "w") as f:
         f.write(json.dumps(json_input))
 
+    # CPU/Threads
     if "--cpus" not in docker_parameters:
         docker_parameters += f" --cpus={threads} "
+
+    # Memory
+    if (
+        "--memory" not in docker_parameters
+        and "memory" in json_input
+        and json_input.get("memory", None)
+    ):
+        docker_parameters += f" --memory={json_input.get('memory', '')} "
 
     ts_cmd = f"{_ts_env}{ts} -N {_task_slots} -L {analysis_id_name}" if ts else ""
     my_cmd = (
@@ -282,7 +318,7 @@ def queue_command_docker_compose(json_input: dict) -> str:
 
     docker_name = f"--name {analysis_id_name}"
     docker_parameters = f"--rm {docker_name} {docker_extra_params}"
-    if json_input.get("docker_stark_container_mount", True):
+    if json_input.get("use_stark_container_mount", True):
         docker_parameters += f" {docker_stark_container_mount}"
 
     analysis_folder = docker_stark_api_log_folder
