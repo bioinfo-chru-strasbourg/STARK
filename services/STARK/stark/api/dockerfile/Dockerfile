@@ -37,7 +37,7 @@ ENV PATH=$PATH:/tools/$TOOL_NAME/$TOOL_VERSION/bin
 # TOOL INSTALLATION
 RUN echo "#[INFO] SYSTEM Docker installation '$TOOL_NAME:$TOOL_VERSION'" && \
     mkdir -p /tools/$TOOL_NAME/$TOOL_VERSION/bin && \
-    curl -L $TOOL_SOURCE_EXTERNAL/docker-compose-$(uname -s)-$(uname -m) -o /tools/$TOOL_NAME/$TOOL_VERSION/bin/docker-compose && \
+    wget -q $TOOL_SOURCE_EXTERNAL/docker-compose-$(uname -s)-$(uname -m) -O /tools/$TOOL_NAME/$TOOL_VERSION/bin/docker-compose && \
     chmod +x /tools/$TOOL_NAME/$TOOL_VERSION/bin/docker-compose && \
     ln -s /tools/$TOOL_NAME/$TOOL_VERSION/bin/docker-compose /usr/local/bin/docker-compose;
 
