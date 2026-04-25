@@ -108,7 +108,7 @@ For each analysis, information are provided:
 
 - **Queue**: original queue requested
 - **Slots**: number of slot used
-- **Status**: whether the analysis is still procesing (`unknown`), finished (`finished`) or failed (`failed`)
+- **Status**: whether the analysis is still processing (`unknown`), finished (`finished`) or failed (`failed`)
 - **Date**: Date of the request (when the analysis had been requested, not start running)
 - **Analysis Name**: Name of the analysis
 
@@ -457,7 +457,7 @@ services:
 
 All three nodes share the same `config/peers.json` and `config/queues.json` via the mounted volume. Any node can accept requests and route them to the least-loaded peer considered the queues.
 
-Theses nodes can be configured separatly, especially to configure queues with differents `queues.json` (e.g. `config/node1/queues.json`, `config/node2/queues.json`, `config/node3/queues.json`).
+These nodes can be configured separately, especially to configure queues with different `queues.json` (e.g. `config/node1/queues.json`, `config/node2/queues.json`, `config/node3/queues.json`).
 
 Theses services can be run on multiple servers (e.g. each node on a different server to manage a cluster). This configuration to launch docker compose in each server.
 
@@ -615,11 +615,11 @@ The task type is determined by which key is present in the JSON body. An optiona
 | `threads` | Number of task-spooler slots (`-N`) the task should occupy. Valid range: `0` to the queue's slot count. `0` is a special value that bypasses slot accounting - the task starts immediately regardless of queue load. Absent, invalid, or out-of-range values fall back to the queue's total slot count (conservative default, prevents over-scheduling). |
 | `memory` | Amount of memory requested for the task, for the docker container. |
 
-**Response:** `STARK.<ID>.<analysisIDNAME>` (plain text, 200) or `Launch failed: <reason>` (400/500/403).
+**Response:** `STARK.<ID>.<analysisIDNAME>` (plain text, 200) or `Launch failed: <reason>` (400), `Relaunch failed: <reason>` (500), authentification failure(403).
 
 #### Mode 1 - STARK analysis (`run`)
 
-Runs the configured `DOCKER_STARK_IMAGE` Docker image for the given run directory. See STARK parameters for more informations about how to launch a STARK analysis.
+Runs the configured `DOCKER_STARK_IMAGE` Docker image for the given run directory. See STARK parameters for more information about how to launch a STARK analysis.
 
 Extended parameters can control STARK analysis and docker container.
 
@@ -726,7 +726,7 @@ Runs a command inside a **new ephemeral Docker container** (`docker run --rm`). 
 | `threads` | No | Slots consumed (`-N`); see common optional keys above |
 | `memory` | No | Memory limit for docker container |
 
-Exemple of custom docker command:
+Example of custom docker command:
 
 ```json
 {
@@ -737,11 +737,11 @@ Exemple of custom docker command:
   "analysis_name": "my_pipeline",
   "queue": "medium",
   "threads": 2,
-  "queue": "4G"
+  "memory": "4G"
 }
 ```
 
-Exemple of docker command with STARK data automatically mounted:
+Example of docker command with STARK data automatically mounted:
 
 ```json
 {
@@ -752,7 +752,7 @@ Exemple of docker command with STARK data automatically mounted:
   "analysis_name": "my_pipeline",
   "queue": "stark",
   "threads": 4,
-  "queue": "12G"
+  "memory": "12G"
 }
 ```
 
@@ -772,7 +772,7 @@ curl -s -X POST "http://localhost:8000/analysis" \
 >
 > **Note:**
 >
-> - `threads` is defined to select slots in queue, and constrain the resources themselves, using `--cpus` parameter. To constrain memory, use `--memory` parameter within `docker_extra_params` parameter.
+> - `threads` is defined to select slots in queue, and constrain the resources themselves, using `--cpus` parameter. To constrain memory, use `memory` json key, or `--memory` parameter within `docker_extra_params` parameter.
 
 #### Mode 4 - Docker compose command (`command_docker_compose`)
 
@@ -817,7 +817,7 @@ curl -s -X POST "http://localhost:8000/analysis" \
 >
 > **Note:**
 >
-> - `threads` is defined to select slots in queue, but do not constrain the resources themselves, because docker compose do not allow this parameter. Ensure that `docker-compose.yml` defines resources parameters (e.g. `cpus` and `memory`).
+> - `threads` is defined to select slots in queue, but do not constrain the resources themselves, because docker compose does not allow this parameter. Ensure that `docker-compose.yml` defines resources parameters (e.g. `cpus` and `memory`).
 
 #### `analysis_name` sanitisation
 
