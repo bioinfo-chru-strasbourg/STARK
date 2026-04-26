@@ -132,7 +132,7 @@ def _queue_task(my_cmd: str, prioritize: bool = False, ts_cmd: str = "") -> str:
         except subprocess.TimeoutExpired as exc:
             raise RuntimeError(
                 f"timed out after 10 seconds while reprioritizing task {task_id} "
-                f"with '{ts_cmd} -u'"
+                f"with '{ts_cmd} -u {task_id}'"
             ) from exc
         if reprioritize_result.returncode != 0:
             error_output = (
