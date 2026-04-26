@@ -324,6 +324,23 @@ document.addEventListener('DOMContentLoaded', () => {
         if (name === 'tasks')    fetchAllTasks();
         if (name === 'cluster')  fetchClusterSummary();
         if (name === 'archives') fetchArchives();
+        if (name === 'launch')   fetchQueuesForLaunch();
+    }
+
+    async function fetchQueuesForLaunch() {
+        try {
+            const resp = await fetch('/queues', { headers: { Authorization: `Bearer ${token}` } });
+            if (!resp.ok) return;
+            const data = await resp.json();
+            const dl = document.getElementById('queues-datalist');
+            if (!dl) return;
+            dl.innerHTML = '';
+            (data.queues || []).forEach(q => {
+                const opt = document.createElement('option');
+                opt.value = q;
+                dl.appendChild(opt);
+            });
+        } catch (_) { /* non-blocking */ }
     }
 
     ['tasks', 'cluster', 'launch', 'archives'].forEach(name => {
@@ -589,15 +606,31 @@ document.addEventListener('DOMContentLoaded', () => {
         activeLaunchSubTab = 'run';
         document.getElementById('launch-view-run').style.display     = '';
         document.getElementById('launch-view-advanced').style.display = 'none';
+        document.getElementById('launch-view-command-docker').style.display = 'none';
         document.getElementById('launch-tab-run').classList.add('active');
         document.getElementById('launch-tab-advanced').classList.remove('active');
+        document.getElementById('launch-tab-command-docker').classList.remove('active');
+        document.getElementById('launch-result').style.display = 'none';
     });
     document.getElementById('launch-tab-advanced')?.addEventListener('click', () => {
         activeLaunchSubTab = 'advanced';
         document.getElementById('launch-view-run').style.display     = 'none';
         document.getElementById('launch-view-advanced').style.display = '';
+        document.getElementById('launch-view-command-docker').style.display = 'none';
         document.getElementById('launch-tab-run').classList.remove('active');
         document.getElementById('launch-tab-advanced').classList.add('active');
+        document.getElementById('launch-tab-command-docker').classList.remove('active');
+        document.getElementById('launch-result').style.display = 'none';
+    });
+    document.getElementById('launch-tab-command-docker')?.addEventListener('click', () => {
+        activeLaunchSubTab = 'command-docker';
+        document.getElementById('launch-view-run').style.display     = 'none';
+        document.getElementById('launch-view-advanced').style.display = 'none';
+        document.getElementById('launch-view-command-docker').style.display = '';
+        document.getElementById('launch-tab-run').classList.remove('active');
+        document.getElementById('launch-tab-advanced').classList.remove('active');
+        document.getElementById('launch-tab-command-docker').classList.add('active');
+        document.getElementById('launch-result').style.display = 'none';
     });
 
     async function submitAnalysis(payload) {
@@ -640,6 +673,32 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!payload) return;
         try { JSON.parse(payload); } catch (_) { showLaunchResult('Invalid JSON payload', false); return; }
         await submitAnalysis(payload);
+    });
+
+    document.getElementById('analysis-form-command-docker')?.addEventListener('submit', async e => {
+        e.preventDefault();
+        const analysis_name = document.getElementById('command-docker-analysis-name')?.value.trim();
+        if (!analysis_name) {
+            showLaunchResult('Analysis name is required', false);
+            return;
+        }
+        const image = document.getElementById('command-docker-image')?.value.trim();
+        if (!analysis_name || !image) {
+            showLaunchResult('Docker image is required', false);
+            return;
+        }
+        const command = document.getElementById('command-docker-command-docker')?.value.trim();
+        if (!command) {
+            showLaunchResult('Docker command is required', false);
+            return;
+        }
+        const docker_extra_params = document.getElementById('command-docker-extra-params')?.value.trim();
+        const use_container_mount = document.getElementById('command-docker-use-container-mount')?.checked;
+        const queue = document.getElementById('command-docker-queue')?.value.trim();
+        const threads = Number.parseInt(document.getElementById('command-docker-threads')?.value.trim());
+        const memory = document.getElementById('command-docker-memory')?.value.trim();
+        const prioritize = document.getElementById('command-docker-prioritize')?.checked;
+        await submitAnalysis(JSON.stringify({ "analysis_name": analysis_name, "image": image, "command_docker": command, "docker_extra_params": docker_extra_params, "use_container_mount": use_container_mount, "queue": queue, "threads": threads, "memory": memory, "prioritize": prioritize }));
     });
 
     // ══════════════════════════════════════════════════════════════════════════

@@ -77,11 +77,19 @@ async def stark_launch(
     except Exception:
         json_input = {}
 
+    # Queue
+    queues = load_queues()
+    default_queue = next(iter(queues))
+    input_queue = (
+        json_input.get("queue")
+        if json_input.get("queue") and json_input.get("queue").strip() != ""
+        else default_queue
+    )
+    queue_name = input_queue or default_queue
+    json_input["queue"] = queue_name  # ensure queue is set for forwarded request
+
     # --- Routing (only on first hop when peers are configured) ---
     if not already_forwarded and load_peers():
-        queues = load_queues()
-        default_queue = next(iter(queues))
-        queue_name = json_input.get("queue") or default_queue
 
         # Gather metrics: peers + self
         peers_metrics = await get_peers_metrics()
@@ -203,11 +211,29 @@ async def relaunch_task(
             status_code=500,
         )
 
+    # Queue
+    queues = load_queues()
+    default_queue = next(iter(queues))
+    input_queue = (
+        json_input.get("queue")
+        if json_input.get("queue") and json_input.get("queue").strip() != ""
+        else default_queue
+    )
+    queue_name = input_queue or default_queue
+    json_input["queue"] = queue_name  # ensure queue is set for forwarded request
+
+    # Write the updated JSON input back to the file for accurate forwarding if needed
+    try:
+        with open(json_file, "w") as f:
+            json.dump(json_input, f, indent=2)
+    except OSError as e:
+        return PlainTextResponse(
+            content=f"Relaunch failed: error writing JSON file ({e})",
+            status_code=500,
+        )
+
     # Route to the best peer (same logic as a new analysis submission).
     if load_peers():
-        queues = load_queues()
-        default_queue = next(iter(queues))
-        queue_name = json_input.get("queue") or default_queue
 
         # Gather metrics: peers + self
         peers_metrics = await get_peers_metrics()

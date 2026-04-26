@@ -139,13 +139,16 @@ def _queue_task(my_cmd: str, prioritize: bool = False, ts_cmd: str = "") -> str:
                 reprioritize_result.stderr or reprioritize_result.stdout or ""
             ).strip()
             if error_output:
-                raise RuntimeError(
-                    f"failed to reprioritize task {task_id} with '{ts_cmd} -u {task_id}': {error_output}"
-                )
-            raise RuntimeError(
-                f"failed to reprioritize task {task_id} with '{ts_cmd} -u {task_id}' "
-                f"(exit code {reprioritize_result.returncode})"
-            )
+                # ts returns "cannot be urged" when the task is already running or finished:
+                # this is expected and not an error.
+                if "cannot be urged" in error_output:
+                    pass
+                else:
+                    raise RuntimeError(
+                        f"failed to reprioritize task {task_id} with '{ts_cmd} -u {task_id}': {error_output} | stdout: {reprioritize_result.stdout.strip()} | stderr: {reprioritize_result.stderr.strip()}"
+                    )
+            # No output and non-zero exit: task is likely already running or finished,
+            # reprioritization is not applicable but not an error.
     return task_id
 
 
