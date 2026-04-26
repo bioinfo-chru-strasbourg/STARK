@@ -35,6 +35,18 @@ router = APIRouter()
 
 async def _run_locally(json_input: dict) -> str:
     """Dispatch json_input to the appropriate queue function and return the IDNAME."""
+
+    # Retrieve specific parameters for resources, and create a separate json/dict
+    # to pass to the queue functions (to avoid passing irrelevant parameters).
+
+    # specific_params_list = ["threads", "memory", "prioritize"]
+
+    # specific_params = {
+    #     param: json_input[param]
+    #     for param in specific_params_list
+    #     if param in json_input
+    # }
+
     if "command" in json_input:
         return queue_command(json_input)
     elif "command_docker" in json_input:
@@ -110,6 +122,10 @@ async def relaunch_task(
         None,
         description="Queue name the task belongs to (default: first configured queue)",
     ),
+    prioritize: Optional[bool] = Query(
+        None,
+        description="Whether to prioritize the task (default: False)",
+    ),
     authorized: Union[User, str] = Depends(get_current_user_or_service),
 ):
     if authorized != "service":
@@ -144,6 +160,20 @@ async def relaunch_task(
             json_input = json.load(f)
     except (OSError, json.JSONDecodeError) as e:
         raise HTTPException(status_code=500, detail=f"Error reading JSON file: {e}")
+
+    if prioritize is not None:
+        json_input["prioritize"] = prioritize
+        print(
+            f"Set prioritize={prioritize} for task {ts_id} based on query parameter {_ts_env}."
+        )
+        info_result = subprocess.run(
+            f"{_ts_env} {ts} -r {ts_id}",
+            shell=True,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=10,
+        )
 
     # Route to the best peer (same logic as a new analysis submission).
     if load_peers():

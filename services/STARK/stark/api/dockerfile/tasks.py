@@ -110,6 +110,26 @@ def _build_analysis_idname(json_input: dict) -> tuple:
     return analysis_id_name, analyses_run_name
 
 
+def _queue_task(my_cmd: str, prioritize: bool = False) -> str:
+    task_id = (
+        subprocess.run(my_cmd, shell=True, stdout=subprocess.PIPE)
+        .stdout.decode("utf-8")
+        .strip()
+    )
+    if not task_id:
+        raise RuntimeError("task-spooler returned no task ID")
+
+    if prioritize:
+        # Move the task to the front of the queue
+        prioritize_output = (
+            subprocess.run(f"{ts} -u {task_id}", shell=True, stdout=subprocess.PIPE)
+            .stdout.decode("utf-8")
+            .strip()
+        )
+        print(f"Prioritize output: {prioritize_output}")
+    return task_id
+
+
 def queue_analysis(json_input: dict) -> str:
     """Build and queue a STARK Docker analysis. Returns analysisIDNAME or raises RuntimeError."""
     analysis_id_name, analyses_run_name = _build_analysis_idname(json_input)
@@ -133,6 +153,9 @@ def queue_analysis(json_input: dict) -> str:
 
     analysis_folder = docker_stark_api_log_folder
     analysis_file = os.path.join(analysis_folder, f"{analysis_id_name}.json")
+    analysis_file_stark = os.path.join(
+        analysis_folder, f"{analysis_id_name}.json.stark_analysis"
+    )
     analysis_info_file = os.path.join(analysis_folder, f"{analysis_id_name}.info")
     analysis_output_file = os.path.join(analysis_folder, f"{analysis_id_name}.output")
 
@@ -154,34 +177,43 @@ def queue_analysis(json_input: dict) -> str:
     ):
         docker_parameters += f" --memory={json_input.get('memory', '')} "
 
-    # Remove host-side task scheduling parameters from the JSON passed to the container.
-    json_input.pop("queue", None)
-    json_input.pop("docker_extra_params", None)
-    # json_input.pop("use_stark_container_mount", None)
-    json_input.pop("memory", None)
+    # Prioritize
+    prioritize = json_input.get("prioritize", False)
 
-    # Write the final JSON input for the container, which may be used for metrics and debugging.
+    # Write the JSON
     with open(analysis_file, "w") as f:
         f.write(json.dumps(json_input))
+
+    # Remove host-side task scheduling parameters from the JSON passed to the container.
+    json_input_for_container = json_input.copy()
+    forbiden_params = [
+        "queue",
+        "docker_extra_params",
+        "use_stark_container_mount",
+        "memory",
+        "prioritize",
+    ]
+    for param in forbiden_params:
+        json_input_for_container.pop(param, None)
+
+    # Write the final JSON input for the container, which may be used for metrics and debugging.
+    with open(analysis_file_stark, "w") as f:
+        f.write(json.dumps(json_input_for_container))
 
     ts_cmd = f"{_ts_env}{ts} -N {_task_slots} -L {analysis_id_name}" if ts else ""
     my_cmd = (
         f'{ts_cmd} bash -c "'
         f"trap 'docker stop {analysis_id_name} 2>/dev/null; echo failed > {analysis_info_file}' TERM INT; "
         f"docker run {docker_parameters} {docker_stark} "
-        f"--analysis_name={analyses_run_name} --analysis={analysis_file} "
+        f"--analysis_name={analyses_run_name} --analysis={analysis_file_stark} "
         f"> {analysis_output_file} 2>&1 "
         f"&& (echo 'finished' > {analysis_info_file} && exit 0) "
         f"|| (echo 'failed' > {analysis_info_file} && exit 1)\""
     )
 
-    task_id = (
-        subprocess.run(my_cmd, shell=True, stdout=subprocess.PIPE)
-        .stdout.decode("utf-8")
-        .strip()
-    )
-    if not task_id:
-        raise RuntimeError("task-spooler returned no task ID")
+    # Queue the task and get the task ID from task-spooler
+    _ = _queue_task(my_cmd, prioritize=prioritize)
+
     return analysis_id_name
 
 
@@ -212,13 +244,9 @@ def queue_command(json_input: dict) -> str:
         f"|| (echo 'failed' > {analysis_info_file} && exit 1)\""
     )
 
-    task_id = (
-        subprocess.run(my_cmd, shell=True, stdout=subprocess.PIPE)
-        .stdout.decode("utf-8")
-        .strip()
-    )
-    if not task_id:
-        raise RuntimeError("task-spooler returned no task ID")
+    # Queue the task and get the task ID from task-spooler
+    _ = _queue_task(my_cmd, prioritize=json_input.get("prioritize", False))
+
     return analysis_id_name
 
 
@@ -277,13 +305,9 @@ def queue_command_docker(json_input: dict) -> str:
         f"|| (echo 'failed' > {analysis_info_file} && exit 1)\""
     )
 
-    task_id = (
-        subprocess.run(my_cmd, shell=True, stdout=subprocess.PIPE)
-        .stdout.decode("utf-8")
-        .strip()
-    )
-    if not task_id:
-        raise RuntimeError("task-spooler returned no task ID")
+    # Queue the task and get the task ID from task-spooler
+    _ = _queue_task(my_cmd, prioritize=json_input.get("prioritize", False))
+
     return analysis_id_name
 
 
@@ -350,11 +374,7 @@ def queue_command_docker_compose(json_input: dict) -> str:
         f"|| (echo 'failed' > {analysis_info_file} && exit 1)\""
     )
 
-    task_id = (
-        subprocess.run(my_cmd, shell=True, stdout=subprocess.PIPE)
-        .stdout.decode("utf-8")
-        .strip()
-    )
-    if not task_id:
-        raise RuntimeError("task-spooler returned no task ID")
+    # Queue the task and get the task ID from task-spooler
+    _ = _queue_task(my_cmd, prioritize=json_input.get("prioritize", False))
+
     return analysis_id_name

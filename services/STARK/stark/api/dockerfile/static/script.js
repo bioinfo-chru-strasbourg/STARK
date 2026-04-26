@@ -448,9 +448,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         let ok = false;
                         try {
                             let resp;
-                            if (act === 'relaunch') {
+                            if (act === 'relaunch' || act === 'prioritize') {
                                 const p = new URLSearchParams({ node_url: task.node_url });
                                 if (task.queue) p.append('queue', task.queue);
+                                if (act === 'prioritize') p.append('prioritize', true);
                                 resp = await fetch(`/cluster/proxy/relaunch/${task.id}?${p}`, {
                                     method: 'POST',
                                     headers: { Authorization: `Bearer ${token}` },
