@@ -55,6 +55,12 @@ textarea {
     margin-bottom: 10px;
 }
 
+text {
+    width: 100%;
+    height: 100px;
+    margin-bottom: 10px;
+}
+
 button {
     padding: 10px 15px;
     border: none;
@@ -68,16 +74,25 @@ button:hover {
     background-color: #0056b3;
 }
 
+.form-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
 .form-row {
     display: flex;
     align-items: center;
     gap: 10px;
     margin-bottom: 10px;
+    width: 100%;
+    vertical-align: top;
 }
 
 .form-row label {
-    font-weight: 600;
-    white-space: nowrap;
+    font-weight: 400;
+    /* white-space: nowrap; */
+    width: 200px;
+    vertical-align: top;;
 }
 
 .form-row input[type="text"] {
@@ -86,6 +101,7 @@ button:hover {
     border: 1px solid #dddfe2;
     border-radius: 3px;
     font-size: 1em;
+    /* width: 400px; */
 }
 
 details {
@@ -780,4 +796,33 @@ pre.inline-detail {
     overflow: auto;
     white-space: pre-wrap;
     word-break: break-word;
+}
+
+/* --- LABELED LINE (for separating sections) --- */
+
+.labeled-line {
+  position: relative;
+  text-align: center;
+  margin: 20px 0;
+}
+
+.labeled-line hr {
+  border: 0;
+  height: 1px;
+  background: #ccc;
+  margin: 0;
+}
+
+.labeled-line .label-text {
+  position: absolute;
+  /* top: 50%; */
+  left: 15%;
+  transform: translate(-50%, -50%);
+  background: white; /* Matches page background to hide line behind text */
+  padding: 0 10px;
+}
+
+.labeled-line:before {
+  content: '\A';
+  white-space: pre;
 }

@@ -197,7 +197,7 @@ async def list_archives():
     pattern = os.path.join(docker_stark_api_log_folder, "STARK.*.json")
     files = sorted(_glob.glob(pattern), key=os.path.getmtime, reverse=True)
 
-    max_entries = 1000
+    max_entries = 100000
 
     result = []
     for json_path in files[:max_entries]:

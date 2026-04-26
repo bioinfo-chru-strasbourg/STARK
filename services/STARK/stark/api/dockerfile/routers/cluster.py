@@ -160,6 +160,14 @@ async def cluster_summary():
     return {"nodes": nodes, "totals": totals}
 
 
+@router.get("/queues")
+def list_queues():
+    """Return the list of configured queue names."""
+    from queues import load_queues
+
+    return {"queues": list(load_queues().keys())}
+
+
 @router.get("/cluster/tasks")
 async def cluster_tasks():
     """Return the consolidated task list from all nodes (self + peers).
