@@ -36,17 +36,6 @@ router = APIRouter()
 async def _run_locally(json_input: dict) -> str:
     """Dispatch json_input to the appropriate queue function and return the IDNAME."""
 
-    # Retrieve specific parameters for resources, and create a separate json/dict
-    # to pass to the queue functions (to avoid passing irrelevant parameters).
-
-    # specific_params_list = ["threads", "memory", "prioritize"]
-
-    # specific_params = {
-    #     param: json_input[param]
-    #     for param in specific_params_list
-    #     if param in json_input
-    # }
-
     if "command" in json_input:
         return queue_command(json_input)
     elif "command_docker" in json_input:
@@ -163,10 +152,9 @@ async def relaunch_task(
 
     if prioritize is not None:
         json_input["prioritize"] = prioritize
-        print(
-            f"Set prioritize={prioritize} for task {ts_id} based on query parameter {_ts_env}."
-        )
-        info_result = subprocess.run(
+
+    try:
+        relaunch_result = subprocess.run(
             f"{_ts_env} {ts} -r {ts_id}",
             shell=True,
             capture_output=True,
@@ -174,6 +162,27 @@ async def relaunch_task(
             check=False,
             timeout=10,
         )
+        if relaunch_result.returncode != 0 or relaunch_result.stderr:
+            return PlainTextResponse(
+                content=f"Relaunch failed: {relaunch_result.stderr or 'unknown error'}",
+                status_code=500,
+            )
+        # Verify the task was actually removed (ts -r can exit 0 silently on invalid IDs)
+        verify_result = subprocess.run(
+            f"{_ts_env} {ts} -i {ts_id}",
+            shell=True,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=10,
+        )
+        if verify_result.returncode == 0 and verify_result.stdout.strip():
+            return PlainTextResponse(
+                content=f"Relaunch failed: task {ts_id} was not removed from queue",
+                status_code=500,
+            )
+    except Exception as e:
+        return PlainTextResponse(content=f"Relaunch failed: {e}", status_code=500)
 
     # Route to the best peer (same logic as a new analysis submission).
     if load_peers():

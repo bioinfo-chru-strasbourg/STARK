@@ -110,7 +110,7 @@ def _build_analysis_idname(json_input: dict) -> tuple:
     return analysis_id_name, analyses_run_name
 
 
-def _queue_task(my_cmd: str, prioritize: bool = False) -> str:
+def _queue_task(my_cmd: str, prioritize: bool = False, ts_cmd: str = "") -> str:
     task_id = (
         subprocess.run(my_cmd, shell=True, stdout=subprocess.PIPE)
         .stdout.decode("utf-8")
@@ -121,12 +121,11 @@ def _queue_task(my_cmd: str, prioritize: bool = False) -> str:
 
     if prioritize:
         # Move the task to the front of the queue
-        prioritize_output = (
-            subprocess.run(f"{ts} -u {task_id}", shell=True, stdout=subprocess.PIPE)
+        _ = (
+            subprocess.run(f"{ts_cmd} -u {task_id}", shell=True, stdout=subprocess.PIPE)
             .stdout.decode("utf-8")
             .strip()
         )
-        print(f"Prioritize output: {prioritize_output}")
     return task_id
 
 
@@ -186,14 +185,14 @@ def queue_analysis(json_input: dict) -> str:
 
     # Remove host-side task scheduling parameters from the JSON passed to the container.
     json_input_for_container = json_input.copy()
-    forbiden_params = [
+    forbidden_params = [
         "queue",
         "docker_extra_params",
         "use_stark_container_mount",
         "memory",
         "prioritize",
     ]
-    for param in forbiden_params:
+    for param in forbidden_params:
         json_input_for_container.pop(param, None)
 
     # Write the final JSON input for the container, which may be used for metrics and debugging.
@@ -212,7 +211,7 @@ def queue_analysis(json_input: dict) -> str:
     )
 
     # Queue the task and get the task ID from task-spooler
-    _ = _queue_task(my_cmd, prioritize=prioritize)
+    _ = _queue_task(my_cmd, prioritize=prioritize, ts_cmd=f"{_ts_env}{ts}")
 
     return analysis_id_name
 
@@ -245,7 +244,9 @@ def queue_command(json_input: dict) -> str:
     )
 
     # Queue the task and get the task ID from task-spooler
-    _ = _queue_task(my_cmd, prioritize=json_input.get("prioritize", False))
+    _ = _queue_task(
+        my_cmd, prioritize=json_input.get("prioritize", False), ts_cmd=f"{_ts_env}{ts}"
+    )
 
     return analysis_id_name
 
@@ -306,7 +307,9 @@ def queue_command_docker(json_input: dict) -> str:
     )
 
     # Queue the task and get the task ID from task-spooler
-    _ = _queue_task(my_cmd, prioritize=json_input.get("prioritize", False))
+    _ = _queue_task(
+        my_cmd, prioritize=json_input.get("prioritize", False), ts_cmd=f"{_ts_env}{ts}"
+    )
 
     return analysis_id_name
 
@@ -375,6 +378,8 @@ def queue_command_docker_compose(json_input: dict) -> str:
     )
 
     # Queue the task and get the task ID from task-spooler
-    _ = _queue_task(my_cmd, prioritize=json_input.get("prioritize", False))
+    _ = _queue_task(
+        my_cmd, prioritize=json_input.get("prioritize", False), ts_cmd=f"{_ts_env}{ts}"
+    )
 
     return analysis_id_name
