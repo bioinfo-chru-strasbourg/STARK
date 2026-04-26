@@ -264,6 +264,7 @@ async def cluster_proxy_relaunch(
     ts_id: str,
     node_url: str = Query(..., description="Target node base URL"),
     queue: Optional[str] = Query(None),
+    prioritize: Optional[bool] = Query(None),
     authorized: Union[User, str] = Depends(get_current_user_or_service),
 ):
     """Proxy a /relaunch request to a specific cluster node."""
@@ -279,6 +280,9 @@ async def cluster_proxy_relaunch(
         node_url = "http://" + get_self_hostname() + f":{local_port}"
 
     q = f"?queue={queue}" if queue else ""
+    if prioritize is not None:
+        q += f"&prioritize={prioritize}" if q else f"?prioritize={prioritize}"
+
     url = f"{node_url}/relaunch/{ts_id}{q}"
 
     try:

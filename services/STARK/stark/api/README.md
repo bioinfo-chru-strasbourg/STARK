@@ -13,6 +13,7 @@ A **FastAPI**-based web service for launching and monitoring [STARK](https://git
 - **Four task modes** - STARK analysis, custom Docker container command, custom Docker compose command or raw shell command
 - **Multiple named queues** - independent task-spooler daemons, each with its own concurrency setting, configurable via `config/queues.json`
 - **Multiple node cluster** - independent nodes on multiple servers, configurable via `config/peers.json`
+- **Resources** - task are defined with a number of threads (corresponding to slots requested) and memory limit (for docker container)
 - **Live queue** - auto-refreshing task table (running -> queued -> finished) with per-node and per-queue context on every action
 - **State colour coding** - running (orange), queued (grey), finished success (green), finished failed (red)
 - **Filter bar** - combined State dropdown (Running / Queued / Finished / Failed only), and Node and Queue multi-select dropdown (and with Reset button)
@@ -21,6 +22,7 @@ A **FastAPI**-based web service for launching and monitoring [STARK](https://git
 - **Confirmation dialogs** - danger actions (Kill, Prioritize, Remove, Relaunch) require explicit confirmation before executing
 - **Visual feedback** - danger buttons show `Done` / `Failed` with colour flash after each action
 - **Relaunch** - re-queue a finished task from its original JSON parameters on its original queue (but different node possible)
+- **Prioritize** - re-queue a queued task and prioritize it from its original JSON parameters on its original queue (but different node possible)
 - **Username display** - logged-in username shown next to the Logout button; group membership visible on hover
 - **Cluster monitoring** - cluster resources dashboard, showing usage and running, queued and available queues on online nodes
 - **Archives** - list of previous analyses stored as configuration files (not in live spooler), with status, date, queue and requested slots
@@ -459,7 +461,7 @@ All three nodes share the same `config/peers.json` and `config/queues.json` via 
 
 These nodes can be configured separately, especially to configure queues with different `queues.json` (e.g. `config/node1/queues.json`, `config/node2/queues.json`, `config/node3/queues.json`).
 
-Theses services can be run on multiple servers (e.g. each node on a different server to manage a cluster). This configuration to launch docker compose in each server.
+These services can be run on multiple servers (e.g. each node on a different server to manage a cluster). This configuration to launch docker compose in each server.
 
 Example of multi-server and multi-nodes configuration, with common peers and users configuration:
 
@@ -614,8 +616,9 @@ The task type is determined by which key is present in the JSON body. An optiona
 | `queue` | Target queue name. Must exist in at least one `queues.json` of a node. Defaults to first queue. |
 | `threads` | Number of task-spooler slots (`-N`) the task should occupy. Valid range: `0` to the queue's slot count. `0` is a special value that bypasses slot accounting - the task starts immediately regardless of queue load. Absent, invalid, or out-of-range values fall back to the queue's total slot count (conservative default, prevents over-scheduling). |
 | `memory` | Amount of memory requested for the task, for the docker container. |
+| `prioritize` | Prioritize task once it is launched. |
 
-**Response:** `STARK.<ID>.<analysisIDNAME>` (plain text, 200) or `Launch failed: <reason>` (400), `Relaunch failed: <reason>` (500), authentification failure(403).
+**Response:** `STARK.<ID>.<analysisIDNAME>` (plain text, 200) or `Launch failed: <reason>` (plain text, 400), `Relaunch failed: <reason>` (plain text, 500), authentification failure (JSON, 403).
 
 #### Mode 1 - STARK analysis (`run`)
 
@@ -630,6 +633,7 @@ Extended parameters can control STARK analysis and docker container.
 | `queue` | No | Target queue (defaults to first queue) |
 | `threads` | No | Slots consumed (`-N`); see common optional keys above |
 | `memory` | No | Memory limit for docker container |
+| `prioritize` | Prioritize task once it is launched. |
 
 Example of standard RUN analysis:
 
@@ -725,6 +729,7 @@ Runs a command inside a **new ephemeral Docker container** (`docker run --rm`). 
 | `queue` | No | Target queue (defaults to first queue) |
 | `threads` | No | Slots consumed (`-N`); see common optional keys above |
 | `memory` | No | Memory limit for docker container |
+| `prioritize` | Prioritize task once it is launched. |
 
 Example of custom docker command:
 
