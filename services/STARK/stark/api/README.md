@@ -13,7 +13,7 @@ A **FastAPI**-based web service for launching and monitoring [STARK](https://git
 - **Four task modes** - STARK analysis, custom Docker container command, custom Docker compose command or raw shell command
 - **Multiple named queues** - independent task-spooler daemons, each with its own concurrency setting, configurable via `config/queues.json`
 - **Multiple node cluster** - independent nodes on multiple servers, configurable via `config/peers.json`
-- **Resources** - task are defined with a number of threads (corresponding to slots requested) and memory limit (for docker container)
+- **Resources** - tasks are defined with a number of threads (corresponding to slots requested) and memory limit (for docker container)
 - **Live queue** - auto-refreshing task table (running -> queued -> finished) with per-node and per-queue context on every action
 - **State colour coding** - running (orange), queued (grey), finished success (green), finished failed (red)
 - **Filter bar** - combined State dropdown (Running / Queued / Finished / Failed only), and Node and Queue multi-select dropdown (and with Reset button)
@@ -618,7 +618,7 @@ The task type is determined by which key is present in the JSON body. An optiona
 | `memory` | Amount of memory requested for the task, for the docker container. |
 | `prioritize` | Prioritize task once it is launched. |
 
-**Response:** `STARK.<ID>.<analysisIDNAME>` (plain text, 200) or `Launch failed: <reason>` (plain text, 400), `Relaunch failed: <reason>` (plain text, 500), authentification failure (JSON, 403).
+**Response:** `STARK.<ID>.<analysisIDNAME>` (plain text, 200) or `Launch failed: <reason>` (plain text, 400), `Relaunch failed: <reason>` (plain text, 500), authentication failure (JSON, 403).
 
 #### Mode 1 - STARK analysis (`run`)
 
@@ -633,7 +633,7 @@ Extended parameters can control STARK analysis and docker container.
 | `queue` | No | Target queue (defaults to first queue) |
 | `threads` | No | Slots consumed (`-N`); see common optional keys above |
 | `memory` | No | Memory limit for docker container |
-| `prioritize` | Prioritize task once it is launched. |
+| `prioritize` | No | Prioritize task once it is launched |
 
 Example of standard RUN analysis:
 
@@ -729,7 +729,7 @@ Runs a command inside a **new ephemeral Docker container** (`docker run --rm`). 
 | `queue` | No | Target queue (defaults to first queue) |
 | `threads` | No | Slots consumed (`-N`); see common optional keys above |
 | `memory` | No | Memory limit for docker container |
-| `prioritize` | Prioritize task once it is launched. |
+| `prioritize` | No | Prioritize task once it is launched |
 
 Example of custom docker command:
 
