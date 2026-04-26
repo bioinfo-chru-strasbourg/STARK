@@ -181,8 +181,21 @@ async def relaunch_task(
                 content=f"Relaunch failed: task {ts_id} was not removed from queue",
                 status_code=500,
             )
+    except subprocess.TimeoutExpired:
+        return PlainTextResponse(
+            content="Relaunch failed: command timed out",
+            status_code=504,
+        )
+    except FileNotFoundError:
+        return PlainTextResponse(
+            content="Relaunch failed: task spooler command or daemon not found",
+            status_code=500,
+        )
     except Exception as e:
-        return PlainTextResponse(content=f"Relaunch failed: {e}", status_code=500)
+        return PlainTextResponse(
+            content=f"Relaunch failed: internal error ({e})",
+            status_code=500,
+        )
 
     # Route to the best peer (same logic as a new analysis submission).
     if load_peers():

@@ -121,11 +121,24 @@ def _queue_task(my_cmd: str, prioritize: bool = False, ts_cmd: str = "") -> str:
 
     if prioritize:
         # Move the task to the front of the queue
-        _ = (
-            subprocess.run(f"{ts_cmd} -u {task_id}", shell=True, stdout=subprocess.PIPE)
-            .stdout.decode("utf-8")
-            .strip()
+        reprioritize_result = subprocess.run(
+            f"{ts_cmd} -u {task_id}",
+            shell=True,
+            capture_output=True,
+            text=True,
         )
+        if reprioritize_result.returncode != 0:
+            error_output = (
+                reprioritize_result.stderr or reprioritize_result.stdout or ""
+            ).strip()
+            if error_output:
+                raise RuntimeError(
+                    f"failed to reprioritize task {task_id} with '{ts_cmd} -u': {error_output}"
+                )
+            raise RuntimeError(
+                f"failed to reprioritize task {task_id} with '{ts_cmd} -u' "
+                f"(exit code {reprioritize_result.returncode})"
+            )
     return task_id
 
 
