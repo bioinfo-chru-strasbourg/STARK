@@ -693,12 +693,12 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         const docker_extra_params = document.getElementById('command-docker-extra-params')?.value.trim();
-        const use_container_mount = document.getElementById('command-docker-use-container-mount')?.checked;
+        const use_stark_container_mount = document.getElementById('command-docker-use-stark-container-mount')?.checked;
         const queue = document.getElementById('command-docker-queue')?.value.trim();
         const threads = Number.parseInt(document.getElementById('command-docker-threads')?.value.trim());
         const memory = document.getElementById('command-docker-memory')?.value.trim();
         const prioritize = document.getElementById('command-docker-prioritize')?.checked;
-        await submitAnalysis(JSON.stringify({ "analysis_name": analysis_name, "image": image, "command_docker": command, "docker_extra_params": docker_extra_params, "use_container_mount": use_container_mount, "queue": queue, "threads": threads, "memory": memory, "prioritize": prioritize }));
+        await submitAnalysis(JSON.stringify({ "analysis_name": analysis_name, "image": image, "command_docker": command, "docker_extra_params": docker_extra_params, "use_stark_container_mount": use_stark_container_mount, "queue": queue, "threads": threads, "memory": memory, "prioritize": prioritize }));
     });
 
     // ══════════════════════════════════════════════════════════════════════════

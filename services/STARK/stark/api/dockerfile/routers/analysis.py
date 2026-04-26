@@ -79,13 +79,18 @@ async def stark_launch(
 
     # Queue
     queues = load_queues()
+    if not queues:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="No queues configured",
+        )
     default_queue = next(iter(queues))
-    input_queue = (
-        json_input.get("queue")
-        if json_input.get("queue") and json_input.get("queue").strip() != ""
-        else default_queue
-    )
-    queue_name = input_queue or default_queue
+    requested_queue = json_input.get("queue")
+    if isinstance(requested_queue, str) and requested_queue.strip() != "":
+        queue_name = requested_queue
+    else:
+        queue_name = default_queue
+
     json_input["queue"] = queue_name  # ensure queue is set for forwarded request
 
     # --- Routing (only on first hop when peers are configured) ---
@@ -213,13 +218,18 @@ async def relaunch_task(
 
     # Queue
     queues = load_queues()
+    if not queues:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="No queues configured",
+        )
     default_queue = next(iter(queues))
-    input_queue = (
-        json_input.get("queue")
-        if json_input.get("queue") and json_input.get("queue").strip() != ""
-        else default_queue
-    )
-    queue_name = input_queue or default_queue
+    requested_queue = json_input.get("queue")
+    if isinstance(requested_queue, str) and requested_queue.strip() != "":
+        queue_name = requested_queue
+    else:
+        queue_name = default_queue
+
     json_input["queue"] = queue_name  # ensure queue is set for forwarded request
 
     # Write the updated JSON input back to the file for accurate forwarding if needed
