@@ -121,22 +121,29 @@ def _queue_task(my_cmd: str, prioritize: bool = False, ts_cmd: str = "") -> str:
 
     if prioritize:
         # Move the task to the front of the queue
-        reprioritize_result = subprocess.run(
-            f"{ts_cmd} -u {task_id}",
-            shell=True,
-            capture_output=True,
-            text=True,
-        )
+        try:
+            reprioritize_result = subprocess.run(
+                f"{ts_cmd} -u {task_id}",
+                shell=True,
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise RuntimeError(
+                f"timed out after 10 seconds while reprioritizing task {task_id} "
+                f"with '{ts_cmd} -u'"
+            ) from exc
         if reprioritize_result.returncode != 0:
             error_output = (
                 reprioritize_result.stderr or reprioritize_result.stdout or ""
             ).strip()
             if error_output:
                 raise RuntimeError(
-                    f"failed to reprioritize task {task_id} with '{ts_cmd} -u': {error_output}"
+                    f"failed to reprioritize task {task_id} with '{ts_cmd} -u {task_id}': {error_output}"
                 )
             raise RuntimeError(
-                f"failed to reprioritize task {task_id} with '{ts_cmd} -u' "
+                f"failed to reprioritize task {task_id} with '{ts_cmd} -u {task_id}' "
                 f"(exit code {reprioritize_result.returncode})"
             )
     return task_id

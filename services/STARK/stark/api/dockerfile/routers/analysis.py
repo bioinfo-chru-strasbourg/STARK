@@ -126,14 +126,25 @@ async def relaunch_task(
 
     _ts_env = get_queue_env(queue)
 
-    info_result = subprocess.run(
-        f"{_ts_env} {ts} -i {ts_id}",
-        shell=True,
-        capture_output=True,
-        text=True,
-        check=False,
-        timeout=10,
-    )
+    try:
+        info_result = subprocess.run(
+            f"{_ts_env} {ts} -i {ts_id}",
+            shell=True,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=10,
+        )
+    except subprocess.TimeoutExpired:
+        raise HTTPException(
+            status_code=504, detail="Failed to retrieve task info: command timed out"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to retrieve task info: internal error ({e})",
+        )
+
     analysis_name = _extract_analysis_name(info_result.stdout)
     if not analysis_name:
         raise HTTPException(
@@ -185,11 +196,6 @@ async def relaunch_task(
         return PlainTextResponse(
             content="Relaunch failed: command timed out",
             status_code=504,
-        )
-    except FileNotFoundError:
-        return PlainTextResponse(
-            content="Relaunch failed: task spooler command or daemon not found",
-            status_code=500,
         )
     except Exception as e:
         return PlainTextResponse(
