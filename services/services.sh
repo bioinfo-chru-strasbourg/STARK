@@ -220,34 +220,37 @@ mkdir -p $TMP_FOLDER
 
 # DOCKER
 
-# Docker Compose command
+# Docker command
 if docker 2>/dev/null; then
 	DOCKER=docker
-	DOCKER_VERSION=$(docker --version 2>/dev/null)
 else
 	echo "#[ERROR] Docker not installed"
 	exit 1
 fi;
 
-# Docker Compose command
-DOCKER_COMPOSE="docker-compose"
-
-# Docker Compose command
-# !!! docker compose as command failed due to env variables !!!
-# if docker compose 1>/dev/null 2>/dev/null; then
-# 	DOCKER_COMPOSE="docker compose"
-# 	DOCKER_COMPOSE_VERSION=$(docker --version 2>/dev/null)
-# elif docker-compose 2>/dev/null; then
-# 	DOCKER_COMPOSE="docker-compose"
-# 	DOCKER_COMPOSE_VERSION=$(docker-compose --version 2>/dev/null)
-# else
-# 	echo "#[ERROR] Docker Compose not installed"
-# 	exit 1
-# fi;
-
 # Docker version
+DOCKER_VERSION=$($DOCKER --version 2>/dev/null)
+
+# Docker info
 (($VERBOSE)) && echo "#[INFO] STARK Module Docker version '$DOCKER_VERSION'"
+(($VERBOSE)) && echo "#[INFO] STARK Module Docker command '$DOCKER'"
+
+# Docker Compose command
+if docker-compose 1>/dev/null; then
+	DOCKER_COMPOSE="docker-compose";
+elif docker compose 1>/dev/null 2>/dev/null; then
+	DOCKER_COMPOSE="docker compose";
+else
+	echo "#[ERROR] Docker Compose not installed"
+	exit 1
+fi
+
+# Docker Compose version
+DOCKER_COMPOSE_VERSION=$($DOCKER_COMPOSE --version 2>/dev/null)
+
+# Docker Compose info
 (($VERBOSE)) && echo "#[INFO] STARK Module Docker Compose version '$DOCKER_COMPOSE_VERSION'"
+(($VERBOSE)) && echo "#[INFO] STARK Module Docker Compose command '$DOCKER_COMPOSE'"
 
 
 # ENV
@@ -584,38 +587,49 @@ else
 						# patch for --env-file unavailable
 						if (( $($DOCKER_COMPOSE --help | grep "\-\-env\-file" -c) )); then
 							
-							# Command
-							if $DOCKER_COMPOSE --file $service_module_yml --env-file $TMP_FOLDER/.env -p $module_name config 1>$TMP_FOLDER/docker-compose.log 2>$TMP_FOLDER/docker-compose.err; then
-								> $TMP_FOLDER/docker-compose.err
+							(($DEBUG)) && echo "#[DEBUG] Check services"
+							services=$($DOCKER_COMPOSE --file $service_module_yml --env-file $TMP_FOLDER/.env -p $module_name config --services 2>/dev/null)
 
-								if [ "$(cat $TMP_FOLDER/docker-compose.log)" == "services: {}" ]; then
-
-									echo "#[WARNING] docker-compose 'empty yml'"
+							if [ -z "$services" ]; then
 								
-								else
+								(($DEBUG)) && echo "#[WARNING] No services found"
+							
+							else
 
-									if $DOCKER_COMPOSE --file $service_module_yml --env-file $TMP_FOLDER/.env -p $module_name $COMMAND $COMMAND_ARGS $SERVICES 2>>$TMP_FOLDER/docker-compose.err; then
-										(($VERBOSE)) && cat $TMP_FOLDER/docker-compose.err | grep "Found orphan containers" -v
+								# Command
+								if $DOCKER_COMPOSE --file $service_module_yml --env-file $TMP_FOLDER/.env -p $module_name config 1>$TMP_FOLDER/docker-compose.log 2>$TMP_FOLDER/docker-compose.err; then
+									> $TMP_FOLDER/docker-compose.err
+
+									if [ "$(cat $TMP_FOLDER/docker-compose.log)" == "services: {}" ]; then
+
+										echo "#[WARNING] docker-compose 'empty yml'"
+									
 									else
-										if (($(cat $TMP_FOLDER/docker-compose.err | grep "no service selected" -c))); then
-											echo "#[WARNING] docker-compose 'no service selected'";
+
+										if $DOCKER_COMPOSE --file $service_module_yml --env-file $TMP_FOLDER/.env -p $module_name $COMMAND $COMMAND_ARGS $SERVICES 2>>$TMP_FOLDER/docker-compose.err; then
+											(($VERBOSE)) && cat $TMP_FOLDER/docker-compose.err | grep "Found orphan containers" -v
+										else
+											if (($(cat $TMP_FOLDER/docker-compose.err | grep "no service selected" -c))); then
+												echo "#[WARNING] docker-compose 'no service selected'";
+											fi;
+											if (($(cat $TMP_FOLDER/docker-compose.err | grep " level=warning " -c))); then
+												echo "#[WARNING] docker-compose 'level=warning'";
+											fi;
+											if (($(cat $TMP_FOLDER/docker-compose.err | grep -e "no service selected" -e " level=warning " -vc))); then
+												echo "#[ERROR] docker-compose error1";
+												cat $TMP_FOLDER/docker-compose.err
+												exit 1;
+											fi;
 										fi;
-										if (($(cat $TMP_FOLDER/docker-compose.err | grep " level=warning " -c))); then
-											echo "#[WARNING] docker-compose 'level=warning'";
-										fi;
-										if (($(cat $TMP_FOLDER/docker-compose.err | grep -e "no service selected" -e " level=warning " -vc))); then
-											echo "#[ERROR] docker-compose error1";
-											cat $TMP_FOLDER/docker-compose.err
-											exit 1;
-										fi;
+
 									fi;
 
+								else
+									echo "#[ERROR] docker-compose error - docker compose command error";
+									cat $TMP_FOLDER/docker-compose.log $TMP_FOLDER/docker-compose.err;
+									#exit 1;
 								fi;
 
-							else
-								echo "#[ERROR] docker-compose error - docker compose command error";
-								cat $TMP_FOLDER/docker-compose.log $TMP_FOLDER/docker-compose.err;
-								#exit 1;
 							fi;
 							
 						else
