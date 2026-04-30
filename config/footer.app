@@ -364,11 +364,6 @@ done;
 # RULES for the project
 [ "$APP_PROJECT" != "" ] && RULES_APP="$RULES_APP $STARK_FOLDER_RULES/$APP_PROJECT/*rules.mk";
 
-#SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd -P )"
-#echo $SCRIPT_DIR
-#echo $APP_NAME
-#echo $APP_GROUP
-#echo $APP_PROJECT
 
 # TOOLS
 #########

@@ -174,6 +174,9 @@ source_app () {
 
 	for ENV_ONE in $ENV; do
 
+		# Add app folder to allow specifis rules defined in apps
+		local APP_FOLDER=$(dirname $ENV_ONE)
+
 		FILES_TO_SOURCE=$FILES_TO_SOURCE" $ENV_ONE"
 
 	done
