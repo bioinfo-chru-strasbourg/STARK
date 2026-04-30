@@ -65,6 +65,13 @@ services:
         build:
             context: ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_API_IMAGE_CONTEXT}
             dockerfile: ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_API_IMAGE_CONTEXT_DOCKERFILE}
+            args:
+                - HTTP_PROXY=${HTTP_PROXY}
+                - HTTPS_PROXY=${HTTPS_PROXY}
+                - FTP_PROXY=${FTP_PROXY}
+                - http_proxy=${http_proxy}
+                - https_proxy=${https_proxy}
+                - ftp_proxy=${ftp_proxy}
         container_name: ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_API_CONTAINER_NAME}
         restart: ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_API_CONTAINER_RESTART}
         env_file:
@@ -204,6 +211,13 @@ services:
         build:
             context: ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_XTERM_IMAGE_CONTEXT}
             dockerfile: ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_XTERM_IMAGE_CONTEXT_DOCKERFILE}
+            args:
+                - HTTP_PROXY=${HTTP_PROXY}
+                - HTTPS_PROXY=${HTTPS_PROXY}
+                - FTP_PROXY=${FTP_PROXY}
+                - http_proxy=${http_proxy}
+                - https_proxy=${https_proxy}
+                - ftp_proxy=${ftp_proxy}
         container_name: ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_XTERM_CONTAINER_NAME}
         restart: ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_XTERM_CONTAINER_RESTART}
         env_file:
@@ -236,6 +250,11 @@ services:
         entrypoint: ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_DOCS_CONTAINER_ENTRYPOINT}
         command: ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_DOCS_CONTAINER_COMMAND}
         restart: ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_DOCS_CONTAINER_RESTART}
+        # working_dir: /tool/docs
+        # environment:
+        #     - STARK_API_KEY=${STARK_API_KEY}
+        #     - STARK_LAUNCHER=${STARK_LAUNCHER}
+        #     - REFRESH=10
         ports:
             - ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_DOCS_PARAM_PORT_PUBLISHED}:${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_DOCS_PARAM_PORT_TARGET}
         networks:

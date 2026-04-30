@@ -15,23 +15,6 @@ services:
     ##############
 
 
-    # # STARK SOURCES
-    # stark-sources:
-    #     image: ${DOCKER_STARK_SOURCES_IMAGE}
-    #     platform: linux/amd64
-    #     build:
-    #         context: ${DOCKER_STARK_IMAGE_CONTEXT}
-    #         dockerfile: Dockerfile
-    #         args:
-    #             - THREADS=${DOCKER_STARK_BUILD_THREADS}
-    #             - REPO_SOURCES=${DOCKER_STARK_BUILD_SOURCES_URL}
-    #             - REMOVE_SOURCES=0
-    #     container_name: STARK-sources
-    #     command: --help
-    #     networks:
-    #         - stark
-
-
     # STARK IMAGE
     stark:
         image: ${DOCKER_STARK_IMAGE}
@@ -43,6 +26,12 @@ services:
                 - THREADS=${DOCKER_STARK_BUILD_THREADS}
                 - REPO_SOURCES=${DOCKER_STARK_BUILD_SOURCES_URL}
                 - REMOVE_SOURCES=1
+                - HTTP_PROXY=${HTTP_PROXY}
+                - HTTPS_PROXY=${HTTPS_PROXY}
+                - FTP_PROXY=${FTP_PROXY}
+                - http_proxy=${http_proxy}
+                - https_proxy=${https_proxy}
+                - ftp_proxy=${ftp_proxy}
         container_name: STARK
         command: --help
         # depends_on:
@@ -87,22 +76,6 @@ services:
             - stark-setup
         networks:
             - stark
-
-
-    # # STARK SOURCES
-    # stark-sources-archives:
-    #     image: ${DOCKER_STARK_SOURCES_IMAGE}
-    #     platform: linux/amd64
-    #     container_name: STARK-sources-archives
-    #     entrypoint: /bin/bash
-    #     command: -c "rsync -auczAXhiv --no-links --no-perms --no-owner --no-group ${DOCKER_STARK_INNER_FOLDER_SOURCES}/* /sources-archives/ 1>>/sources-archives/archives.log 2>>/sources-archives/archives.err && rsync -auczAXhiv --no-links --no-perms --no-owner --no-group ${DOCKER_STARK_INNER_FOLDER_MAIN}/tools/* /sources-archives/sources/tools/ 1>>/sources-archives/archives.log 2>>/sources-archives/archives.err "
-    #     volumes:
-    #         - ${DOCKER_STARK_MAIN_FOLDER}/${DOCKER_STARK_FOLDER_SOURCES}:/sources-archives:rw
-    #     depends_on:
-    #         - stark-sources
-    #         - stark-setup
-    #     networks:
-    #         - stark
 
             
 # NETWORK
