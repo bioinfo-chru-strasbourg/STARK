@@ -140,6 +140,70 @@ extract_tag () {
 
 
 
+# source_app_old () {
+# # source an env file from an application definition
+# # $1: APP definition
+# # $2: APPS folder
+# # return APP env file or default APP env file or null
+
+# 	[ -z $TMP_SYS_FOLDER ] && TMP_SYS_FOLDER="/tmp"
+
+# 	local APP_LIST=$(echo $1 | tr "," " " | tr "+" " ") FOLDER_APPS=$2 VERBOSE=$3
+
+# 	local TMP_VERBOSE=$TMP_SYS_FOLDER/$RANDOM
+
+# 	if [ "$FOLDER_APPS" == "" ]; then FOLDER_APPS="$STARK_FOLDER_APPS"; fi
+# 	if [ "$FOLDER_APPS" == "" ]; then FOLDER_APPS=".."; fi
+
+# 	FILES_TO_SOURCE=""
+
+# 	if [ "$CONFIG_HEADER" != "" ] && [ -e "$CONFIG_HEADER" ]; then
+# 		FILES_TO_SOURCE=$FILES_TO_SOURCE" $CONFIG_HEADER"
+# 	fi
+
+# 	local ENV=$(find_app "$APP_LIST" "$FOLDER_APPS")
+
+# 	# if [ "$ENV" == "" ]; then
+
+# 	# 	# SOURCE
+# 	# 	if [ "$CONFIG_FOOTER" != "" ] && [ -e "$CONFIG_FOOTER" ]; then
+# 	# 		FILES_TO_SOURCE=$FILES_TO_SOURCE" $CONFIG_FOOTER"
+# 	# 	fi
+
+# 	# else
+
+# 	for ENV_ONE in $ENV; do
+
+# 		# Add app folder to allow specifis rules defined in apps
+# 		local APP_FOLDER=$(dirname $ENV_ONE)
+
+# 		FILES_TO_SOURCE=$FILES_TO_SOURCE" $ENV_ONE"
+
+# 	done
+
+# 	# FOOTER
+# 	if [ "$CONFIG_FOOTER" != "" ] && [ -e "$CONFIG_FOOTER" ]; then
+# 		FILES_TO_SOURCE=$FILES_TO_SOURCE" $CONFIG_FOOTER"
+# 	fi
+
+# 	# Source
+# 	#source $FILES_TO_SOURCE
+# 	for f in $FILES_TO_SOURCE; do
+# 		[[ -f "$f" ]] || { echo "File not found: $f" >&2; exit 1; }
+# 		source "$f"
+# 	done
+# 	# for FILE_TO_SOURCE in $FILES_TO_SOURCE; do
+# 	# 	if source $FILE_TO_SOURCE 1>>$TMP_VERBOSE 2>>$TMP_VERBOSE; then
+# 	# 		echo "ok" 1>/dev/null 2>/dev/null
+# 	# 	else
+# 	# 		cat $TMP_VERBOSE 2>/dev/null && return 1;
+# 	# 	fi
+# 	# done;
+	
+
+# } # source_app
+
+
 source_app () {
 # source an env file from an application definition
 # $1: APP definition
@@ -163,43 +227,23 @@ source_app () {
 
 	local ENV=$(find_app "$APP_LIST" "$FOLDER_APPS")
 
-	# if [ "$ENV" == "" ]; then
-
-	# 	# SOURCE
-	# 	if [ "$CONFIG_FOOTER" != "" ] && [ -e "$CONFIG_FOOTER" ]; then
-	# 		FILES_TO_SOURCE=$FILES_TO_SOURCE" $CONFIG_FOOTER"
-	# 	fi
-
-	# else
-
 	for ENV_ONE in $ENV; do
 
-		# Add app folder to allow specifis rules defined in apps
-		local APP_FOLDER=$(dirname $ENV_ONE)
+		# Add app folder to allow specific rules defined in apps
+		local APP_FOLDER=$(dirname "$ENV_ONE")
 
-		FILES_TO_SOURCE=$FILES_TO_SOURCE" $ENV_ONE"
+		# Source app env file
+		[[ -f "$ENV_ONE" ]] || { echo "File not found: $ENV_ONE" >&2; exit 1; }
+ 		source "$ENV_ONE"
 
 	done
 
 	# FOOTER
 	if [ "$CONFIG_FOOTER" != "" ] && [ -e "$CONFIG_FOOTER" ]; then
-		FILES_TO_SOURCE=$FILES_TO_SOURCE" $CONFIG_FOOTER"
+		# Source config footer
+		[[ -f "$CONFIG_FOOTER" ]] || { echo "File not found: $CONFIG_FOOTER" >&2; exit 1; }
+ 		source "$CONFIG_FOOTER"
 	fi
-
-	# Source
-	#source $FILES_TO_SOURCE
-	for f in $FILES_TO_SOURCE; do
-		[[ -f "$f" ]] || { echo "File not found: $f" >&2; exit 1; }
-		source "$f"
-	done
-	# for FILE_TO_SOURCE in $FILES_TO_SOURCE; do
-	# 	if source $FILE_TO_SOURCE 1>>$TMP_VERBOSE 2>>$TMP_VERBOSE; then
-	# 		echo "ok" 1>/dev/null 2>/dev/null
-	# 	else
-	# 		cat $TMP_VERBOSE 2>/dev/null && return 1;
-	# 	fi
-	# done;
-	
 
 } # source_app
 
