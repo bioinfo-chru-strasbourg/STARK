@@ -16,9 +16,9 @@ MK_DATE="30/04/2026"
 ###############
 
 
-# write the genome file in a file
-%.genome: #%.assembly
-	echo $(GENOME) > $@;
+# Write the genome file in a file
+%.genome:
+	printf '%s\n' "$(GENOME)" > "$@";
 
 
 # CONFIG/RELEASE
