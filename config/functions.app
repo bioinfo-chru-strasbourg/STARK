@@ -219,12 +219,12 @@ source_app () {
 	if [ "$FOLDER_APPS" == "" ]; then FOLDER_APPS="$STARK_FOLDER_APPS"; fi
 	if [ "$FOLDER_APPS" == "" ]; then FOLDER_APPS=".."; fi
 
-	if [ "$CONFIG_HEADER" != "" ] && [ -e "$CONFIG_HEADER" ]; then
+	if [ "$CONFIG_HEADER" != "" ]; then
 
 		# Source config header
 		[[ -f "$CONFIG_HEADER" ]] || { echo "File not found: $CONFIG_HEADER" >&2; exit 1; }	
 		source "$CONFIG_HEADER"
-		
+
 	fi
 
 	local ENV=$(find_app "$APP_LIST" "$FOLDER_APPS")
@@ -241,7 +241,7 @@ source_app () {
 	done
 
 	# FOOTER
-	if [ "$CONFIG_FOOTER" != "" ] && [ -e "$CONFIG_FOOTER" ]; then
+	if [ "$CONFIG_FOOTER" != "" ]; then
 
 		# Source config footer
 		[[ -f "$CONFIG_FOOTER" ]] || { echo "File not found: $CONFIG_FOOTER" >&2; exit 1; }
