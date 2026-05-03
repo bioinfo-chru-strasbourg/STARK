@@ -1584,6 +1584,8 @@ for RUU in $RUN_UNIQ; do
 			for BEDFILE_GENES_LIST_ONE_GENES_FILE in $(cat $BEDFILE_GENES_LIST_ONE); do
 				cp -p $RUN_SAMPLE_DIR/$BEDFILE_GENES_LIST_ONE_GENES_FILE $RUN_SAMPLE_DIR/$BEDFILE_GENES_LIST_ONE_GENES_FILE.bed
 			done;
+		else
+			(($VERBOSE)) && echo "["$(timestamp)" | WARN] Generate genes.bed from .genes files within LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes': failed because no .genes file found."
 		fi;
 
 
