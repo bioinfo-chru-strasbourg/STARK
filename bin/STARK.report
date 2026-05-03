@@ -470,9 +470,14 @@ if [ -s "$BED_NAME_FILE" ]; then
 	BED_NAME=$(basename $(awk -F"\t" '{print $1}' $BED_NAME_FILE))
 	BED_SOURCE=$(awk -F"\t" '{print $2}' $BED_NAME_FILE)
 fi;
+if [ ! -s "$GENES_LIST_FILE" ]; then
+	touch $GENES_LIST_FILE
+fi;
 if [ -s "$GENES_LIST_FILE" ]; then
 	GENES_LIST=$(cat $GENES_LIST_FILE | tr "\n" " ")
 	#BED_SOURCE=$(awk -F"\t" '{print $2}' $BED_NAME_FILE)
+else
+	GENES_LIST=""
 fi;
 
 if [ -z "$MANIFEST_NAME" ]; then
@@ -518,11 +523,19 @@ BAM_VALIDATION_TEXT_HTML=$BAM_VALIDATION_TEXT_HTML' Minimum <strong>Base</strong
 
 # LIST_GENES_PANEL
 LIST_GENES_PANEL="$SAMPLE_FOLDER/$SAMPLE.list.genes"
+if [ ! -s $LIST_GENE_PANEL ]; then
+	touch $LIST_GENE_PANEL
+fi;
 LIST_GENES_PANEL_BASENAME=$REPORTDIR/list.genes
 > $LIST_GENES_PANEL_BASENAME
-for GENES_PANEL in $(cat $LIST_GENES_PANEL); do
-	echo $(basename $GENES_PANEL) >> $LIST_GENES_PANEL_BASENAME
-done;
+if [ -s "$LIST_GENES_PANEL" ]; then
+	echo "#[INFO] List of genes panel found: $LIST_GENES_PANEL"
+	for GENES_PANEL in $(cat $LIST_GENES_PANEL); do
+		echo $(basename $GENES_PANEL) >> $LIST_GENES_PANEL_BASENAME
+	done;
+else
+	echo "#[INFO] No list of genes panel found for the sample ($LIST_GENES_PANEL)."
+fi;
 
 
 
@@ -895,9 +908,16 @@ fi;
 
 # GENE PANEL
 LIST_GENE_PANEL="$SAMPLE_FOLDER/$SAMPLE.list.genes"
-GENE_PANEL_FILES_NAME=$(grep -v "^#" $LIST_GENE_PANEL | sed "s/^$SAMPLE\.//gi")
-GENE_PANEL_FILES_NAME_HTML=$(echo $GENE_PANEL_FILES_NAME | sed "s/ /<br>/gi")
-
+if [ ! -s $LIST_GENE_PANEL ]; then
+	touch $LIST_GENE_PANEL
+fi;
+if [ -s "$LIST_GENE_PANEL" ]; then
+	GENE_PANEL_FILES_NAME=$(grep -v "^#" $LIST_GENE_PANEL | sed "s/^$SAMPLE\.//gi")
+	GENE_PANEL_FILES_NAME_HTML=$(echo $GENE_PANEL_FILES_NAME | sed "s/ /<br>/gi")
+else
+	GENE_PANEL_FILES_NAME=""
+	GENE_PANEL_FILES_NAME_HTML=""
+fi;
 
 # Gene number
 if [ "$(cat $LIST_GENE_PANEL)" != "" ]; then
@@ -1130,7 +1150,11 @@ SEQUENCING_UMI=$(grep "^UMI" $SEQUENCING_INFOS | cut -f2)
 [ "$SEQUENCING_UMI" == "true" ] && SEQUENCING_UMI_HTML=" (<strong>UMI</strong> enabled)" || SEQUENCING_UMI=""
 
 # BASES count
-GENES_BASES_NUMBER=$(cd $SAMPLE_FOLDER/; cat $(cat $LIST_GENE_PANEL) | $BEDTOOLS sort -i - | $BEDTOOLS merge -i - > $REPORTDIR/merge_all_genes.bed; $BEDTOOLS coverage -a $REPORTDIR/merge_all_genes.bed  -b $REPORTDIR/merge_all_genes.bed | awk -F '\t' 'BEGIN{sum = 0} {sum += $6} END {print sum}'; rm $REPORTDIR/merge_all_genes.bed; )
+if [ ! -z "$(cat $LIST_GENE_PANEL)" ]; then
+	GENES_BASES_NUMBER=$(cd $SAMPLE_FOLDER/; cat $(cat $LIST_GENE_PANEL) | $BEDTOOLS sort -i - | $BEDTOOLS merge -i - > $REPORTDIR/merge_all_genes.bed; $BEDTOOLS coverage -a $REPORTDIR/merge_all_genes.bed  -b $REPORTDIR/merge_all_genes.bed | awk -F '\t' 'BEGIN{sum = 0} {sum += $6} END {print sum}'; rm $REPORTDIR/merge_all_genes.bed; )
+else
+	GENES_BASES_NUMBER=0
+fi;
 GENES_BASES_HTML=$(echo $GENES_BASES_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
 
 
