@@ -328,7 +328,7 @@ Command with Docker
 
 ```json
 {
-  "command_docker": "sleep 10 && echo 'Hello Wolrd! From docker...", 
+  "command_docker": "sleep 10 && echo 'Hello World! From docker...", 
   "image": "alpine", 
   "analysis_name": "cmd_docker",
   "queue": "medium"
