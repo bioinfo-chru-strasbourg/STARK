@@ -51,7 +51,7 @@ def _resolve_task_slots(json_input: dict, max_slots: int) -> int:
         return max_slots
     try:
         n = int(raw)
-        if 0 <= n <= max_slots:
+        if 1 <= n <= max_slots:
             return n
         return max_slots
     except (ValueError, TypeError):

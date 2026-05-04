@@ -604,7 +604,7 @@ The task type is determined by which key is present in the JSON body. An optiona
 | --- | --- |
 | `analysis_name` | Human-readable task label (sanitised, max 64 chars, defaults to `UNKNOWN`) |
 | `queue` | Target queue name. Must exist in at least one `queues.json` of a node. Defaults to first queue. |
-| `threads` | Number of task-spooler slots (`-N`) the task should occupy. Valid range: `0` to the queue's slot count. `0` is a special value that bypasses slot accounting - the task starts immediately regardless of queue load. Absent, invalid, or out-of-range values fall back to the queue's total slot count (conservative default, prevents over-scheduling). |
+| `threads` | Number of task-spooler slots (`-N`) the task should occupy. Valid range: `1` to the queue's slot count. Absent, invalid, or out-of-range values fall back to the queue's total slot count (conservative default, prevents over-scheduling). |
 | `memory` | Amount of memory requested for the task, for the docker container. |
 | `prioritize` | Prioritize task once it is launched. |
 
