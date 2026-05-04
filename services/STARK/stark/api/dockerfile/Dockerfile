@@ -43,7 +43,13 @@ RUN echo "#[INFO] SYSTEM Docker installation '$TOOL_NAME:$TOOL_VERSION'" && \
 
 
 # Task Spooler
-RUN git clone https://github.com/thomaspreece/task-spooler.git && \
+ENV TOOL_NAME="task-spooler"
+ENV TOOL_VERSION="v1.0.0"
+ENV TOOL_SOURCE_EXTERNAL="https://github.com/thomaspreece/task-spooler.git"
+
+# TOOL INSTALLATION
+RUN echo "#[INFO] SYSTEM Task Spooler installation '$TOOL_NAME:$TOOL_VERSION'" && \
+    git clone $TOOL_SOURCE_EXTERNAL && \
     cd task-spooler && \
     make && \
     make install && \
@@ -52,7 +58,7 @@ RUN git clone https://github.com/thomaspreece/task-spooler.git && \
 
 
 # Bundle app source
-COPY . /app
+COPY app /app
 
 WORKDIR /app
 
