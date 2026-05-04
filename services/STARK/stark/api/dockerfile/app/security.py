@@ -100,18 +100,6 @@ def _sanitize_analysis_name(name: str) -> str:
     return sanitized[:64] if sanitized else "UNKNOWN"
 
 
-def _sanitize_docker_extra_params(extra_params: str) -> str:
-    tokens = shlex.split(extra_params)
-    filtered = []
-
-    for t in tokens:
-        if any(t == f or t.startswith(f + "=") for f in _FORBIDDEN_DOCKER_FLAGS):
-            continue
-        filtered.append(t)
-
-    return " ".join(filtered)
-
-
 def _sanitize_docker_extra_params(
     extra_params: str, extra_forbidden: Optional[Dict[str, bool]] = None
 ) -> str:
