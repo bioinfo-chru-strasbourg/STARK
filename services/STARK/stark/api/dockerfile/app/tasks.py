@@ -4,6 +4,7 @@ import json
 import os
 import random
 import re
+import shlex
 import string
 import subprocess
 from typing import Optional
@@ -20,9 +21,10 @@ from security import (
     _sanitize_analysis_name,
     _validate_command,
     _validate_docker_extra_params,
+    _sanitize_docker_extra_params,
     _validate_image,
+    _safe_split,
 )
-
 
 def random_string_digits(string_length: int = 6) -> str:
     letters_and_digits = string.ascii_letters + string.digits
@@ -49,7 +51,7 @@ def _resolve_task_slots(json_input: dict, max_slots: int) -> int:
         return max_slots
     try:
         n = int(raw)
-        if 0 <= n <= max_slots:
+        if 1 <= n <= max_slots:
             return n
         return max_slots
     except (ValueError, TypeError):
@@ -165,14 +167,14 @@ def queue_analysis(json_input: dict) -> str:
     docker_extra_params = json_input.get("docker_extra_params", "")
     if docker_extra_params:
         _validate_docker_extra_params(docker_extra_params)
+        docker_extra_params = _sanitize_docker_extra_params(docker_extra_params)
 
     # Combine Docker parameters, ensuring --name is included and --rm is set for cleanup.
     docker_parameters = (
         f"--rm {docker_name} {docker_extra_params} {docker_stark_container_mount}"
     )
-    # if json_input.get("use_stark_container_mount", True):
-    #     docker_parameters += f" {docker_stark_container_mount}"
 
+    # Analysis file paths
     analysis_folder = docker_stark_api_log_folder
     analysis_file = os.path.join(analysis_folder, f"{analysis_id_name}.json")
     analysis_file_stark = os.path.join(
@@ -181,23 +183,25 @@ def queue_analysis(json_input: dict) -> str:
     analysis_info_file = os.path.join(analysis_folder, f"{analysis_id_name}.info")
     analysis_output_file = os.path.join(analysis_folder, f"{analysis_id_name}.output")
 
+    # Task spooler configuration
     _ts_env, _max_slots = _prepare_queue_for_submission(json_input.get("queue"))
     _task_slots = _resolve_task_slots(json_input, _max_slots)
 
+    # Threads
     threads = (_task_slots == 0) and _max_slots or _task_slots
     json_input["threads"] = threads
 
     # CPU/Threads
-    if " --cpus" not in docker_parameters:
-        docker_parameters += f" --cpus={threads} "
+    docker_extra_params = _sanitize_docker_extra_params(
+        docker_extra_params, extra_forbidden={"--cpus": True}
+    )
+    docker_parameters += f" --cpus={threads} "
 
     # Memory
-    if (
-        " --memory" not in docker_parameters
-        and " -m " not in docker_parameters
-        and "memory" in json_input
-        and json_input.get("memory", None)
-    ):
+    if "memory" in json_input and json_input.get("memory", None):
+        docker_extra_params = _sanitize_docker_extra_params(
+            docker_extra_params, extra_forbidden={"--memory": True, "-m": True}
+        )
         memory = str(json_input.get("memory", "")).strip()
         if not re.fullmatch(r"\d+(?:[bBkKmMgG])?", memory):
             raise ValueError(f"Invalid memory value: {memory}")
@@ -226,11 +230,20 @@ def queue_analysis(json_input: dict) -> str:
     with open(analysis_file_stark, "w") as f:
         f.write(json.dumps(json_input_for_container))
 
+    # Security checks for docker-compose command: we allow more freedom than for raw docker commands, but we still want to block some obviously dangerous patterns.
+    docker_cmd = ["docker", "run"]
+    docker_cmd += _safe_split(docker_parameters)
+    docker_cmd.append(docker_stark)
+    docker_cmd_str = " ".join(shlex.quote(tok) for tok in docker_cmd)
+
+    # Task spooler command
     ts_cmd = f"{_ts_env}{ts} -N {_task_slots} -L {analysis_id_name}" if ts else ""
+
+    # Task spooler command: we wrap the docker run in a bash command that traps termination signals to stop the container and mark the task as failed, and writes "finished" or "failed" to an info file based on the exit status of the docker command. This allows us to track the status of the task and ensure cleanup if it's killed.
     my_cmd = (
         f'{ts_cmd} bash -c "'
         f"trap 'docker stop {analysis_id_name} 2>/dev/null; echo failed > {analysis_info_file}' TERM INT; "
-        f"docker run {docker_parameters} {docker_stark} "
+        f"{docker_cmd_str} "
         f"--analysis_name={analyses_run_name} --analysis={analysis_file_stark} "
         f"> {analysis_output_file} 2>&1 "
         f"&& (echo 'finished' > {analysis_info_file} && exit 0) "
@@ -243,95 +256,86 @@ def queue_analysis(json_input: dict) -> str:
     return analysis_id_name
 
 
-def queue_command(json_input: dict) -> str:
-    """Queue a raw shell command (json key 'command'). Returns analysisIDNAME or raises RuntimeError."""
-    command = json_input["command"]
-    _validate_command(command)
-    analysis_id_name, _ = _build_analysis_idname(json_input)
-
-    analysis_folder = docker_stark_api_log_folder
-    analysis_file = os.path.join(analysis_folder, f"{analysis_id_name}.json")
-    analysis_info_file = os.path.join(analysis_folder, f"{analysis_id_name}.info")
-    analysis_output_file = os.path.join(analysis_folder, f"{analysis_id_name}.output")
-
-    _ts_env, _max_slots = _prepare_queue_for_submission(json_input.get("queue"))
-    _task_slots = _resolve_task_slots(json_input, _max_slots)
-
-    with open(analysis_file, "w") as f:
-        f.write(json.dumps(json_input))
-
-    ts_cmd = f"{_ts_env}{ts} -N {_task_slots} -L {analysis_id_name}" if ts else ""
-    my_cmd = (
-        f'{ts_cmd} bash -c "'
-        f"trap 'echo failed > {analysis_info_file}' TERM INT; "
-        f"{command} "
-        f"> {analysis_output_file} 2>&1 "
-        f"&& (echo 'finished' > {analysis_info_file} && exit 0) "
-        f"|| (echo 'failed' > {analysis_info_file} && exit 1)\""
-    )
-
-    # Queue the task and get the task ID from task-spooler
-    _ = _queue_task(
-        my_cmd, prioritize=json_input.get("prioritize", False), ts_cmd=f"{_ts_env}{ts}"
-    )
-
-    return analysis_id_name
-
-
 def queue_command_docker(json_input: dict) -> str:
     """Queue a docker command with predefined mount parameters (json key 'command_docker').
     Returns analysis_id_name or raises RuntimeError."""
+
+    # Command
     command_docker = json_input["command_docker"]
+
+    # Image
     image = json_input.get("image")
     if not image:
         raise ValueError("'image' is required when using 'command_docker'")
     _validate_image(image)
+
+    # Extra docker parameters
     docker_extra_params = json_input.get("docker_extra_params", "")
     if docker_extra_params:
         _validate_docker_extra_params(docker_extra_params)
+        docker_extra_params = _sanitize_docker_extra_params(docker_extra_params)
 
+    # Build analysis_id_name
     analysis_id_name, _ = _build_analysis_idname(json_input)
 
+    # Docker parameters: use analysis_id_name as Docker container name to be able to identify the container corresponding to a task-spooler task, and stop it if needed when the task is killed.
     docker_name = f"--name {analysis_id_name}"
     docker_parameters = f"--rm {docker_name} {docker_extra_params}"
     if json_input.get("use_stark_container_mount", True):
         docker_parameters += f" {docker_stark_container_mount}"
 
+    # Analysis file paths
     analysis_folder = docker_stark_api_log_folder
     analysis_file = os.path.join(analysis_folder, f"{analysis_id_name}.json")
     analysis_info_file = os.path.join(analysis_folder, f"{analysis_id_name}.info")
     analysis_output_file = os.path.join(analysis_folder, f"{analysis_id_name}.output")
 
+    # Task spooler configuration
     _ts_env, _max_slots = _prepare_queue_for_submission(json_input.get("queue"))
     _task_slots = _resolve_task_slots(json_input, _max_slots)
 
+    # Threads
     threads = (_task_slots == 0) and _max_slots or _task_slots
     json_input["threads"] = threads
 
+    # Write the JSON input for the container, which may be used for metrics and debugging.
     with open(analysis_file, "w") as f:
         f.write(json.dumps(json_input))
 
     # CPU/Threads
-    if " --cpus" not in docker_parameters:
-        docker_parameters += f" --cpus={threads} "
+    docker_extra_params = _sanitize_docker_extra_params(
+        docker_extra_params, extra_forbidden={"--cpus": True}
+    )
+    docker_parameters += f" --cpus={threads} "
 
     # Memory
-    if (
-        " --memory" not in docker_parameters
-        and " -m " not in docker_parameters
-        and "memory" in json_input
-        and json_input.get("memory", None)
-    ):
+    if "memory" in json_input and json_input.get("memory", None):
+        docker_extra_params = _sanitize_docker_extra_params(
+            docker_extra_params, extra_forbidden={"--memory": True, "-m": True}
+        )
         memory = str(json_input.get("memory", "")).strip()
         if not re.fullmatch(r"\d+(?:[bBkKmMgG])?", memory):
             raise ValueError(f"Invalid memory value: {memory}")
         docker_parameters += f" --memory={memory} "
 
+    # Security checks for docker-compose command: we allow more freedom than for raw docker commands, but we still want to block some obviously dangerous patterns.
+    docker_cmd = [
+        "docker",
+        "run",
+    ]
+    docker_cmd += _safe_split(docker_parameters)
+    docker_cmd.append(image)
+    docker_cmd += _safe_split(command_docker)
+    docker_cmd_str = " ".join(shlex.quote(tok) for tok in docker_cmd)
+
+    # Task spooler command
     ts_cmd = f"{_ts_env}{ts} -N {_task_slots} -L {analysis_id_name}" if ts else ""
+
+    # Task spooler command: we wrap the docker run in a bash command that traps termination signals to stop the container and mark the task as failed, and writes "finished" or "failed" to an info file based on the exit status of the docker command. This allows us to track the status of the task and ensure cleanup if it's killed.
     my_cmd = (
         f'{ts_cmd} bash -c "'
         f"trap 'docker stop {analysis_id_name} 2>/dev/null; echo failed > {analysis_info_file}' TERM INT; "
-        f"docker run {docker_parameters} {image} {command_docker} "
+        f"{docker_cmd_str} "
         f"> {analysis_output_file} 2>&1 "
         f"&& (echo 'finished' > {analysis_info_file} && exit 0) "
         f"|| (echo 'failed' > {analysis_info_file} && exit 1)\""
@@ -356,7 +360,6 @@ def queue_command_docker_compose(json_input: dict) -> str:
     service = json_input.get("service", json_input.get("image"))
     if not service:
         raise ValueError("'service' is required when using 'command_docker_compose'")
-    # _validate_image(service)
 
     # docker configuration file
     docker_compose_file = json_input.get("docker_compose_file")
@@ -371,14 +374,18 @@ def queue_command_docker_compose(json_input: dict) -> str:
     docker_extra_params = json_input.get("docker_extra_params", "")
     if docker_extra_params:
         _validate_docker_extra_params(docker_extra_params)
+        docker_extra_params = _sanitize_docker_extra_params(docker_extra_params)
 
+    # Analysis name
     analysis_id_name, _ = _build_analysis_idname(json_input)
 
+    # Docker parameters: use analysis_id_name as Docker container name to be able to identify the container corresponding to a task-spooler task, and stop it if needed when the task is killed.
     docker_name = f"--name {analysis_id_name}"
     docker_parameters = f"--rm {docker_name} {docker_extra_params}"
     if json_input.get("use_stark_container_mount", True):
         docker_parameters += f" {docker_stark_container_mount}"
 
+    # Analysis file paths
     analysis_folder = docker_stark_api_log_folder
     analysis_file = os.path.join(analysis_folder, f"{analysis_id_name}.json")
     analysis_info_file = os.path.join(analysis_folder, f"{analysis_id_name}.info")
@@ -388,21 +395,40 @@ def queue_command_docker_compose(json_input: dict) -> str:
     with open(analysis_output_file, "w") as f:
         f.write("")
 
+    # Task spooler configuration
     _ts_env, _max_slots = _prepare_queue_for_submission(json_input.get("queue"))
     _task_slots = _resolve_task_slots(json_input, _max_slots)
 
+    # Threads
     threads = (_task_slots == 0) and _max_slots or _task_slots
     json_input["threads"] = threads
 
+    # Write the JSON input for the container, which may be used for metrics and debugging.
     with open(analysis_file, "w") as f:
         f.write(json.dumps(json_input))
 
+    # Task spooler command
+
+    # Security checks for docker-compose command: we allow more freedom than for raw docker commands, but we still want to block some obviously dangerous patterns.
+    docker_cmd = [
+        "docker-compose",
+        "-f",
+        docker_compose_file,
+        "run",
+    ]
+    docker_cmd += _safe_split(docker_parameters)
+    docker_cmd.append(service)
+    docker_cmd += _safe_split(command_docker_compose)
+    docker_cmd_str = " ".join(shlex.quote(tok) for tok in docker_cmd)
+
+    # Task spooler command
     ts_cmd = f"{_ts_env}{ts} -N {_task_slots} -L {analysis_id_name}" if ts else ""
 
+    # Task spooler command: we wrap the docker-compose run in a bash command that traps termination signals to stop the container and mark the task as failed, and writes "finished" or "failed" to an info file based on the exit status of the docker command. This allows us to track the status of the task and ensure cleanup if it's killed.
     my_cmd = (
         f'{ts_cmd} bash -c "'
         f"trap 'docker stop {analysis_id_name} 2>/dev/null; echo failed > {analysis_info_file}' TERM INT; "
-        f"docker-compose -f {docker_compose_file} run {docker_parameters} {service} {command_docker_compose} "
+        f"{docker_cmd_str} "
         f"> {analysis_output_file} 2>&1 "
         f"&& (echo 'finished' > {analysis_info_file} && exit 0) "
         f"|| (echo 'failed' > {analysis_info_file} && exit 1)\""
