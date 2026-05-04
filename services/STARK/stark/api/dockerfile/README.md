@@ -10,7 +10,7 @@ A **FastAPI**-based web service for launching and monitoring [STARK](https://git
 - **REST API** - JSON endpoints consumable by external services (e.g. listeners)
 - **Dual authentication** - JWT bearer tokens for human users + static API key (`X-API-Key`) for service-to-service calls
 - **Role-based access** - `admin` group required for destructive or modification actions (kill, remove, prioritize, relaunch) and for launching new analyses
-- **Four task modes** - STARK analysis, custom Docker container command, custom Docker compose command or raw shell command
+- **Three task modes** - STARK analysis, custom Docker container command, or custom Docker compose command
 - **Multiple named queues** - independent task-spooler daemons, each with its own concurrency setting, configurable via `config/queues.json`
 - **Multiple node cluster** - independent nodes on multiple servers, configurable via `config/peers.json`
 - **Resources** - tasks are defined with a number of threads (corresponding to slots requested) and memory limit (for docker container)
@@ -315,20 +315,11 @@ Example `config/queues.json`:
 
 **Choosing the target queue** - add a `"queue"` key to any `/analysis` request body:
 
-Command
-
-```json
-{ 
-  "command": "sleep 10 && echo 'Hello World!'",
-  "queue": "light" 
-}
-```
-
 Command with Docker
 
 ```json
 {
-  "command_docker": "sleep 10 && echo 'Hello World! From docker...", 
+  "command_docker": "sh -c 'sleep 10 && echo 'Hello World! From docker!'", 
   "image": "alpine", 
   "analysis_name": "cmd_docker",
   "queue": "medium"
@@ -604,7 +595,6 @@ The task type is determined by which key is present in the JSON body. An optiona
 | Key present | Mode | Description |
 | --- | --- | --- |
 | `run` | **STARK analysis** | Runs a full STARK Docker analysis for the given run name |
-| `command` | **Shell command** | Runs a raw shell command inside the API container |
 | `command_docker` | **Docker command** | Runs a command in a new ephemeral Docker container |
 | `command_docker_compose` | **Docker compose command** | Runs a command in a Docker container using a Docker compose configuration |
 
@@ -682,40 +672,7 @@ curl -s -X POST "<http://localhost:8000/analysis>" \
   -d '{"run": "MY_RUN", "analysis_name": "MY_RUN_analysis"}' 
 ```
 
-#### Mode 2 - Shell command (`command`)
-
-Runs a shell command **directly inside the API container**. Has access to all mounted volumes and binaries available in the container.
-
-Example of a simple shell command:
-
-```json
-{
-  "command": "echo hello world && sleep 2",
-  "analysis_name": "test_cmd",
-  "queue": "light"
-}
-```
-
-Example of request with curl (using token or API key):
-
-```bash
-curl -s -X POST "http://localhost:8000/analysis" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"command": "echo hello world", "analysis_name": "test_cmd", "queue": "light"}'
-```
-
-```bash
-curl -s -X POST "<http://localhost:8000/analysis>" \
-  -H 'Content-Type: application/json' \
-  -H "X-API-Key: $STARK_API_KEY" \
-  -d '{"command": "echo hello world", "analysis_name": "test_cmd", "queue": "light"}' 
-```
-
-> **Security:** Commands matching known destructive patterns are rejected:
-> `rm -rf /`, `dd of=/dev/…`, `:(){:|:&};:` (fork bomb), `mkfs`, `> /dev/…`, etc.
-
-#### Mode 3 - Docker command (`command_docker`)
+#### Mode 2 - Docker command (`command_docker`)
 
 Runs a command inside a **new ephemeral Docker container** (`docker run --rm`). The container receives the predefined volume mounts from `DOCKER_STARK_SERVICE_STARK_API_CONTAINER_MOUNT` and a generated `--name` for identification and cleanup.
 
@@ -779,7 +736,7 @@ curl -s -X POST "http://localhost:8000/analysis" \
 >
 > - `threads` is defined to select slots in queue, and constrain the resources themselves, using `--cpus` parameter. To constrain memory, use `memory` json key, or `--memory` parameter within `docker_extra_params` parameter.
 
-#### Mode 4 - Docker compose command (`command_docker_compose`)
+#### Mode 3 - Docker compose command (`command_docker_compose`)
 
 Runs a command inside a **new ephemeral Docker container** with a docker compose configuration (`docker-compose -f docker-compose.yml run --rm`). The container receives the predefined volume mounts from `DOCKER_STARK_SERVICE_STARK_API_CONTAINER_MOUNT` and a generated `--name` for identification and cleanup.
 
