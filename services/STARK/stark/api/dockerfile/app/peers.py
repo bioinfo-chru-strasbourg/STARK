@@ -267,8 +267,8 @@ def compute_best_peer(
     if not all_metrics:
         return None
 
-    # Extract requested slots from input, default to 0 (no specific requirement)
-    requested_slots = json_input.get("threads")
+    # Extract requested slots from input, default to None (no specific requirement)
+    requested_slots = json_input.get("threads", None)
 
     # Determine max_slots across cluster for this queue to use as a fallback when requested_slots is not specified or exceeds max capacity.
     max_slots = max(
