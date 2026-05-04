@@ -188,16 +188,20 @@ def queue_analysis(json_input: dict) -> str:
     json_input["threads"] = threads
 
     # CPU/Threads
-    if "--cpus" not in docker_parameters:
+    if " --cpus" not in docker_parameters:
         docker_parameters += f" --cpus={threads} "
 
     # Memory
     if (
-        "--memory" not in docker_parameters
+        " --memory" not in docker_parameters
+        and " -m " not in docker_parameters
         and "memory" in json_input
         and json_input.get("memory", None)
     ):
-        docker_parameters += f" --memory={json_input.get('memory', '')} "
+        memory = str(json_input.get("memory", "")).strip()
+        if not re.fullmatch(r"\d+(?:[bBkKmMgG])?", memory):
+            raise ValueError(f"Invalid memory value: {memory}")
+        docker_parameters += f" --memory={memory} "
 
     # Prioritize
     prioritize = json_input.get("prioritize", False)
@@ -308,16 +312,20 @@ def queue_command_docker(json_input: dict) -> str:
         f.write(json.dumps(json_input))
 
     # CPU/Threads
-    if "--cpus" not in docker_parameters:
+    if " --cpus" not in docker_parameters:
         docker_parameters += f" --cpus={threads} "
 
     # Memory
     if (
-        "--memory" not in docker_parameters
+        " --memory" not in docker_parameters
+        and " -m " not in docker_parameters
         and "memory" in json_input
         and json_input.get("memory", None)
     ):
-        docker_parameters += f" --memory={json_input.get('memory', '')} "
+        memory = str(json_input.get("memory", "")).strip()
+        if not re.fullmatch(r"\d+(?:[bBkKmMgG])?", memory):
+            raise ValueError(f"Invalid memory value: {memory}")
+        docker_parameters += f" --memory={memory} "
 
     ts_cmd = f"{_ts_env}{ts} -N {_task_slots} -L {analysis_id_name}" if ts else ""
     my_cmd = (
