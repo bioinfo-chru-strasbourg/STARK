@@ -25,7 +25,6 @@ from queues import get_queue_env, load_queues
 from tasks import (
     _extract_analysis_name,
     queue_analysis,
-    queue_command,
     queue_command_docker,
     queue_command_docker_compose,
 )
@@ -36,9 +35,10 @@ router = APIRouter()
 async def _run_locally(json_input: dict) -> str:
     """Dispatch json_input to the appropriate queue function and return the IDNAME."""
 
-    if "command" in json_input:
-        return queue_command(json_input)
-    elif "command_docker" in json_input:
+    # if "command" in json_input:
+    #     return queue_command(json_input)
+    # el
+    if "command_docker" in json_input:
         return queue_command_docker(json_input)
     elif "command_docker_compose" in json_input:
         return queue_command_docker_compose(json_input)
