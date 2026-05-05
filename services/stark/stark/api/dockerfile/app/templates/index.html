@@ -29,6 +29,7 @@
             <button class="tab-btn" id="tab-launch" style="display:none">Launch</button>
             <button class="tab-btn" id="tab-cluster">Cluster</button>
             <button class="tab-btn" id="tab-archives">Archives</button>
+            <button class="tab-btn" id="tab-stats">Statistics</button>
         </div>
 
         <!-- ── Tasks view ──────────────────────────────────────────── -->
@@ -220,6 +221,66 @@
             </div>
         </div><!-- /view-archives -->
 
+        <!-- ── Statistics view ─────────────────────────────────────── -->
+        <div id="view-stats" style="display:none">
+            <div id="stats-header-row">
+                <h2>Statistics</h2>
+                <button id="stats-refresh-btn" title="Refresh statistics">Refresh</button>
+            </div>
+            <div id="stats-filters">
+                <div class="filter-group">
+                    <span class="filter-label">Granularity</span>
+                    <select id="stats-granularity">
+                        <option value="month" selected>Month</option>
+                        <option value="day">Day</option>
+                        <option value="year">Year</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <span class="filter-label">Metric</span>
+                    <select id="stats-metric">
+                        <option value="tasks" selected>Task count</option>
+                        <option value="slots">Slots used</option>
+                    </select>
+                </div>
+                <div class="filter-group" id="stats-filter-queues-group" style="display:none">
+                    <span class="filter-label">Queue</span>
+                    <span id="stats-filter-queues-container"></span>
+                </div>
+                <div class="filter-group">
+                    <span class="filter-label">Period</span>
+                    <select id="stats-daterange-preset"></select>
+                </div>
+                <div class="filter-group" id="stats-custom-range-group" style="display:none">
+                    <span class="filter-label">From</span>
+                    <input type="date" id="stats-date-from">
+                    <span class="filter-label">To</span>
+                    <input type="date" id="stats-date-to">
+                </div>
+            </div>
+            <div id="stats-warning" class="stats-warning-banner" style="display:none"></div>
+            <div class="stats-sub-tabs">
+                <button class="stats-sub-tab-btn active" id="stats-tab-distribution">Distribution over time</button>
+                <button class="stats-sub-tab-btn" id="stats-tab-summary">Summary by period</button>
+                <button class="stats-sub-tab-btn" id="stats-tab-success">Success rate</button>
+            </div>
+            <div id="stats-view-distribution">
+                <div class="stats-chart-container">
+                    <canvas id="stats-bar-chart"></canvas>
+                </div>
+                <p id="stats-bar-no-data" style="display:none;color:#888;font-style:italic;padding:0.5rem 0"></p>
+            </div>
+            <div id="stats-view-summary" style="display:none">
+                <div id="stats-table-content"><p class="cluster-loading">Loading…</p></div>
+            </div>
+            <div id="stats-view-success" style="display:none">
+                <div class="stats-donut-wrap">
+                    <canvas id="stats-donut-chart"></canvas>
+                </div>
+                <p id="stats-donut-no-data" style="display:none;color:#888;font-style:italic;padding:0.5rem 0"></p>
+            </div>
+        </div><!-- /view-stats -->
+
     </div>
 
     <div id="detailModal" style="display:none;">
@@ -229,6 +290,7 @@
     </div>
     </div>
 
+    <script src="/static/chart.umd.min.js"></script>
     <script src="/static/script.js?v={{ version }}"></script>
     <script>const REFRESH_INTERVAL_MS = {{ refresh_interval_ms }};</script>
 </body>
