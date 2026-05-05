@@ -415,19 +415,19 @@ document.addEventListener('DOMContentLoaded', () => {
             task.state = stateAdjust(stateLC, task.elevel);
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <!-- <td title="${task.node} - ${task.node_url || ''}">${task.node || '\u2014'}</td> -->
+                <!-- <td title="${task.node} - ${task.node_url || ''}">${task.node || '-'}</td> -->
                 <td title="${task.node} - ${task.node_url || ''}">
                     ${task.node
                         ? (task.node.length > 10 ? task.node.slice(0, 7) + '...' : task.node)
-                        : '\u2014'}
+                        : '-'}
                 </td>
                 <td>${task.id ?? ''}</td>
                 <td>${task.queue || ''}</td>
-                <td class="task-slots-cell">${task.task_slots != null ? task.task_slots + ' / ' + task.queue_slots : '\u2014'}</td>
+                <td class="task-slots-cell">${task.task_slots != null ? task.task_slots + ' / ' + task.queue_slots : '-'}</td>
                 <td class="${cls}" title="${task.elevel || ''}">${task.state || ''}</td>
                 <td>${formatTime(task.times)}</td>
                 <td title="${task.run_name || ''}">
-                    ${task.run_name ? (task.run_name.length > 50 ? task.run_name.slice(0, 47) + '...' : task.run_name) : '\u2014'}
+                    ${task.run_name ? (task.run_name.length > 50 ? task.run_name.slice(0, 47) + '...' : task.run_name) : '-'}
                 </td>
             `;
             const actionTd = document.createElement('td');
@@ -653,7 +653,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (m && success) {
             content.innerHTML = `<div class="launch-result-ok">
                 <div class="launch-result-row"><span class="lr-label">Analysis ID</span><code>${m[1]}</code></div>
-                <div class="launch-result-row"><span class="lr-label">Name</span><span>${m[3] || '\u2014'}</span></div>
+                <div class="launch-result-row"><span class="lr-label">Name</span><span>${m[3] || '-'}</span></div>
             </div>`;
         } else {
             content.innerHTML = `<div class="${success ? 'launch-result-ok' : 'launch-result-err'}">${text}</div>`;
@@ -785,12 +785,15 @@ document.addEventListener('DOMContentLoaded', () => {
         sorted.forEach(a => {
             const tr = document.createElement('tr');
             const statusLabel = a.status || 'unknown';
+            let date_title = a.launch_date ? `Launch:\t${formatDate(a.launch_date) ?? '-'}` : 'Date unknown';
+            date_title += a.end_date ? `\nEnd:\t\t${formatDate(a.end_date) ?? '-'}` : '';
+            date_title += a.exec_time ? `\nTime:\t${formatTime(a.exec_time) ?? '-'}` : '';
             tr.innerHTML = `
-                <td>${a.queue || ''}</td>
-                <td>${a.threads ?? '\u2014'}</td>
+                <td>${a.queue || '-'}</td>
+                <td>${a.threads ?? '-'}</td>
                 <td class="${statusCls[statusLabel] || 'state-unknown'}">${statusLabel}</td>
-                <td>${formatDate(a.mtime)}</td>
-                <td title="${a.analysis_id_name || ''}" >${a.run_name || ''}</td>
+                <td title="${date_title}">${formatDate(a.mtime) ?? '-'}</td>
+                <td title="${a.analysis_id_name || '-'}" >${a.run_name || '-'}</td>
             `;
             tbody.appendChild(tr);
         });
