@@ -26,6 +26,7 @@ A **FastAPI**-based web service for launching and monitoring [STARK](https://git
 - **Username display** - logged-in username shown next to the Logout button; group membership visible on hover
 - **Cluster monitoring** - cluster resources dashboard, showing usage and running, queued and available queues on online nodes
 - **Archives** - list of previous analyses stored as configuration files (not in live spooler), with status, date, queue and requested slots
+- **Statistics** - graphical dashboard built from archive data: task distribution over time (bar chart), per-period summary table, and overall success-rate donut chart, with granularity, date-range and queue filters
 
 ---
 
@@ -35,16 +36,17 @@ The dashboard is accessible at `http://server:8000/`, for any nodes.
 
 The dashboard has four top-level tabs:
 
-- **Analyses** — Show activity, with all analyses launched in nodes and queues, with requested number of slots, state of the analysis, and available actions.
-- **Launch** — Launch an analysis, through STARK run name or a JSON parameter.
-- **Cluster** — Summary of cluster resources, with all nodes (online or offline), available queues and associated slots.
-- **Archives** — List of archived analyses, with information about queue, requested slots and date of request.
+- **Analyses** - Show activity, with all analyses launched in nodes and queues, with requested number of slots, state of the analysis, and available actions.
+- **Launch** - Launch an analysis, through STARK run name or a JSON parameter.
+- **Cluster** - Summary of cluster resources, with all nodes (online or offline), available queues and associated slots.
+- **Archives** - List of archived analyses, with information about queue, requested slots and date of request.
+- **Statistics** - Graphical statistics computed from archived analyses: distribution over time, summary by period, and success rate.
 
 ### Analysis tab
 
 Displays an aggregation of all tasks from all nodes defined in `config/peers.json`.
 
-![STARKUB Analyses](images/analyses.png)
+![STARKUB Analyses](app/images/analyses.png)
 
 **State colour coding:**
 
@@ -84,7 +86,7 @@ Filters on states:
 
 Provide two tabs to launch an analysis, through STARK run name or a JSON parmeter.
 
-![STARKUB Launch](images/launch.png)
+![STARKUB Launch](app/images/launch.png)
 
 Response show the analysis ID and Name (available in Analysis tab), with green color if success, red if failed (with reason, such as `Invalid JSON payload`).
 
@@ -92,9 +94,9 @@ Response show the analysis ID and Name (available in Analysis tab), with green c
 
 Displays aggregated information from all nodes defined in `config/peers.json`.
 
-![STARKUB cluster view](images/cluster.png)
+![STARKUB cluster view](app/images/cluster.png)
 
-**Cluster Resources table** — one row per (node x queue). Columns: Node, Queue, Config, Running, Queued, Available, Usage.
+**Cluster Resources table** - one row per (node x queue). Columns: Node, Queue, Config, Running, Queued, Available, Usage.
 
 - The **Usage** bar is colour-coded: green (< 70%), yellow (≥ 70%), red (≥ 100%).
 - Offline nodes (unreachable) are shown with a red `offline` badge and empty metric cells.
@@ -104,7 +106,7 @@ Displays aggregated information from all nodes defined in `config/peers.json`.
 
 Show a list of previous analyses.
 
-![STARKUB Archives](images/archives.png)
+![STARKUB Archives](app/images/archives.png)
 
 For each analysis, information are provided:
 
@@ -123,6 +125,39 @@ Analyses can be filtered by Queue or Status. A search bar filter on analysis nam
 | `unknown` | Grey |
 | `finished` | Green |
 | `failed` | Red |
+
+### Statistics tab
+
+Displays statistics computed from the full archive of analyses.
+
+![STARKUB Statistics](app/images/statistics.png)
+
+The tab is divided into three sub-tabs:
+
+- **Distribution over time** - Stacked bar chart showing the number of tasks (or slots used) per period, broken down by status (`finished` in green, `failed` in red, `unknown` in grey).
+- **Summary by period** - Table with one row per period: finished, failed, unknown counts, total, and success rate badge (green ≥ 80 %, orange ≥ 50 %, red < 50 %). A **TOTAL** row aggregates all periods.
+- **Success rate** - Donut chart with the overall `finished / total` ratio displayed at the centre, colour-coded by threshold (green ≥ 80 %, orange ≥ 50 %, red < 50 %).
+
+**Filters:**
+
+| Filter | Description |
+| --- | --- |
+| **Granularity** | Group periods by `Day`, `Month` (default) or `Year` |
+| **Metric** | Count by number of `Tasks` (default) or `Slots used` |
+| **Queue** | Multi-select dropdown - visible when more than one queue is present |
+| **Period** | Pre-defined ranges that adapt to the selected granularity (e.g. Last 30 days / Last 12 months / Last 3 years), plus a **Custom…** option exposing free `From` / `To` date inputs |
+
+**Pre-defined ranges by granularity:**
+
+| Granularity | Available presets |
+| --- | --- |
+| `Year` | All, Last 3 years, Last 5 years, Last 10 years |
+| `Month` | All, Last 3 months, Last 6 months, Last 12 months (default), Last 24 months |
+| `Day` | Last 7 days, Last 14 days, Last 30 days (default), Last 90 days, All |
+
+> **Note:** when the number of periods exceeds 90, a warning banner is displayed advising to switch to a coarser granularity or to narrow the date range, to avoid an unreadable chart.
+
+Data is loaded from `/cluster/archives` (same endpoint as the Archives tab). If the Archives tab has already been visited in the session, the data is reused without a second request.
 
 ---
 
@@ -144,15 +179,13 @@ Analyses can be filtered by Queue or Status. A search bar filter on analysis nam
 ## Directory layout
 
 ```bash
-dockerfile/
+app/
 ├── app.py               # FastAPI entry point (router wiring only)
 ├── authentication.py    # JWT + API key auth, user loading
 ├── config.py            # All constants and environment variables
-├── Dockerfile
 ├── models.py            # Pydantic models (Token, User)
 ├── peers.py             # Cluster/orchestrator logic (peer discovery, routing, metrics)
 ├── queues.py            # task-spooler queue management
-├── requirements.txt
 ├── security.py          # Input validation (command, image, docker_extra_params)
 ├── tasks.py             # Task build & submission logic
 ├── config/
@@ -166,9 +199,9 @@ dockerfile/
 │   ├── queue.py         # GET /list, GET /queue
 │   └── ui.py            # GET / (dashboard)
 ├── static/
-│   ├── favicon.ico
+│   ├── favicon.ico      # Icon
 │   ├── script.js        # Frontend logic (Local + Cluster tabs)
-│   └── style.css
+│   └── style.css        # CSS
 ├── templates/
 │   └── index.html       # Dashboard template
 └── images/
@@ -177,7 +210,10 @@ dockerfile/
     ├── archives.png
     ├── cluster.png
     └── launch.png
+Dockerfile
+LICENSE
 README.md
+requirements.txt
 ```
 
 ---
@@ -341,9 +377,9 @@ If omitted, the first queue in `queues.json` is used.
 
 ## Cluster / Multi-node orchestration
 
-Several STARKUB instances can be linked together into a lightweight cluster. Each node keeps its own queues and task-spooler daemons; the cluster layer adds **peer discovery**, **intelligent routing**, and **aggregated monitoring** — without any external coordinator.
+Several STARKUB instances can be linked together into a lightweight cluster. Each node keeps its own queues and task-spooler daemons; the cluster layer adds **peer discovery**, **intelligent routing**, and **aggregated monitoring** - without any external coordinator.
 
-![STARKUB cluster view](images/cluster.png)
+![STARKUB cluster view](app/images/cluster.png)
 
 ### How it works
 
@@ -377,8 +413,8 @@ Auto-created with an empty template on first start. Add one entry per node:
 }
 ```
 
-- `name` — display name (used in the cluster UI)
-- `url` — base URL reachable from other nodes (Docker network hostname or IP)
+- `name` - display name (used in the cluster UI)
+- `url` - base URL reachable from other nodes (Docker network hostname or IP)
 
 Nodes can be deployed on same server, with different port (see `docker-compose.yml`)
 
