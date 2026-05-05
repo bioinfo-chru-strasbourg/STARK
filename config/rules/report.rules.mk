@@ -51,15 +51,17 @@ REPORT_SECTIONS?=ALL
 	cp -p $< $@
 
 
-%.analysis.json: %.archive.cram %.manifest %.bed %.list.genes %.tag
+%.analysis.json: %.archive.cram %.manifest %.bed %.list.genes %.tag %.SampleSheet.csv %.transcripts %.config
 	mkdir -p $(@D)
 	> $@
 	echo "{" >> $@;
 	echo "\"sample\": [\"$(*F)\"]," >> $@;
 	echo "\"reads\": [\"$(*F).archive.cram\"]," >> $@;
-	echo "\"design\": [\"$(*F).$$([[ -s $*.manifest ]] && echo 'manifest' || echo 'bed')\"]," >> $@;
+	if [[ -s $*.manifest ]]; then echo "\"design\": [\"$(*F).manifest\"]," >> $@; elif [[ -s $*.bed ]]; then echo "\"design\": [\"$(*F).bed\"]," >> $@; fi;
+	if [ -s $*.SampleSheet.csv ]; then echo "\"samplesheet\": [\"$(*F).SampleSheet.csv\"]," >> $@; fi;
 	if [ -s $*.list.genes ]; then echo "\"genes\": [\""$$(for g in $$(cat $*.list.genes); do basename $$g; done | tr '\n' '+' | sed s/+$$//gi)"\"]," >> $@; fi;
 	if [ -s $*.transcripts ]; then echo "\"transcripts\": [\"$(*F).transcripts\"]," >> $@; fi;
+	echo "\"analysis_tag\": [\"$$(cat $*.analysis.tag | tr ' ' '!')\"]," >> $@;
 	echo "\"sample_tag\": [\"$$(cat $*.tag | tr ' ' '!')\"]," >> $@;
 	echo "\"application\": [\"$(APP)\"]" >> $@;
 	echo "}" >> $@;
