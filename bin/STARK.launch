@@ -521,11 +521,12 @@ if [ "$BED_INPUT" != "" ]; then
 	# Test BED files exist
 	for B in $BED_INPUT; do
 		if [ -f "$B" ] || [ -f "$ANALYSIS_DIR/$B" ]; then
-			(($DEBUG)) && echo "["$(timestamp)" | DEBUG] B=$B";
 			# Relocation
 			if [ -f "$B" ]; then
+				(($DEBUG)) && echo "["$(timestamp)" | DEBUG] B=$B";
 				BED_RELOCATED="$BED_RELOCATED $B"
 		 	elif [ -f "$ANALYSIS_DIR/$B" ]; then
+				(($DEBUG)) && echo "["$(timestamp)" | DEBUG] B=$ANALYSIS_DIR/$B";
 				BED_RELOCATED="$BED_RELOCATED $ANALYSIS_DIR/$B"
 			fi;
 		else
@@ -533,7 +534,6 @@ if [ "$BED_INPUT" != "" ]; then
 			exit 0;
 		fi;
 	done;
-
 
 fi;
 BED_INPUT=$BED_RELOCATED
@@ -553,11 +553,12 @@ if [ "$BEDFILE_GENES" != "" ]; then
 		BEDFILE_GENES_LIST=""
 		for G in $(echo $G_LIST_ONE | tr "+" " "); do
 			if [ -f "$G" ] || [ -f "$ANALYSIS_DIR/$G" ]; then
-				(($DEBUG)) && echo "["$(timestamp)" | DEBUG] G=$G";
 				# Relocation
 				if [ -f "$G" ]; then
+					(($DEBUG)) && echo "["$(timestamp)" | DEBUG] G=$G";
 					BEDFILE_GENES_LIST="$BEDFILE_GENES_LIST+$G"
 			 	elif [ -f "$ANALYSIS_DIR/$G" ]; then
+					(($DEBUG)) && echo "["$(timestamp)" | DEBUG] G=$ANALYSIS_DIR/$G";
 					BEDFILE_GENES_LIST="$BEDFILE_GENES_LIST+$ANALYSIS_DIR/$G"
 				fi;
 			else
@@ -585,11 +586,12 @@ if [ "$TRANSCRIPTS" != "" ]; then
 		TRANSCRIPTS_LIST=""
 		for T in $(echo $T_LIST_ONE | tr "+" " "); do
 			if [ -f "$T" ] || [ -f "$ANALYSIS_DIR/$T" ]; then
-				(($DEBUG)) && echo "["$(timestamp)" | DEBUG] T=$T";
 				# Relocation
 				if [ -f "$T" ]; then
+					(($DEBUG)) && echo "["$(timestamp)" | DEBUG] T=$T";
 					TRANSCRIPTS_LIST="$TRANSCRIPTS_LIST+$T"
 				elif [ -f "$ANALYSIS_DIR/$T" ]; then
+					(($DEBUG)) && echo "["$(timestamp)" | DEBUG] T=$ANALYSIS_DIR/$T";
 					TRANSCRIPTS_LIST="$TRANSCRIPTS_LIST+$ANALYSIS_DIR/$T"
 				fi;
 			else
@@ -919,15 +921,15 @@ if [ -z "$APP_NAME" ]; then APP_NAME="UNKNOWN"; fi;
 
 
 if (($DEBUG)); then
-	echo "["$(timestamp)" | INFO] FOLDER_REPOSITORY=$FOLDER_REPOSITORY"
-	echo "["$(timestamp)" | INFO] FOLDER_ARCHIVES=$FOLDER_ARCHIVES"
-	echo "["$(timestamp)" | INFO] FOLDER_FAVORITES=$FOLDER_FAVORITES"
-	echo "["$(timestamp)" | INFO] REPOSITORY=$REPOSITORY"
-	echo "["$(timestamp)" | INFO] ARCHIVES=$ARCHIVES"
-	echo "["$(timestamp)" | INFO] FAVORITES=$FAVORITES"
-	echo "["$(timestamp)" | INFO] REPOSITORY_FILE_PATTERNS=$REPOSITORY_FILE_PATTERNS"
-	echo "["$(timestamp)" | INFO] ARCHIVES_FILE_PATTERNS=$ARCHIVES_FILE_PATTERNS"
-	echo "["$(timestamp)" | INFO] FAVORITES_FILE_PATTERNS=$FAVORITES_FILE_PATTERNS"
+	echo "["$(timestamp)" | DEBUG] FOLDER_REPOSITORY=$FOLDER_REPOSITORY"
+	echo "["$(timestamp)" | DEBUG] FOLDER_ARCHIVES=$FOLDER_ARCHIVES"
+	echo "["$(timestamp)" | DEBUG] FOLDER_FAVORITES=$FOLDER_FAVORITES"
+	echo "["$(timestamp)" | DEBUG] REPOSITORY=$REPOSITORY"
+	echo "["$(timestamp)" | DEBUG] ARCHIVES=$ARCHIVES"
+	echo "["$(timestamp)" | DEBUG] FAVORITES=$FAVORITES"
+	echo "["$(timestamp)" | DEBUG] REPOSITORY_FILE_PATTERNS=$REPOSITORY_FILE_PATTERNS"
+	echo "["$(timestamp)" | DEBUG] ARCHIVES_FILE_PATTERNS=$ARCHIVES_FILE_PATTERNS"
+	echo "["$(timestamp)" | DEBUG] FAVORITES_FILE_PATTERNS=$FAVORITES_FILE_PATTERNS"
 fi;
 
 
@@ -1441,7 +1443,7 @@ for RUU in $RUN_UNIQ; do
 				# Copy other file
 				CF=$(echo $OFCF_ONE | awk -F: '{print $2}')
 				[ "$CF" == "" ] && CF=$(basename $OF)
-				(($DEBUG)) && echo "["$(timestamp)" | INFO] Copy OTHER FILES '$OF' to '$CF'."
+				(($DEBUG)) && echo "["$(timestamp)" | DEBUG] Copy OTHER FILES '$OF' to '$CF'."
 				if [ -d $OF ]; then
 					mkdir -p $RUN_SAMPLE_DIR/$CF
 					$COMMAND_COPY $OF/* $RUN_SAMPLE_DIR/$CF/
@@ -1639,8 +1641,19 @@ for RUU in $RUN_UNIQ; do
 		fi;
 
 
-		# SampleSheet
-		if ((1)); then
+		# SAMPLESHEET
+
+		# Relocated SampleSheet
+		if [ -f "$SAMPLESHEET_INPUT" ]; then
+			(($DEBUG)) && echo "["$(timestamp)" | DEBUG] SampleSheet input file '$SAMPLESHEET_INPUT' found."
+			SAMPLESHEET_RELOCATED=$SAMPLESHEET_INPUT
+		elif [ -f "$ANALYSIS_DIR/$SAMPLESHEET_INPUT" ]; then
+			(($DEBUG)) && echo "["$(timestamp)" | DEBUG] SampleSheet input file '$ANALYSIS_DIR/$SAMPLESHEET_INPUT' found."
+			SAMPLESHEET_RELOCATED=$ANALYSIS_DIR/$SAMPLESHEET_INPUT
+		fi;
+		SAMPLESHEET_INPUT="$SAMPLESHEET_RELOCATED"
+
+		# Copy SampleSheet
 		if [ ! -e $RUN_SAMPLE_DIR/$S.SampleSheet.csv ]; then
 			(($VERBOSE)) && echo "["$(timestamp)" | INFO] Copy SampleSheet."
 			[ -f "$SAMPLESHEET_INPUT" ] && $COMMAND_COPY $SAMPLESHEET_INPUT $RUN_SAMPLE_DIR/$S.SampleSheet.csv
@@ -1648,7 +1661,6 @@ for RUU in $RUN_UNIQ; do
 			if [ -e $RUN_SAMPLE_DIR/$S.manifest ]; then
 				touch -f $RUN_SAMPLE_DIR/$S.SampleSheet.csv -r $RUN_SAMPLE_DIR/$S.manifest;
 			fi;
-		fi;
 		fi;
 
 

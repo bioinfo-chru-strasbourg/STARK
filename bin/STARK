@@ -566,8 +566,19 @@ EXIT=0
 # PARAMETERS in ARRAYS
 
 # SAMPLESHEET
-SAMPLESHEET_INPUT_ARRAY=($(echo $SAMPLESHEET_INPUT | tr "," " "))
 
+# Relocated SampleSheet
+SAMPLESHEET_RELOCATED=$SAMPLESHEET_INPUT
+if [ -f "$SAMPLESHEET_INPUT" ]; then
+	(($DEBUG)) && echo "["$(timestamp)" | DEBUG] SampleSheet input file '$SAMPLESHEET_INPUT' found."
+	#SAMPLESHEET_RELOCATED=$SAMPLESHEET_INPUT
+elif [ ! -z "$ANALYSIS_DIR" ] && [ -f "$ANALYSIS_DIR/$SAMPLESHEET_INPUT" ]; then
+	(($DEBUG)) && echo "["$(timestamp)" | DEBUG] SampleSheet input file '$ANALYSIS_DIR/$SAMPLESHEET_INPUT' found."
+	SAMPLESHEET_RELOCATED=$ANALYSIS_DIR/$SAMPLESHEET_INPUT
+fi;
+SAMPLESHEET_INPUT="$SAMPLESHEET_RELOCATED"
+
+SAMPLESHEET_INPUT_ARRAY=($(echo $SAMPLESHEET_INPUT | tr "," " "))
 
 
 # APPLICATIONS_INFOS
@@ -936,7 +947,7 @@ if [ -s "$DOCKER_COMPOSE_FILE" ] || [ -s "$DOCKER_ENV_FILE" ] || [ "$DOCKER_STAR
 	if [ -s "$DOCKER_COMPOSE_FILE" ]; then
 		(($VERBOSE)) && echo "["$(timestamp)" | INFO] Compose build with file '$DOCKER_COMPOSE_FILE' to build image (if necessary)"
 		DOCKER_CMD="docker-compose -f $DOCKER_COMPOSE_FILE --project-directory=$(dirname $DOCKER_COMPOSE_FILE) $DOCKER_STARK_IMAGE_ENV up --no-start stark stark-databases"
-		(($DEBUG)) && echo "["$(timestamp)" | INFO] DOCKER CMD: $DOCKER_CMD"
+		(($DEBUG)) && echo "["$(timestamp)" | DEBUG] DOCKER CMD: $DOCKER_CMD"
 		eval $DOCKER_CMD
 	fi;
 
@@ -1027,7 +1038,7 @@ if [ -s "$DOCKER_COMPOSE_FILE" ] || [ -s "$DOCKER_ENV_FILE" ] || [ "$DOCKER_STAR
 			(($VERBOSE)) && echo "["$(timestamp)" | INFO] Docker execute command on docker container '$DOCKER_STARK_CONTAINER'"
 			echo ""
 			DOCKER_CMD="docker exec $DOCKER_STARK_CONTAINER STARK $PARAM_CMD"
-			(($DEBUG)) && echo "["$(timestamp)" | INFO] DOCKER CMD: $DOCKER_CMD"
+			(($DEBUG)) && echo "["$(timestamp)" | DEBUG] DOCKER CMD: $DOCKER_CMD"
 			eval $DOCKER_CMD || exit 1
 			# if $DOCKER_CMD; then
 			# 	(($DEBUG)) && echo "["$(timestamp)" | INFO] DOCKER CMD: OK"
@@ -1043,7 +1054,7 @@ if [ -s "$DOCKER_COMPOSE_FILE" ] || [ -s "$DOCKER_ENV_FILE" ] || [ "$DOCKER_STAR
 	# Create and execute command
 
 	DOCKER_CMD="docker run $DOCKER_CMD_PARAMETERS $DOCKER_STARK_IMAGE_INPUT $PARAM_CMD"
-	(($DEBUG)) && echo "["$(timestamp)" | INFO] DOCKER CMD: $DOCKER_CMD"
+	(($DEBUG)) && echo "["$(timestamp)" | DEBUG] DOCKER CMD: $DOCKER_CMD"
 	echo ""
 
 	if $DOCKER_CMD; then
@@ -1064,7 +1075,7 @@ if [ "$ANALYSIS" != "" ]; then
 
 	echo "["$(timestamp)" | INFO] Analysis Configuration files"
 
-	(($DEBUG)) && echo "["$(timestamp)" | INFO] Config files '$ANALYSIS'"
+	(($DEBUG)) && echo "["$(timestamp)" | DEBUG] Config files '$ANALYSIS'"
 
 	for J in $(echo $ANALYSIS | tr "," " "); do
 
@@ -1072,7 +1083,7 @@ if [ "$ANALYSIS" != "" ]; then
 
 			echo "["$(timestamp)" | INFO] Config file '$J' does exists."
 
- 			(($DEBUG)) && cat $J
+ 			(($DEBUG)) && echo "["$(timestamp)" | DEBUG] Config file content:" && cat $J
 
 			PARAM_ANALYSIS=$(echo "$PARAM " | sed "s/--analysis=[^ |$]*//gi" | sed "s/-w [^ |$]*//gi")
 
@@ -1084,9 +1095,9 @@ if [ "$ANALYSIS" != "" ]; then
 			ANALYSIS_DIR=$(cd "$( dirname $J )" && pwd)
 			PARAM_STARK_ANALYSIS_DIR=" --analysis_dir=$ANALYSIS_DIR"
 			if [ $? -eq 0 ]; then
-			    (($DEBUG)) && echo "["$(timestamp)" | INFO] PARAM_STARK=$PARAM_STARK"
-			    (($DEBUG)) && echo "["$(timestamp)" | INFO] PARAM_ANALYSIS=$PARAM_ANALYSIS"
-			    (($DEBUG)) && echo "["$(timestamp)" | INFO] PARAM_STARK_ANALYSIS_DIR=$PARAM_STARK_ANALYSIS_DIR"
+			    (($DEBUG)) && echo "["$(timestamp)" | DEBUG] PARAM_STARK=$PARAM_STARK"
+			    (($DEBUG)) && echo "["$(timestamp)" | DEBUG] PARAM_ANALYSIS=$PARAM_ANALYSIS"
+			    (($DEBUG)) && echo "["$(timestamp)" | DEBUG] PARAM_STARK_ANALYSIS_DIR=$PARAM_STARK_ANALYSIS_DIR"
 			else
 			    echo "["$(timestamp)" | ERROR] Analysis configuration file '$J' failed"
 			    exit 1;
@@ -1173,7 +1184,7 @@ fi;
 ##############################
 
 
-(($DEBUG)) && echo "["$(timestamp)" | INFO] RUN folders: $FOLDER_RUN"
+(($DEBUG)) && echo "["$(timestamp)" | DEBUG] RUN folders: $FOLDER_RUN"
 
 if [ ! -z "$RUNS" ]; then
 
@@ -1190,7 +1201,7 @@ if [ ! -z "$RUNS" ]; then
 		RUN_PATH=""
 		if [ "$R" != "" ]; then
 			# test if RUN full PATH
-			(($DEBUG)) && echo "["$(timestamp)" | INFO] Search for RUN '$R' ";
+			(($DEBUG)) && echo "["$(timestamp)" | DEBUG] Search for RUN '$R' ";
 			# Run as a folder path
 			[ -d $R ] && RUN_PATH=$R;
 			# Run as a TARBALL
@@ -1209,7 +1220,7 @@ if [ ! -z "$RUNS" ]; then
 			# Run in Input/Runs folder(s) - Search
 			[ "$RUN_PATH" == "" ] && \
 			for FR in $(echo $FOLDER_RUN | tr "," " "); do
-				(($DEBUG)) && echo "["$(timestamp)" | INFO] Search for RUN '$R' in RUN folder '$FR' ";
+				(($DEBUG)) && echo "["$(timestamp)" | DEBUG] Search for RUN '$R' in RUN folder '$FR' ";
 				[ -d $FR/$R ] && RUN_PATH="$RUN_PATH$FR/$R" && echo "["$(timestamp)" | INFO] Input RUN '$R' found in RUN folder '$FR'"
 			done;
 			# Test multifolder run path (error if found in multiple input/Runs folder(s))
@@ -1702,9 +1713,9 @@ if [ ! -z "$RUNS" ]; then
 					#echo "\"comment\":\"Analysis for APP $APP_ONE\"" >> $RUN_CONFIG_FILE
 					echo "}" >> $RUN_CONFIG_FILE
 
-					(($DEBUG)) && echo "["$(timestamp)" | INFO] RUN config file '$RUN_CONFIG_FILE' in JSON" && cat $RUN_CONFIG_FILE
+					(($DEBUG)) && echo "["$(timestamp)" | DEBUG] RUN config file '$RUN_CONFIG_FILE' in JSON" && cat $RUN_CONFIG_FILE
 					#(($DEBUG)) && echo "["$(timestamp)" | INFO] " && $PYTHON2 $STARK_FOLDER_BIN/json_to_options.py $RUN_CONFIG_FILE
-					(($DEBUG)) && echo "["$(timestamp)" | INFO] RUN config file '$RUN_CONFIG_FILE' to options" && $PYTHON $STARK_FOLDER_BIN/json_to_options.py $RUN_CONFIG_FILE
+					(($DEBUG)) && echo "["$(timestamp)" | DEBUG] RUN config file '$RUN_CONFIG_FILE' to options" && $PYTHON $STARK_FOLDER_BIN/json_to_options.py $RUN_CONFIG_FILE
 
 					ANALYSIS_FILES="$ANALYSIS_FILES,$RUN_CONFIG_FILE"
 
@@ -1743,8 +1754,8 @@ if [ ! -z "$RUNS" ]; then
 					FASTQ_R2="$FASTQ_R2,"
 
 				done;
-				(($DEBUG)) && echo "["$(timestamp)" | INFO] List FASTQ_R1: $FASTQ_R1"
-				(($DEBUG)) && echo "["$(timestamp)" | INFO] List FASTQ_R2: $FASTQ_R2"
+				(($DEBUG)) && echo "["$(timestamp)" | DEBUG] List FASTQ_R1: $FASTQ_R1"
+				(($DEBUG)) && echo "["$(timestamp)" | DEBUG] List FASTQ_R2: $FASTQ_R2"
 
 
 				(($VERBOSE)) && echo "["$(timestamp)" | INFO] Find *sam/*bam.*cram"
@@ -1758,8 +1769,8 @@ if [ ! -z "$RUNS" ]; then
 				done;
 				FASTQ_R1=$(echo $FASTQ_R1 | sed s/,$//)
 				FASTQ_R2=$(echo $FASTQ_R2 | sed s/,$//)
-				(($DEBUG)) && echo "["$(timestamp)" | INFO] List FASTQ_R1: $FASTQ_R1"
-				(($DEBUG)) && echo "["$(timestamp)" | INFO] List FASTQ_R2: $FASTQ_R2"
+				(($DEBUG)) && echo "["$(timestamp)" | DEBUG] List FASTQ_R1: $FASTQ_R1"
+				(($DEBUG)) && echo "["$(timestamp)" | DEBUG] List FASTQ_R2: $FASTQ_R2"
 
 				CMD="$STARK_FOLDER_BIN/STARK $PARAM --reads=$FASTQ_R1 --fastq_R2=$FASTQ_R2 "
 
@@ -1767,7 +1778,7 @@ if [ ! -z "$RUNS" ]; then
 
 			((RI_NUM++))
 
-			(($DEBUG)) && echo "["$(timestamp)" | INFO] CMD=$CMD"
+			(($DEBUG)) && echo "["$(timestamp)" | DEBUG] CMD=$CMD"
 			[ "$CMD" != "" ] && eval $CMD --no_header || exit 1
 			echo ""
 
