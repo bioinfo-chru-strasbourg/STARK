@@ -311,6 +311,7 @@ document.addEventListener('DOMContentLoaded', () => {
         cluster:  'view-cluster',
         launch:   'view-launch',
         archives: 'view-archives',
+        stats:    'view-stats',
     };
 
     function switchTab(name) {
@@ -325,6 +326,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (name === 'cluster')  fetchClusterSummary();
         if (name === 'archives') fetchArchives();
         if (name === 'launch')   fetchQueuesForLaunch();
+        if (name === 'stats')    fetchStats();
     }
 
     async function fetchQueuesForLaunch() {
@@ -343,7 +345,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (_) { /* non-blocking */ }
     }
 
-    ['tasks', 'cluster', 'launch', 'archives'].forEach(name => {
+    ['tasks', 'cluster', 'launch', 'archives', 'stats'].forEach(name => {
         const btn = document.getElementById(`tab-${name}`);
         if (btn) btn.addEventListener('click', () => switchTab(name));
     });
@@ -461,7 +463,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     btn.addEventListener('click', async () => {
                         if (!confirm(`${capitalize(act)} '${task.run_name}' [#${task.id}] on queue '${task.queue || 'default'}' on node '${task.node || task.node_url}'?`)) return;
-                        btn.disabled = true; btn.textContent = '\u2026';
+                        btn.disabled = true; btn.textContent = '...';
                         let ok = false;
                         try {
                             let resp;
@@ -482,7 +484,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                             ok = resp.ok;
                         } catch (_) {}
-                        // btn.textContent = ok ? '\u2713 Done' : '\u2717 Failed';
                         btn.textContent = ok ? '\u2713 Done' : '\u2717 Failed';
                         btn.classList.toggle('btn-success', ok);
                         btn.classList.toggle('btn-error',   !ok);
@@ -819,7 +820,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function fetchArchives() {
         const el = document.getElementById('archives-content');
         if (!el) return;
-        el.innerHTML = '<p class="cluster-loading">Loading\u2026</p>';
+        el.innerHTML = '<p class="cluster-loading">Loading...</p>';
         try {
             const resp = await fetch('/cluster/archives', { headers: { Authorization: `Bearer ${token}` } });
             if (!resp.ok) { el.innerHTML = `<p class="error">Error ${resp.status}</p>`; return; }
@@ -839,6 +840,366 @@ document.addEventListener('DOMContentLoaded', () => {
             renderArchivesTable();
         } catch (e) { el.innerHTML = `<p class="error">Could not reach /cluster/archives: ${e}</p>`; }
     }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // STATISTICS TAB
+    // ══════════════════════════════════════════════════════════════════════════
+
+    let statsBarChart     = null;
+    let statsDonutChart   = null;
+    let statsQueueDd      = null;
+    let activeStatsSubTab = 'distribution';
+    let currentStats      = null;
+
+    const STATS_WARN_THRESHOLD = 90;
+
+    const STATS_PRESETS = {
+        year:  [{v:'all',l:'All'},{v:'3y',l:'Last 3 years'},{v:'5y',l:'Last 5 years'},{v:'10y',l:'Last 10 years'},{v:'custom',l:'Custom...'}],
+        month: [{v:'all',l:'All'},{v:'3m',l:'Last 3 months'},{v:'6m',l:'Last 6 months'},{v:'12m',l:'Last 12 months'},{v:'24m',l:'Last 24 months'},{v:'custom',l:'Custom...'}],
+        day:   [{v:'30d',l:'Last 30 days'},{v:'7d',l:'Last 7 days'},{v:'14d',l:'Last 14 days'},{v:'90d',l:'Last 90 days'},{v:'all',l:'All'},{v:'custom',l:'Custom...'}],
+    };
+
+    function updateStatsPresets(keepValue = false) {
+        const granularity = document.getElementById('stats-granularity')?.value || 'month';
+        const sel = document.getElementById('stats-daterange-preset');
+        if (!sel) return;
+        const presets = STATS_PRESETS[granularity] || STATS_PRESETS.month;
+        const current = sel.value;
+        sel.innerHTML = '';
+        presets.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.v; opt.textContent = p.l;
+            sel.appendChild(opt);
+        });
+        if (keepValue && presets.some(p => p.v === current)) sel.value = current;
+        const customGroup = document.getElementById('stats-custom-range-group');
+        if (customGroup) customGroup.style.display = sel.value === 'custom' ? 'flex' : 'none';
+    }
+
+    function getStatsDateRange() {
+        const preset = document.getElementById('stats-daterange-preset')?.value || 'all';
+        if (preset === 'all') return { from: null, to: null };
+        if (preset === 'custom') {
+            const fromVal = document.getElementById('stats-date-from')?.value;
+            const toVal   = document.getElementById('stats-date-to')?.value;
+            return {
+                from: fromVal ? new Date(fromVal).getTime() / 1000         : null,
+                to:   toVal   ? new Date(toVal).getTime()   / 1000 + 86399 : null,
+            };
+        }
+        const m = preset.match(/^(\d+)([dmy])$/);
+        if (!m) return { from: null, to: null };
+        const n = parseInt(m[1]), unit = m[2];
+        const d = new Date();
+        if      (unit === 'd') d.setDate(d.getDate() - n);
+        else if (unit === 'm') d.setMonth(d.getMonth() - n);
+        else                   d.setFullYear(d.getFullYear() - n);
+        return { from: d.getTime() / 1000, to: null };
+    }
+
+    function showStatsWarning(labelCount) {
+        const el = document.getElementById('stats-warning');
+        if (!el) return;
+        if (labelCount > STATS_WARN_THRESHOLD) {
+            el.style.display = '';
+            el.textContent = `\u26a0\ufe0f ${labelCount} periods to display \u2014 the chart may be hard to read. Consider switching to a larger granularity (Month or Year) or narrowing the date range.`;
+        } else {
+            el.style.display = 'none';
+        }
+    }
+
+    function buildStatsQueueFilter(archives) {
+        const queues = [...new Set(archives.map(a => a.queue || ''))].filter(Boolean).sort();
+        const group  = document.getElementById('stats-filter-queues-group');
+        if (queues.length > 1) {
+            if (group) group.style.display = 'flex';
+            if (!statsQueueDd)
+                statsQueueDd = buildDropdown('stats-filter-queues-container', queues, null, renderStats, 'All queues');
+        }
+    }
+
+    function getPeriodKey(ts, granularity) {
+        if (ts == null) return null;
+        const d   = new Date(ts * 1000);
+        const y   = d.getFullYear();
+        const mo  = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        if (granularity === 'year')  return `${y}`;
+        if (granularity === 'month') return `${y}-${mo}`;
+        return `${y}-${mo}-${day}`;
+    }
+
+    function computeStats(archives, granularity, metric, dateRange) {
+        const selectedQueues = statsQueueDd ? statsQueueDd.getSelected() : null;
+        let filtered = selectedQueues
+            ? archives.filter(a => selectedQueues.includes(a.queue || ''))
+            : [...archives];
+        if (dateRange.from != null) filtered = filtered.filter(a => (a.launch_date || a.mtime) >= dateRange.from);
+        if (dateRange.to   != null) filtered = filtered.filter(a => (a.launch_date || a.mtime) <= dateRange.to);
+
+        const periodMap = new Map();
+        for (const a of filtered) {
+            const key = getPeriodKey(a.launch_date || a.mtime, granularity);
+            if (key === null) continue;
+            if (!periodMap.has(key)) periodMap.set(key, { finished: 0, failed: 0, unknown: 0, total: 0 });
+            const entry  = periodMap.get(key);
+            const weight = metric === 'slots' ? (a.threads ?? 1) : 1;
+            const status = a.status || 'unknown';
+            if (status === 'finished')    entry.finished += weight;
+            else if (status === 'failed') entry.failed   += weight;
+            else                          entry.unknown  += weight;
+            entry.total += weight;
+        }
+
+        const labels       = [...periodMap.keys()].sort();
+        const finishedData = labels.map(l => periodMap.get(l).finished);
+        const failedData   = labels.map(l => periodMap.get(l).failed);
+        const unknownData  = labels.map(l => periodMap.get(l).unknown);
+
+        let totalFinished = 0, totalFailed = 0, totalUnknown = 0;
+        for (const e of periodMap.values()) {
+            totalFinished += e.finished;
+            totalFailed   += e.failed;
+            totalUnknown  += e.unknown;
+        }
+
+        const tableRows = labels.map(l => {
+            const e   = periodMap.get(l);
+            const rate = e.total > 0 ? Math.round(e.finished / e.total * 100) : 0;
+            return { period: l, finished: e.finished, failed: e.failed, unknown: e.unknown, total: e.total, rate };
+        });
+
+        return { labels, finishedData, failedData, unknownData, totalFinished, totalFailed, totalUnknown, tableRows };
+    }
+
+    function renderStatsBarChart(stats, metric) {
+        const metricLabel = metric === 'slots' ? 'Slots' : 'Tasks';
+        const barCanvas = document.getElementById('stats-bar-chart');
+        const noData    = document.getElementById('stats-bar-no-data');
+        if (!barCanvas || typeof Chart === 'undefined') return;
+        if (statsBarChart) { statsBarChart.destroy(); statsBarChart = null; }
+        if (!stats.labels.length) {
+            barCanvas.style.display = 'none';
+            if (noData) { noData.style.display = ''; noData.textContent = 'No data in selected range.'; }
+            return;
+        }
+        barCanvas.style.display = '';
+        if (noData) noData.style.display = 'none';
+        statsBarChart = new Chart(barCanvas, {
+            type: 'bar',
+            data: {
+                labels: stats.labels,
+                datasets: [
+                    { label: 'Finished', data: stats.finishedData, backgroundColor: 'rgba(40,167,69,0.82)',   stack: 's' },
+                    { label: 'Failed',   data: stats.failedData,   backgroundColor: 'rgba(220,53,69,0.82)',   stack: 's' },
+                    { label: 'Unknown',  data: stats.unknownData,  backgroundColor: 'rgba(108,117,125,0.45)', stack: 's' },
+                ],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'top' },
+                    tooltip: { mode: 'index', intersect: false },
+                },
+                scales: {
+                    x: { stacked: true, ticks: { maxRotation: 45, autoSkip: true, maxTicksLimit: 60 } },
+                    y: { stacked: true, beginAtZero: true, title: { display: true, text: metricLabel } },
+                },
+            },
+        });
+    }
+
+    function renderStatsDonutChart(stats) {
+        const donutCanvas = document.getElementById('stats-donut-chart');
+        const noData      = document.getElementById('stats-donut-no-data');
+        if (!donutCanvas || typeof Chart === 'undefined') return;
+        if (statsDonutChart) { statsDonutChart.destroy(); statsDonutChart = null; }
+        const grand = stats.totalFinished + stats.totalFailed + stats.totalUnknown;
+        if (!grand) {
+            donutCanvas.style.display = 'none';
+            if (noData) { noData.style.display = ''; noData.textContent = 'No data in selected range.'; }
+            return;
+        }
+        donutCanvas.style.display = '';
+        if (noData) noData.style.display = 'none';
+        const rate      = Math.round(stats.totalFinished / grand * 100);
+        const rateColor = rate >= 80 ? '#28a745' : rate >= 50 ? '#e07b00' : '#dc3545';
+        statsDonutChart = new Chart(donutCanvas, {
+            type: 'doughnut',
+            data: {
+                labels: ['Finished', 'Failed', 'Unknown'],
+                datasets: [{
+                    data: [stats.totalFinished, stats.totalFailed, stats.totalUnknown],
+                    backgroundColor: ['rgba(40,167,69,0.82)', 'rgba(220,53,69,0.82)', 'rgba(108,117,125,0.45)'],
+                    borderColor:     ['#28a745',               '#dc3545',               '#6c757d'],
+                    borderWidth: 1,
+                }],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '62%',
+                plugins: {
+                    legend: { position: 'bottom' },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => {
+                                const v   = ctx.raw;
+                                const pct = grand > 0 ? Math.round(v / grand * 100) : 0;
+                                return ` ${ctx.label}: ${v} (${pct}%)`;
+                            },
+                        },
+                    },
+                },
+            },
+            plugins: [{
+                id: 'statsCenterText',
+                afterDraw(chart) {
+                    const { ctx, chartArea: { top, bottom, left, right } } = chart;
+                    const cx = (left + right) / 2;
+                    const cy = (top  + bottom) / 2;
+                    ctx.save();
+                    ctx.font         = 'bold 1.8em sans-serif';
+                    ctx.fillStyle    = rateColor;
+                    ctx.textAlign    = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(`${rate}%`, cx, cy - 10);
+                    ctx.font      = '0.78em sans-serif';
+                    ctx.fillStyle = '#888';
+                    ctx.fillText('success', cx, cy + 14);
+                    ctx.restore();
+                },
+            }],
+        });
+    }
+
+    function renderStatsTable(stats, metric) {
+        const el = document.getElementById('stats-table-content');
+        if (!el) return;
+        const metricLabel = metric === 'slots' ? 'Slots' : 'Tasks';
+        if (!stats.tableRows.length) {
+            el.innerHTML = '<p style="color:#888;font-style:italic">No data in selected range.</p>'; return;
+        }
+        const table = document.createElement('table');
+        table.className = 'cluster-tasks-table stats-summary-table';
+        table.innerHTML = `<thead><tr>
+            <th>Period</th>
+            <th>Finished</th>
+            <th>Failed</th>
+            <th>Unknown</th>
+            <th>Total ${metricLabel}</th>
+            <th>Success Rate</th>
+        </tr></thead>`;
+        const tbody = document.createElement('tbody');
+        stats.tableRows.forEach(r => {
+            const cls = r.rate >= 80 ? 'stats-rate-good' : r.rate >= 50 ? 'stats-rate-warn' : 'stats-rate-bad';
+            const tr  = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${r.period}</td>
+                <td class="state-finished-success">${r.finished}</td>
+                <td class="state-finished-failed">${r.failed}</td>
+                <td style="color:#6c757d">${r.unknown}</td>
+                <td>${r.total}</td>
+                <td><span class="stats-rate-badge ${cls}">${r.rate}%</span></td>`;
+            tbody.appendChild(tr);
+        });
+        const tot = stats.tableRows.reduce(
+            (acc, r) => ({ finished: acc.finished + r.finished, failed: acc.failed + r.failed, unknown: acc.unknown + r.unknown, total: acc.total + r.total }),
+            { finished: 0, failed: 0, unknown: 0, total: 0 }
+        );
+        const totalRate = tot.total > 0 ? Math.round(tot.finished / tot.total * 100) : 0;
+        const totalCls  = totalRate >= 80 ? 'stats-rate-good' : totalRate >= 50 ? 'stats-rate-warn' : 'stats-rate-bad';
+        const totTr = document.createElement('tr');
+        totTr.className = 'stats-total-row';
+        totTr.innerHTML = `
+            <td><strong>TOTAL</strong></td>
+            <td class="state-finished-success"><strong>${tot.finished}</strong></td>
+            <td class="state-finished-failed"><strong>${tot.failed}</strong></td>
+            <td style="color:#6c757d"><strong>${tot.unknown}</strong></td>
+            <td><strong>${tot.total}</strong></td>
+            <td><span class="stats-rate-badge ${totalCls}">${totalRate}%</span></td>`;
+        tbody.appendChild(totTr);
+        table.appendChild(tbody);
+        el.innerHTML = ''; el.appendChild(table);
+    }
+
+    function switchStatsSubTab(name) {
+        activeStatsSubTab = name;
+        ['distribution', 'summary', 'success'].forEach(n => {
+            const view = document.getElementById(`stats-view-${n}`);
+            const btn  = document.getElementById(`stats-tab-${n}`);
+            if (view) view.style.display = n === name ? '' : 'none';
+            if (btn)  btn.classList.toggle('active', n === name);
+        });
+        renderActiveStatsSubTab();
+    }
+
+    function renderActiveStatsSubTab() {
+        if (!currentStats) return;
+        const metric = document.getElementById('stats-metric')?.value || 'tasks';
+        if      (activeStatsSubTab === 'distribution') renderStatsBarChart(currentStats, metric);
+        else if (activeStatsSubTab === 'summary')      renderStatsTable(currentStats, metric);
+        else if (activeStatsSubTab === 'success')      renderStatsDonutChart(currentStats);
+    }
+
+    function renderStats() {
+        if (!allArchives.length) return;
+        const granularity = document.getElementById('stats-granularity')?.value || 'month';
+        const metric      = document.getElementById('stats-metric')?.value      || 'tasks';
+        const dateRange   = getStatsDateRange();
+        currentStats      = computeStats(allArchives, granularity, metric, dateRange);
+        showStatsWarning(currentStats.labels.length);
+        renderActiveStatsSubTab();
+    }
+
+    async function fetchStats() {
+        const el = document.getElementById('stats-table-content');
+        if (!allArchives.length) {
+            if (el) el.innerHTML = '<p class="cluster-loading">Loading...</p>';
+            try {
+                const resp = await fetch('/cluster/archives', { headers: { Authorization: `Bearer ${token}` } });
+                if (!resp.ok) { if (el) el.innerHTML = `<p class="error">Error ${resp.status}</p>`; return; }
+                const raw = await resp.json();
+                const seen = new Set();
+                allArchives = raw.filter(a => {
+                    const key = a.analysis_id_name;
+                    if (seen.has(key)) return false;
+                    seen.add(key);
+                    return true;
+                });
+            } catch (e) {
+                if (el) el.innerHTML = `<p class="error">Could not load archives: ${e}</p>`;
+                return;
+            }
+        }
+        buildStatsQueueFilter(allArchives);
+        updateStatsPresets();
+        renderStats();
+    }
+
+    document.getElementById('stats-refresh-btn')?.addEventListener('click', () => {
+        allArchives  = [];
+        statsQueueDd = null;
+        currentStats = null;
+        const grp = document.getElementById('stats-filter-queues-group');
+        if (grp) { grp.style.display = 'none'; const c = document.getElementById('stats-filter-queues-container'); if (c) c.innerHTML = ''; }
+        fetchStats();
+    });
+    document.getElementById('stats-granularity')?.addEventListener('change', () => { updateStatsPresets(false); renderStats(); });
+    document.getElementById('stats-metric')?.addEventListener('change', renderStats);
+    document.getElementById('stats-daterange-preset')?.addEventListener('change', () => {
+        const val = document.getElementById('stats-daterange-preset')?.value;
+        const customGroup = document.getElementById('stats-custom-range-group');
+        if (customGroup) customGroup.style.display = val === 'custom' ? 'flex' : 'none';
+        if (val !== 'custom') renderStats();
+    });
+    document.getElementById('stats-date-from')?.addEventListener('change', renderStats);
+    document.getElementById('stats-date-to')?.addEventListener('change', renderStats);
+    ['distribution', 'summary', 'success'].forEach(name => {
+        document.getElementById(`stats-tab-${name}`)?.addEventListener('click', () => switchStatsSubTab(name));
+    });
+    updateStatsPresets();
 
     // ── Auto-refresh ──────────────────────────────────────────────────────────
     const REFRESH_MS = typeof REFRESH_INTERVAL_MS !== 'undefined' ? REFRESH_INTERVAL_MS : 10000;
