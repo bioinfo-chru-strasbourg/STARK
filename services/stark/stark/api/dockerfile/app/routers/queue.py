@@ -238,6 +238,14 @@ async def list_archives():
             except Exception:
                 status = "unknown"
 
+        # Times
+        # Start time
+        launch_date = (os.path.getmtime(json_path) if os.path.exists(json_path) else None)
+        # End time
+        end_date = (os.path.getmtime(info_path) if os.path.exists(info_path) else None)
+        # Execution time (from file modification times)
+        exec_time = end_date - launch_date if launch_date and end_date else None
+
         result.append(
             {
                 "analysis_id_name": base,
@@ -246,6 +254,9 @@ async def list_archives():
                 "threads": threads,
                 "status": status,
                 "mtime": os.path.getmtime(json_path),
+                "launch_date": launch_date,
+                "end_date": end_date,
+                "exec_time": exec_time
             }
         )
 
