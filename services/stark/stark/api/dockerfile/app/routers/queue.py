@@ -34,6 +34,11 @@ _LINE_REGEX = re.compile(
     r"(?P<command>.*)$"
 )
 
+def _safe_mtime(path: str) -> Optional[float]:
+    try:
+        return os.path.getmtime(path)
+    except FileNotFoundError:
+        return None
 
 def _iter_queue_tasks(queue_name: str, cfg: dict, is_default: bool) -> list:
     """Run 'ts -l' on a single queue and return parsed task dicts."""
@@ -238,18 +243,17 @@ async def list_archives():
             except Exception:
                 status = "unknown"
 
+
+
         # Times
         # Start time
-        mtime = (os.path.getmtime(json_path) if os.path.exists(json_path) else None)
+        mtime = _safe_mtime(json_path)
         # End time
-        end_date = (os.path.getmtime(info_path) if os.path.exists(info_path) else None)
+        end_date = _safe_mtime(info_path)
         # Execution time (from file modification times)
-        exec_time = (
-            end_date - mtime
-            if mtime is not None and end_date is not None
-            else None
-        )
+        exec_time = (end_date - mtime) if end_date is not None else None
 
+        # Append to results
         result.append(
             {
                 "analysis_id_name": base,
