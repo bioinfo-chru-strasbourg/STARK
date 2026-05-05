@@ -281,7 +281,7 @@ def queue_command_docker(json_input: dict) -> str:
     # Docker parameters: use analysis_id_name as Docker container name to be able to identify the container corresponding to a task-spooler task, and stop it if needed when the task is killed.
     docker_name = f"--name {analysis_id_name}"
     docker_parameters = f"--rm {docker_name} {docker_extra_params}"
-    if json_input.get("use_stark_container_mount", True):
+    if json_input.get("use_stark_container_mount", False):
         docker_parameters += f" {docker_stark_container_mount}"
 
     # Analysis file paths
@@ -382,7 +382,7 @@ def queue_command_docker_compose(json_input: dict) -> str:
     # Docker parameters: use analysis_id_name as Docker container name to be able to identify the container corresponding to a task-spooler task, and stop it if needed when the task is killed.
     docker_name = f"--name {analysis_id_name}"
     docker_parameters = f"--rm {docker_name} {docker_extra_params}"
-    if json_input.get("use_stark_container_mount", True):
+    if json_input.get("use_stark_container_mount", False):
         docker_parameters += f" {docker_stark_container_mount}"
 
     # Analysis file paths

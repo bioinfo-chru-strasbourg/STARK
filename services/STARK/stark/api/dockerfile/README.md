@@ -681,7 +681,7 @@ Runs a command inside a **new ephemeral Docker container** (`docker run --rm`). 
 | `command_docker` | Yes | Command to run inside the container |
 | `image` | Yes | Docker image name (e.g. `alpine`, `myregistry/myimage:1.0`) |
 | `docker_extra_params` | No | Additional `docker run` flags (e.g. `-e MY_VAR=value`, `--entrypoint /bin/sh`) |
-| `use_stark_container_mount` | No | Additional predefined volume mounts (e.g. `true`, `false`, default `true`) |
+| `use_stark_container_mount` | No | Additional predefined volume mounts (e.g. `true`, `false`, default `false`) |
 | `analysis_name` | No | Human-readable task label |
 | `queue` | No | Target queue (defaults to first queue) |
 | `threads` | No | Slots consumed (`-N`); see common optional keys above |
@@ -746,7 +746,7 @@ Runs a command inside a **new ephemeral Docker container** with a docker compose
 | `docker_compose_file` | Yes | Docker compose configuration file (e.g. `docker-compose.yml`) |
 | `service` | Yes | Docker compose configuration file (e.g. `my_service`) |
 | `docker_extra_params` | No | Additional `docker compose run` flags (e.g. `-e MY_VAR=value`, `--entrypoint /bin/sh`) |
-| `use_stark_container_mount` | No | Additional predefined volume mounts (e.g. `true`, `false`, default `true`) |
+| `use_stark_container_mount` | No | Additional predefined volume mounts (e.g. `true`, `false`, default `false`) |
 | `analysis_name` | No | Human-readable task label |
 | `queue` | No | Target queue (defaults to first queue) |
 | `threads` | No | Slots consumed (`-N`); see common optional keys above |
