@@ -854,9 +854,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const STATS_WARN_THRESHOLD = 90;
 
     const STATS_PRESETS = {
-        year:  [{v:'all',l:'All'},{v:'3y',l:'Last 3 years'},{v:'5y',l:'Last 5 years'},{v:'10y',l:'Last 10 years'},{v:'custom',l:'Custom...'}],
-        month: [{v:'all',l:'All'},{v:'3m',l:'Last 3 months'},{v:'6m',l:'Last 6 months'},{v:'12m',l:'Last 12 months'},{v:'24m',l:'Last 24 months'},{v:'custom',l:'Custom...'}],
-        day:   [{v:'30d',l:'Last 30 days'},{v:'7d',l:'Last 7 days'},{v:'14d',l:'Last 14 days'},{v:'90d',l:'Last 90 days'},{v:'all',l:'All'},{v:'custom',l:'Custom...'}],
+        year:  [{v:'3y',l:'Last 3 years'},{v:'5y',l:'Last 5 years'},{v:'10y',l:'Last 10 years'},{v:'all',l:'All'},{v:'custom',l:'Custom...'}],
+        month: [{v:'3m',l:'Last 3 months'},{v:'6m',l:'Last 6 months'},{v:'12m',l:'Last 12 months'},{v:'24m',l:'Last 24 months'},{v:'all',l:'All'},{v:'custom',l:'Custom...'}],
+        day:   [{v:'7d',l:'Last 7 days'},{v:'14d',l:'Last 14 days'},{v:'30d',l:'Last 30 days'},{v:'90d',l:'Last 90 days'},{v:'all',l:'All'},{v:'custom',l:'Custom...'}],
     };
 
     function updateStatsPresets(keepValue = false) {
@@ -1174,7 +1174,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         buildStatsQueueFilter(allArchives);
-        updateStatsPresets();
+        updateStatsPresets(true);
         renderStats();
     }
 
