@@ -786,14 +786,14 @@ document.addEventListener('DOMContentLoaded', () => {
         sorted.forEach(a => {
             const tr = document.createElement('tr');
             const statusLabel = a.status || 'unknown';
-            let date_title = a.launch_date ? `Launch:\t${formatDate(a.launch_date) ?? '-'}` : 'Date unknown';
-            date_title += a.end_date ? `\nEnd:\t\t${formatDate(a.end_date) ?? '-'}` : '';
-            date_title += a.exec_time ? `\nTime:\t${formatTime(a.exec_time) ?? '-'}` : '';
+            let date_title = a.mtime != null ? `Launch:\t${formatDate(a.mtime) ?? '-'}` : 'Date unknown';
+            date_title += a.end_date != null ? `\nEnd:\t\t${formatDate(a.end_date) ?? '-'}` : '';
+            date_title += a.exec_time != null ? `\nTime:\t${formatTime(a.exec_time) ?? '-'}` : '';
             tr.innerHTML = `
                 <td>${a.queue || '-'}</td>
                 <td>${a.threads ?? '-'}</td>
                 <td class="${statusCls[statusLabel] || 'state-unknown'}">${statusLabel}</td>
-                <td title="${date_title}">${formatDate(a.mtime) ?? '-'}</td>
+                <td title="${date_title}">${formatDate(a.mtime) || '-'}</td>
                 <td title="${a.analysis_id_name || '-'}" >${a.run_name || '-'}</td>
             `;
             tbody.appendChild(tr);
@@ -934,12 +934,12 @@ document.addEventListener('DOMContentLoaded', () => {
         let filtered = selectedQueues
             ? archives.filter(a => selectedQueues.includes(a.queue || ''))
             : [...archives];
-        if (dateRange.from != null) filtered = filtered.filter(a => (a.launch_date || a.mtime) >= dateRange.from);
-        if (dateRange.to   != null) filtered = filtered.filter(a => (a.launch_date || a.mtime) <= dateRange.to);
+        if (dateRange.from != null) filtered = filtered.filter(a => a.mtime >= dateRange.from);
+        if (dateRange.to   != null) filtered = filtered.filter(a => a.mtime <= dateRange.to);
 
         const periodMap = new Map();
         for (const a of filtered) {
-            const key = getPeriodKey(a.launch_date || a.mtime, granularity);
+            const key = getPeriodKey(a.mtime, granularity);
             if (key === null) continue;
             if (!periodMap.has(key)) periodMap.set(key, { finished: 0, failed: 0, unknown: 0, total: 0 });
             const entry  = periodMap.get(key);
