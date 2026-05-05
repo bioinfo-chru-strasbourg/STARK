@@ -240,11 +240,15 @@ async def list_archives():
 
         # Times
         # Start time
-        launch_date = (os.path.getmtime(json_path) if os.path.exists(json_path) else None)
+        mtime = (os.path.getmtime(json_path) if os.path.exists(json_path) else None)
         # End time
         end_date = (os.path.getmtime(info_path) if os.path.exists(info_path) else None)
         # Execution time (from file modification times)
-        exec_time = end_date - launch_date if launch_date and end_date else None
+        exec_time = (
+            end_date - mtime
+            if mtime is not None and end_date is not None
+            else None
+        )
 
         result.append(
             {
@@ -253,8 +257,7 @@ async def list_archives():
                 "queue": queue,
                 "threads": threads,
                 "status": status,
-                "mtime": os.path.getmtime(json_path),
-                "launch_date": launch_date,
+                "mtime": mtime,
                 "end_date": end_date,
                 "exec_time": exec_time
             }

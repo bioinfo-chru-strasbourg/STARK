@@ -786,14 +786,14 @@ document.addEventListener('DOMContentLoaded', () => {
         sorted.forEach(a => {
             const tr = document.createElement('tr');
             const statusLabel = a.status || 'unknown';
-            let date_title = a.launch_date ? `Launch:\t${formatDate(a.launch_date) ?? '-'}` : 'Date unknown';
-            date_title += a.end_date ? `\nEnd:\t\t${formatDate(a.end_date) ?? '-'}` : '';
-            date_title += a.exec_time ? `\nTime:\t${formatTime(a.exec_time) ?? '-'}` : '';
+            let date_title = a.mtime != null ? `Launch:\t${formatDate(a.mtime) ?? '-'}` : 'Date unknown';
+            date_title += a.end_date != null ? `\nEnd:\t\t${formatDate(a.end_date) ?? '-'}` : '';
+            date_title += a.exec_time != null ? `\nTime:\t${formatTime(a.exec_time) ?? '-'}` : '';
             tr.innerHTML = `
                 <td>${a.queue || '-'}</td>
                 <td>${a.threads ?? '-'}</td>
                 <td class="${statusCls[statusLabel] || 'state-unknown'}">${statusLabel}</td>
-                <td title="${date_title}">${formatDate(a.mtime) ?? '-'}</td>
+                <td title="${date_title}">${formatDate(a.mtime) || '-'}</td>
                 <td title="${a.analysis_id_name || '-'}" >${a.run_name || '-'}</td>
             `;
             tbody.appendChild(tr);
@@ -854,9 +854,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const STATS_WARN_THRESHOLD = 90;
 
     const STATS_PRESETS = {
-        year:  [{v:'all',l:'All'},{v:'3y',l:'Last 3 years'},{v:'5y',l:'Last 5 years'},{v:'10y',l:'Last 10 years'},{v:'custom',l:'Custom...'}],
-        month: [{v:'all',l:'All'},{v:'3m',l:'Last 3 months'},{v:'6m',l:'Last 6 months'},{v:'12m',l:'Last 12 months'},{v:'24m',l:'Last 24 months'},{v:'custom',l:'Custom...'}],
-        day:   [{v:'30d',l:'Last 30 days'},{v:'7d',l:'Last 7 days'},{v:'14d',l:'Last 14 days'},{v:'90d',l:'Last 90 days'},{v:'all',l:'All'},{v:'custom',l:'Custom...'}],
+        year:  [{v:'3y',l:'Last 3 years'},{v:'5y',l:'Last 5 years'},{v:'10y',l:'Last 10 years'},{v:'all',l:'All'},{v:'custom',l:'Custom...'}],
+        month: [{v:'3m',l:'Last 3 months'},{v:'6m',l:'Last 6 months'},{v:'12m',l:'Last 12 months'},{v:'24m',l:'Last 24 months'},{v:'all',l:'All'},{v:'custom',l:'Custom...'}],
+        day:   [{v:'7d',l:'Last 7 days'},{v:'14d',l:'Last 14 days'},{v:'30d',l:'Last 30 days'},{v:'90d',l:'Last 90 days'},{v:'all',l:'All'},{v:'custom',l:'Custom...'}],
     };
 
     function updateStatsPresets(keepValue = false) {
@@ -934,12 +934,12 @@ document.addEventListener('DOMContentLoaded', () => {
         let filtered = selectedQueues
             ? archives.filter(a => selectedQueues.includes(a.queue || ''))
             : [...archives];
-        if (dateRange.from != null) filtered = filtered.filter(a => (a.launch_date || a.mtime) >= dateRange.from);
-        if (dateRange.to   != null) filtered = filtered.filter(a => (a.launch_date || a.mtime) <= dateRange.to);
+        if (dateRange.from != null) filtered = filtered.filter(a => a.mtime >= dateRange.from);
+        if (dateRange.to   != null) filtered = filtered.filter(a => a.mtime <= dateRange.to);
 
         const periodMap = new Map();
         for (const a of filtered) {
-            const key = getPeriodKey(a.launch_date || a.mtime, granularity);
+            const key = getPeriodKey(a.mtime, granularity);
             if (key === null) continue;
             if (!periodMap.has(key)) periodMap.set(key, { finished: 0, failed: 0, unknown: 0, total: 0 });
             const entry  = periodMap.get(key);
@@ -1174,7 +1174,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         buildStatsQueueFilter(allArchives);
-        updateStatsPresets();
+        updateStatsPresets(true);
         renderStats();
     }
 

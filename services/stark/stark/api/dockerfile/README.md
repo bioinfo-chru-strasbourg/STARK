@@ -34,7 +34,7 @@ A **FastAPI**-based web service for launching and monitoring [STARK](https://git
 
 The dashboard is accessible at `http://server:8000/`, for any nodes.
 
-The dashboard has four top-level tabs:
+The dashboard has five top-level tabs:
 
 - **Analyses** - Show activity, with all analyses launched in nodes and queues, with requested number of slots, state of the analysis, and available actions.
 - **Launch** - Launch an analysis, through STARK run name or a JSON parameter.
@@ -151,9 +151,9 @@ The tab is divided into three sub-tabs:
 
 | Granularity | Available presets |
 | --- | --- |
-| `Year` | All, Last 3 years, Last 5 years, Last 10 years |
-| `Month` | All, Last 3 months, Last 6 months, Last 12 months (default), Last 24 months |
-| `Day` | Last 7 days, Last 14 days, Last 30 days (default), Last 90 days, All |
+| `Year` | Last 3 years, Last 5 years, Last 10 years, All |
+| `Month` | Last 3 months, Last 6 months, Last 12 months, Last 24 months, All |
+| `Day` | Last 7 days, Last 14 days, Last 30 days, Last 90 days, All |
 
 > **Note:** when the number of periods exceeds 90, a warning banner is displayed advising to switch to a coarser granularity or to narrow the date range, to avoid an unreadable chart.
 
@@ -200,7 +200,8 @@ app/
 │   └── ui.py            # GET / (dashboard)
 ├── static/
 │   ├── favicon.ico      # Icon
-│   ├── script.js        # Frontend logic (Local + Cluster tabs)
+│   ├── chart.umd.min.js # Chart.js bundle used by the dashboard
+│   ├── script.js        # Frontend logic (Local + Cluster + Statistics tabs)
 │   └── style.css        # CSS
 ├── templates/
 │   └── index.html       # Dashboard template
