@@ -761,7 +761,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!sorted.length) {
             el.innerHTML = '<p style="color:#888;font-style:italic">No archives found.</p>'; return;
         }
-        // const statusCls = { done: 'state-finished-success', failed: 'state-finished-failed', unknown: 'state-unknown' };
         const statusCls = { finished: 'state-finished-success', failed: 'state-finished-failed', unknown: 'state-unknown' };
         const table = document.createElement('table');
         table.className = 'cluster-tasks-table';
@@ -786,9 +785,9 @@ document.addEventListener('DOMContentLoaded', () => {
         sorted.forEach(a => {
             const tr = document.createElement('tr');
             const statusLabel = a.status || 'unknown';
-            let date_title = a.mtime != null ? `Launch:\t${formatDate(a.mtime) ?? '-'}` : 'Date unknown';
-            date_title += a.end_date != null ? `\nEnd:\t\t${formatDate(a.end_date) ?? '-'}` : '';
-            date_title += a.exec_time != null ? `\nTime:\t${formatTime(a.exec_time) ?? '-'}` : '';
+            let date_title = a.mtime != null ? `Launch:\t${formatDate(a.mtime) || '-'}` : 'Date unknown';
+            date_title += a.end_date != null ? `\nEnd:\t\t${formatDate(a.end_date) || '-'}` : '';
+            date_title += a.exec_time != null ? `\nTime:\t${formatTime(a.exec_time) || '-'}` : '';
             tr.innerHTML = `
                 <td>${a.queue || '-'}</td>
                 <td>${a.threads ?? '-'}</td>
