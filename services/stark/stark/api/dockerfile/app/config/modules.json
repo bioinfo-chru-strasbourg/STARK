@@ -1,0 +1,14 @@
+{
+  "STARK": {
+    "image": "stark",
+    "description": "Default STARK analysis module",
+    "docker_extra_params": "",
+    "use_stark_container_mount": true,
+    "defaults": {
+      "queue": null,
+      "threads": null,
+      "memory": null,
+      "prioritize": false
+    }
+  }
+}

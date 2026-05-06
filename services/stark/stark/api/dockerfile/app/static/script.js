@@ -277,8 +277,16 @@ document.addEventListener('DOMContentLoaded', () => {
         dashboardContainer.style.display = 'block';
         isAdmin = false;
         await fetchUserInfo();
+        const launchEnabled = typeof LAUNCH_ENABLED !== 'undefined' ? LAUNCH_ENABLED : true;
+        const launchModes   = typeof LAUNCH_MODES   !== 'undefined' ? LAUNCH_MODES   : ['run', 'docker', 'advanced'];
         const launchTab = document.getElementById('tab-launch');
-        if (launchTab) launchTab.style.display = isAdmin ? '' : 'none';
+        if (launchTab) launchTab.style.display = (isAdmin && launchEnabled) ? '' : 'none';
+        // Apply sub-tab visibility according to LAUNCH_MODES
+        const modeButtonMap = { run: 'launch-tab-run', analysis: 'launch-tab-analysis', docker: 'launch-tab-docker', advanced: 'launch-tab-advanced' };
+        Object.entries(modeButtonMap).forEach(([mode, btnId]) => {
+            const btn = document.getElementById(btnId);
+            if (btn) btn.style.display = launchModes.includes(mode) ? '' : 'none';
+        });
         switchTab('tasks');
     }
 
@@ -330,18 +338,66 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function fetchQueuesForLaunch() {
+        // Ensure the active sub-tab is one of the allowed modes; if not, switch to the first allowed
+        const launchModes = typeof LAUNCH_MODES !== 'undefined' ? LAUNCH_MODES : ['run', 'analysis', 'docker', 'advanced'];
+        if (!launchModes.includes(activeLaunchSubTab)) {
+            const firstMode = launchModes[0];
+            document.getElementById(`launch-tab-${firstMode || 'run'}`)?.click();
+        }
         try {
             const resp = await fetch('/queues', { headers: { Authorization: `Bearer ${token}` } });
             if (!resp.ok) return;
             const data = await resp.json();
+            // Legacy datalist for docker form
             const dl = document.getElementById('queues-datalist');
-            if (!dl) return;
-            dl.innerHTML = '';
-            (data.queues || []).forEach(q => {
-                const opt = document.createElement('option');
-                opt.value = q;
-                dl.appendChild(opt);
-            });
+            if (dl) {
+                dl.innerHTML = '';
+                (data.queues || []).forEach(q => {
+                    const opt = document.createElement('option');
+                    opt.value = q;
+                    dl.appendChild(opt);
+                });
+            }
+            // Select for STARK Analysis form
+            const qsel = document.getElementById('analysis-queue');
+            if (qsel) {
+                qsel.innerHTML = '';
+                (data.queues || []).forEach(q => {
+                    const opt = document.createElement('option');
+                    opt.value = q;
+                    opt.textContent = q;
+                    qsel.appendChild(opt);
+                });
+            }
+        } catch (_) { /* non-blocking */ }
+
+        // Load modules for STARK Analysis form
+        try {
+            const mresp = await fetch('/modules', { headers: { Authorization: `Bearer ${token}` } });
+            if (!mresp.ok) return;
+            const mdata = await mresp.json();
+            const minput = document.getElementById('analysis-module');
+            const mdl = document.getElementById('modules-datalist');
+            if (minput && mdl) {
+                const previousValue = minput.value;
+                const alreadyLoaded = !!window._modulesMeta;
+                mdl.innerHTML = '';
+                window._modulesMeta = {};
+                (mdata.modules || []).forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m.name;
+                    opt.label = m.description ? `${m.name} — ${m.description}` : m.name;
+                    mdl.appendChild(opt);
+                    window._modulesMeta[m.name] = { defaults: m.defaults || {} };
+                });
+                // Restore previous value if still valid, otherwise leave empty
+                const modules = mdata.modules || [];
+                const stillValid = previousValue && modules.some(m => m.name === previousValue);
+                if (stillValid) minput.value = previousValue;
+                // Apply defaults only on first load (not on tab switch)
+                if (!alreadyLoaded) applyAnalysisModuleDefaults();
+                if (!alreadyLoaded) minput.addEventListener('input', applyAnalysisModuleDefaults);
+            }
         } catch (_) { /* non-blocking */ }
     }
 
@@ -606,31 +662,49 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('launch-tab-run')?.addEventListener('click', () => {
         activeLaunchSubTab = 'run';
         document.getElementById('launch-view-run').style.display     = '';
+        document.getElementById('launch-view-analysis').style.display = 'none';
         document.getElementById('launch-view-advanced').style.display = 'none';
-        document.getElementById('launch-view-command-docker').style.display = 'none';
+        document.getElementById('launch-view-docker').style.display = 'none';
         document.getElementById('launch-tab-run').classList.add('active');
+        document.getElementById('launch-tab-analysis').classList.remove('active');
         document.getElementById('launch-tab-advanced').classList.remove('active');
-        document.getElementById('launch-tab-command-docker').classList.remove('active');
+        document.getElementById('launch-tab-docker').classList.remove('active');
+        document.getElementById('launch-result').style.display = 'none';
+    });
+    document.getElementById('launch-tab-analysis')?.addEventListener('click', () => {
+        activeLaunchSubTab = 'analysis';
+        document.getElementById('launch-view-run').style.display     = 'none';
+        document.getElementById('launch-view-analysis').style.display = '';
+        document.getElementById('launch-view-advanced').style.display = 'none';
+        document.getElementById('launch-view-docker').style.display = 'none';
+        document.getElementById('launch-tab-run').classList.remove('active');
+        document.getElementById('launch-tab-analysis').classList.add('active');
+        document.getElementById('launch-tab-advanced').classList.remove('active');
+        document.getElementById('launch-tab-docker').classList.remove('active');
         document.getElementById('launch-result').style.display = 'none';
     });
     document.getElementById('launch-tab-advanced')?.addEventListener('click', () => {
         activeLaunchSubTab = 'advanced';
         document.getElementById('launch-view-run').style.display     = 'none';
+        document.getElementById('launch-view-analysis').style.display = 'none';
         document.getElementById('launch-view-advanced').style.display = '';
-        document.getElementById('launch-view-command-docker').style.display = 'none';
+        document.getElementById('launch-view-docker').style.display = 'none';
         document.getElementById('launch-tab-run').classList.remove('active');
+        document.getElementById('launch-tab-analysis').classList.remove('active');
         document.getElementById('launch-tab-advanced').classList.add('active');
-        document.getElementById('launch-tab-command-docker').classList.remove('active');
+        document.getElementById('launch-tab-docker').classList.remove('active');
         document.getElementById('launch-result').style.display = 'none';
     });
-    document.getElementById('launch-tab-command-docker')?.addEventListener('click', () => {
-        activeLaunchSubTab = 'command-docker';
+    document.getElementById('launch-tab-docker')?.addEventListener('click', () => {
+        activeLaunchSubTab = 'docker';
         document.getElementById('launch-view-run').style.display     = 'none';
+        document.getElementById('launch-view-analysis').style.display = 'none';
         document.getElementById('launch-view-advanced').style.display = 'none';
-        document.getElementById('launch-view-command-docker').style.display = '';
+        document.getElementById('launch-view-docker').style.display = '';
         document.getElementById('launch-tab-run').classList.remove('active');
+        document.getElementById('launch-tab-analysis').classList.remove('active');
         document.getElementById('launch-tab-advanced').classList.remove('active');
-        document.getElementById('launch-tab-command-docker').classList.add('active');
+        document.getElementById('launch-tab-docker').classList.add('active');
         document.getElementById('launch-result').style.display = 'none';
     });
 
@@ -661,6 +735,89 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Convert a JSON object to a CLI string: {run:"X", sample_filter:["S1","S2"]} -> "--run=X --sample_filter=S1,S2"
+    function jsonCommandToCli(obj) {
+        return Object.entries(obj).map(([k, v]) => {
+            if (Array.isArray(v))           return `--${k}=${v.join(',')}`;
+            if (v === true)                 return `--${k}`;
+            if (v === false || v === null)  return '';
+            return `--${k}=${v}`;
+        }).filter(Boolean).join(' ');
+    }
+
+    function applyAnalysisModuleDefaults() {
+        const minput = document.getElementById('analysis-module');
+        if (!minput) return;
+        const meta = (window._modulesMeta || {})[minput.value];
+        if (!meta) return;
+        const defaults = meta.defaults || {};
+        const qsel = document.getElementById('analysis-queue');
+        if (qsel && defaults.queue) qsel.value = defaults.queue;
+        const thr = document.getElementById('analysis-threads');
+        if (thr && defaults.threads) thr.value = defaults.threads;
+        const mem = document.getElementById('analysis-memory');
+        if (mem && defaults.memory) mem.value = defaults.memory;
+        const pri = document.getElementById('analysis-prioritize');
+        if (pri) pri.checked = !!defaults.prioritize;
+    }
+
+    // Switch command input panels when user changes format
+    document.querySelectorAll('input[name="analysis-cmd-mode"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+            const mode = document.querySelector('input[name="analysis-cmd-mode"]:checked')?.value;
+            document.getElementById('analysis-cmd-text').style.display = mode === 'text' ? '' : 'none';
+            document.getElementById('analysis-cmd-json').style.display = mode === 'json' ? '' : 'none';
+            document.getElementById('analysis-cmd-file').style.display = mode === 'file' ? '' : 'none';
+        });
+    });
+
+    document.getElementById('analysis-form-analysis')?.addEventListener('submit', async e => {
+        e.preventDefault();
+        const msel = document.getElementById('analysis-module');
+        const moduleName = msel?.value || '';
+
+        const mode = document.querySelector('input[name="analysis-cmd-mode"]:checked')?.value || 'text';
+        let command = '';
+        if (mode === 'text') {
+            command = document.getElementById('analysis-command-text')?.value.trim() || '';
+        } else if (mode === 'json') {
+            const raw = document.getElementById('analysis-command-json')?.value.trim() || '';
+            try { command = jsonCommandToCli(JSON.parse(raw)); }
+            catch (_) { showLaunchResult('Invalid JSON command', false); return; }
+        } else if (mode === 'file') {
+            const file = document.getElementById('analysis-command-file')?.files[0];
+            if (!file) { showLaunchResult('No file selected', false); return; }
+            try {
+                const text = await file.text();
+                command = jsonCommandToCli(JSON.parse(text));
+            } catch (_) { showLaunchResult('Invalid JSON file', false); return; }
+        }
+        if (!command) { showLaunchResult('Command is required', false); return; }
+
+        const analysis_name = document.getElementById('analysis-name-input')?.value.trim() || undefined;
+        const queue = document.getElementById('analysis-queue')?.value || undefined;
+        const threadsRaw = document.getElementById('analysis-threads')?.value.trim();
+        const threads = threadsRaw ? parseInt(threadsRaw, 10) : undefined;
+        const memory = document.getElementById('analysis-memory')?.value.trim() || undefined;
+        const prioritize = document.getElementById('analysis-prioritize')?.checked || undefined;
+
+        const payload = { module: moduleName, command };
+        if (analysis_name) payload.analysis_name = analysis_name;
+        if (queue)         payload.queue = queue;
+        if (threads)       payload.threads = threads;
+        if (memory)        payload.memory = memory;
+        if (prioritize)    payload.prioritize = prioritize;
+
+        const resp = await fetch('/analysis/module', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify(payload),
+        });
+        const text = await resp.text();
+        showLaunchResult(text, resp.ok);
+        if (resp.ok) setTimeout(fetchAllTasks, 500);
+    });
+
     document.getElementById('analysis-form-run')?.addEventListener('submit', async e => {
         e.preventDefault();
         const runName = document.getElementById('run-name-input')?.value.trim();
@@ -676,29 +833,29 @@ document.addEventListener('DOMContentLoaded', () => {
         await submitAnalysis(payload);
     });
 
-    document.getElementById('analysis-form-command-docker')?.addEventListener('submit', async e => {
+    document.getElementById('analysis-form-docker')?.addEventListener('submit', async e => {
         e.preventDefault();
-        const analysis_name = document.getElementById('command-docker-analysis-name')?.value.trim();
+        const analysis_name = document.getElementById('docker-analysis-name')?.value.trim();
         if (!analysis_name) {
             showLaunchResult('Analysis name is required', false);
             return;
         }
-        const image = document.getElementById('command-docker-image')?.value.trim();
+        const image = document.getElementById('docker-image')?.value.trim();
         if (!analysis_name || !image) {
             showLaunchResult('Docker image is required', false);
             return;
         }
-        const command = document.getElementById('command-docker-command-docker')?.value.trim();
+        const command = document.getElementById('docker-command')?.value.trim();
         if (!command) {
             showLaunchResult('Docker command is required', false);
             return;
         }
-        const docker_extra_params = document.getElementById('command-docker-extra-params')?.value.trim();
-        const use_stark_container_mount = document.getElementById('command-docker-use-stark-container-mount')?.checked;
-        const queue = document.getElementById('command-docker-queue')?.value.trim();
-        const threads = Number.parseInt(document.getElementById('command-docker-threads')?.value.trim());
-        const memory = document.getElementById('command-docker-memory')?.value.trim();
-        const prioritize = document.getElementById('command-docker-prioritize')?.checked;
+        const docker_extra_params = document.getElementById('docker-extra-params')?.value.trim();
+        const use_stark_container_mount = document.getElementById('docker-use-stark-container-mount')?.checked;
+        const queue = document.getElementById('docker-queue')?.value.trim();
+        const threads = Number.parseInt(document.getElementById('docker-threads')?.value.trim());
+        const memory = document.getElementById('docker-memory')?.value.trim();
+        const prioritize = document.getElementById('docker-prioritize')?.checked;
         await submitAnalysis(JSON.stringify({ "analysis_name": analysis_name, "image": image, "command_docker": command, "docker_extra_params": docker_extra_params, "use_stark_container_mount": use_stark_container_mount, "queue": queue, "threads": threads, "memory": memory, "prioritize": prioritize }));
     });
 

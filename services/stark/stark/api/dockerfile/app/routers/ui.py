@@ -6,7 +6,7 @@ from fastapi import APIRouter, Request  # pyright: ignore[reportMissingImports]
 from fastapi.responses import HTMLResponse  # pyright: ignore[reportMissingImports]
 from fastapi.templating import Jinja2Templates  # pyright: ignore[reportMissingImports]
 
-from config import refresh_interval_ms
+from config import launch_enabled, launch_modes, refresh_interval_ms
 
 router = APIRouter()
 templates = Jinja2Templates(directory="templates")
@@ -21,5 +21,7 @@ async def read_root(request: Request):
             "request": request,
             "version": version,
             "refresh_interval_ms": refresh_interval_ms,
+            "launch_enabled": launch_enabled,
+            "launch_modes": launch_modes,
         },
     )

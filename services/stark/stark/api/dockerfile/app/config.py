@@ -7,6 +7,7 @@ SECRET_KEY = "a_very_secret_key_that_should_be_in_a_config_file"
 ALGORITHM = "HS256"
 USERS_FILE = "config/users.json"
 QUEUES_FILE = "config/queues.json"
+MODULES_FILE = "config/modules.json"
 STARK_API_KEY = os.environ.get("STARK_API_KEY", "a_default_super_secret_api_key")
 
 # --- Cluster / Peers ---
@@ -42,3 +43,24 @@ docker_stark_api_runs_folder = os.environ.get(
 
 # --- UI ---
 refresh_interval_ms = int(os.environ.get("STARK_API_REFRESH_INTERVAL", "10")) * 1000
+
+# --- Launch tab access control ---
+# STARK_API_LAUNCH_ENABLED: "true" (default) shows the Launch tab to admins;
+#   "false" hides it entirely for all users.
+launch_enabled: bool = (
+    os.environ.get("STARK_API_LAUNCH_ENABLED", "true").strip().lower() == "true"
+)
+
+# STARK_API_LAUNCH_MODES: comma-separated list of allowed sub-tabs.
+#   Recognised values: run, analysis, docker, advanced  (all enabled by default)
+_launch_modes_raw = os.environ.get(
+    "STARK_API_LAUNCH_MODES", "run,analysis,docker,advanced"
+)
+launch_modes: list = [
+    m.strip()
+    for m in _launch_modes_raw.split(",")
+    if m.strip() in ("run", "analysis", "docker", "advanced")
+]
+# Fallback: if the env var was set but produced no valid entries, keep all
+if not launch_modes:
+    launch_modes = ["run", "analysis", "docker", "advanced"]

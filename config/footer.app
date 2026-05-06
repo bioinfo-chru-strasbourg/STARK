@@ -1613,11 +1613,12 @@ RELEASE_FILE=$STARK_FOLDER_CONFIG/RELEASE
 ##################
 
 # THREADS is CORES - 1
+[ -z $CORES ] && CORES=$(get_cores)
 
 if [ -z $THREADS ] || [ "${THREADS^^}" == "AUTO" ] || ! [[ $THREADS =~ ^[0-9]+$ ]]; then
 	#export CORES=$(ls -d /sys/devices/system/cpu/cpu[[:digit:]]* | wc -w)	# NB of cores in the server
-	export CORES=$(nproc)	# NB of cores in the server
-	export CORES_FREE=1							# Number of threads free for other command
+	export CORES	# NB of cores in the server
+	export CORES_FREE=0							# Number of threads free for other command
 	export CORES_TO_USE=$(($CORES-$CORES_FREE))				# Nb of cores to use
 	THREADS=$CORES_TO_USE
 	#THREADS=2

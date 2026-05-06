@@ -201,7 +201,7 @@ export APP
 
 # CORES
 re='^[0-9]+$'
-CORES=$(nproc)
+[ -z $CORES ] && CORES=$(get_cores)
 
 if ! [[ $THREADS =~ $re ]] || [ -z "$THREADS" ] || [ "$THREADS" == "" ] || [ $THREADS -gt $CORES ] ; then
 	CORES_FREE=0
