@@ -97,7 +97,7 @@
             <h2>Launch Analysis</h2>
             <div class="launch-sub-tabs">
                 <button class="launch-sub-tab-btn active" id="launch-tab-run">STARK Run</button>
-                <button class="launch-sub-tab-btn" id="launch-tab-command-docker">Docker Command</button>
+                <button class="launch-sub-tab-btn" id="launch-tab-docker">Docker Command</button>
                 <button class="launch-sub-tab-btn" id="launch-tab-advanced">Advanced (JSON)</button>
             </div>
 
@@ -125,52 +125,52 @@
                 </form>
             </div>
 
-            <div id="launch-view-command-docker" style="display:none; width:100%">
-                <form id="analysis-form-command-docker" style="width:100%">
+            <div id="launch-view-docker" style="display:none; width:100%">
+                <form id="analysis-form-docker" style="width:100%">
                     <div class="form-row">
-                        <label for="command-docker-analysis-name">Analysis Name *</label>
-                        <input type="text" id="command-docker-analysis-name" placeholder="My_Analysis_Docker_Command">
+                        <label for="docker-analysis-name">Analysis Name *</label>
+                        <input type="text" id="docker-analysis-name" placeholder="My_Analysis_Docker_Command">
                     </div>
                     <div class="labeled-line">
                         <hr>
                         <span class="label-text">Docker parameters</span>
                     </div>
                     <div class="form-row">
-                        <label for="command-docker-image">Docker Image *</label>
-                        <input type="text" id="command-docker-image" placeholder="alpine">
+                        <label for="docker-image">Docker Image *</label>
+                        <input type="text" id="docker-image" placeholder="alpine">
                     </div>
                     <div class="form-row">
-                        <label for="command-docker-command-docker">Docker Command *</label>
-                        <input type="text" id="command-docker-command-docker" placeholder="echo hello from docker">
+                        <label for="docker-command">Docker Command *</label>
+                        <input type="text" id="docker-command" placeholder="echo hello from docker">
                     </div>
                     <div class="form-row">
-                        <label for="command-docker-extra-params">Docker Extra Parameters</label>
-                        <input type="text" id="command-docker-extra-params" placeholder="-e MY_VAR:value --entrypoint=sh">
+                        <label for="docker-extra-params">Docker Extra Parameters</label>
+                        <input type="text" id="docker-extra-params" placeholder="-e MY_VAR:value --entrypoint=sh">
                     </div>
                     <div class="form-row">
-                        <label for="command-docker-use-stark-container-mount">Docker Volumes Mount</label>
-                        <input type="checkbox" id="command-docker-use-stark-container-mount">   
+                        <label for="docker-use-stark-container-mount">Docker Volumes Mount</label>
+                        <input type="checkbox" id="docker-use-stark-container-mount">   
                     </div>
                     <div class="labeled-line">
                         <hr>
                         <span class="label-text">Resources parameters</span>
                     </div>
                     <div class="form-row">
-                        <label for="command-docker-queue">Queue</label>
-                        <input type="text" id="command-docker-queue" placeholder="stark" list="queues-datalist">
+                        <label for="docker-queue">Queue</label>
+                        <input type="text" id="docker-queue" placeholder="stark" list="queues-datalist">
                         <datalist id="queues-datalist"></datalist>
                     </div>
                     <div class="form-row">
-                        <label for="command-docker-threads">Threads</label>
-                        <input type="number" id="command-docker-threads" placeholder="1" min="0" step="1">
+                        <label for="docker-threads">Threads</label>
+                        <input type="number" id="docker-threads" placeholder="1" min="0" step="1">
                     </div>
                     <div class="form-row">
-                        <label for="command-docker-memory">Memory</label>
-                        <input type="text" id="command-docker-memory" placeholder="4G">
+                        <label for="docker-memory">Memory</label>
+                        <input type="text" id="docker-memory" placeholder="4G">
                     </div>
                     <div class="form-row">
-                        <label for="command-docker-prioritize">Prioritize</label>
-                        <input type="checkbox" id="command-docker-prioritize">
+                        <label for="docker-prioritize">Prioritize</label>
+                        <input type="checkbox" id="docker-prioritize">
                     </div>
                     <div class="labeled-line">
                         <hr>
@@ -292,6 +292,10 @@
 
     <script src="/static/chart.umd.min.js"></script>
     <script src="/static/script.js?v={{ version }}"></script>
-    <script>const REFRESH_INTERVAL_MS = {{ refresh_interval_ms }};</script>
+    <script>
+        const REFRESH_INTERVAL_MS = {{ refresh_interval_ms }};
+        const LAUNCH_ENABLED      = {{ launch_enabled | tojson }};
+        const LAUNCH_MODES        = {{ launch_modes | tojson }};
+    </script>
 </body>
 </html>

@@ -277,8 +277,16 @@ document.addEventListener('DOMContentLoaded', () => {
         dashboardContainer.style.display = 'block';
         isAdmin = false;
         await fetchUserInfo();
+        const launchEnabled = typeof LAUNCH_ENABLED !== 'undefined' ? LAUNCH_ENABLED : true;
+        const launchModes   = typeof LAUNCH_MODES   !== 'undefined' ? LAUNCH_MODES   : ['run', 'docker', 'advanced'];
         const launchTab = document.getElementById('tab-launch');
-        if (launchTab) launchTab.style.display = isAdmin ? '' : 'none';
+        if (launchTab) launchTab.style.display = (isAdmin && launchEnabled) ? '' : 'none';
+        // Apply sub-tab visibility according to LAUNCH_MODES
+        const modeButtonMap = { run: 'launch-tab-run', docker: 'launch-tab-docker', advanced: 'launch-tab-advanced' };
+        Object.entries(modeButtonMap).forEach(([mode, btnId]) => {
+            const btn = document.getElementById(btnId);
+            if (btn) btn.style.display = launchModes.includes(mode) ? '' : 'none';
+        });
         switchTab('tasks');
     }
 
@@ -330,6 +338,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function fetchQueuesForLaunch() {
+        // Ensure the active sub-tab is one of the allowed modes; if not, switch to the first allowed
+        const launchModes = typeof LAUNCH_MODES !== 'undefined' ? LAUNCH_MODES : ['run', 'docker', 'advanced'];
+        if (!launchModes.includes(activeLaunchSubTab)) {
+            const firstMode = launchModes[0];
+            document.getElementById(`launch-tab-${firstMode || 'run'}`)?.click();
+        }
         try {
             const resp = await fetch('/queues', { headers: { Authorization: `Bearer ${token}` } });
             if (!resp.ok) return;
@@ -607,30 +621,30 @@ document.addEventListener('DOMContentLoaded', () => {
         activeLaunchSubTab = 'run';
         document.getElementById('launch-view-run').style.display     = '';
         document.getElementById('launch-view-advanced').style.display = 'none';
-        document.getElementById('launch-view-command-docker').style.display = 'none';
+        document.getElementById('launch-view-docker').style.display = 'none';
         document.getElementById('launch-tab-run').classList.add('active');
         document.getElementById('launch-tab-advanced').classList.remove('active');
-        document.getElementById('launch-tab-command-docker').classList.remove('active');
+        document.getElementById('launch-tab-docker').classList.remove('active');
         document.getElementById('launch-result').style.display = 'none';
     });
     document.getElementById('launch-tab-advanced')?.addEventListener('click', () => {
         activeLaunchSubTab = 'advanced';
         document.getElementById('launch-view-run').style.display     = 'none';
         document.getElementById('launch-view-advanced').style.display = '';
-        document.getElementById('launch-view-command-docker').style.display = 'none';
+        document.getElementById('launch-view-docker').style.display = 'none';
         document.getElementById('launch-tab-run').classList.remove('active');
         document.getElementById('launch-tab-advanced').classList.add('active');
-        document.getElementById('launch-tab-command-docker').classList.remove('active');
+        document.getElementById('launch-tab-docker').classList.remove('active');
         document.getElementById('launch-result').style.display = 'none';
     });
-    document.getElementById('launch-tab-command-docker')?.addEventListener('click', () => {
-        activeLaunchSubTab = 'command-docker';
+    document.getElementById('launch-tab-docker')?.addEventListener('click', () => {
+        activeLaunchSubTab = 'docker';
         document.getElementById('launch-view-run').style.display     = 'none';
         document.getElementById('launch-view-advanced').style.display = 'none';
-        document.getElementById('launch-view-command-docker').style.display = '';
+        document.getElementById('launch-view-docker').style.display = '';
         document.getElementById('launch-tab-run').classList.remove('active');
         document.getElementById('launch-tab-advanced').classList.remove('active');
-        document.getElementById('launch-tab-command-docker').classList.add('active');
+        document.getElementById('launch-tab-docker').classList.add('active');
         document.getElementById('launch-result').style.display = 'none';
     });
 
@@ -676,29 +690,29 @@ document.addEventListener('DOMContentLoaded', () => {
         await submitAnalysis(payload);
     });
 
-    document.getElementById('analysis-form-command-docker')?.addEventListener('submit', async e => {
+    document.getElementById('analysis-form-docker')?.addEventListener('submit', async e => {
         e.preventDefault();
-        const analysis_name = document.getElementById('command-docker-analysis-name')?.value.trim();
+        const analysis_name = document.getElementById('docker-analysis-name')?.value.trim();
         if (!analysis_name) {
             showLaunchResult('Analysis name is required', false);
             return;
         }
-        const image = document.getElementById('command-docker-image')?.value.trim();
+        const image = document.getElementById('docker-image')?.value.trim();
         if (!analysis_name || !image) {
             showLaunchResult('Docker image is required', false);
             return;
         }
-        const command = document.getElementById('command-docker-command-docker')?.value.trim();
+        const command = document.getElementById('docker-command')?.value.trim();
         if (!command) {
             showLaunchResult('Docker command is required', false);
             return;
         }
-        const docker_extra_params = document.getElementById('command-docker-extra-params')?.value.trim();
-        const use_stark_container_mount = document.getElementById('command-docker-use-stark-container-mount')?.checked;
-        const queue = document.getElementById('command-docker-queue')?.value.trim();
-        const threads = Number.parseInt(document.getElementById('command-docker-threads')?.value.trim());
-        const memory = document.getElementById('command-docker-memory')?.value.trim();
-        const prioritize = document.getElementById('command-docker-prioritize')?.checked;
+        const docker_extra_params = document.getElementById('docker-extra-params')?.value.trim();
+        const use_stark_container_mount = document.getElementById('docker-use-stark-container-mount')?.checked;
+        const queue = document.getElementById('docker-queue')?.value.trim();
+        const threads = Number.parseInt(document.getElementById('docker-threads')?.value.trim());
+        const memory = document.getElementById('docker-memory')?.value.trim();
+        const prioritize = document.getElementById('docker-prioritize')?.checked;
         await submitAnalysis(JSON.stringify({ "analysis_name": analysis_name, "image": image, "command_docker": command, "docker_extra_params": docker_extra_params, "use_stark_container_mount": use_stark_container_mount, "queue": queue, "threads": threads, "memory": memory, "prioritize": prioritize }));
     });
 

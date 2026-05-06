@@ -229,6 +229,8 @@ All settings are passed as **environment variables** (e.g. via `docker-compose` 
 | --- | --- | --- |
 | `STARK_API_KEY` | `a_default_super_secret_api_key` | Static API key for service-to-service auth (`X-API-Key` header) |
 | `STARK_API_REFRESH_INTERVAL` | `10` | Queue auto-refresh interval **in seconds** |
+| `STARK_API_LAUNCH_ENABLED` | `true` | Show (`true`) or hide (`false`) the Launch tab for all users, including admins |
+| `STARK_API_LAUNCH_MODES` | `run,docker,advanced` | Comma-separated list of allowed Launch sub-tabs. Accepted values: `run`, `docker`, `advanced`. Unknown values are silently ignored. If the result is empty, all three are re-enabled as a safety fallback |
 | `DOCKER_STARK_IMAGE` | `stark` | Docker image used to run STARK analyses |
 | `TS` | _(empty)_ | Path to the `ts` binary |
 | `TS_SAVELIST` | `/ts-tmp` | task-spooler save directory for the **default** queue |
