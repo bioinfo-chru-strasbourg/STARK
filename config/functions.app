@@ -7,26 +7,41 @@
 get_cores() {
 # Get the number of cores available for the current process, taking into account cgroup limits if applicable.
 
+	compute_cores() {
+        cores=$(((quota + period - 1) / period))
+
+        # Clamp minimum to 1
+        [ "$cores" -lt 1 ] && cores=1
+
+        echo "$cores"
+    }
+
     # --- Cgroups v2 ---
     if [ -f /sys/fs/cgroup/cpu.max ]; then
+
         read quota period < /sys/fs/cgroup/cpu.max
+
         if [ "$quota" != "max" ]; then
-            echo $((quota / period))
+            compute_cores
             return
         fi
+
         nproc
         return
+
     fi
 
     # --- Cgroups v1 ---
     if [ -f /sys/fs/cgroup/cpu/cpu.cfs_quota_us ]; then
+
         quota=$(cat /sys/fs/cgroup/cpu/cpu.cfs_quota_us)
         period=$(cat /sys/fs/cgroup/cpu/cpu.cfs_period_us)
 
-        if [ "$quota" -gt 0 ] 2>/dev/null; then
-            echo $((quota / period))
-            return
+        if [ "${quota:-0}" -gt 0 ] 2>/dev/null; then
+			compute_cores
+			return
         fi
+
         nproc
         return
     fi
@@ -417,7 +432,8 @@ find_app () {
 
 		# done;
 
-		[ -z "$THREADS" ] && THREADS=1
+		#[ -z "$THREADS" ] && THREADS=1
+		[[ "${THREADS:-}" =~ ^[1-9][0-9]*$ ]] || THREADS=1
 
 		# NEW VERSION - parallelized
 		find -L "$FOLDER_APPS" \

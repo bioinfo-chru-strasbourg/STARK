@@ -22,7 +22,7 @@ from peers import (
     load_peers,
 )
 from queues import get_queue_env, load_queues
-from modules import apply_module_defaults, load_modules, resolve_module
+from modules import apply_module_defaults, resolve_module
 from tasks import (
     _extract_analysis_name,
     queue_analysis,
@@ -167,6 +167,14 @@ async def module_launch(
             content="'command' field is required", status_code=400
         )
 
+    # Resolve module
+    try:
+        module_cfg = resolve_module(json_input)
+    except ValueError as e:
+        return PlainTextResponse(content=str(e), status_code=400)
+
+    apply_module_defaults(json_input, module_cfg)
+
     # Queue
     queues = load_queues()
     if not queues:
@@ -181,14 +189,6 @@ async def module_launch(
     else:
         queue_name = default_queue
     json_input["queue"] = queue_name
-
-    # Resolve module
-    try:
-        module_cfg = resolve_module(json_input)
-    except ValueError as e:
-        return PlainTextResponse(content=str(e), status_code=400)
-
-    apply_module_defaults(json_input, module_cfg)
 
     # --- Routing (same peer logic as /analysis) ---
     already_forwarded = request.headers.get("X-STARK-Forwarded", "0") == "1"

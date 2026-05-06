@@ -358,7 +358,7 @@ Example `config/modules.json`:
 
 - Module names are upper-cased (lookup is case-insensitive).
 - The `command` field sent in `POST /analysis/module` is always forwarded as **direct CLI args** to the container: `docker run <image> <command>`.
-- If `module` is absent or empty in the request, the server returns HTTP 400 listing available modules.
+- If `module` is absent from the request, the server falls back to the first configured module. If `module` is provided but empty or unknown, the server returns HTTP 400 listing available modules.
 - The `GET /modules` endpoint exposes `name`, `description`, and `defaults` for each module (image is not exposed for security).
 
 ---
