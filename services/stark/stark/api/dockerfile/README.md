@@ -10,7 +10,8 @@ A **FastAPI**-based web service for launching and monitoring [STARK](https://git
 - **REST API** - JSON endpoints consumable by external services (e.g. listeners)
 - **Dual authentication** - JWT bearer tokens for human users + static API key (`X-API-Key`) for service-to-service calls
 - **Role-based access** - `admin` group required for destructive or modification actions (kill, remove, prioritize, relaunch) and for launching new analyses
-- **Three task modes** - STARK analysis, custom Docker container command, or custom Docker compose command
+- **Module-based analysis** - server-side module registry (`config/modules.json`) maps named modules to Docker images with per-module defaults; the `POST /analysis/module` endpoint always passes the command as direct CLI args to the container
+- **Four task modes** - STARK run, module CLI analysis, custom Docker container command, or custom Docker compose command
 - **Multiple named queues** - independent task-spooler daemons, each with its own concurrency setting, configurable via `config/queues.json`
 - **Multiple node cluster** - independent nodes on multiple servers, configurable via `config/peers.json`
 - **Resources** - tasks are defined with a number of threads (corresponding to slots requested) and memory limit (for docker container)
@@ -84,11 +85,18 @@ Filters on states:
 
 ### Launch tab
 
-Provide two tabs to launch an analysis, through STARK run name or a JSON parmeter.
+Provides four sub-tabs to launch an analysis.
 
 ![STARKUB Launch](app/images/launch.png)
 
-Response show the analysis ID and Name (available in Analysis tab), with green color if success, red if failed (with reason, such as `Invalid JSON payload`).
+| Sub-tab | Description |
+| --- | --- |
+| **STARK Run** | Submit a run name directly to the default STARK module |
+| **STARK Analysis** | Submit a CLI command to a configured module (see [Module configuration](#module-configuration-configmodulesjson)) |
+| **Docker Command** | Run an arbitrary command in a custom Docker container |
+| **Advanced (JSON)** | Send a raw JSON payload to `POST /analysis` |
+
+Response shows the analysis ID and name (available in the Analyses tab), with green colour on success, red on failure (with reason, e.g. `Unknown module 'FOO'. Available: STARK`).
 
 ### Cluster tab
 
@@ -187,15 +195,17 @@ app/
 ├── peers.py             # Cluster/orchestrator logic (peer discovery, routing, metrics)
 ├── queues.py            # task-spooler queue management
 ├── security.py          # Input validation (command, image, docker_extra_params)
+├── modules.py           # Module registry loader and resolver
 ├── tasks.py             # Task build & submission logic
 ├── config/
+│   ├── modules.json     # Module registry (auto-created on first run)
 │   ├── peers.json       # Cluster peer list (auto-created on first run)
 │   ├── queues.json      # Queue definitions (auto-created on first run)
 │   └── users.json       # User database (auto-created on first run)
 ├── routers/
-│   ├── analysis.py      # POST /analysis, POST /relaunch/{id}
+│   ├── analysis.py      # POST /analysis, POST /analysis/module, POST /relaunch/{id}
 │   ├── auth.py          # POST /token, GET /me
-│   ├── cluster.py       # GET /whoami, /metrics, /peers, /cluster/summary, /cluster/tasks
+│   ├── cluster.py       # GET /whoami, /metrics, /peers, /modules, /queues, /cluster/summary, /cluster/tasks
 │   ├── queue.py         # GET /list, GET /queue
 │   └── ui.py            # GET / (dashboard)
 ├── static/
@@ -230,7 +240,7 @@ All settings are passed as **environment variables** (e.g. via `docker-compose` 
 | `STARK_API_KEY` | `a_default_super_secret_api_key` | Static API key for service-to-service auth (`X-API-Key` header) |
 | `STARK_API_REFRESH_INTERVAL` | `10` | Queue auto-refresh interval **in seconds** |
 | `STARK_API_LAUNCH_ENABLED` | `true` | Show (`true`) or hide (`false`) the Launch tab for all users, including admins |
-| `STARK_API_LAUNCH_MODES` | `run,docker,advanced` | Comma-separated list of allowed Launch sub-tabs. Accepted values: `run`, `docker`, `advanced`. Unknown values are silently ignored. If the result is empty, all three are re-enabled as a safety fallback |
+| `STARK_API_LAUNCH_MODES` | `run,analysis,docker,advanced` | Comma-separated list of allowed Launch sub-tabs. Accepted values: `run`, `analysis`, `docker`, `advanced`. Unknown values are silently ignored. If the result is empty, all four are re-enabled as a safety fallback |
 | `DOCKER_STARK_IMAGE` | `stark` | Docker image used to run STARK analyses |
 | `TS` | _(empty)_ | Path to the `ts` binary |
 | `TS_SAVELIST` | `/ts-tmp` | task-spooler save directory for the **default** queue |
@@ -298,6 +308,60 @@ Example of `docker-compose.yml`:
             timeout: 10s
             retries: 3
 ```
+
+### Module configuration (`config/modules.json`)
+
+Modules are named Docker-image profiles used by the **STARK Analysis** launch sub-tab and the `POST /analysis/module` endpoint. They are defined in `config/modules.json` and auto-created with a built-in `STARK` default on first start.
+
+Each module entry has the following fields:
+
+| Field | Required | Description |
+| --- | --- | --- |
+| `image` | Yes | Docker image to run (e.g. `stark/stark:19.0.0`) |
+| `description` | No | Human-readable label shown in the UI |
+| `docker_extra_params` | No | Extra `docker run` flags injected for this module (e.g. `--shm-size=4g`) |
+| `use_stark_container_mount` | No | Whether to append the STARK volume mounts (default `true`) |
+| `defaults` | No | Default values for `queue`, `threads`, `memory`, `prioritize` pre-filled in the UI |
+
+Example `config/modules.json`:
+
+```json
+{
+  "STARK": {
+    "image": "stark/stark:19.0.0",
+    "description": "Default STARK analysis module",
+    "docker_extra_params": "",
+    "use_stark_container_mount": true,
+    "defaults": {
+      "queue": "stark",
+      "threads": 8,
+      "memory": null,
+      "prioritize": false
+    }
+  },
+  "HOWARD": {
+    "image": "bioinfochrustrasbourg/howard:0.9.18.0",
+    "description": "HOWARD annotation pipeline",
+    "docker_extra_params": "--shm-size=4g",
+    "use_stark_container_mount": false,
+    "defaults": {
+      "queue": "light",
+      "threads": 4,
+      "memory": "8G",
+      "prioritize": false
+    }
+  }
+}
+```
+
+**How modules work:**
+
+- Module names are upper-cased (lookup is case-insensitive).
+- The `command` field sent in `POST /analysis/module` is always forwarded as **direct CLI args** to the container: `docker run <image> <command>`.
+- If `module` is absent or empty in the request, the server returns HTTP 400 listing available modules.
+- The `GET /modules` endpoint exposes `name`, `description`, and `defaults` for each module (image is not exposed for security).
+
+---
 
 ### Queue configuration (`config/queues.json`)
 
@@ -594,6 +658,9 @@ X-API-Key: <STARK_API_KEY>
 | `POST` | `/token` | - | Obtain JWT token |
 | `GET` | `/me` | JWT | Current user info |
 | `POST` | `/analysis` | JWT / API-Key (admin) | Launch a task (with intelligent cluster routing) |
+| `POST` | `/analysis/module` | JWT / API-Key (admin) | Launch a module CLI analysis (command forwarded as-is to the container) |
+| `GET` | `/modules` | JWT / API-Key | List configured modules with their defaults |
+| `GET` | `/queues` | JWT / API-Key | List configured queue names |
 | `GET` | `/list` | - | List all tasks (all queues, no auth) |
 | `GET` | `/queue` | JWT / API-Key | Query or act on a queue |
 | `POST` | `/relaunch/{ts_id}` | JWT / API-Key (admin) | Re-queue a finished task |
@@ -827,6 +894,74 @@ In all modes, `analysis_name` is sanitised before use as a task label and Docker
 - Characters outside `[A-Za-z0-9._-]` are replaced with `_`
 - Truncated to 64 characters (Docker container name limit)
 - Defaults to `UNKNOWN` if absent or empty
+
+### `POST /analysis/module`
+
+Launch a module analysis. **Admin or service key only.**
+
+The `command` value is always forwarded as **direct CLI args** to the container:
+
+```
+docker run <image> <command>
+```
+
+The module image and extra Docker parameters are resolved server-side from `config/modules.json`.
+
+| JSON key | Required | Description |
+| --- | --- | --- |
+| `module` | Yes | Module name (case-insensitive). Must exist in `config/modules.json`. Returns HTTP 400 if absent or unknown |
+| `command` | Yes | CLI argument string passed directly to the container (e.g. `--run=MY_RUN --sample_filter=Sample1`) |
+| `analysis_name` | No | Human-readable task label |
+| `queue` | No | Target queue (defaults to first queue) |
+| `threads` | No | Slots consumed (`-N`); see common optional keys above |
+| `memory` | No | Memory limit for the Docker container |
+| `prioritize` | No | Prioritize task once it is launched |
+
+Example:
+
+```json
+{
+  "module": "STARK",
+  "command": "--run=MY_RUN --sample_filter=Sample1,Sample2",
+  "queue": "stark",
+  "threads": 8
+}
+```
+
+Example with curl:
+
+```bash
+curl -s -X POST "http://localhost:8000/analysis/module" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"module": "STARK", "command": "--run=MY_RUN", "queue": "stark"}'
+```
+
+**Response:** `STARK.<ID>.<analysisIDNAME>` (plain text, 200) or `Launch failed: <reason>` (plain text, 400), `Relaunch failed: <reason>` (plain text, 500), authentication failure (JSON, 403).
+
+### `GET /queues`
+
+Returns the list of configured queue names from `config/queues.json`.
+
+**Response:** `{ "queues": ["stark", "light", "medium"] }`
+
+### `GET /modules`
+
+Returns the list of configured modules from `config/modules.json`. Image names are not exposed.
+
+**Response:**
+
+```json
+{
+  "modules": [
+    {
+      "name": "STARK",
+      "description": "Default STARK analysis module",
+      "defaults": { "queue": "stark", "threads": 8, "memory": null, "prioritize": false }
+    }
+  ]
+}
+```
 
 ### `GET /list`
 

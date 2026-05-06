@@ -126,6 +126,34 @@ def _build_analysis_idname(json_input: dict) -> tuple:
         run_id = _sanitize_analysis_name(str(json_input["analysis_name"]))
     elif "run" in json_input:
         run_id = _sanitize_analysis_name(str(json_input["run"].split(":")[0]))
+    elif "command" in json_input:
+        if isinstance(json_input["command"], str):
+            # Extract run name from the command string if possible, using the parameter "--run=<run_id> " (e.g. "--run=MY_RUN" or "--run MY_RUN")
+            analysis_name_match = re.search(r"--analysis_name[=\s]+(\S+)", json_input["command"])
+            run_id_match = re.search(r"--run[=\s]+(\S+)", json_input["command"])
+            if analysis_name_match:
+                run_id = _sanitize_analysis_name(analysis_name_match.group(1))
+            elif run_id_match:
+                run_id = _sanitize_analysis_name(run_id_match.group(1))
+            else:
+                run_id = _sanitize_analysis_name(str(json_input["command"].split(":")[0]))
+        elif isinstance(json_input["command"], dict) and len(json_input["command"]) > 0:
+            # Extract run name from the command dict if possible, using the key "run" (e.g. {"run": "MY_RUN"})
+            analysis_name = json_input["command"].get("analysis_name")
+            run = json_input["command"].get("run")
+            if analysis_name:
+                run_id = _sanitize_analysis_name(str(analysis_name))
+            elif run:
+                run_id = _sanitize_analysis_name(str(run))
+            else:
+                run_id = _sanitize_analysis_name(str(json_input["command"].get("run", "UNKNOWN")))
+        else:
+            run_id = (
+                datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                + "_"
+                + "UNKNOWN_"
+                + str(random_string_digits(10))
+            )
     else:
         # run_id = "UNKNOWN_" + str(random_string_digits(10))
         run_id = (
@@ -334,6 +362,124 @@ def queue_analysis(
     )
 
     # Queue the task and get the task ID from task-spooler
+    _ = _queue_task(my_cmd, prioritize=prioritize, ts_cmd=f"{_ts_env}{ts}")
+
+    return analysis_id_name
+
+
+def _parse_command_to_dict(command: str) -> dict:
+    """Parse a CLI command string into a dict of key/value pairs.
+
+    Examples:
+        "--run=MY_RUN --sample_filter=S1,S2" -> {"run": "MY_RUN", "sample_filter": "S1,S2"}
+        "--flag"                              -> {"flag": True}
+        "--key value"                         -> {"key": "value"}
+    """
+    result = {}
+    try:
+        tokens = shlex.split(command)
+    except ValueError:
+        tokens = command.split()
+    i = 0
+    while i < len(tokens):
+        tok = tokens[i]
+        if tok.startswith("--"):
+            if "=" in tok:
+                k, v = tok[2:].split("=", 1)
+                result[k] = v
+            elif i + 1 < len(tokens) and not tokens[i + 1].startswith("-"):
+                result[tok[2:]] = tokens[i + 1]
+                i += 1
+            else:
+                result[tok[2:]] = True
+        i += 1
+    return result
+
+
+def queue_module_analysis(
+    json_input: dict,
+    image: str,
+    module_docker_extra_params: str = "",
+    use_stark_container_mount: bool = True,
+) -> str:
+    """Queue a module analysis by passing the ``command`` field as direct CLI args.
+
+    The ``command`` value is always forwarded as-is to the container:
+        docker run IMAGE <command>
+
+    The caller is responsible for converting any JSON-based input to a CLI
+    string before calling this function (see ``jsonCommandToCli`` on the
+    client side).
+
+    Args:
+        json_input: Must contain a ``command`` key with the CLI string.
+        image: Docker image to use (resolved from modules.json by the caller).
+        module_docker_extra_params: Extra Docker flags defined by the module.
+        use_stark_container_mount: Whether to append the STARK volume mount.
+    """
+    if not image:
+        image = docker_stark
+
+    analysis_id_name, _ = _build_analysis_idname(json_input)
+
+    docker_name = f" --name {analysis_id_name} "
+
+    if module_docker_extra_params:
+        _validate_docker_extra_params(module_docker_extra_params)
+        module_docker_extra_params = _sanitize_docker_extra_params(module_docker_extra_params)
+
+    mount = docker_stark_container_mount if use_stark_container_mount else ""
+    docker_parameters = f"--rm {docker_name} {module_docker_extra_params} {mount}"
+
+    # Analysis file paths
+    analysis_folder = docker_stark_api_log_folder
+    analysis_file = os.path.join(analysis_folder, f"{analysis_id_name}.json")
+    analysis_info_file = os.path.join(analysis_folder, f"{analysis_id_name}.info")
+    analysis_output_file = os.path.join(analysis_folder, f"{analysis_id_name}.output")
+
+    # Task spooler configuration
+    _ts_env, _max_slots = _prepare_queue_for_submission(json_input.get("queue"))
+    _task_slots = _resolve_task_slots(json_input, _max_slots)
+
+    threads = (_task_slots == 0) and _max_slots or _task_slots
+    json_input["threads"] = threads
+
+    docker_parameters += f" --cpus={threads} "
+
+    if "memory" in json_input and json_input.get("memory", None):
+        memory = str(json_input.get("memory", "")).strip()
+        if not re.fullmatch(r"\d+(?:[bBkKmMgG])?", memory):
+            raise ValueError(f"Invalid memory value: {memory}")
+        docker_parameters += f" --memory={memory} "
+
+    prioritize = json_input.get("prioritize", False)
+
+    # Write the full JSON (with all fields including command) for traceability
+    with open(analysis_file, "w") as f:
+        f.write(json.dumps(json_input))
+
+    # Build the docker run command
+    docker_cmd = ["docker", "run"]
+    docker_cmd += _safe_split(docker_parameters)
+    docker_cmd.append(image)
+    docker_cmd_str = " ".join(shlex.quote(tok) for tok in docker_cmd)
+
+    ts_cmd = f"{_ts_env}{ts} -N {_task_slots} -L {analysis_id_name}" if ts else ""
+
+    raw_command = str(json_input.get("command", "")).strip()
+    _validate_command(raw_command)
+    command_tokens = _safe_split(raw_command)
+    command_str = " ".join(shlex.quote(t) for t in command_tokens)
+
+    my_cmd = (
+        f'{ts_cmd} bash -c "'
+        f"trap 'docker stop {analysis_id_name} 2>/dev/null; echo failed > {analysis_info_file}' TERM INT; "
+        f"{docker_cmd_str} {command_str} "
+        f"> {analysis_output_file} 2>&1 "
+        f"&& (echo 'finished' > {analysis_info_file} && exit 0) "
+        f"|| (echo 'failed' > {analysis_info_file} && exit 1)\""
+    )
+
     _ = _queue_task(my_cmd, prioritize=prioritize, ts_cmd=f"{_ts_env}{ts}")
 
     return analysis_id_name

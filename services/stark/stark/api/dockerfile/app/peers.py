@@ -342,7 +342,7 @@ def compute_best_peer(
 # ---------------------------------------------------------------------------
 
 async def forward_request(target_url: str, request):
-    """Transparently forward an /analysis request to target_url.
+    """Transparently forward a request to target_url, preserving the original path.
 
     Adds X-STARK-Forwarded: 1 to prevent routing loops (a forwarded request is
     always executed locally on the receiving node).
@@ -358,7 +358,7 @@ async def forward_request(target_url: str, request):
 
     async with httpx.AsyncClient(timeout=30.0) as client:
         resp = await client.post(
-            f"{target_url}/analysis",
+            f"{target_url}{request.url.path}",
             content=await request.body(),
             headers=headers,
         )

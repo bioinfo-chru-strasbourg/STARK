@@ -97,6 +97,7 @@
             <h2>Launch Analysis</h2>
             <div class="launch-sub-tabs">
                 <button class="launch-sub-tab-btn active" id="launch-tab-run">STARK Run</button>
+                <button class="launch-sub-tab-btn" id="launch-tab-analysis">STARK Analysis</button>
                 <button class="launch-sub-tab-btn" id="launch-tab-docker">Docker Command</button>
                 <button class="launch-sub-tab-btn" id="launch-tab-advanced">Advanced (JSON)</button>
             </div>
@@ -106,6 +107,72 @@
                     <div class="form-row">
                         <label for="run-name-input">STARK Run name</label>
                         <input type="text" id="run-name-input" placeholder="MY_RUN">
+                    </div>
+                    <div class="launch-row">
+                        <button type="submit">Launch</button>
+                    </div>
+                </form>
+            </div>
+
+            <div id="launch-view-analysis" style="display:none">
+                <form id="analysis-form-analysis">
+                    <div class="form-row">
+                        <label for="analysis-name-input">Analysis Name *</label>
+                        <input type="text" id="analysis-name-input" placeholder="My_Analysis_Module">
+                    </div>
+                    <div class="labeled-line">
+                        <hr><span class="label-text">Module &amp; Command</span>
+                    </div>
+                    
+                    <div class="form-row">
+                        <label for="analysis-module">Module *</label>
+                        <input type="text" id="analysis-module" list="modules-datalist" placeholder="Select a module">
+                        <datalist id="modules-datalist"></datalist>
+                    </div>
+                    <div class="form-row">
+                        <label>Command format</label>
+                        <span class="radio-group">
+                            <label><input type="radio" name="analysis-cmd-mode" value="text" checked> Text</label>
+                            <label><input type="radio" name="analysis-cmd-mode" value="json"> JSON</label>
+                            <label><input type="radio" name="analysis-cmd-mode" value="file"> File</label>
+                        </span>
+                    </div>
+                    <div id="analysis-cmd-text" class="form-row">
+                        <label for="analysis-command-text">Command *</label>
+                        <input type="text" id="analysis-command-text" placeholder="--run=MY_RUN --sample_filter=Sample1,Sample2">
+                    </div>
+                    <div id="analysis-cmd-json" class="form-row" style="display:none">
+                        <label for="analysis-command-json">Command (JSON) *</label>
+                        <textarea id="analysis-command-json" rows="4" placeholder='{"run": "MY_RUN", "sample_filter": ["Sample1", "Sample2"]}'></textarea>
+                    </div>
+                    <div id="analysis-cmd-file" class="form-row" style="display:none">
+                        <label for="analysis-command-file">Command (JSON file) *</label>
+                        <input type="file" id="analysis-command-file" accept=".json">
+                    </div>
+                    <div class="labeled-line">
+                        <hr><span class="label-text">Resources parameters</span>
+                    </div>
+                    <div class="form-row">
+                        <label for="analysis-queue">Queue</label>
+                        <input type="text" id="analysis-queue" placeholder="stark" list="queues-datalist">
+                        <datalist id="queues-datalist"></datalist>
+                    </div>
+                    <div class="form-row">
+                        <label for="analysis-threads">Threads</label>
+                        <input type="number" id="analysis-threads" min="1" step="1" placeholder="1">
+                    </div>
+                    <div class="form-row">
+                        <label for="analysis-memory">Memory</label>
+                        <input type="text" id="analysis-memory" placeholder="4G">
+                    </div>
+                    <div class="form-row">
+                        <label for="analysis-prioritize">Prioritize</label>
+                        <input type="checkbox" id="analysis-prioritize">
+                    </div>
+                    <div class="labeled-line">
+                        <hr>
+                        <span class="label-text"></span>
+                        <span class="form-row">* required fields</span>
                     </div>
                     <div class="launch-row">
                         <button type="submit">Launch</button>

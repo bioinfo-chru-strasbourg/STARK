@@ -52,13 +52,15 @@ launch_enabled: bool = (
 )
 
 # STARK_API_LAUNCH_MODES: comma-separated list of allowed sub-tabs.
-#   Recognised values: run, docker, advanced  (all enabled by default)
-_launch_modes_raw = os.environ.get("STARK_API_LAUNCH_MODES", "run,docker,advanced")
+#   Recognised values: run, analysis, docker, advanced  (all enabled by default)
+_launch_modes_raw = os.environ.get(
+    "STARK_API_LAUNCH_MODES", "run,analysis,docker,advanced"
+)
 launch_modes: list = [
     m.strip()
     for m in _launch_modes_raw.split(",")
-    if m.strip() in ("run", "docker", "advanced")
+    if m.strip() in ("run", "analysis", "docker", "advanced")
 ]
 # Fallback: if the env var was set but produced no valid entries, keep all
 if not launch_modes:
-    launch_modes = ["run", "docker", "advanced"]
+    launch_modes = ["run", "analysis", "docker", "advanced"]

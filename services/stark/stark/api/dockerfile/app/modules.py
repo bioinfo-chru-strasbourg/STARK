@@ -37,24 +37,7 @@ def load_modules() -> dict:
     if not os.path.exists(MODULES_FILE):
         os.makedirs(os.path.dirname(MODULES_FILE), exist_ok=True)
         with open(MODULES_FILE, "w") as f:
-            json.dump(
-                {
-                    "STARK": {
-                        "image": docker_stark,
-                        "description": "Default STARK analysis module",
-                        "docker_extra_params": "",
-                        "use_stark_container_mount": True,
-                        "defaults": {
-                            "queue": None,
-                            "threads": None,
-                            "memory": None,
-                            "prioritize": False,
-                        },
-                    }
-                },
-                f,
-                indent=2,
-            )
+            json.dump(default, f, indent=2)
 
     try:
         with open(MODULES_FILE, "r") as f:
@@ -72,7 +55,9 @@ def load_modules() -> dict:
             "image": str(cfg["image"]),
             "description": str(cfg.get("description", "")),
             "docker_extra_params": str(cfg.get("docker_extra_params", "")),
-            "use_stark_container_mount": bool(cfg.get("use_stark_container_mount", True)),
+            "use_stark_container_mount": bool(
+                cfg.get("use_stark_container_mount", True)
+            ),
             "defaults": {
                 "queue": cfg.get("defaults", {}).get("queue") or None,
                 "threads": cfg.get("defaults", {}).get("threads") or None,

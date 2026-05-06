@@ -1081,7 +1081,8 @@ if [ "$ANALYSIS" != "" ]; then
 
 		if [ -f $J ]; then
 
-			echo "["$(timestamp)" | INFO] Config file '$J' does exists."
+			echo "["$(timestamp)" | INFO] Config file exists"
+			echo "["$(timestamp)" | DEBUG] Config file: $J"
 
  			(($DEBUG)) && echo "["$(timestamp)" | DEBUG] Config file content:" && cat $J
 
