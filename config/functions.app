@@ -4,6 +4,36 @@
 #################################
 
 
+get_cores() {
+# Get the number of cores available for the current process, taking into account cgroup limits if applicable.
+
+    # --- Cgroups v2 ---
+    if [ -f /sys/fs/cgroup/cpu.max ]; then
+        read quota period < /sys/fs/cgroup/cpu.max
+        if [ "$quota" != "max" ]; then
+            echo $((quota / period))
+            return
+        fi
+        nproc
+        return
+    fi
+
+    # --- Cgroups v1 ---
+    if [ -f /sys/fs/cgroup/cpu/cpu.cfs_quota_us ]; then
+        quota=$(cat /sys/fs/cgroup/cpu/cpu.cfs_quota_us)
+        period=$(cat /sys/fs/cgroup/cpu/cpu.cfs_period_us)
+
+        if [ "$quota" -gt 0 ] 2>/dev/null; then
+            echo $((quota / period))
+            return
+        fi
+        nproc
+        return
+    fi
+
+    # --- No file available ---
+    nproc
+}
 
 extract_tag () {
 # Extract APP variable from STARK TAG List
@@ -387,10 +417,13 @@ find_app () {
 
 		# done;
 
+		[ -z "$THREADS" ] && THREADS=1
+
 		# NEW VERSION - parallelized
 		find -L "$FOLDER_APPS" \
 			-name '*.app' -or -name '*.plugapp' |
-		xargs -P"$(nproc)" -I{} bash -c 'check_app "$@"' _ {} |
+		#xargs -P"$(nproc)" -I{} bash -c 'check_app "$@"' _ {} |
+		xargs -P$THREADS -I{} bash -c 'check_app "$@"' _ {} |
 		head -n1
 
 	fi;

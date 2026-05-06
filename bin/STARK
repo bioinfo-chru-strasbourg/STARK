@@ -508,13 +508,13 @@ export APP
 
 
 # CORES
-CORES=$(nproc)
+[ -z $CORES ] && CORES=$(get_cores)
 
 # THREADS
 re='^[0-9]+$'
 
 if ! [[ $THREADS =~ $re ]] || [ -z "$THREADS" ] || [ "$THREADS" == "" ] || [ $THREADS -gt $CORES ] ; then
-	CORES_FREE=1
+	CORES_FREE=0
 	THREADS=$(($CORES-$CORES_FREE))
 fi;
 if [[ $THREADS_INPUT =~ $re ]] && [ "$THREADS_INPUT" != "" ]; then
