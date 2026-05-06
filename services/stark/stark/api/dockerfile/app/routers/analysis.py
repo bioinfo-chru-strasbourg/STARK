@@ -22,6 +22,7 @@ from peers import (
     load_peers,
 )
 from queues import get_queue_env, load_queues
+from modules import apply_module_defaults, load_modules, resolve_module
 from tasks import (
     _extract_analysis_name,
     queue_analysis,
@@ -43,7 +44,16 @@ async def _run_locally(json_input: dict) -> str:
     elif "command_docker_compose" in json_input:
         return queue_command_docker_compose(json_input)
     else:
-        return queue_analysis(json_input)
+        # Resolve module (raises ValueError for unknown names -> HTTP 400 in caller)
+        module_cfg = resolve_module(json_input)
+        # Apply module defaults for keys not already provided by the client
+        apply_module_defaults(json_input, module_cfg)
+        return queue_analysis(
+            json_input,
+            image=module_cfg["image"],
+            module_docker_extra_params=module_cfg["docker_extra_params"],
+            use_stark_container_mount=module_cfg["use_stark_container_mount"],
+        )
 
 
 @router.post("/analysis")

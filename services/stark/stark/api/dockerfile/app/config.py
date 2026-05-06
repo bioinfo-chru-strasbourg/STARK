@@ -7,6 +7,7 @@ SECRET_KEY = "a_very_secret_key_that_should_be_in_a_config_file"
 ALGORITHM = "HS256"
 USERS_FILE = "config/users.json"
 QUEUES_FILE = "config/queues.json"
+MODULES_FILE = "config/modules.json"
 STARK_API_KEY = os.environ.get("STARK_API_KEY", "a_default_super_secret_api_key")
 
 # --- Cluster / Peers ---

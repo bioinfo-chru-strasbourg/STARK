@@ -168,6 +168,27 @@ def list_queues():
     return {"queues": list(load_queues().keys())}
 
 
+@router.get("/modules")
+def list_modules():
+    """Return the list of configured modules with their public metadata.
+
+    The Docker image name is intentionally excluded from the response to
+    avoid leaking internal infrastructure details to clients.
+    """
+    from modules import load_modules
+
+    return {
+        "modules": [
+            {
+                "name": name,
+                "description": cfg.get("description", ""),
+                "defaults": cfg.get("defaults", {}),
+            }
+            for name, cfg in load_modules().items()
+        ]
+    }
+
+
 @router.get("/cluster/tasks")
 async def cluster_tasks():
     """Return the consolidated task list from all nodes (self + peers).
