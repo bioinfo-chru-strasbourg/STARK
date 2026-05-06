@@ -144,34 +144,6 @@ def _build_analysis_idname(json_input: dict) -> tuple:
     # MD5
     run_md5 = random_string_digits(10)
 
-    # if "run" in json_input:
-    #     name = json_input["run"].split(":")[0]
-    #     run_id = os.path.basename(name)
-
-    #     run_folder = ""
-    #     if os.path.isdir(name):
-    #         run_folder = name
-    #     elif os.path.isdir(os.path.join(docker_stark_api_runs_folder, name)):
-    #         run_folder = os.path.join(docker_stark_api_runs_folder, name)
-
-    #     if run_folder:
-    #         my_cmd = f"find {run_folder} -maxdepth 1 -type f -print0 | xargs -0 sha1sum | cut -b-40 | sha1sum | awk '{{print $1}}'"
-    #     else:
-    #         my_cmd = f"echo {name} | sha1sum | awk '{{print $1}}'"
-
-    #     run_md5 = (
-    #         subprocess.run(my_cmd, shell=True, stdout=subprocess.PIPE)
-    #         .stdout.decode("utf-8")
-    #         .strip()
-    #     )
-
-    #     if "analysis_name" in json_input:
-    #         run_id = _sanitize_analysis_name(str(json_input["analysis_name"]))
-
-    # elif "analysis_name" in json_input:
-    #     run_id = _sanitize_analysis_name(str(json_input["analysis_name"]))
-    #     run_md5 = random_string_digits(41)
-
     analyses_run_name = run_id
     analyses_name = f"ID-{run_md5}-NAME-{run_id}"
     analysis_id_name = f"STARK.{analyses_id}.{analyses_name}"
@@ -256,7 +228,8 @@ def queue_analysis(
 
     # Extra docker parameters from the client request (ignored for module analyses — kept for
     # backward-compat with direct callers but stripped before reaching the container)
-    docker_extra_params = ""
+    # docker_extra_params = json_input.get("docker_extra_params", "")
+    # docker_extra_params = ""
 
     # Combine Docker parameters, ensuring --name is included and --rm is set for cleanup.
     mount = docker_stark_container_mount if use_stark_container_mount else ""
@@ -280,16 +253,16 @@ def queue_analysis(
     json_input["threads"] = threads
 
     # CPU/Threads
-    docker_extra_params = _sanitize_docker_extra_params(
-        docker_extra_params, extra_forbidden={"--cpus": True}
-    )
+    # docker_extra_params = _sanitize_docker_extra_params(
+    #     docker_extra_params, extra_forbidden={"--cpus": True}
+    # )
     docker_parameters += f" --cpus={threads} "
 
     # Memory
     if "memory" in json_input and json_input.get("memory", None):
-        docker_extra_params = _sanitize_docker_extra_params(
-            docker_extra_params, extra_forbidden={"--memory": True, "-m": True}
-        )
+        # docker_extra_params = _sanitize_docker_extra_params(
+        #     docker_extra_params, extra_forbidden={"--memory": True, "-m": True}
+        # )
         memory = str(json_input.get("memory", "")).strip()
         if not re.fullmatch(r"\d+(?:[bBkKmMgG])?", memory):
             raise ValueError(f"Invalid memory value: {memory}")
@@ -297,6 +270,12 @@ def queue_analysis(
 
     # Prioritize
     prioritize = json_input.get("prioritize", False)
+
+    # # Docker extra params
+    # if docker_extra_params:
+    #     _validate_docker_extra_params(docker_extra_params)
+    #     docker_extra_params = _sanitize_docker_extra_params(docker_extra_params)
+    #     docker_parameters += f" {docker_extra_params} "
 
     # Write the JSON
     with open(analysis_file, "w") as f:
@@ -345,33 +324,33 @@ def queue_analysis(
     return analysis_id_name
 
 
-def _parse_command_to_dict(command: str) -> dict:
-    """Parse a CLI command string into a dict of key/value pairs.
+# def _parse_command_to_dict(command: str) -> dict:
+#     """Parse a CLI command string into a dict of key/value pairs.
 
-    Examples:
-        "--run=MY_RUN --sample_filter=S1,S2" -> {"run": "MY_RUN", "sample_filter": "S1,S2"}
-        "--flag"                              -> {"flag": True}
-        "--key value"                         -> {"key": "value"}
-    """
-    result = {}
-    try:
-        tokens = shlex.split(command)
-    except ValueError:
-        tokens = command.split()
-    i = 0
-    while i < len(tokens):
-        tok = tokens[i]
-        if tok.startswith("--"):
-            if "=" in tok:
-                k, v = tok[2:].split("=", 1)
-                result[k] = v
-            elif i + 1 < len(tokens) and not tokens[i + 1].startswith("-"):
-                result[tok[2:]] = tokens[i + 1]
-                i += 1
-            else:
-                result[tok[2:]] = True
-        i += 1
-    return result
+#     Examples:
+#         "--run=MY_RUN --sample_filter=S1,S2" -> {"run": "MY_RUN", "sample_filter": "S1,S2"}
+#         "--flag"                              -> {"flag": True}
+#         "--key value"                         -> {"key": "value"}
+#     """
+#     result = {}
+#     try:
+#         tokens = shlex.split(command)
+#     except ValueError:
+#         tokens = command.split()
+#     i = 0
+#     while i < len(tokens):
+#         tok = tokens[i]
+#         if tok.startswith("--"):
+#             if "=" in tok:
+#                 k, v = tok[2:].split("=", 1)
+#                 result[k] = v
+#             elif i + 1 < len(tokens) and not tokens[i + 1].startswith("-"):
+#                 result[tok[2:]] = tokens[i + 1]
+#                 i += 1
+#             else:
+#                 result[tok[2:]] = True
+#         i += 1
+#     return result
 
 
 def queue_module_analysis(

@@ -3,6 +3,8 @@
 ## STARK environment
 #################################
 
+source $STARK_FOLDER_CONFIG/functions.app
+
 # FUNCTIONS
 #############
 

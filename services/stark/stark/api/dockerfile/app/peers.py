@@ -358,7 +358,7 @@ async def forward_request(target_url: str, request):
 
     async with httpx.AsyncClient(timeout=30.0) as client:
         resp = await client.post(
-            f"{target_url}{request.url.path}",
+            f"{target_url}{request.url.path}" + ('?' + request.url.query if request.url.query else ''),
             content=await request.body(),
             headers=headers,
         )

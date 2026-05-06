@@ -26,7 +26,7 @@ def load_modules() -> dict:
             "docker_extra_params": "",
             "use_stark_container_mount": True,
             "defaults": {
-                "queue": None,
+                "queue": "stark",
                 "threads": None,
                 "memory": None,
                 "prioritize": False,
@@ -72,10 +72,10 @@ def load_modules() -> dict:
 def resolve_module(json_input: dict) -> dict:
     """Return the module config for the 'module' key in json_input.
 
-    Falls back to the first defined module (STARK by default) if the key is
-    absent or if the requested name is not in the loaded modules.
+    Falls back to the first defined module (STARK by default) only when the key is absent.
     Raises ValueError for unknown module names so the caller can return HTTP 400.
     """
+
     modules = load_modules()
     first_module = next(iter(modules))
 

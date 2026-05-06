@@ -278,7 +278,7 @@ document.addEventListener('DOMContentLoaded', () => {
         isAdmin = false;
         await fetchUserInfo();
         const launchEnabled = typeof LAUNCH_ENABLED !== 'undefined' ? LAUNCH_ENABLED : true;
-        const launchModes   = typeof LAUNCH_MODES   !== 'undefined' ? LAUNCH_MODES   : ['run', 'docker', 'advanced'];
+        const launchModes   = typeof LAUNCH_MODES   !== 'undefined' ? LAUNCH_MODES   : ['run', 'analysis', 'docker', 'advanced'];
         const launchTab = document.getElementById('tab-launch');
         if (launchTab) launchTab.style.display = (isAdmin && launchEnabled) ? '' : 'none';
         // Apply sub-tab visibility according to LAUNCH_MODES
@@ -358,17 +358,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     dl.appendChild(opt);
                 });
             }
-            // Select for STARK Analysis form
-            const qsel = document.getElementById('analysis-queue');
-            if (qsel) {
-                qsel.innerHTML = '';
-                (data.queues || []).forEach(q => {
-                    const opt = document.createElement('option');
-                    opt.value = q;
-                    opt.textContent = q;
-                    qsel.appendChild(opt);
-                });
-            }
+            // STARK Analysis queue uses an <input list="queues-datalist">,
+            // so its suggestions must come from the datalist populated above.
         } catch (_) { /* non-blocking */ }
 
         // Load modules for STARK Analysis form
@@ -748,7 +739,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function applyAnalysisModuleDefaults() {
         const minput = document.getElementById('analysis-module');
         if (!minput) return;
-        const meta = (window._modulesMeta || {})[minput.value];
+        const meta = (window._modulesMeta || {})[minput.value.toUpperCase()];
         if (!meta) return;
         const defaults = meta.defaults || {};
         const qsel = document.getElementById('analysis-queue');
