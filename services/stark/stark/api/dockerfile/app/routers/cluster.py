@@ -326,6 +326,106 @@ async def cluster_proxy_relaunch(
         raise HTTPException(status_code=502, detail=f"Node unreachable: {exc}") from exc
 
 
+@router.get("/cluster/proxy/archive/{analysis_id_name}/log")
+async def cluster_proxy_archive_log(
+    analysis_id_name: str,
+    node_url: str = Query(..., description="Target node base URL"),
+    authorized: Union[User, str] = Depends(get_current_user_or_service),
+):
+    """Proxy GET /archive/{id}/log to the node that owns the archive files."""
+    if not node_url or node_url == "null":
+        node_url = "http://" + get_self_hostname() + f":{local_port}"
+    url = f"{node_url}/archive/{analysis_id_name}/log"
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.get(url, headers={"X-API-Key": STARK_API_KEY})
+        return Response(
+            content=resp.content,
+            status_code=resp.status_code,
+            media_type=resp.headers.get("content-type", "text/plain"),
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Node unreachable: {exc}") from exc
+
+
+@router.get("/cluster/proxy/archive/{analysis_id_name}/json")
+async def cluster_proxy_archive_json(
+    analysis_id_name: str,
+    node_url: str = Query(..., description="Target node base URL"),
+    authorized: Union[User, str] = Depends(get_current_user_or_service),
+):
+    """Proxy GET /archive/{id}/json to the node that owns the archive files."""
+    if not node_url or node_url == "null":
+        node_url = "http://" + get_self_hostname() + f":{local_port}"
+    url = f"{node_url}/archive/{analysis_id_name}/json"
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(url, headers={"X-API-Key": STARK_API_KEY})
+        return Response(
+            content=resp.content,
+            status_code=resp.status_code,
+            media_type=resp.headers.get("content-type", "text/plain"),
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Node unreachable: {exc}") from exc
+
+
+@router.post("/cluster/proxy/archive/{analysis_id_name}/relaunch")
+async def cluster_proxy_archive_relaunch(
+    analysis_id_name: str,
+    node_url: str = Query(..., description="Target node base URL"),
+    authorized: Union[User, str] = Depends(get_current_user_or_service),
+):
+    """Proxy POST /archive/{id}/relaunch to the node that owns the archive files."""
+    if authorized != "service":
+        if not isinstance(authorized, User) or "admin" not in authorized.groups:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Admin group required for relaunch",
+            )
+    if not node_url or node_url == "null":
+        node_url = "http://" + get_self_hostname() + f":{local_port}"
+    url = f"{node_url}/archive/{analysis_id_name}/relaunch"
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            resp = await client.post(url, headers={"X-API-Key": STARK_API_KEY})
+        return Response(
+            content=resp.content,
+            status_code=resp.status_code,
+            media_type=resp.headers.get("content-type", "text/plain"),
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Node unreachable: {exc}") from exc
+
+
+@router.delete("/cluster/proxy/archive/{analysis_id_name}")
+async def cluster_proxy_archive_delete(
+    analysis_id_name: str,
+    node_url: str = Query(..., description="Target node base URL"),
+    authorized: Union[User, str] = Depends(get_current_user_or_service),
+):
+    """Proxy DELETE /archive/{id} to the node that owns the archive files."""
+    if authorized != "service":
+        if not isinstance(authorized, User) or "admin" not in authorized.groups:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Admin group required for delete",
+            )
+    if not node_url or node_url == "null":
+        node_url = "http://" + get_self_hostname() + f":{local_port}"
+    url = f"{node_url}/archive/{analysis_id_name}"
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.delete(url, headers={"X-API-Key": STARK_API_KEY})
+        return Response(
+            content=resp.content,
+            status_code=resp.status_code,
+            media_type=resp.headers.get("content-type", "text/plain"),
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Node unreachable: {exc}") from exc
+
+
 @router.get("/cluster/archives")
 async def cluster_archives():
     """Return the aggregated archives from all nodes (self + peers).
