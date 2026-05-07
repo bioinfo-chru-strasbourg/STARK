@@ -10,7 +10,6 @@ body {
     border-radius: 5px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     min-width: 1200px;
-    min-width: 1200px;
     max-width: 1200px;
     margin: auto;
 }
@@ -133,14 +132,6 @@ button:hover {
 }
 
 .form-row input[type="radio"] {
-    flex: 1;
-    padding: 8px;
-    border: 1px solid #dddfe2;
-    border-radius: 3px;
-    font-size: 1em;
-}
-
-.form-row input[type="textarea"] {
     flex: 1;
     padding: 8px;
     border: 1px solid #dddfe2;

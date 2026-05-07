@@ -34,7 +34,9 @@ router = APIRouter()
 # ---------------------------------------------------------------------------
 
 # Strict allowlist: STARK.<alphanum>.<ID-…-NAME-…> — no slashes, no dots
-# outside the two expected positions, no shell metacharacters.
+# Strict allowlist: STARK.<alphanum>.<trailing-segment> — no slashes or
+# shell metacharacters; the trailing segment may contain alphanumerics and
+# the characters ``.``, ``_``, ``@``, ``=``, and ``-``.
 _ANALYSIS_ID_RE = re.compile(r"^STARK\.[A-Za-z0-9]+\.[A-Za-z0-9_.@=-]+$")
 
 
