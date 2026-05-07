@@ -95,9 +95,9 @@ def _validate_image(image: str) -> None:
 
 
 def _sanitize_analysis_name(name: str) -> str:
-    """Sanitize an analysis name: keep only [A-Za-z0-9._-], truncate to 64 chars."""
+    """Sanitize an analysis name: keep only [A-Za-z0-9._-], truncate to 80 chars."""
     sanitized = re.sub(r"[^A-Za-z0-9._-]", "_", name)
-    return sanitized[:64] if sanitized else "UNKNOWN"
+    return sanitized[:80] if sanitized else "UNKNOWN"
 
 
 def _sanitize_docker_extra_params(

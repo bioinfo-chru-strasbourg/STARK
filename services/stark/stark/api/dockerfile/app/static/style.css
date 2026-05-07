@@ -9,9 +9,9 @@ body {
     padding: 20px;
     border-radius: 5px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    min-width: 1000px;
-    min-width: 1000px;
-    max-width: 1000px;
+    min-width: 1200px;
+    min-width: 1200px;
+    max-width: 1200px;
     margin: auto;
 }
 
@@ -101,7 +101,59 @@ button:hover {
     border: 1px solid #dddfe2;
     border-radius: 3px;
     font-size: 1em;
-    /* width: 400px; */
+}
+
+.input-hint {
+    font-size: 0.78em;
+    color: #888;
+    white-space: nowrap;
+    align-self: center;
+}
+
+.input-hint.input-hint-warn {
+    color: #e65100;
+    font-weight: 600;
+}
+
+.form-row input[type="number"] {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #dddfe2;
+    border-radius: 3px;
+    font-size: 1em;
+}
+
+.form-row input[type="file"] {
+    flex: 1;
+    padding: 8px;
+    font-size: 1em;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.form-row input[type="radio"] {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #dddfe2;
+    border-radius: 3px;
+    font-size: 1em;
+}
+
+.form-row input[type="textarea"] {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #dddfe2;
+    border-radius: 3px;
+    font-size: 1em;
+}
+
+.form-row textarea {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #dddfe2;
+    border-radius: 3px;
+    font-size: 1em;
 }
 
 details {

@@ -57,6 +57,18 @@ async def _run_locally(json_input: dict) -> str:
         )
 
 
+async def _run_locally_module(json_input: dict) -> str:
+    """Dispatch a module analysis locally (CLI command forwarded to container)."""
+    module_cfg = resolve_module(json_input)
+    apply_module_defaults(json_input, module_cfg)
+    return queue_module_analysis(
+        json_input,
+        image=module_cfg["image"],
+        module_docker_extra_params=module_cfg["docker_extra_params"],
+        use_stark_container_mount=module_cfg["use_stark_container_mount"],
+    )
+
+
 @router.post("/analysis")
 async def stark_launch(
     request: Request,

@@ -51,7 +51,7 @@
                     <span id="tasks-filter-states-container"></span>
                 </div>
                 <div class="filter-group">
-                    <input type="text" id="tasks-search" placeholder="Search analysis name…" class="tasks-search-input">
+                    <input type="text" id="tasks-search" placeholder="Search analysis name..." class="tasks-search-input">
                 </div>
                 <div class="filter-group">
                     <button id="tasks-filter-reset" title="Reset all filters">Reset</button>
@@ -87,7 +87,7 @@
                     <button id="cluster-refresh-btn" title="Refresh cluster">Refresh</button>
                 </div>
                 <div id="cluster-summary-content">
-                    <p class="cluster-loading">Loading…</p>
+                    <p class="cluster-loading">Loading...</p>
                 </div>
             </div>
         </div><!-- /view-cluster -->
@@ -118,7 +118,8 @@
                 <form id="analysis-form-analysis">
                     <div class="form-row">
                         <label for="analysis-name-input">Analysis Name *</label>
-                        <input type="text" id="analysis-name-input" placeholder="My_Analysis_Module">
+                        <input type="text" id="analysis-name-input" placeholder="My_Analysis_Module" maxlength="80">
+                        <span class="input-hint" id="analysis-name-input-hint">0 / 80</span>
                     </div>
                     <div class="labeled-line">
                         <hr><span class="label-text">Module &amp; Command</span>
@@ -196,7 +197,8 @@
                 <form id="analysis-form-docker" style="width:100%">
                     <div class="form-row">
                         <label for="docker-analysis-name">Analysis Name *</label>
-                        <input type="text" id="docker-analysis-name" placeholder="My_Analysis_Docker_Command">
+                        <input type="text" id="docker-analysis-name" placeholder="My_Analysis_Docker_Command" maxlength="80">
+                        <span class="input-hint" id="docker-analysis-name-hint">0 / 80</span>
                     </div>
                     <div class="labeled-line">
                         <hr>
@@ -270,11 +272,11 @@
                     <span id="archives-filter-queues-container"></span>
                 </div>
                 <div class="filter-group" id="archives-filter-status-group">
-                    <span class="filter-label">Status</span>
+                    <span class="filter-label">State</span>
                     <span id="archives-filter-status-container"></span>
                 </div>
                 <div class="filter-group">
-                    <input type="text" id="archives-search" placeholder="Search analysis name…" class="tasks-search-input">
+                    <input type="text" id="archives-search" placeholder="Search analysis name..." class="tasks-search-input">
                 </div>
                 <div class="filter-group">
                     <button id="archives-filter-reset" title="Reset all filters">Reset</button>
@@ -284,7 +286,7 @@
                 </div>
             </div>
             <div id="archives-content">
-                <p class="cluster-loading">Loading…</p>
+                <p class="cluster-loading">Loading...</p>
             </div>
         </div><!-- /view-archives -->
 
@@ -309,6 +311,10 @@
                         <option value="tasks" selected>Task count</option>
                         <option value="slots">Slots used</option>
                     </select>
+                </div>
+                <div class="filter-group" id="stats-filter-nodes-group" style="display:none">
+                    <span class="filter-label">Node</span>
+                    <span id="stats-filter-nodes-container"></span>
                 </div>
                 <div class="filter-group" id="stats-filter-queues-group" style="display:none">
                     <span class="filter-label">Queue</span>
@@ -338,7 +344,7 @@
                 <p id="stats-bar-no-data" style="display:none;color:#888;font-style:italic;padding:0.5rem 0"></p>
             </div>
             <div id="stats-view-summary" style="display:none">
-                <div id="stats-table-content"><p class="cluster-loading">Loading…</p></div>
+                <div id="stats-table-content"><p class="cluster-loading">Loading...</p></div>
             </div>
             <div id="stats-view-success" style="display:none">
                 <div class="stats-donut-wrap">

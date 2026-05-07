@@ -13,9 +13,11 @@ document.addEventListener('DOMContentLoaded', () => {
     let tasksSortCol = 'state';
     let tasksSortDir = 1;
     const tasksOpenDetails = new Map();
+    let _currentOpenDetail = null; // { map, key } — tracks which openMap entry is visible in the modal
 
     // Archives tab state
     let allArchives = [];
+    const archivesOpenDetails = new Map();
     let archivesSortCol = 'mtime';
     let archivesSortDir = -1;
 
@@ -187,21 +189,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('detailClose').onclick = () => {
         document.getElementById('detailModal').style.display = 'none';
+        if (_currentOpenDetail) {
+            _currentOpenDetail.map.delete(_currentOpenDetail.key);
+            _currentOpenDetail = null;
+        }
     };
 
     async function toggleDetail(openMap, row, fetchUrl, key) {
         if (openMap.has(key)) {
             openMap.delete(key);
+            _currentOpenDetail = null;
             document.getElementById('detailModal').style.display = 'none';
             return;
+        }
+
+        // Close any previously open detail from a different button
+        if (_currentOpenDetail) {
+            _currentOpenDetail.map.delete(_currentOpenDetail.key);
+            _currentOpenDetail = null;
         }
 
         try {
             const resp = await fetch(fetchUrl, { headers: { Authorization: `Bearer ${token}` } });
             const content = await resp.text();
             openMap.set(key, content);
-
-            // 👉 ici tu réutilises ta logique existante
+            _currentOpenDetail = { map: openMap, key };
             openModal(buildDetailContent(key, content));
 
         } catch (err) {
@@ -463,21 +475,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const cls     = stateClass(stateLC, task.elevel);
             task.state = stateAdjust(stateLC, task.elevel);
             const tr = document.createElement('tr');
+            const analysis_name = task.run_name ? task.run_name : '-';
+            const analysis_name_label = task.run_name ? (task.run_name.length > 50 ? task.run_name.slice(0, 47) + '...' : task.run_name) : '-';
+            const analysis_title = analysis_name ? `Analysis Name:\t${analysis_name}` : '';
+            const node_title = task.node ? `Node:\t${task.node}\nURL:\t\t${task.node_url || '-'}` : 'Node unknown';
+            const node_label = task.node ? (task.node.length > 12 ? task.node.slice(0, 12) + '...' : task.node) : '-';
             tr.innerHTML = `
                 <!-- <td title="${task.node} - ${task.node_url || ''}">${task.node || '-'}</td> -->
-                <td title="${task.node} - ${task.node_url || ''}">
-                    ${task.node
-                        ? (task.node.length > 10 ? task.node.slice(0, 7) + '...' : task.node)
-                        : '-'}
-                </td>
+                <td title="${node_title}">${node_label}</td>
                 <td>${task.id ?? ''}</td>
                 <td>${task.queue || ''}</td>
                 <td class="task-slots-cell">${task.task_slots != null ? task.task_slots + ' / ' + task.queue_slots : '-'}</td>
                 <td class="${cls}" title="${task.elevel || ''}">${task.state || ''}</td>
                 <td>${formatTime(task.times)}</td>
-                <td title="${task.run_name || ''}">
-                    ${task.run_name ? (task.run_name.length > 50 ? task.run_name.slice(0, 47) + '...' : task.run_name) : '-'}
-                </td>
+                <td title="${analysis_title}" >${analysis_name_label}</td>
             `;
             const actionTd = document.createElement('td');
             actionTd.className = 'action-buttons';
@@ -649,6 +660,31 @@ document.addEventListener('DOMContentLoaded', () => {
     // ══════════════════════════════════════════════════════════════════════════
     // LAUNCH TAB
     // ══════════════════════════════════════════════════════════════════════════
+
+    // Analysis name: character filter + counter (shared logic for both forms)
+    const ANALYSIS_NAME_MAX = 80;
+    const ANALYSIS_NAME_RE  = /[^A-Za-z0-9._-]/g;
+    function setupAnalysisNameInput(inputId, hintId) {
+        const input = document.getElementById(inputId);
+        const hint  = document.getElementById(hintId);
+        if (!input || !hint) return;
+        function update() {
+            const filtered = input.value.replace(ANALYSIS_NAME_RE, '_');
+            if (filtered !== input.value) {
+                const pos = input.selectionStart;
+                input.value = filtered;
+                input.setSelectionRange(pos, pos);
+            }
+            const len = input.value.length;
+            hint.textContent = `${len} / ${ANALYSIS_NAME_MAX}`;
+            hint.classList.toggle('input-hint-warn', len >= ANALYSIS_NAME_MAX * 0.9);
+        }
+        input.addEventListener('input', update);
+        input.addEventListener('paste', () => setTimeout(update, 0));
+        update();
+    }
+    setupAnalysisNameInput('analysis-name-input',  'analysis-name-input-hint');
+    setupAnalysisNameInput('docker-analysis-name', 'docker-analysis-name-hint');
 
     document.getElementById('launch-tab-run')?.addEventListener('click', () => {
         activeLaunchSubTab = 'run';
@@ -875,7 +911,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 archivesQueueDd = buildDropdown('archives-filter-queues-container', queues, null, renderArchivesTable, 'All queues');
         }
         if (!archivesStatusDd)
-            archivesStatusDd = buildDropdown('archives-filter-status-container', statuses, null, renderArchivesTable, 'All statuses');
+            archivesStatusDd = buildDropdown('archives-filter-status-container', statuses, null, renderArchivesTable, 'All states');
     }
 
     function applyArchivesFilters(archives) {
@@ -913,11 +949,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const table = document.createElement('table');
         table.className = 'cluster-tasks-table';
         table.innerHTML = `<thead><tr>
+            <th data-col="node">Node <span class="sort-icon"></span></th>
             <th data-col="queue">Queue <span class="sort-icon"></span></th>
             <th data-col="threads">Slots <span class="sort-icon"></span></th>
-            <th data-col="status">Status <span class="sort-icon"></span></th>
-            <th data-col="mtime">Date <span class="sort-icon"></span></th>
+            <th data-col="status">State <span class="sort-icon"></span></th>
+            <th data-col="mtime">Time <span class="sort-icon"></span></th>
             <th data-col="run_name">Analysis Name <span class="sort-icon"></span></th>
+            <th>Actions</th>
         </tr></thead>`;
         updateSortIcons(table, archivesSortCol, archivesSortDir);
         table.querySelectorAll('th[data-col]').forEach(th => {
@@ -936,13 +974,85 @@ document.addEventListener('DOMContentLoaded', () => {
             let date_title = a.mtime != null ? `Launch:\t${formatDate(a.mtime) || '-'}` : 'Date unknown';
             date_title += a.end_date != null ? `\nEnd:\t\t${formatDate(a.end_date) || '-'}` : '';
             date_title += a.exec_time != null ? `\nTime:\t${formatTime(a.exec_time) || '-'}` : '';
+            const analysis_name = a.run_name ? a.run_name : '-';
+            const analysis_name_label = a.run_name ? (a.run_name.length > 50 ? a.run_name.slice(0, 47) + '...' : a.run_name) : '-';
+            const analysis_id = a.analysis_id_name;
+            const analysis_title = a.analysis_id_name ? `Analysis Name:\t${analysis_name}\nAnalysis ID:\t${analysis_id}` : '';
+            const node_title = a.node ? `Node:\t${a.node}\nURL:\t\t${a.node_url || '-'}` : 'Node unknown';
+            const node_label = a.node ? (a.node.length > 12 ? a.node.slice(0, 12) + '...' : a.node) : '-';
             tr.innerHTML = `
+                <td title="${node_title}">${node_label}</td>
                 <td>${a.queue || '-'}</td>
                 <td>${a.threads ?? '-'}</td>
                 <td class="${statusCls[statusLabel] || 'state-unknown'}">${statusLabel}</td>
                 <td title="${date_title}">${formatDate(a.mtime) || '-'}</td>
-                <td title="${a.analysis_id_name || '-'}" >${a.run_name || '-'}</td>
+                <td title="${analysis_title}" >${analysis_name_label}</td>
             `;
+            const id = a.analysis_id_name;
+            const nodeUrl = a.node_url || '';
+
+            const actionTd = document.createElement('td');
+            actionTd.className = 'action-buttons';
+
+            // L — Log, A — Analysis JSON (read-only, no admin required)
+            // R — Relaunch, X — Delete (admin only)
+            const btnDefs = [['L', 'log'], ['A', 'json'], ['R', 'relaunch'], ['X', 'delete']];
+            btnDefs.forEach(([label, act]) => {
+                const isDanger = ['relaunch', 'delete'].includes(act);
+                if (isDanger && !isAdmin) return;
+                const btn = document.createElement('button');
+                btn.textContent = label;
+                btn.title = `${capitalize(act)} '${a.run_name || id}'`;
+                if (isDanger) btn.classList.add('btn-danger');
+
+                if (act === 'log' || act === 'json') {
+                    btn.addEventListener('click', () => {
+                        const key = `archive::${id}::${act}`;
+                        const params = new URLSearchParams({ node_url: nodeUrl });
+                        toggleDetail(archivesOpenDetails, tr, `/cluster/proxy/archive/${encodeURIComponent(id)}/${act}?${params}`, key);
+                    });
+                } else {
+                    btn.addEventListener('click', async () => {
+                        const actionLabel = act === 'delete'
+                            ? `Delete all files for "${a.run_name || id}"?\n\nThis will permanently remove the .json, .info and .output files.`
+                            : `Relaunch '${a.run_name || id}'?`;
+                        if (!confirm(actionLabel)) return;
+                        btn.disabled = true; btn.textContent = '...';
+                        let ok = false;
+                        try {
+                            const params = new URLSearchParams({ node_url: nodeUrl });
+                            let resp;
+                            if (act === 'relaunch') {
+                                resp = await fetch(`/cluster/proxy/archive/${encodeURIComponent(id)}/relaunch?${params}`, {
+                                    method: 'POST',
+                                    headers: { Authorization: `Bearer ${token}` },
+                                });
+                            } else {
+                                resp = await fetch(`/cluster/proxy/archive/${encodeURIComponent(id)}?${params}`, {
+                                    method: 'DELETE',
+                                    headers: { Authorization: `Bearer ${token}` },
+                                });
+                            }
+                            ok = resp.ok;
+                            if (ok && act === 'delete') {
+                                allArchives = allArchives.filter(x => x.analysis_id_name !== id);
+                            }
+                        } catch (_) {}
+                        btn.textContent = ok ? '\u2713 Done' : '\u2717 Failed';
+                        btn.classList.toggle('btn-success', ok);
+                        btn.classList.toggle('btn-error',   !ok);
+                        setTimeout(() => {
+                            btn.textContent = label; btn.disabled = false;
+                            btn.classList.remove('btn-success', 'btn-error');
+                            if (act === 'delete' && ok) renderArchivesTable();
+                            else if (act === 'relaunch' && ok) fetchAllTasks();
+                        }, 1500);
+                    });
+                }
+                actionTd.appendChild(btn);
+            });
+
+            tr.appendChild(actionTd);
             tbody.appendChild(tr);
         });
         table.appendChild(tbody);
@@ -995,6 +1105,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let statsBarChart     = null;
     let statsDonutChart   = null;
     let statsQueueDd      = null;
+    let statsNodeDd       = null;
     let activeStatsSubTab = 'distribution';
     let currentStats      = null;
 
@@ -1063,6 +1174,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!statsQueueDd)
                 statsQueueDd = buildDropdown('stats-filter-queues-container', queues, null, renderStats, 'All queues');
         }
+        const nodes     = [...new Set(archives.map(a => a.node || ''))].filter(Boolean).sort();
+        const nodeGroup = document.getElementById('stats-filter-nodes-group');
+        if (nodes.length > 1) {
+            if (nodeGroup) nodeGroup.style.display = 'flex';
+            if (!statsNodeDd)
+                statsNodeDd = buildDropdown('stats-filter-nodes-container', nodes, null, renderStats, 'All nodes');
+        }
     }
 
     function getPeriodKey(ts, granularity) {
@@ -1078,9 +1196,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function computeStats(archives, granularity, metric, dateRange) {
         const selectedQueues = statsQueueDd ? statsQueueDd.getSelected() : null;
+        const selectedNodes  = statsNodeDd  ? statsNodeDd.getSelected()  : null;
         let filtered = selectedQueues
             ? archives.filter(a => selectedQueues.includes(a.queue || ''))
             : [...archives];
+        if (selectedNodes) filtered = filtered.filter(a => selectedNodes.includes(a.node || ''));
         if (dateRange.from != null) filtered = filtered.filter(a => a.mtime >= dateRange.from);
         if (dateRange.to   != null) filtered = filtered.filter(a => a.mtime <= dateRange.to);
 
@@ -1328,9 +1448,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('stats-refresh-btn')?.addEventListener('click', () => {
         allArchives  = [];
         statsQueueDd = null;
+        statsNodeDd  = null;
         currentStats = null;
         const grp = document.getElementById('stats-filter-queues-group');
         if (grp) { grp.style.display = 'none'; const c = document.getElementById('stats-filter-queues-container'); if (c) c.innerHTML = ''; }
+        const ngrp = document.getElementById('stats-filter-nodes-group');
+        if (ngrp) { ngrp.style.display = 'none'; const c = document.getElementById('stats-filter-nodes-container'); if (c) c.innerHTML = ''; }
         fetchStats();
     });
     document.getElementById('stats-granularity')?.addEventListener('change', () => { updateStatsPresets(false); renderStats(); });

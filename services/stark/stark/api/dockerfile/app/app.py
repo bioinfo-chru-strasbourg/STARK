@@ -4,7 +4,7 @@ from fastapi import FastAPI  # pyright: ignore[reportMissingImports]
 from fastapi.staticfiles import StaticFiles  # pyright: ignore[reportMissingImports]
 from fastapi.responses import FileResponse  # pyright: ignore[reportMissingImports]
 
-from routers import auth, ui, analysis, cluster
+from routers import auth, ui, analysis, cluster, archive
 from routers import queue as queue_router
 from config import local_port
 
@@ -23,6 +23,7 @@ app.include_router(ui.router)
 app.include_router(cluster.router)
 app.include_router(analysis.router)
 app.include_router(queue_router.router)
+app.include_router(archive.router)
 
 
 if __name__ == "__main__":
