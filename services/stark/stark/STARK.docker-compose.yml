@@ -288,8 +288,6 @@ services:
         environment:
             - CONFIG_FOLDER=${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_PORTAL_PARAM_CONFIG_INNER}
         volumes:
-            # Docker sock
-            - ${DOCKER_STARK_SOCK_MOUNT}
             # Main configuration
             - ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_PORTAL_HOST_FOLDER_CONFIG}:${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_PORTAL_INNER_FOLDER_CONFIG}:ro
             - ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_PORTAL_HOST_FOLDER_SERVICES}:${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_PORTAL_INNER_FOLDER_SERVICES}:ro
@@ -300,7 +298,7 @@ services:
         networks:
             - stark_stark
         healthcheck:
-            test: ["CMD", "curl", "-f", "http://localhost"]
+            test: ["CMD", "curl", "-f", "http://localhost:8000"]
             interval: 600s
             timeout: 600s
             retries: 3
