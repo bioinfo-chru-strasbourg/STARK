@@ -268,6 +268,46 @@ services:
             start_interval: 5s
 
 
+    stark-module-stark-submodule-stark-service-portal:
+        image: ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_PORTAL_IMAGE}
+        build:
+            context: ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_PORTAL_IMAGE_CONTEXT}
+            dockerfile: ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_PORTAL_IMAGE_CONTEXT_DOCKERFILE}
+            args:
+                - HTTP_PROXY=${HTTP_PROXY}
+                - HTTPS_PROXY=${HTTPS_PROXY}
+                - FTP_PROXY=${FTP_PROXY}
+                - http_proxy=${http_proxy}
+                - https_proxy=${https_proxy}
+                - ftp_proxy=${ftp_proxy}
+        container_name: ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_PORTAL_CONTAINER_NAME}
+        entrypoint: ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_PORTAL_CONTAINER_ENTRYPOINT}
+        command: ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_PORTAL_CONTAINER_COMMAND}
+        restart: ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_PORTAL_CONTAINER_RESTART}
+        # working_dir: /tool/docs
+        environment:
+            - CONFIG_FOLDER=${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_PORTAL_PARAM_CONFIG_INNER}
+        volumes:
+            # Docker sock
+            - ${DOCKER_STARK_SOCK_MOUNT}
+            # Main configuration
+            - ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_PORTAL_HOST_FOLDER_CONFIG}:${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_PORTAL_INNER_FOLDER_CONFIG}:ro
+            - ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_PORTAL_HOST_FOLDER_SERVICES}:${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_PORTAL_INNER_FOLDER_SERVICES}:ro
+            # User configuration
+            - ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_PORTAL_PARAM_CONFIG_HOST}:${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_PORTAL_PARAM_CONFIG_INNER}:rw
+        ports:
+            - ${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_PORTAL_PARAM_PORT_PUBLISHED}:${DOCKER_STARK_MODULE_SUBMODULE_SERVICE_PORTAL_PARAM_PORT_TARGET}
+        networks:
+            - stark_stark
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost"]
+            interval: 600s
+            timeout: 600s
+            retries: 3
+            start_period: 5s
+            start_interval: 5s
+
+
 # NETWORK
 ###########
 
