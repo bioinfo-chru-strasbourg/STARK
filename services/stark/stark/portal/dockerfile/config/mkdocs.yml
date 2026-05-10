@@ -1,0 +1,36 @@
+site_name: BioInformatique Médicale Appliquee au Diagnostic
+theme:
+  name: material
+  highlightjs: true
+  language: fr
+  features:
+    - search.suggestions
+    - search.highlight
+    - toc.integrated
+    - content.code.annotated
+    - content.code.copy
+    - navigation.tabs
+    #- header.autohide
+plugins:
+  #- mkdocs-pyscript
+  - markdown-exec
+  - include-markdown
+  #- mkdocs-macros
+  #- mkdocs-macros-plugin
+  - search
+  - tags
+  - include_dir_to_nav:
+      file_pattern: '.*\.md$'
+  - macros:
+      #include_dir: docs
+markdown_extensions:
+  - pymdownx.superfences
+  - attr_list
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+nav:
+  - Accueil: index.md
+  #- Applications: 'Applications/'
+  #- Documentation: 'Documentation/'
+  - Contact: contact.md
