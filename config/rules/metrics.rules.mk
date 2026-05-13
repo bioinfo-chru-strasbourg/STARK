@@ -187,7 +187,8 @@ BAM_VALIDATION_COMPRESSION?=4
 # ALL METRICS
 ###############
 
-%.bam.metrics/metrics: %.bam.metrics/metrics.design %.bam.metrics/metrics.genes_coverage %.bam.metrics/metrics.gatk %.bam.metrics/metrics.picard %.bam.metrics/metrics.samtools %.bam.metrics/metrics.regions_coverage %.bam.metrics/metrics.per_amplicon_coverage %.bam.metrics/metrics.post_alignment
+#%.bam.metrics/metrics: %.bam.metrics/metrics.design %.bam.metrics/metrics.genes_coverage %.bam.metrics/metrics.gatk %.bam.metrics/metrics.picard %.bam.metrics/metrics.samtools %.bam.metrics/metrics.regions_coverage %.bam.metrics/metrics.per_amplicon_coverage %.bam.metrics/metrics.post_alignment
+%.bam.metrics/metrics: %.bam.metrics/metrics.design %.bam.metrics/metrics.gatk %.bam.metrics/metrics.picard %.bam.metrics/metrics.samtools %.bam.metrics/metrics.regions_coverage %.bam.metrics/metrics.per_amplicon_coverage %.bam.metrics/metrics.post_alignment
 	mkdir -p $(@D)
 	cat $^ > $@
 	echo "#[INFO] BAM Metrics done" >> $@
