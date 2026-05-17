@@ -590,7 +590,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const nodes  = data.nodes  || {};
         const totals = data.totals || {};
         if (!Object.keys(nodes).length) {
-            el.innerHTML = '<div class="cluster-no-peers">No peers configured. Add entries to <code>config/peers.json</code> to enable cluster view.</div>';
+            el.innerHTML = '<div class="cluster-no-nodes">No nodes configured. Add entries to <code>config/nodes.json</code> to enable cluster view.</div>';
             return;
         }
         const table = document.createElement('table');

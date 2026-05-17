@@ -10,11 +10,11 @@ QUEUES_FILE = "config/queues.json"
 MODULES_FILE = "config/modules.json"
 STARK_API_KEY = os.environ.get("STARK_API_KEY", "a_default_super_secret_api_key")
 
-# --- Cluster / Peers ---
-# Path to the peers config file (auto-created empty on first start if absent)
-PEERS_FILE = "config/peers.json"
+# --- Cluster / Nodes ---
+# Path to the nodes config file (auto-created empty on first start if absent)
+NODES_FILE = "config/nodes.json"
 # Optional: explicit URL this node is reachable at (e.g. "http://192.168.1.10:8001")
-# If not set, the node tries to self-identify by scanning peers via /whoami.
+# If not set, the node tries to self-identify by scanning nodes via /whoami.
 # If self-URL cannot be determined, the node always runs analyses locally.
 STARK_API_SELF_URL = os.environ.get("STARK_API_SELF_URL", "")
 STARK_API_SELF_PORT = int(os.environ.get("STARK_API_SELF_PORT", 8000))

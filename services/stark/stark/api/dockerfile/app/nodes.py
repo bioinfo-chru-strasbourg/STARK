@@ -1,21 +1,21 @@
 #!/usr/bin/env python
 """
-peers.py — Cluster / mini-orchestrator logic.
+nodes.py — Cluster / mini-orchestrator logic.
 
 Responsibilities:
-  - Load peers from config/peers.json (auto-created empty on first start).
+  - Load nodes from config/nodes.json (auto-created empty on first start).
   - Resolve this node's own URL (env var → /whoami scan → None = local-only).
   - Compute local task-spooler metrics per queue.
-  - Collect metrics from all peers asynchronously (httpx).
-  - Score peers and select the best one for a given queue.
-  - Forward an /analysis request transparently to a target peer.
+  - Collect metrics from all nodes asynchronously (httpx).
+  - Score nodes and select the best one for a given queue.
+  - Forward an /analysis request transparently to a target node.
 
-If no peers are configured, or if self-URL cannot be determined, all analyses
+If no nodes are configured, or if self-URL cannot be determined, all analyses
 are run locally — the cluster logic is entirely transparent / opt-in.
 
-peers.json format (auto-created in config/ on first start):
+nodes.json format (auto-created in config/ on first start):
 {
-  "peers": [
+  "nodes": [
     {"name": "node1", "url": "http://192.168.1.10:8001"},
     {"name": "node2", "url": "http://192.168.1.10:8002"},
     {"name": "node3", "url": "http://192.168.1.11:8001"}
@@ -35,7 +35,7 @@ import httpx  # pyright: ignore[reportMissingImports]
 
 logger = logging.getLogger(__name__)
 
-from config import PEERS_FILE, STARK_API_KEY, STARK_API_SELF_URL, shell, ts
+from config import NODES_FILE, STARK_API_KEY, STARK_API_SELF_URL, shell, ts
 from queues import _queue_daemon_is_active, _resolve_queue_socket, load_queues
 from tasks import _read_task_slots, _resolve_task_slots
 
@@ -58,8 +58,8 @@ def get_self_url() -> Optional[str]:
 
     Resolution order:
       1. STARK_API_SELF_URL environment variable (explicit, recommended).
-      2. Lazy scan of configured peers: POST /whoami to each peer; if the
-         returned hostname matches ours, that peer entry is our own URL.
+      2. Lazy scan of configured nodes: POST /whoami to each node; if the
+         returned hostname matches ours, that node entry is our own URL.
       3. None — self-URL unknown; analyses will always run locally.
 
     The result is cached after the first successful resolution.
@@ -74,9 +74,9 @@ def get_self_url() -> Optional[str]:
     if _self_url_cache is not None:
         return _self_url_cache
 
-    # 2. Scan peers to find which one is us
-    peers = load_peers()
-    for p in peers:
+    # 2. Scan nodes to find which one is us
+    nodes = load_nodes()
+    for p in nodes:
         url = p.get("url", "")
         if not url:
             continue
@@ -96,39 +96,39 @@ def get_self_url() -> Optional[str]:
 
 
 # ---------------------------------------------------------------------------
-# Peers config
+# Nodes config
 # ---------------------------------------------------------------------------
 
-def load_peers() -> list:
-    """Load peers from config/peers.json.
+def load_nodes() -> list:
+    """Load nodes from config/nodes.json.
 
-    If the file does not exist it is auto-created with an empty peers list so
+    If the file does not exist it is auto-created with an empty nodes list so
     the user has a ready-to-fill template. Returns [] if file is absent,
-    malformed, or contains no peers — in all those cases analyses run locally.
+    malformed, or contains no nodes — in all those cases analyses run locally.
 
     Expected format:
     {
-      "peers": [
+      "nodes": [
         {"name": "node1", "url": "http://192.168.1.10:8001"},
         {"name": "node2", "url": "http://192.168.1.11:8001"}
       ]
     }
     """
-    default: dict = {"peers": []}
+    default: dict = {"nodes": []}
 
-    if not os.path.exists(PEERS_FILE):
+    if not os.path.exists(NODES_FILE):
         try:
-            os.makedirs(os.path.dirname(PEERS_FILE), exist_ok=True)
-            with open(PEERS_FILE, "w") as f:
+            os.makedirs(os.path.dirname(NODES_FILE), exist_ok=True)
+            with open(NODES_FILE, "w") as f:
                 json.dump(default, f, indent=2)
         except OSError:
             pass
         return []
 
     try:
-        with open(PEERS_FILE, "r") as f:
+        with open(NODES_FILE, "r") as f:
             data = json.load(f)
-        return data.get("peers", [])
+        return data.get("nodes", [])
     except (FileNotFoundError, json.JSONDecodeError):
         return []
 
@@ -204,29 +204,29 @@ def get_local_metrics() -> dict:
 
 
 # ---------------------------------------------------------------------------
-# Peer metrics (async)
+# Node metrics (async)
 # ---------------------------------------------------------------------------
 
-async def get_peers_metrics() -> dict:
-    """Collect /metrics from all configured peers concurrently.
+async def get_nodes_metrics() -> dict:
+    """Collect /metrics from all configured nodes concurrently.
 
-    Returns {peer_url: queues_dict}, where queues_dict has the same structure
-    as get_local_metrics().  Unreachable peers are silently skipped.
+    Returns {node_url: queues_dict}, where queues_dict has the same structure
+    as get_local_metrics().  Unreachable nodes are silently skipped.
     """
-    peers = load_peers()
-    if not peers:
+    nodes = load_nodes()
+    if not nodes:
         return {}
 
     headers = {"X-API-Key": STARK_API_KEY}
-    # Exclude self to avoid double-counting when this node is in peers.json
+    # Exclude self to avoid double-counting when this node is in nodes.json
     self_url = get_self_url()
     urls = [
         p["url"]
-        for p in peers
+        for p in nodes
         if p.get("url") and (not self_url or p["url"] != self_url)
     ]
 
-    logger.debug("Collecting metrics from peers: %s", urls)
+    logger.debug("Collecting metrics from nodes: %s", urls)
 
     async with httpx.AsyncClient(timeout=1.0) as client:
         responses = await asyncio.gather(
@@ -237,7 +237,7 @@ async def get_peers_metrics() -> dict:
     result: dict = {}
     for url, resp in zip(urls, responses):
         if isinstance(resp, Exception):
-            logger.debug("Peer %s unreachable: %s", url, resp)
+            logger.debug("Node %s unreachable: %s", url, resp)
             continue
         if resp.status_code == 200:
             try:
@@ -254,7 +254,7 @@ async def get_peers_metrics() -> dict:
 # ---------------------------------------------------------------------------
 
 
-def compute_best_peer(
+def compute_best_node(
     queue_name: str, all_metrics: dict, json_input: dict
 ) -> Optional[str]:
     """Return the URL of the node with the most capacity for queue_name.
@@ -279,7 +279,7 @@ def compute_best_peer(
     if requested_slots is None or requested_slots > max_slots:
         requested_slots = max_slots
 
-    # Track best peer and its priority tuple for comparison
+    # Track best node and its priority tuple for comparison
     best_url: Optional[str] = None
     best_priority: Optional[tuple] = None
 
@@ -288,7 +288,7 @@ def compute_best_peer(
         # Get metrics for the requested queue
         q = queues.get(queue_name, {})
 
-        # If queue not configured on that peer, consider it unavailable for that peer (score = -inf)
+        # If queue not configured on that node, consider it unavailable for that node (score = -inf)
         if not q or q.get("configured", 0) <= 0:
             continue
 
@@ -304,8 +304,8 @@ def compute_best_peer(
         delta = available - requested_slots
 
         # PRIORITY DESIGN
-        # 1. First classify peers by capability: can this peer satisfy the request (delta >= 0) or not (delta < 0)?
-        # 2. Among capable peers, prefer those that are not overloaded (delta < 0) over those that are (delta >= 0).
+        # 1. First classify nodes by capability: can this node satisfy the request (delta >= 0) or not (delta < 0)?
+        # 2. Among capable nodes, prefer those that are not overloaded (delta < 0) over those that are (delta >= 0).
         # 3. Then minimize overload (negative delta) or waste (positive delta).
         # 4. Penalize overload more heavily than waste by making it a primary sorting key.
 
@@ -327,7 +327,7 @@ def compute_best_peer(
             best_url = url
 
     if best_url is None:
-        # Choose first peer with the queue configured, even if it has no free slots (best effort)
+        # Choose first node with the queue configured, even if it has no free slots (best effort)
         for url, queues in all_metrics.items():
             q = queues.get(queue_name, {})
             if q and q.get("configured", 0) > 0:
@@ -371,43 +371,43 @@ async def forward_request(target_url: str, request):
 
 
 # ---------------------------------------------------------------------------
-# Peer tasks (async)
+# Node tasks (async)
 # ---------------------------------------------------------------------------
 
 
-async def get_peers_tasks() -> dict:
-    """Collect /list (task list) from all configured peers concurrently.
+async def get_nodes_tasks() -> dict:
+    """Collect /list (task list) from all configured nodes concurrently.
 
-    Returns {peer_url: tasks_list}, where each tasks_list is the same
+    Returns {node_url: tasks_list}, where each tasks_list is the same
     structure returned by the local GET /list endpoint.
-    Unreachable peers are silently skipped.
+    Unreachable nodes are silently skipped.
 
-    The name of each peer (from peers.json) is included so callers can
+    The name of each node (from nodes.json) is included so callers can
     map a URL back to a human-readable name.
     """
-    peers = load_peers()
-    if not peers:
+    nodes = load_nodes()
+    if not nodes:
         return {}
 
     headers = {"X-API-Key": STARK_API_KEY}
-    # Exclude self to avoid duplicate tasks when this node is in peers.json
+    # Exclude self to avoid duplicate tasks when this node is in nodes.json
     self_url = get_self_url()
-    peer_entries = [
+    node_entries = [
         (p.get("name", p.get("url", "")), p["url"])
-        for p in peers
+        for p in nodes
         if p.get("url") and (not self_url or p["url"] != self_url)
     ]
 
     async with httpx.AsyncClient(timeout=5.0) as client:
         responses = await asyncio.gather(
-            *[client.get(f"{url}/list", headers=headers) for _, url in peer_entries],
+            *[client.get(f"{url}/list", headers=headers) for _, url in node_entries],
             return_exceptions=True,
         )
 
     result: dict = {}
-    for (name, url), resp in zip(peer_entries, responses):
+    for (name, url), resp in zip(node_entries, responses):
         if isinstance(resp, Exception):
-            logger.debug("Peer %s (%s) unreachable for tasks: %s", name, url, resp)
+            logger.debug("Node %s (%s) unreachable for tasks: %s", name, url, resp)
             continue
         if resp.status_code == 200:
             try:
