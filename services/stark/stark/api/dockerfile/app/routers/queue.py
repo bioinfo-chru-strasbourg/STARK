@@ -54,9 +54,10 @@ def _iter_queue_tasks(queue_name: str, cfg: dict, is_default: bool) -> list:
             capture_output=True,
             text=True,
             check=False,
+            timeout=5,
         )
-    except FileNotFoundError:
-        raise HTTPException(status_code=500, detail=f"Command not found: {ts}")
+    except subprocess.TimeoutExpired:
+        return []
 
     if result.returncode != 0 and (
         "tasks" in result.stderr.lower() or not result.stdout

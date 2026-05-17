@@ -18,7 +18,7 @@ from nodes import (
     forward_request,
     get_local_metrics,
     get_nodes_metrics,
-    get_self_url,
+    resolve_self_url,
     load_nodes,
 )
 from queues import get_queue_env, load_queues
@@ -121,7 +121,7 @@ async def stark_launch(
 
         # Gather metrics: nodes + self
         nodes_metrics = await get_nodes_metrics()
-        self_url = get_self_url()
+        self_url = await resolve_self_url()
         if self_url:
             nodes_metrics[self_url] = get_local_metrics()
         target = compute_best_node(queue_name, nodes_metrics, json_input)
@@ -206,7 +206,7 @@ async def module_launch(
     already_forwarded = request.headers.get("X-STARK-Forwarded", "0") == "1"
     if not already_forwarded and load_nodes():
         nodes_metrics = await get_nodes_metrics()
-        self_url = get_self_url()
+        self_url = await resolve_self_url()
         if self_url:
             nodes_metrics[self_url] = get_local_metrics()
         target = compute_best_node(queue_name, nodes_metrics, json_input)
@@ -359,7 +359,7 @@ async def relaunch_task(
 
         # Gather metrics: nodes + self
         nodes_metrics = await get_nodes_metrics()
-        self_url = get_self_url()
+        self_url = await resolve_self_url()
         if self_url:
             nodes_metrics[self_url] = get_local_metrics()
         target = compute_best_node(queue_name, nodes_metrics, json_input)

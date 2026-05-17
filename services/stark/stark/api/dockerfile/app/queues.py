@@ -103,6 +103,7 @@ def _prepare_queue_for_submission(queue_name: Optional[str] = None) -> tuple:
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
+            timeout=5,
         )
     return _ts_env, slots
 

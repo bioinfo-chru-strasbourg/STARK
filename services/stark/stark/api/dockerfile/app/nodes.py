@@ -29,6 +29,7 @@ import logging
 import os
 import socket
 import subprocess
+import time
 from typing import Optional
 
 import httpx  # pyright: ignore[reportMissingImports]
@@ -46,7 +47,51 @@ from tasks import _read_task_slots, _resolve_task_slots
 # ---------------------------------------------------------------------------
 
 _self_hostname: str = socket.gethostname()
-_self_url_cache: Optional[str] = None  # populated lazily
+# None        = not yet scanned
+# ""          = scanned, this node is not in nodes.json (or all unreachable) — local-only
+# "http://..."= this node's own URL, as found in nodes.json
+_self_url_cache: Optional[str] = None
+# Timestamp of the last negative scan result; used to apply a TTL so that a
+# temporary "not found" result (e.g. nodes offline at startup) does not become
+# permanent.  Positive results are never re-scanned.
+_SELF_URL_NEGATIVE_TTL: float = 60.0  # seconds
+_self_url_negative_ts: float = 0.0
+
+# ---------------------------------------------------------------------------
+# Nodes metrics cache
+# ---------------------------------------------------------------------------
+
+# Cache for get_nodes_metrics(): avoids a 1-s timeout wait on every request
+# when nodes are configured but temporarily unreachable.
+# Entries expire after _NODES_METRICS_TTL seconds; fresh fetch is triggered by
+# the first request after expiry.
+_NODES_METRICS_TTL: float = 5.0  # seconds — low enough to stay near real-time
+_nodes_metrics_cache: Optional[dict] = None
+_nodes_metrics_ts: float = 0.0
+# Lock prevents concurrent cache-refresh races under parallel requests
+_nodes_metrics_lock: Optional[asyncio.Lock] = None
+
+# Cache for get_nodes_tasks(): tasks are volatile so TTL is intentionally short
+# (just enough to absorb burst refreshes without stale data concerns).
+_NODES_TASKS_TTL: float = 2.0  # seconds
+_nodes_tasks_cache: Optional[dict] = None
+_nodes_tasks_ts: float = 0.0
+_nodes_tasks_lock: Optional[asyncio.Lock] = None
+
+
+def _get_nodes_metrics_lock() -> asyncio.Lock:
+    """Return the module-level asyncio.Lock, creating it lazily inside the event loop."""
+    global _nodes_metrics_lock
+    if _nodes_metrics_lock is None:
+        _nodes_metrics_lock = asyncio.Lock()
+    return _nodes_metrics_lock
+
+
+def _get_nodes_tasks_lock() -> asyncio.Lock:
+    global _nodes_tasks_lock
+    if _nodes_tasks_lock is None:
+        _nodes_tasks_lock = asyncio.Lock()
+    return _nodes_tasks_lock
 
 
 def get_self_hostname() -> str:
@@ -54,27 +99,37 @@ def get_self_hostname() -> str:
 
 
 def get_self_url() -> Optional[str]:
-    """Return the URL at which *this* node is reachable.
+    """Return the URL at which *this* node is reachable (sync, uses cache).
 
     Resolution order:
       1. STARK_API_SELF_URL environment variable (explicit, recommended).
-      2. Lazy scan of configured nodes: POST /whoami to each node; if the
-         returned hostname matches ours, that node entry is our own URL.
+      2. Returns the cached result from a previous call to resolve_self_url()
+         or get_self_url().  If the cache has not been populated yet (or the
+         negative TTL has expired), falls back to a synchronous blocking scan
+         (use resolve_self_url() instead in async contexts).
       3. None — self-URL unknown; analyses will always run locally.
-
-    The result is cached after the first successful resolution.
     """
-    global _self_url_cache
+    global _self_url_cache, _self_url_negative_ts
 
-    # 1. Explicit env var
+    # 1. Explicit env var — always authoritative, never cached
     if STARK_API_SELF_URL:
         return STARK_API_SELF_URL
 
-    # Return cached value if already resolved
-    if _self_url_cache is not None:
+    # Positive hit — permanent cache, return immediately
+    if _self_url_cache:
         return _self_url_cache
 
-    # 2. Scan nodes to find which one is us
+    # Negative hit — only honour it within the TTL window
+    if (
+        _self_url_cache == ""
+        and (time.monotonic() - _self_url_negative_ts) < _SELF_URL_NEGATIVE_TTL
+    ):
+        return None
+
+    # Cache absent or TTL expired: run a synchronous scan as a last resort.
+    # This path is only hit on the very first request or after a negative TTL
+    # expiry, and only when resolve_self_url() has not been awaited yet (e.g.
+    # from a sync endpoint like GET /metrics).
     nodes = load_nodes()
     for p in nodes:
         url = p.get("url", "")
@@ -90,8 +145,58 @@ def get_self_url() -> Optional[str]:
         except Exception:
             continue
 
-    # 3. Unknown — local-only mode
-    # return "http://localhost"
+    # Not found — store negative result with a timestamp so it expires
+    _self_url_cache = ""
+    _self_url_negative_ts = time.monotonic()
+    return None
+
+
+async def resolve_self_url() -> Optional[str]:
+    """Async version of get_self_url() — does not block the event loop.
+
+    Use this from async request handlers.  The result is shared with the
+    synchronous get_self_url() via _self_url_cache so subsequent calls
+    (sync or async) are always instant.
+
+    Negative results expire after _SELF_URL_NEGATIVE_TTL seconds so that
+    nodes added to nodes.json after startup (or unreachable at first scan)
+    are eventually re-detected without requiring a process restart.
+    """
+    global _self_url_cache, _self_url_negative_ts
+
+    if STARK_API_SELF_URL:
+        return STARK_API_SELF_URL
+
+    # Positive hit — permanent cache
+    if _self_url_cache:
+        return _self_url_cache
+
+    # Negative hit within TTL — skip scan
+    if (
+        _self_url_cache == ""
+        and (time.monotonic() - _self_url_negative_ts) < _SELF_URL_NEGATIVE_TTL
+    ):
+        return None
+
+    nodes = load_nodes()
+    async with httpx.AsyncClient(timeout=1.0) as client:
+        for p in nodes:
+            url = p.get("url", "")
+            if not url:
+                continue
+            if not url.startswith("http"):
+                url = f"http://{url}"
+            try:
+                r = await client.get(f"{url}/whoami")
+                if r.is_success and r.json().get("id") == _self_hostname:
+                    _self_url_cache = url
+                    return url
+            except Exception:
+                continue
+
+    # Not found — store negative result with timestamp
+    _self_url_cache = ""
+    _self_url_negative_ts = time.monotonic()
     return None
 
 
@@ -210,16 +315,49 @@ def get_local_metrics() -> dict:
 async def get_nodes_metrics() -> dict:
     """Collect /metrics from all configured nodes concurrently.
 
+    Results are cached for _NODES_METRICS_TTL seconds so that a burst of
+    requests does not trigger one network round-trip per request.  A single
+    refresh is performed when the cache expires; concurrent callers during a
+    refresh share the same result via a lock.
+
     Returns {node_url: queues_dict}, where queues_dict has the same structure
     as get_local_metrics().  Unreachable nodes are silently skipped.
     """
+    global _nodes_metrics_cache, _nodes_metrics_ts
+
+    now = time.monotonic()
+
+    # Fast path: cache is fresh
+    if (
+        _nodes_metrics_cache is not None
+        and (now - _nodes_metrics_ts) < _NODES_METRICS_TTL
+    ):
+        return _nodes_metrics_cache
+
+    async with _get_nodes_metrics_lock():
+        # Re-check inside the lock (another coroutine may have refreshed while we waited)
+        now = time.monotonic()
+        if (
+            _nodes_metrics_cache is not None
+            and (now - _nodes_metrics_ts) < _NODES_METRICS_TTL
+        ):
+            return _nodes_metrics_cache
+
+        result = await _fetch_nodes_metrics()
+        _nodes_metrics_cache = result
+        _nodes_metrics_ts = time.monotonic()
+        return result
+
+
+async def _fetch_nodes_metrics() -> dict:
+    """Perform the actual HTTP collection (called only when cache is stale)."""
     nodes = load_nodes()
     if not nodes:
         return {}
 
     headers = {"X-API-Key": STARK_API_KEY}
     # Exclude self to avoid double-counting when this node is in nodes.json
-    self_url = get_self_url()
+    self_url = await resolve_self_url()
     urls = [
         p["url"]
         for p in nodes
@@ -378,20 +516,42 @@ async def forward_request(target_url: str, request):
 async def get_nodes_tasks() -> dict:
     """Collect /list (task list) from all configured nodes concurrently.
 
-    Returns {node_url: tasks_list}, where each tasks_list is the same
-    structure returned by the local GET /list endpoint.
-    Unreachable nodes are silently skipped.
+    Results are cached for _NODES_TASKS_TTL seconds to absorb burst refreshes.
+    Tasks are volatile so the TTL is kept intentionally short (2 s).
 
-    The name of each node (from nodes.json) is included so callers can
-    map a URL back to a human-readable name.
+    Returns {node_url: {"name": str, "tasks": list}}.
+    Unreachable nodes are silently skipped.
     """
+    global _nodes_tasks_cache, _nodes_tasks_ts
+
+    now = time.monotonic()
+
+    if _nodes_tasks_cache is not None and (now - _nodes_tasks_ts) < _NODES_TASKS_TTL:
+        return _nodes_tasks_cache
+
+    async with _get_nodes_tasks_lock():
+        now = time.monotonic()
+        if (
+            _nodes_tasks_cache is not None
+            and (now - _nodes_tasks_ts) < _NODES_TASKS_TTL
+        ):
+            return _nodes_tasks_cache
+
+        result = await _fetch_nodes_tasks()
+        _nodes_tasks_cache = result
+        _nodes_tasks_ts = time.monotonic()
+        return result
+
+
+async def _fetch_nodes_tasks() -> dict:
+    """Perform the actual HTTP collection of /list from remote nodes."""
     nodes = load_nodes()
     if not nodes:
         return {}
 
     headers = {"X-API-Key": STARK_API_KEY}
     # Exclude self to avoid duplicate tasks when this node is in nodes.json
-    self_url = get_self_url()
+    self_url = await resolve_self_url()
     node_entries = [
         (p.get("name", p.get("url", "")), p["url"])
         for p in nodes

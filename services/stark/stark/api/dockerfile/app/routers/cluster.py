@@ -22,6 +22,7 @@ from nodes import (
     get_nodes_tasks,
     get_self_hostname,
     get_self_url,
+    resolve_self_url,
     load_nodes,
 )
 
@@ -93,7 +94,7 @@ async def cluster_summary():
         p["url"]: p.get("name", p["url"]) for p in load_nodes() if p.get("url")
     }
 
-    self_url = get_self_url()
+    self_url = await resolve_self_url()
     self_name = (
         node_name_map.get(self_url, get_self_hostname())
         if self_url
@@ -205,7 +206,7 @@ async def cluster_tasks():
     node_name_map = {
         p["url"]: p.get("name", p["url"]) for p in load_nodes() if p.get("url")
     }
-    self_url = get_self_url()
+    self_url = await resolve_self_url()
     self_name = (
         node_name_map.get(self_url, get_self_hostname())
         if self_url
@@ -440,7 +441,7 @@ async def cluster_archives():
     node_name_map = {
         p["url"]: p.get("name", p["url"]) for p in load_nodes() if p.get("url")
     }
-    self_url = get_self_url()
+    self_url = await resolve_self_url()
     self_name = (
         node_name_map.get(self_url, get_self_hostname())
         if self_url
