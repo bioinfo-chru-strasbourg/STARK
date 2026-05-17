@@ -25,6 +25,10 @@ ts = os.environ.get("TS", "")
 ts_savelist = os.environ.get("TS_SAVELIST", "/ts-tmp")
 ts_slots = int(os.environ.get("TS_SLOTS", os.cpu_count()))
 ts_socket_env = os.environ.get("TS_SOCKET", "")
+ts_timeout = int(
+    os.environ.get("STARK_API_TIMEOUT", 10)
+)  # seconds to wait for task-spooler commands before giving up to avoid hanging the API on unexpected issues with task-spooler or the underlying system.
+
 
 # --- Shell ---
 shell = os.environ.get("SHELL", "/bin/ash")

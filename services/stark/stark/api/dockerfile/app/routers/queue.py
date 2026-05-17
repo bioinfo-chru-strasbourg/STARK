@@ -13,7 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status  # pyright:
 from fastapi.responses import JSONResponse, PlainTextResponse  # pyright: ignore[reportMissingImports]
 
 from authentication import get_current_user_or_service
-from config import docker_stark_api_log_folder, shell, ts
+from config import docker_stark_api_log_folder, shell, ts, ts_timeout
 from models import User
 from queues import (
     _queue_daemon_is_active,
@@ -54,7 +54,7 @@ def _iter_queue_tasks(queue_name: str, cfg: dict, is_default: bool) -> list:
             capture_output=True,
             text=True,
             check=False,
-            timeout=5,
+            timeout=ts_timeout,
         )
     except subprocess.TimeoutExpired:
         return []
@@ -118,7 +118,7 @@ def _enrich_task_times(task: dict) -> None:
             capture_output=True,
             text=True,
             check=False,
-            timeout=5,
+            timeout=ts_timeout,
         )
         stdout = info_result.stdout
         if state == "finished":
@@ -333,7 +333,7 @@ async def queue_action(
             capture_output=True,
             text=True,
             check=False,
-            timeout=10,
+            timeout=ts_timeout,
         )
         container_match = re.search(r"--name\s+(\S+)", info_result.stdout)
         if container_match:
@@ -343,7 +343,7 @@ async def queue_action(
                 capture_output=True,
                 text=True,
                 check=False,
-                timeout=30,
+                timeout=ts_timeout,
             )
 
     elif action == "analysis":
@@ -353,7 +353,7 @@ async def queue_action(
             capture_output=True,
             text=True,
             check=False,
-            timeout=10,
+            timeout=ts_timeout,
         )
         analysis_name = _extract_analysis_name(info_result.stdout)
         if not analysis_name:
@@ -383,7 +383,7 @@ async def queue_action(
             capture_output=True,
             text=True,
             check=False,
-            timeout=10,
+            timeout=ts_timeout,
         )
         analysis_name = _extract_analysis_name(info_result.stdout)
         if not analysis_name:
@@ -415,7 +415,7 @@ async def queue_action(
             capture_output=True,
             text=True,
             check=False,
-            timeout=10,
+            timeout=ts_timeout,
         )
         if result.returncode != 0:
             return PlainTextResponse(

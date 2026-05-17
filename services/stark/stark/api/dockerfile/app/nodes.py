@@ -36,7 +36,7 @@ import httpx  # pyright: ignore[reportMissingImports]
 
 logger = logging.getLogger(__name__)
 
-from config import NODES_FILE, STARK_API_KEY, STARK_API_SELF_URL, shell, ts
+from config import NODES_FILE, STARK_API_KEY, STARK_API_SELF_URL, shell, ts, ts_timeout
 from queues import _queue_daemon_is_active, _resolve_queue_socket, load_queues
 from tasks import _read_task_slots, _resolve_task_slots
 
@@ -280,7 +280,7 @@ def get_local_metrics() -> dict:
                 capture_output=True,
                 text=True,
                 check=False,
-                timeout=5,
+                timeout=ts_timeout,
             )
             for line in result.stdout.strip().split("\n")[1:]:
                 parts = line.split()

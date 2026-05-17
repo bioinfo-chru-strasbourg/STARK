@@ -11,7 +11,7 @@ from fastapi.responses import PlainTextResponse  # pyright: ignore[reportMissing
 import httpx  # pyright: ignore[reportMissingImports]
 
 from authentication import get_current_user_or_service
-from config import STARK_API_KEY, docker_stark_api_log_folder, ts
+from config import STARK_API_KEY, docker_stark_api_log_folder, ts, ts_timeout
 from models import User
 from nodes import (
     compute_best_node,
@@ -258,7 +258,7 @@ async def relaunch_task(
             capture_output=True,
             text=True,
             check=False,
-            timeout=10,
+            timeout=ts_timeout,
         )
     except subprocess.TimeoutExpired:
         raise HTTPException(
@@ -296,7 +296,7 @@ async def relaunch_task(
             capture_output=True,
             text=True,
             check=False,
-            timeout=10,
+            timeout=ts_timeout,
         )
         if relaunch_result.returncode != 0 or relaunch_result.stderr:
             return PlainTextResponse(
@@ -310,7 +310,7 @@ async def relaunch_task(
             capture_output=True,
             text=True,
             check=False,
-            timeout=10,
+            timeout=ts_timeout,
         )
         if verify_result.returncode == 0 and verify_result.stdout.strip():
             return PlainTextResponse(
