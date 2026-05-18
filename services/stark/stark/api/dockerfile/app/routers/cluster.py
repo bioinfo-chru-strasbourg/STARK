@@ -182,7 +182,9 @@ def list_modules():
         "modules": [
             {
                 "name": name,
-                "description": cfg.get("description", ""),
+                "description": cfg.get("_description", ""),
+                "enable": cfg.get("_enable", True),
+                "available": cfg.get("_available", True),
                 "defaults": cfg.get("defaults", {}),
             }
             for name, cfg in load_modules().items()

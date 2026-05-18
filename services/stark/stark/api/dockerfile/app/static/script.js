@@ -387,9 +387,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 mdl.innerHTML = '';
                 window._modulesMeta = {};
                 (mdata.modules || []).forEach(m => {
+                    if (m.enable === false || m.available === false) return; // skip disabled or unavailable modules
                     const opt = document.createElement('option');
                     opt.value = m.name;
-                    opt.label = m.description ? `${m.name} — ${m.description}` : m.name;
+                    opt.label = m.description ? `${m.description}` : m.name;
                     mdl.appendChild(opt);
                     window._modulesMeta[m.name] = { defaults: m.defaults || {} };
                 });
@@ -834,7 +835,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (memory)        payload.memory = memory;
         if (prioritize)    payload.prioritize = prioritize;
 
-        const resp = await fetch('/analysis/module', {
+        const resp = await fetch('/analysis', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
             body: JSON.stringify(payload),

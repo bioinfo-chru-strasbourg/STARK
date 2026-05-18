@@ -40,6 +40,9 @@ _DANGEROUS_DOCKER_PARAMS_PATTERNS = [
 # Valid docker image name: registry/name:tag — no shell metacharacters
 _VALID_IMAGE_RE = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_.:\-/@]*$")
 
+# Valid Docker container name or ID: alphanumeric start, then alphanumeric / _ . -
+_VALID_CONTAINER_NAME_RE = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_.\-]*$")
+
 # Forbidden docker flags that can lead to privilege escalation or security issues
 _FORBIDDEN_DOCKER_FLAGS = {
     "--name": True,  # Requires a value, but we block any use of --name to prevent container name conflicts
@@ -91,6 +94,15 @@ def _validate_image(image: str) -> None:
     if not _VALID_IMAGE_RE.match(image):
         raise ValueError(
             f"Invalid image name: {image!r}. Only alphanumeric, '_', '.', ':', '-', '/' characters are allowed."
+        )
+
+
+def _validate_container_name(name: str) -> None:
+    """Raise ValueError if the container name or ID contains shell metacharacters."""
+    if not _VALID_CONTAINER_NAME_RE.match(name):
+        raise ValueError(
+            f"Invalid container name: {name!r}. "
+            "Only alphanumeric, '_', '.', '-' characters are allowed, starting with alphanumeric."
         )
 
 
