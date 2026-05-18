@@ -10,8 +10,8 @@ A **FastAPI**-based web service for launching and monitoring [STARK](https://git
 - **REST API** - JSON endpoints consumable by external services (e.g. listeners)
 - **Dual authentication** - JWT bearer tokens for human users + static API key (`X-API-Key`) for service-to-service calls
 - **Role-based access** - `admin` group required for destructive or modification actions (kill, remove, prioritize, relaunch) and for launching new analyses
-- **Module-based analysis** - server-side module registry (`config/modules.json`) maps named modules to Docker images with per-module defaults; the `POST /analysis/module` endpoint always passes the command as direct CLI args to the container
-- **Four task modes** - STARK run, module CLI analysis, custom Docker container command, or custom Docker compose command
+- **Module-based analysis** - server-side module registry (`config/modules.json`) maps named modules to Docker images with per-module defaults
+- **Five task modes** - STARK analysis, module CLI (`module`), Docker run (`image`), Docker exec (`container`), or Docker Compose (`service`)
 - **Multiple named queues** - independent task-spooler daemons, each with its own concurrency setting, configurable via `config/queues.json`
 - **Multiple node cluster** - independent nodes on multiple servers, configurable via `config/nodes.json`
 - **Resources** - tasks are defined with a number of threads (corresponding to slots requested) and memory limit (for docker container)
@@ -203,7 +203,7 @@ app/
 │   ├── queues.json      # Queue definitions (auto-created on first run)
 │   └── users.json       # User database (auto-created on first run)
 ├── routers/
-│   ├── analysis.py      # POST /analysis, POST /analysis/module, POST /relaunch/{id}
+│   ├── analysis.py      # POST /analysis, POST /relaunch/{id}
 │   ├── auth.py          # POST /token, GET /me
 │   ├── cluster.py       # GET /whoami, /metrics, /nodes, /modules, /queues, /cluster/summary, /cluster/tasks
 │   ├── queue.py         # GET /list, GET /queue
@@ -247,7 +247,7 @@ All settings are passed as **environment variables** (e.g. via `docker-compose` 
 | `TS_SLOTS` | (max core) | Number of parallel slots for the **default** queue |
 | `TS_SOCKET` | _(empty)_ | TS_SOCKET path for the **default** queue (set by container) |
 | `SHELL` | `/bin/ash` | Shell used to run queued commands |
-| `DOCKER_STARK_SERVICE_STARK_API_CONTAINER_MOUNT` | _(empty)_ | Extra Docker volume mounts injected into all `command_docker` containers |
+| `DOCKER_STARK_SERVICE_STARK_API_CONTAINER_MOUNT` | _(empty)_ | Extra Docker volume mounts injected into `docker run` and `docker-compose run` containers (when `use_stark_container_mount` is `true`) |
 | `DOCKER_STARK_SERVICE_STARK_API_LOG_FOLDER` | `/STARK/services/stark/stark/api` | Folder where `.json`, `.info` and `.output` files are written |
 | `DOCKER_STARK_SERVICE_STARK_API_RUNS_FOLDER` | `/STARK/input/runs` | Default folder scanned for run directories |
 | `STARK_API_SELF_URL` | _(empty)_ | This node's own public URL (e.g. `http://node1:4200`). Used by the cluster orchestrator to identify which peer is self, avoid forwarding loops, and display the correct node in the cluster view. If not set, the node tries to auto-discover itself by querying each peer's `/whoami` endpoint. **Strongly recommended when using a multi-node setup.** |
@@ -311,7 +311,7 @@ Example of `docker-compose.yml`:
 
 ### Module configuration (`config/modules.json`)
 
-Modules are named Docker-image profiles used by the **STARK Analysis** launch sub-tab and the `POST /analysis/module` endpoint. They are defined in `config/modules.json` and auto-created with a built-in `STARK` default on first start.
+Modules are named Docker-image profiles used by the **STARK Analysis** launch sub-tab and the `POST /analysis` endpoint (with a `command` key). They are defined in `config/modules.json` and auto-created with a built-in `STARK` default on first start.
 
 Each module entry has the following fields:
 
@@ -357,7 +357,7 @@ Example `config/modules.json`:
 **How modules work:**
 
 - Module names are upper-cased (lookup is case-insensitive).
-- The `command` field sent in `POST /analysis/module` is always forwarded as **direct CLI args** to the container: `docker run <image> <command>`.
+- The `command` field sent to `POST /analysis` is always forwarded as **direct CLI args** to the container: `docker run <image> <command>`.
 - If `module` is absent from the request, the server falls back to the first configured module. If `module` is provided but empty or unknown, the server returns HTTP 400 listing available modules.
 - The `GET /modules` endpoint exposes `name`, `description`, and `defaults` for each module (image is not exposed for security).
 
@@ -418,12 +418,12 @@ Example `config/queues.json`:
 
 **Choosing the target queue** - add a `"queue"` key to any `/analysis` request body:
 
-Command with Docker
+Command with Docker:
 
 ```json
 {
-  "command_docker": "sh -c 'sleep 10 && echo Hello World'", 
-  "image": "alpine", 
+  "command": "sh -c 'sleep 10 && echo Hello World'",
+  "image": "alpine",
   "analysis_name": "cmd_docker",
   "queue": "medium"
 }
@@ -657,8 +657,7 @@ X-API-Key: <STARK_API_KEY>
 | `GET` | `/` | JWT | Web dashboard |
 | `POST` | `/token` | - | Obtain JWT token |
 | `GET` | `/me` | JWT | Current user info |
-| `POST` | `/analysis` | JWT / API-Key (admin) | Launch a task (with intelligent cluster routing) |
-| `POST` | `/analysis/module` | JWT / API-Key (admin) | Launch a module CLI analysis (command forwarded as-is to the container) |
+| `POST` | `/analysis` | JWT / API-Key (admin) | Launch a task — dispatch by context key: `container` (exec), `service` (compose), `image` (run), `module` (CLI), else STARK analysis; cluster-routed |
 | `GET` | `/modules` | JWT / API-Key | List configured modules with their defaults |
 | `GET` | `/queues` | JWT / API-Key | List configured queue names |
 | `GET` | `/list` | - | List all tasks (all queues, no auth) |
@@ -696,13 +695,15 @@ Returns the current user's username and groups.
 
 Launch a new task. **Admin or service key only.**
 
-The task type is determined by which key is present in the JSON body. An optional `"queue"` key routes the task to any configured queue.
+The task mode is determined by which **context key** is present in the JSON body. The command to execute is always passed in the `"command"` key. An optional `"queue"` key routes the task to any configured queue.
 
-| Key present | Mode | Description |
+| Context key | Mode | Description |
 | --- | --- | --- |
-| `run` | **STARK analysis** | Runs a full STARK Docker analysis for the given run name |
-| `command_docker` | **Docker command** | Runs a command in a new ephemeral Docker container |
-| `command_docker_compose` | **Docker compose command** | Runs a command in a Docker container using a Docker compose configuration |
+| `container` | **Docker exec** | Runs `command` inside an already-running container via `docker exec` |
+| `service` | **Docker compose** | Runs `command` via `docker-compose run` (requires `docker_compose_file`) |
+| `image` | **Docker run** | Runs `command` in a new ephemeral Docker container via `docker run` |
+| `module` | **Module CLI** | Runs `command` as direct CLI args to the configured module container (image resolved server-side) |
+| *(none)* | **STARK analysis** | Runs a full STARK Docker analysis — use `run` key or full JSON params |
 
 **Common optional keys (all modes):**
 
@@ -715,6 +716,46 @@ The task type is determined by which key is present in the JSON body. An optiona
 | `prioritize` | Prioritize task once it is launched. |
 
 **Response:** `STARK.<ID>.<analysisIDNAME>` (plain text, 200) or `Launch failed: <reason>` (plain text, 400), `Relaunch failed: <reason>` (plain text, 500), authentication failure (JSON, 403).
+
+#### Mode 0 - Module CLI (`module` + `command`)
+
+Runs `command` as **direct CLI args** in the module container:
+
+```
+docker run <image> <command>
+```
+
+The module image and extra Docker parameters are resolved server-side from `config/modules.json`. Sending the `module` key in the request selects this mode; without it, the request is treated as a STARK JSON analysis.
+
+| JSON key | Required | Description |
+| --- | --- | --- |
+| `module` | Yes* | Context key that selects Module CLI mode. Module name (case-insensitive); empty or `null` defaults to the first configured module; unknown name → HTTP 400. |
+| `command` | Yes | CLI argument string passed directly to the container (e.g. `--run=MY_RUN --sample_filter=Sample1`) |
+| `analysis_name` | No | Human-readable task label |
+| `queue` | No | Target queue (defaults to first queue) |
+| `threads` | No | Slots consumed (`-N`); see common optional keys above |
+| `memory` | No | Memory limit for the Docker container |
+| `prioritize` | No | Prioritize task once it is launched |
+
+Example:
+
+```json
+{
+  "module": "STARK",
+  "command": "--run=MY_RUN --sample_filter=Sample1,Sample2",
+  "queue": "stark",
+  "threads": 8
+}
+```
+
+Example with curl:
+
+```bash
+curl -s -X POST "http://localhost:8000/analysis" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"module": "STARK", "command": "--run=MY_RUN", "queue": "stark"}'
+```
 
 #### Mode 1 - STARK analysis (`run`)
 
@@ -778,29 +819,29 @@ curl -s -X POST "<http://localhost:8000/analysis>" \
   -d '{"run": "MY_RUN", "analysis_name": "MY_RUN_analysis"}' 
 ```
 
-#### Mode 2 - Docker command (`command_docker`)
+#### Mode 2 - Docker run (`image` + `command`)
 
-Runs a command inside a **new ephemeral Docker container** (`docker run --rm`). The container receives the predefined volume mounts from `DOCKER_STARK_SERVICE_STARK_API_CONTAINER_MOUNT` and a generated `--name` for identification and cleanup.
+Runs `command` inside a **new ephemeral Docker container** (`docker run --rm`). The container receives the predefined volume mounts from `DOCKER_STARK_SERVICE_STARK_API_CONTAINER_MOUNT` when `use_stark_container_mount` is `true`, and a generated `--name` for identification and cleanup.
 
 | JSON key | Required | Description |
 | --- | --- | --- |
-| `command_docker` | Yes | Command to run inside the container |
-| `image` | Yes | Docker image name (e.g. `alpine`, `myregistry/myimage:1.0`) |
+| `image` | Yes | Docker image name (e.g. `alpine`, `myregistry/myimage:1.0`) — context key that selects this mode |
+| `command` | Yes | Command to run inside the container |
 | `docker_extra_params` | No | Additional `docker run` flags (e.g. `-e MY_VAR=value`, `--entrypoint /bin/sh`) |
-| `use_stark_container_mount` | No | Additional predefined volume mounts (e.g. `true`, `false`, default `false`) |
+| `use_stark_container_mount` | No | Append the STARK volume mounts (default `false`) |
 | `analysis_name` | No | Human-readable task label |
 | `queue` | No | Target queue (defaults to first queue) |
-| `threads` | No | Slots consumed (`-N`); see common optional keys above |
-| `memory` | No | Memory limit for docker container |
+| `threads` | No | Slots consumed (`-N`) and `--cpus` limit; see common optional keys above |
+| `memory` | No | Docker memory limit (e.g. `4G`) |
 | `prioritize` | No | Prioritize task once it is launched |
 
-Example of custom docker command:
+Example:
 
 ```json
 {
-  "command_docker": "python3 /scripts/run.py --input /data/sample.vcf",
   "image": "myregistry/mypipeline:1.0",
-  "docker_extra_params": " -v ${HOME}/data:/data/ -e MY_VAR=value",
+  "command": "python3 /scripts/run.py --input /data/sample.vcf",
+  "docker_extra_params": "-v ${HOME}/data:/data/ -e MY_VAR=value",
   "use_stark_container_mount": false,
   "analysis_name": "my_pipeline",
   "queue": "medium",
@@ -809,12 +850,12 @@ Example of custom docker command:
 }
 ```
 
-Example of docker command with STARK data automatically mounted:
+Example with STARK volumes automatically mounted:
 
 ```json
 {
-  "command_docker": "python3 /scripts/run.py --input /STARK/data/sample.vcf",
   "image": "myregistry/mypipeline:1.0",
+  "command": "python3 /scripts/run.py --input /STARK/data/sample.vcf",
   "docker_extra_params": "-e MY_VAR=value",
   "use_stark_container_mount": true,
   "analysis_name": "my_pipeline",
@@ -824,59 +865,59 @@ Example of docker command with STARK data automatically mounted:
 }
 ```
 
-Example of request with curl:
+Example with curl:
 
 ```bash
 curl -s -X POST "http://localhost:8000/analysis" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"command_docker": "echo hello", "image": "alpine", "analysis_name": "test_docker", "queue": "light"}'
+  -d '{"image": "alpine", "command": "echo hello", "analysis_name": "test_docker", "queue": "light"}'
 ```
 
 > **Security:**
 >
-> - `image` must match `[a-zA-Z0-9_.:/\-/@]` - shell metacharacters are rejected.
+> - `image` must match `[a-zA-Z0-9_.:/\-/@]` — shell metacharacters are rejected.
 > - `docker_extra_params` is validated against a blocklist: `--privileged`, high-privilege `--cap-add` values (`SYS_ADMIN`, `SYS_PTRACE`, `NET_ADMIN`, `ALL`), `--pid host`, `--network host`, host-root mounts (`-v /:`), sensitive path mounts (`-v /etc:`, `-v /root:`, `-v /proc:`, etc.) are all rejected.
 >
 > **Note:**
 >
-> - `threads` is defined to select slots in queue, and constrain the resources themselves, using `--cpus` parameter. To constrain memory, use `memory` json key, or `--memory` parameter within `docker_extra_params` parameter.
+> - `threads` sets both the task-spooler slot count and the Docker `--cpus` limit. To constrain memory, use the `memory` key or `--memory` within `docker_extra_params`.
 
-#### Mode 3 - Docker compose command (`command_docker_compose`)
+#### Mode 3 - Docker compose (`service` + `command`)
 
-Runs a command inside a **new ephemeral Docker container** with a docker compose configuration (`docker-compose -f docker-compose.yml run --rm`). The container receives the predefined volume mounts from `DOCKER_STARK_SERVICE_STARK_API_CONTAINER_MOUNT` and a generated `--name` for identification and cleanup.
+Runs `command` via **`docker-compose run --rm`** using the specified service and compose file. A generated `--name` is used for identification and cleanup.
 
 | JSON key | Required | Description |
 | --- | --- | --- |
-| `command_docker_compose` | Yes | Command to run inside the container |
-| `docker_compose_file` | Yes | Docker compose configuration file (e.g. `docker-compose.yml`) |
-| `service` | Yes | Docker compose configuration file (e.g. `my_service`) |
-| `docker_extra_params` | No | Additional `docker compose run` flags (e.g. `-e MY_VAR=value`, `--entrypoint /bin/sh`) |
-| `use_stark_container_mount` | No | Additional predefined volume mounts (e.g. `true`, `false`, default `false`) |
+| `service` | Yes | Docker Compose service name — context key that selects this mode |
+| `docker_compose_file` | Yes | Path to the docker-compose YAML file (e.g. `docker-compose.yml`) |
+| `command` | Yes | Command to run inside the service container |
+| `docker_extra_params` | No | Additional `docker-compose run` flags (e.g. `-e MY_VAR=value`, `--entrypoint /bin/sh`) |
+| `use_stark_container_mount` | No | Append the STARK volume mounts (default `false`) |
 | `analysis_name` | No | Human-readable task label |
 | `queue` | No | Target queue (defaults to first queue) |
 | `threads` | No | Slots consumed (`-N`); see common optional keys above |
 
-Example of docker compose command:
+Example:
 
 ```json
 {
-  "command_docker_compose": "python3 /scripts/run.py --input /data/sample.vcf",
-  "docker_compose_file": "docker-compose.yml",
   "service": "my_service",
+  "docker_compose_file": "docker-compose.yml",
+  "command": "python3 /scripts/run.py --input /data/sample.vcf",
   "docker_extra_params": "-e MY_VAR=value",
   "analysis_name": "my_pipeline",
   "queue": "medium"
 }
 ```
 
-Example of request with curl:
+Example with curl:
 
 ```bash
 curl -s -X POST "http://localhost:8000/analysis" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"command_docker_compose": "echo hello", "docker_compose_file": "docker-compose.yml", "service": "my_service", "analysis_name": "test_docker", "queue": "light"}'
+  -d '{"service": "my_service", "docker_compose_file": "docker-compose.yml", "command": "echo hello", "analysis_name": "test_docker", "queue": "light"}'
 ```
 
 > **Security:**
@@ -885,7 +926,54 @@ curl -s -X POST "http://localhost:8000/analysis" \
 >
 > **Note:**
 >
-> - `threads` is defined to select slots in queue, but do not constrain the resources themselves, because docker compose does not allow this parameter. Ensure that `docker-compose.yml` defines resources parameters (e.g. `cpus` and `memory`).
+> - `threads` sets the task-spooler slot count but does **not** constrain container resources (Docker Compose does not accept `--cpus`). Define resource limits directly in `docker-compose.yml` (e.g. `cpus` and `memory` under `deploy.resources`).
+
+#### Mode 4 - Docker exec (`container` + `command`)
+
+Runs `command` inside an **already-running container** via `docker exec`. The target container is not stopped on completion; only the exec process is killed on TERM/INT.
+
+This mode is useful for sending a command to a long-running service container without spawning a new container.
+
+| JSON key | Required | Description |
+| --- | --- | --- |
+| `container` | Yes | Name or ID of an already-running container — context key that selects this mode |
+| `command` | Yes | Command to run inside the container |
+| `docker_extra_params` | No | Extra `docker exec` flags (e.g. `-e VAR=val`, `-w /workdir`, `-u user`) |
+| `analysis_name` | No | Human-readable task label |
+| `queue` | No | Target queue (defaults to first queue) |
+| `threads` | No | Slots consumed (`-N`); see common optional keys above |
+| `prioritize` | No | Prioritize task once it is launched |
+
+Example:
+
+```json
+{
+  "container": "stark_daemon",
+  "command": "--run=MY_RUN --sample_filter=Sample1",
+  "analysis_name": "MY_RUN_exec",
+  "queue": "stark",
+  "threads": 4
+}
+```
+
+Example with curl:
+
+```bash
+curl -s -X POST "http://localhost:8000/analysis" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"container": "stark_daemon", "command": "echo hello", "analysis_name": "test_exec"}'
+```
+
+> **Security:**
+>
+> - `container` must match `[a-zA-Z0-9][a-zA-Z0-9_.\-]*` — other characters are rejected.
+> - `docker_extra_params` is validated against the same blocklist as other modes.
+>
+> **Note:**
+>
+> - `docker exec` does not support `--cpus` or `--memory`; those resource flags are ignored. Thread count only affects the task-spooler slot count (`-N`).
+> - The target container must already be running when the task is dequeued. If it is stopped in the meantime, the exec will fail.
 
 #### `analysis_name` sanitisation
 
@@ -894,50 +982,6 @@ In all modes, `analysis_name` is sanitised before use as a task label and Docker
 - Characters outside `[A-Za-z0-9._-]` are replaced with `_`
 - Truncated to 64 characters (Docker container name limit)
 - Defaults to `UNKNOWN` if absent or empty
-
-### `POST /analysis/module`
-
-Launch a module analysis. **Admin or service key only.**
-
-The `command` value is always forwarded as **direct CLI args** to the container:
-
-```
-docker run <image> <command>
-```
-
-The module image and extra Docker parameters are resolved server-side from `config/modules.json`.
-
-| JSON key | Required | Description |
-| --- | --- | --- |
-| `module` | Yes | Module name (case-insensitive). Must exist in `config/modules.json`. Returns HTTP 400 if absent or unknown |
-| `command` | Yes | CLI argument string passed directly to the container (e.g. `--run=MY_RUN --sample_filter=Sample1`) |
-| `analysis_name` | No | Human-readable task label |
-| `queue` | No | Target queue (defaults to first queue) |
-| `threads` | No | Slots consumed (`-N`); see common optional keys above |
-| `memory` | No | Memory limit for the Docker container |
-| `prioritize` | No | Prioritize task once it is launched |
-
-Example:
-
-```json
-{
-  "module": "STARK",
-  "command": "--run=MY_RUN --sample_filter=Sample1,Sample2",
-  "queue": "stark",
-  "threads": 8
-}
-```
-
-Example with curl:
-
-```bash
-curl -s -X POST "http://localhost:8000/analysis/module" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"module": "STARK", "command": "--run=MY_RUN", "queue": "stark"}'
-```
-
-**Response:** `STARK.<ID>.<analysisIDNAME>` (plain text, 200) or `Launch failed: <reason>` (plain text, 400), `Relaunch failed: <reason>` (plain text, 500), authentication failure (JSON, 403).
 
 ### `GET /queues`
 
@@ -1149,6 +1193,6 @@ curl -s http://localhost:4200/cluster/tasks | python3 -m json.tool
 | JWT secret | Set a strong `SECRET_KEY` env var; default is an insecure placeholder |
 | API key | Change `STARK_API_KEY` from its default before deployment |
 | Shell injection (`command`) | Blocklist of dangerous patterns; runs inside the container, not on the host |
-| Shell injection (`command_docker`) | `image` character whitelist; `docker_extra_params` privilege-escalation blocklist |
+| Shell injection (Docker modes) | `image` character whitelist; `container` name validation; `docker_extra_params` privilege-escalation blocklist |
 | Queue enumeration | Unknown queue names return an explicit 400 with the list of valid queues |
-| Privilege escalation | `--privileged`, `--cap-add SYS_ADMIN`, host path mounts are blocked in `command_docker` |
+| Privilege escalation | `--privileged`, `--cap-add SYS_ADMIN`, host path mounts are blocked in Docker run and compose modes |

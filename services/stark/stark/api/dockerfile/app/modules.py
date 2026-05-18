@@ -11,7 +11,7 @@ def load_modules() -> dict:
 
     Returns a dict keyed by module name (upper-cased). Each entry contains:
       - image (str): Docker image to use — server-side only, never overridable by clients
-      - description (str): Human-readable description
+      - _description (str): Human-readable description
       - docker_extra_params (str): Extra Docker flags added by the module
       - use_stark_container_mount (bool): Whether to mount the STARK volumes
       - defaults (dict): Default values for queue, threads, memory, prioritize
@@ -19,10 +19,13 @@ def load_modules() -> dict:
     If the file does not exist it is created with the built-in STARK default.
     If the file is malformed the built-in default is returned.
     """
+
     default = {
         "STARK": {
+            "_description": "Default STARK analysis module",
+            "_enable": True,
+            "_available": True,
             "image": docker_stark,
-            "description": "Default STARK analysis module",
             "docker_extra_params": "",
             "use_stark_container_mount": True,
             "defaults": {
@@ -45,26 +48,12 @@ def load_modules() -> dict:
     except (FileNotFoundError, json.JSONDecodeError):
         return default
 
-    # Normalise: upper-case keys, fill missing optional fields
+    # Normalise: upper-case keys, filter out disabled modules and non-dict entries, but keep the rest of the config as-is for flexibility.
     modules: dict = {}
     for name, cfg in raw.items():
-        if not isinstance(cfg, dict) or "image" not in cfg:
-            continue
-        key = name.upper()
-        modules[key] = {
-            "image": str(cfg["image"]),
-            "description": str(cfg.get("description", "")),
-            "docker_extra_params": str(cfg.get("docker_extra_params", "")),
-            "use_stark_container_mount": bool(
-                cfg.get("use_stark_container_mount", True)
-            ),
-            "defaults": {
-                "queue": cfg.get("defaults", {}).get("queue") or None,
-                "threads": cfg.get("defaults", {}).get("threads") or None,
-                "memory": cfg.get("defaults", {}).get("memory") or None,
-                "prioritize": bool(cfg.get("defaults", {}).get("prioritize", False)),
-            },
-        }
+        if isinstance(cfg, dict) and ("_enable" not in cfg or cfg["_enable"]):
+            key = name.upper()
+            modules[key] = cfg
 
     return modules if modules else default
 
