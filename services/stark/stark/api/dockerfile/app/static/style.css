@@ -629,7 +629,7 @@ pre.inline-detail {
 
 .cluster-tasks-table tr:hover td { background: #f0f4f8; }
 
-.cluster-no-peers {
+.cluster-no-nodes {
     padding: 1rem;
     background: #fff3cd;
     border: 1px solid #ffc107;

@@ -6,7 +6,7 @@ import re
 import subprocess
 from typing import Optional
 
-from config import QUEUES_FILE, ts, ts_savelist, ts_slots, ts_socket_env
+from config import QUEUES_FILE, ts, ts_savelist, ts_slots, ts_socket_env, ts_timeout
 
 
 def load_queues() -> dict:
@@ -103,6 +103,7 @@ def _prepare_queue_for_submission(queue_name: Optional[str] = None) -> tuple:
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
+            timeout=ts_timeout,
         )
     return _ts_env, slots
 

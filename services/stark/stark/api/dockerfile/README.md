@@ -13,7 +13,7 @@ A **FastAPI**-based web service for launching and monitoring [STARK](https://git
 - **Module-based analysis** - server-side module registry (`config/modules.json`) maps named modules to Docker images with per-module defaults; the `POST /analysis/module` endpoint always passes the command as direct CLI args to the container
 - **Four task modes** - STARK run, module CLI analysis, custom Docker container command, or custom Docker compose command
 - **Multiple named queues** - independent task-spooler daemons, each with its own concurrency setting, configurable via `config/queues.json`
-- **Multiple node cluster** - independent nodes on multiple servers, configurable via `config/peers.json`
+- **Multiple node cluster** - independent nodes on multiple servers, configurable via `config/nodes.json`
 - **Resources** - tasks are defined with a number of threads (corresponding to slots requested) and memory limit (for docker container)
 - **Live queue** - auto-refreshing task table (running -> queued -> finished) with per-node and per-queue context on every action
 - **State colour coding** - running (orange), queued (grey), finished success (green), finished failed (red)
@@ -45,7 +45,7 @@ The dashboard has five top-level tabs:
 
 ### Analysis tab
 
-Displays an aggregation of all tasks from all nodes defined in `config/peers.json`.
+Displays an aggregation of all tasks from all nodes defined in `config/nodes.json`.
 
 ![STARKUB Analyses](app/images/analyses.png)
 
@@ -100,7 +100,7 @@ Response shows the analysis ID and name (available in the Analyses tab), with gr
 
 ### Cluster tab
 
-Displays aggregated information from all nodes defined in `config/peers.json`.
+Displays aggregated information from all nodes defined in `config/nodes.json`.
 
 ![STARKUB cluster view](app/images/cluster.png)
 
@@ -192,20 +192,20 @@ app/
 ├── authentication.py    # JWT + API key auth, user loading
 ├── config.py            # All constants and environment variables
 ├── models.py            # Pydantic models (Token, User)
-├── peers.py             # Cluster/orchestrator logic (peer discovery, routing, metrics)
+├── nodes.py             # Cluster/orchestrator logic (node discovery, routing, metrics)
 ├── queues.py            # task-spooler queue management
 ├── security.py          # Input validation (command, image, docker_extra_params)
 ├── modules.py           # Module registry loader and resolver
 ├── tasks.py             # Task build & submission logic
 ├── config/
 │   ├── modules.json     # Module registry (auto-created on first run)
-│   ├── peers.json       # Cluster peer list (auto-created on first run)
+│   ├── nodes.json       # Cluster node list (auto-created on first run)
 │   ├── queues.json      # Queue definitions (auto-created on first run)
 │   └── users.json       # User database (auto-created on first run)
 ├── routers/
 │   ├── analysis.py      # POST /analysis, POST /analysis/module, POST /relaunch/{id}
 │   ├── auth.py          # POST /token, GET /me
-│   ├── cluster.py       # GET /whoami, /metrics, /peers, /modules, /queues, /cluster/summary, /cluster/tasks
+│   ├── cluster.py       # GET /whoami, /metrics, /nodes, /modules, /queues, /cluster/summary, /cluster/tasks
 │   ├── queue.py         # GET /list, GET /queue
 │   └── ui.py            # GET / (dashboard)
 ├── static/
@@ -444,35 +444,35 @@ If omitted, the first queue in `queues.json` is used.
 
 ## Cluster / Multi-node orchestration
 
-Several STARKUB instances can be linked together into a lightweight cluster. Each node keeps its own queues and task-spooler daemons; the cluster layer adds **peer discovery**, **intelligent routing**, and **aggregated monitoring** - without any external coordinator.
+Several STARKUB instances can be linked together into a lightweight cluster. Each node keeps its own queues and task-spooler daemons; the cluster layer adds **node discovery**, **intelligent routing**, and **aggregated monitoring** - without any external coordinator.
 
 ![STARKUB cluster view](app/images/cluster.png)
 
 ### How it works
 
-1. Each node holds a `config/peers.json` listing all known nodes (including itself).
-2. When a `POST /analysis` request arrives and the node is **not** already handling a forwarded request, it collects queue metrics from all reachable peers and from itself.
-3. It picks the **best peer** using the prioritize method:
+1. Each node holds a `config/nodes.json` listing all known nodes (including itself).
+2. When a `POST /analysis` request arrives and the node is **not** already handling a forwarded request, it collects queue metrics from all reachable nodes and from itself.
+3. It picks the **best node** using the prioritize method:
 
     - calculate delta as overload distance: `delta = available - requested`
-    - First classify peers by capability: can this peer satisfy the request (delta >= 0) or not (delta < 0)?
-    - Among capable peers, prefer those that are not overloaded (delta >= 0) over those that are overload (delta < 0).
+    - First classify nodes by capability: can this node satisfy the request (delta >= 0) or not (delta < 0)?
+    - Among capable nodes, prefer those that are not overloaded (delta >= 0) over those that are overload (delta < 0).
     - Then minimize overload (negative delta) or waste (positive delta).
     - Penalize overload more heavily than waste by making it a primary sorting key.
 
-4. If the best peer is a remote node, the request is **transparently forwarded** (`httpx`) with the `X-STARK-Forwarded: 1` header to prevent routing loops.
-5. If the best peer cannot be reached, the node falls back to **local execution**.
+4. If the best node is a remote node, the request is **transparently forwarded** (`httpx`) with the `X-STARK-Forwarded: 1` header to prevent routing loops.
+5. If the best node cannot be reached, the node falls back to **local execution**.
 6. Number of threads is adjusted if the queue can not reach the request number (i.e. threads = max(slots) for the queue if threads > max(slots))
 
 > No external message broker, no shared database, no Kubernetes required.
 
-### Peer configuration (`config/peers.json`)
+### Node configuration (`config/nodes.json`)
 
 Auto-created with an empty template on first start. Add one entry per node:
 
 ```json
 {
-  "peers": [
+  "nodes": [
     { "name": "node1", "url": "http://node1:4200" },
     { "name": "node2", "url": "http://node2:4210" },
     { "name": "node3", "url": "http://node3:4211" }
@@ -487,7 +487,7 @@ Nodes can be deployed on same server, with different port (see `docker-compose.y
 
 ```json
 {
-  "peers": [
+  "nodes": [
     { "name": "server1-node1", "url": "http://server1:4200" },
     { "name": "server2-node1", "url": "http://server2:4200" },
     { "name": "server2-node2", "url": "http://server2:4201" }
@@ -495,7 +495,7 @@ Nodes can be deployed on same server, with different port (see `docker-compose.y
 }
 ```
 
-If the file is empty or contains no peers, the node operates in **standalone mode** and all requests are executed locally.
+If the file is empty or contains no nodes, the node operates in **standalone mode** and all requests are executed locally.
 
 ### Self-identification
 
@@ -517,7 +517,7 @@ This is used to:
 - Prevent infinite-forwarding loops
 - Mark the correct node as "online" in the cluster summary
 
-Without `STARK_API_SELF_URL`, the node attempts auto-discovery by probing each peer's `/whoami` endpoint and comparing hostnames (slower, less reliable).
+Without `STARK_API_SELF_URL`, the node attempts auto-discovery by probing each node's `/whoami` endpoint and comparing hostnames (slower, less reliable).
 
 ### Docker Compose example (3-nodes on same server)
 
@@ -551,13 +551,13 @@ services:
       - ./config:/app/config
 ```
 
-All three nodes share the same `config/peers.json` and `config/queues.json` via the mounted volume. Any node can accept requests and route them to the least-loaded peer considered the queues.
+All three nodes share the same `config/nodes.json` and `config/queues.json` via the mounted volume. Any node can accept requests and route them to the least-loaded node considered the queues.
 
 These nodes can be configured separately, especially to configure queues with different `queues.json` (e.g. `config/node1/queues.json`, `config/node2/queues.json`, `config/node3/queues.json`).
 
 These services can be run on multiple servers (e.g. each node on a different server to manage a cluster). This configuration to launch docker compose in each server.
 
-Example of multi-server and multi-nodes configuration, with common peers and users configuration:
+Example of multi-server and multi-nodes configuration, with common nodes and users configuration:
 
 ```yaml
 # Server1
@@ -569,7 +569,7 @@ services:
       STARK_API_SELF_URL: http://server:4200
       STARK_API_KEY: shared_secret
     volumes:
-      - ./config/peers.json:/app/config/peers.json
+      - ./config/nodes.json:/app/config/nodes.json
       - ./config/users.json:/app/config/users.json
       - ./config/server1/node1/queues.json:/app/config/queues.json
 ```
@@ -585,7 +585,7 @@ services:
       STARK_API_SELF_URL: http://server:4200
       STARK_API_KEY: shared_secret
     volumes:
-      - ./config/peers.json:/app/config/peers.json
+      - ./config/nodes.json:/app/config/nodes.json
       - ./config/users.json:/app/config/users.json
       - ./config/server2/node1/queues.json:/app/config/queues.json
 
@@ -596,7 +596,7 @@ services:
       STARK_API_SELF_URL: http://server:4201
       STARK_API_KEY: shared_secret
     volumes:
-      - ./config/peers.json:/app/config/peers.json
+      - ./config/nodes.json:/app/config/nodes.json
       - ./config/users.json:/app/config/users.json
       - ./config/server2/node2/queues.json:/app/config/queues.json
 ```
@@ -664,9 +664,9 @@ X-API-Key: <STARK_API_KEY>
 | `GET` | `/list` | - | List all tasks (all queues, no auth) |
 | `GET` | `/queue` | JWT / API-Key | Query or act on a queue |
 | `POST` | `/relaunch/{ts_id}` | JWT / API-Key (admin) | Re-queue a finished task |
-| `GET` | `/whoami` | - | Returns this node's hostname (used for peer self-discovery) |
-| `GET` | `/metrics` | - | Returns local queue metrics (used by peer nodes) |
-| `GET` | `/peers` | - | Returns the configured peer list |
+| `GET` | `/whoami` | - | Returns this node's hostname (used for node self-discovery) |
+| `GET` | `/metrics` | - | Returns local queue metrics (used by other nodes) |
+| `GET` | `/nodes` | - | Returns the configured node list |
 | `GET` | `/cluster/summary` | - | Aggregated resources table for all nodes |
 | `GET` | `/cluster/tasks` | - | Consolidated task list from all nodes |
 | `GET` | `/cluster/archives` | - | Consolidated task list from archived configured files |
@@ -1076,7 +1076,7 @@ The relaunched task is re-submitted to the same queue as the original (queue inf
 
 ### `GET /whoami`
 
-Returns this node's hostname. Used by peers during self-discovery when `STARK_API_SELF_URL` is not set.
+Returns this node's hostname. Used by nodes during self-discovery when `STARK_API_SELF_URL` is not set.
 
 **Response:** `{ "id": "node1" }`
 
@@ -1093,11 +1093,11 @@ Returns the local queue metrics. Called by other nodes to compute routing scores
 }
 ```
 
-### `GET /peers`
+### `GET /nodes`
 
-Returns the list of configured peers from `config/peers.json`.
+Returns the list of configured nodes from `config/nodes.json`.
 
-**Response:** `{ "peers": [{ "name": "node1", "url": "http://node1:4200" }, ...] }`
+**Response:** `{ "nodes": [{ "name": "node1", "url": "http://node1:4200" }, ...] }`
 
 ### `GET /cluster/summary`
 

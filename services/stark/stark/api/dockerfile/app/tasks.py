@@ -15,6 +15,7 @@ from config import (
     docker_stark_api_runs_folder,
     docker_stark_container_mount,
     ts,
+    ts_timeout,
 )
 from queues import _prepare_queue_for_submission
 from security import (
@@ -167,11 +168,11 @@ def _queue_task(my_cmd: str, prioritize: bool = False, ts_cmd: str = "") -> str:
                 shell=True,
                 capture_output=True,
                 text=True,
-                timeout=10,
+                timeout=ts_timeout,
             )
         except subprocess.TimeoutExpired as exc:
             raise RuntimeError(
-                f"timed out after 10 seconds while reprioritizing task {task_id} "
+                f"timed out after {ts_timeout} seconds while reprioritizing task {task_id} "
                 f"with '{ts_cmd} -u {task_id}'"
             ) from exc
         if reprioritize_result.returncode != 0:

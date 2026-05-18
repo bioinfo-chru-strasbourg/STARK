@@ -11,15 +11,15 @@ from fastapi.responses import PlainTextResponse  # pyright: ignore[reportMissing
 import httpx  # pyright: ignore[reportMissingImports]
 
 from authentication import get_current_user_or_service
-from config import STARK_API_KEY, docker_stark_api_log_folder, ts
+from config import STARK_API_KEY, docker_stark_api_log_folder, ts, ts_timeout
 from models import User
-from peers import (
-    compute_best_peer,
+from nodes import (
+    compute_best_node,
     forward_request,
     get_local_metrics,
-    get_peers_metrics,
-    get_self_url,
-    load_peers,
+    get_nodes_metrics,
+    resolve_self_url,
+    load_nodes,
 )
 from queues import get_queue_env, load_queues
 from modules import apply_module_defaults, resolve_module
@@ -79,11 +79,11 @@ async def stark_launch(
     Routing logic (transparent to the caller):
       1. If the request carries X-STARK-Forwarded (already routed once) ->
          run locally immediately to prevent loops.
-      2. If no peers are configured -> run locally.
-      3. Collect metrics from all peers + self asynchronously.
-      4. Select the peer with the most available capacity for the requested queue.
-      5. If the best peer is this node (or self-URL is unknown) -> run locally.
-      6. Otherwise -> forward the request transparently to the best peer.
+      2. If no nodes are configured -> run locally.
+      3. Collect metrics from all nodes + self asynchronously.
+      4. Select the node with the most available capacity for the requested queue.
+      5. If the best node is this node (or self-URL is unknown) -> run locally.
+      6. Otherwise -> forward the request transparently to the best node.
     """
     if authorized != "service":
         if not isinstance(authorized, User) or "admin" not in authorized.groups:
@@ -116,15 +116,15 @@ async def stark_launch(
 
     json_input["queue"] = queue_name  # ensure queue is set for forwarded request
 
-    # --- Routing (only on first hop when peers are configured) ---
-    if not already_forwarded and load_peers():
+    # --- Routing (only on first hop when nodes are configured) ---
+    if not already_forwarded and load_nodes():
 
-        # Gather metrics: peers + self
-        peers_metrics = await get_peers_metrics()
-        self_url = get_self_url()
+        # Gather metrics: nodes + self
+        nodes_metrics = await get_nodes_metrics()
+        self_url = await resolve_self_url()
         if self_url:
-            peers_metrics[self_url] = get_local_metrics()
-        target = compute_best_peer(queue_name, peers_metrics, json_input)
+            nodes_metrics[self_url] = get_local_metrics()
+        target = compute_best_node(queue_name, nodes_metrics, json_input)
 
         if target:
             try:
@@ -202,14 +202,14 @@ async def module_launch(
         queue_name = default_queue
     json_input["queue"] = queue_name
 
-    # --- Routing (same peer logic as /analysis) ---
+    # --- Routing (same node logic as /analysis) ---
     already_forwarded = request.headers.get("X-STARK-Forwarded", "0") == "1"
-    if not already_forwarded and load_peers():
-        peers_metrics = await get_peers_metrics()
-        self_url = get_self_url()
+    if not already_forwarded and load_nodes():
+        nodes_metrics = await get_nodes_metrics()
+        self_url = await resolve_self_url()
         if self_url:
-            peers_metrics[self_url] = get_local_metrics()
-        target = compute_best_peer(queue_name, peers_metrics, json_input)
+            nodes_metrics[self_url] = get_local_metrics()
+        target = compute_best_node(queue_name, nodes_metrics, json_input)
         if target:
             try:
                 return await forward_request(target, request)
@@ -258,7 +258,7 @@ async def relaunch_task(
             capture_output=True,
             text=True,
             check=False,
-            timeout=10,
+            timeout=ts_timeout,
         )
     except subprocess.TimeoutExpired:
         raise HTTPException(
@@ -296,7 +296,7 @@ async def relaunch_task(
             capture_output=True,
             text=True,
             check=False,
-            timeout=10,
+            timeout=ts_timeout,
         )
         if relaunch_result.returncode != 0 or relaunch_result.stderr:
             return PlainTextResponse(
@@ -310,7 +310,7 @@ async def relaunch_task(
             capture_output=True,
             text=True,
             check=False,
-            timeout=10,
+            timeout=ts_timeout,
         )
         if verify_result.returncode == 0 and verify_result.stdout.strip():
             return PlainTextResponse(
@@ -354,15 +354,15 @@ async def relaunch_task(
             status_code=500,
         )
 
-    # Route to the best peer (same logic as a new analysis submission).
-    if load_peers():
+    # Route to the best node (same logic as a new analysis submission).
+    if load_nodes():
 
-        # Gather metrics: peers + self
-        peers_metrics = await get_peers_metrics()
-        self_url = get_self_url()
+        # Gather metrics: nodes + self
+        nodes_metrics = await get_nodes_metrics()
+        self_url = await resolve_self_url()
         if self_url:
-            peers_metrics[self_url] = get_local_metrics()
-        target = compute_best_peer(queue_name, peers_metrics, json_input)
+            nodes_metrics[self_url] = get_local_metrics()
+        target = compute_best_node(queue_name, nodes_metrics, json_input)
 
         if target:
             try:

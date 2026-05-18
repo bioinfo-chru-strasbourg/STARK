@@ -16,13 +16,14 @@ from fastapi import (
 from authentication import get_current_user_or_service
 from config import STARK_API_KEY, local_port
 from models import User
-from peers import (
+from nodes import (
     get_local_metrics,
-    get_peers_metrics,
-    get_peers_tasks,
+    get_nodes_metrics,
+    get_nodes_tasks,
     get_self_hostname,
     get_self_url,
-    load_peers,
+    resolve_self_url,
+    load_nodes,
 )
 
 router = APIRouter()
@@ -55,15 +56,15 @@ def metrics():
     }
 
 
-@router.get("/peers")
-def peers():
-    """Return the list of configured peers."""
-    return {"peers": load_peers()}
+@router.get("/nodes")
+def nodes_list():
+    """Return the list of configured nodes."""
+    return {"nodes": load_nodes()}
 
 
 @router.get("/cluster/summary")
 async def cluster_summary():
-    """Aggregate queue slot metrics across all nodes (self + peers).
+    """Aggregate queue slot metrics across all nodes (self + all nodes).
 
     Response format:
     {
@@ -84,18 +85,18 @@ async def cluster_summary():
         }
     }
 
-    The local node is always included. Offline peers appear with status "offline"
+    The local node is always included. Offline nodes appear with status "offline"
     and no queue detail.
     """
-    peers_metrics = await get_peers_metrics()  # {url: queues_dict}
+    nodes_metrics = await get_nodes_metrics()  # {url: queues_dict}
 
-    peer_name_map = {
-        p["url"]: p.get("name", p["url"]) for p in load_peers() if p.get("url")
+    node_name_map = {
+        p["url"]: p.get("name", p["url"]) for p in load_nodes() if p.get("url")
     }
 
-    self_url = get_self_url()
+    self_url = await resolve_self_url()
     self_name = (
-        peer_name_map.get(self_url, get_self_hostname())
+        node_name_map.get(self_url, get_self_hostname())
         if self_url
         else get_self_hostname()
     )
@@ -116,9 +117,9 @@ async def cluster_summary():
         },
     }
 
-    # Peers
-    responding_urls = set(peers_metrics.keys())
-    for p in load_peers():
+    # Nodes
+    responding_urls = set(nodes_metrics.keys())
+    for p in load_nodes():
         url = p.get("url", "")
         name = p.get("name", url)
         if not url:
@@ -127,7 +128,7 @@ async def cluster_summary():
         if self_url and url == self_url:
             continue
         if url in responding_urls:
-            raw = peers_metrics[url]
+            raw = nodes_metrics[url]
             nodes[name] = {
                 "url": url,
                 "status": "online",
@@ -191,10 +192,10 @@ def list_modules():
 
 @router.get("/cluster/tasks")
 async def cluster_tasks():
-    """Return the consolidated task list from all nodes (self + peers).
+    """Return the consolidated task list from all nodes (self + all nodes).
 
     Each task carries two extra fields compared to GET /list:
-        "node":     "node1"                      human-readable name from peers.json
+        "node":     "node1"                      human-readable name from nodes.json
         "node_url": "http://192.168.1.10:4200"   URL of the originating node
 
     Tasks are sorted by state priority (running → queued → waiting → finished)
@@ -202,12 +203,12 @@ async def cluster_tasks():
     """
     from routers.queue import list_task  # local import to avoid circular deps
 
-    peer_name_map = {
-        p["url"]: p.get("name", p["url"]) for p in load_peers() if p.get("url")
+    node_name_map = {
+        p["url"]: p.get("name", p["url"]) for p in load_nodes() if p.get("url")
     }
-    self_url = get_self_url()
+    self_url = await resolve_self_url()
     self_name = (
-        peer_name_map.get(self_url, get_self_hostname())
+        node_name_map.get(self_url, get_self_hostname())
         if self_url
         else get_self_hostname()
     )
@@ -222,10 +223,10 @@ async def cluster_tasks():
         t["node"] = self_name
         t["node_url"] = self_url
 
-    # Peers tasks
-    peers_tasks = await get_peers_tasks()  # {url: {"name": str, "tasks": list}}
+    # Nodes tasks
+    nodes_tasks = await get_nodes_tasks()  # {url: {"name": str, "tasks": list}}
     all_tasks = list(local_tasks)
-    for url, data in peers_tasks.items():
+    for url, data in nodes_tasks.items():
         for t in data.get("tasks", []):
             t["node"] = data.get("name", url)
             t["node_url"] = url
@@ -428,7 +429,7 @@ async def cluster_proxy_archive_delete(
 
 @router.get("/cluster/archives")
 async def cluster_archives():
-    """Return the aggregated archives from all nodes (self + peers).
+    """Return the aggregated archives from all nodes (self + all nodes).
 
     Each entry is enriched with 'node' and 'node_url' fields.
     Results are sorted by mtime descending (newest first).
@@ -437,12 +438,12 @@ async def cluster_archives():
 
     from routers.queue import list_archives  # local import to avoid circular deps
 
-    peer_name_map = {
-        p["url"]: p.get("name", p["url"]) for p in load_peers() if p.get("url")
+    node_name_map = {
+        p["url"]: p.get("name", p["url"]) for p in load_nodes() if p.get("url")
     }
-    self_url = get_self_url()
+    self_url = await resolve_self_url()
     self_name = (
-        peer_name_map.get(self_url, get_self_hostname())
+        node_name_map.get(self_url, get_self_hostname())
         if self_url
         else get_self_hostname()
     )
@@ -457,26 +458,26 @@ async def cluster_archives():
         a["node"] = self_name
         a["node_url"] = self_url
 
-    # Peer archives
-    peers = load_peers()
-    peer_entries = [
+    # Node archives
+    nodes = load_nodes()
+    node_entries = [
         (p.get("name", p.get("url", "")), p["url"])
-        for p in peers
+        for p in nodes
         if p.get("url") and (not self_url or p["url"] != self_url)
     ]
 
     all_archives = list(local_archives)
 
-    if peer_entries:
+    if node_entries:
         async with httpx.AsyncClient(timeout=10.0) as client:
             responses = await asyncio.gather(
                 *[
                     client.get(f"{url}/archives", headers={"X-API-Key": STARK_API_KEY})
-                    for _, url in peer_entries
+                    for _, url in node_entries
                 ],
                 return_exceptions=True,
             )
-        for (name, url), resp in zip(peer_entries, responses):
+        for (name, url), resp in zip(node_entries, responses):
             if isinstance(resp, Exception):
                 continue
             if resp.status_code == 200:
