@@ -12,3 +12,7 @@ def _safe_mtime(path: str) -> Optional[float]:
         return os.path.getmtime(path)
     except FileNotFoundError:
         return None
+
+
+def is_empty(v):
+    return v is None or (isinstance(v, str) and v.strip() == "")

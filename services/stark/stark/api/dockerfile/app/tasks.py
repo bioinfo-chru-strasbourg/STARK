@@ -294,10 +294,11 @@ def _build_ts_bash_wrapper_exec(
     """
     return (
         f'{ts_cmd} bash -c "'
-        f"{inner_cmd_str} > {analysis_output_file} 2>&1 & PID=$!; "
-        f"trap 'kill $PID 2>/dev/null; echo failed > {analysis_info_file}' TERM INT; "
-        f"wait $PID; RC=$?; "
-        f'[ $RC -eq 0 ] && (echo finished > {analysis_info_file} && exit 0) || (echo failed > {analysis_info_file} && exit 1)"'
+        f"{inner_cmd_str} > {analysis_output_file} 2>&1 & PID=\\$! ; "
+        f"trap 'kill \\$PID 2>/dev/null; echo killed > {analysis_info_file}; exit 1' TERM INT; "
+        f"wait \\$PID; RC=\\$?; "
+        f"if [ \\$RC -eq 0 ]; then echo finished > {analysis_info_file}; else echo failed > {analysis_info_file}; fi; "
+        f'exit \\$RC"'
     )
 
 
@@ -306,10 +307,11 @@ def queue_module_analysis(json_input: dict) -> str:
     """
 
     # Resolve module
+    module_name = json_input.get("module", "UNKNOWN")
     module_cfg = resolve_module(json_input)
     apply_module_defaults(json_input, module_cfg)
 
-    # Filter with alloawed keys for security, the rest of the config will be taken from module config to ensure security of sensitive parameters like "image" and "docker_extra_params" that could be misconfigured in the JSON input if we let them come from there, even if the module config is safe. The "image" parameter is especially important to have a safe default as it defines the Docker image used for analyses and we don't want it to be accidentally misconfigured to an unsafe value. The "docker_extra_params" and "use_stark_container_mount" parameters are also important to enforce from the module config to prevent potential abuse via unsafe extra Docker parameters or mounts if they are exposed in the JSON input.
+    # Filter with allowed keys for security, the rest of the config will be taken from module config to ensure security of sensitive parameters like "image" and "docker_extra_params" that could be misconfigured in the JSON input if we let them come from there, even if the module config is safe. The "image" parameter is especially important to have a safe default as it defines the Docker image used for analyses and we don't want it to be accidentally misconfigured to an unsafe value. The "docker_extra_params" and "use_stark_container_mount" parameters are also important to enforce from the module config to prevent potential abuse via unsafe extra Docker parameters or mounts if they are exposed in the JSON input.
     json_input = {k: v for k, v in json_input.items() if k in ALLOWED_CLIENT_KEYS}
 
     # Systematically fix sensitive parameters from module config to avoid security issues, even if the module config is misconfigured with unsafe values. This ensures that the API will enforce safe values for these critical parameters regardless of the module configuration, which is important for security since some of these parameters (e.g. "image") can have a big impact on the security of the system if set to an unsafe value. The "image" parameter is especially important to have a safe default as it defines the Docker image used for analyses and we don't want it to be accidentally misconfigured to an unsafe value. The "docker_extra_params" and "use_stark_container_mount" parameters are also important to enforce from the module config to prevent potential abuse via unsafe extra Docker parameters or mounts if they are exposed in the JSON input.
@@ -322,6 +324,9 @@ def queue_module_analysis(json_input: dict) -> str:
         for k, v in module_cfg["defaults"].items():
             if k not in json_input:
                 json_input[k] = v
+
+    # Add module name in JSON input for reference, even if it's not used directly in the analysis execution since the module config is already applied to set the relevant parameters for execution. This is just for reference and debugging purposes to keep track of which module was resolved for this analysis.
+    json_input["module"] = module_name
 
     # The module config may contain the following keys (in addition to the standard JSON input fields)
     if "container" in json_input:
@@ -447,6 +452,18 @@ def queue_command_docker_exec(json_input: dict) -> str:
         _validate_docker_extra_params(docker_extra_params)
         docker_extra_params = _sanitize_docker_extra_params(docker_extra_params)
 
+    # Extra command prefix
+    command_prefix = json_input.get("command_prefix", "")
+    if command_prefix:
+        _validate_command(command_prefix)
+        command_prefix = command_prefix.strip() + " " # add space after prefix
+
+    # Extra command postfix
+    command_postfix = json_input.get("command_postfix", "")
+    if command_postfix:
+        _validate_command(command_postfix)
+        command_postfix = " " + command_postfix.strip() # add space before postfix
+
     # Task context (also sets json_input["threads"])
     ctx = _setup_task_context(json_input)
 
@@ -461,7 +478,9 @@ def queue_command_docker_exec(json_input: dict) -> str:
     if docker_extra_params:
         docker_cmd += _safe_split(docker_extra_params)
     docker_cmd.append(container)
+    docker_cmd += _safe_split(command_prefix)
     docker_cmd += _safe_split(raw_command)
+    docker_cmd += _safe_split(command_postfix)
     docker_cmd_str = " ".join(shlex.quote(tok) for tok in docker_cmd)
 
     ts_cmd = f"{ctx.ts_env}{ts} -N {ctx.task_slots} -L {ctx.analysis_id_name}" if ts else ""
@@ -506,6 +525,18 @@ def queue_command_docker(json_input: dict) -> str:
         _validate_docker_extra_params(docker_extra_params)
         docker_extra_params = _sanitize_docker_extra_params(docker_extra_params)
 
+    # Extra command prefix
+    command_prefix = json_input.get("command_prefix", "")
+    if command_prefix:
+        _validate_command(command_prefix)
+        command_prefix = command_prefix.strip() + " "  # add space after prefix
+
+    # Extra command postfix
+    command_postfix = json_input.get("command_postfix", "")
+    if command_postfix:
+        _validate_command(command_postfix)
+        command_postfix = " " + command_postfix.strip()  # add space before postfix
+
     # Task context (also sets json_input["threads"])
     ctx = _setup_task_context(json_input)
 
@@ -524,7 +555,12 @@ def queue_command_docker(json_input: dict) -> str:
     docker_parameters += _build_docker_resource_flags(ctx.threads, json_input)
 
     # Build docker command
-    docker_cmd = ["docker", "run"] + _safe_split(docker_parameters) + [image] + _safe_split(command)
+    docker_cmd = ["docker", "run"]
+    docker_cmd += _safe_split(docker_parameters)
+    docker_cmd += [image] 
+    docker_cmd += _safe_split(command_prefix) 
+    docker_cmd += _safe_split(command) 
+    docker_cmd += _safe_split(command_postfix)
     docker_cmd_str = " ".join(shlex.quote(tok) for tok in docker_cmd)
 
     ts_cmd = f"{ctx.ts_env}{ts} -N {ctx.task_slots} -L {ctx.analysis_id_name}" if ts else ""
@@ -577,6 +613,18 @@ def queue_command_docker_compose(json_input: dict) -> str:
         _validate_docker_extra_params(docker_extra_params)
         docker_extra_params = _sanitize_docker_extra_params(docker_extra_params)
 
+    # Extra command prefix
+    command_prefix = json_input.get("command_prefix", "")
+    if command_prefix:
+        _validate_command(command_prefix)
+        command_prefix = command_prefix.strip() + " "  # add space after prefix
+
+    # Extra command postfix
+    command_postfix = json_input.get("command_postfix", "")
+    if command_postfix:
+        _validate_command(command_postfix)
+        command_postfix = " " + command_postfix.strip()  # add space before postfix
+
     # Task context (also sets json_input["threads"])
     ctx = _setup_task_context(json_input)
 
@@ -601,7 +649,9 @@ def queue_command_docker_compose(json_input: dict) -> str:
     docker_cmd = ["docker-compose", "-f", docker_compose_file, "run"]
     docker_cmd += _safe_split(docker_parameters)
     docker_cmd.append(service)
+    docker_cmd += _safe_split(command_prefix)
     docker_cmd += _safe_split(command)
+    docker_cmd += _safe_split(command_postfix)
     docker_cmd_str = " ".join(shlex.quote(tok) for tok in docker_cmd)
 
     ts_cmd = f"{ctx.ts_env}{ts} -N {ctx.task_slots} -L {ctx.analysis_id_name}" if ts else ""

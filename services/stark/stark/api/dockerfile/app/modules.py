@@ -5,6 +5,7 @@ import os
 
 from config import MODULES_FILE, docker_stark
 from security import MANDATORY_KEYS_PARAMS, MANDATORY_PARAMS
+from functions import is_empty
 
 def load_modules() -> dict:
     """Load the modules configuration from MODULES_FILE.
@@ -57,6 +58,11 @@ def load_modules() -> dict:
             key = name.upper()
 
             # Safe security defaults values for parameters
+
+            # If any of the mandatory keys are present but empty/None, remove them so they will be filled with the safe default values
+            for k in MANDATORY_KEYS_PARAMS:
+                if k in cfg and is_empty(cfg[k]):
+                    del cfg[k]
 
             # If none of keys param are in module config, add stark image as default
             if not any(k in cfg for k in MANDATORY_KEYS_PARAMS):
