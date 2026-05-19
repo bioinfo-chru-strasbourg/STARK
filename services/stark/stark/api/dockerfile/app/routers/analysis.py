@@ -22,7 +22,6 @@ from nodes import (
     load_nodes,
 )
 from queues import get_queue_env, load_queues
-from modules import apply_module_defaults, resolve_module
 from tasks import (
     _extract_analysis_name,
     queue_analysis,
@@ -141,7 +140,7 @@ async def stark_launch(
         analysis_id_name = await _run_locally(json_input)
         return PlainTextResponse(content=analysis_id_name, status_code=200)
     except Exception as e:
-        return PlainTextResponse(content=f"Launch failed?: {e}", status_code=400)
+        return PlainTextResponse(content=f"Launch failed: {e}", status_code=400)
 
 
 @router.post("/relaunch/{ts_id}")

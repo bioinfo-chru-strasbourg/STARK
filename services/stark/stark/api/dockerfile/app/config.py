@@ -41,9 +41,6 @@ docker_stark_container_mount = os.environ.get(
 docker_stark_api_log_folder = os.environ.get(
     "DOCKER_STARK_SERVICE_STARK_API_LOG_FOLDER", "/STARK/services/stark/stark/api"
 )
-docker_stark_api_runs_folder = os.environ.get(
-    "DOCKER_STARK_SERVICE_STARK_API_RUNS_FOLDER", "/STARK/input/runs"
-)
 
 # --- UI ---
 refresh_interval_ms = int(os.environ.get("STARK_API_REFRESH_INTERVAL", "10")) * 1000

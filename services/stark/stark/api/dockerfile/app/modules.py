@@ -4,7 +4,7 @@ import json
 import os
 
 from config import MODULES_FILE, docker_stark
-
+from security import MANDATORY_KEYS_PARAMS, MANDATORY_PARAMS
 
 def load_modules() -> dict:
     """Load the modules configuration from MODULES_FILE.
@@ -52,7 +52,20 @@ def load_modules() -> dict:
     modules: dict = {}
     for name, cfg in raw.items():
         if isinstance(cfg, dict) and ("_enable" not in cfg or cfg["_enable"]):
+
+            # Key - Module name is upper-cased for case-insensitive matching, but the rest of the config is left as-is to allow flexibility in defining arbitrary extra fields if needed in the future without breaking the API. The mandatory keys for modules are filled with safe defaults if missing or None to avoid security issues. The "image" key is especially important to have a safe default as it defines the Docker image used for analyses and we don't want it to be accidentally misconfigured to an unsafe value.
             key = name.upper()
+
+            # Safe security defaults values for parameters
+
+            # If none of keys param are in module config, add stark image as default
+            if not any(k in cfg for k in MANDATORY_KEYS_PARAMS):
+                cfg["image"] = docker_stark
+
+            # For each mandatory param, if it's missing, fill it with the default value
+            for param, default_val in MANDATORY_PARAMS.items():
+                if param not in cfg:
+                    cfg[param] = default_val
             modules[key] = cfg
 
     return modules if modules else default

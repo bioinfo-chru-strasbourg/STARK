@@ -438,7 +438,7 @@ async def cluster_archives():
     """
     import asyncio
 
-    from routers.queue import list_archives  # local import to avoid circular deps
+    from routers.archive import list_archives  # local import to avoid circular deps
 
     node_name_map = {
         p["url"]: p.get("name", p["url"]) for p in load_nodes() if p.get("url")
