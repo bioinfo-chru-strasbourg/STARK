@@ -1,7 +1,9 @@
 {
   "STARK": {
+    "_description": "Default STARK analysis module",
+    "_enable": true,
+    "_available": true,
     "image": "stark",
-    "description": "Default STARK analysis module",
     "docker_extra_params": "",
     "use_stark_container_mount": true,
     "defaults": {

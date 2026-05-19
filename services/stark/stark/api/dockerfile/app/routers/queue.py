@@ -34,11 +34,6 @@ _LINE_REGEX = re.compile(
     r"(?P<command>.*)$"
 )
 
-def _safe_mtime(path: str) -> Optional[float]:
-    try:
-        return os.path.getmtime(path)
-    except FileNotFoundError:
-        return None
 
 def _iter_queue_tasks(queue_name: str, cfg: dict, is_default: bool) -> list:
     """Run 'ts -l' on a single queue and return parsed task dicts."""
@@ -186,88 +181,6 @@ async def list_task():
                 "queue_slots": t["queue_slots"],
             }
         )
-    return JSONResponse(content=result)
-
-
-@router.get("/archives")
-async def list_archives():
-    """List all historical tasks based on .json parameter files in the log folder.
-
-    Each entry is built from the `.json` parameter file written at task submission
-    time and the companion `.info` file written at task completion.
-
-    Returns up to 1000 most recent entries (by file modification time, newest first).
-    """
-    import glob as _glob
-
-    pattern = os.path.join(docker_stark_api_log_folder, "STARK.*.json")
-    files = sorted(_glob.glob(pattern), key=os.path.getmtime, reverse=True)
-
-    max_entries = 100000
-
-    result = []
-    for json_path in files[:max_entries]:
-        base = os.path.splitext(os.path.basename(json_path))[0]
-        info_path = json_path.replace(".json", ".info")
-
-        # Parse run_name from filename (-NAME-<run_name>)
-        m = re.search(r"-NAME-(.+)$", base)
-        run_name = m.group(1) if m else base
-
-        # Read original parameters
-        try:
-            with open(json_path, "r", errors="replace") as f:
-                params = json.load(f)
-        except Exception:
-            params = {}
-
-        # Queue
-        queues_all = load_queues()
-        default_name_q = next(iter(queues_all))
-        queue = params.get("queue", default_name_q)
-
-        # Threads
-        threads = params.get("threads")
-
-        # Determine status from .info file
-        status = "unknown"
-        if os.path.exists(info_path):
-            try:
-                with open(info_path, "r", errors="replace") as f:
-                    info_content = f.read().strip()
-                if info_content == "finished":
-                    status = "finished"
-                elif info_content == "failed":
-                    status = "failed"
-                else:
-                    status = info_content
-            except Exception:
-                status = "unknown"
-
-
-
-        # Times
-        # Start time
-        mtime = _safe_mtime(json_path)
-        # End time
-        end_date = _safe_mtime(info_path)
-        # Execution time (from file modification times)
-        exec_time = (end_date - mtime) if end_date is not None else None
-
-        # Append to results
-        result.append(
-            {
-                "analysis_id_name": base,
-                "run_name": run_name,
-                "queue": queue,
-                "threads": threads,
-                "status": status,
-                "mtime": mtime,
-                "end_date": end_date,
-                "exec_time": exec_time
-            }
-        )
-
     return JSONResponse(content=result)
 
 

@@ -13,7 +13,6 @@ from typing import Optional
 from config import (
     docker_stark,
     docker_stark_api_log_folder,
-    docker_stark_api_runs_folder,
     docker_stark_container_mount,
     ts,
     ts_timeout,
@@ -27,6 +26,8 @@ from security import (
     _sanitize_docker_extra_params,
     _validate_image,
     _safe_split,
+    ALLOWED_CLIENT_KEYS,
+    SENSITIVE_KEYS
 )
 from modules import resolve_module, apply_module_defaults
 
@@ -296,7 +297,7 @@ def _build_ts_bash_wrapper_exec(
         f"{inner_cmd_str} > {analysis_output_file} 2>&1 & PID=$!; "
         f"trap 'kill $PID 2>/dev/null; echo failed > {analysis_info_file}' TERM INT; "
         f"wait $PID; RC=$?; "
-        f"[ $RC -eq 0 ] && echo finished > {analysis_info_file} || echo failed > {analysis_info_file}\""
+        f'[ $RC -eq 0 ] && (echo finished > {analysis_info_file} && exit 0) || (echo failed > {analysis_info_file} && exit 1)"'
     )
 
 
@@ -308,16 +309,19 @@ def queue_module_analysis(json_input: dict) -> str:
     module_cfg = resolve_module(json_input)
     apply_module_defaults(json_input, module_cfg)
 
-    # Add module-level Docker parameters to json_input for downstream processing in queue_analysis and the bash wrapper builders.
-    for k in module_cfg:
-        if (
-            k not in [ "description", "defaults"] 
-            and (
-                isinstance(k, str) 
-                and not k.startswith("_")
-                )
-        ):
+    # Filter with alloawed keys for security, the rest of the config will be taken from module config to ensure security of sensitive parameters like "image" and "docker_extra_params" that could be misconfigured in the JSON input if we let them come from there, even if the module config is safe. The "image" parameter is especially important to have a safe default as it defines the Docker image used for analyses and we don't want it to be accidentally misconfigured to an unsafe value. The "docker_extra_params" and "use_stark_container_mount" parameters are also important to enforce from the module config to prevent potential abuse via unsafe extra Docker parameters or mounts if they are exposed in the JSON input.
+    json_input = {k: v for k, v in json_input.items() if k in ALLOWED_CLIENT_KEYS}
+
+    # Systematically fix sensitive parameters from module config to avoid security issues, even if the module config is misconfigured with unsafe values. This ensures that the API will enforce safe values for these critical parameters regardless of the module configuration, which is important for security since some of these parameters (e.g. "image") can have a big impact on the security of the system if set to an unsafe value. The "image" parameter is especially important to have a safe default as it defines the Docker image used for analyses and we don't want it to be accidentally misconfigured to an unsafe value. The "docker_extra_params" and "use_stark_container_mount" parameters are also important to enforce from the module config to prevent potential abuse via unsafe extra Docker parameters or mounts if they are exposed in the JSON input.
+    for k in SENSITIVE_KEYS:
+        if k in module_cfg:
             json_input[k] = module_cfg[k]
+
+    # Add defaults if not in json_input, but only for the standard JSON input fields, not for the extra module config fields to allow flexibility in module configuration without affecting the expected structure of the JSON input. The module config may contain arbitrary extra fields that are not part of the standard JSON input but can be used for other purposes (e.g. defining extra Docker parameters or mounts) without affecting the expected structure of the JSON input that the API processes for launching analyses. The "defaults" key in the module config is specifically designed to allow setting default values for standard JSON input fields if they are not provided by the client, while still allowing the module config to contain extra fields for other purposes without affecting the JSON input structure.
+    if "defaults" in module_cfg:
+        for k, v in module_cfg["defaults"].items():
+            if k not in json_input:
+                json_input[k] = v
 
     # The module config may contain the following keys (in addition to the standard JSON input fields)
     if "container" in json_input:
@@ -336,9 +340,9 @@ def queue_analysis(json_input: dict) -> str:
     # Resolve module
     module_cfg = resolve_module(json_input)
     apply_module_defaults(json_input, module_cfg)
-    image = module_cfg["image"] or docker_stark
-    module_docker_extra_params = module_cfg["docker_extra_params"]
-    use_stark_container_mount = module_cfg["use_stark_container_mount"]
+    image = module_cfg.get("image") or docker_stark
+    module_docker_extra_params = module_cfg.get("docker_extra_params", "")
+    use_stark_container_mount = module_cfg.get("use_stark_container_mount", False)
 
     # Task context (also sets json_input["threads"])
     ctx = _setup_task_context(json_input)

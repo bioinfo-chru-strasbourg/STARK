@@ -59,6 +59,25 @@ _FORBIDDEN_DOCKER_FLAGS = {
     "--interactive": False,
 }
 
+# Keys that are mandatory in the module config for security reasons and will be filled with safe defaults if missing/None in the config file. The presence of the mandatory keys is crucial for ensuring that each module has a defined Docker image, service name, and container name, which are essential for the secure operation of the analysis execution. The mandatory params will be filled with safe defaults to ensure secure operation even if the module is misconfigured or missing these fields.
+MANDATORY_KEYS_PARAMS = ("image", "service", "container")
+MANDATORY_PARAMS = {
+    "docker_extra_params": "",
+    "use_stark_container_mount": False,
+}
+# Sensitive keys include both the mandatory keys that must be present in the module config for security reasons, and the mandatory params that will be filled with safe defaults if missing to ensure secure operation even with misconfigured modules.
+SENSITIVE_KEYS = MANDATORY_KEYS_PARAMS + tuple(MANDATORY_PARAMS.keys())
+
+# Keys allowed from client input for analyses, to prevent abuse via extra fields in the JSON input that are not expected by the API and could be used to inject malicious content if not properly handled. This is a whitelist of known safe fields that the API accepts from the client for launching analyses. Any field outside of this set will be ignored if sent by the client.
+ALLOWED_CLIENT_KEYS = {
+    "command",
+    "analysis_name",
+    "run",
+    "queue",
+    "threads",
+    "memory",
+    "prioritize",
+}
 
 def _safe_split(s: str) -> list:
     """Split user input into tokens safely (no eval, no shell)."""
@@ -72,12 +91,6 @@ def _validate_command(command: str) -> None:
             raise ValueError(
                 f"Command rejected: matches a dangerous pattern ({pattern.pattern!r})"
             )
-
-
-def _validate_docker_command(cmd: str):
-    # Interdire redirections & opérateurs shell
-    if any(op in cmd for op in [";", "|", "&&", "||", "`", "$(", ">", "<"]):
-        raise ValueError("command_docker contains unsafe shell operators")
 
 
 def _validate_docker_extra_params(params: str) -> None:

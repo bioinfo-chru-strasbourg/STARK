@@ -317,8 +317,10 @@ Each module entry has the following fields:
 
 | Field | Required | Description |
 | --- | --- | --- |
+| `_description` | No | Human-readable label shown in the UI |
+| `_enable` | No | Define if module is available and can be used |
+| `_available` | No | Define if module is available in interface |
 | `image` | Yes | Docker image to run (e.g. `stark/stark:19.0.0`) |
-| `description` | No | Human-readable label shown in the UI |
 | `docker_extra_params` | No | Extra `docker run` flags injected for this module (e.g. `--shm-size=4g`) |
 | `use_stark_container_mount` | No | Whether to append the STARK volume mounts (default `true`) |
 | `defaults` | No | Default values for `queue`, `threads`, `memory`, `prioritize` pre-filled in the UI |
@@ -328,8 +330,10 @@ Example `config/modules.json`:
 ```json
 {
   "STARK": {
+    "_description": "Default STARK analysis module",
+    "_enable": true,
+    "_available": true,
     "image": "stark/stark:19.0.0",
-    "description": "Default STARK analysis module",
     "docker_extra_params": "",
     "use_stark_container_mount": true,
     "defaults": {
@@ -340,8 +344,10 @@ Example `config/modules.json`:
     }
   },
   "HOWARD": {
+    "_description": "HOWARD annotation pipeline",
+    "_enable": true,
+    "_available": true,
     "image": "bioinfochrustrasbourg/howard:0.9.18.0",
-    "description": "HOWARD annotation pipeline",
     "docker_extra_params": "--shm-size=4g",
     "use_stark_container_mount": false,
     "defaults": {
