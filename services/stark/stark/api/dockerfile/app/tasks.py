@@ -16,7 +16,7 @@ from config import (
     docker_stark_container_mount,
     ts,
     ts_timeout,
-    curl_script_path,
+    launch_script_path,
 )
 from queues import _prepare_queue_for_submission
 from security import (
@@ -68,9 +68,11 @@ def _resolve_task_slots(json_input: dict, max_slots: int) -> int:
 
 def _read_task_slots(command_str: str, max_slots: int) -> Optional[int]:
     """Resolve the effective slot count for a task from its stored JSON."""
-    m = re.search(r">\s*(\S+)\.output\s+2>&1", command_str)
+    # Find output file
+    m = re.search(r"--output\s+(\S+)\.output\b", command_str)
     if not m:
         return None
+    # Find JSON file
     json_path = m.group(1) + ".json"
     try:
         with open(json_path) as f:
@@ -83,11 +85,20 @@ def _read_task_slots(command_str: str, max_slots: int) -> Optional[int]:
 def _build_analysis_idname(json_input: dict) -> tuple:
     """Build analysisIDNAME and analysesRUNNAME from json_input."""
 
+    import datetime
+
     # Analysis ID
     analyses_id = random_string_digits(12)
     # run_id = "UNKNOWN_" + str(random_string_digits(10))
     # run_md5 = random_string_digits(41)
-    import datetime
+
+    # RUN ID Random
+    run_id_random = (
+        datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        + "_"
+        + "UNKNOWN_"
+        + str(random_string_digits(10))
+    )
 
     # RUN ID
     if "analysis_name" in json_input:
@@ -127,26 +138,15 @@ def _build_analysis_idname(json_input: dict) -> tuple:
                 run_id = _sanitize_analysis_name(
                     str(
                         json_input["command"]
-                        .get("run", "UNKNOWN")
+                        .get("run", run_id_random)
                         .split(":")[0]
                         .split("/")[-1]
                     )
                 )
         else:
-            run_id = (
-                datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-                + "_"
-                + "UNKNOWN_"
-                + str(random_string_digits(10))
-            )
+            run_id = run_id_random
     else:
-        # run_id = "UNKNOWN_" + str(random_string_digits(10))
-        run_id = (
-            datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            + "_"
-            + "UNKNOWN_"
-            + str(random_string_digits(10))
-        )
+        run_id = run_id_random
 
     # MD5
     run_md5 = random_string_digits(10)
@@ -316,8 +316,12 @@ def _json_command_to_str(obj: Union[dict, list, str]) -> str:
     """
     if isinstance(obj, str):
         return obj
+    elif isinstance(obj, list):
+        if not all(isinstance(i, str) for i in obj):
+            raise ValueError("All items in command list must be strings")
+        return " ".join(obj)
     elif not isinstance(obj, dict):
-        raise ValueError("Command must be a dict")
+        raise ValueError("Command must be a string, a list or a dict")
 
     parts = []
 
@@ -436,20 +440,10 @@ def queue_endpoint(json_input: dict) -> str:
     #     command["jsonrpc"] = "2.0"  # JSON-RPC version
 
     # Create a curl config file to avoid issues with escaping quotes in the command string, like:
-    # STARK.xxx.rpc.curl
-    # url = "http://..."
-    # request = "POST"
-    # header = "Content-Type: application/json"
-    # header = "X-API-Key: <token>"
-    # header = "Authorization: Bearer <token>"
-    # data = @/path/to/payload.json
     curl_config_path = os.path.join(ctx.analysis_folder, f"{ctx.analysis_id_name}.endpoint.curl")
     with open(curl_config_path, "w") as f:
-        # URL
         f.write(f'url = "{endpoint}"\n')
-        # Request
         f.write("request = \"POST\"\n")
-        # Headers
         f.write("header = \"Content-Type: application/json\"\n")
         # TOKEN in header if specified
         if api_key_variable:
@@ -463,24 +457,16 @@ def queue_endpoint(json_input: dict) -> str:
         # Write the command dict as JSON to the payload file and reference it in the curl config with "data = @payload_path" to avoid issues with escaping quotes and special characters in the command string when passing it directly as a parameter in the curl config.
         with open(payload_path, "w") as pf:
             pf.write(json.dumps(command))
-        # f.write(f"data = @{payload_path}\n")
 
-    # Command for task spooler
-    inner_cmd = f"{curl_script_path} --config={curl_config_path} --data={payload_path} --remove "
-
-    #ts_cmd = f"{ctx.ts_env}{ts}"
+    # Build task-spooler command with a bash wrapper for signal handling and status reporting
     ts_cmd = (
         f"{ctx.ts_env}{ts} -N {ctx.task_slots} -L {ctx.analysis_id_name}" if ts else ""
     )
 
-    my_cmd = _build_ts_bash_wrapper(
-        ts_cmd,
-        inner_cmd,
-        ctx.analysis_id_name,
-        ctx.analysis_info_file,
-        ctx.analysis_output_file,
-    )
+    # Command to launch
+    my_cmd = f"{ts_cmd} {launch_script_path} --mode endpoint --name {ctx.analysis_id_name} --output {ctx.analysis_output_file} --info {ctx.analysis_info_file} --curl-config {curl_config_path} --curl-data {payload_path} --remove"
 
+    # Queue the task
     _ = _queue_task(my_cmd, prioritize=prioritize, ts_cmd=ts_cmd)
     return ctx.analysis_id_name
 
@@ -534,25 +520,29 @@ def queue_analysis(json_input: dict) -> str:
     with open(analysis_file_stark, "w") as f:
         f.write(json.dumps(json_input_for_container))
 
-    # Build docker command
-    docker_cmd = ["docker", "run"] + _safe_split(docker_parameters) + [image]
-    docker_cmd_str = " ".join(shlex.quote(tok) for tok in docker_cmd)
-    inner_cmd = (
-        f"{docker_cmd_str} "
-        f"--analysis_name={ctx.analyses_run_name} --analysis={analysis_file_stark}"
-    )
+    # Docker command
+    docker_cmd = ["docker", "run"]
+    docker_cmd += _safe_split(docker_parameters) 
+    docker_cmd += [image] 
+    docker_cmd += [f"--analysis_name={ctx.analyses_run_name}"]
+    docker_cmd += [f"--analysis={analysis_file_stark}"]
 
+    # Docker command file
+    command_file_path = os.path.join(
+        ctx.analysis_folder, f"{ctx.analysis_id_name}.command"
+    )
+    with open(command_file_path, "w") as f:
+        f.write(json.dumps(docker_cmd))
+
+    # Build task-spooler command with a bash wrapper for signal handling and status reporting
     ts_cmd = (
         f"{ctx.ts_env}{ts} -N {ctx.task_slots} -L {ctx.analysis_id_name}" if ts else ""
     )
-    my_cmd = _build_ts_bash_wrapper(
-        ts_cmd,
-        inner_cmd,
-        ctx.analysis_id_name,
-        ctx.analysis_info_file,
-        ctx.analysis_output_file,
-    )
 
+    # Command to launch
+    my_cmd = f"""{ts_cmd} {launch_script_path} --mode docker-run --name {ctx.analysis_id_name} --output {ctx.analysis_output_file} --info {ctx.analysis_info_file} --cmd-file {command_file_path} --remove """
+
+    # Queue the task
     _ = _queue_task(my_cmd, prioritize=prioritize, ts_cmd=f"{ctx.ts_env}{ts}")
     return ctx.analysis_id_name
 
@@ -627,13 +617,23 @@ def queue_command_docker_exec(json_input: dict) -> str:
     docker_cmd += _safe_split(command_prefix)
     docker_cmd += _safe_split(command)
     docker_cmd += _safe_split(command_postfix)
-    docker_cmd_str = " ".join(shlex.quote(tok) for tok in docker_cmd)
 
-    ts_cmd = f"{ctx.ts_env}{ts} -N {ctx.task_slots} -L {ctx.analysis_id_name}" if ts else ""
-    my_cmd = _build_ts_bash_wrapper_exec(
-        ts_cmd, docker_cmd_str, ctx.analysis_info_file, ctx.analysis_output_file
+    # Docker command file
+    command_file_path = os.path.join(
+        ctx.analysis_folder, f"{ctx.analysis_id_name}.command"
+    )
+    with open(command_file_path, "w") as f:
+        f.write(json.dumps(docker_cmd))
+
+    # Build task-spooler command with a bash wrapper for signal handling and status reporting
+    ts_cmd = (
+        f"{ctx.ts_env}{ts} -N {ctx.task_slots} -L {ctx.analysis_id_name}" if ts else ""
     )
 
+    # Command to launch
+    my_cmd = f"""{ts_cmd} {launch_script_path} --mode docker-run --name {ctx.analysis_id_name} --output {ctx.analysis_output_file} --info {ctx.analysis_info_file} --cmd-file {command_file_path} --remove """
+
+    # Command to launch
     _ = _queue_task(my_cmd, prioritize=prioritize, ts_cmd=f"{ctx.ts_env}{ts}")
     return ctx.analysis_id_name
 
@@ -709,13 +709,23 @@ def queue_command_docker(json_input: dict) -> str:
     docker_cmd += _safe_split(command_prefix) 
     docker_cmd += _safe_split(command) 
     docker_cmd += _safe_split(command_postfix)
-    docker_cmd_str = " ".join(shlex.quote(tok) for tok in docker_cmd)
 
-    ts_cmd = f"{ctx.ts_env}{ts} -N {ctx.task_slots} -L {ctx.analysis_id_name}" if ts else ""
-    my_cmd = _build_ts_bash_wrapper(
-        ts_cmd, docker_cmd_str, ctx.analysis_id_name, ctx.analysis_info_file, ctx.analysis_output_file
+    # Docker command file
+    command_file_path = os.path.join(
+        ctx.analysis_folder, f"{ctx.analysis_id_name}.command"
+    )
+    with open(command_file_path, "w") as f:
+        f.write(json.dumps(docker_cmd))
+
+    # Build task-spooler command with a bash wrapper for signal handling and status reporting
+    ts_cmd = (
+        f"{ctx.ts_env}{ts} -N {ctx.task_slots} -L {ctx.analysis_id_name}" if ts else ""
     )
 
+    # Command to launch
+    my_cmd = f"""{ts_cmd} {launch_script_path} --mode docker-run --name {ctx.analysis_id_name} --output {ctx.analysis_output_file} --info {ctx.analysis_info_file} --cmd-file {command_file_path} --remove """
+
+    # Queue the task
     _ = _queue_task(my_cmd, prioritize=prioritize, ts_cmd=f"{ctx.ts_env}{ts}")
     return ctx.analysis_id_name
 
@@ -802,12 +812,22 @@ def queue_command_docker_compose(json_input: dict) -> str:
     docker_cmd += _safe_split(command_prefix)
     docker_cmd += _safe_split(command)
     docker_cmd += _safe_split(command_postfix)
-    docker_cmd_str = " ".join(shlex.quote(tok) for tok in docker_cmd)
 
-    ts_cmd = f"{ctx.ts_env}{ts} -N {ctx.task_slots} -L {ctx.analysis_id_name}" if ts else ""
-    my_cmd = _build_ts_bash_wrapper(
-        ts_cmd, docker_cmd_str, ctx.analysis_id_name, ctx.analysis_info_file, ctx.analysis_output_file
+    # Docker command file
+    command_file_path = os.path.join(
+        ctx.analysis_folder, f"{ctx.analysis_id_name}.command"
+    )
+    with open(command_file_path, "w") as f:
+        f.write(json.dumps(docker_cmd))
+
+    # Build task-spooler command with a bash wrapper for signal handling and status reporting
+    ts_cmd = (
+        f"{ctx.ts_env}{ts} -N {ctx.task_slots} -L {ctx.analysis_id_name}" if ts else ""
     )
 
+    # Command to launch
+    my_cmd = f"""{ts_cmd} {launch_script_path} --mode docker-run --name {ctx.analysis_id_name} --output {ctx.analysis_output_file} --info {ctx.analysis_info_file} --cmd-file {command_file_path} --remove """
+
+    # Queue the task
     _ = _queue_task(my_cmd, prioritize=prioritize, ts_cmd=f"{ctx.ts_env}{ts}")
     return ctx.analysis_id_name

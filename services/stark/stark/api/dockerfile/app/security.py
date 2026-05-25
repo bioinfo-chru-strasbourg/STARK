@@ -66,6 +66,7 @@ MANDATORY_KEYS_PARAMS = ("module", "image", "service", "container", "endpoint")
 MANDATORY_PARAMS = {
     "docker_extra_params": "",
     "use_stark_container_mount": False,
+    "docker_compose_file": "",
     "command_prefix": "",
     "command_postfix": "",
     "api_key_variable": None,
