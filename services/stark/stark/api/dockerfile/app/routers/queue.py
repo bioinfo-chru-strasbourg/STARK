@@ -85,7 +85,7 @@ def _iter_queue_tasks(queue_name: str, cfg: dict, is_default: bool) -> list:
                         "FAILED: " + data["elevel"].strip()
                         if data[
                             "elevel"
-                        ].strip()  # any non-zero, non-empty → failed (handles "signal:15" etc.)
+                        ].strip()  # any non-zero, non-empty -> failed (handles "signal:15" etc.)
                         else ""
                     )
                 ),

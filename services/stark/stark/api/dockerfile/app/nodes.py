@@ -4,7 +4,7 @@ nodes.py — Cluster / mini-orchestrator logic.
 
 Responsibilities:
   - Load nodes from config/nodes.json (auto-created empty on first start).
-  - Resolve this node's own URL (env var → /whoami scan → None = local-only).
+  - Resolve this node's own URL (env var -> /whoami scan -> None = local-only).
   - Compute local task-spooler metrics per queue.
   - Collect metrics from all nodes asynchronously (httpx).
   - Score nodes and select the best one for a given queue.
@@ -291,7 +291,7 @@ def get_local_metrics() -> dict:
                 # a task submitted with -N k occupies k slots.
                 slot_cost = _read_task_slots(line, configured)
                 if slot_cost is None or slot_cost == 0:
-                    slot_cost = 1  # fallback: unknown → assume 1 slot
+                    slot_cost = 1  # fallback: unknown -> assume 1 slot
                 if state == "running":
                     running += slot_cost
                 elif state == "queued":
@@ -397,7 +397,7 @@ def compute_best_node(
 ) -> Optional[str]:
     """Return the URL of the node with the most capacity for queue_name.
 
-    Score = configured - running - queued  (higher → more slots available).
+    Score = configured - running - queued  (higher -> more slots available).
     Returns None if all_metrics is empty.
     """
 

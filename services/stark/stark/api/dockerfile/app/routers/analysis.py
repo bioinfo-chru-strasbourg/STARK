@@ -29,6 +29,7 @@ from tasks import (
     queue_command_docker_compose,
     queue_command_docker_exec,
     queue_module_analysis,
+    queue_endpoint,
 )
 
 router = APIRouter()
@@ -38,17 +39,17 @@ async def _run_locally(json_input: dict) -> str:
     """Dispatch json_input to the appropriate queue function.
 
     Dispatch is determined by which context key is present:
-      - ``container``          → docker exec  (command runs inside an existing container)
-      - ``service``            → docker-compose run
-      - ``image``  (client)   → docker run  (ephemeral container, image supplied by caller)
-      - ``module``             → module CLI  (image resolved server-side from modules.json)
-      - *(none of the above)* → STARK JSON analysis
+      - ``container``          -> docker exec  (command runs inside an existing container)
+      - ``service``            -> docker-compose run
+      - ``image``  (client)   -> docker run  (ephemeral container, image supplied by caller)
+      - ``module``             -> module CLI  (image resolved server-side from modules.json)
+      - *(none of the above)* -> STARK JSON analysis
 
     All modes that execute a command read it from the ``command`` key.
     """
 
     # For simplicity and robustness, the presence of the context keys is checked in a fixed order of precedence
-    # (container > service > image > module) rather than trying to detect multiple keys and applying complex rules. 
+    # (container > service > image > module) rather than trying to detect multiple keys and applying complex rules.
     # This means that if multiple context keys are present, the one with the highest precedence will determine the mode and the others will be ignored.
     if "container" in json_input:
         return queue_command_docker_exec(json_input)    # docker exec
@@ -56,8 +57,10 @@ async def _run_locally(json_input: dict) -> str:
         return queue_command_docker_compose(json_input) # docker-compose run
     elif "image" in json_input:
         return queue_command_docker(json_input)         # docker run (client image)
+    elif "endpoint" in json_input:
+        return queue_endpoint(json_input)  # module RCP
     elif "module" in json_input:
-        return queue_module_analysis(json_input)        # module CLI
+        return queue_module_analysis(json_input)  # module
     else:
         return queue_analysis(json_input)               # STARK JSON analysis
 
@@ -70,11 +73,11 @@ async def stark_launch(
     """Launch a STARK analysis, module command, or docker-command.
 
     The task type is determined by which **context key** is present in the JSON body:
-      - ``container``            → docker exec  (command runs inside an existing container)
-      - ``service``              → docker-compose run
-      - ``image``  (explicit)    → docker run  (ephemeral container)
-      - ``module``               → module CLI  (image resolved server-side)
-      - *(none of the above)*    → STARK JSON analysis
+      - ``container``            -> docker exec  (command runs inside an existing container)
+      - ``service``              -> docker-compose run
+      - ``image``  (explicit)    -> docker run  (ephemeral container)
+      - ``module``               -> module CLI  (image resolved server-side)
+      - ``endpoint``             -> RCP analysis
 
     The command to execute is always passed in the ``command`` key.
 

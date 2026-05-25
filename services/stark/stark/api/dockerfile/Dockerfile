@@ -2,7 +2,7 @@ FROM almalinux:9
 
 # Update
 #RUN yum update -y && yum install -y epel-release && yum install -y python3 python-pip3 docker git make gcc g++ && yum clean all
-RUN yum update -y && yum install -y epel-release && yum install -y python3-pip wget git make gcc g++ && yum clean all
+RUN yum update -y && yum install -y epel-release && yum install -y python3-pip wget git make gcc g++ jq && yum clean all
 
 # Install app dependencies
 COPY requirements.txt /src/requirements.txt

@@ -804,22 +804,26 @@ document.addEventListener('DOMContentLoaded', () => {
         const moduleName = msel?.value || '';
 
         const mode = document.querySelector('input[name="analysis-cmd-mode"]:checked')?.value || 'text';
-        let command = '';
+        // let command = '';
+        let command = {};
         if (mode === 'text') {
-            command = document.getElementById('analysis-command-text')?.value.trim() || '';
+            // command = document.getElementById('analysis-command-text')?.value.trim() || '';
+            command[document.getElementById('analysis-command-text')?.value.trim() || ''] = null; // convert to object with command as key for easier CLI conversion later
         } else if (mode === 'json') {
             const raw = document.getElementById('analysis-command-json')?.value.trim() || '';
-            try { command = jsonCommandToCli(JSON.parse(raw)); }
+            try { command = JSON.parse(raw); }
             catch (_) { showLaunchResult('Invalid JSON command', false); return; }
         } else if (mode === 'file') {
             const file = document.getElementById('analysis-command-file')?.files[0];
             if (!file) { showLaunchResult('No file selected', false); return; }
             try {
                 const text = await file.text();
-                command = jsonCommandToCli(JSON.parse(text));
+                command = JSON.parse(text);
             } catch (_) { showLaunchResult('Invalid JSON file', false); return; }
         }
-        if (!command) { showLaunchResult('Command is required', false); return; }
+        if (!command || (typeof command === 'object' ? Object.keys(command).length === 0 : !command)) {
+            showLaunchResult('Command is required', false); return;
+        }
 
         const analysis_name = document.getElementById('analysis-name-input')?.value.trim() || undefined;
         const queue = document.getElementById('analysis-queue')?.value || undefined;
@@ -883,7 +887,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const threads = Number.parseInt(document.getElementById('docker-threads')?.value.trim());
         const memory = document.getElementById('docker-memory')?.value.trim();
         const prioritize = document.getElementById('docker-prioritize')?.checked;
-        await submitAnalysis(JSON.stringify({ "analysis_name": analysis_name, "image": image, "command_docker": command, "docker_extra_params": docker_extra_params, "use_stark_container_mount": use_stark_container_mount, "queue": queue, "threads": threads, "memory": memory, "prioritize": prioritize }));
+        await submitAnalysis(JSON.stringify({ "analysis_name": analysis_name, "image": image, "command": command, "docker_extra_params": docker_extra_params, "use_stark_container_mount": use_stark_container_mount, "queue": queue, "threads": threads, "memory": memory, "prioritize": prioritize }));
     });
 
     // ══════════════════════════════════════════════════════════════════════════
