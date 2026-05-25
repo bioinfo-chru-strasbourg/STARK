@@ -857,7 +857,7 @@ Example:
 }
 ```
 
-Example with entrypoint and commadn in JSON:
+Example with entrypoint and command in JSON:
 
 ```json
 {
@@ -1009,9 +1009,9 @@ curl -s -X POST "http://localhost:8000/analysis" \
 > - `docker exec` does not support `--cpus` or `--memory`; those resource flags are ignored. Thread count only affects the task-spooler slot count (`-N`).
 > - The target container must already be running when the task is dequeued. If it is stopped in the meantime, the exec will fail.
 
-#### Mode 5 - Endpoint (`url` + `command`)
+#### Mode 5 - Endpoint (`endpoint` + `command`)
 
-Runs `command` requesting an **endpoint** (such as RPC or API-REST).
+Runs `command` requesting an **endpoint** as URL (such as RPC or API-REST).
 
 This mode is useful for sending a command to a external application.
 
@@ -1068,7 +1068,7 @@ curl -s -X POST "http://localhost:8000/analysis" \
 >
 > **Note:**
 >
-> - External application as enpoint does not support `--threads` or `--memory`; those resource flags are ignored. Thread count only affects the task-spooler slot count (`-N`).
+> - External application as endpoint does not support `--threads` or `--memory`; those resource flags are ignored. Thread count only affects the task-spooler slot count (`-N`).
 > - The external application must already be running.
 > - For RPC application, "id" is required in command JSON parameters. JSON RPC version is an option (e.g. `"jsonrpc": "2.0"`)
 

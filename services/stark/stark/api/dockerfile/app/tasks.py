@@ -20,15 +20,16 @@ from config import (
 )
 from queues import _prepare_queue_for_submission
 from security import (
-    _sanitize_analysis_name,
     _validate_command,
+    _validate_image,
+    _validate_url,
     _validate_container_name,
     _validate_docker_extra_params,
     _sanitize_docker_extra_params,
-    _validate_image,
+    _sanitize_analysis_name,
     _safe_split,
     ALLOWED_CLIENT_KEYS,
-    SENSITIVE_KEYS
+    SENSITIVE_KEYS,
 )
 from modules import resolve_module, apply_module_defaults
 
@@ -304,27 +305,56 @@ def _build_ts_bash_wrapper_exec(
 
 
 def _json_command_to_str(obj: Union[dict, list, str]) -> str:
-    parts = []
+    """Convert a JSON command (dict or list) to a CLI string.
+    The JSON command can be a string (passed as-is), a list of strings (joined with spaces), or a dict where keys are parameter names and values are parameter values. The dict form allows for more structured input and supports boolean flags, lists of values, and nested parameters if needed in the future. The function processes the dict to build a CLI string with proper formatting for different types of parameters, while also validating the input to ensure it is well-formed and does not contain unsupported types. This approach provides flexibility in how commands can be specified in the JSON input while ensuring that they are correctly translated into CLI format for execution.
+    Examples of supported JSON command formats:
+        - String: "my_command --option value"
+        - List: ["my_command", "--option", "value"]
+        - Dict: {"my_command": null, "option": "value", "flag": true, "list": ["val1", "val2"]}
+    The resulting CLI string would be:
+        "my_command --option=value --flag --list=val1,val2"
+    """
     if isinstance(obj, str):
         return obj
-    if isinstance(obj, list):
-        for item in obj:
-            if isinstance(item, str):
-                parts.append(item)
-            else:
-                raise ValueError(f"Invalid command list item: {item}")
-    elif isinstance(obj, dict):
-        for k, v in obj.items():
-            if isinstance(v, list):
-                parts.append(f"--{k}={','.join(str(i) for i in v)}")
-            elif v is True:
-                parts.append(f"--{k}")        
-            elif v is None:
-                parts.append(f"{k}")
-            elif v is False:
-                continue
-            else:
-                parts.append(f"--{k}={v}")
+    elif not isinstance(obj, dict):
+        raise ValueError("Command must be a dict")
+
+    parts = []
+
+    for k, v in obj.items():
+
+        if not isinstance(k, str) or not k.strip():
+            raise ValueError(f"Invalid command key: {k!r}")
+
+        if isinstance(v, list):
+            parts.append(f"--{k}={','.join(str(i) for i in v)}")
+
+        elif v is True:
+            parts.append(f"--{k}")
+
+        elif v is False:
+            continue
+
+        elif v is None:
+            parts.append(f"{k}")
+
+        elif isinstance(v, (str, int, float)):
+            parts.append(f"--{k}={v}")
+
+        elif isinstance(v, dict):
+            # option 1: allow recusivity
+            # parts.append("--" + k)
+            # parts.extend(json_command_to_cli(v).split())
+
+            # option 2: disallow (strict security)
+            raise ValueError(f"Nested objects not supported for key '{k}'")
+
+        else:
+            raise ValueError(f"Unsupported type for key '{k}': {type(v).__name__}")
+
+    if not parts:
+        raise ValueError("Command cannot be empty")
+
     return " ".join(parts)
 
 
@@ -362,19 +392,26 @@ def queue_module_analysis(json_input: dict) -> str:
     elif "image" in json_input:
         return queue_command_docker(json_input)         # docker run (client image)
     elif "endpoint" in json_input:
-        return queue_endpoint(json_input)  # RCP analysis
+        return queue_endpoint(json_input)  # RPC analysis
     else:
         return queue_analysis(json_input)               # STARK JSON analysis
 
 
 def queue_endpoint(json_input: dict) -> str:
-    """Build and queue a RCP analysis. Returns analysisIDNAME or raises RuntimeError."""
+    """Build and queue a RPC analysis. Returns analysisIDNAME or raises RuntimeError."""
 
     # Command
     command = json_input.get("command")
+    if not isinstance(command, dict) or not command:
+        raise RuntimeError("Error: endpoint mode requires a non-empty 'command' object")
 
     # Endpoint
     endpoint = json_input.get("endpoint")
+    if not isinstance(endpoint, str) or not endpoint.strip():
+        raise RuntimeError(
+            "Error: endpoint mode requires a non-empty 'endpoint' string"
+        )
+    endpoint = _validate_url(endpoint)
 
     # token variable for curl config
     api_key_variable = json_input.get("api_key_variable")
@@ -389,7 +426,7 @@ def queue_endpoint(json_input: dict) -> str:
     with open(ctx.analysis_file, "w") as f:
         f.write(json.dumps(json_input))
 
-    # Construct command with ID and JSONRCP version
+    # Construct command with ID and JSONRPC version
     # Only for RPC endpoint -- IGNORED
     # if "id" not in command:
     #     command["id"] = (
@@ -399,7 +436,7 @@ def queue_endpoint(json_input: dict) -> str:
     #     command["jsonrpc"] = "2.0"  # JSON-RPC version
 
     # Create a curl config file to avoid issues with escaping quotes in the command string, like:
-    # STARK.xxx.rcp.curl
+    # STARK.xxx.rpc.curl
     # url = "http://..."
     # request = "POST"
     # header = "Content-Type: application/json"
@@ -426,12 +463,15 @@ def queue_endpoint(json_input: dict) -> str:
         # Write the command dict as JSON to the payload file and reference it in the curl config with "data = @payload_path" to avoid issues with escaping quotes and special characters in the command string when passing it directly as a parameter in the curl config.
         with open(payload_path, "w") as pf:
             pf.write(json.dumps(command))
-        #f.write(f"data = @{payload_path}\n")
+        # f.write(f"data = @{payload_path}\n")
 
     # Command for task spooler
     inner_cmd = f"{curl_script_path} --config={curl_config_path} --data={payload_path} --remove "
 
-    ts_cmd = f"{ctx.ts_env}{ts}"
+    #ts_cmd = f"{ctx.ts_env}{ts}"
+    ts_cmd = (
+        f"{ctx.ts_env}{ts} -N {ctx.task_slots} -L {ctx.analysis_id_name}" if ts else ""
+    )
 
     my_cmd = _build_ts_bash_wrapper(
         ts_cmd,

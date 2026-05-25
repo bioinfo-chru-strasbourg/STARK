@@ -804,25 +804,47 @@ document.addEventListener('DOMContentLoaded', () => {
         const moduleName = msel?.value || '';
 
         const mode = document.querySelector('input[name="analysis-cmd-mode"]:checked')?.value || 'text';
-        // let command = '';
-        let command = {};
+        let command = null;
+
         if (mode === 'text') {
-            // command = document.getElementById('analysis-command-text')?.value.trim() || '';
-            command[document.getElementById('analysis-command-text')?.value.trim() || ''] = null; // convert to object with command as key for easier CLI conversion later
-        } else if (mode === 'json') {
-            const raw = document.getElementById('analysis-command-json')?.value.trim() || '';
-            try { command = JSON.parse(raw); }
-            catch (_) { showLaunchResult('Invalid JSON command', false); return; }
-        } else if (mode === 'file') {
+            const value = document.getElementById('analysis-command-text')?.value.trim();
+
+            if (!value) {
+                showLaunchResult('Command is required', false);
+                return;
+            }
+
+            // Only after validation
+            command = { [value]: null };
+        }
+
+        else if (mode === 'json') {
+            const raw = document.getElementById('analysis-command-json')?.value.trim();
+            if (!raw) { showLaunchResult('Invalid JSON command', false); return; }
+            try {
+                command = JSON.parse(raw);
+            } catch {
+                showLaunchResult('Invalid JSON command', false);
+                return;
+            }
+        }
+
+        else if (mode === 'file') {
             const file = document.getElementById('analysis-command-file')?.files[0];
             if (!file) { showLaunchResult('No file selected', false); return; }
             try {
                 const text = await file.text();
                 command = JSON.parse(text);
-            } catch (_) { showLaunchResult('Invalid JSON file', false); return; }
+            } catch {
+                showLaunchResult('Invalid JSON file', false);
+                return;
+            }
         }
-        if (!command || (typeof command === 'object' ? Object.keys(command).length === 0 : !command)) {
-            showLaunchResult('Command is required', false); return;
+
+        // Final validation
+        if (!command || (typeof command === 'object' && Object.keys(command).length === 0)) {
+            showLaunchResult('Command is required', false);
+            return;
         }
 
         const analysis_name = document.getElementById('analysis-name-input')?.value.trim() || undefined;

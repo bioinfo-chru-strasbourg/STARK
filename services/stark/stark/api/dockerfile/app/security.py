@@ -3,6 +3,7 @@
 import re
 import shlex
 from typing import Optional, Dict
+from urllib.parse import urlparse
 
 # --- Blocklist: destructive shell command patterns ---
 _DANGEROUS_COMMAND_PATTERNS = [
@@ -122,6 +123,22 @@ def _validate_container_name(name: str) -> None:
             f"Invalid container name: {name!r}. "
             "Only alphanumeric, '_', '.', '-' characters are allowed, starting with alphanumeric."
         )
+
+
+def _validate_url(ep: str) -> str:
+    parsed = urlparse(ep)
+
+    if parsed.scheme not in ("http", "https"):
+        raise ValueError("Invalid scheme")
+
+    if not parsed.netloc:
+        raise ValueError("Invalid host")
+
+    # empêche injection
+    if any(c in ep for c in ['"', "\r", "\n"]):
+        raise ValueError("Invalid characters")
+
+    return ep
 
 
 def _sanitize_analysis_name(name: str) -> str:

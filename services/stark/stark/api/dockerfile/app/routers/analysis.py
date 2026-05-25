@@ -42,6 +42,7 @@ async def _run_locally(json_input: dict) -> str:
       - ``container``          -> docker exec  (command runs inside an existing container)
       - ``service``            -> docker-compose run
       - ``image``  (client)   -> docker run  (ephemeral container, image supplied by caller)
+      - ``endpoint``           -> request RPC/API endpoint  (command is RPC config, endpoint is the target)
       - ``module``             -> module CLI  (image resolved server-side from modules.json)
       - *(none of the above)* -> STARK JSON analysis
 
