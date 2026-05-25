@@ -232,13 +232,10 @@ async def archive_relaunch(
         return PlainTextResponse(f"Error reading JSON file: {e}", status_code=500)
 
     # Route to the correct task function
-    from routers.analysis import _run_locally_module, _run_locally
+    from routers.analysis import _run_locally
 
     try:
-        if "command" in json_input and "module" in json_input:
-            analysis_id_name_new = await _run_locally_module(json_input)
-        else:
-            analysis_id_name_new = await _run_locally(json_input)
+        analysis_id_name_new = await _run_locally(json_input)
         return PlainTextResponse(content=analysis_id_name_new, status_code=200)
     except Exception as e:
         return PlainTextResponse(content=f"Relaunch failed: {e}", status_code=400)

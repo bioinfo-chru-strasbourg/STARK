@@ -33,6 +33,10 @@ ts_timeout = int(
 # --- Shell ---
 shell = os.environ.get("SHELL", "/bin/ash")
 
+# --- CURL bash script for RPC calls from within Docker containers ---
+# We use a custom bash script instead of a direct curl command to have better control over the error handling and output formatting of the RPC calls made from within the Docker containers to the API. The curl.sh script executes the curl command with the provided config, captures the response and exit code, and then processes the output to distinguish between network/curl errors and RPC errors, ensuring that the API receives clear and consistent feedback on the success or failure of the RPC calls made from the containers. This approach allows us to handle errors more gracefully and provide better debugging information in case of issues with the RPC communication between the containers and the API.
+curl_script_path = "/app/bin/curl.py"
+
 # --- Docker STARK image and parameters ---
 docker_stark = os.environ.get("DOCKER_STARK_IMAGE", "stark")
 docker_stark_container_mount = os.environ.get(

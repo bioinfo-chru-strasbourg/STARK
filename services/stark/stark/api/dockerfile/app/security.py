@@ -60,12 +60,15 @@ _FORBIDDEN_DOCKER_FLAGS = {
 }
 
 # Keys that are mandatory in the module config for security reasons and will be filled with safe defaults if missing/None in the config file. The presence of the mandatory keys is crucial for ensuring that each module has a defined Docker image, service name, and container name, which are essential for the secure operation of the analysis execution. The mandatory params will be filled with safe defaults to ensure secure operation even if the module is misconfigured or missing these fields.
-MANDATORY_KEYS_PARAMS = ("module", "image", "service", "container")
+
+MANDATORY_KEYS_PARAMS = ("module", "image", "service", "container", "endpoint")
 MANDATORY_PARAMS = {
     "docker_extra_params": "",
     "use_stark_container_mount": False,
     "command_prefix": "",
     "command_postfix": "",
+    "api_key_variable": None,
+    "bearer_token_variable": None,
 }
 # Sensitive keys include both the mandatory keys that must be present in the module config for security reasons, and the mandatory params that will be filled with safe defaults if missing to ensure secure operation even with misconfigured modules.
 SENSITIVE_KEYS = MANDATORY_KEYS_PARAMS + tuple(MANDATORY_PARAMS.keys())
@@ -175,7 +178,7 @@ def _sanitize_docker_extra_params(
                 i += 1
             continue
 
-        # Allowed token → keep it
+        # Allowed token -> keep it
         cleaned.append(token)
         i += 1
 

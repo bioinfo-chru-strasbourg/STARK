@@ -8,7 +8,7 @@ import shlex
 import string
 import subprocess
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Union
 
 from config import (
     docker_stark,
@@ -16,6 +16,7 @@ from config import (
     docker_stark_container_mount,
     ts,
     ts_timeout,
+    curl_script_path,
 )
 from queues import _prepare_queue_for_submission
 from security import (
@@ -302,6 +303,31 @@ def _build_ts_bash_wrapper_exec(
     )
 
 
+def _json_command_to_str(obj: Union[dict, list, str]) -> str:
+    parts = []
+    if isinstance(obj, str):
+        return obj
+    if isinstance(obj, list):
+        for item in obj:
+            if isinstance(item, str):
+                parts.append(item)
+            else:
+                raise ValueError(f"Invalid command list item: {item}")
+    elif isinstance(obj, dict):
+        for k, v in obj.items():
+            if isinstance(v, list):
+                parts.append(f"--{k}={','.join(str(i) for i in v)}")
+            elif v is True:
+                parts.append(f"--{k}")        
+            elif v is None:
+                parts.append(f"{k}")
+            elif v is False:
+                continue
+            else:
+                parts.append(f"--{k}={v}")
+    return " ".join(parts)
+
+
 def queue_module_analysis(json_input: dict) -> str:
     """Queue a module analysis by passing the ``command`` field as direct CLI args.
     """
@@ -335,9 +361,88 @@ def queue_module_analysis(json_input: dict) -> str:
         return queue_command_docker_compose(json_input) # docker-compose run
     elif "image" in json_input:
         return queue_command_docker(json_input)         # docker run (client image)
+    elif "endpoint" in json_input:
+        return queue_endpoint(json_input)  # RCP analysis
     else:
         return queue_analysis(json_input)               # STARK JSON analysis
 
+
+def queue_endpoint(json_input: dict) -> str:
+    """Build and queue a RCP analysis. Returns analysisIDNAME or raises RuntimeError."""
+
+    # Command
+    command = json_input.get("command")
+
+    # Endpoint
+    endpoint = json_input.get("endpoint")
+
+    # token variable for curl config
+    api_key_variable = json_input.get("api_key_variable")
+    bearer_token_variable = json_input.get("bearer_token_variable")
+
+    # Task context (also sets json_input["threads"])
+    ctx = _setup_task_context(json_input)
+
+    prioritize = json_input.get("prioritize", False)
+
+    # Write the JSON
+    with open(ctx.analysis_file, "w") as f:
+        f.write(json.dumps(json_input))
+
+    # Construct command with ID and JSONRCP version
+    # Only for RPC endpoint -- IGNORED
+    # if "id" not in command:
+    #     command["id"] = (
+    #         ctx.analysis_id_name
+    #     )  # JSON-RPC requires an "id" field; using a fixed value for simplicity, can be enhanced to generate unique IDs if needed
+    # if "jsonrpc" not in command:
+    #     command["jsonrpc"] = "2.0"  # JSON-RPC version
+
+    # Create a curl config file to avoid issues with escaping quotes in the command string, like:
+    # STARK.xxx.rcp.curl
+    # url = "http://..."
+    # request = "POST"
+    # header = "Content-Type: application/json"
+    # header = "X-API-Key: <token>"
+    # header = "Authorization: Bearer <token>"
+    # data = @/path/to/payload.json
+    curl_config_path = os.path.join(ctx.analysis_folder, f"{ctx.analysis_id_name}.endpoint.curl")
+    with open(curl_config_path, "w") as f:
+        # URL
+        f.write(f'url = "{endpoint}"\n')
+        # Request
+        f.write("request = \"POST\"\n")
+        # Headers
+        f.write("header = \"Content-Type: application/json\"\n")
+        # TOKEN in header if specified
+        if api_key_variable:
+            f.write(f'header = "X-API-Key: ${api_key_variable}"\n')
+        elif bearer_token_variable:
+            f.write(f'header = "Authorization: Bearer ${bearer_token_variable}"\n')
+        # Data payload
+        payload_path = os.path.join(
+            ctx.analysis_folder, f"{ctx.analysis_id_name}.endpoint.payload"
+        )
+        # Write the command dict as JSON to the payload file and reference it in the curl config with "data = @payload_path" to avoid issues with escaping quotes and special characters in the command string when passing it directly as a parameter in the curl config.
+        with open(payload_path, "w") as pf:
+            pf.write(json.dumps(command))
+        #f.write(f"data = @{payload_path}\n")
+
+    # Command for task spooler
+    inner_cmd = f"{curl_script_path} --config={curl_config_path} --data={payload_path} --remove "
+
+    ts_cmd = f"{ctx.ts_env}{ts}"
+
+    my_cmd = _build_ts_bash_wrapper(
+        ts_cmd,
+        inner_cmd,
+        ctx.analysis_id_name,
+        ctx.analysis_info_file,
+        ctx.analysis_output_file,
+    )
+
+    _ = _queue_task(my_cmd, prioritize=prioritize, ts_cmd=ts_cmd)
+    return ctx.analysis_id_name
 
 def queue_analysis(json_input: dict) -> str:
     """Build and queue a STARK Docker analysis. Returns analysisIDNAME or raises RuntimeError."""
@@ -437,8 +542,9 @@ def queue_command_docker_exec(json_input: dict) -> str:
     """
 
     # Command
-    raw_command = str(json_input["command"]).strip()
-    _validate_command(raw_command)
+    command = json_input["command"]
+    command = _json_command_to_str(command)  # stringify if it's a dict of args
+    _validate_command(command)
 
     # Container (name or ID of an already-running container)
     container = json_input.get("container")
@@ -479,7 +585,7 @@ def queue_command_docker_exec(json_input: dict) -> str:
         docker_cmd += _safe_split(docker_extra_params)
     docker_cmd.append(container)
     docker_cmd += _safe_split(command_prefix)
-    docker_cmd += _safe_split(raw_command)
+    docker_cmd += _safe_split(command)
     docker_cmd += _safe_split(command_postfix)
     docker_cmd_str = " ".join(shlex.quote(tok) for tok in docker_cmd)
 
@@ -512,6 +618,8 @@ def queue_command_docker(json_input: dict) -> str:
 
     # Command
     command = json_input["command"]
+    command = _json_command_to_str(command)  # stringify if it's a dict of args
+    _validate_command(command)
 
     # Image
     image = json_input.get("image")
@@ -592,6 +700,8 @@ def queue_command_docker_compose(json_input: dict) -> str:
 
     # Command
     command = json_input["command"]
+    command = _json_command_to_str(command)  # stringify if it's a dict of args
+    _validate_command(command)
 
     # Service
     service = json_input.get("service")

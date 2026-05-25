@@ -705,11 +705,12 @@ The task mode is determined by which **context key** is present in the JSON body
 
 | Context key | Mode | Description |
 | --- | --- | --- |
-| `container` | **Docker exec** | Runs `command` inside an already-running container via `docker exec` |
-| `service` | **Docker compose** | Runs `command` via `docker-compose run` (requires `docker_compose_file`) |
-| `image` | **Docker run** | Runs `command` in a new ephemeral Docker container via `docker run` |
 | `module` | **Module CLI** | Runs `command` as direct CLI args to the configured module container (image resolved server-side) |
-| *(none)* | **STARK analysis** | Runs a full STARK Docker analysis — use `run` key or full JSON params |
+| `image` | **Docker run** | Runs `command` in a new ephemeral Docker container via `docker run` |
+| `service` | **Docker compose** | Runs `command` via `docker-compose run` (requires `docker_compose_file`) |
+| `container` | **Docker exec** | Runs `command` inside an already-running container via `docker exec` |
+| `endpoint` | **RPC** or **API** | Runs `command` as parameters for an external application endpoint |
+| _(none)_ | **STARK analysis** | Runs a full STARK Docker analysis — use `run` key or full JSON params |
 
 **Common optional keys (all modes):**
 
@@ -727,7 +728,7 @@ The task mode is determined by which **context key** is present in the JSON body
 
 Runs `command` as **direct CLI args** in the module container:
 
-```
+```bash
 docker run <image> <command>
 ```
 
@@ -735,8 +736,8 @@ The module image and extra Docker parameters are resolved server-side from `conf
 
 | JSON key | Required | Description |
 | --- | --- | --- |
-| `module` | Yes* | Context key that selects Module CLI mode. Module name (case-insensitive); empty or `null` defaults to the first configured module; unknown name → HTTP 400. |
-| `command` | Yes | CLI argument string passed directly to the container (e.g. `--run=MY_RUN --sample_filter=Sample1`) |
+| `module` | Yes* | Context key that selects Module CLI mode. Module name (case-insensitive); empty or `null` defaults to the first configured module; unknown name -> HTTP 400. |
+| `command` | Yes | CLI argument JSON or string passed directly to the container (e.g. `{"run": "MY_RUN", "sample_filter": "Sample1"}` or `--run=MY_RUN --sample_filter=Sample1`) |
 | `analysis_name` | No | Human-readable task label |
 | `queue` | No | Target queue (defaults to first queue) |
 | `threads` | No | Slots consumed (`-N`); see common optional keys above |
@@ -832,7 +833,7 @@ Runs `command` inside a **new ephemeral Docker container** (`docker run --rm`). 
 | JSON key | Required | Description |
 | --- | --- | --- |
 | `image` | Yes | Docker image name (e.g. `alpine`, `myregistry/myimage:1.0`) — context key that selects this mode |
-| `command` | Yes | Command to run inside the container |
+| `command` | Yes | CLI argument JSON or string passed directly to the container (e.g. `{"run": "MY_RUN", "sample_filter": "Sample1"}` or `--run=MY_RUN --sample_filter=Sample1`) |
 | `docker_extra_params` | No | Additional `docker run` flags (e.g. `-e MY_VAR=value`, `--entrypoint /bin/sh`) |
 | `use_stark_container_mount` | No | Append the STARK volume mounts (default `false`) |
 | `analysis_name` | No | Human-readable task label |
@@ -848,6 +849,21 @@ Example:
   "image": "myregistry/mypipeline:1.0",
   "command": "python3 /scripts/run.py --input /data/sample.vcf",
   "docker_extra_params": "-v ${HOME}/data:/data/ -e MY_VAR=value",
+  "use_stark_container_mount": false,
+  "analysis_name": "my_pipeline",
+  "queue": "medium",
+  "threads": 2,
+  "memory": "4G"
+}
+```
+
+Example with entrypoint and commadn in JSON:
+
+```json
+{
+  "image": "myregistry/mypipeline:1.0",
+  "command": {"input": "/data/sample.vcf"},
+  "docker_extra_params": "-v ${HOME}/data:/data/ -e MY_VAR=value --entrypoint=/scripts/run.py",
   "use_stark_container_mount": false,
   "analysis_name": "my_pipeline",
   "queue": "medium",
@@ -897,7 +913,7 @@ Runs `command` via **`docker-compose run --rm`** using the specified service and
 | --- | --- | --- |
 | `service` | Yes | Docker Compose service name — context key that selects this mode |
 | `docker_compose_file` | Yes | Path to the docker-compose YAML file (e.g. `docker-compose.yml`) |
-| `command` | Yes | Command to run inside the service container |
+| `command` | Yes | CLI argument JSON or string passed directly to the container (e.g. `{"run": "MY_RUN", "sample_filter": "Sample1"}` or `--run=MY_RUN --sample_filter=Sample1`) |
 | `docker_extra_params` | No | Additional `docker-compose run` flags (e.g. `-e MY_VAR=value`, `--entrypoint /bin/sh`) |
 | `use_stark_container_mount` | No | Append the STARK volume mounts (default `false`) |
 | `analysis_name` | No | Human-readable task label |
@@ -943,7 +959,7 @@ This mode is useful for sending a command to a long-running service container wi
 | JSON key | Required | Description |
 | --- | --- | --- |
 | `container` | Yes | Name or ID of an already-running container — context key that selects this mode |
-| `command` | Yes | Command to run inside the container |
+| `command` | Yes | CLI argument JSON or string passed directly to the container (e.g. `{"run": "MY_RUN", "sample_filter": "Sample1"}` or `--run=MY_RUN --sample_filter=Sample1`) |
 | `docker_extra_params` | No | Extra `docker exec` flags (e.g. `-e VAR=val`, `-w /workdir`, `-u user`) |
 | `analysis_name` | No | Human-readable task label |
 | `queue` | No | Target queue (defaults to first queue) |
@@ -954,8 +970,20 @@ Example:
 
 ```json
 {
-  "container": "stark_daemon",
+  "container": "stark_cli",
   "command": "--run=MY_RUN --sample_filter=Sample1",
+  "analysis_name": "MY_RUN_exec",
+  "queue": "stark",
+  "threads": 4
+}
+```
+
+Example with commadn in JSON:
+
+```json
+{
+  "container": "stark_cli",
+  "command": {"run": "MY_RUN", "sample_filter": "Sample1"},
   "analysis_name": "MY_RUN_exec",
   "queue": "stark",
   "threads": 4
@@ -968,7 +996,7 @@ Example with curl:
 curl -s -X POST "http://localhost:8000/analysis" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"container": "stark_daemon", "command": "echo hello", "analysis_name": "test_exec"}'
+  -d '{"container": "stark_cli", "command": "echo hello", "analysis_name": "test_exec"}'
 ```
 
 > **Security:**
@@ -980,6 +1008,69 @@ curl -s -X POST "http://localhost:8000/analysis" \
 >
 > - `docker exec` does not support `--cpus` or `--memory`; those resource flags are ignored. Thread count only affects the task-spooler slot count (`-N`).
 > - The target container must already be running when the task is dequeued. If it is stopped in the meantime, the exec will fail.
+
+#### Mode 5 - Endpoint (`url` + `command`)
+
+Runs `command` requesting an **endpoint** (such as RPC or API-REST).
+
+This mode is useful for sending a command to a external application.
+
+| JSON key | Required | Description |
+| --- | --- | --- |
+| `endpoint` | Yes | URL of the RPC or API-REST application |
+| `command` | Yes | Parameters to send to the endpoint, in JSON |
+| `api_key_variable` | No | API KEY for security, if needed |
+| `bearer_token_variable` | No | TOKEN for security, if needed |
+| `analysis_name` | No | Human-readable task label |
+| `queue` | No | Target queue (defaults to first queue) |
+| `threads` | No | Slots consumed (`-N`); see common optional keys above |
+| `memory` | No | Docker memory limit (e.g. `4G`) |
+| `prioritize` | No | Prioritize task once it is launched |
+
+Example with RPC application:
+
+```json
+{
+  "endpoint": "http://192.168.1.130:5001/rpc",
+  "command": {"method": "my_analysis", "params": ["MY_RUN", "Sample1", [1,5,10,100]], "id": "MY_APPLICATION_RPC", "jsonrpc": "2.0"},
+  "api_key_variable": "RPC_API_KEY",
+  "analysis_name": "MY_APPLICATION_RPC",
+  "queue": "stark",
+  "threads": 4
+}
+```
+
+Example for API-REST application:
+
+```json
+{
+  "endpoint": "http://192.168.1.130:5002/analysis",
+  "command": {"run": "MY_RUN", "sample_filter": "Sample1", "param2": [1,5,10,100], "id": "MY_APPLICATION_API"},
+  "api_key_variable": "APP_API_KEY",
+  "analysis_name": "MY_APPLICATION_API",
+  "queue": "stark",
+  "threads": 4
+}
+```
+
+Example with curl:
+
+```bash
+curl -s -X POST "http://localhost:8000/analysis" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"endpoint": "http://192.168.1.130:5001/rpc", "command": {"method": "my_analysis", "params": ["MY_RUN", "Sample1", [1,5,10,100]], "id": "MY_APPLICATION_RPC", "jsonrpc": "2.0"}, "api_key_variable": "RPC_API_KEY", "analysis_name": "MY_APPLICATION_RPC"}'
+```
+
+> **Security:**
+>
+> - `api_key_variable` and `bearer_token_variable` are variable names that are configured as a system variable on external application.
+>
+> **Note:**
+>
+> - External application as enpoint does not support `--threads` or `--memory`; those resource flags are ignored. Thread count only affects the task-spooler slot count (`-N`).
+> - The external application must already be running.
+> - For RPC application, "id" is required in command JSON parameters. JSON RPC version is an option (e.g. `"jsonrpc": "2.0"`)
 
 #### `analysis_name` sanitisation
 

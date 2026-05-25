@@ -200,7 +200,7 @@ async def cluster_tasks():
         "node":     "node1"                      human-readable name from nodes.json
         "node_url": "http://192.168.1.10:4200"   URL of the originating node
 
-    Tasks are sorted by state priority (running → queued → waiting → finished)
+    Tasks are sorted by state priority (running -> queued -> waiting -> finished)
     then by task id within each state.
     """
     from routers.queue import list_task  # local import to avoid circular deps
