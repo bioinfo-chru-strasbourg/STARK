@@ -75,6 +75,7 @@ def _iter_queue_tasks(queue_name: str, cfg: dict, is_default: bool) -> list:
         task_slots = _read_task_slots(data["command"], int(cfg.get("slots", 1)))
 
         # elevel is already "SUCCESS" / "FAILED: X" / "" from _iter_queue_tasks, with X an integer, but we want to explicitly set it to "SUCCESS" if it's "0" for easier handling in the frontend (empty or integer -> failed, only "0" -> success)
+        elevel = ""
         try:
             if data["elevel"].strip() == "0":
                 elevel = "SUCCESS"
