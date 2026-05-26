@@ -73,22 +73,22 @@ def _iter_queue_tasks(queue_name: str, cfg: dict, is_default: bool) -> list:
             run_name_match.group(1) if run_name_match else "N/A",
         )
         task_slots = _read_task_slots(data["command"], int(cfg.get("slots", 1)))
+
+        # elevel is already "SUCCESS" / "FAILED: X" / "" from _iter_queue_tasks, with X an integer, but we want to explicitly set it to "SUCCESS" if it's "0" for easier handling in the frontend (empty or integer -> failed, only "0" -> success)
+        try:
+            if data["elevel"].strip() == "0":
+                elevel = "SUCCESS"
+            elif data["elevel"].strip() and int(data["elevel"].strip()) != 0:
+                elevel = "FAILED: " + data["elevel"].strip()
+        except ValueError:
+            elevel = ""
+
         tasks.append(
             {
                 "id": data["id"].strip(),
                 "state": data["state"].strip(),
                 "output": data["output"].strip(),
-                "elevel": (
-                    "SUCCESS"
-                    if data["elevel"].strip() == "0"
-                    else (
-                        "FAILED: " + data["elevel"].strip()
-                        if data[
-                            "elevel"
-                        ].strip()  # any non-zero, non-empty -> failed (handles "signal:15" etc.)
-                        else ""
-                    )
-                ),
+                "elevel": elevel,
                 "times": "",
                 "run_name": run_name,
                 "queue": queue_name,
