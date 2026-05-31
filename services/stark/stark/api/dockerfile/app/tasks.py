@@ -421,8 +421,26 @@ def queue_endpoint(json_input: dict) -> str:
     api_key_variable = json_input.get("api_key_variable")
     bearer_token_variable = json_input.get("bearer_token_variable")
 
+    # Get params from command
+    command_params = command.get("params")
+
+    # copy threads in command (if exists) into json_input (if not exists)
+    if isinstance(command_params, dict) and "threads" in command_params and ("threads" not in json_input or json_input.get("threads") is None):
+        json_input["threads"] = int(command_params["threads"])
+
     # Task context (also sets json_input["threads"])
     ctx = _setup_task_context(json_input)
+
+    # Inject resolved resources into RPC named params (Solution 0).
+    # Only when params is a dict (named params) and the key is already present
+    # (set to null by the listener as an opt-in signal). This is safe for both
+    # JSON-RPC (**kwargs convention) and REST/Pydantic (extra fields ignored).
+    params = command.get("params")
+    if isinstance(params, dict):
+        if "threads" in params:
+            params["threads"] = ctx.threads
+        if "memory" in params and ctx.memory:
+            params["memory"] = ctx.memory
 
     prioritize = json_input.get("prioritize", False)
 
