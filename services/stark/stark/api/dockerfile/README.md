@@ -1027,6 +1027,19 @@ This mode is useful for sending a command to a external application.
 | `memory` | No | Docker memory limit (e.g. `4G`) |
 | `prioritize` | No | Prioritize task once it is launched |
 
+Example with RPC application (with named parameters):
+
+```json
+{
+  "endpoint": "http://192.168.1.130:5001/rpc",
+  "command": {"method": "my_analysis", "params": {"run": "MY_RUN", "sample_filter": "Sample1", "param1": [1,5,10,100]}, "id": "MY_APPLICATION_RPC", "jsonrpc": "2.0"},
+  "api_key_variable": "RPC_API_KEY",
+  "analysis_name": "MY_APPLICATION_RPC",
+  "queue": "stark",
+  "threads": 4
+}
+```
+
 Example with RPC application:
 
 ```json
@@ -1070,7 +1083,8 @@ curl -s -X POST "http://localhost:8000/analysis" \
 >
 > - External application as endpoint does not support `--threads` or `--memory`; those resource flags are ignored. Thread count only affects the task-spooler slot count (`-N`).
 > - The external application must already be running.
-> - For RPC application, "id" is required in command JSON parameters. JSON RPC version is an option (e.g. `"jsonrpc": "2.0"`)
+> - For RPC application, "id" is required in command JSON parameters. JSON RPC version is an option (e.g. `"jsonrpc": "2.0"`), but needed if params as a dict (named parameters)
+> - For RPC with params as dict (named parameters), keywords `threads` and `memory` are re-injected depending on queue resources (only if keywords exists in command)
 
 #### `analysis_name` sanitisation
 
