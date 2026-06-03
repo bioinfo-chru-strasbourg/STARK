@@ -218,6 +218,7 @@ class _TaskContext:
     max_slots: int
     task_slots: int
     threads: int
+    memory: str
 
 
 def _setup_task_context(json_input: dict) -> "_TaskContext":
@@ -234,6 +235,7 @@ def _setup_task_context(json_input: dict) -> "_TaskContext":
     _task_slots = _resolve_task_slots(json_input, _max_slots)
     threads = (_task_slots == 0) and _max_slots or _task_slots
     json_input["threads"] = threads
+    memory = json_input.get("memory", None)
     return _TaskContext(
         analysis_id_name=analysis_id_name,
         analyses_run_name=analyses_run_name,
@@ -245,13 +247,14 @@ def _setup_task_context(json_input: dict) -> "_TaskContext":
         max_slots=_max_slots,
         task_slots=_task_slots,
         threads=threads,
+        memory=memory,
     )
 
 
 def _build_docker_resource_flags(threads: int, json_input: dict) -> str:
     """Return ' --cpus=N [--memory=M] ' resource flag string for docker parameters."""
     flags = f" --cpus={threads} "
-    if json_input.get("memory"):
+    if json_input.get("memory", None) is not None:
         memory = str(json_input["memory"]).strip()
         if not re.fullmatch(r"\d+(?:[bBkKmMgG])?", memory):
             raise ValueError(f"Invalid memory value: {memory}")
@@ -425,7 +428,12 @@ def queue_endpoint(json_input: dict) -> str:
     command_params = command.get("params")
 
     # copy threads in command (if exists) into json_input (if not exists)
-    if isinstance(command_params, dict) and "threads" in command_params and ("threads" not in json_input or json_input.get("threads") is None):
+    if (
+        isinstance(command_params, dict)
+        and "threads" in command_params
+        and ("threads" not in json_input or json_input.get("threads") is None)
+        and command_params.get("threads", None) is not None
+    ):
         json_input["threads"] = int(command_params["threads"])
 
     # Task context (also sets json_input["threads"])
