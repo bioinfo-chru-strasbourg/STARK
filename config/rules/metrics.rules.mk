@@ -390,7 +390,7 @@ MAX_CONCURRENT_HSMETRICS_RAM?=24g
 			cp -p $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.bed $(@D)/$(*F).validation.flags.$$bed_subname.bed; \
 			# HsMetrics per_target_coverage compression file file \
 			$(GZ) -p $(THREADS_BY_SAMPLE) -c $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.gz; \
-			rm $(@D)/$(*F).$$(basename $$one_bed).4fields* $(@D)/$(*F).$$(basename $$one_bed).interval $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_target_coverage.tmp $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp rm -f $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.bed.tmp; \
+			rm $(@D)/$(*F).$$(basename $$one_bed).4fields* $(@D)/$(*F).$$(basename $$one_bed).interval $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_target_coverage.tmp $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.bed.tmp; \
 		else \
 			# BED empty \
 			echo "#" > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_target_coverage.flags; \
