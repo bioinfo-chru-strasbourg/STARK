@@ -22,7 +22,7 @@ MK_DATE="30/04/2026"
 
 
 # CONFIG/RELEASE
-RELEASE_COMMENT := "\#\# GENOME '$(MK_RELEASE)': Write .genome file with reference genome path (deprecated)."
+RELEASE_COMMENT := "\#\# GENOME '$(MK_RELEASE)': Write .genome file with reference genome path - deprecated."
 RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
 

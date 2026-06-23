@@ -221,7 +221,7 @@ mkdir -p $TMP_FOLDER
 # DOCKER
 
 # Docker command
-if docker 2>/dev/null; then
+if docker 1>/dev/null 2>/dev/null; then
 	DOCKER=docker
 else
 	echo "#[ERROR] Docker not installed"
@@ -236,7 +236,7 @@ DOCKER_VERSION=$($DOCKER --version 2>/dev/null)
 (($VERBOSE)) && echo "#[INFO] STARK Module Docker command '$DOCKER'"
 
 # Docker Compose command
-if docker-compose 1>/dev/null; then
+if docker-compose 1>/dev/null 2>/dev/null; then
 	DOCKER_COMPOSE="docker-compose";
 elif docker compose 1>/dev/null 2>/dev/null; then
 	DOCKER_COMPOSE="docker compose";

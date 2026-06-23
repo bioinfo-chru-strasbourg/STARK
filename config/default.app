@@ -7,58 +7,124 @@
 
 # APPLICATION INFOS
 #####################
+
+# Name of the application.
+# Auto-detect by file name using pattern: `<APP_NAME>.app`.
+# This name is used to identify which application to apply, with parameter `--app|--application` (e.g. `--application=EXOME` or `--application=EXOME.app`).
+# Also usefull to include specific rules if exists (e.g. `$RULES_APP/$APP_NAME.rules.mk/*rules.mk`, `<APP_NAME>.rules.mk/*rules.mk`).
 APP_NAME="DEFAULT"
-APP_RELEASE="1.2"
+
+# Release of the application.
+# Should follow [Semantic Versioning](https://semver.org/) system (i.e. `MAJOR.MINOR.PATCH`)
+APP_RELEASE="1.2.0"
+
+# Description of the application.
+# Will be using parameter `--applications_infos` in the command line to display it in the help message of the application.
 APP_DESCRIPTION="Default application"
+
+# Group associated with the application.
+# Use to structure data in the repository folder (i.e. `<GROUP>/<PROJECT>`).
+# Leave it blank for no group (i.e. `UNKNOWN`).
 APP_GROUP=""
+
+# Project associated with the application.
+# Use to structure data in the repository folder (i.e. `<GROUP>/<PROJECT>`).
+# Leave it blank for no project (i.e. `UNKNOWN`).
 APP_PROJECT=""
 
 
 # FOLDERS
 ###########
 
+# Folders used for the analysis.
+# These folders will be automatically created if not exist.
+# The main folder is defined by STARK_FOLDER_MAIN variable, and all other folders are defined as subfolders of this main folder.
+# Folders can be redefined as absolute path, but we suggest to keep them as subfolders of the main folder for better organization and management of the data.
+# Folders like tools and databases contains pipeline tools and databases needed for the analysis, and will be used by the rules of the analysis.
+# Folders like input and output are used to store input data and results of the analysis, and will be used by the rules of the analysis.
+
 # MAIN STARK FOLDER
+# This is the main folder for the analysis, and all other folders are defined as subfolders of this main folder.
+# This folder will be automatically created if not exist, either during setup (for folders tools and databases) or during the analysis to store all the data and results of the analysis.
 STARK_FOLDER_MAIN="/STARK"
 
 # TOOLS FOLDER
-# tools: All tools needed for STARK, and more, including STARK
+# All tools needed for STARK, and more, including STARK.
+# This folder will be automatically created during setup if not exist, and will be used to store all the tools needed for the analysis, including STARK itself. 
+# This folder will be used by the rules of the analysis to access the tools needed for the analysis.
 FOLDER_TOOLS=$STARK_FOLDER_MAIN/tools
 
 # DATABASES FOLDER
-# genomes: All references genomes. format: $FOLDER_GENOMES/$ASSEMBLY/$ASSEMBLY.fa (with ASSEMBLY=hg19, hg38, mmu19...)
-# db: Folder with mandatory databases: dbSNP database for variant calling, such as "dbsnp_138.hg19.vcf.gz" (mandatory, depending on ASSEMBLY), VCF databases for recalibration such as "dbsnp_137.hg19.vcf" (mandatory, depending on ASSEMBLY)
+# All databases needed for STARK, and more.
+# This folder will be automatically created during setup if not exist, and will be used to store all the databases needed for the analysis, including reference genomes and mandatory databases for calling and annotation.
+# Folder structure is important for the rules of the analysis to access the databases needed for the analysis, and to automatically detect the reference genome and mandatory databases for calling and annotation depending on the assembly defined in the manifest file (configured in the SampleSheet of each run), if any.
+# Folder structuer format: `$FOLDER_DATABASES/<DATABASE_NAME>/<DATABASE_RELEASE>/<ASSEMBLY>/<DATABASE_FILE>`
+# Examples of folder structure:
+# - `$FOLDER_DATABASES/genomes/current/hg19/hg19.fa`
+# - `$FOLDER_DATABASES/dnsnp/latest/hg19/dbsnp_138.hg19.vcf.gz`
+# - `$FOLDER_DATABASES/dbnsfp/4.4a/hg19/dbNSFP4.4a.hg19.parquet`
 FOLDER_DATABASES=$STARK_FOLDER_MAIN/databases
 
 
 # INPUT FOLDER
+# All input data for the analysis, including raw data and metadata, should be stored in this folder. This folder will be used by the rules of the analysis to access the input data needed for the analysis.
+# Folder structure is important for the rules of the analysis to access the input data needed for the analysis, and to automatically detect the input data needed for the analysis depending on the manifest file (configured in the SampleSheet of each run), if any.
+# Subfolders for runs, manifests and pedigree can be defined as absolute path, but we suggest to keep them as subfolders of the input folder for better organization and management of the data.
 FOLDER_INPUT=$STARK_FOLDER_MAIN/input
+
 # Illumina Sequencer repository Folder. Subfolder as runs
+# This folder will be used by the rules of the analysis to access the raw data of each run (from the sequencer, such as Illumina), organized as subfolder for each run (e.g. `$FOLDER_RUN/<RUN_NAME>/`), and to automatically detect the raw data information of each run on a SampleSheet file, or a analysis JSON file.
 #FOLDER_RUN=$FOLDER_INPUT/runs
+
 # Illumina Manifests repository.
-# Files to provide in the SampleSheet of each run
+# This folder will be used by the rules of the analysis to access the manifest (Illumina format), design (BED format) and gene panels (BED format) files of each run (e.g. `$FOLDER_MANIFEST/my_manifest.manifest`, `$FOLDER_MANIFEST/my_design.bed`, `$FOLDER_MANIFEST/my_gene_panel.genes`).
+# These files are automatically detected within the SampleSheet of the run, or the analysis JSON file of the run.
 #FOLDER_MANIFEST=$FOLDER_INPUT/manifests
+
 # Pedigree repository.
+# This folder will be used by the rules of the analysis to access the pedigree file (PED format) of each run (e.g. `$FOLDER_PEDIGREE/my_pedigree.ped`).
+# These files are automatically detected within the SampleSheet of the run, or the analysis JSON file of the run, by using GROUP and PROJECT defined by the application used for the run.
 #FOLDER_PEDIGREE=$FOLDER_INPUT/pedigree
 
 
 # OUTPUT FOLDER
-# All results will be generated in this folder :
+# This folder will be used to store all the results of the analysis, including intermediate files and final results.
+# Subfolders for results, demultiplexing, log and tmp can be defined as absolute path, but we suggest to keep them as subfolders of the output folder for better organization and management of the data.
 FOLDER_OUTPUT=$STARK_FOLDER_MAIN/output
-# RES: RUN files such as BAM, VCF, metrics
-#FOLDER_RESULTS=$FOLDER_OUTPUT/results
-# DEM: Demultiplexing folder
+
+# DEMULTIPLEXING FOLDER
+# This folder will be used by the rules of the analysis to store the results of the demultiplexing step (using SampleSheet file), including the demultiplexed FASTQ files and the demultiplexing report.
 #FOLDER_DEMULTIPLEXING=$FOLDER_OUTPUT/demulitplexing
-# LOG: log files
+
+# FOLDER_RESULTS
+# This folder will be used to store all the results of the analysis, including intermediate files and final results (files such as BAM, VCF, metrics, annotation files, and more).
+#FOLDER_RESULTS=$FOLDER_OUTPUT/results
+
+
+# FOLDER_LOG
+# This folder will be used by the rules of the analysis to store log files of the analysis.
 #FOLDER_LOG=$FOLDER_OUTPUT/log
-# TMP: temporary files
+
+# FOLDER_TMP
+# This folder will be used by the rules of the analysis to store temporary files of the analysis, and to store temporary files of the tools used for the analysis (e.g. temporary files of GATK tools).
 #FOLDER_TMP=$FOLDER_OUTPUT/tmp
 
-# REPOSITORY and ARCHIVES folder
-# Results data can be copy in a repository folder. leave it blank for no copy
+# REPOSITORY folder
+# This folder will be used by the rules of the analysis to copy some results of the analysis in a repository folder, organized by group and project (e.g. `$FOLDER_REPOSITORY/<GROUP>/<PROJECT>/`), and to automatically detect the files to copy in the repository folder depending on application.
+# For a full run analysis, repository folder is automatically defined with group pand project structure. For other analyses, such as a single sample analysis, repository folder is empty, and no copy is performed.
+# Leave it blank for no copy in repository folder.
 FOLDER_REPOSITORY=$FOLDER_OUTPUT/repository
-# Results data can be copy in a archives folder. leave it blank for no copy
+
+# ARCHIVES folder
+# This folder will be used by the rules of the analysis to copy some results of the analysis in a archives folder, organized by group and project (e.g. `$FOLDER_ARCHIVES/<GROUP>/<PROJECT>/`), and to automatically detect the files to copy in the archives folder depending on application.
+# For a full run analysis, archives folder is automatically defined with group pand project structure. For other analyses, such as a single sample analysis, archives folder is empty, and no copy is performed.
+# Leave it blank for no copy in archives folder.
 FOLDER_ARCHIVES=$FOLDER_OUTPUT/archives
-# Results data can be copy in a favorites folder. leave it blank for no copy
+
+# FAVORITES folder
+# This folder will be used by the rules of the analysis to copy some results of the analysis in a favorites folder, organized by group and project (e.g. `$FOLDER_FAVORITES/<GROUP>/<PROJECT>/`), and to automatically detect the files to copy in the favorites folder depending on application.
+# For a full run analysis, favorites folder is automatically defined with group pand project structure. For other analyses, such as a single sample analysis, favorites folder is empty, and no copy is performed.
+# Leave it blank for no copy in favorites folder.
 # Configurations:
 #    - to NOT use favorites folder: FOLDER_FAVORITES=
 #    - to copy favorites within repository folder: FOLDER_FAVORITES=$FOLDER_REPOSITORY
@@ -613,6 +679,13 @@ MAX_CONCURRENT_HSMETRICS_RAM=16g
 HOWARD_CONFIG=$HOWARD_FOLDER_CONFIG/config.json
 #HOWARD_CONFIG={}
 
+# HOWARD prioritization configuration
+HOWARD_PRIORITIZATION_CONFIG="$HOWARD_FOLDER_CONFIG/prioritization_profiles.json" # default prioritization config
+
+# HOWARD calculation configuration
+HOWARD_CALCULATION_CONFIG="$HOWARD_FOLDER_CONFIG/calculation_config.json" # default calculation config
+
+
 # HOWARD PARAM
 # Use $HOWARD_FOLDER_CONFIG if necessary
 # default: $HOWARD_FOLDER_CONFIG/param.json
@@ -635,8 +708,6 @@ HOWARD_PARAM_REPORT=$HOWARD_FOLDER_CONFIG/param.json
 #HOWARD_PARAM_ANALYSIS=$HOWARD_FOLDER_CONFIG/param.json
 #HOWARD_PARAM_ANALYSIS='{}'
 
-# HOWARD prioritization parameters
-HOWARD_PRIORITIZATION_CONFIG="$HOWARD_FOLDER_CONFIG/prioritization_profiles.json" # default prioritization rule
 
 
 # # ANNOTATION

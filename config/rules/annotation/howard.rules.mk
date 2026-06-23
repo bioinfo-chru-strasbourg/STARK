@@ -36,7 +36,7 @@ HOWARD_NOMEN_FIELDS?="hgvs"
 %.howard$(POST_ANNOTATION).vcf: %.vcf %.empty.vcf %.transcripts 
 	# Annotation calculation step HOWARD
 	if (( $$(grep -v "^#" $< | head -n1 | wc -l) )); then \
-		$(HOWARD) process $(HOWARD_CONFIG_OPTIONS) --input=$< --output=$@ --param=$(HOWARD_PARAM); \
+		$(HOWARD) process $(HOWARD_CONFIG_OPTIONS) $(HOWARD_PRIORITIZATION_CONFIG_OPTIONS) $(HOWARD_CALCULATION_CONFIG_OPTIONS) --input=$< --output=$@ --param=$(HOWARD_PARAM); \
 	else \
 		cp $< $@; \
 	fi;
