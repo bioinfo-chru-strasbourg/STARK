@@ -47,6 +47,8 @@ function usage {
 	echo "# --threads=<INTEGER>             Number of threads (for BCFTOOLS)";
 	echo "# --bcftools=<STRING>             BCFTOOLS bin";
 	echo "#                                 Default: 'bcftools'";
+	echo "# --bgzip=<STRING>                BGZIP bin";
+	echo "#                                 Default: 'bgzip'";    
 
 	echo "# --verbose                       VERBOSE option";
 	echo "# --debug                         DEBUG option";
@@ -63,7 +65,7 @@ header;
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
-ARGS=$(getopt -o "i:o:rt:b:vdnh" --long "vcf:,input:,output:,reformat,threads:,bcftools:,verbose,debug,release,help" -- "$@" 2> /dev/null)
+ARGS=$(getopt -o "i:o:rt:b:z:vdnh" --long "vcf:,input:,output:,reformat,threads:,bcftools:,bgzip:,verbose,debug,release,help" -- "$@" 2> /dev/null)
 
 
 PARAM=$@
@@ -92,6 +94,14 @@ do
 			;;
 		-b|--bcftools)
 			BCFTOOLS="$2"
+			shift 2
+			;;
+		-b|--bcftools)
+			BCFTOOLS="$2"
+			shift 2
+			;;
+		-z|--bgzip)
+			BGZIP="$2"
 			shift 2
 			;;
 		-v|--verbose)
@@ -145,6 +155,11 @@ fi;
 # bcftools
 if [ -z "$BCFTOOLS" ]; then
     BCFTOOLS=bcftools
+fi;
+
+# bgzip
+if [ -z "$BGZIP" ]; then
+    BGZIP=bgzip
 fi;
 
 # reformat
@@ -389,7 +404,7 @@ fi;
 ############
 
 if [ "$EXTENSION" == "gz" ]; then
-    bgzip -c $OUTPUT_TMP > $OUTPUT_TMP.compressed
+    $BGZIP -c $OUTPUT_TMP > $OUTPUT_TMP.compressed
     mv $OUTPUT_TMP.compressed $OUTPUT_TMP
 fi;
 

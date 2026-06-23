@@ -52,6 +52,7 @@ function usage {
   	echo "# --threads=<INTEGER>          Number of threads for bcftools";
 	echo "#                              Default: 1";
   	echo "# --bcftools=<BIN>             BCFTOOLS binary file";
+  	echo "# --bgzip=<BIN>                BGZIP binary file";
   	echo "# --tabix=<BIN>                TABIX binary file";
 	echo "# -v|--verbose                 Verbose mode";
 	echo "# -d|--debug                   Debug mode";
@@ -68,7 +69,7 @@ function usage {
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
-ARGS=$(getopt -o "vdnh" --long "vcf:,input:,annotations:,output:,threads:,bcftools:,tabix:,verbose,debug,release,help" -- "$@" 2> /dev/null)
+ARGS=$(getopt -o "vdnh" --long "vcf:,input:,annotations:,output:,threads:,bcftools:,bgzip:,tabix:,verbose,debug,release,help" -- "$@" 2> /dev/null)
 if [ $? -ne 0 ]; then
 	:
 	echo "#[ERROR] Error in the argument list:";
@@ -104,6 +105,10 @@ do
 			;;
   		--bcftools)
 			BCFTOOLS=$2
+			shift 2
+			;;
+  		--bgzip)
+			BGZIP=$2
 			shift 2
 			;;
   		--tabix)
@@ -168,6 +173,11 @@ if [ "$BCFTOOLS" == "" ]; then
     BCFTOOLS="bcftools"
 fi;
 
+# bgzip
+if [ "$BGZIP" == "" ]; then
+	BGZIP="bgzip"
+fi;
+
 # tabix
 if [ "$TABIX" == "" ]; then
     TABIX="tabix"
@@ -184,6 +194,7 @@ if (($VERBOSE)); then
     echo "#[INFO] Annotations: '$ANNOT_LIST'"
     echo "#[INFO] Threads: $THREADS"
     echo "#[INFO] bcftools: $BCFTOOLS"
+	echo "#[INFO] bgzip: $BGZIP"
     echo "#[INFO] tabix: $TABIX"
 fi
 
@@ -219,10 +230,10 @@ if (($DEBUG)); then
 fi;
 
 # Extract INFO/DP into a tab-delimited annotation file
-$BCFTOOLS query -f "%CHROM\t%POS\t%REF\t%ALT$ANNOT_query\n" $VCF 2>/dev/null | bgzip -c > $VCF.tmp.annot.txt.gz
+$BCFTOOLS query -f "%CHROM\t%POS\t%REF\t%ALT$ANNOT_query\n" $VCF 2>/dev/null | $BGZIP -c > $VCF.tmp.annot.txt.gz
 if (($DEBUG)); then
     echo "#[INFO] Annotation file:"
-    bgzip -dc $VCF.tmp.annot.txt.gz | head
+    $BGZIP -dc $VCF.tmp.annot.txt.gz | head
 fi;
 
 # Index the file with $TABIX

@@ -179,7 +179,19 @@ fi;
 mkdir -p $TMP_GENESCOVERAGE
 (($DEBUG)) && echo $TMP_GENESCOVERAGE
 
+# gz et gunzip
+if [ "$GZ" == "" ]; then
+	GZ="gzip"
+fi;
+if [ "$UNGZ" == "" ]; then
+	UNGZ="gzip -d"
+fi;
 
+# Add thread if GZ is pigz (command start with pigz)
+if [[ $GZ == pigz* ]]; then
+	GZ="$GZ -p $THREADS"
+	UNGZ="$UNGZ -p $THREADS"
+fi;
 
 
 (($DEBUG)) && echo $BEDFILE_GENES && head $BEDFILE_GENES

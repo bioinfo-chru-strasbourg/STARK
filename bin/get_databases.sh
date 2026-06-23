@@ -212,6 +212,20 @@ if [[ $THREADS_INPUT =~ $re ]] && [ "$THREADS_INPUT" != "" ]; then
 	THREADS=$THREADS_INPUT;
 fi;
 
+# gz et gunzip
+if [ "$GZ" == "" ]; then
+	GZ="gzip"
+fi;
+if [ "$UNGZ" == "" ]; then
+	UNGZ="gzip -d"
+fi;
+
+# Add thread if GZ is pigz (command start with pigz)
+if [[ $GZ == pigz* ]]; then
+	GZ="$GZ -p $THREADS"
+	UNGZ="$UNGZ -p $THREADS"
+fi;
+
 # ARIA
 ARIA_CMD="aria2c -c -s $THREADS -x 16 -k 1M --async-dns=false -j $THREADS"
 
@@ -821,7 +835,7 @@ if in_array $DATABASE $DATABASES_LIST_INPUT || in_array ALL $DATABASES_LIST_INPU
 			chmod 0775 $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY;
 			$ARIA_CMD $GENCODE_CURRENT -d $DB_TMP;
 			cp $DB_TMP/$(basename $GENCODE_CURRENT) $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY/gencode.gtf.gz;
-			gzip -d $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY/gencode.gtf.gz;
+			$GZ -d $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY/gencode.gtf.gz;
 			$PYTHON $STARK_FOLDER_BIN/collapse_annotation.py $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY/gencode.gtf $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY/gencode.collapsed.gtf;
 			-[ ! -s $DBFOLDER_GENCODE/STARK.database ] && cp $DB_TMP/STARK.database $DBFOLDER_GENCODE/STARK.database && chmod o+r $DBFOLDER_GENCODE/STARK.database;
 			-[ ! -s $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY/STARK.database.release ] && cp $DB_TMP/STARK.database.release $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY/STARK.database.release && chmod o+r $DBFOLDER_GENCODE/$GENCODE_VERSION/$ASSEMBLY/STARK.database.release;

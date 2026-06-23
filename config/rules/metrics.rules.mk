@@ -389,7 +389,7 @@ MAX_CONCURRENT_HSMETRICS_RAM?=24g
 			# Copy Design bed \
 			cp -p $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.bed $(@D)/$(*F).validation.flags.$$bed_subname.bed; \
 			# HsMetrics per_target_coverage compression file file \
-			$(GZ) -c $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.gz; \
+			$(GZ) -p $(THREADS_BY_SAMPLE) -c $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp > $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.gz; \
 			rm $(@D)/$(*F).$$(basename $$one_bed).4fields* $(@D)/$(*F).$$(basename $$one_bed).interval $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_target_coverage.tmp $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.tmp rm -f $(@D)/$(*F).$$(basename $$one_bed).HsMetrics.per_base_coverage.bed.tmp; \
 		else \
 			# BED empty \
@@ -455,9 +455,9 @@ MAX_CONCURRENT_HSMETRICS_RAM?=24g
 	if (($(BAM_METRICS))); then \
 		if (($(FULL_COVERAGE))); then \
 			$(BEDTOOLS) genomecov -ibam $*.bam -dz > $(@D)/$(*F).genomeCoverage; \
-			$(GZ) --best -f $(@D)/$(*F).genomeCoverage; \
+			$(GZ) -p $(THREADS_BY_SAMPLE) --best -f $(@D)/$(*F).genomeCoverage; \
 			$(BEDTOOLS) genomecov -ibam $*.validation.bam -dz > $(@D)/$(*F).validation.genomeCoverage; \
-			$(GZ) --best -f $(@D)/$(*F).validation.genomeCoverage; \
+			$(GZ) -p $(THREADS_BY_SAMPLE) --best -f $(@D)/$(*F).validation.genomeCoverage; \
 			if [ -s $(@D)/$(*F).genomeCoverage.gz ] && [ -s $(@D)/$(*F).validation.genomeCoverage.gz ]; then \
 				echo "#[INFO] BEDTOOLS genomeCoverage done. See '$(@D)/$(*F).genomeCoverage.gz' and '$(@D)/$(*F).validation.genomeCoverage.gz'. " >> $@; \
 			else \
@@ -478,7 +478,7 @@ MAX_CONCURRENT_HSMETRICS_RAM?=24g
 	if (($(BAM_METRICS))); then \
 		if (($(FULL_COVERAGE))); then \
 			$(SAMTOOLS) mpileup $(SAMTOOLS_METRICS_MPILEUP_PARAM) $< | cut -f1,2,4 > $(@D)/$(*F).depth; \
-			$(GZ) --best -f $(@D)/$(*F).depth; \
+			$(GZ) -p $(THREADS_BY_SAMPLE) --best -f $(@D)/$(*F).depth; \
 			if [ -s $(@D)/$(*F).idxstats.gz ]; then \
 				echo "#[INFO] SAMTOOLS depth done. See '$(@D)/$(*F).depth.gz'. " >> $@; \
 			else \
@@ -503,7 +503,7 @@ MAX_CONCURRENT_HSMETRICS_RAM?=24g
 		bedfile_name=$$( basename $$one_bed ); \
 		if [ -s $$one_bed ]; then \
 			echo -e "#Depth\tCoveredBases\tTotalBases\tPercent" > $(@D)/$(*F).$$(basename $$one_bed).coverage; \
-			$(UNGZ) -c $(@D)/$(*F).$$bedfile_name.HsMetrics.per_base_coverage.gz | awk 'NR!=1{print $$4"\t"$$3}' | \
+			$(UNGZ) -p $(THREADS_BY_SAMPLE) -c $(@D)/$(*F).$$bedfile_name.HsMetrics.per_base_coverage.gz | awk 'NR!=1{print $$4"\t"$$3}' | \
 			awk -v MDP=$$(echo $(COVERAGE_CRITERIA) | tr "," "\n" | sort -n | tail -n 1)  '{SUM++} { if ($$1>MDP) {DP[MDP]++} else {DP[$$1]++} } END { for (i=MDP; i>=0; i-=1) {print i" "DP[i]" SUM"SUM}}' | \
 			sort -g -r | awk -v COVERAGE_CRITERIA=$(COVERAGE_CRITERIA) '{SUM+=$$2} {CUM[$$1]=SUM} {split(COVERAGE_CRITERIA,C,",")} END { for (j in C) {print C[j]"X\t"CUM[C[j]]"\t"SUM"\t"(CUM[C[j]]/SUM)} }' | \
 			sort -g >> $(@D)/$(*F).$$bedfile_name.coverage; \
@@ -722,7 +722,7 @@ MAX_CONCURRENT_HSMETRICS_RAM?=24g
 			do \
 				if [ -e $$one_bed ]; then \
 					bedfile_name=$$( basename $$one_bed ); \
-					$(UNGZ) -c $(@D)/$(*F).$$bedfile_name.HsMetrics.per_base_coverage.gz | awk 'NR!=1{print $$4"\t"$$3}' > $(@D)/$(*F).$$bedfile_name.HsMetrics.per_base_coverage.2cols ; \
+					$(UNGZ) -p $(THREADS_BY_SAMPLE) -c $(@D)/$(*F).$$bedfile_name.HsMetrics.per_base_coverage.gz | awk 'NR!=1{print $$4"\t"$$3}' > $(@D)/$(*F).$$bedfile_name.HsMetrics.per_base_coverage.2cols ; \
 					$(NGSscripts)/genesCoverage.sh -f $*.bam -b $$one_bed -c "$(COVERAGE_CRITERIA)" --coverage-bases=$(@D)/$(*F).$$bedfile_name.HsMetrics.per_base_coverage.2cols --dp_fail=$(MINIMUM_DEPTH) --dp_warn=$(EXPECTED_DEPTH) --dp_threshold=$(DEPTH_COVERAGE_THRESHOLD) --precision=$(GENESCOVERAGE_PRECISION) -n $(NB_BASES_AROUND) -t $(BEDTOOLS) -s $(SAMTOOLS) --threads=$(THREADS) -o $(@D)/$(*F).$$bedfile_name; \
 					$(NGSscripts)/genesCoverage.sh -f $*.bam -b $$one_bed -c "1,$(MINIMUM_DEPTH),$(EXPECTED_DEPTH)" --coverage-bases=$(@D)/$(*F).$$bedfile_name.HsMetrics.per_base_coverage.2cols --dp_fail=$(MINIMUM_DEPTH) --dp_warn=$(EXPECTED_DEPTH) --dp_threshold=$(DEPTH_COVERAGE_THRESHOLD) --precision=$(GENESCOVERAGE_PRECISION) -n $(NB_BASES_AROUND) -t $(BEDTOOLS) -s $(SAMTOOLS) --threads=$(THREADS) -o $(@D)/$(*F).$$bedfile_name.report; \
 					rm $(@D)/$(*F).$$bedfile_name.HsMetrics.per_base_coverage.2cols ; \

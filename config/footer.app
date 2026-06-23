@@ -204,7 +204,7 @@ export FOLDER_TOOLS
 # Folder structuer format: `$FOLDER_DATABASES/<DATABASE_NAME>/<DATABASE_RELEASE>/<ASSEMBLY>/<DATABASE_FILE>`
 # Examples of folder structure:
 # - `$FOLDER_DATABASES/genomes/current/hg19/hg19.fa`
-# - `$FOLDER_DATABASES/dnsnp/latest/hg19/dbsnp_138.hg19.vcf.gz`
+# - `$FOLDER_DATABASES/dbsnp/latest/hg19/dbsnp_138.hg19.vcf.gz`
 # - `$FOLDER_DATABASES/dbnsfp/4.4a/hg19/dbNSFP4.4a.hg19.parquet`
 [ "$DATABASES" != "" ] && [ -d $DATABASES ] && FOLDER_DATABASES=$DATABASES
 if [ "$FOLDER_DATABASES" == "" ]; then
@@ -1415,7 +1415,7 @@ export HOWARD_CONFIG
 # Default HOWARD parameters
 #HOWARD_PARAM=$HOWARD_FOLDER_CONFIG/param.json
 #HOWARD_PARAM='{}'
-if [ -z $HOWARD_PARAM ]; then
+if [ -z "$HOWARD_PARAM" ]; then
 	HOWARD_PARAM='{}'
 fi;
 export HOWARD_PARAM
@@ -1423,7 +1423,7 @@ export HOWARD_PARAM
 # Default HOWARD parameters for minimal VCF annotation (rule howard_minimal)
 #HOWARD_PARAM_MINIMAL=$HOWARD_FOLDER_CONFIG/param.json
 #HOWARD_MINIMALPARAM='{}'
-if [ -z $HOWARD_MINIMALPARAM ]; then
+if [ -z "$HOWARD_MINIMALPARAM" ]; then
 	HOWARD_MINIMALPARAM='{}'
 fi;
 export HOWARD_MINIMALPARAM
@@ -1431,7 +1431,7 @@ export HOWARD_MINIMALPARAM
 # Default HOWARD parameters for report (rule howard)
 #HOWARD_PARAM_REPORT=$HOWARD_FOLDER_CONFIG/param.json
 #HOWARD_PARAM_REPORT='{}'
-if [ -z $HOWARD_PARAM_REPORT ]; then
+if [ -z "$HOWARD_PARAM_REPORT" ]; then
 	HOWARD_PARAM_REPORT='{}'
 fi;
 export HOWARD_PARAM_REPORT
@@ -1439,20 +1439,20 @@ export HOWARD_PARAM_REPORT
 # Default HOWARD parameters for whole analysis (rule howard)
 #HOWARD_PARAM_ANALYSIS=$HOWARD_FOLDER_CONFIG/param.json
 #HOWARD_PARAM_ANALYSIS='{}'
-if [ -z $HOWARD_PARAM_ANALYSIS ]; then
+if [ -z "$HOWARD_PARAM_ANALYSIS" ]; then
 	HOWARD_PARAM_ANALYSIS='{}'
 fi;
 export HOWARD_PARAM_ANALYSIS
 
 
 # HOWARD prioritization config
-if [ -z $HOWARD_PRIORITIZATION_CONFIG ]; then
+if [ -z "$HOWARD_PRIORITIZATION_CONFIG" ]; then
 	HOWARD_PRIORITIZATION_CONFIG=''
 fi;
 export HOWARD_PRIORITIZATION_CONFIG
 
 # HOWARD calculation config
-if [ -z $HOWARD_CALCULATION_CONFIG ]; then
+if [ -z "$HOWARD_CALCULATION_CONFIG" ]; then
 	HOWARD_CALCULATION_CONFIG=''
 fi;
 export HOWARD_CALCULATION_CONFIG

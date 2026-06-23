@@ -44,7 +44,7 @@ GATK4_MUTECT2_FILTERED_FLAGS_SHARED?=--disable-read-filter MateOnSameContigOrNoM
 	 else \
 	 	cp $@.tmp.unfiltered.TLOD.vcf $@.tmp.cleaned.vcf; \
 	 fi;
-	cp $@.tmp.unfiltered.TLOD.vcf $@.tmp.cleaned.vcf;
+	#cp $@.tmp.unfiltered.TLOD.vcf $@.tmp.cleaned.vcf;
 	# Sorting and contig
 	$(JAVA) -jar $(PICARD) SortVcf -I $@.tmp.cleaned.vcf -O $@ -SD $(DICT);
 	# Clean
