@@ -870,6 +870,20 @@ if ! [[ $THREADS_COPY =~ $re ]] || [ "$THREADS_COPY" == "" ]; then
 	#THREADS_COPY=1
 fi;
 
+# gz et gunzip
+if [ "$GZ" == "" ]; then
+	GZ="gzip"
+fi;
+if [ "$UNGZ" == "" ]; then
+	UNGZ="gzip -d"
+fi;
+
+# Add thread if GZ is pigz (command start with pigz)
+if [[ $GZ == pigz* ]]; then
+	GZ="$GZ -p $THREADS"
+	UNGZ="$UNGZ -p $THREADS"
+fi;
+
 # TMP_SYS_FOLDER
 if [ ! -d $TMP_SYS_FOLDER ]; then
 	TMP_SYS_FOLDER=/tmp
@@ -1763,7 +1777,7 @@ for RUU in $RUN_UNIQ; do
 
 	if [ -s $INPUT_MK ]; then
 		(($VERBOSE)) && echo "["$(timestamp)" | INFO] Process Input data from FASTQ file(s) - multithreading mode [$THREADS]"
-		if make -j $THREADS -f $INPUT_MK -f $SCRIPT_DIR/STARK.launch.input.mk $INPUT_MK_ALL $INPUT_MK_ALL 1>$INPUT_MK.log 2>$INPUT_MK.err; then
+		if make -j $THREADS -e THREADS_BY_SAMPLE=$THREADS_BY_SAMPLE -f $INPUT_MK -f $SCRIPT_DIR/STARK.launch.input.mk $INPUT_MK_ALL $INPUT_MK_ALL 1>$INPUT_MK.log 2>$INPUT_MK.err; then
 			cat $INPUT_MK.log $INPUT_MK.err >>$LOGFILE_RES_RUN
 			(($VERBOSE)) && echo "["$(timestamp)" | INFO] STARK Input Processing done."
 			echo "["$(date '+%Y%m%d-%H%M%S')"] STARK Input Processing '$RELEASE_RUN' END" >>$LOGFILE_RES_RUN

@@ -137,7 +137,7 @@ WORKDIR $WORKDIR
 # This will install system packages, python packages and scripts to install tools
 
 #ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git make mlocate ncurses-devel tbb-devel unzip rsync wget which xz xz-devel zlib zlib-devel docker java-17 java-1.8.0 curl-devel openssl-devel htslib diffutils parallel aria2 jq"
-ENV PACKAGES_INSTALL="autoconf automake htop tree bc bzip2 bzip2-devel curl gcc gcc-c++ git make mlocate ncurses-devel tbb-devel unzip rsync wget which xz xz-devel zlib zlib-devel java-21 java-1.8.0 curl-devel openssl-devel diffutils parallel aria2 jq"
+ENV PACKAGES_INSTALL="autoconf automake htop tree bc bzip2 bzip2-devel pigz curl gcc gcc-c++ git make mlocate ncurses-devel tbb-devel unzip rsync wget which xz xz-devel zlib zlib-devel java-21 java-1.8.0 curl-devel openssl-devel diffutils parallel aria2 jq"
 #ENV YUM_REMOVE="autoconf automake bzip2-devel lzma-devel ncurses-devel tbb-devel xz-devel zlib-devel zlib2-devel python3-devel curl-devel openssl-devel"
 
 #ENV PYTHON_MODULE=" pathos=0.3.5 numpy=2.2.6 scipy=1.15.3 argparse=1.1 bx-python=0.14.0 pandas=2.3.3"

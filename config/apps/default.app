@@ -61,7 +61,7 @@ FOLDER_TOOLS=$STARK_FOLDER_MAIN/tools
 # Folder structuer format: `$FOLDER_DATABASES/<DATABASE_NAME>/<DATABASE_RELEASE>/<ASSEMBLY>/<DATABASE_FILE>`
 # Examples of folder structure:
 # - `$FOLDER_DATABASES/genomes/current/hg19/hg19.fa`
-# - `$FOLDER_DATABASES/dnsnp/latest/hg19/dbsnp_138.hg19.vcf.gz`
+# - `$FOLDER_DATABASES/dbsnp/latest/hg19/dbsnp_138.hg19.vcf.gz`
 # - `$FOLDER_DATABASES/dbnsfp/4.4a/hg19/dbNSFP4.4a.hg19.parquet`
 FOLDER_DATABASES=$STARK_FOLDER_MAIN/databases
 
@@ -94,7 +94,7 @@ FOLDER_OUTPUT=$STARK_FOLDER_MAIN/output
 
 # DEMULTIPLEXING FOLDER
 # This folder will be used by the rules of the analysis to store the results of the demultiplexing step (using SampleSheet file), including the demultiplexed FASTQ files and the demultiplexing report.
-#FOLDER_DEMULTIPLEXING=$FOLDER_OUTPUT/demulitplexing
+#FOLDER_DEMULTIPLEXING=$FOLDER_OUTPUT/demultiplexing
 
 # FOLDER_RESULTS
 # This folder will be used to store all the results of the analysis, including intermediate files and final results (files such as BAM, VCF, metrics, annotation files, and more).

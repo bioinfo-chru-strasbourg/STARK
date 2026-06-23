@@ -123,7 +123,7 @@ Folder structuer format: `$FOLDER_DATABASES/<DATABASE_NAME>/<DATABASE_RELEASE>/<
 Examples of folder structure:
 
 - `$FOLDER_DATABASES/genomes/current/hg19/hg19.fa`
-- `$FOLDER_DATABASES/dnsnp/latest/hg19/dbsnp_138.hg19.vcf.gz`
+- `$FOLDER_DATABASES/dbsnp/latest/hg19/dbsnp_138.hg19.vcf.gz`
 - `$FOLDER_DATABASES/dbnsfp/4.4a/hg19/dbNSFP4.4a.hg19.parquet`
 
 ### `FOLDER_INPUT`
@@ -164,7 +164,7 @@ Subfolders for results, demultiplexing, log and tmp can be defined as absolute p
 
 This folder will be used by the rules of the analysis to store the results of the demultiplexing step (using SampleSheet file), including the demultiplexed FASTQ files and the demultiplexing report.
 
-- Default: `"$FOLDER_OUTPUT/demulitplexing"`
+- Default: `"$FOLDER_OUTPUT/demultiplexing"`
 
 #### `FOLDER_RESULTS`
 

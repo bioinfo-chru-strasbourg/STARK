@@ -3,7 +3,8 @@
 ### Variables
 ##############
 
-
+THREADS?=1
+THREADS_BY_SAMPLE?=1
 FASTQ_DEMULTIPLEXING_KEEP?=0
 REMOVE_FASTQ_COMMENT?=0
 FASTQ_COMPRESSION_LEVEL?=5
@@ -58,28 +59,28 @@ FASTQ_CLEAN_HEADER_PARAM=-v SAM_TAG=1 -v UMI_REFORMAT=1 -v UMI_TAG=1 -v UMI_LOC=
 
 %.input.R1.fastq.gz: %.log
 	if (($(REMOVE_FASTQ_COMMENT))); then \
-		$(UNGZ) -c $(@D)/../$(*F).R1.fastq.gz | cut -d' ' -f1 | $(GZ) -1 -c > $@; \
+		$(UNGZ) -p $(THREADS_BY_SAMPLE) -c $(@D)/../$(*F).R1.fastq.gz | cut -d' ' -f1 | $(GZ) -p $(THREADS_BY_SAMPLE) -1 -c > $@; \
 	else \
 		ln -s $(@D)/../$(*F).R1.fastq.gz $@; \
 	fi;
 
 %.input.R2.fastq.gz: %.log
 	if (($(REMOVE_FASTQ_COMMENT))); then \
-		$(UNGZ) -c $(@D)/../$(*F).R2.fastq.gz | cut -d' ' -f1 | $(GZ) -1 -c > $@; \
+		$(UNGZ) -p $(THREADS_BY_SAMPLE) -c $(@D)/../$(*F).R2.fastq.gz | cut -d' ' -f1 | $(GZ) -p $(THREADS_BY_SAMPLE) -1 -c > $@; \
 	else \
 		ln -s $(@D)/../$(*F).R2.fastq.gz $@; \
 	fi;
 
 %.input.I1.fastq.gz: %.log
 	if (($(REMOVE_FASTQ_COMMENT))); then \
-		$(UNGZ) -c $(@D)/../$(*F).I1.fastq.gz | cut -d' ' -f1 | $(GZ) -1 -c > $@; \
+		$(UNGZ) -p $(THREADS_BY_SAMPLE) -c $(@D)/../$(*F).I1.fastq.gz | cut -d' ' -f1 | $(GZ) -p $(THREADS_BY_SAMPLE) -1 -c > $@; \
 	else \
 		ln -s $(@D)/../$(*F).I1.fastq.gz $@; \
 	fi;
 
 %.input.I2.fastq.gz: %.log
 	if (($(REMOVE_FASTQ_COMMENT))); then \
-		$(UNGZ) -c $(@D)/../$(*F).I2.fastq.gz | cut -d' ' -f1 | $(GZ) -1 -c > $@; \
+		$(UNGZ) -p $(THREADS_BY_SAMPLE) -c $(@D)/../$(*F).I2.fastq.gz | cut -d' ' -f1 | $(GZ) -p $(THREADS_BY_SAMPLE) -1 -c > $@; \
 	else \
 		ln -s $(@D)/../$(*F).I2.fastq.gz $@; \
 	fi;
@@ -157,16 +158,16 @@ FASTQ_CLEAN_HEADER_PARAM=-v SAM_TAG=1 -v UMI_REFORMAT=1 -v UMI_TAG=1 -v UMI_LOC=
 ### Compression
 
 %.compress.R1.fastq.gz: %.R1.fastq.gz %.log 
-	$(UNGZ) $< -c | $(GZ) -$(FASTQ_COMPRESSION_LEVEL) -c  > $@;
+	$(UNGZ) -p $(THREADS_BY_SAMPLE) $< -c | $(GZ) -p $(THREADS_BY_SAMPLE) -$(FASTQ_COMPRESSION_LEVEL) -c  > $@;
 
 %.compress.R2.fastq.gz: %.R2.fastq.gz %.log 
-	$(UNGZ) $< -c | $(GZ) -$(FASTQ_COMPRESSION_LEVEL) -c  > $@;
+	$(UNGZ) -p $(THREADS_BY_SAMPLE) $< -c | $(GZ) -p $(THREADS_BY_SAMPLE) -$(FASTQ_COMPRESSION_LEVEL) -c  > $@;
 
 %.compress.I1.fastq.gz: %.I1.fastq.gz %.log
-	$(UNGZ) $< -c | $(GZ) -$(FASTQ_COMPRESSION_LEVEL) -c  > $@;
+	$(UNGZ) -p $(THREADS_BY_SAMPLE) $< -c | $(GZ) -p $(THREADS_BY_SAMPLE) -$(FASTQ_COMPRESSION_LEVEL) -c  > $@;
 
 %.compress.I2.fastq.gz: %.I2.fastq.gz %.log 
-	$(UNGZ) $< -c | $(GZ) -$(FASTQ_COMPRESSION_LEVEL) -c  > $@;
+	$(UNGZ) -p $(THREADS_BY_SAMPLE) $< -c | $(GZ) -p $(THREADS_BY_SAMPLE) -$(FASTQ_COMPRESSION_LEVEL) -c  > $@;
 
 %.compress.log: %.log %.compress.R1.fastq.gz %.compress.R2.fastq.gz %.compress.I1.fastq.gz %.compress.I2.fastq.gz
 	#rm -rf $*.*.fastq.gz;
@@ -178,22 +179,22 @@ FASTQ_CLEAN_HEADER_PARAM=-v SAM_TAG=1 -v UMI_REFORMAT=1 -v UMI_TAG=1 -v UMI_LOC=
 
 %.sort.R1.fastq.gz: %.R1.fastq.gz %.log
 	mkdir -p $@.tmp.SORT;
-	$(UNGZ) $< -c | tr "\t" " " | paste - - - - | sort -T $@.tmp.SORT -n -k1,1 -t " " | tr "\t" "\n" | $(GZ) -1 -c > $@;
+	$(UNGZ) -p $(THREADS_BY_SAMPLE) $< -c | tr "\t" " " | paste - - - - | sort -T $@.tmp.SORT -n -k1,1 -t " " | tr "\t" "\n" | $(GZ) -p $(THREADS_BY_SAMPLE) -1 -c > $@;
 	rm -rf $@.tmp*
 
 %.sort.R2.fastq.gz: %.R2.fastq.gz %.log 
 	mkdir -p $@.tmp.SORT;
-	$(UNGZ) $< -c | tr "\t" " " | paste - - - - | sort -T $@.tmp.SORT -n -k1,1 -t " " | tr "\t" "\n" | $(GZ) -1 -c > $@;
+	$(UNGZ) -p $(THREADS_BY_SAMPLE) $< -c | tr "\t" " " | paste - - - - | sort -T $@.tmp.SORT -n -k1,1 -t " " | tr "\t" "\n" | $(GZ) -p $(THREADS_BY_SAMPLE) -1 -c > $@;
 	rm -rf $@.tmp*
 
 %.sort.I1.fastq.gz: %.I1.fastq.gz %.log
 	mkdir -p $@.tmp.SORT;
-	$(UNGZ) $< -c | tr "\t" " " | paste - - - - | sort -T $@.tmp.SORT -n -k1,1 -t " " | tr "\t" "\n" | $(GZ) -1 -c > $@;
+	$(UNGZ) -p $(THREADS_BY_SAMPLE) $< -c | tr "\t" " " | paste - - - - | sort -T $@.tmp.SORT -n -k1,1 -t " " | tr "\t" "\n" | $(GZ) -p $(THREADS_BY_SAMPLE) -1 -c > $@;
 	rm -rf $@.tmp*
 
 %.sort.I2.fastq.gz: %.I2.fastq.gz %.log 
 	mkdir -p $@.tmp.SORT;
-	$(UNGZ) $< -c | tr "\t" " " | paste - - - - | sort -T $@.tmp.SORT -n -k1,1 -t " " | tr "\t" "\n" | $(GZ) -1 -c > $@;
+	$(UNGZ) -p $(THREADS_BY_SAMPLE) $< -c | tr "\t" " " | paste - - - - | sort -T $@.tmp.SORT -n -k1,1 -t " " | tr "\t" "\n" | $(GZ) -p $(THREADS_BY_SAMPLE) -1 -c > $@;
 	rm -rf $@.tmp*
 
 %.sort.log: %.log %.sort.R1.fastq.gz %.sort.R2.fastq.gz %.sort.I1.fastq.gz %.sort.I2.fastq.gz
@@ -215,8 +216,8 @@ FASTQ_CLEAN_HEADER_PARAM=-v SAM_TAG=1 -v UMI_REFORMAT=1 -v UMI_TAG=1 -v UMI_LOC=
 	echo " $(FASTP_ADDITIONAL_OPTIONS) " >> $@.param;
 	# UMI test
 	#if [ "$(UMI_RELOC)" != "" ]; then
-	if ! (( $$($(UNGZ) -c $*.R1.fastq.gz | head -n 1 | cut -d" " -f1 | awk -F: '{if ($$8!="") {print $$0}}' | wc -l) )); then \
-		if [[ "$(UMI_RELOC)" =~ .*index.* ]] && (( $$($(UNGZ) -c $*.R1.fastq.gz | head -n 1 | cut -d" " -f2- | grep -P '[0-9]*:N:0:[^\t $$]*' | wc -l) )); then \
+	if ! (( $$($(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.R1.fastq.gz | head -n 1 | cut -d" " -f1 | awk -F: '{if ($$8!="") {print $$0}}' | wc -l) )); then \
+		if [[ "$(UMI_RELOC)" =~ .*index.* ]] && (( $$($(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.R1.fastq.gz | head -n 1 | cut -d" " -f2- | grep -P '[0-9]*:N:0:[^\t $$]*' | wc -l) )); then \
 			echo " --umi --umi_loc=$(UMI_RELOC) " >> $@.param; \
 		fi; \
 		if [[ "$(UMI_RELOC)" =~ .*read.* ]]; then \
@@ -226,7 +227,7 @@ FASTQ_CLEAN_HEADER_PARAM=-v SAM_TAG=1 -v UMI_REFORMAT=1 -v UMI_TAG=1 -v UMI_LOC=
 	# Report
 	echo " --html=$(@D)/$$(echo $(*F) | cut -d. -f1).fastp.html --json=$(@D)/$$(echo $(*F) | cut -d. -f1).fastp.json --report_title=$$(echo $(@D) | xargs dirname | xargs dirname | xargs basename)/$$(echo $(*F) | cut -d. -f1) " >> $@.param;
 	# Paired-End or Single-End
-	if (( $$($(UNGZ) -c $*.R2.fastq.gz | head -n 1 | wc -l) )); then \
+	if (( $$($(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.R2.fastq.gz | head -n 1 | wc -l) )); then \
 		echo " --in1=$*.R1.fastq.gz --in2=$*.R2.fastq.gz " >> $@.param ; \
 		echo " --out1=$*.fastp.R1.fastq.gz --out2=$*.fastp.R2.fastq.gz " >> $@.param ; \
 		#if (($(DETECT_ADAPTER_FOR_PE))); then echo " --detect_adapter_for_pe " >> $@.param ; fi ; \
@@ -284,22 +285,22 @@ FASTQ_CLEAN_HEADER_PARAM=-v SAM_TAG=1 -v UMI_REFORMAT=1 -v UMI_TAG=1 -v UMI_LOC=
 ### UMITools
 
 %.umi_tools.R1.fastq.gz: %.log
-	if [ -z $(UMI_RELOC) ] || (( $$($(UNGZ) -c $*.R1.fastq.gz | head -n 1 | cut -d" " -f1 | awk -F: '{if ($$8!="") {print $$0}}' | wc -l) )); then \
+	if [ -z $(UMI_RELOC) ] || (( $$($(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.R1.fastq.gz | head -n 1 | cut -d" " -f1 | awk -F: '{if ($$8!="") {print $$0}}' | wc -l) )); then \
 		ln -s $*.R1.fastq.gz $@; \
 	elif [ "$(UMI_LOC)" == "index1" ]; then \
-		$(UMITOOLS) extract --bc-pattern=$(UMI_BARCODE_PATTERN_1) --stdin=$*.I1.fastq.gz --read2-in=$*.R1.fastq.gz --read2-stdout --compresslevel=1 --log=$@.log --error=$@.err | sed '/^@/ s/_\([A-Z]*\)/:\1/' | $(GZ) -1 -c > $@; \
+		$(UMITOOLS) extract --bc-pattern=$(UMI_BARCODE_PATTERN_1) --stdin=$*.I1.fastq.gz --read2-in=$*.R1.fastq.gz --read2-stdout --compresslevel=1 --log=$@.log --error=$@.err | sed '/^@/ s/_\([A-Z]*\)/:\1/' | $(GZ) -p $(THREADS_BY_SAMPLE) -1 -c > $@; \
 	elif [ "$(UMI_LOC)" == "index2" ]; then \
-		$(UMITOOLS) extract --bc-pattern=$(UMI_BARCODE_PATTERN_1) --stdin=$*.I2.fastq.gz --read2-in=$*.R1.fastq.gz --read2-stdout --compresslevel=1 --log=$@.log --error=$@.err | sed '/^@/ s/_\([A-Z]*\)/:\1/' | $(GZ) -1 -c > $@; \
+		$(UMITOOLS) extract --bc-pattern=$(UMI_BARCODE_PATTERN_1) --stdin=$*.I2.fastq.gz --read2-in=$*.R1.fastq.gz --read2-stdout --compresslevel=1 --log=$@.log --error=$@.err | sed '/^@/ s/_\([A-Z]*\)/:\1/' | $(GZ) -p $(THREADS_BY_SAMPLE) -1 -c > $@; \
 	elif [ "$(UMI_LOC)" == "per_index" ]; then \
-		$(UMITOOLS) extract --bc-pattern=$(UMI_BARCODE_PATTERN_1) --stdin=$*.I1.fastq.gz --read2-in=$*.R1.fastq.gz --read2-stdout --compresslevel=1 --log=$@.log --error=$@.err | sed '/^@/ s/_\([A-Z]*\)/:\1/' | $(GZ) -1 -c > $@; \
+		$(UMITOOLS) extract --bc-pattern=$(UMI_BARCODE_PATTERN_1) --stdin=$*.I1.fastq.gz --read2-in=$*.R1.fastq.gz --read2-stdout --compresslevel=1 --log=$@.log --error=$@.err | sed '/^@/ s/_\([A-Z]*\)/:\1/' | $(GZ) -p $(THREADS_BY_SAMPLE) -1 -c > $@; \
 	elif [ "$(UMI_LOC)" == "read1" ]; then \
-		$(UMITOOLS) extract --bc-pattern=$(UMI_BARCODE_PATTERN_1) --stdin=$*.R1.fastq.gz --read2-in=$*.R1.fastq.gz --read2-stdout --compresslevel=1 --log=$@.log --error=$@.err | sed '/^@/ s/_\([A-Z]*\)/:\1/' | $(GZ) -1 -c > $@; \
+		$(UMITOOLS) extract --bc-pattern=$(UMI_BARCODE_PATTERN_1) --stdin=$*.R1.fastq.gz --read2-in=$*.R1.fastq.gz --read2-stdout --compresslevel=1 --log=$@.log --error=$@.err | sed '/^@/ s/_\([A-Z]*\)/:\1/' | $(GZ) -p $(THREADS_BY_SAMPLE) -1 -c > $@; \
 	elif [ "$(UMI_LOC)" == "read2" ]; then \
-		$(UMITOOLS) extract --bc-pattern=$(UMI_BARCODE_PATTERN_1) --stdin=$*.R2.fastq.gz --read2-in=$*.R1.fastq.gz --read2-stdout --compresslevel=1 --log=$@.log --error=$@.err | sed '/^@/ s/_\([A-Z]*\)/:\1/' | $(GZ) -1 -c > $@; \
+		$(UMITOOLS) extract --bc-pattern=$(UMI_BARCODE_PATTERN_1) --stdin=$*.R2.fastq.gz --read2-in=$*.R1.fastq.gz --read2-stdout --compresslevel=1 --log=$@.log --error=$@.err | sed '/^@/ s/_\([A-Z]*\)/:\1/' | $(GZ) -p $(THREADS_BY_SAMPLE) -1 -c > $@; \
 	elif [ "$(UMI_LOC)" == "per_read" ]; then \
 		$(UMITOOLS) extract --extract-method=string --bc-pattern=$(UMI_BARCODE_PATTERN_1) --bc-pattern2=$(UMI_BARCODE_PATTERN_2) --stdin=$*.R1.fastq.gz --read2-in=$*.R2.fastq.gz --stdout=$@.tmp.R1.fastq.gz --read2-out=$@.tmp.R2.fastq.gz --compresslevel=1 --log=$@.log --error=$@.err; \
-		$(UNGZ) -c $@.tmp.R1.fastq.gz | sed '/^@/ s/_\([A-Z]\{$(UMI_BARCODE_PATTERN_1_LENGTH)\}\)\([A-Z]\{$(UMI_BARCODE_PATTERN_2_LENGTH)\}\)/:\1-\2/' | $(GZ) -1 -c > $@; \
-		$(UNGZ) -c $@.tmp.R2.fastq.gz | sed '/^@/ s/_\([A-Z]\{$(UMI_BARCODE_PATTERN_1_LENGTH)\}\)\([A-Z]\{$(UMI_BARCODE_PATTERN_2_LENGTH)\}\)/:\1-\2/' | $(GZ) -1 -c > $*.umi_tools.R2.fastq.gz; \
+		$(UNGZ) -p $(THREADS_BY_SAMPLE) -c $@.tmp.R1.fastq.gz | sed '/^@/ s/_\([A-Z]\{$(UMI_BARCODE_PATTERN_1_LENGTH)\}\)\([A-Z]\{$(UMI_BARCODE_PATTERN_2_LENGTH)\}\)/:\1-\2/' | $(GZ) -p $(THREADS_BY_SAMPLE) -1 -c > $@; \
+		$(UNGZ) -p $(THREADS_BY_SAMPLE) -c $@.tmp.R2.fastq.gz | sed '/^@/ s/_\([A-Z]\{$(UMI_BARCODE_PATTERN_1_LENGTH)\}\)\([A-Z]\{$(UMI_BARCODE_PATTERN_2_LENGTH)\}\)/:\1-\2/' | $(GZ) -p $(THREADS_BY_SAMPLE) -1 -c > $*.umi_tools.R2.fastq.gz; \
 	else \
 		echo '#[ERROR] UMI source unknown' > $@.err; \
 		ln -s $*.R1.fastq.gz $@; \
@@ -307,18 +308,18 @@ FASTQ_CLEAN_HEADER_PARAM=-v SAM_TAG=1 -v UMI_REFORMAT=1 -v UMI_TAG=1 -v UMI_LOC=
 	rm -rf $@.tmp*
 
 %.umi_tools.R2.fastq.gz: %.log
-	if [ -z $(UMI_RELOC) ] || (( $$($(UNGZ) -c $*.R1.fastq.gz | head -n 1 | cut -d" " -f1 | awk -F: '{if ($$8!="") {print $$0}}' | wc -l) )); then \
+	if [ -z $(UMI_RELOC) ] || (( $$($(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.R1.fastq.gz | head -n 1 | cut -d" " -f1 | awk -F: '{if ($$8!="") {print $$0}}' | wc -l) )); then \
 		ln -s $*.R2.fastq.gz $@; \
 	elif [ "$(UMI_LOC)" == "index1" ]; then \
-		$(UMITOOLS) extract --bc-pattern=$(UMI_BARCODE_PATTERN_1) --stdin=$*.I1.fastq.gz --read2-in=$*.R2.fastq.gz --read2-stdout --compresslevel=1 --log=$@.log --error=$@.err | sed '/^@/ s/_\([A-Z]*\)/:\1/' | $(GZ) -1 -c > $@; \
+		$(UMITOOLS) extract --bc-pattern=$(UMI_BARCODE_PATTERN_1) --stdin=$*.I1.fastq.gz --read2-in=$*.R2.fastq.gz --read2-stdout --compresslevel=1 --log=$@.log --error=$@.err | sed '/^@/ s/_\([A-Z]*\)/:\1/' | $(GZ) -p $(THREADS_BY_SAMPLE) -1 -c > $@; \
 	elif [ "$(UMI_LOC)" == "index2" ]; then \
-		$(UMITOOLS) extract --bc-pattern=$(UMI_BARCODE_PATTERN_1) --stdin=$*.I2.fastq.gz --read2-in=$*.R2.fastq.gz --read2-stdout --compresslevel=1 --log=$@.log --error=$@.err | sed '/^@/ s/_\([A-Z]*\)/:\1/' | $(GZ) -1 -c > $@; \
+		$(UMITOOLS) extract --bc-pattern=$(UMI_BARCODE_PATTERN_1) --stdin=$*.I2.fastq.gz --read2-in=$*.R2.fastq.gz --read2-stdout --compresslevel=1 --log=$@.log --error=$@.err | sed '/^@/ s/_\([A-Z]*\)/:\1/' | $(GZ) -p $(THREADS_BY_SAMPLE) -1 -c > $@; \
 	elif [ "$(UMI_LOC)" == "per_index" ]; then \
-		$(UMITOOLS) extract --bc-pattern=$(UMI_BARCODE_PATTERN_1) --stdin=$*.I2.fastq.gz --read2-in=$*.R2.fastq.gz --read2-stdout --compresslevel=1 --log=$@.log --error=$@.err | sed '/^@/ s/_\([A-Z]*\)/:\1/' | $(GZ) -1 -c > $@; \
+		$(UMITOOLS) extract --bc-pattern=$(UMI_BARCODE_PATTERN_1) --stdin=$*.I2.fastq.gz --read2-in=$*.R2.fastq.gz --read2-stdout --compresslevel=1 --log=$@.log --error=$@.err | sed '/^@/ s/_\([A-Z]*\)/:\1/' | $(GZ) -p $(THREADS_BY_SAMPLE) -1 -c > $@; \
 	elif [ "$(UMI_LOC)" == "read1" ]; then \
-		$(UMITOOLS) extract --bc-pattern=$(UMI_BARCODE_PATTERN_1) --stdin=$*.R1.fastq.gz --read2-in=$*.R2.fastq.gz --read2-stdout --compresslevel=1 --log=$@.log --error=$@.err | sed '/^@/ s/_\([A-Z]*\)/:\1/' | $(GZ) -1 -c > $@; \
+		$(UMITOOLS) extract --bc-pattern=$(UMI_BARCODE_PATTERN_1) --stdin=$*.R1.fastq.gz --read2-in=$*.R2.fastq.gz --read2-stdout --compresslevel=1 --log=$@.log --error=$@.err | sed '/^@/ s/_\([A-Z]*\)/:\1/' | $(GZ) -p $(THREADS_BY_SAMPLE) -1 -c > $@; \
 	elif [ "$(UMI_LOC)" == "read2" ]; then \
-		$(UMITOOLS) extract --bc-pattern=$(UMI_BARCODE_PATTERN_1) --stdin=$*.R2.fastq.gz --read2-in=$*.R2.fastq.gz --read2-stdout --compresslevel=1 --log=$@.log --error=$@.err | sed '/^@/ s/_\([A-Z]*\)/:\1/' | $(GZ) -1 -c > $@; \
+		$(UMITOOLS) extract --bc-pattern=$(UMI_BARCODE_PATTERN_1) --stdin=$*.R2.fastq.gz --read2-in=$*.R2.fastq.gz --read2-stdout --compresslevel=1 --log=$@.log --error=$@.err | sed '/^@/ s/_\([A-Z]*\)/:\1/' | $(GZ) -p $(THREADS_BY_SAMPLE) -1 -c > $@; \
 	elif [ "$(UMI_LOC)" == "per_read" ]; then \
 		touch $@; \
 	else \
@@ -342,40 +343,40 @@ FASTQ_CLEAN_HEADER_PARAM=-v SAM_TAG=1 -v UMI_REFORMAT=1 -v UMI_TAG=1 -v UMI_LOC=
 ### Clean fastq header
 
 %.fastq_clean_header.R1.fastq.gz: %.log
-	$(UNGZ) -c $*.R1.fastq.gz | head -n1 > $@.tmp.source
-	$(UNGZ) -c $*.R1.fastq.gz | head -n1 | awk $(FASTQ_CLEAN_HEADER_PARAM) -f $(FASTQ_CLEAN_HEADER) > $@.tmp.target
+	$(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.R1.fastq.gz | head -n1 > $@.tmp.source
+	$(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.R1.fastq.gz | head -n1 | awk $(FASTQ_CLEAN_HEADER_PARAM) -f $(FASTQ_CLEAN_HEADER) > $@.tmp.target
 	if (( $$( diff $@.tmp.source $@.tmp.target | wc -l) )); then \
-		$(UNGZ) -c $*.R1.fastq.gz | awk $(FASTQ_CLEAN_HEADER_PARAM) -f $(FASTQ_CLEAN_HEADER) | $(GZ) -1 -c > $@; \
+		$(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.R1.fastq.gz | awk $(FASTQ_CLEAN_HEADER_PARAM) -f $(FASTQ_CLEAN_HEADER) | $(GZ) -p $(THREADS_BY_SAMPLE) -1 -c > $@; \
 	else \
 		ln -s $*.R1.fastq.gz $@; \
 	fi;
 	rm -f $@.tmp.source $@.tmp.target 
 
 %.fastq_clean_header.R2.fastq.gz: %.log
-	$(UNGZ) -c $*.R2.fastq.gz | head -n1 > $@.tmp.source
-	$(UNGZ) -c $*.R2.fastq.gz | head -n1 | awk $(FASTQ_CLEAN_HEADER_PARAM) -f $(FASTQ_CLEAN_HEADER) > $@.tmp.target
+	$(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.R2.fastq.gz | head -n1 > $@.tmp.source
+	$(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.R2.fastq.gz | head -n1 | awk $(FASTQ_CLEAN_HEADER_PARAM) -f $(FASTQ_CLEAN_HEADER) > $@.tmp.target
 	if (( $$( diff $@.tmp.source $@.tmp.target | wc -l) )); then \
-			$(UNGZ) -c $*.R2.fastq.gz | awk $(FASTQ_CLEAN_HEADER_PARAM) -f $(FASTQ_CLEAN_HEADER) | $(GZ) -1 -c > $@; \
+			$(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.R2.fastq.gz | awk $(FASTQ_CLEAN_HEADER_PARAM) -f $(FASTQ_CLEAN_HEADER) | $(GZ) -p $(THREADS_BY_SAMPLE) -1 -c > $@; \
 	else \
 		ln -s $*.R2.fastq.gz $@; \
 	fi;
 	rm -f $@.tmp.source $@.tmp.target 
 
 %.fastq_clean_header.I1.fastq.gz: %.log
-	$(UNGZ) -c $*.I1.fastq.gz | head -n1 > $@.tmp.source
-	$(UNGZ) -c $*.I1.fastq.gz | head -n1 | awk $(FASTQ_CLEAN_HEADER_PARAM) -f $(FASTQ_CLEAN_HEADER) > $@.tmp.target
+	$(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.I1.fastq.gz | head -n1 > $@.tmp.source
+	$(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.I1.fastq.gz | head -n1 | awk $(FASTQ_CLEAN_HEADER_PARAM) -f $(FASTQ_CLEAN_HEADER) > $@.tmp.target
 	if (( $$( diff $@.tmp.source $@.tmp.target | wc -l) )); then \
-			$(UNGZ) -c $*.I1.fastq.gz | awk $(FASTQ_CLEAN_HEADER_PARAM) -f $(FASTQ_CLEAN_HEADER) | $(GZ) -1 -c > $@; \
+			$(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.I1.fastq.gz | awk $(FASTQ_CLEAN_HEADER_PARAM) -f $(FASTQ_CLEAN_HEADER) | $(GZ) -p $(THREADS_BY_SAMPLE) -1 -c > $@; \
 	else \
 		ln -s $*.I1.fastq.gz $@; \
 	fi;
 	rm -f $@.tmp.source $@.tmp.target 
 
 %.fastq_clean_header.I2.fastq.gz: %.log
-	$(UNGZ) -c $*.I2.fastq.gz | head -n1 > $@.tmp.source
-	$(UNGZ) -c $*.I2.fastq.gz | head -n1 | awk $(FASTQ_CLEAN_HEADER_PARAM) -f $(FASTQ_CLEAN_HEADER) > $@.tmp.target
+	$(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.I2.fastq.gz | head -n1 > $@.tmp.source
+	$(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.I2.fastq.gz | head -n1 | awk $(FASTQ_CLEAN_HEADER_PARAM) -f $(FASTQ_CLEAN_HEADER) > $@.tmp.target
 	if (( $$( diff $@.tmp.source $@.tmp.target | wc -l) )); then \
-			$(UNGZ) -c $*.I2.fastq.gz | awk $(FASTQ_CLEAN_HEADER_PARAM) -f $(FASTQ_CLEAN_HEADER) | $(GZ) -1 -c > $@; \
+			$(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.I2.fastq.gz | awk $(FASTQ_CLEAN_HEADER_PARAM) -f $(FASTQ_CLEAN_HEADER) | $(GZ) -p $(THREADS_BY_SAMPLE) -1 -c > $@; \
 	else \
 		ln -s $*.I2.fastq.gz $@; \
 	fi;
@@ -391,16 +392,16 @@ FASTQ_CLEAN_HEADER_PARAM=-v SAM_TAG=1 -v UMI_REFORMAT=1 -v UMI_TAG=1 -v UMI_LOC=
 # if (( $(zcat /STARK/data/STARKData/RUN_TEST_UMI_index2/demultiplexing/RUN_TEST/Sample3UMI_S3_R1_001.fastq.gz  | head -n1 | grep -e "BC:" -e "RX" -c) )); then echo "exists BC or RX"; fi;
 
 %.fastq_reheader.R1.fastq.gz: %.log
-	#if (( $$($(UNGZ) -c $*.R1.fastq.gz | head -n1 | grep -e "BC:Z:" -e "RX:Z:" -c) )); then \
-	if (( $$($(UNGZ) -c $*.R1.fastq.gz | head -n1 | wc -l) )) && ! (( $$($(UNGZ) -c $*.R1.fastq.gz | head -n1 | grep -e "BC:Z:" -e "RX:Z:" -c) )); then \
-		echo "$(UNGZ) -c $*.R1.fastq.gz | head -n1 | tr '\t' ' ' > $@.tmp.read_head" > $@.tmp.read_head.cmd; \
+	#if (( $$($(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.R1.fastq.gz | head -n1 | grep -e "BC:Z:" -e "RX:Z:" -c) )); then \
+	if (( $$($(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.R1.fastq.gz | head -n1 | wc -l) )) && ! (( $$($(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.R1.fastq.gz | head -n1 | grep -e "BC:Z:" -e "RX:Z:" -c) )); then \
+		echo "$(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.R1.fastq.gz | head -n1 | tr '\t' ' ' > $@.tmp.read_head" > $@.tmp.read_head.cmd; \
 		chmod u+x $@.tmp.read_head.cmd; \
 		/bin/bash $@.tmp.read_head.cmd; \
-		echo "paste <($(UNGZ) -c $*.R1.fastq.gz | head -n2 | tr '\t' ' ') <($(UNGZ) -c $*.I1.fastq.gz | head -n2) <($(UNGZ) -c $*.I2.fastq.gz | head -n2) | awk -F'\t' -v READ=1 -f $(FASTQ_REHEADER) | head -n1 > $@.tmp.read_rehead" > $@.tmp.read_rehead.cmd; \
+		echo "paste <($(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.R1.fastq.gz | head -n2 | tr '\t' ' ') <($(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.I1.fastq.gz | head -n2) <($(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.I2.fastq.gz | head -n2) | awk -F'\t' -v READ=1 -f $(FASTQ_REHEADER) | head -n1 > $@.tmp.read_rehead" > $@.tmp.read_rehead.cmd; \
 		chmod u+x $@.tmp.read_rehead.cmd; \
 		/bin/bash $@.tmp.read_rehead.cmd; \
 		if [ "$$(cat $@.tmp.read_head)" != "$$(cat $@.tmp.read_rehead)" ]; then \
-			echo 'paste <($(UNGZ) -c $*.R1.fastq.gz | tr "\t" " ") <($(UNGZ) -c $*.I1.fastq.gz) <($(UNGZ) -c $*.I2.fastq.gz) | awk -F"\t" -v READ=1 -f $(FASTQ_REHEADER) | $(GZ) -1 -c > $@' > $@.tmp.cmd; \
+			echo 'paste <($(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.R1.fastq.gz | tr "\t" " ") <($(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.I1.fastq.gz) <($(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.I2.fastq.gz) | awk -F"\t" -v READ=1 -f $(FASTQ_REHEADER) | $(GZ) -p $(THREADS_BY_SAMPLE) -1 -c > $@' > $@.tmp.cmd; \
 			chmod u+x $@.tmp.cmd; \
 			/bin/bash $@.tmp.cmd; \
 			#rm -f $@.tmp.cmd; \
@@ -413,15 +414,15 @@ FASTQ_CLEAN_HEADER_PARAM=-v SAM_TAG=1 -v UMI_REFORMAT=1 -v UMI_TAG=1 -v UMI_LOC=
 	rm -rf $@.tmp*
 
 %.fastq_reheader.R2.fastq.gz: %.log
-	if (( $$($(UNGZ) -c $*.R2.fastq.gz | head -n1 | wc -l) )) && ! (( $$($(UNGZ) -c $*.R2.fastq.gz | head -n1 | grep -e "BC:Z:" -e "RX:Z:" -c) )); then \
-		echo "$(UNGZ) -c $*.R2.fastq.gz | head -n1 | tr '\t' ' ' > $@.tmp.read_head" > $@.tmp.read_head.cmd; \
+	if (( $$($(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.R2.fastq.gz | head -n1 | wc -l) )) && ! (( $$($(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.R2.fastq.gz | head -n1 | grep -e "BC:Z:" -e "RX:Z:" -c) )); then \
+		echo "$(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.R2.fastq.gz | head -n1 | tr '\t' ' ' > $@.tmp.read_head" > $@.tmp.read_head.cmd; \
 		chmod u+x $@.tmp.read_head.cmd; \
 		/bin/bash $@.tmp.read_head.cmd; \
-		echo "paste <($(UNGZ) -c $*.R2.fastq.gz | head -n2 | tr '\t' ' ') <($(UNGZ) -c $*.I1.fastq.gz | head -n2) <($(UNGZ) -c $*.I2.fastq.gz | head -n2) | awk -F'\t' -v READ=1 -f $(FASTQ_REHEADER) | head -n1 > $@.tmp.read_rehead" > $@.tmp.read_rehead.cmd; \
+		echo "paste <($(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.R2.fastq.gz | head -n2 | tr '\t' ' ') <($(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.I1.fastq.gz | head -n2) <($(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.I2.fastq.gz | head -n2) | awk -F'\t' -v READ=1 -f $(FASTQ_REHEADER) | head -n1 > $@.tmp.read_rehead" > $@.tmp.read_rehead.cmd; \
 		chmod u+x $@.tmp.read_rehead.cmd; \
 		/bin/bash $@.tmp.read_rehead.cmd; \
 		if [ "$$(cat $@.tmp.read_head)" != "$$(cat $@.tmp.read_rehead)" ]; then \
-			echo 'paste <($(UNGZ) -c $*.R2.fastq.gz | tr "\t" " ") <($(UNGZ) -c $*.I1.fastq.gz) <($(UNGZ) -c $*.I2.fastq.gz) | awk -F"\t" -v READ=1 -f $(FASTQ_REHEADER) | $(GZ) -1 -c > $@' > $@.tmp.cmd; \
+			echo 'paste <($(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.R2.fastq.gz | tr "\t" " ") <($(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.I1.fastq.gz) <($(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.I2.fastq.gz) | awk -F"\t" -v READ=1 -f $(FASTQ_REHEADER) | $(GZ) -p $(THREADS_BY_SAMPLE) -1 -c > $@' > $@.tmp.cmd; \
 			chmod u+x $@.tmp.cmd; \
 			/bin/bash $@.tmp.cmd; \
 			#rm -f $@.tmp.cmd; \
@@ -434,15 +435,15 @@ FASTQ_CLEAN_HEADER_PARAM=-v SAM_TAG=1 -v UMI_REFORMAT=1 -v UMI_TAG=1 -v UMI_LOC=
 	rm -rf $@.tmp*
 
 %.fastq_reheader.I1.fastq.gz: %.log
-	if (( $$($(UNGZ) -c $*.I1.fastq.gz | head -n1 | wc -l) )) && ! (( $$($(UNGZ) -c $*.I1.fastq.gz | head -n1 | grep -e "BC:Z:" -e "RX:Z:" -c) )); then \
-		echo "$(UNGZ) -c $*.I1.fastq.gz | head -n1 | tr '\t' ' ' > $@.tmp.read_head" > $@.tmp.read_head.cmd; \
+	if (( $$($(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.I1.fastq.gz | head -n1 | wc -l) )) && ! (( $$($(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.I1.fastq.gz | head -n1 | grep -e "BC:Z:" -e "RX:Z:" -c) )); then \
+		echo "$(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.I1.fastq.gz | head -n1 | tr '\t' ' ' > $@.tmp.read_head" > $@.tmp.read_head.cmd; \
 		chmod u+x $@.tmp.read_head.cmd; \
 		/bin/bash $@.tmp.read_head.cmd; \
-		echo "paste <($(UNGZ) -c $*.I1.fastq.gz | head -n2 | tr '\t' ' ') <($(UNGZ) -c $*.I1.fastq.gz | head -n2) <($(UNGZ) -c $*.I2.fastq.gz | head -n2) | awk -F'\t' -v READ=1 -f $(FASTQ_REHEADER) | head -n1 > $@.tmp.read_rehead" > $@.tmp.read_rehead.cmd; \
+		echo "paste <($(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.I1.fastq.gz | head -n2 | tr '\t' ' ') <($(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.I1.fastq.gz | head -n2) <($(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.I2.fastq.gz | head -n2) | awk -F'\t' -v READ=1 -f $(FASTQ_REHEADER) | head -n1 > $@.tmp.read_rehead" > $@.tmp.read_rehead.cmd; \
 		chmod u+x $@.tmp.read_rehead.cmd; \
 		/bin/bash $@.tmp.read_rehead.cmd; \
 		if [ "$$(cat $@.tmp.read_head)" != "$$(cat $@.tmp.read_rehead)" ]; then \
-			echo 'paste <($(UNGZ) -c $*.I1.fastq.gz | tr "\t" " ") <($(UNGZ) -c $*.I1.fastq.gz) <($(UNGZ) -c $*.I2.fastq.gz) | awk -F"\t" -v READ=1 -f $(FASTQ_REHEADER) | $(GZ) -1 -c > $@' > $@.tmp.cmd; \
+			echo 'paste <($(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.I1.fastq.gz | tr "\t" " ") <($(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.I1.fastq.gz) <($(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.I2.fastq.gz) | awk -F"\t" -v READ=1 -f $(FASTQ_REHEADER) | $(GZ) -p $(THREADS_BY_SAMPLE) -1 -c > $@' > $@.tmp.cmd; \
 			chmod u+x $@.tmp.cmd; \
 			/bin/bash $@.tmp.cmd; \
 			#rm -f $@.tmp.cmd; \
@@ -455,15 +456,15 @@ FASTQ_CLEAN_HEADER_PARAM=-v SAM_TAG=1 -v UMI_REFORMAT=1 -v UMI_TAG=1 -v UMI_LOC=
 	rm -rf $@.tmp*
 
 %.fastq_reheader.I2.fastq.gz: %.log
-	if (( $$($(UNGZ) -c $*.I2.fastq.gz | head -n1 | wc -l) )) && ! (( $$($(UNGZ) -c $*.I2.fastq.gz | head -n1 | grep -e "BC:Z:" -e "RX:Z:" -c) )); then \
-		echo "$(UNGZ) -c $*.I2.fastq.gz | head -n1 | tr '\t' ' ' > $@.tmp.read_head" > $@.tmp.read_head.cmd; \
+	if (( $$($(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.I2.fastq.gz | head -n1 | wc -l) )) && ! (( $$($(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.I2.fastq.gz | head -n1 | grep -e "BC:Z:" -e "RX:Z:" -c) )); then \
+		echo "$(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.I2.fastq.gz | head -n1 | tr '\t' ' ' > $@.tmp.read_head" > $@.tmp.read_head.cmd; \
 		chmod u+x $@.tmp.read_head.cmd; \
 		/bin/bash $@.tmp.read_head.cmd; \
-		echo "paste <($(UNGZ) -c $*.I2.fastq.gz | head -n2 | tr '\t' ' ') <($(UNGZ) -c $*.I1.fastq.gz | head -n2) <($(UNGZ) -c $*.I2.fastq.gz | head -n2) | awk -F'\t' -v READ=1 -f $(FASTQ_REHEADER) | head -n1 > $@.tmp.read_rehead" > $@.tmp.read_rehead.cmd; \
+		echo "paste <($(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.I2.fastq.gz | head -n2 | tr '\t' ' ') <($(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.I1.fastq.gz | head -n2) <($(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.I2.fastq.gz | head -n2) | awk -F'\t' -v READ=1 -f $(FASTQ_REHEADER) | head -n1 > $@.tmp.read_rehead" > $@.tmp.read_rehead.cmd; \
 		chmod u+x $@.tmp.read_rehead.cmd; \
 		/bin/bash $@.tmp.read_rehead.cmd; \
 		if [ "$$(cat $@.tmp.read_head)" != "$$(cat $@.tmp.read_rehead)" ]; then \
-			echo 'paste <($(UNGZ) -c $*.I2.fastq.gz | tr "\t" " ") <($(UNGZ) -c $*.I1.fastq.gz) <($(UNGZ) -c $*.I2.fastq.gz) | awk -F"\t" -v READ=1 -f $(FASTQ_REHEADER) | $(GZ) -1 -c > $@' > $@.tmp.cmd; \
+			echo 'paste <($(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.I2.fastq.gz | tr "\t" " ") <($(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.I1.fastq.gz) <($(UNGZ) -p $(THREADS_BY_SAMPLE) -c $*.I2.fastq.gz) | awk -F"\t" -v READ=1 -f $(FASTQ_REHEADER) | $(GZ) -p $(THREADS_BY_SAMPLE) -1 -c > $@' > $@.tmp.cmd; \
 			chmod u+x $@.tmp.cmd; \
 			/bin/bash $@.tmp.cmd; \
 			#rm -f $@.tmp.cmd; \

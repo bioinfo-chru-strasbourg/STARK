@@ -11,8 +11,11 @@ DOCKER_LIST=""
 
 
 # GZIP
-export GZ="gzip"			# BIN
-export UNGZ="gzip -d"		# BIN
+# export GZ="gzip"			# BIN
+# export UNGZ="gzip -d"		# BIN
+# export GZIP=""				# PARAM GZIP
+export GZ="pigz"			# BIN
+export UNGZ="pigz -d"		# BIN
 export GZIP=""				# PARAM GZIP
 
 
