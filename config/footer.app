@@ -24,26 +24,40 @@ in_array ()
 # APPLICATION INFOS
 ############
 
-# Name of the APP. usefull to include specific rules if exists (in $STARK/$APP_NAME.rules.mk/*rules.mk)
-# AUTO detect: $(basename ${BASH_SOURCE[0]} | sed 's/^env//' | sed 's/\.sh$//gi' | cut -d. -f2-)
+# Name of the application.
+# Auto-detect by file name using pattern: `<APP_NAME>.app`.
+# This name is used to identify which application to apply, with parameter `--app|--application` (e.g. `--application=EXOME` or `--application=EXOME.app`).
+# Also usefull to include specific rules if exists (e.g. `$RULES_APP/$APP_NAME.rules.mk/*rules.mk`, `<APP_NAME>.rules.mk/*rules.mk`).
 if [ "$APP_NAME" == "" ]; then
 	APP_NAME="DEFAULT"
 fi;
 export APP_NAME
 
-# Release of the APP
-# AUTO detect: $(basename ${BASH_SOURCE[0]} | sed 's/^env//' | sed 's/\.sh$//gi' | cut -d. -f2-)
+# Release of the application.
+# Should follow [Semantic Versioning](https://semver.org/) system (i.e. `MAJOR.MINOR.PATCH`)
 if [ "$APP_RELEASE" == "" ]; then
-	APP_RELEASE=""
+	APP_RELEASE="1.0.0"
 fi;
 export APP_RELEASE
 
-# GROUP and PROJECT Associated with the APP
-# Use to structure data in the repository folder
+# Description of the application.
+# Will be using parameter `--applications_infos` in the command line to display it in the help message of the application.
+if [ "$APP_DESCRIPTION" == "" ]; then
+	APP_DESCRIPTION="No description available for this application"
+fi;
+export APP_DESCRIPTION
+
+# Group associated with the application.
+# Use to structure data in the repository folder (i.e. `<GROUP>/<PROJECT>`).
+# Leave it blank for no group (i.e. `UNKNOWN`).
 if [ "$APP_GROUP" == "" ]; then
 	APP_GROUP="UNKNOWN"
 fi;
-export GROUP
+export APP_GROUP
+
+# Project associated with the application.
+# Use to structure data in the repository folder (i.e. `<GROUP>/<PROJECT>`).
+# Leave it blank for no project (i.e. `UNKNOWN`).
 if [ "$APP_PROJECT" == "" ]; then
 	APP_PROJECT="UNKNOWN"
 fi;
@@ -51,17 +65,15 @@ export APP_PROJECT
 
 
 
-# SCRIPT DIR
-##############
-
-# Folder of STARK ENV
-#export STARK_FOLDER_CONFIG="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd -P )"
-
-
-
 # FOLDERS
 #################
-# Checking and adaptation of variables for the workflow
+
+# Folders used for the analysis.
+# These folders will be automatically created if not exist.
+# The main folder is defined by STARK_FOLDER_MAIN variable, and all other folders are defined as subfolders of this main folder.
+# Folders can be redefined as absolute path, but we suggest to keep them as subfolders of the main folder for better organization and management of the data.
+# Folders like tools and databases contains tools and databases needed for the analysis, and will be used by the rules of the analysis.
+# Folders like input and output are used to store input data and results of the analysis, and will be used by the rules of the analysis.
 
 
 # MAIN FOLDERS
@@ -78,77 +90,127 @@ export STARK_FOLDER_RULES=$STARK_FOLDER_CONFIG/rules
 # FOLDER INFRASTRUCTURE
 
 # MAIN STARK FOLDER
+# This is the main folder for the analysis, and all other folders are defined as subfolders of this main folder.
+# This folder will be automatically created if not exist, either during setup (for folders tools and databases) or during the analysis to store all the data and results of the analysis.
 STARK_FOLDER_MAIN="/STARK"
+#export STARK_FOLDER_MAIN
 
 # INPUT FOLDER
-[ "$INPUT" != "" ] && FOLDER_INPUT=$INPUT && FOLDER_RUN="$FOLDER_INPUT/runs" && FOLDER_MANIFEST="$FOLDER_INPUT/manifests" && FOLDER_MANIFEST="$FOLDER_INPUT/pedigree"
+# All input data for the analysis, including raw data and metadata, should be stored in this folder. This folder will be used by the rules of the analysis to access the input data needed for the analysis.
+# Folder structure is important for the rules of the analysis to access the input data needed for the analysis, and to automatically detect the input data needed for the analysis depending on the manifest file (configured in the SampleSheet of each run), if any.
+# Subfolders for runs, manifests and pedigree can be defined as absolute path, but we suggest to keep them as subfolders of the input folder for better organization and management of the data.
+[ "$INPUT" != "" ] && FOLDER_INPUT=$INPUT
+[ "$INPUT" != "" ] && FOLDER_INPUT=$INPUT && FOLDER_RUN="$FOLDER_INPUT/runs" && FOLDER_MANIFEST="$FOLDER_INPUT/manifests" && FOLDER_PEDIGREE="$FOLDER_INPUT/pedigree"
 if [ "$FOLDER_INPUT" == "" ]; then
 	FOLDER_INPUT="$STARK_FOLDER_MAIN/input"
 fi;
+#export FOLDER_INPUT
 
 # RUN FOLDER
+# This folder will be used by the rules of the analysis to access the raw data of each run (from the sequencer, such as Illumina), organized as subfolder for each run (e.g. `$FOLDER_RUN/<RUN_NAME>/`), and to automatically detect the raw data information of each run on a SampleSheet file, or a analysis JSON file.
 if [ "$FOLDER_RUN" == "" ]; then
 	FOLDER_RUN="$FOLDER_INPUT/runs"
 fi;
+#export FOLDER_RUN
+
+# MANIFEST FOLDER
+# This folder will be used by the rules of the analysis to access the manifest (Illumina format), design (BED format) and gene panels (BED format) files of each run (e.g. `$FOLDER_MANIFEST/my_manifest.manifest`, `$FOLDER_MANIFEST/my_design.bed`, `$FOLDER_MANIFEST/my_gene_panel.genes`).
+# These files are automatically detected within the SampleSheet of the run, or the analysis JSON file of the run.
 if [ "$FOLDER_MANIFEST" == "" ]; then
 	FOLDER_MANIFEST="$FOLDER_INPUT/manifests"
 fi;
+#export FOLDER_MANIFEST
+
+# This folder will be used by the rules of the analysis to access the pedigree file (PED format) of each run (e.g. `$FOLDER_PEDIGREE/my_pedigree.ped`).
+# These files are automatically detected within the SampleSheet of the run, or the analysis JSON file of the run, by using GROUP and PROJECT defined by the application used for the run.
 if [ "$FOLDER_PEDIGREE" == "" ]; then
 	FOLDER_PEDIGREE="$FOLDER_INPUT/pedigree"
 fi;
+#export FOLDER_PEDIGREE
 
 # OUTPUT FOLDER
+# This folder will be used to store all the results of the analysis, including intermediate files and final results.
+# Subfolders for results, demultiplexing, log and tmp can be defined as absolute path, but we suggest to keep them as subfolders of the output folder for better organization and management of the data.
 [ "$OUTPUT" != "" ] && FOLDER_OUTPUT=$OUTPUT
 [ "$OUTPUT" != "" ] && FOLDER_OUTPUT=$OUTPUT && FOLDER_RESULTS="$FOLDER_OUTPUT/results" && FOLDER_DEMULTIPLEXING="$FOLDER_OUTPUT/demultiplexing"  && FOLDER_LOG="$FOLDER_OUTPUT/log"  && FOLDER_TMP="$FOLDER_OUTPUT/tmp"
-
 if [ "$FOLDER_OUTPUT" == "" ]; then
 	FOLDER_OUTPUT="$STARK_FOLDER_MAIN/output"
 fi;
-
-# RESULTS FOLDER
-[ "$RESULTS" != "" ] && FOLDER_RESULTS=$RESULTS
-if [ "$FOLDER_RESULTS" == "" ]; then
-	FOLDER_RESULTS="$FOLDER_OUTPUT/results"
-fi;
+#export FOLDER_OUTPUT
 
 # DEMULTIPLEXING FOLDER
+# This folder will be used by the rules of the analysis to store the results of the demultiplexing step (using SampleSheet file), including the demultiplexed FASTQ files and the demultiplexing report.
 [ "$DEMULTIPLEXING" != "" ] && FOLDER_DEMULTIPLEXING=$DEMULTIPLEXING
 if [ "$FOLDER_DEMULTIPLEXING" == "" ]; then
 	FOLDER_DEMULTIPLEXING="$FOLDER_OUTPUT/demultiplexing"
 fi;
+#export FOLDER_DEMULTIPLEXING
 
-# ANALYSIS/LOG FOLDER
+# RESULTS FOLDER
+# This folder will be used to store all the results of the analysis, including intermediate files and final results (files such as BAM, VCF, metrics, annotation files, and more).
+[ "$RESULTS" != "" ] && FOLDER_RESULTS=$RESULTS
+if [ "$FOLDER_RESULTS" == "" ]; then
+	FOLDER_RESULTS="$FOLDER_OUTPUT/results"
+fi;
+#export FOLDER_RESULTS
+
+# LOG FOLDER
+# This folder will be used by the rules of the analysis to store log files of the analysis.
 [ "$LOG" != "" ] && FOLDER_LOG=$LOG
 if [ "$FOLDER_LOG" == "" ]; then
 	FOLDER_LOG="$FOLDER_OUTPUT/log"
 fi;
 
 # TMP FOLDER
+# This folder will be used by the rules of the analysis to store temporary files of the analysis, and to store temporary files of the tools used for the analysis (e.g. temporary files of GATK tools).
 [ "$TMP" != "" ] && FOLDER_TMP=$TMP
 if [ "$FOLDER_TMP" == "" ]; then
 	FOLDER_TMP="$FOLDER_OUTPUT/tmp"
 fi;
 
 # EXPORT FOLDER REPOSITORY
+# This folder will be used by the rules of the analysis to copy some results of the analysis in a repository folder, organized by group and project (e.g. `$FOLDER_REPOSITORY/<GROUP>/<PROJECT>/`), and to automatically detect the files to copy in the repository folder depending on application.
+# For a full run analysis, repository folder is automatically defined with group pand project structure. For other analyses, such as a single sample analysis, repository folder is empty, and no copy is performed.
+# Leave it blank for no copy in repository folder.
 export FOLDER_REPOSITORY
 
 # EXPORT FOLDER ARCHIVES
+# This folder will be used by the rules of the analysis to copy some results of the analysis in a archives folder, organized by group and project (e.g. `$FOLDER_ARCHIVES/<GROUP>/<PROJECT>/`), and to automatically detect the files to copy in the archives folder depending on application.
+# For a full run analysis, archives folder is automatically defined with group pand project structure. For other analyses, such as a single sample analysis, archives folder is empty, and no copy is performed.
+# Leave it blank for no copy in archives folder.
 export FOLDER_ARCHIVES
 
 # EXPORT FOLDER FAVORITES
+# This folder will be used by the rules of the analysis to copy some results of the analysis in a favorites folder, organized by group and project (e.g. `$FOLDER_FAVORITES/<GROUP>/<PROJECT>/`), and to automatically detect the files to copy in the favorites folder depending on application.
+# For a full run analysis, favorites folder is automatically defined with group pand project structure. For other analyses, such as a single sample analysis, favorites folder is empty, and no copy is performed.
+# Leave it blank for no copy in favorites folder.
 export FOLDER_FAVORITES
 
 
 # CONFIG FOLDERS
 
+# TOOLS FOLDER
+# All tools needed for STARK, and more, including STARK.
+# This folder will be automatically created during setup if not exist, and will be used to store all the tools needed for the analysis, including STARK itself. 
+# This folder will be used by the rules of the analysis to access the tools needed for the analysis.
 if [ "$FOLDER_TOOLS" == "" ]; then
 	FOLDER_TOOLS="$STARK_FOLDER_MAIN/tools"
 fi;
+export FOLDER_TOOLS
 
+# All databases needed for STARK, and more.
+# This folder will be automatically created during setup if not exist, and will be used to store all the databases needed for the analysis, including reference genomes and mandatory databases for calling and annotation.
+# Folder structure is important for the rules of the analysis to access the databases needed for the analysis, and to automatically detect the reference genome and mandatory databases for calling and annotation depending on the assembly defined in the manifest file (configured in the SampleSheet of each run), if any.
+# Folder structuer format: `$FOLDER_DATABASES/<DATABASE_NAME>/<DATABASE_RELEASE>/<ASSEMBLY>/<DATABASE_FILE>`
+# Examples of folder structure:
+# - `$FOLDER_DATABASES/genomes/current/hg19/hg19.fa`
+# - `$FOLDER_DATABASES/dnsnp/latest/hg19/dbsnp_138.hg19.vcf.gz`
+# - `$FOLDER_DATABASES/dbnsfp/4.4a/hg19/dbNSFP4.4a.hg19.parquet`
 [ "$DATABASES" != "" ] && [ -d $DATABASES ] && FOLDER_DATABASES=$DATABASES
 if [ "$FOLDER_DATABASES" == "" ]; then
 	FOLDER_DATABASES="$STARK_FOLDER_MAIN/databases"
 fi;
+export FOLDER_DATABASES
 
 
 # RUNS FOLDER
@@ -1389,6 +1451,11 @@ if [ -z $HOWARD_PRIORITIZATION_CONFIG ]; then
 fi;
 export HOWARD_PRIORITIZATION_CONFIG
 
+# HOWARD calculation config
+if [ -z $HOWARD_CALCULATION_CONFIG ]; then
+	HOWARD_CALCULATION_CONFIG=''
+fi;
+export HOWARD_CALCULATION_CONFIG
 
 
 # Recalibration and Filtration

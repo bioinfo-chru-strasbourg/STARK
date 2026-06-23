@@ -91,9 +91,18 @@ KNOWN_SITES?=$(VCFDBSNP)
 # OMNI?=$(DBFOLDER)/1000G_omni2.5.hg19.vcf
 # PHASE1_1000G?=$(DBFOLDER)/1000G_phase1.snps.high_confidence.hg19.sites.vcf
 
-# HOWARD
+# HOWARD Configuration
 HOWARD_CONFIG_OPTIONS?=--config=$(HOWARD_CONFIG) --threads=$(THREADS) --verbosity=DEBUG
-HOWARD_DEJAVU_CONFIG_OPTIONS?=--config=$(HOWARD_CONFIG) --threads=$(THREADS) --verbosity=DEBUG
+
+# HOWARD Prioritization Configuration
+HOWARD_PRIORITIZATION_CONFIG_OPTIONS?=$(shell if [ "$(HOWARD_PRIORITIZATION_CONFIG)" != "" ] && [ -f "$(HOWARD_PRIORITIZATION_CONFIG)" ]; then echo " --prioritization_config=$(HOWARD_PRIORITIZATION_CONFIG) "; fi;)
+
+# HOWARD Calculation Configuration
+HOWARD_CALCULATION_CONFIG_OPTIONS?=$(shell if [ "$(HOWARD_CALCULATION_CONFIG)" != "" ] && [ -f "$(HOWARD_CALCULATION_CONFIG)" ]; then echo " --calculation_config=$(HOWARD_CALCULATION_CONFIG) "; fi;)
+
+# HOWARD DejaVu Configuration
+#--config=$(HOWARD_CONFIG) --threads=$(THREADS) --verbosity=DEBUG
+HOWARD_DEJAVU_CONFIG_OPTIONS?=$(HOWARD_CONFIG_OPTIONS) 
 
 
 # FIX_VCF_HEADER_REFORMAT

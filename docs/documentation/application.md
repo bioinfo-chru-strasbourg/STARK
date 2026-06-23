@@ -5,7 +5,6 @@ This document describes the configuration variables for the STARK application, a
 Example of application configuration file:
 
 ```bash
-
 #!/bin/bash
 ## STARK application EXOME
 
@@ -40,136 +39,176 @@ HOWARD_ANNOTATION_MINIMAL=""
 # Default annotation with HOWARD for report
 HOWARD_ANNOTATION_REPORT="core,frequency,score,annotation,prediction,snpeff_split"
 
-
 ```
 
 _Application for Exome analysis: From default application, information of application are defind, as well as specific pipelines, interval padding and variant annotation_
 
 ## Application Infos
 
-### APP_NAME
+All informations related to the application, for description, easy search and repository folder structure.
 
-Default application name.
+### `APP_NAME`
+
+Name of the application.
+Auto-detect by file name using pattern: `<APP_NAME>.app`.
+This name is used to identify which application to apply, with parameter `--app|--application` (e.g. `--application=EXOME` or `--application=EXOME.app`).
+Also usefull to include specific rules if exists (e.g. `$RULES_APP/$APP_NAME.rules.mk/*rules.mk`, `<APP_NAME>.rules.mk/*rules.mk`).
 
 - Default: `"DEFAULT"`
 
-### APP_RELEASE
+### `APP_RELEASE`
 
-Application release version.
+Release of the application.
+Should follow [Semantic Versioning](https://semver.org/) system (i.e. `MAJOR.MINOR.PATCH`)
 
-- Default: `"1.2"`
+- Default: `"1.0.0"`
 
-### APP_DESCRIPTION
+### `APP_DESCRIPTION`
 
 Description of the application.
+Will be using parameter `--applications_infos` in the command line to display it in the help message of the application.
 
-- Default: `"Default application"`
+- Default: `"No description available for this application"`
 
-### APP_GROUP
+### `APP_GROUP`
 
-Application group.
+Group associated with the application.
+Use to structure data in the repository folder (i.e. `<GROUP>/<PROJECT>`).
+Leave it blank for no group (i.e. `UNKNOWN`).
 
-- Default: `""`
+- Default: `"UNKNOWN"`
 
-### APP_PROJECT
+### `APP_PROJECT`
 
-Application project.
+Project associated with the application.
+Use to structure data in the repository folder (i.e. `<GROUP>/<PROJECT>`).
+Leave it blank for no project (i.e. `UNKNOWN`).
 
-- Default: `""`
+- Default: `"UNKNOWN"`
 
 ## Folders
 
-### STARK_FOLDER_MAIN
+Folders used for the analysis.
+These folders will be automatically created if not exist.
+The main folder is defined by STARK_FOLDER_MAIN variable, and all other folders are defined as subfolders of this main folder.
+Folders can be redefined as absolute path, but we suggest to keep them as subfolders of the main folder for better organization and management of the data.
+Folders like tools and databases contains tools and databases needed for the analysis, and will be used by the rules of the analysis.
+Folders like input and output are used to store input data and results of the analysis, and will be used by the rules of the analysis.
 
-Main STARK folder.
+### `STARK_FOLDER_MAIN`
+
+This is the main folder for the analysis, and all other folders are defined as subfolders of this main folder.
+This folder will be automatically created if not exist, either during setup (for folders tools and databases) or during the analysis to store all the data and results of the analysis.
 
 - Default: `"/STARK"`
 
-### FOLDER_TOOLS
+### `FOLDER_TOOLS`
 
-Folder for all tools needed for STARK, and more, including STARK.
+All tools needed for STARK, and more, including STARK.
+This folder will be automatically created during setup if not exist, and will be used to store all the tools needed for the analysis, including STARK itself.
+This folder will be used by the rules of the analysis to access the tools needed for the analysis.
 
 - Default: `"$STARK_FOLDER_MAIN/tools"`
 
-### FOLDER_DATABASES
+### `FOLDER_DATABASES`
 
-Folder for all reference genomes and databases. The format for genomes is `$FOLDER_GENOMES/$ASSEMBLY/$ASSEMBLY.fa`. It also contains mandatory databases for variant calling and recalibration.
+All databases needed for STARK, and more.
+This folder will be automatically created during setup if not exist, and will be used to store all the databases needed for the analysis, including reference genomes and mandatory databases for calling and annotation.
+Folder structure is important for the rules of the analysis to access the databases needed for the analysis, and to automatically detect the reference genome and mandatory databases for calling and annotation depending on the assembly defined in the manifest file (configured in the SampleSheet of each run), if any.
+
+Folder structuer format: `$FOLDER_DATABASES/<DATABASE_NAME>/<DATABASE_RELEASE>/<ASSEMBLY>/<DATABASE_FILE>`.
 
 - Default: `"$STARK_FOLDER_MAIN/databases"`
 
-### FOLDER_INPUT
+Examples of folder structure:
 
-Input folder.
+- `$FOLDER_DATABASES/genomes/current/hg19/hg19.fa`
+- `$FOLDER_DATABASES/dnsnp/latest/hg19/dbsnp_138.hg19.vcf.gz`
+- `$FOLDER_DATABASES/dbnsfp/4.4a/hg19/dbNSFP4.4a.hg19.parquet`
+
+### `FOLDER_INPUT`
+
+All input data for the analysis, including raw data and metadata, should be stored in this folder. This folder will be used by the rules of the analysis to access the input data needed for the analysis.
+Folder structure is important for the rules of the analysis to access the input data needed for the analysis, and to automatically detect the input data needed for the analysis depending on the manifest file (configured in the SampleSheet of each run), if any.
 
 - Default: `"$STARK_FOLDER_MAIN/input"`
 
-### `FOLDER_RUN`
+#### `FOLDER_RUN`
 
-Illumina Sequencer repository Folder. Subfolder as runs.
+This folder will be used by the rules of the analysis to access the raw data of each run (from the sequencer, such as Illumina), organized as subfolder for each run (e.g. `$FOLDER_RUN/<RUN_NAME>/`), and to automatically detect the raw data information of each run on a SampleSheet file, or a analysis JSON file.
 
-- Default: `"$FOLDER_INPUT/runs"` (Commented out by default)
+- Default: `"$FOLDER_INPUT/runs"`
 
-### `FOLDER_MANIFEST`
+#### `FOLDER_MANIFEST`
 
-Illumina Manifests repository. Files to provide in the SampleSheet of each run.
+This folder will be used by the rules of the analysis to access the manifest (Illumina format), design (BED format) and gene panels (BED format) files of each run (e.g. `$FOLDER_MANIFEST/my_manifest.manifest`, `$FOLDER_MANIFEST/my_design.bed`, `$FOLDER_MANIFEST/my_gene_panel.genes`).
+These files are automatically detected within the SampleSheet of the run, or the analysis JSON file of the run.
 
-- Default: `"$FOLDER_INPUT/manifests"` (Commented out by default)
+- Default: `"$FOLDER_INPUT/manifests"`
 
-### `FOLDER_PEDIGREE`
+#### `FOLDER_PEDIGREE`
 
-Pedigree repository.
+This folder will be used by the rules of the analysis to access the pedigree file (PED format) of each run (e.g. `$FOLDER_PEDIGREE/my_pedigree.ped`).
+These files are automatically detected within the SampleSheet of the run, or the analysis JSON file of the run, by using GROUP and PROJECT defined by the application used for the run.
 
-- Default: `"$FOLDER_INPUT/pedigree"` (Commented out by default)
+- Default: `"$FOLDER_INPUT/pedigree"`
 
-### FOLDER_OUTPUT
+### `FOLDER_OUTPUT`
 
-Folder where all results will be generated.
+This folder will be used to store all the results of the analysis, including intermediate files and final results.
+Subfolders for results, demultiplexing, log and tmp can be defined as absolute path, but we suggest to keep them as subfolders of the output folder for better organization and management of the data.
 
 - Default: `"$STARK_FOLDER_MAIN/output"`
 
-### `FOLDER_RESULTS`
+#### `FOLDER_DEMULTIPLEXING`
 
-RUN files such as BAM, VCF, metrics.
+This folder will be used by the rules of the analysis to store the results of the demultiplexing step (using SampleSheet file), including the demultiplexed FASTQ files and the demultiplexing report.
 
-- Default: `"$FOLDER_OUTPUT/results"` (Commented out by default)
+- Default: `"$FOLDER_OUTPUT/demulitplexing"`
 
-### `FOLDER_DEMULTIPLEXING`
+#### `FOLDER_RESULTS`
 
-Demultiplexing folder.
+This folder will be used to store all the results of the analysis, including intermediate files and final results (files such as BAM, VCF, metrics, annotation files, and more).
 
-- Default: `"$FOLDER_OUTPUT/demulitplexing"` (Commented out by default)
+- Default: `"$FOLDER_OUTPUT/results"`
 
-### `FOLDER_LOG`
+#### `FOLDER_LOG`
 
-Log files folder.
+This folder will be used by the rules of the analysis to store log files of the analysis.
 
 - Default: `"$FOLDER_OUTPUT/log"` (Commented out by default)
 
-### `FOLDER_TMP`
+#### `FOLDER_TMP`
 
-Temporary files folder.
+This folder will be used by the rules of the analysis to store temporary files of the analysis, and to store temporary files of the tools used for the analysis (e.g. temporary files of GATK tools).
 
 - Default: `"$FOLDER_OUTPUT/tmp"` (Commented out by default)
 
-### FOLDER_REPOSITORY
+#### FOLDER_REPOSITORY
 
-Repository folder for results data. Leave blank for no copy.
+This folder will be used by the rules of the analysis to copy some results of the analysis in a repository folder, organized by group and project (e.g. `$FOLDER_REPOSITORY/<GROUP>/<PROJECT>/`), and to automatically detect the files to copy in the repository folder depending on application.
+For a full run analysis, repository folder is automatically defined with group pand project structure. For other analyses, such as a single sample analysis, repository folder is empty, and no copy is performed.
+Leave it blank for no copy in repository folder.
 
-- Default: `"$FOLDER_OUTPUT/repository"`
+- Default: `"$FOLDER_OUTPUT/repository"` (for run analysis) or `""` (for single sample analysis)
 
-### FOLDER_ARCHIVES
+#### FOLDER_ARCHIVES
 
-Archives folder for results data. Leave blank for no copy.
+This folder will be used by the rules of the analysis to copy some results of the analysis in a archives folder, organized by group and project (e.g. `$FOLDER_ARCHIVES/<GROUP>/<PROJECT>/`), and to automatically detect the files to copy in the archives folder depending on application.
+For a full run analysis, archives folder is automatically defined with group pand project structure. For other analyses, such as a single sample analysis, archives folder is empty, and no copy is performed.
+Leave it blank for no copy in archives folder.
 
-- Default: `"$FOLDER_OUTPUT/archives"`
+- Default: `"$FOLDER_OUTPUT/archives"` (for run analysis) or `""` (for single sample analysis)
 
-### FOLDER_FAVORITES
+#### FOLDER_FAVORITES
 
-Favorites folder for results data.
+This folder will be used by the rules of the analysis to copy some results of the analysis in a favorites folder, organized by group and project (e.g. `$FOLDER_FAVORITES/<GROUP>/<PROJECT>/`), and to automatically detect the files to copy in the favorites folder depending on application.
+For a full run analysis, favorites folder is automatically defined with group pand project structure. For other analyses, such as a single sample analysis, favorites folder is empty, and no copy is performed.
+Leave it blank for no copy in favorites folder.
 
 - Default: `""`
 
-- **Configurations**:
+- Configurations:
   - To NOT use favorites folder: `FOLDER_FAVORITES=`
   - To copy favorites within repository folder: `FOLDER_FAVORITES=$FOLDER_REPOSITORY`
   - To copy favorites within default favorites folder: `FOLDER_FAVORITES=$FOLDER_OUTPUT/favorites`

@@ -34,7 +34,7 @@ HOWARD_NOMEN_FIELDS?="hgvs"
 %.howard_minimal$(POST_ANNOTATION).vcf: %.vcf %.empty.vcf %.transcripts
 	# Annotation step
 	if (( $$(grep -v "^#" $< | head -n1 | wc -l) )); then \
-		$(HOWARD) process $(HOWARD_CONFIG_OPTIONS) --input=$< --output=$@ --param=$(HOWARD_MINIMALPARAM)
+		$(HOWARD) process $(HOWARD_CONFIG_OPTIONS) $(HOWARD_PRIORITIZATION_CONFIG_OPTIONS) $(HOWARD_CALCULATION_CONFIG_OPTIONS) --input=$< --output=$@ --param=$(HOWARD_MINIMALPARAM)
 	else \
 		cp $< $@; \
 	fi;
