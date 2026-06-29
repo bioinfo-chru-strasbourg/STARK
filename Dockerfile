@@ -141,7 +141,7 @@ ENV PACKAGES_INSTALL="autoconf automake htop tree bc bzip2 bzip2-devel pigz curl
 #ENV YUM_REMOVE="autoconf automake bzip2-devel lzma-devel ncurses-devel tbb-devel xz-devel zlib-devel zlib2-devel python3-devel curl-devel openssl-devel"
 
 #ENV PYTHON_MODULE=" pathos=0.3.5 numpy=2.2.6 scipy=1.15.3 argparse=1.1 bx-python=0.14.0 pandas=2.3.3"
-ENV PYTHON_MODULE=" pathos numpy scipy argparse pandas bx-python"
+ENV PYTHON_MODULE=" pathos numpy scipy argparse pandas bx-python requests"
 ENV PERL_INSTALL=" perl perl-Switch perl-Time-HiRes perl-Data-Dumper perl-Digest-MD5 perl-Tk perl-devel"
 
 ENV REPO_SYSTEM_GIT="$REPO/sources.system.tar.gz?path=sources/system"
