@@ -21,15 +21,26 @@ if [ -z $ASSEMBLY ] || [ "$ASSEMBLY" == "" ]; then
 fi;
 export ASSEMBLY
 
-if [ -z $GENOME ] || [ "$GENOME" == "" ]; then
+# GENOME/DICT are auto-derived from ASSEMBLY by default. During normal STARK
+# operation, this file is sourced once with the default ASSEMBLY, then again
+# later (via config.app) after an app (e.g. HG38.plugapp) has changed
+# ASSEMBLY. So we track which ASSEMBLY was used to auto-derive GENOME/DICT
+# and refresh them every time ASSEMBLY differs from that tracked value. A
+# GENOME/DICT explicitly set by the user (i.e. never auto-derived here) is
+# left untouched, whatever ASSEMBLY is.
+if [ -z "$GENOME" ] || { [ ! -z "$GENOME_ASSEMBLY" ] && [ "$GENOME_ASSEMBLY" != "$ASSEMBLY" ]; }; then
 	GENOME=$DBFOLDER/genomes/current/$ASSEMBLY/$ASSEMBLY.fa
+	GENOME_ASSEMBLY=$ASSEMBLY
 fi;
 export GENOME
+export GENOME_ASSEMBLY
 
-if [ -z $DICT ] || [ "$DICT" == "" ]; then
+if [ -z "$DICT" ] || { [ ! -z "$DICT_ASSEMBLY" ] && [ "$DICT_ASSEMBLY" != "$ASSEMBLY" ]; }; then
 	DICT=$DBFOLDER/genomes/current/$ASSEMBLY/$ASSEMBLY.dict
+	DICT_ASSEMBLY=$ASSEMBLY
 fi;
 export DICT
+export DICT_ASSEMBLY
 
 
 # REF_CACHE_FOLDER and REF_CACHE
