@@ -1086,7 +1086,7 @@ if [ "$ANALYSIS" != "" ]; then
 
  			(($DEBUG)) && echo "["$(timestamp)" | DEBUG] Config file content:" && cat $J
 
-			PARAM_ANALYSIS=$(echo "$PARAM " | sed "s/--analysis=[^ |$]*//gi" | sed "s/-w [^ |$]*//gi")
+			PARAM_ANALYSIS=$(echo "$PARAM " | sed "s/--analysis=[^ |$]*//gi" | sed "s/--analysis  *[^ |$]*//gi" | sed "s/-w [^ |$]*//gi")
 
 			PARAM_STARK_TEST=0
 			PARAM_STARK="$($PYTHON $STARK_FOLDER_BIN/json_to_options.py $J)" && PARAM_STARK_TEST=1
