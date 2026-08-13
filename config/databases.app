@@ -13,23 +13,50 @@ DATABASES_CONFIG_LIST=""
 # ASSEMBLY & GENOME #
 #####################
 
+# Genome regex for chromosome names.
+# Default: 'chr[0-9XYM]+\$$' (for canonical contig names like chr1, chr2, chrX, chrY, chrM)
 GENOME_REGEX="'chr[0-9XYM]+\$$'"
 export GENOME_REGEX
 
-if [ -z $ASSEMBLY ] || [ "$ASSEMBLY" == "" ]; then
+# if [ -z $ASSEMBLY ] || [ "$ASSEMBLY" == "" ]; then
+# 	ASSEMBLY=hg19
+# fi;
+# export ASSEMBLY
+
+# if [ -z $GENOME ] || [ "$GENOME" == "" ]; then
+# 	GENOME=$DBFOLDER/genomes/current/$ASSEMBLY/$ASSEMBLY.fa
+# fi;
+# export GENOME
+
+# if [ -z $DICT ] || [ "$DICT" == "" ]; then
+# 	DICT=$DBFOLDER/genomes/current/$ASSEMBLY/$ASSEMBLY.dict
+# fi;
+# export DICT
+
+# Assembly
+# Default: hg19 ; can be changed by application inheritance (e.g. GENOME.app inherit from default.app)
+if [ -z "${ASSEMBLY:-}" ]; then
 	ASSEMBLY=hg19
-fi;
+fi
 export ASSEMBLY
 
-if [ -z $GENOME ] || [ "$GENOME" == "" ]; then
-	GENOME=$DBFOLDER/genomes/current/$ASSEMBLY/$ASSEMBLY.fa
-fi;
+# Genome
+# Default: depend on ASSEMBLY ; can be changed by application inheritance (e.g. GENOME.app inherit from default.app)
+if [ -z "${GENOME+x}" ] || [ "$ASSEMBLY" != "$_GENOME_ASSEMBLY" ]; then
+	GENOME="$DBFOLDER/genomes/current/$ASSEMBLY/$ASSEMBLY.fa"
+ 	_GENOME_ASSEMBLY="$ASSEMBLY"
+fi
 export GENOME
 
-if [ -z $DICT ] || [ "$DICT" == "" ]; then
-	DICT=$DBFOLDER/genomes/current/$ASSEMBLY/$ASSEMBLY.dict
-fi;
+# Dict
+# Default: depend on ASSEMBLY ; can be changed by application inheritance (e.g. GENOME.app inherit from default.app)
+if [ -z "${DICT+x}" ] || [ "$ASSEMBLY" != "$_DICT_ASSEMBLY" ]; then
+	DICT="$DBFOLDER/genomes/current/$ASSEMBLY/$ASSEMBLY.dict"
+	_DICT_ASSEMBLY="$ASSEMBLY"
+fi
 export DICT
+ 
+
 
 
 # REF_CACHE_FOLDER and REF_CACHE
@@ -271,12 +298,19 @@ export DBSNP_BUILDID
 
 DATABASES_CONFIG_LIST=$DATABASES_CONFIG_LIST" DBSNP_DATABASES"
 DBFOLDER_DBSNP=$DBFOLDER/dbsnp
+
+# VCF dbSNP for GATK tools (realignement, recalibration, calling)
 #export VCFDBSNP=$DBFOLDER_DBSNP/current/$ASSEMBLY/dbsnp.$DBSNP_VERSION.vcf.gz
 #export VCFDBSNP=$DBFOLDER_DBSNP/current/$ASSEMBLY/$DBSNP_VERSION/dbsnp.vcf.gz
-if [ -z "$VCFDBSNP" ]; then
-	VCFDBSNP=$DBFOLDER_DBSNP/current/$ASSEMBLY/$DBSNP_VERSION_DOWNLOAD/dbsnp.b$DBSNP_BUILDID.vcf.gz
-fi;
-export VCFDBSNP #=$DBFOLDER_DBSNP/current/$ASSEMBLY/$DBSNP_VERSION_DOWNLOAD/dbsnp.b$DBSNP_BUILDID.vcf.gz
+# if [ -z "$VCFDBSNP" ]; then
+# 	VCFDBSNP=$DBFOLDER_DBSNP/current/$ASSEMBLY/$DBSNP_VERSION_DOWNLOAD/dbsnp.b$DBSNP_BUILDID.vcf.gz
+# fi;
+# export VCFDBSNP #=$DBFOLDER_DBSNP/current/$ASSEMBLY/$DBSNP_VERSION_DOWNLOAD/dbsnp.b$DBSNP_BUILDID.vcf.gz
+if [ -z "${VCFDBSNP+x}" ] || [ "$ASSEMBLY" != "$_VCFDBSNP_ASSEMBLY" ]; then
+	VCFDBSNP="$DBFOLDER_DBSNP/current/$ASSEMBLY/$DBSNP_VERSION_DOWNLOAD/dbsnp.b$DBSNP_BUILDID.vcf.gz"
+ 	_VCFDBSNP_ASSEMBLY="$ASSEMBLY"
+fi
+export VCFDBSNP
 
 if [ ! -e $VCFDBSNP ]; then
 	echo "#[WARNING] No VCFDBSNP '$VCFDBSNP' in the database. Calling step impossible. Please check '$DBFOLDER' folder or configuration file" >>/dev/stderr
