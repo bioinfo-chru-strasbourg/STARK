@@ -27,13 +27,17 @@
 
 %.bam: %.recalibration.bam %.recalibration.bam.bai %.recalibration.bam.grp 
 	# Recalibrate BAM with BaseRecalibrator grp file
-	$(JAVA) $(JAVA_FLAGS_GATK4) -XX:ParallelGCThreads=$(THREADS_BY_SAMPLE) -jar $(GATK4) \
+	if ! $(JAVA) $(JAVA_FLAGS_GATK4) -XX:ParallelGCThreads=$(THREADS_BY_SAMPLE) -jar $(GATK4) \
 		ApplyBQSR \
 		-R $(GENOME) \
 		-I $< \
 		--bqsr-recal-file $*.recalibration.bam.grp \
 		--use-original-qualities \
-		-O $@
+		-O $@; \
+	then \
+		echo "Error: GATK ApplyBQSR failed for $<"; \
+		mv $< $@; \
+	fi
 	-rm -f $*.recalibration.*;
 
 
