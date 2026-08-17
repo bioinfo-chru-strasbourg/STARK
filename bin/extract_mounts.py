@@ -22,67 +22,75 @@ def get_container_id():
         return f.read().strip()
 
 
-def main(docker):
+def main(docker, volumes_from_enable=False) -> str:
+
+    result = ""
 
     # Container ID
     container_id = get_container_id()
-    # print(f"[INFO] Detected container hostname (short ID): {container_id}")
 
-    # Inspect JSON
-    try:
-        raw_json = run_cmd([docker, "inspect", container_id])
-        data = json.loads(raw_json)[0]
-    except Exception as e:
-        print("[ERROR] Failed to parse docker inspect JSON:", e)
-        sys.exit(1)
+    # If volumes_from_enable is True, print the --volumes-from option and exit
+    if volumes_from_enable:
+        result = f" --volumes-from {container_id}"
 
-    # print("\n=== Mounts detected ===")
-
-    mounts_array = []
-    mounts_array_for_check = []
-
-    # 1) MOUNTS (runtime mounts)
-    mounts = data.get("Mounts", [])
-    if mounts:
-        # print("\n# Mounts[]:")
-        for m in mounts:
-            src = m.get("Source")
-            dst = m.get("Destination")
-            mode = m.get("Mode", "")
-            rw = m.get("RW", True)
-
-            opt = mode if mode else ("rw" if rw else "ro")
-
-            mount = f"{src}:{dst}:{opt}"
-            #print(mount.split(":")[0:2])
-            if mount.split(":")[0:2] not in mounts_array_for_check:
-                # print(f"-v {mount}")
-                mounts_array.append(mount)
-                mounts_array_for_check.append(mount.split(":")[0:2])
-            # print(f"-v {src}:{dst}:{opt}")
-    # else:
-    #     print("\n# No Mounts[] found")
-
-    # 2) HostConfig.binds
-    binds = data.get("HostConfig", {}).get("Binds", [])
-    if binds:
-        # print("\n# HostConfig.Binds:")
-        for b in binds:
-            mount = f"{b}"
-            #print(mount.split(":")[0:2])
-            if mount.split(":")[0:2] not in mounts_array_for_check:
-                # print(f"-v {mount}")
-                mounts_array.append(mount)
-                mounts_array_for_check.append(mount.split(":")[0:2])
-    # else:
-    #     print("\n# No HostConfig.Binds found")
-
-    if not mounts_array:
-        print("")
+    # Retrieve the mounts from the container using docker inspect
     else:
-        print(" -v " + " -v ".join(mounts_array))
 
-    # print("\n=== End ===")
+        # Inspect JSON
+        try:
+            raw_json = run_cmd([docker, "inspect", container_id])
+            data = json.loads(raw_json)[0]
+        except Exception as e:
+            print("[ERROR] Failed to parse docker inspect JSON:", e)
+            sys.exit(1)
+
+        # Init
+        mounts_array = []
+        mounts_array_for_check = []
+
+        # 1) MOUNTS (runtime mounts)
+        mounts = data.get("Mounts", [])
+        if mounts:
+
+            # For each mount, construct the mount string and add it to the mounts_array if it's not already present
+            for m in mounts:
+
+                # Extract source, destination, mode, and rw from the mount dictionary
+                src = m.get("Source")
+                dst = m.get("Destination")
+                mode = m.get("Mode", "")
+                rw = m.get("RW", True)
+
+                # Determine the mount option based on mode and rw
+                opt = mode if mode else ("rw" if rw else "ro")
+
+                # Construct the mount string in the format "source:destination:options"
+                mount = f"{src}:{dst}:{opt}"
+                if mount.split(":")[0:2] not in mounts_array_for_check:
+                    mounts_array.append(mount)
+                    mounts_array_for_check.append(mount.split(":")[0:2])
+
+        # 2) HostConfig.binds
+        binds = data.get("HostConfig", {}).get("Binds", [])
+        if binds:
+            # For each bind, construct the mount string and add it to the mounts_array if it's not already present
+            for b in binds:
+
+                # Extract source, destination, and options from the bind string
+                mount = f"{b}"
+
+                # Check if the mount (source and destination) is already in mounts_array_for_check
+                if mount.split(":")[0:2] not in mounts_array_for_check:
+                    mounts_array.append(mount)
+                    mounts_array_for_check.append(mount.split(":")[0:2])
+
+        # Print the mounts in the required format
+        if not mounts_array:
+            print("")
+        else:
+            result = " -v " + " -v ".join(mounts_array)
+
+    return result
 
 
 if __name__ == "__main__":
@@ -91,11 +99,15 @@ if __name__ == "__main__":
     # add parameter for the docker binary
     parser = argparse.ArgumentParser(description="Extract mounts from within a Docker container")
     parser.add_argument("--docker", default="docker", help="Path to the docker binary (default: docker)")
+    parser.add_argument("--volumes_from_enable", action="store_true", help="Enable --volumes-from option (default: False)")
     args = parser.parse_args()
 
     # catch arguments
     # docker
     docker = args.docker
+    # volumes_from_enable
+    volumes_from_enable = args.volumes_from_enable
+
     # check if docker is available
     try:
         run_cmd([docker, "--version"])
@@ -103,4 +115,5 @@ if __name__ == "__main__":
         print(f"[ERROR] Docker binary '{docker}' is not available or not working: {e}")
         sys.exit(1)
 
-    main(docker=docker)
+    output = main(docker=docker, volumes_from_enable=volumes_from_enable)
+    print(output)

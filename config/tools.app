@@ -422,7 +422,7 @@ TOOLS_LIST=$TOOLS_LIST" DOCKER"
 
 # Docker Config
 if [ -z "$DOCKER_MOUNTS" ]; then
-	export DOCKER_MOUNTS=$($PYTHON $STARK/extract_mounts.py --docker=$DOCKER)	# MOUNTS
+	export DOCKER_MOUNTS=$($PYTHON $STARK/extract_mounts.py --docker=$DOCKER --volumes_from_enable)	# MOUNTS
 fi;
 export DOCKER_MOUNTS
 export DOCKER_RUN="$DOCKER run $DOCKER_MOUNTS"								# RUN
