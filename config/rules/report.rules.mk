@@ -238,10 +238,10 @@ REPORT_SECTIONS?=ALL
 			# List of $$genes_file within Samples folders \
 			List_of_genes_files=$$(ls $$(for L in $$(echo $$List_of_samples | tr "," "\n"); do echo $(@D)/$$L/$$L.$$genes_file; done;)) ; \
 			# Merge all $$genes_file found into uniq BED file (but supposed to be the same) \
-			cat $$(echo $$List_of_genes_files) | $(BEDTOOLS) sort | $(BEDTOOLS) merge > $@.tmp.GENES.$$genes_file; \
+			cat $$(echo $$List_of_genes_files) | $(BEDTOOLS) sort | $(BEDTOOLS) merge > $@.tmp.GENES.$$genes_file.bed; \
 			# Generate VCF Panel from VCF Design (especially $@.tmp.calculated.prioritized.sorted.vcf.gz because tabix) with $$genes_file for List of Samples \
-			if (( $$(grep ^ $@.tmp.GENES.$$genes_file -c) )); then \
-				$(BCFTOOLS) view --threads=$(THREADS) --samples $$List_of_samples -U --force-samples $@.tmp.calculated.prioritized.sorted.vcf.gz -R $@.tmp.GENES.$$genes_file > $@.Panel.$$genes_file.vcf; \
+			if (( $$(grep ^ $@.tmp.GENES.$$genes_file.bed -c) )); then \
+				$(BCFTOOLS) view --threads=$(THREADS) --samples $$List_of_samples -U --force-samples $@.tmp.calculated.prioritized.sorted.vcf.gz --regions-file $@.tmp.GENES.$$genes_file.bed > $@.Panel.$$genes_file.vcf; \
 			else \
 				$(BCFTOOLS) view --threads=$(THREADS) --samples $$List_of_samples -U --force-samples $@.tmp.calculated.prioritized.sorted.vcf.gz > $@.Panel.$$genes_file.vcf; \
 			fi; \
@@ -282,10 +282,10 @@ REPORT_SECTIONS?=ALL
 				# List of $$genes_file within Samples folders \
 				List_of_genes_files=$$(ls $$(for L in $$(echo $$List_of_samples | tr "," "\n"); do echo $(@D)/$$L/$$L.$$genes_file; done;)) ; \
 				# Merge all $$genes_file found into uniq BED file (but supposed to be the same) \
-				cat $$(echo $$List_of_genes_files) | $(BEDTOOLS) sort | $(BEDTOOLS) merge > $@.tmp.GENES.$$genes_file; \
+				cat $$(echo $$List_of_genes_files) | $(BEDTOOLS) sort | $(BEDTOOLS) merge > $@.tmp.GENES.$$genes_file.bed; \
 				# Generate VCF Panel from VCF Design (especially $@.tmp.calculated.prioritized.sorted.vcf.gz because tabix) with $$genes_file for List of Samples \
-				if (( $$(grep ^ $@.tmp.GENES.$$genes_file -c) )); then \
-					$(BCFTOOLS) view --threads=$(THREADS)  --force-samples -U $@.tmp.calculated.prioritized.sorted.vcf.gz -R $@.tmp.GENES.$$genes_file > $@.Panel.$$genes_file.vcf; \
+				if (( $$(grep ^ $@.tmp.GENES.$$genes_file.bed -c) )); then \
+					$(BCFTOOLS) view --threads=$(THREADS)  --force-samples -U $@.tmp.calculated.prioritized.sorted.vcf.gz --regions-file $@.tmp.GENES.$$genes_file.bed > $@.Panel.$$genes_file.vcf; \
 				else \
 					$(BCFTOOLS) view --threads=$(THREADS)  --force-samples -U $@.tmp.calculated.prioritized.sorted.vcf.gz > $@.Panel.$$genes_file.vcf; \
 				fi; \
