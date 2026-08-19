@@ -929,7 +929,7 @@ if [ -s "$DOCKER_COMPOSE_FILE" ] || [ -s "$DOCKER_ENV_FILE" ] || [ "$DOCKER_STAR
 	## PARAM & CMD
 	# Clean parameters
 
-	PARAM_CMD=$(echo "$PARAM " | sed "s/--docker-compose-file=[^ |$]*//g" | sed "s/--docker-env-file=[^ |$]*//g" | sed "s/--docker-parameters=[^ |$]*//g" | sed "s/--docker-stark-image=[^ |$]*//g" | sed "s/--docker-stark-container=[^ |$]*//g")
+	PARAM_CMD=$(sed -E 's/--docker-(compose-file|env-file|parameters|stark-image|stark-container)(=| +)[^ |$]*//gi' <<< "$PARAM")
 
 	# MAIN Docker PARAMETERS
 	#DOCKER_CMD_PARAMETERS=" --rm "
@@ -1086,7 +1086,7 @@ if [ "$ANALYSIS" != "" ]; then
 
  			(($DEBUG)) && echo "["$(timestamp)" | DEBUG] Config file content:" && cat $J
 
-			PARAM_ANALYSIS=$(echo "$PARAM " | sed "s/--analysis=[^ |$]*//gi" | sed "s/-w [^ |$]*//gi")
+			PARAM_ANALYSIS=$(sed -E 's/(--analysis(=| +)|-w )[^ |$]*//gi' <<< "$PARAM")
 
 			PARAM_STARK_TEST=0
 			PARAM_STARK="$($PYTHON $STARK_FOLDER_BIN/json_to_options.py $J)" && PARAM_STARK_TEST=1
