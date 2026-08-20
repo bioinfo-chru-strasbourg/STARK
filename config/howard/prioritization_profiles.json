@@ -4,7 +4,7 @@
     "_version": "1.0.0",
     "Quality": [
       {
-      "sql": " QUAL >= 30 and (regexp_matches(FILTER, 'PASS') or FILTER = '.')",
+      "sql": " (QUAL::VARCHAR = '.' or TRY_CAST(QUAL::VARCHAR AS INTEGER) >= 30) and (regexp_matches(FILTER::VARCHAR, 'PASS') or FILTER::VARCHAR = '.')",
         "fields": ["QUAL", "FILTER"],
         "score": 10,
         "flag": "PASS",
@@ -14,7 +14,7 @@
         ]
       },
       {
-        "sql": " QUAL < 30 or NOT (regexp_matches(FILTER, 'PASS') or FILTER = '.')",
+        "sql": " (QUAL::VARCHAR != '.' and TRY_CAST(QUAL::VARCHAR AS INTEGER) < 30) or NOT (regexp_matches(FILTER::VARCHAR, 'PASS') or FILTER::VARCHAR = '.')",
         "fields": ["QUAL", "FILTER"],
         "score": -10,
         "flag": "FILTERED",
@@ -26,13 +26,23 @@
     ],
     "snpeff_AnnotationImpact": [
       {
-        "sql": " regexp_matches(snpeff_AnnotationImpact, 'MODIFIER') ",
+        "sql": " regexp_matches(snpeff_AnnotationImpact::VARCHAR, 'HIGH') ",
         "fields": ["snpeff_AnnotationImpact"],
-        "score": 100,
+        "score": 20,
         "flag": "PASS",
-        "class": "MODIFIER",
+        "class": "HIGH",
         "comment": [
-          "Annotated as modifier in snpEff"
+          "Annotated as high impact in snpEff"
+        ]
+      },
+      {
+        "sql": " regexp_matches(snpeff_AnnotationImpact::VARCHAR, 'MODERATE') ",
+        "fields": ["snpeff_AnnotationImpact"],
+        "score": 10,
+        "flag": "PASS",
+        "class": "MODERATE",
+        "comment": [
+          "Annotated as moderate impact in snpEff"
         ]
       }
     ]
