@@ -693,88 +693,28 @@ HOWARD_CALCULATION_CONFIG="$HOWARD_FOLDER_CONFIG/calculation_config.json" # defa
 # Example: HOWARD_PARAM=$STARK_FOLDER_APPS/MY_APP_GROUP/param.json
 
 # Default HOWARD parameters
-#HOWARD_PARAM=$HOWARD_FOLDER_CONFIG/param.json
+HOWARD_PARAM=$HOWARD_FOLDER_CONFIG/param.howard.json
 #HOWARD_PARAM='{}'
 
 # Default HOWARD parameters for minimal VCF annotation (rule howard_minimal)
-#HOWARD_PARAM_MINIMAL=$HOWARD_FOLDER_CONFIG/param.json
+HOWARD_PARAM_MINIMAL=$HOWARD_FOLDER_CONFIG/param.howard.minimal.json
 #HOWARD_PARAM_MINIMAL='{}'
 
 # Default HOWARD parameters for report (rule howard)
-HOWARD_PARAM_REPORT=$HOWARD_FOLDER_CONFIG/param.json
+HOWARD_PARAM_REPORT=$HOWARD_FOLDER_CONFIG/param.report.json
 #HOWARD_PARAM_REPORT='{}'
 
 # Default HOWARD parameters for whole analysis (rule howard)
-#HOWARD_PARAM_ANALYSIS=$HOWARD_FOLDER_CONFIG/param.json
+HOWARD_PARAM_ANALYSIS=$HOWARD_FOLDER_CONFIG/param.analysis.json
 #HOWARD_PARAM_ANALYSIS='{}'
-
-
-
-# # ANNOTATION
-# # Default annotation with HOWARD for intermediate VCF (for each caller) used by default with annotation rule "howard"
-# #ANNOTATION_TYPE="core,frequency,score,annotation,prediction,snpeff,snpeff_hgvs" "core,symbol,location,outcome,hgvs,snpeff,snpeff_hgvs,snpeff_split"
-# HOWARD_ANNOTATION="symbol,location,outcome,hgvs"
-# # Default annotation with HOWARD for minimal VCF annotation (rule howard_minimal)
-# HOWARD_ANNOTATION_MINIMAL="core,snpeff_split"
-# # Default annotation with HOWARD for report
-# HOWARD_ANNOTATION_REPORT="core,frequency,score,annotation,prediction,snpeff,snpeff_hgvs,snpeff_split"
-# # Default annotation with HOWARD for whole analysis
-# HOWARD_ANNOTATION_ANALYSIS="null" # no more annotation
-
-
-# # CALCULATION
-# # Default calculation with HOWARD for all VCF/pipelines
-# HOWARD_CALCULATION="VAF_STATS,DP_STATS,VARTYPE,NOMEN,BARCODE"
-# # Default minimal calculation with HOWARD for final VCF report
-# HOWARD_CALCULATION_MINIMAL="VAF_STATS,DP_STATS,VARTYPE,NOMEN,BARCODE"
-# # Default calculation with HOWARD for final VCF report
-# HOWARD_CALCULATION_REPORT="FindByPipelines,GenotypeConcordance,VAF,VAF_STATS,DP_STATS,VARTYPE,NOMEN,BARCODE"
-# # Default calculation with HOWARD for whole analysis (calculation forced, no transcripts list available)
-# HOWARD_CALCULATION_ANALYSIS="VAF_STATS,DP_STATS,BARCODE"
-# # List of annotation fields to extract NOMEN annotation (default 'hgvs', see HOWARD docs)
-# HOWARD_NOMEN_FIELDS="hgvs"
-
-
-# # PRIORITIZATION
-# # Default filter to prioritize/rank variant.
-# # This option create ranking scores in VCF and comment in TXT (after translation).
-# # Scores can be used to sort variant in the TXT
-# # HOWARD_FILTER_DEFAULT="default" # in env_header.sh
-# # Default prioritization with HOWARD (deprecated)
-# #HOWARD_PRIORITIZATION=$HOWARD_PRIORITIZATION_DEFAULT # "default"
-# # Minimal prioritization with HOWARD (deprecated)
-# #HOWARD_PRIORITIZATION_MINIMAL=$HOWARD_PRIORITIZATION_DEFAULT # "default"
-# # Default prioritization with HOWARD for Report (full/final VCF)
-# HOWARD_PRIORITIZATION_REPORT=$HOWARD_PRIORITIZATION_DEFAULT # "default"
-# # Default prioritization with HOWARD for whole analysis (prioritization forced)
-# HOWARD_PRIORITIZATION_ANALYSIS="" # "none"
-# # Default prioritization with HOWARD for VaRank score mode
-# HOWARD_PRIORITIZATION_VARANK=VaRank # "default"
-
-
-# # TRANSLATION
-# # List of fields to show in the TSV file
-# # use ALL to show ALL "other" annotations
-# # Default filter to prioritize/rank variant, Sort variant in the TXT using 2 fields, Order fields in variant ranking
-# HOWARD_FIELDS="NOMEN,PZFlag,PZScore,PZComment,CNOMEN,PNOMEN,location,outcome,snpeff_impact,VAF_average,dbSNP,dbSNPNonFlagged,popfreq,ALL"
-# HOWARD_SORT="PZFlag::DESC,PZScore:n:DESC"
-# HOWARD_SORT_BY="PZFlag,PZScore"
-# HOWARD_ORDER_BY="DESC,DESC"
-# # Minimal
-# HOWARD_FIELDS_MINIMAL="NOMEN,PZFlag,PZScore,PZComment,CNOMEN,PNOMEN,location,outcome,snpeff_impact,VAF_average,dbSNP,dbSNPNonFlagged,popfreq"
-# HOWARD_SORT_MINIMAL="PZFlag::DESC,PZScore:n:DESC"
-# HOWARD_SORT_BY_MINIMAL="PZFlag,PZScore"
-# HOWARD_ORDER_BY_MINIMAL="DESC,DESC"
-# # REPORT
-# HOWARD_FIELDS_REPORT="NOMEN,PZFlag,PZScore,PZComment,CNOMEN,PNOMEN,location,outcome,snpeff_impact,VAF_average,dbSNP,dbSNPNonFlagged,popfreq"
-# HOWARD_SORT_REPORT="PZFlag::DESC,PZScore:n:DESC"
-# HOWARD_SORT_BY_REPORT="PZFlag,PZScore"
-# HOWARD_ORDER_BY_REPORT="DESC,DESC"
-
 
 # INFO to FORMAT
 # Transfers INFO annotation to FORMAT annotation
 # Useful for annotations on full VCF to final VCF on each sample
+# (such as DP_stats, VAF_stats, etc.)
+# Beware that annotation exists (see annotation parameters in HOWARD)
+# Available in HOWARD (see Parameters JSON help)
+# Default: "" (no transfer)
 INFO_TO_FORMAT_ANNOTATIONS=""
 
 

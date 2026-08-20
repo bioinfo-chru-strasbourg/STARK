@@ -1,0 +1,53 @@
+{
+  "annotation": {
+    "snpeff": {
+      "options": "-lof -hgvs -spliceSiteSize 3 "
+    }
+  },
+  "calculation": {
+    "calculations": {
+      "VARTYPE": null,
+      "VAF_NORMALIZATION": "",
+      "GENOTYPE_STATS": {
+        "infos": ["VAF", "DP"],
+        "stats": ["min", "max", "mean"]
+      },
+      "FIND_SAMPLES": {
+        "tags": {
+          "count_pipelines": "count",
+          "list_pipelines": "list" 
+      }
+      },
+      "ANNOTATION_EXTRACT": {
+        "annotation_field": "ANN",
+        "annotation_hgvs": "snpeff_hgvs",
+        "annotation_explode": "snpeff_",
+        "annotation_json": null,
+        "uniquify": false
+      },
+      "NOMEN": {
+        "options": {
+          "hgvs_field": "snpeff_hgvs"
+        }
+      },
+      "INFO_TO_FORMAT": {
+        "annotation_fields": {
+          "DP_stats_min": "DP_min",
+          "DP_stats_max": "DP_max",
+          "DP_stats_mean": "DP_mean",
+          "VAF_stats_min": "VAF_min",
+          "VAF_stats_max": "VAF_max",
+          "VAF_stats_mean": "VAF_mean",
+          "count_pipelines": "count_pipelines",
+          "list_pipelines": "list_pipelines"
+        },
+        "remove_info_fields": true
+      }
+    }
+  },
+  "prioritization": {
+    "profiles": ["default"],
+    "pzfields": ["PZScore", "PZFlag", "PZComment", "PZClass"],
+    "prioritization_score_mode": "HOWARD"
+  }
+}

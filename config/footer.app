@@ -1151,245 +1151,17 @@ export VCF_MISSING_GENOTYPE
 # ANNOTATION
 #############
 
-# DEFAULT
 
-# Default annotation with HOWARD for HOWARD for intermediate VCF (for each caller) used by default with annotation rule "howard"
-if [ -z "$HOWARD_ANNOTATION" ]; then
-	#HOWARD_ANNOTATION="core,symbol,location,outcome,hgvs,snpeff,snpeff_hgvs"
-	#HOWARD_ANNOTATION="core,snpeff_hgvs"
-	HOWARD_ANNOTATION="symbol,location,outcome,hgvs"
-	# ANNOTATINO FULL
-	#HOWARD_ANNOTATION="core,frequency,score,annotation,prediction,snpeff,snpeff_hgvs"
-fi;
-export HOWARD_ANNOTATION
-
-
-# DEJAVU
-# if [ -s $ANNOVAR_DATABASES/$ASSEMBLY"_dejavu."$APP_GROUP.$APP_PROJECT.txt ]; then
-# 	HOWARD_ANNOTATION="$HOWARD_ANNOTATION,dejavu.$APP_GROUP.$APP_PROJECT"
+# # DEJAVU
+# if [ -s $DEJAVU_ANNOVAR_DATABASES/$ASSEMBLY"_dejavu."$APP_GROUP.$APP_PROJECT.txt ]; then
+# 	HOWARD_DEJAVU_ANNOTATION="dejavu.$APP_GROUP.$APP_PROJECT"
 # fi
 # # DEJAVU for all the GROUP
-# for DEJAVU_DATABASE_ONE in $(find $ANNOVAR_DATABASES -name $ASSEMBLY"_dejavu."$APP_GROUP".*txt" 2>/dev/null); do
-# 	HOWARD_ANNOTATION=$HOWARD_ANNOTATION","$(basename $DEJAVU_DATABASE_ONE | sed s/^$ASSEMBLY"_"//g | sed s/.txt$//g );
+# for DEJAVU_DATABASE_ONE in $(find $DEJAVU_ANNOVAR_DATABASES -name $ASSEMBLY"_dejavu."$APP_GROUP".*txt" 2>/dev/null); do
+# 	HOWARD_DEJAVU_ANNOTATION=$HOWARD_DEJAVU_ANNOTATION","$(basename $DEJAVU_DATABASE_ONE | sed s/^$ASSEMBLY"_"//g | sed s/.txt$//g );
 # done;
-# export HOWARD_ANNOTATION
-
-# DEJAVU
-if [ -s $DEJAVU_ANNOVAR_DATABASES/$ASSEMBLY"_dejavu."$APP_GROUP.$APP_PROJECT.txt ]; then
-	HOWARD_DEJAVU_ANNOTATION="dejavu.$APP_GROUP.$APP_PROJECT"
-fi
-# DEJAVU for all the GROUP
-for DEJAVU_DATABASE_ONE in $(find $DEJAVU_ANNOVAR_DATABASES -name $ASSEMBLY"_dejavu."$APP_GROUP".*txt" 2>/dev/null); do
-	HOWARD_DEJAVU_ANNOTATION=$HOWARD_DEJAVU_ANNOTATION","$(basename $DEJAVU_DATABASE_ONE | sed s/^$ASSEMBLY"_"//g | sed s/.txt$//g );
-done;
-HOWARD_DEJAVU_ANNOTATION=$(echo $HOWARD_DEJAVU_ANNOTATION | tr "," "\n" | sort -u | tr "\n" "," | sed s/,$//)
-export HOWARD_DEJAVU_ANNOTATION
-
-
-# MINIMAL
-
-# Minimal annotation with HOWARD for minimal VCF annotation  (rule howard_minimal)
-if [ -z "$HOWARD_ANNOTATION_MINIMAL" ]; then
-	HOWARD_ANNOTATION_MINIMAL=$HOWARD_ANNOTATION
-fi;
-export HOWARD_ANNOTATION_MINIMAL
-
-# REPORT
-# Default annotation with HOWARD for Report (/fullfinal VCF)
-if [ -z "$HOWARD_ANNOTATION_REPORT" ]; then
-	HOWARD_ANNOTATION_REPORT=$HOWARD_ANNOTATION
-fi;
-export HOWARD_ANNOTATION_REPORT
-
-# ANALYSIS
-# Default annotation with HOWARD for whole analysis (annotation NOT forced)
-if [ -z "$HOWARD_ANNOTATION_ANALYSIS" ]; then
-	HOWARD_ANNOTATION_ANALYSIS=$HOWARD_ANNOTATION
-fi;
-export HOWARD_ANNOTATION_ANALYSIS
-
-
-
-# CALCULATION
-###############
-
-# DEFAULT
-# Default calculation with HOWARD
-if [ -z "$HOWARD_CALCULATION" ]; then
-	HOWARD_CALCULATION="VARTYPE,NOMEN"
-fi;
-export HOWARD_CALCULATION
-
-# MINIMAL
-# Minimal calculation with HOWARD
-if [ -z "$HOWARD_CALCULATION_MINIMAL" ]; then
-	HOWARD_CALCULATION_MINIMAL=$HOWARD_CALCULATION
-fi;
-export HOWARD_CALCULATION_MINIMAL
-
-# REPORT
-# Default calculation with HOWARD for Report (full/final VCF)
-if [ -z "$HOWARD_CALCULATION_REPORT" ]; then
-	HOWARD_CALCULATION_REPORT=$HOWARD_CALCULATION
-fi;
-export HOWARD_CALCULATION_REPORT
-
-# ANALYSIS
-# Default calculation with HOWARD for whole analysis (prioritization forced)
-if [ -z "$HOWARD_CALCULATION_ANALYSIS" ]; then
-	HOWARD_CALCULATION_ANALYSIS=$HOWARD_CALCULATION
-fi;
-export HOWARD_CALCULATION_ANALYSIS
-
-
-# List of annotation fields to extract NOMEN annotation (default 'hgvs', see HOWARD docs)
-if [ -z "$HOWARD_NOMEN_FIELDS" ]; then
-	HOWARD_NOMEN_FIELDS="hgvs"
-fi;
-export HOWARD_NOMEN_FIELDS
-
-
-
-# PRIORITIZATION
-###################
-# This option create ranking scores in VCF and comment in TXT (after translation).
-# Scores can be used to sort variant in the TXT
-
-# DEFAULT
-if [ -z "$HOWARD_PRIORITIZATION_DEFAULT" ]; then
-	HOWARD_PRIORITIZATION_DEFAULT="null"
-fi;
-export HOWARD_PRIORITIZATION_DEFAULT
-
-
-# # DEFAULT (deprecated)
-# # Default filter to prioritize/rank variant.
-# if [ -z "$HOWARD_PRIORITIZATION" ]; then
-# 	HOWARD_PRIORITIZATION=$HOWARD_PRIORITIZATION_DEFAULT
-# fi;
-# if [ ! -z "$APP_NAME" ] && [ ${APP_NAME^^} != "DEFAULT" ]; then
-# 	HOWARD_PRIORITIZATION="$APP_NAME,$HOWARD_PRIORITIZATION"
-# fi;
-# # Keep fist as first and sort the rest
-# HOWARD_PRIORITIZATION=$(echo $(echo $HOWARD_PRIORITIZATION | tr "," " " | cut -d" " -f1 | tr " " "," && echo $HOWARD_PRIORITIZATION | tr "," " " | tr " " "\n" | sort -u | grep -v "^$(echo $HOWARD_PRIORITIZATION | tr "," " " | cut -d" " -f1)$" | tr "\n" "," | sed s/,$//) | tr " " "," )
-# export HOWARD_PRIORITIZATION
-
-
-# # MINIMAL (deprecated)
-# # Minimal filter to prioritize/rank variant.
-# if [ -z "$HOWARD_PRIORITIZATION_MINIMAL" ]; then
-# 	HOWARD_PRIORITIZATION_MINIMAL=$HOWARD_PRIORITIZATION
-# fi;
-# if [ ! -z "$APP_NAME" ] && [ ${APP_NAME^^} != "DEFAULT" ]; then
-# 	HOWARD_PRIORITIZATION_MINIMAL="$APP_NAME,$HOWARD_PRIORITIZATION_MINIMAL"
-# fi;
-# # Keep fist as first and sort the rest
-# HOWARD_PRIORITIZATION_MINIMAL=$(echo $(echo $HOWARD_PRIORITIZATION_MINIMAL | tr "," " " | cut -d" " -f1 | tr " " "," && echo $HOWARD_PRIORITIZATION_MINIMAL | tr "," " " | tr " " "\n" | sort -u | grep -v "^$(echo $HOWARD_PRIORITIZATION_MINIMAL | tr "," " " | cut -d" " -f1)$" | tr "\n" "," | sed s/,$//) | tr " " "," )
-# export HOWARD_PRIORITIZATION_MINIMAL
-
-
-# # Report
-# # Default filter to prioritize/rank variant for Report
-# if [ -z "$HOWARD_PRIORITIZATION_REPORT" ]; then
-# 	HOWARD_PRIORITIZATION_REPORT=$HOWARD_PRIORITIZATION_DEFAULT
-# fi;
-# if [ ! -z "$APP_NAME" ] && [ ${APP_NAME^^} != "DEFAULT" ]; then
-# 	HOWARD_PRIORITIZATION_REPORT="$APP_NAME,$HOWARD_PRIORITIZATION_REPORT"
-# fi;
-# # Keep fist as first and sort the rest
-# HOWARD_PRIORITIZATION_REPORT=$(echo $(echo $HOWARD_PRIORITIZATION_REPORT | tr "," " " | cut -d" " -f1 | tr " " "," && echo $HOWARD_PRIORITIZATION_REPORT | tr "," " " | tr " " "\n" | sort -u | grep -v "^$(echo $HOWARD_PRIORITIZATION_REPORT | tr "," " " | cut -d" " -f1)$" | tr "\n" "," | sed s/,$//) | tr " " "," )
-# export HOWARD_PRIORITIZATION_REPORT
-
-
-# # ANALYSIS
-# # Default filter to prioritize/rank variant for whole analysis (calculation forced)
-# if [ -z "$HOWARD_PRIORITIZATION_ANALYSIS" ]; then
-# 	HOWARD_PRIORITIZATION_ANALYSIS=$HOWARD_PRIORITIZATION_DEFAULT
-# fi;
-# if [ ! -z "$APP_NAME" ] && [ ${APP_NAME^^} != "DEFAULT" ]; then
-# 	HOWARD_PRIORITIZATION_ANALYSIS="$APP_NAME,$HOWARD_PRIORITIZATION_ANALYSIS"
-# fi;
-# # Keep fist as first and sort the rest
-# HOWARD_PRIORITIZATION_ANALYSIS=$(echo $(echo $HOWARD_PRIORITIZATION_ANALYSIS | tr "," " " | cut -d" " -f1 | tr " " "," && echo $HOWARD_PRIORITIZATION_ANALYSIS | tr "," " " | tr " " "\n" | sort -u | grep -v "^$(echo $HOWARD_PRIORITIZATION_ANALYSIS | tr "," " " | cut -d" " -f1)$" | tr "\n" "," | sed s/,$//) | tr " " "," )
-# export HOWARD_PRIORITIZATION_ANALYSIS
-
-
-# # VARANK
-# # Default prioritization with HOWARD for VaRank score mode
-# if [ -z "$HOWARD_PRIORITIZATION_VARANK" ]; then
-# 	HOWARD_PRIORITIZATION_VARANK=$HOWARD_PRIORITIZATION_DEFAULT
-# fi;
-# if [ ! -z "$APP_NAME" ] && [ ${APP_NAME^^} != "DEFAULT" ]; then
-# 	HOWARD_PRIORITIZATION_VARANK="$APP_NAME,$HOWARD_PRIORITIZATION_VARANK"
-# fi;
-# # Keep fist as first and sort the rest
-# HOWARD_PRIORITIZATION_VARANK=$(echo $(echo $HOWARD_PRIORITIZATION_VARANK | tr "," " " | cut -d" " -f1 | tr " " "," && echo $HOWARD_PRIORITIZATION_VARANK | tr "," " " | tr " " "\n" | sort -u | grep -v "^$(echo $HOWARD_PRIORITIZATION_VARANK | tr "," " " | cut -d" " -f1)$" | tr "\n" "," | sed s/,$//) | tr " " "," )
-# export HOWARD_PRIORITIZATION_VARANK
-
-
-# # TRANSLATION
-# ################
-# # List of fields to show in the TXT file
-# # use ALL to show ALL "other" annotations
-
-# # DEFAULT
-# # Fields to show after translation
-# if [ -z $HOWARD_FIELDS ]; then
-# 	HOWARD_FIELDS="NOMEN,PZFlag,PZScore,PZComment,CNOMEN,PNOMEN,location,outcome,snpeff_impact,VAF_average,dbSNP,dbSNPNonFlagged,popfreq,ALL"
-# fi;
-# export HOWARD_FIELDS
-# # Sort variant in the TXT using 2 fields
-# if [ -z $HOWARD_SORT_BY ]; then
-# 	HOWARD_SORT_BY="PZFlag,PZScore"
-# fi;
-# export HOWARD_SORT_BY
-# # Order fields in variant ranking
-# if [ -z $HOWARD_ORDER_BY ]; then
-# 	HOWARD_ORDER_BY="DESC,DESC"
-# fi;
-# export HOWARD_ORDER_BY
-
-# # MINIMAL
-# # Fields to show after minimal translation
-# if [ -z $HOWARD_FIELDS_MINIMAL ]; then
-# 	HOWARD_FIELDS_MINIMAL=$(echo $HOWARD_FIELDS | sed "s/ALL//")
-# fi;
-# export HOWARD_FIELDS_MINIMAL
-# # Sort variant in the TXT using 2 fields
-# if [ -z $HOWARD_SORT_BY_MINIMAL ]; then
-# 	HOWARD_SORT_BY_MINIMAL=$HOWARD_SORT_BY
-# fi;
-# export HOWARD_SORT_BY_MINIMAL
-# # Order fields in variant ranking
-# if [ -z $HOWARD_ORDER_BY_MINIMAL ]; then
-# 	HOWARD_ORDER_BY_MINIMAL=$HOWARD_ORDER_BY
-# fi;
-# export HOWARD_ORDER_BY_MINIMAL
-
-# # REPORT
-# # Fields to show after minimal translation
-# if [ -z $HOWARD_FIELDS_REPORT ]; then
-# 	HOWARD_FIELDS_REPORT=$(echo $HOWARD_FIELDS | sed "s/ALL//")
-# fi;
-# export HOWARD_FIELDS_REPORT
-# # Sort variant in the TXT using 2 fields
-# if [ -z $HOWARD_SORT_BY_REPORT ]; then
-# 	HOWARD_SORT_BY_REPORT=$HOWARD_SORT_BY
-# fi;
-# export HOWARD_SORT_BY_REPORT
-# # Order fields in variant ranking
-# if [ -z $HOWARD_ORDER_BY_REPORT ]; then
-# 	HOWARD_ORDER_BY_REPORT=$HOWARD_ORDER_BY
-# fi;
-# export HOWARD_ORDER_BY_REPORT
-
-# # INFO to FORMAT
-# # Transfers INFO annotation to FORMAT annotation
-# # Useful for annotations on full VCF to final VCF on each sample
-# if [ -z $INFO_TO_FORMAT_ANNOTATIONS ]; then
-# 	INFO_TO_FORMAT_ANNOTATIONS=""
-# fi;
-# export INFO_TO_FORMAT_ANNOTATIONS
+# HOWARD_DEJAVU_ANNOTATION=$(echo $HOWARD_DEJAVU_ANNOTATION | tr "," "\n" | sort -u | tr "\n" "," | sed s/,$//)
+# export HOWARD_DEJAVU_ANNOTATION
 
 
 # HOWARD
@@ -1405,46 +1177,6 @@ if [ -z "$HOWARD_CONFIG" ]; then
 fi;
 export HOWARD_CONFIG
 
-
-# HOWARD PARAM
-# Use $HOWARD_FOLDER_CONFIG if necessary
-# default: $HOWARD_FOLDER_CONFIG/param.json
-# Example: HOWARD_PARAM=$APP_FOLDER/param.json
-# Example: HOWARD_PARAM=$STARK_FOLDER_APPS/MY_APP_GROUP/param.json
-
-# Default HOWARD parameters
-#HOWARD_PARAM=$HOWARD_FOLDER_CONFIG/param.json
-#HOWARD_PARAM='{}'
-if [ -z "$HOWARD_PARAM" ]; then
-	HOWARD_PARAM='{}'
-fi;
-export HOWARD_PARAM
-
-# Default HOWARD parameters for minimal VCF annotation (rule howard_minimal)
-#HOWARD_PARAM_MINIMAL=$HOWARD_FOLDER_CONFIG/param.json
-#HOWARD_MINIMALPARAM='{}'
-if [ -z "$HOWARD_MINIMALPARAM" ]; then
-	HOWARD_MINIMALPARAM='{}'
-fi;
-export HOWARD_MINIMALPARAM
-
-# Default HOWARD parameters for report (rule howard)
-#HOWARD_PARAM_REPORT=$HOWARD_FOLDER_CONFIG/param.json
-#HOWARD_PARAM_REPORT='{}'
-if [ -z "$HOWARD_PARAM_REPORT" ]; then
-	HOWARD_PARAM_REPORT='{}'
-fi;
-export HOWARD_PARAM_REPORT
-
-# Default HOWARD parameters for whole analysis (rule howard)
-#HOWARD_PARAM_ANALYSIS=$HOWARD_FOLDER_CONFIG/param.json
-#HOWARD_PARAM_ANALYSIS='{}'
-if [ -z "$HOWARD_PARAM_ANALYSIS" ]; then
-	HOWARD_PARAM_ANALYSIS='{}'
-fi;
-export HOWARD_PARAM_ANALYSIS
-
-
 # HOWARD prioritization config
 if [ -z "$HOWARD_PRIORITIZATION_CONFIG" ]; then
 	HOWARD_PRIORITIZATION_CONFIG=''
@@ -1456,6 +1188,58 @@ if [ -z "$HOWARD_CALCULATION_CONFIG" ]; then
 	HOWARD_CALCULATION_CONFIG=''
 fi;
 export HOWARD_CALCULATION_CONFIG
+
+
+# HOWARD PARAM
+# Use $HOWARD_FOLDER_CONFIG if necessary
+# default: $HOWARD_FOLDER_CONFIG/param.json
+# Example: HOWARD_PARAM=$APP_FOLDER/param.json
+# Example: HOWARD_PARAM=$STARK_FOLDER_APPS/MY_APP_GROUP/param.json
+
+# Default HOWARD parameters
+#HOWARD_PARAM=$HOWARD_FOLDER_CONFIG/param.howard.json
+#HOWARD_PARAM='{}'
+if [ -z "$HOWARD_PARAM" ]; then
+	HOWARD_PARAM='{}'
+fi;
+export HOWARD_PARAM
+
+# Default HOWARD parameters for minimal VCF annotation (rule howard_minimal)
+#HOWARD_PARAM_MINIMAL=$HOWARD_FOLDER_CONFIG/param.howard.minimal.json
+#HOWARD_PARAM_MINIMAL='{}'
+if [ -z "$HOWARD_PARAM_MINIMAL" ]; then
+	HOWARD_PARAM_MINIMAL='{}'
+fi;
+export HOWARD_PARAM_MINIMAL
+
+# Default HOWARD parameters for report (rule howard)
+#HOWARD_PARAM_REPORT=$HOWARD_FOLDER_CONFIG/param.report.json
+#HOWARD_PARAM_REPORT='{}'
+if [ -z "$HOWARD_PARAM_REPORT" ]; then
+	HOWARD_PARAM_REPORT='{}'
+fi;
+export HOWARD_PARAM_REPORT
+
+# Default HOWARD parameters for whole analysis (rule howard)
+#HOWARD_PARAM_ANALYSIS=$HOWARD_FOLDER_CONFIG/param.analysis.json
+#HOWARD_PARAM_ANALYSIS='{}'
+if [ -z "$HOWARD_PARAM_ANALYSIS" ]; then
+	HOWARD_PARAM_ANALYSIS='{}'
+fi;
+export HOWARD_PARAM_ANALYSIS
+
+
+# INFO to FORMAT
+# Transfers INFO annotation to FORMAT annotation
+# Useful for annotations on full VCF to final VCF on each sample
+# (such as DP_stats, VAF_stats, etc.)
+# Beware that annotation exists (see annotation parameters in HOWARD)
+# Available in HOWARD (see Parameters JSON help)
+# Default: "" (no transfer)
+if [ -z $INFO_TO_FORMAT_ANNOTATIONS ]; then
+	INFO_TO_FORMAT_ANNOTATIONS=""
+fi;
+export INFO_TO_FORMAT_ANNOTATIONS
 
 
 # Recalibration and Filtration

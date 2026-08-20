@@ -119,8 +119,8 @@ REPORT_SECTIONS?=ALL
 	cat $< | rev | cut -d/ -f1 | rev | sed s/\.vcf.gz//gi | cut -d. -f2- > $@.pipelines
 	# Merge VCF, normalize and rehead with pipelines names (prevent empty VCFs, force single if only one VCF, separate SNP/INDEL and OTHERS to avoid bcftools norm issues with breakends)
 	# Add validation flags depth and alignments depth header
-	echo '##INFO=<ID=Validation_Depth,Number=.,Type=Float,Description="Depth metrics from BAM validation">' > $@.tmp.annotate.new_header.txt
-	echo '##INFO=<ID=Validation_Depth_Flags,Number=.,Type=String,Description="Depth metrics flag from BAM validation">' >> $@.tmp.annotate.new_header.txt
+	echo '##INFO=<ID=Validation_Depth,Number=1,Type=Float,Description="Depth metrics from BAM validation">' > $@.tmp.annotate.new_header.txt
+	echo '##INFO=<ID=Validation_Depth_Flags,Number=1,Type=String,Description="Depth metrics flag from BAM validation">' >> $@.tmp.annotate.new_header.txt
 	# Merge VCF, normalize and rehead with pipelines names (prevent empty VCFs, force single if only one VCF)
 	$(BCFTOOLS) merge --threads=$(THREADS_BY_SAMPLE) -l $< --force-samples $$( [ $$(cat $< | wc -l) -lt 2 ] && echo " --force-single " ) -m none --info-rules - $$((($$($(BCFTOOLS) merge --force-samples $$( [ $$(cat $< | wc -l) -lt 2 ] && echo " --force-single " ) $$(cat $<) | grep "^#" -v | head -n 1 | wc -l))) && echo "" || echo " --print-header ") | $(BCFTOOLS) sort | $(BCFTOOLS) reheader --threads=$(THREADS_BY_SAMPLE) -s $@.pipelines -o $@.merge_step0.vcf;
 	# Extract SNP and InDels with normalization
@@ -170,8 +170,7 @@ REPORT_SECTIONS?=ALL
 		$(BCFTOOLS) norm -m- $@.tmp00.vcf --threads $(THREADS_BY_SAMPLE) --force | $(BCFTOOLS) view --threads $(THREADS_BY_SAMPLE) > $@.tmp0.vcf; \
 	fi;
 	# HOWARD annotation prioritization calculation process
-	#$(HOWARD) process $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp0.vcf --output=$@ --param=$(HOWARD_PARAM_REPORT) $$( [ ! -z '$(HOWARD_PRIORITIZATION_CONFIG)' ] && echo " --prioritization_config=$(HOWARD_PRIORITIZATION_CONFIG) ") --threads=$(THREADS_BY_SAMPLE) --memory=$$( (( $(MEMORY_BY_SAMPLE) > $(MEMORY) )) && echo "$(MEMORY_BY_SAMPLE)" || echo "$(MEMORY)" )G # --memory=1G # --memory=$(MEMORY)G --memory=$(MEMORY_BY_SAMPLE)G --memory=$$( (( $(MEMORY_BY_SAMPLE) > $(MEMORY) ))  && echo "$(MEMORY_BY_SAMPLE)" || echo "$(MEMORY)" )G
-	$(HOWARD) process $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp0.vcf --output=$@ --param=$(HOWARD_PARAM_REPORT) $(HOWARD_PRIORITIZATION_CONFIG_OPTIONS) $(HOWARD_CALCULATION_CONFIG_OPTIONS) --threads=$(THREADS_BY_SAMPLE) --memory=$$( (( $(MEMORY_BY_SAMPLE) > $(MEMORY) )) && echo "$(MEMORY_BY_SAMPLE)" || echo "$(MEMORY)" )G
+	$(HOWARD) process $(HOWARD_CONFIG_OPTIONS) $(HOWARD_PRIORITIZATION_CONFIG_OPTIONS) $(HOWARD_CALCULATION_CONFIG_OPTIONS) --input=$@.tmp0.vcf --output=$@ --param=$(HOWARD_PARAM_REPORT) --threads=$(THREADS_BY_SAMPLE) --memory=$$( (( $(MEMORY_BY_SAMPLE) > $(MEMORY) )) && echo "$(MEMORY_BY_SAMPLE)" || echo "$(MEMORY)" )G
 	# Clean INFO spaces
 	$(STARK_FOLDER_BIN)/clean_vcf_info_spaces.sh --input=$@ --output=$@
 	# cleaning
@@ -214,7 +213,7 @@ REPORT_SECTIONS?=ALL
 	echo $^ | tr " " "\n" | tr "\t" "\n" | grep "final.vcf.gz$$" > $@.tmp.vcf_list
 	$(BCFTOOLS) merge --threads=$(THREADS) -l $@.tmp.vcf_list -m none --force-samples $$([ $$(cat $@.tmp.vcf_list | wc -l) -lt 2 ] && echo " --force-single ") | $(BCFTOOLS) filter --threads=$(THREADS) -S . -e 'GT=="0/0" | GT=="0|0"' > $@.tmp.merged.vcf;
 	# HOWARD annotation
-	$(HOWARD) process $(HOWARD_CONFIG_OPTIONS) $(HOWARD_PRIORITIZATION_CONFIG_OPTIONS) $(HOWARD_CALCULATION_CONFIG_OPTIONS) --input=$@.tmp.merged.vcf --output=$@.tmp.merged.annotated.vcf --param=$(HOWARD_PARAM_ANALYSIS)
+	$(HOWARD) process $(HOWARD_CONFIG_OPTIONS) $(HOWARD_PRIORITIZATION_CONFIG_OPTIONS) $(HOWARD_CALCULATION_CONFIG_OPTIONS) --input=$@.tmp.merged.vcf --output=$@.tmp.merged.annotated.vcf --param=$(HOWARD_PARAM_ANALYSIS) --threads=$(THREADS)
 	# Clean INFO spaces
 	$(STARK_FOLDER_BIN)/clean_vcf_info_spaces.sh --input=$@.tmp.merged.annotated.vcf --output=$@.tmp.merged.annotated.vcf
 	# Prevent comma in description in vcf header

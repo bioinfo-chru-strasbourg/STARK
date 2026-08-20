@@ -78,6 +78,6 @@ RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
 
 # PIPELINES INFOS
-PIPELINES_COMMENT := "ALIGNER:bwamem:BWA2 MEM - Last powerful algorithm. From FASTQ files."
+PIPELINES_COMMENT := "ALIGNER:bwamem2:BWA2 MEM - Last powerful algorithm. From FASTQ files."
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
 
