@@ -473,6 +473,32 @@ in_array ()
     return 1
 }
 
+log_prefix ()
+{
+
+	# Parameters
+	LEVEL=$1
+	LOG=$2
+
+	# colors
+	GREEN='\033[0;32m'
+	ORANGE='\033[0;33m'
+	RED='\033[0;31m'
+	VIOLET='\033[0;35m'
+	GRAY='\033[0;37m'
+	NC='\033[0m' # No Color
+
+	# LOG_LEVELS
+	LOG_INFO="    INFO|${GREEN}"
+	LOG_WARNING=" WARNING|${ORANGE}"
+	LOG_ERROR="   ERROR|${RED}"
+	LOG_DEBUG="   DEBUG|${VIOLET}"
+
+	# Output
+	LOG_VAR="LOG_${LEVEL}"
+	echo -e "#["$(timestamp)"] ${!LOG_VAR} ${LOG}${NC}"
+
+}
 
 # APPLICATION
 ##############
@@ -490,6 +516,8 @@ ENV=$(cd $SCRIPT_DIR && CONFIG_APP=$CONFIG_APP && find_app "$APP" "$STARK_FOLDER
 
 # Debug
 (($DEBUG)) && echo "["$(timestamp)" | DEBUG] Application '$APP' configuration loaded from '$ENV' environment file.";
+# (($DEBUG)) && echo -e "["$(timestamp)" | DEBUG\033[0m] Application '$APP' configuration loaded from '$ENV' environment file.";
+# (($DEBUG)) && echo $(log_prefix DEBUG "Application '$APP' configuration loaded from '$ENV' environment file.")
 
 # Error if application not found
 if [ "$ENV" == "" ] && [ "$APP" != "" ]; then

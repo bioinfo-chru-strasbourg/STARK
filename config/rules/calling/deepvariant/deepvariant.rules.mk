@@ -1,13 +1,13 @@
 ############################
-# GATK Calling Rules
+# DeepVariant Rules
 # Release: 1.0.0
-# Date: 15/03/2026
+# Date: 19/08/2026
 # Author: Antony Le Bechec
 ############################
 
 
 # Release note
-# 1.0.0-15/03/2026: Create DeepVariant rule
+# 1.0.0-19/08/2026: Create DeepVariant rule
 
 
 ###############

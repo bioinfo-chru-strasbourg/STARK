@@ -1,0 +1,28 @@
+{
+  "annotations": "ALL:format=parquet:release=disabled",
+  "annotation": {
+    "snpeff": {
+      "options": "-lof -hgvs -oicr -spliceSiteSize 3 "
+    }
+  },
+  "calculation": {
+    "calculations": {
+      "VARTYPE": null,
+      "VAF": "",
+      "VAF_STATS": "",
+      "DP_STATS": "",
+      "SNPEFF_HGVS": null,
+      "SNPEFF_EXTRACT": null,
+      "NOMEN": {
+        "options": {
+          "hgvs_field": "snpeff_hgvs"
+        }
+      }
+    }
+  },
+  "prioritization": {
+    "profiles": ["default"],
+    "pzfields": ["PZScore", "PZFlag", "PZComment", "PZClass"],
+    "prioritization_score_mode": "HOWARD"
+  }
+}

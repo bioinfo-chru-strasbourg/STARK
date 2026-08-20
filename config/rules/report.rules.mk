@@ -170,8 +170,7 @@ REPORT_SECTIONS?=ALL
 		$(BCFTOOLS) norm -m- $@.tmp00.vcf --threads $(THREADS_BY_SAMPLE) --force | $(BCFTOOLS) view --threads $(THREADS_BY_SAMPLE) > $@.tmp0.vcf; \
 	fi;
 	# HOWARD annotation prioritization calculation process
-	#$(HOWARD) process $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp0.vcf --output=$@ --param=$(HOWARD_PARAM_REPORT) $$( [ ! -z '$(HOWARD_PRIORITIZATION_CONFIG)' ] && echo " --prioritization_config=$(HOWARD_PRIORITIZATION_CONFIG) ") --threads=$(THREADS_BY_SAMPLE) --memory=$$( (( $(MEMORY_BY_SAMPLE) > $(MEMORY) )) && echo "$(MEMORY_BY_SAMPLE)" || echo "$(MEMORY)" )G # --memory=1G # --memory=$(MEMORY)G --memory=$(MEMORY_BY_SAMPLE)G --memory=$$( (( $(MEMORY_BY_SAMPLE) > $(MEMORY) ))  && echo "$(MEMORY_BY_SAMPLE)" || echo "$(MEMORY)" )G
-	$(HOWARD) process $(HOWARD_CONFIG_OPTIONS) --input=$@.tmp0.vcf --output=$@ --param=$(HOWARD_PARAM_REPORT) $(HOWARD_PRIORITIZATION_CONFIG_OPTIONS) $(HOWARD_CALCULATION_CONFIG_OPTIONS) --threads=$(THREADS_BY_SAMPLE) --memory=$$( (( $(MEMORY_BY_SAMPLE) > $(MEMORY) )) && echo "$(MEMORY_BY_SAMPLE)" || echo "$(MEMORY)" )G
+	$(HOWARD) process $(HOWARD_CONFIG_OPTIONS) $(HOWARD_PRIORITIZATION_CONFIG_OPTIONS) $(HOWARD_CALCULATION_CONFIG_OPTIONS) --input=$@.tmp0.vcf --output=$@ --param=$(HOWARD_PARAM_REPORT) --threads=$(THREADS_BY_SAMPLE) --memory=$$( (( $(MEMORY_BY_SAMPLE) > $(MEMORY) )) && echo "$(MEMORY_BY_SAMPLE)" || echo "$(MEMORY)" )G
 	# Clean INFO spaces
 	$(STARK_FOLDER_BIN)/clean_vcf_info_spaces.sh --input=$@ --output=$@
 	# cleaning
@@ -214,7 +213,7 @@ REPORT_SECTIONS?=ALL
 	echo $^ | tr " " "\n" | tr "\t" "\n" | grep "final.vcf.gz$$" > $@.tmp.vcf_list
 	$(BCFTOOLS) merge --threads=$(THREADS) -l $@.tmp.vcf_list -m none --force-samples $$([ $$(cat $@.tmp.vcf_list | wc -l) -lt 2 ] && echo " --force-single ") | $(BCFTOOLS) filter --threads=$(THREADS) -S . -e 'GT=="0/0" | GT=="0|0"' > $@.tmp.merged.vcf;
 	# HOWARD annotation
-	$(HOWARD) process $(HOWARD_CONFIG_OPTIONS) $(HOWARD_PRIORITIZATION_CONFIG_OPTIONS) $(HOWARD_CALCULATION_CONFIG_OPTIONS) --input=$@.tmp.merged.vcf --output=$@.tmp.merged.annotated.vcf --param=$(HOWARD_PARAM_ANALYSIS)
+	$(HOWARD) process $(HOWARD_CONFIG_OPTIONS) $(HOWARD_PRIORITIZATION_CONFIG_OPTIONS) $(HOWARD_CALCULATION_CONFIG_OPTIONS) --input=$@.tmp.merged.vcf --output=$@.tmp.merged.annotated.vcf --param=$(HOWARD_PARAM_ANALYSIS) --threads=$(THREADS)
 	# Clean INFO spaces
 	$(STARK_FOLDER_BIN)/clean_vcf_info_spaces.sh --input=$@.tmp.merged.annotated.vcf --output=$@.tmp.merged.annotated.vcf
 	# Prevent comma in description in vcf header
@@ -238,10 +237,10 @@ REPORT_SECTIONS?=ALL
 			# List of $$genes_file within Samples folders \
 			List_of_genes_files=$$(ls $$(for L in $$(echo $$List_of_samples | tr "," "\n"); do echo $(@D)/$$L/$$L.$$genes_file; done;)) ; \
 			# Merge all $$genes_file found into uniq BED file (but supposed to be the same) \
-			cat $$(echo $$List_of_genes_files) | $(BEDTOOLS) sort | $(BEDTOOLS) merge > $@.tmp.GENES.$$genes_file; \
+			cat $$(echo $$List_of_genes_files) | $(BEDTOOLS) sort | $(BEDTOOLS) merge > $@.tmp.GENES.$$genes_file.bed; \
 			# Generate VCF Panel from VCF Design (especially $@.tmp.calculated.prioritized.sorted.vcf.gz because tabix) with $$genes_file for List of Samples \
-			if (( $$(grep ^ $@.tmp.GENES.$$genes_file -c) )); then \
-				$(BCFTOOLS) view --threads=$(THREADS) --samples $$List_of_samples -U --force-samples $@.tmp.calculated.prioritized.sorted.vcf.gz -R $@.tmp.GENES.$$genes_file > $@.Panel.$$genes_file.vcf; \
+			if (( $$(grep ^ $@.tmp.GENES.$$genes_file.bed -c) )); then \
+				$(BCFTOOLS) view --threads=$(THREADS) --samples $$List_of_samples -U --force-samples $@.tmp.calculated.prioritized.sorted.vcf.gz --regions-file $@.tmp.GENES.$$genes_file.bed > $@.Panel.$$genes_file.vcf; \
 			else \
 				$(BCFTOOLS) view --threads=$(THREADS) --samples $$List_of_samples -U --force-samples $@.tmp.calculated.prioritized.sorted.vcf.gz > $@.Panel.$$genes_file.vcf; \
 			fi; \
@@ -282,10 +281,10 @@ REPORT_SECTIONS?=ALL
 				# List of $$genes_file within Samples folders \
 				List_of_genes_files=$$(ls $$(for L in $$(echo $$List_of_samples | tr "," "\n"); do echo $(@D)/$$L/$$L.$$genes_file; done;)) ; \
 				# Merge all $$genes_file found into uniq BED file (but supposed to be the same) \
-				cat $$(echo $$List_of_genes_files) | $(BEDTOOLS) sort | $(BEDTOOLS) merge > $@.tmp.GENES.$$genes_file; \
+				cat $$(echo $$List_of_genes_files) | $(BEDTOOLS) sort | $(BEDTOOLS) merge > $@.tmp.GENES.$$genes_file.bed; \
 				# Generate VCF Panel from VCF Design (especially $@.tmp.calculated.prioritized.sorted.vcf.gz because tabix) with $$genes_file for List of Samples \
-				if (( $$(grep ^ $@.tmp.GENES.$$genes_file -c) )); then \
-					$(BCFTOOLS) view --threads=$(THREADS)  --force-samples -U $@.tmp.calculated.prioritized.sorted.vcf.gz -R $@.tmp.GENES.$$genes_file > $@.Panel.$$genes_file.vcf; \
+				if (( $$(grep ^ $@.tmp.GENES.$$genes_file.bed -c) )); then \
+					$(BCFTOOLS) view --threads=$(THREADS)  --force-samples -U $@.tmp.calculated.prioritized.sorted.vcf.gz --regions-file $@.tmp.GENES.$$genes_file.bed > $@.Panel.$$genes_file.vcf; \
 				else \
 					$(BCFTOOLS) view --threads=$(THREADS)  --force-samples -U $@.tmp.calculated.prioritized.sorted.vcf.gz > $@.Panel.$$genes_file.vcf; \
 				fi; \

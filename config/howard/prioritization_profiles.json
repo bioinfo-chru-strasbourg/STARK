@@ -2,61 +2,15 @@
   "default": {
     "_description": "Default prioritization profile",
     "_version": "1.0.0",
-    "DP": [
+    "snpeff_AnnotationImpact": [
       {
-        "type": "gte",
-        "value": "50",
-        "fields": ["DP"],
-        "score": 5,
-        "flag": "PASS",
-        "comment": ["DP higher than 50"]
-      },
-      {
-        "type": "lt",
-        "value": "50",
-        "fields": ["DP"],
-        "score": 0,
-        "flag": "FILTERED",
-        "comment": ["DP lower than 50"]
-      }
-    ],
-    "CLNSIG": [
-      {
-        "type": "equals",
-        "value": "pathogenic",
-        "fields": ["CLNSIG"],
-        "score": 15,
-        "flag": "PASS",
-        "comment": ["Described on CLINVAR database as pathogenic"]
-      },
-      {
-        "type": "equals",
-        "value": "non-pathogenic",
-        "fields": ["CLNSIG"],
-        "score": -100,
-        "flag": "FILTERED",
-        "comment": ["Described on CLINVAR database as non-pathogenic"]
-      }
-    ],
-    "Class": [
-      {
-        "sql": " DP >= 100 OR regexp_matches(CLNSIG, 'Pathogenic') ",
-        "fields": ["DP", "CLNSIG"],
+        "sql": " regexp_matches(snpeff_AnnotationImpact, 'MODIFIER') ",
+        "fields": ["snpeff_AnnotationImpact"],
         "score": 100,
         "flag": "PASS",
-        "class": "PM1,PM2",
+        "class": "MODIFIER",
         "comment": [
-          "Described on CLINVAR database as pathogenic, classified as PM1 and PM2"
-        ]
-      },
-      {
-        "sql": ["DP >= 200", "OR regexp_matches(CLNSIG, 'Pathogenic')"],
-        "fields": ["DP", "CLNSIG"],
-        "score": 200,
-        "flag": "PASS",
-        "class": ["PM1", "PM2"],
-        "comment": [
-          "Described on CLINVAR database as non-pathogenic, classified as PM1 and PM3"
+          "Annotated as modifier in snpEff, classified as MODIFIER"
         ]
       }
     ]
@@ -64,61 +18,15 @@
   "GERMLINE": {
     "_description": "Prioritization profile for GERMLINE analyses",
     "_version": "1.0.0",
-    "DP": [
+    "snpeff_AnnotationImpact": [
       {
-        "type": "gte",
-        "value": "30",
-        "fields": ["DP"],
-        "score": 5,
-        "flag": "PASS",
-        "comment": ["DP higher than 50"]
-      },
-      {
-        "type": "lt",
-        "value": "30",
-        "fields": ["DP"],
-        "score": 0,
-        "flag": "FILTERED",
-        "comment": ["DP lower than 50"]
-      }
-    ],
-    "CLNSIG": [
-      {
-        "type": "equals",
-        "value": "pathogenic",
-        "fields": ["CLNSIG"],
-        "score": 15,
-        "flag": "PASS",
-        "comment": ["Described on CLINVAR database as pathogenic"]
-      },
-      {
-        "type": "equals",
-        "value": "non-pathogenic",
-        "fields": ["CLNSIG"],
-        "score": -100,
-        "flag": "FILTERED",
-        "comment": ["Described on CLINVAR database as non-pathogenic"]
-      }
-    ],
-    "Class": [
-      {
-        "sql": " DP >= 100 OR regexp_matches(CLNSIG, 'Pathogenic') ",
-        "fields": ["DP", "CLNSIG"],
+        "sql": " regexp_matches(snpeff_AnnotationImpact, 'MODIFIER') ",
+        "fields": ["snpeff_AnnotationImpact"],
         "score": 100,
         "flag": "PASS",
-        "class": "PM1,PM2",
+        "class": "MODIFIER",
         "comment": [
-          "Described on CLINVAR database as pathogenic, classified as PM1 and PM2"
-        ]
-      },
-      {
-        "sql": ["DP >= 200", "OR regexp_matches(CLNSIG, 'Pathogenic')"],
-        "fields": ["DP", "CLNSIG"],
-        "score": 200,
-        "flag": "PASS",
-        "class": ["PM1", "PM2"],
-        "comment": [
-          "Described on CLINVAR database as non-pathogenic, classified as PM1 and PM3"
+          "Annotated as modifier in snpEff, classified as MODIFIER"
         ]
       }
     ]
