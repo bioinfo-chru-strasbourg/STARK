@@ -2,22 +2,28 @@
   "default": {
     "_description": "Default prioritization profile",
     "_version": "1.0.0",
-    "snpeff_AnnotationImpact": [
+    "Quality": [
       {
-        "sql": " regexp_matches(snpeff_AnnotationImpact, 'MODIFIER') ",
-        "fields": ["snpeff_AnnotationImpact"],
-        "score": 100,
+      "sql": " QUAL >= 30 and (regexp_matches(FILTER, 'PASS') or FILTER = '.')",
+        "fields": ["QUAL", "FILTER"],
+        "score": 10,
         "flag": "PASS",
-        "class": "MODIFIER",
+        "class": "GOOD_QUAL",
         "comment": [
-          "Annotated as modifier in snpEff, classified as MODIFIER"
+          "Quality is good (QUAL >= 30 and PASS)"
+        ]
+      },
+      {
+        "sql": " QUAL < 30 or NOT (regexp_matches(FILTER, 'PASS') or FILTER = '.')",
+        "fields": ["QUAL", "FILTER"],
+        "score": -10,
+        "flag": "FILTERED",
+        "class": "BAD_QUAL",
+        "comment": [
+          "Quality is poor (QUAL < 30 or FILTER not 'PASS')"
         ]
       }
-    ]
-  },
-  "GERMLINE": {
-    "_description": "Prioritization profile for GERMLINE analyses",
-    "_version": "1.0.0",
+    ],
     "snpeff_AnnotationImpact": [
       {
         "sql": " regexp_matches(snpeff_AnnotationImpact, 'MODIFIER') ",
@@ -26,7 +32,7 @@
         "flag": "PASS",
         "class": "MODIFIER",
         "comment": [
-          "Annotated as modifier in snpEff, classified as MODIFIER"
+          "Annotated as modifier in snpEff"
         ]
       }
     ]

@@ -119,8 +119,8 @@ REPORT_SECTIONS?=ALL
 	cat $< | rev | cut -d/ -f1 | rev | sed s/\.vcf.gz//gi | cut -d. -f2- > $@.pipelines
 	# Merge VCF, normalize and rehead with pipelines names (prevent empty VCFs, force single if only one VCF, separate SNP/INDEL and OTHERS to avoid bcftools norm issues with breakends)
 	# Add validation flags depth and alignments depth header
-	echo '##INFO=<ID=Validation_Depth,Number=.,Type=Float,Description="Depth metrics from BAM validation">' > $@.tmp.annotate.new_header.txt
-	echo '##INFO=<ID=Validation_Depth_Flags,Number=.,Type=String,Description="Depth metrics flag from BAM validation">' >> $@.tmp.annotate.new_header.txt
+	echo '##INFO=<ID=Validation_Depth,Number=1,Type=Float,Description="Depth metrics from BAM validation">' > $@.tmp.annotate.new_header.txt
+	echo '##INFO=<ID=Validation_Depth_Flags,Number=1,Type=String,Description="Depth metrics flag from BAM validation">' >> $@.tmp.annotate.new_header.txt
 	# Merge VCF, normalize and rehead with pipelines names (prevent empty VCFs, force single if only one VCF)
 	$(BCFTOOLS) merge --threads=$(THREADS_BY_SAMPLE) -l $< --force-samples $$( [ $$(cat $< | wc -l) -lt 2 ] && echo " --force-single " ) -m none --info-rules - $$((($$($(BCFTOOLS) merge --force-samples $$( [ $$(cat $< | wc -l) -lt 2 ] && echo " --force-single " ) $$(cat $<) | grep "^#" -v | head -n 1 | wc -l))) && echo "" || echo " --print-header ") | $(BCFTOOLS) sort | $(BCFTOOLS) reheader --threads=$(THREADS_BY_SAMPLE) -s $@.pipelines -o $@.merge_step0.vcf;
 	# Extract SNP and InDels with normalization

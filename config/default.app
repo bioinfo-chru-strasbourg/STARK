@@ -701,7 +701,7 @@ HOWARD_PARAM_MINIMAL=$HOWARD_FOLDER_CONFIG/param.howard.minimal.json
 #HOWARD_PARAM_MINIMAL='{}'
 
 # Default HOWARD parameters for report (rule howard)
-#HOWARD_PARAM_REPORT=$HOWARD_FOLDER_CONFIG/param.report.json
+HOWARD_PARAM_REPORT=$HOWARD_FOLDER_CONFIG/param.report.json
 #HOWARD_PARAM_REPORT='{}'
 
 # Default HOWARD parameters for whole analysis (rule howard)
