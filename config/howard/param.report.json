@@ -9,7 +9,8 @@
       "VARTYPE": null,
       "VAF_NORMALIZATION": "",
       "GENOTYPE_STATS": {
-        "infos": ["VAF", "DP"]
+        "infos": ["VAF", "DP"],
+        "stats": ["min", "max", "mean"]
       },
       "FIND_SAMPLES": {
         "tags": {
@@ -31,18 +32,12 @@
       },
       "INFO_TO_FORMAT": {
         "annotation_fields": {
-          "DP_stats_nb": "DP_nb",
-          "DP_stats_list": "DP_list",
           "DP_stats_min": "DP_min",
           "DP_stats_max": "DP_max",
           "DP_stats_mean": "DP_mean",
-          "DP_stats_mediane": "DP_mediane",
-          "VAF_stats_nb": "VAF_nb",
-          "VAF_stats_list": "VAF_list",
           "VAF_stats_min": "VAF_min",
           "VAF_stats_max": "VAF_max",
           "VAF_stats_mean": "VAF_mean",
-          "VAF_stats_mediane": "VAF_mediane",
           "count_pipelines": "count_pipelines",
           "list_pipelines": "list_pipelines"
         },
