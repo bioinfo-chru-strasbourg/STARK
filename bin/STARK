@@ -197,8 +197,6 @@ VERBOSE=0
 eval set -- "$ARGS"
 while true
 do
-	#echo "$1=$2"
-	#echo "Eval opts";
 	case "$1" in
 		-e|--env|--app|--application)
 			APP="$2"
@@ -214,36 +212,34 @@ do
 			;;
 		--analysis_name)
 			ANALYSIS_NAME="$2"
-			#ANALYSIS_NAME=$(echo $ANALYSIS_NAME | tr "," " ")
 			shift 2
 			;;
 		--analysis_tag)
 			ANALYSIS_TAG="$2"
-			#ANALYSIS_NAME=$(echo $ANALYSIS_NAME | tr "," " ")
 			shift 2
 			;;
 		-f|--reads|--reads1|--fastq|--fastq_R1)
-			FASTQ=$2 #"$(echo $2 | tr "\n" " ")"
+			FASTQ=$2
 			shift 2
 			;;
 		-q|--reads2|--fastq_R2)
-			FASTQ_R2=$2 #"$(echo $2 | tr "\n" " ")"
+			FASTQ_R2=$2
 			shift 2
 			;;
 		--index1)
-			INDEX1=$2 #"$(echo $2 | tr "\n" " ")"
+			INDEX1=$2
 			shift 2
 			;;
 		--index2)
-			INDEX2=$2 #"$(echo $2 | tr "\n" " ")"
+			INDEX2=$2
 			shift 2
 			;;
 		--other_files)
-			OTHER_FILES=$2 #"$(echo $2 | tr "\n" " ")"
+			OTHER_FILES=$2
 			shift 2
 			;;
 		-l|--samplesheet)
-			SAMPLESHEET_INPUT="$2" #"$(echo $2 | tr "\n" " ")"
+			SAMPLESHEET_INPUT="$2"
 			shift 2
 			;;
 		--demultiplexing_only)
@@ -313,7 +309,7 @@ do
 			shift 2
 			;;
 		--demultiplexing)
-			DEMULTIPLEXING="$2" #"$(echo $2 | tr "\n" " ")"
+			DEMULTIPLEXING="$2"
 			shift 2
 			;;
 		--tmp)
@@ -516,8 +512,6 @@ ENV=$(cd $SCRIPT_DIR && CONFIG_APP=$CONFIG_APP && find_app "$APP" "$STARK_FOLDER
 
 # Debug
 (($DEBUG)) && echo "["$(timestamp)" | DEBUG] Application '$APP' configuration loaded from '$ENV' environment file.";
-# (($DEBUG)) && echo -e "["$(timestamp)" | DEBUG\033[0m] Application '$APP' configuration loaded from '$ENV' environment file.";
-# (($DEBUG)) && echo $(log_prefix DEBUG "Application '$APP' configuration loaded from '$ENV' environment file.")
 
 # Error if application not found
 if [ "$ENV" == "" ] && [ "$APP" != "" ]; then
@@ -531,8 +525,6 @@ fi
 
 export ENV
 export APP
-
-
 
 
 # CORES
@@ -599,7 +591,6 @@ EXIT=0
 SAMPLESHEET_RELOCATED=$SAMPLESHEET_INPUT
 if [ -f "$SAMPLESHEET_INPUT" ]; then
 	(($DEBUG)) && echo "["$(timestamp)" | DEBUG] SampleSheet input file '$SAMPLESHEET_INPUT' found."
-	#SAMPLESHEET_RELOCATED=$SAMPLESHEET_INPUT
 elif [ ! -z "$ANALYSIS_DIR" ] && [ -f "$ANALYSIS_DIR/$SAMPLESHEET_INPUT" ]; then
 	(($DEBUG)) && echo "["$(timestamp)" | DEBUG] SampleSheet input file '$ANALYSIS_DIR/$SAMPLESHEET_INPUT' found."
 	SAMPLESHEET_RELOCATED=$ANALYSIS_DIR/$SAMPLESHEET_INPUT
@@ -610,7 +601,7 @@ SAMPLESHEET_INPUT_ARRAY=($(echo $SAMPLESHEET_INPUT | tr "," " "))
 
 
 # APPLICATIONS_INFOS
-#######
+#####################
 
 if (($APPLICATIONS_INFOS)); then
 
@@ -745,7 +736,6 @@ if (($APPLICATIONS_INFOS)); then
 		if [ "$APP_TEST" == "" ] || in_array ${APP_NAME^^} ${APP_TEST_NAME^^}; then
 
 			# Find APP
-			#APP=$(source_app "$STARK_FOLDER_APPS/$ENV_DEF"  2>/dev/null; echo $APP_NAME)
 			if ! APP=$(source_app "$STARK_FOLDER_APPS/$ENV_DEF" 2>/dev/null; echo $APP_NAME); then
 				echo "#[ERROR] Application '$STARK_FOLDER_APPS/$ENV_DEF' error";
 				exit 1
@@ -757,7 +747,6 @@ if (($APPLICATIONS_INFOS)); then
 			fi
 
 			#FIELD_SEP="\t"
-			#APP_INFOS=$(source_app "$STARK_FOLDER_APPS/$ENV_DEF"
 			if ! APP_INFOS=$(source_app "$STARK_FOLDER_APPS/$ENV_DEF"; 
 			echo -e "$APP_RELEASE\t$APP_DESCRIPTION\t$APP_GROUP\t$APP_PROJECT\t$FOLDER_RUN\t$FOLDER_RESULTS\t$FOLDER_REPOSITORY\t$FOLDER_ARCHIVES\t$FOLDER_FAVORITES\t$PIPELINES\t$POST_SEQUENCING_STEPS\t$POST_ALIGNMENT_STEPS\t$POST_CALLING_STEPS\t$POST_ANNOTATION_STEPS\t$HOWARD_ANNOTATION_REPORT"); then
 			 	echo "#[ERROR] Application '$ENV_DEF' error";
@@ -812,12 +801,9 @@ if (($APPLICATIONS_INFOS)); then
 				if [ "$APP_TYPE" == "APP" ]; then
 					(env -i bash -c "export APP=$APP && source /tool/config/config.app && source_app $APP && env | awk '{print \"#[INFO]        \"\$0}'")
 				elif [ "$APP_TYPE" == "plugAPP" ]; then
-					#echo "INFOS ALL plugAPP"
-					#echo "$STARK_FOLDER_APPS/$ENV_DEF"
 					cat "$STARK_FOLDER_APPS/$ENV_DEF" | grep "^#" -v | grep "^ *$" -v | awk '{print "#[INFO]        "$0}'
 				fi;
 			fi;
-			#fi;
 			RAW_LIST=$RAW_LIST" $FOLDER_RUN"
 
 		fi;
@@ -873,9 +859,9 @@ if (($TOOLS_INFOS)); then
 	echo "####################"
 	echo ""
 	for T in $TOOLS_LIST; do
-		VAR_VERSION=$T"_VERSION"; #echo ${!VAR_VERSION};
-		VAR_DESCRIPTION=$T"_DESCRIPTION"; #echo ${!VAR_DESCRIPTION};
-		VAR_REF=$T"_REF"; #echo ${!VAR_REF};
+		VAR_VERSION=$T"_VERSION";
+		VAR_DESCRIPTION=$T"_DESCRIPTION";
+		VAR_REF=$T"_REF";
 		echo "## $T ["${!VAR_VERSION}"]";
 		echo "# "${!VAR_DESCRIPTION};
 		echo "# "${!VAR_REF};
@@ -894,10 +880,8 @@ if (($DATABASES_INFOS)); then
 	echo "########################"
 	echo "#### DATABASES LIST ####"
 	echo "########################"
-	#echo ""
-	#echo "$ENV"
 	for D in $DATABASES_LIST; do
-		VAR_D=$D; #echo ${!VAR_VERSION};
+		VAR_D=$D;
 		echo "## $D: "${!VAR_D}"";
 	done
 
@@ -905,9 +889,8 @@ if (($DATABASES_INFOS)); then
 	echo "##########################"
 	echo "#### DATABASES CONFIG ####"
 	echo "##########################"
-	#echo ""
 	for DC in $DATABASES_CONFIG_LIST; do
-		VAR_DC=$DC; #echo ${!VAR_VERSION};
+		VAR_DC=$DC;
 		echo "## $DC: "${!VAR_DC}"";
 	done
 
@@ -930,7 +913,6 @@ if (($RELEASE_INFOS)); then
 	MAKEFILE_PARAM=$TMP_FOLDER_TMP/$RANDOM$RANDOM.param
 	touch $RELEASE_INFOS $MAKEFILE_PARAM
 
-	#source $ENV;
 	make -e -f $STARK_FOLDER_BIN/STARK.launch.analysis.mk PARAM=$MAKEFILE_PARAM RELEASE_INFOS=$RELEASE_INFOS $RELEASE_INFOS 1>/dev/null 2>/dev/null;
 	
 	cat $RELEASE_INFOS | sed "s/^## /\n## /"
@@ -939,7 +921,6 @@ if (($RELEASE_INFOS)); then
 
 	EXIT=1
 fi;
-#echo "truc"; exit 0;
 
 
 if (($EXIT)); then
@@ -1068,11 +1049,6 @@ if [ -s "$DOCKER_COMPOSE_FILE" ] || [ -s "$DOCKER_ENV_FILE" ] || [ "$DOCKER_STAR
 			DOCKER_CMD="docker exec $DOCKER_STARK_CONTAINER STARK $PARAM_CMD"
 			(($DEBUG)) && echo "["$(timestamp)" | DEBUG] DOCKER CMD: $DOCKER_CMD"
 			eval $DOCKER_CMD || exit 1
-			# if $DOCKER_CMD; then
-			# 	(($DEBUG)) && echo "["$(timestamp)" | INFO] DOCKER CMD: OK"
-			# else
-			# 	exit 1
-			# fi;
 		fi;
 
 		exit 0
@@ -1140,7 +1116,6 @@ if [ "$ANALYSIS" != "" ]; then
 				echo "["$(timestamp)" | ERROR] Analysis failed with errors"
 				exit 1
 			fi;
-			#(($EXEC)) && eval $CMD || exit 1;
 
 			EXIT=1
 
@@ -1164,7 +1139,7 @@ fi;
 # FASTQ/BAM/CRAM/SAM SAMPLE
 ##################################
 
-if [ ! -z "$FASTQ" ]; then # && [ -e "$FASTQ" ]; then
+if [ ! -z "$FASTQ" ]; then
 	# TEST FASTQs if exist
 
 	echo "["$(timestamp)" | INFO] Check Samples Analysis"
@@ -1191,7 +1166,6 @@ if [ ! -z "$FASTQ" ]; then # && [ -e "$FASTQ" ]; then
 			echo "["$(timestamp)" | ERROR] Analysis failed with errors"
 			exit 1
 		fi;
-		#eval $CMD || exit 1
 		echo ""
 		EXIT=1
 	else
@@ -1257,7 +1231,6 @@ if [ ! -z "$RUNS" ]; then
 			# Add Run to RUNS_TO_LAUNCH
 			[ ! -z "$RUN_PATH" ] && RUNS_TO_LAUNCH="$RUNS_TO_LAUNCH$RUN_PATH:$RUN_NAME "
 		fi;
-		#((RUN_INDEX++))
 	done;
 
 
@@ -1288,7 +1261,6 @@ if [ ! -z "$RUNS" ]; then
 
 			# RUN with analysis JSON
 			ANALYSIS_JSON_CONFIG=$(find -L $R -maxdepth 2 -depth -name '*analysis.json' | tac)
-			#if (($(find -L $R -name '*analysis.json' | wc -l))); then
 			if (($(echo $ANALYSIS_JSON_CONFIG | wc -w))); then
 
 				echo "["$(timestamp)" | INFO] RUN '$R_NAME' contains configuration files *analysis.json"
@@ -1345,8 +1317,6 @@ if [ ! -z "$RUNS" ]; then
 						[ "$ENV_OLD" != "" ] && MAIN_APP=$MAIN_APP_OLD
 					fi;
 					
-					#[ "$MAIN_APP" == "" ] && MAIN_APP="default"
-
 					if [ "$MAIN_APP" != ""  ]; then
 						if ! DEMULTIPLEXING_FOLDER=$(source_app "$MAIN_APP" 2>/dev/null; echo $FOLDER_DEMULTIPLEXING); then
 							echo "["$(timestamp)" | ERROR] Application '$MAIN_APP' error";
@@ -1362,7 +1332,6 @@ if [ ! -z "$RUNS" ]; then
 							C=$(( $C + 1 )) ;
 						done
 
-						#FIRST_FOLDER_DEMULTIPLEXING_IN_SAMPLE=""
 						for L in $(cat $RUN_SAMPLESHEET | awk '/\[Data\]/,/\[[^Data]/' | grep "^\[" -v | sed '/^[[:space:]]*$/d' | tail -n +2 | tr -d '\r'); do
 							SAMPLE_TAG=$(echo $L | cut -d, -f$SAMPLE_DESCRIPTION_FIELD | tr " " "!")
 							SAMPLE_APP=$(extract_tag "$SAMPLE_TAG" "APP" | tr " " "+")
@@ -1434,7 +1403,7 @@ if [ ! -z "$RUNS" ]; then
 
 				# Demultiplexin ONLY stop
 				if ! (($DEMULTIPLEXING_ONLY)); then
-					CMD="$STARK_FOLDER_BIN/STARK $PARAM --run=$RI --demultiplexing=$DEMULTIPLEXING_FOLDER " #$APP_ONE_RUN_CONFIG_FILE_JSON " # --repository=$FOLDER_REPOSITORY
+					CMD="$STARK_FOLDER_BIN/STARK $PARAM --run=$RI --demultiplexing=$DEMULTIPLEXING_FOLDER "
 				else
 					CMD=""
 				fi;
@@ -1548,23 +1517,11 @@ if [ ! -z "$RUNS" ]; then
 						SAMPLE_APP_GROUP=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $1}')
 						SAMPLE_APP_PROJECT=$(echo -e "$APP_INFOS" | awk -F'\t' '{print $2}')
 
-						# read SAMPLE_APP_GROUP SAMPLE_APP_PROJECT <<< "$(
-						# 	(
-						# 		source_app "$SAMPLE_APP" "$STARK_FOLDER_APPS/"
-						# 		printf "%s %s" "$APP_GROUP" "$APP_PROJECT"
-						# 	)
-						# )"
-
 						# SAMPLE FASTQ R1/R2
 
 						# Reads mapping
 						STARK_DEMULTIPLEXING_READS_MAPPING=$(source_app "$SAMPLE_APP" "$STARK_FOLDER_APPS/"; echo -e "$STARK_DEMULTIPLEXING_READS_MAPPING")
-						# read STARK_DEMULTIPLEXING_READS_MAPPING <<< "$(
-						# 	(
-						# 		source_app "$SAMPLE_APP" "$STARK_FOLDER_APPS/"
-						# 		printf "%s %s" "$STARK_DEMULTIPLEXING_READS_MAPPING"
-						# 	)
-						# )"
+
 						if [ "$STARK_DEMULTIPLEXING_READS_MAPPING" == "" ]; then
 							STARK_DEMULTIPLEXING_READS_MAPPING="R1 I1 I2 R2";
 						fi;
@@ -1675,10 +1632,6 @@ if [ ! -z "$RUNS" ]; then
 
 				done;
 
-				# (($DEBUG)) && for T in $TMP_FOLDER_TMP_R/*.config.tab; do echo ""; echo $T; cat $T | sort -u; done;
-				# (($DEBUG)) && echo "["$(timestamp)" | INFO] CONFIG_FILE_TAB_LIST=$CONFIG_FILE_TAB_LIST"; #exit 0;
-				# (($DEBUG)) && for APP_ONE_RUN_CONFIG_FILE in $(echo $CONFIG_FILE_TAB_LIST | tr " " "\n"); do echo "["$(timestamp)" | INFO] $APP_ONE_RUN_CONFIG_FILE"; cat $APP_ONE_RUN_CONFIG_FILE; done;
-
 				# Create config
 				ANALYSIS_FILES=""
 
@@ -1753,7 +1706,7 @@ if [ ! -z "$RUNS" ]; then
 				ANALYSIS_FILES=$(echo $ANALYSIS_FILES | sed s/^,//)
 
 				if [ "$ANALYSIS_FILES" != "" ]; then
-					CMD="$STARK_FOLDER_BIN/STARK $PARAM --analysis=$ANALYSIS_FILES " #$APP_ONE_RUN_CONFIG_FILE_JSON " # --repository=$FOLDER_REPOSITORY
+					CMD="$STARK_FOLDER_BIN/STARK $PARAM --analysis=$ANALYSIS_FILES "
 				else
 					echo "["$(timestamp)" | ERROR] No Samples to analyse " && exit 1;
 				fi;

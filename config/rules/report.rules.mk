@@ -124,7 +124,8 @@ REPORT_SECTIONS?=ALL
 	# Merge VCF, normalize and rehead with pipelines names (prevent empty VCFs, force single if only one VCF)
 	$(BCFTOOLS) merge --threads=$(THREADS_BY_SAMPLE) -l $< --force-samples $$( [ $$(cat $< | wc -l) -lt 2 ] && echo " --force-single " ) -m none --info-rules - $$((($$($(BCFTOOLS) merge --force-samples $$( [ $$(cat $< | wc -l) -lt 2 ] && echo " --force-single " ) $$(cat $<) | grep "^#" -v | head -n 1 | wc -l))) && echo "" || echo " --print-header ") | $(BCFTOOLS) sort | $(BCFTOOLS) reheader --threads=$(THREADS_BY_SAMPLE) -s $@.pipelines -o $@.merge_step0.vcf;
 	# Extract SNP and InDels with normalization
-	$(BCFTOOLS) view -v snps,mnps,indels --threads=$(THREADS_BY_SAMPLE) $@.merge_step0.vcf | $(BCFTOOLS) +fixploidy | $(BCFTOOLS) norm --threads=$(THREADS_BY_SAMPLE) -m- -f $(GENOME) --force --write-index -Oz -o $@.tmp.merged.SNPINDELS.vcf.gz;
+	#$(BCFTOOLS) view -v snps,mnps,indels --threads=$(THREADS_BY_SAMPLE) $@.merge_step0.vcf | $(BCFTOOLS) +fixploidy | $(BCFTOOLS) norm --threads=$(THREADS_BY_SAMPLE) -m- -f $(GENOME) --force --write-index -Oz -o $@.tmp.merged.SNPINDELS.vcf.gz;
+	$(BCFTOOLS) view -v snps,mnps,indels --threads=$(THREADS_BY_SAMPLE) $@.merge_step0.vcf | $(BCFTOOLS) +fixploidy | $(BCFTOOLS) norm --threads=$(THREADS_BY_SAMPLE) -m- --multi-overlaps 0 -f $(GENOME) --force --write-index -Oz -o $@.tmp.merged.SNPINDELS.vcf.gz;
 	# Extract others variants (e.g., SVs) without normalization, to avoid issues with bcftools norm on breakends
 	$(BCFTOOLS) view -V snps,mnps,indels --threads=$(THREADS_BY_SAMPLE) $@.merge_step0.vcf --write-index -Oz -o $@.tmp.merged.OTHERS.vcf.gz;
 	# Concat all variants, sort, normalize and fill tags (AN, AC, AF, etc.) with bcftools +fill-tags plugin

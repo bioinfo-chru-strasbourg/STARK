@@ -118,11 +118,8 @@ BEGIN {
 							# check if UMI
 							if (UMI!="" && REMOVE_UMI_FROM_BC) {
 								UMI_AS_BC=UMI
-								#gsub("-","+",UMI_AS_BC)
 								if (UMI_AS_BC == BC) { BC=""}
 								gsub(UMI_AS_BC,"",BC)
-								#gsub("^+","",BC)
-								#gsub("+$","",BC)
 								gsub("^-","",BC)
 								gsub("-$","",BC)
 							}
@@ -139,11 +136,8 @@ BEGIN {
 						gsub("+","-",BC)
 						if (UMI!="" && REMOVE_UMI_FROM_BC) {
 							UMI_AS_BC=UMI
-							#gsub("-","+",UMI_AS_BC)
 							if (UMI_AS_BC == BC) { BC=""}
 							gsub(UMI_AS_BC,"",BC)
-							#gsub("^+","",BC)
-							#gsub("+$","",BC)
 							gsub("^-","",BC)
 							gsub("-$","",BC)
 						}

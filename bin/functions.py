@@ -69,8 +69,8 @@ def get_sample_list_from_samplesheet(samplesheetPath):
 				else:
 					if "," in l:
 						sampleList.append(l.strip().split(",")[0])
-	#if there are spaces in samplesheet names, change them to "_" because that's what demultiplexing.sh will do
-	#otherwise the fastq won't be found when looking in the DEM dir
+	# if there are spaces in samplesheet names, change them to "_" because that's what demultiplexing.sh will do
+	# otherwise the fastq won't be found when looking in the DEM dir
 	for i in range(len(sampleList)):
 		if " " in sampleList[i]:
 			sampleList[i] = sampleList[i].replace(" ", "_")

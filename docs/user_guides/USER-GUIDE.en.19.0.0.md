@@ -277,7 +277,7 @@ Output data:
 - [http://localhost:4201/static/data/public/data](http://localhost:4201/static/data/public/data)^
 
 
-## Run a scan
+## Launch an analysis
 
 ### Input data and parameters
 
@@ -827,3 +827,246 @@ The organization of the directories is according to the modules. Naturally, each
 STARK modules are available on GitHub (https://github.com/bioinfo-chru-strasbourg/STARK-modules).
 
 The _howard_ and _myapps_ directories are common to STARK analyzes and modules/services.
+
+## Annexes
+
+### STARK pipeline overview (simplified)
+
+The following graph keeps only the core analysis pipeline stages.
+
+```mermaid
+flowchart TD
+
+
+    subgraph INPUT [Input]
+        BCL[Illumina BCL]
+        DEMULTIPLEXING_FOLDER[Illumina demultiplexed folder]
+        FOLDER[Input data folder\nFASTQ, BAM, CRAM]
+        FILES[Input data files \nFASTQ, BAM, CRAM]
+
+        SAMPLESHEET[SampleSheet\nIllumina]
+        APPLICATION[STARK Application\nPipeline configuration]
+        DESIGN[Design\nPanels\nTranscripts]
+    end
+
+    READS[Reads]
+
+    METADATA[Metadata]
+
+    subgraph PIPELINE [Pipeline]
+        ALIGN[Alignment\nBWA, BWA2, Bowtie, STAR...\n+\nsorting, markduplicates, clipping, realignment, recalibration...]
+        CALLER[Calling\ngatkHC, gatkUG, MuTect2, Deepvariant, outlyzer...\n+\nnormalization, recalibration, filtration...]
+        ANNOTATOR[Annotation\nHOWARD, snpEff...\n+\nnormalization, sorting...]
+        REPORT_ANNOT[Report\nHTML, TSV]
+        METRICS[Metrics\nTSV, JSON, HTML]
+    end
+
+    REPOSITORY[Repository\nInterpretation]
+    ARCHIVES[Archives\nBackup]
+
+    BCL --> |Demultiplexing| DEMULTIPLEXING_FOLDER
+    DEMULTIPLEXING_FOLDER --> READS
+    DEMULTIPLEXING_FOLDER --> SAMPLESHEET
+    DEMULTIPLEXING_FOLDER --> DESIGN
+    FOLDER --> READS
+    FILES --> READS
+
+    SAMPLESHEET --> METADATA
+    APPLICATION --> METADATA
+    DESIGN --> METADATA
+
+    READS --> ALIGN
+    METADATA --> ALIGN
+    
+    ALIGN --> |BAM| CALLER
+    CALLER --> |VCF| ANNOTATOR
+
+    ALIGN --> METRICS
+    CALLER --> METRICS
+    ANNOTATOR --> METRICS
+    METRICS --> REPORT_ANNOT
+
+    REPORT_ANNOT --> |BAM, VCF, Metadata, Report| REPOSITORY
+    REPORT_ANNOT --> |CRAM, VCF, Metadata, Report| ARCHIVES
+```
+
+### STARK pipeline overview (exhaustive flow)
+
+The following graph summarizes the full STARK workflow with all major entry points, optional branches, intermediate stages, and outputs documented in this guide and technical pages.
+
+```mermaid
+flowchart TD
+    %% Entry points
+    CLI[CLI command: STARK --analysis or --reads or --run]
+    API[API queue: POST /analysis JSON]
+    LISTENER[Listener daemon on input/runs]
+    LISTENER --> API
+
+    %% Input resolution
+    CLI --> PRIORITY{Input detection}
+    API --> PRIORITY
+    PRIORITY -->|1| ANALYSIS_JSON[Analysis\nJSON parameters]
+    PRIORITY -->|2| READS[Reads\nFASTQ, BAM, SAM, CRAM]
+    PRIORITY -->|3| RUN[Run folder]
+
+    %% Run branches
+    RUN --> RUN_TYPE{Run content}
+    RUN_TYPE -->|Illumina BCL| BCL[BCL + SampleSheet]
+    RUN_TYPE -->|Demultiplexed/aligned files| RUN_FILES[FASTQ, BAM, SAM, CRAM]
+    BCL --> DEMUX[Demultiplexing bcl2fastq]
+    DEMUX --> DEMUX_ONLY{demultiplexing only?}
+    DEMUX_ONLY -->|yes| DEMUX_OUT[Output demultiplexing FASTQ + report]
+    DEMUX_ONLY -->|no| FASTQ_INPUT
+    RUN_FILES --> FASTQ_INPUT
+    RUN_FILES --> ALIGNED_INPUT
+
+    %% Sample direct branches
+    READS --> READS_KIND{Input check}
+    READS_KIND -->|FASTQ| FASTQ_INPUT[FASTQ\nRead1, Read2, indexes]
+    READS_KIND -->|BAM or SAM or CRAM| ALIGNED_INPUT[Aligned reads]
+
+    %% Optional metadata and app config
+    ANALYSIS_JSON --> META
+    FASTQ_INPUT --> META
+    ALIGNED_INPUT --> META
+    META[Application check\napplication and tags, design or manifest, panels, transcripts, pedigree, assembly]
+
+    %% FASTQ processing
+    META --> FASTQ_PROC{FASTQ processing?}
+    FASTQ_PROC -->|yes| FASTQ_STEPS[FASTQ processing\nfastq_reheader, sort, fastp, umi_tools, fastq_clean_header, compress]
+    FASTQ_PROC -->|no| PRE_ALIGN[Extract FASTQ]
+    
+    FASTQ_STEPS --> POST_SEQ_STEPS[Additional pre-alignment steps]
+    POST_SEQ_STEPS --> PRE_ALIGN[Pipeline preparation]
+
+    %% Keep alignment option
+    META --> KEEP_ALIGN{keep aligned input?}
+    KEEP_ALIGN -->|yes| BYPASS_ALIGN[Bypass aligner, keep existing alignment]
+    BYPASS_ALIGN --> PRE_ALIGN
+    KEEP_ALIGN -->|no| EXTRACT_FASTQ[Extract FASTQ]
+    EXTRACT_FASTQ --> FASTQ_PROC
+
+    %% Pipelines
+    PRE_ALIGN --> PIPE_DEF{Pipeline definition}
+    PIPE_DEF -->|PIPELINES variable| PIPELINES_LIST[Explicit list: Aligner.Caller.Annotator]
+    PIPE_DEF -->|ALIGNERS x CALLERS x ANNOTATORS| PIPELINES_GEN[Auto-generated combinations]
+    PIPE_DEF -->|none| PIPELINE_DEFAULT[Default pipeline]
+    PIPELINES_LIST --> PIPE_PAR[Parallel execution per pipeline]
+    PIPELINES_GEN --> PIPE_PAR
+    PIPELINE_DEFAULT --> PIPE_PAR
+
+    %% Per-pipeline stages
+    PIPE_PAR --> ALIGN{Aligner step}
+    ALIGN -->|DNA aligners| ALIGN_DNA[BWA, BWA2, Bowtie]
+    ALIGN -->|RNA aligner| ALIGN_RNA[STAR]
+    ALIGN -->|FASTQ only| ALIGN_EMPTY[empty BAM aligner]
+
+    ALIGN_DNA --> POST_ALIGN
+    ALIGN_RNA --> POST_ALIGN
+    ALIGN_EMPTY --> POST_ALIGN
+
+    POST_ALIGN[POST ALIGNMENT\nsorting, markduplicates or gencore, clipping, realignment, recalibration, compress]
+    POST_ALIGN --> VALID_BAM[Validation BAM\nmetrics]
+    POST_ALIGN --> ARCHIVE[Archives CRAM\nmetrics]
+    POST_ALIGN --> CALLER{Caller step}
+    
+
+    CALLER -->|DNA callers| CALL_DNA[gatkHC, gatkUG, VarScan, MuTect2, Outlyzer, DeepVariant, samtools]
+    CALLER -->|RNA fusion callers| CALL_RNA[STAR-Fusion, Arriba]
+    CALL_DNA --> POST_CALL
+    CALL_RNA --> POST_CALL
+
+    POST_CALL[POST CALLING\nsorting, normalization, recalibration, filtration]
+    POST_CALL --> ANNOT{Annotator step}
+    
+
+    MERGE_PIPE[Merge per-pipeline VCFs]
+    POST_ANNOT --> MERGE_PIPE
+    MERGE_PIPE --> POST_CALL_MERGE[POST MERGING\nsorting, normalization, recalibration, filtration]
+
+    ANNOT --> ANNOTATORS[howard, snpeff]
+    ANNOTATORS --> POST_ANNOT[POST ANNOTATION\nsorting, normalization, recalibration if configured]
+
+    %% Global merge and report
+    POST_CALL_MERGE --> MERGE_DESIGN[Full by pipelines\nVCF and TSV]
+    MERGE_DESIGN --> REPORT_ANNOT[Full pipelines Annotation]
+    REPORT_ANNOT --> FINAL_MERGE[Final merge across pipelines\nVCF and TSV]
+    FINAL_MERGE --> FINAL_SAMPLE[final Design and Panel\nper sample\nVCF and TSV]
+    
+
+    %% Metrics
+    METRICS{Metrics}
+    POST_ALIGN --> METRICS
+    POST_CALL_MERGE --> METRICS
+    FINAL_SAMPLE --> METRICS
+
+    %% Report
+    REPORT_HTML[HTML report\nSequencing and Mapping, Targets and Genes Depth or Coverage, Variants, Annex]
+    METRICS --> REPORT_HTML
+    META --> REPORT_HTML
+
+    %% Repository and Arhives
+    REPOSITORY[Repository\nBiological interpretation]
+    FINAL_SAMPLE --> REPOSITORY
+    VALID_BAM --> REPOSITORY
+    ARCHIVE --> REPOSITORY
+    META --> REPOSITORY
+    METRICS --> REPOSITORY
+    REPORT_HTML --> REPOSITORY
+    REPOSITORY --> ARCHIVES[Archives\nBackup]
+    
+```
+
+### Example extended file graph: 3 samples, 1 aligner, 2 callers, 1 annotator
+
+```mermaid
+flowchart TD
+    S1FQ[Sample1.R1 or R2.fastq.gz] --> ALIGNER
+    S2FQ[Sample2.R1 or R2.fastq.gz] --> ALIGNER
+    S3FQ[Sample3.R1 or R2.fastq.gz] --> ALIGNER
+
+    ALIGNER[Aligner: bwa mem] --> S1BAM[Sample1.bwamem.bam]
+    ALIGNER --> S2BAM[Sample2.bwamem.bam]
+    ALIGNER --> S3BAM[Sample3.bwamem.bam]
+
+    S1BAM --> S1POST[Sample1.bwamem.post_alignment.bam]
+    S2BAM --> S2POST[Sample2.bwamem.post_alignment.bam]
+    S3BAM --> S3POST[Sample3.bwamem.post_alignment.bam]
+
+    S1POST --> S1VAL[Sample1.bwamem.validation.bam]
+    S2POST --> S2VAL[Sample2.bwamem.validation.bam]
+    S3POST --> S3VAL[Sample3.bwamem.validation.bam]
+
+    S1POST --> S1C1[Sample1.gatkHC.vcf.gz]
+    S1POST --> S1C2[Sample1.MuTect2.vcf.gz]
+    S2POST --> S2C1[Sample2.gatkHC.vcf.gz]
+    S2POST --> S2C2[Sample2.MuTect2.vcf.gz]
+    S3POST --> S3C1[Sample3.gatkHC.vcf.gz]
+    S3POST --> S3C2[Sample3.MuTect2.vcf.gz]
+
+    S1C1 --> S1A1[Sample1.gatkHC.howard.vcf.gz]
+    S1C2 --> S1A2[Sample1.MuTect2.howard.vcf.gz]
+    S2C1 --> S2A1[Sample2.gatkHC.howard.vcf.gz]
+    S2C2 --> S2A2[Sample2.MuTect2.howard.vcf.gz]
+    S3C1 --> S3A1[Sample3.gatkHC.howard.vcf.gz]
+    S3C2 --> S3A2[Sample3.MuTect2.howard.vcf.gz]
+
+    S1A1 --> S1FULL[Sample1.full.Design.vcf.gz and .tsv]
+    S1A2 --> S1FULL
+    S2A1 --> S2FULL[Sample2.full.Design.vcf.gz and .tsv]
+    S2A2 --> S2FULL
+    S3A1 --> S3FULL[Sample3.full.Design.vcf.gz and .tsv]
+    S3A2 --> S3FULL
+
+    S1FULL --> S1FINAL[Sample1.final.Design.vcf.gz and .tsv]
+    S2FULL --> S2FINAL[Sample2.final.Design.vcf.gz and .tsv]
+    S3FULL --> S3FINAL[Sample3.final.Design.vcf.gz and .tsv]
+
+    S1FINAL --> S1REP[Sample1.stark.report.html]
+    S2FINAL --> S2REP[Sample2.stark.report.html]
+    S3FINAL --> S3REP[Sample3.stark.report.html]
+
+    S1FINAL --> RUNVCF[analysis.ID.variants.vcf.gz and .tsv]
+    S2FINAL --> RUNVCF
+    S3FINAL --> RUNVCF
+```

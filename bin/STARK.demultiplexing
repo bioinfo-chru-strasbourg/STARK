@@ -14,7 +14,6 @@ SCRIPT_COPYRIGHT="HUS"
 SCRIPT_LICENCE="GNU GPLA V3"
 
 # Release note
-#RELEASE_NOTES="#\n"
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.7b-20/11/2015: Creation/ReFormating script\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.8b-26/11/2015: SampleSheet as input option. Add Manifest default folder to find Manifest file defined in SampleSheet\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.9b-26/09/2016: Cleaning Sample Name in the Sample Sheet by removing spaces.\n";
@@ -114,7 +113,7 @@ do
 			shift 2
 			;;
 		-l|--samplesheet)
-			SAMPLESHEET_INPUT="$2" #"$(echo $2 | tr "\n" " ")"
+			SAMPLESHEET_INPUT="$2"
 			shift 2
 			;;
 		-t|--threads)
@@ -251,10 +250,8 @@ echo "["$(timestamp)" | INFO] Barcode Mismatches: $BARCODE_MISMATCHES";
 
 # Config
 LOGFILE=$DEMULTIPLEXING_DIR/$RUN_NAME/demultiplexing.configuration.log
-#RUNFOLDER_DIR=$RUN
 OUTPUT_DIR=$DEMULTIPLEXING_DIR/$RUN_NAME
 DEM_SAMPLESHEET=$OUTPUT_DIR/SampleSheet.csv
-#SAMPLE_SHEET_BCL2FASTQ=$OUTPUT_DIR/SampleSheet.bcl2fastq.csv
 MANIFESTS=$OUTPUT_DIR/manifests.txt
 MANIFESTS_LIST=$OUTPUT_DIR/manifests_list.txt
 INTERVALS=$OUTPUT_DIR/run.intervals
@@ -265,11 +262,8 @@ MAKEFILE=$OUTPUT_DIR/Makefile
 
 
 (($DEBUG)) && echo "["$(timestamp)" | INFO] BCL2FASTQ=$BCL2FASTQ"
-#(($DEBUG)) && echo "["$(timestamp)" | INFO] RUNFOLDER_DIR=$RUNFOLDER_DIR"
 (($DEBUG)) && echo "["$(timestamp)" | INFO] OUTPUT_DIR=$OUTPUT_DIR"
 (($DEBUG)) && echo "["$(timestamp)" | INFO] LOGFILE=$LOGFILE"
-#(($DEBUG)) && ls -l $OUTPUT_DIR
-#(($DEBUG)) && ls -l $DEM_SAMPLESHEET
 
 # create Output/demultiplexing folder
 mkdir -p $OUTPUT_DIR
@@ -306,13 +300,6 @@ echo "#[`date`] COMMAND: $COMMAND" >> $LOGFILE && $COMMAND >> $LOGFILE
 for M in $(cat $MANIFESTS | tr "," " "); do
 	(($VERBOSE)) && echo "["$(timestamp)" | INFO] Copy manifests '$M' and related files";
 
-	#echo $FOLDER_MANIFEST/$M
-	#[ -e $FOLDER_MANIFEST/$M ] && cp $FOLDER_MANIFEST/$M $OUTPUT_DIR/$M 2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy manifest '$M' from Manifest folder '$FOLDER_MANIFEST'";
-	#echo $RUN/$M
-	#echo cp $RUN/$M $OUTPUT_DIR/$M
-	#cp $RUN/$M $OUTPUT_DIR/$M
-	#[ -e $RUN/$M ] && cp $RUN/$M $OUTPUT_DIR/$M  2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy manifest '$M' from RUN folder '$RUN' (replaced if already copied)";
-
 	# Manifest File
 	if [ -e $RUN/$M ]; then
 		cp $RUN/$M $OUTPUT_DIR/$M  2>/dev/null && (($VERBOSE)) && echo "["$(timestamp)" | INFO] Copy manifest '$M' from RUN folder '$RUN'";
@@ -323,11 +310,6 @@ for M in $(cat $MANIFESTS | tr "," " "); do
 	fi;
 
 	# Genes
-	#[ -e $FOLDER_MANIFEST/$M.genes ] && cp $FOLDER_MANIFEST/$M.genes $OUTPUT_DIR/$M.genes 2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy manifest.genes '$M.genes' from Manifest folder '$FOLDER_MANIFEST'";
-	#cp -f $FOLDER_MANIFEST/$M*.genes $OUTPUT_DIR/ 2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy MANIFEST*.genes '$M*.genes' from Manifest folder '$FOLDER_MANIFEST'";
-	#[ -e $RUN/$M.genes ] && cp $FOLDER_MANIFEST/$M.genes $OUTPUT_DIR/$M.genes  2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy manifest.genes '$M.genes' from RUN folder '$RUN' (replaced if already copied)";
-	#cp -f $RUN/$M*.genes $OUTPUT_DIR/ 2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy MANIFEST*.genes '$M*.genes' from Manifest folder '$RUN' (replaced if already copied)";
-
 	if (($(ls $RUN/$M*.genes 2>/dev/null | wc -l))); then
 		cp -f $RUN/$M*.genes $OUTPUT_DIR/ 2>/dev/null && (($VERBOSE)) && echo "["$(timestamp)" | INFO] Copy MANIFEST*.genes '$M*.genes' from Manifest folder '$RUN'";
 	elif (($(ls $FOLDER_MANIFEST/$M*.genes 2>/dev/null | wc -l))); then
@@ -337,11 +319,6 @@ for M in $(cat $MANIFESTS | tr "," " "); do
 	fi;
 
 	# Transcripts
-	#[ -e $FOLDER_MANIFEST/$M.transcripts ] && cp $FOLDER_MANIFEST/$M.transcripts $OUTPUT_DIR/$M.transcripts 2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy manifest.transcripts '$M.transcripts' from Manifest folder '$FOLDER_MANIFEST'";
-	#cp -f $FOLDER_MANIFEST/$M*.transcripts $OUTPUT_DIR/ 2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy MANIFEST*.transcripts '$M*.transcripts' from Transcripts folder '$FOLDER_MANIFEST'";
-	#[ -e $RUN/$M.transcripts ] && cp $FOLDER_MANIFEST/$M.transcripts $OUTPUT_DIR/$M.transcripts  2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy manifest.transcripts '$M.transcripts' from RUN folder '$RUN' (replaced if already copied)";
-	#cp -f $RUN/$M*.transcripts $OUTPUT_DIR/ 2>/dev/null && (($VERBOSE)) && echo "#[INFO] Copy MANIFEST*.transcipts '$M*.transcripts' from Transcripts folder '$RUN' (replaced if already copied)";
-
 	if (($(ls $RUN/$M*.transcripts 2>/dev/null | wc -l))); then
 		cp -f $RUN/$M*.transcripts $OUTPUT_DIR/ 2>/dev/null && (($VERBOSE)) && echo "["$(timestamp)" | INFO] Copy MANIFEST*.transcipts '$M*.transcripts' from Transcripts folder '$RUN' (replaced if already copied)";
 	elif (($(ls $FOLDER_MANIFEST/$M*.transcripts 2>/dev/null | wc -l))); then
@@ -419,24 +396,18 @@ else
 fi;
 
 
-
 # READ_STRUCTURE
 
-
-#FINAL_MASK="Y150,I8,Y10,Y150"
 READ_STRUCTURE=""
 if [ "$FINAL_MASK" != "" ]; then
 	READ_STRUCTURE=$(for read in $(echo $FINAL_MASK | tr "," " "); do 
 		first=${read:0:1}
 		nb_bases=$(echo $read | tr -dc '0-9')
-		#echo "read=$read first=$first nb_bases=$nb_bases"
 		type="T"
 		nb=$nb_bases
 		if [ "$first" == "Y" ]; then
-			#echo "R"
 			type="T"
 		elif [ "$first" == "I" ]; then
-			#echo "I"
 			type="B"
 		fi;
 		echo "$nb$type"
@@ -446,10 +417,6 @@ else
 	echo "["$(timestamp)" | ERROR] Read structure not valid because Mask empty";
 	exit 1
 fi;
-
-# echo $READ_STRUCTURE
-
-
 
 
 
@@ -463,22 +430,17 @@ fi;
 (($VERBOSE)) && echo "["$(timestamp)" | INFO] STARK_DEMULTIPLEXING_BCL2FASTQ_OPTIONS="$STARK_DEMULTIPLEXING_BCL2FASTQ_OPTIONS
 
 
-#(($DEBUG)) && ls -l $DEM_SAMPLESHEET
 (($DEBUG)) && echo "" && echo "["$(timestamp)" | DEBUG] DEBUG"
 (($DEBUG)) && echo "" && echo "["$(timestamp)" | DEBUG] Log file: $LOGFILE"
 (($DEBUG)) && cat $LOGFILE
-#(($DEBUG)) && ls -l $OUTPUT_DIR
 (($DEBUG)) && echo "" && echo "["$(timestamp)" | DEBUG] SampleSheet file: $DEM_SAMPLESHEET"
 (($DEBUG)) && cat $DEM_SAMPLESHEET
-#(($DEBUG)) && cat $MANIFESTS_LIST
-#(($DEBUG)) && cat $MANIFESTS
 
 # Demultiplexing configuration
 COMMAND="$BCL2FASTQ --runfolder-dir $RUN  --output-dir $OUTPUT_DIR --sample-sheet $DEM_SAMPLESHEET --barcode-mismatches $BARCODE_MISMATCHES --fastq-compression-level $FASTQ_DEMULTIPLEXING_COMPRESSION_LEVEL $DEMUX_MASK $DEMUX_MASK_SHORT_READ -r $THREADS_LOADING -p $THREADS -w $THREADS_WRITING $STARK_DEMULTIPLEXING_BCL2FASTQ_OPTIONS"
 echo "#[`date`] COMMAND: " $COMMAND >> $LOGFILE
 (($DEBUG)) && echo "" && echo "["$(timestamp)" | INFO] Command: "$COMMAND
 
-#$COMMAND 1>>$LOGFILE 2>>$LOGFILE || echo "message" && echo "exit"
 if ! $COMMAND 1>>$LOGFILE 2>>$LOGFILE; then
 	# List of fastq files with size
 	ls -hs1 $OUTPUT_DIR/*fastq.gz 2>/dev/null | awk '{print "#[INFO] FASTQ: "$2"\t"$1}'

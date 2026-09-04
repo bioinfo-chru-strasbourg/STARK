@@ -172,7 +172,6 @@ GZ_PARAM := $(if $(and $(filter pigz%,$(GZ)),$(THREADS_BY_SAMPLE)),-p $(THREADS_
 	$(UNGZ) $(GZ_PARAM) $< -c | $(GZ) $(GZ_PARAM) -$(FASTQ_COMPRESSION_LEVEL) -c  > $@;
 
 %.compress.log: %.log %.compress.R1.fastq.gz %.compress.R2.fastq.gz %.compress.I1.fastq.gz %.compress.I2.fastq.gz
-	#rm -rf $*.*.fastq.gz;
 	echo 'compress log !!!' > $@;
 
 
@@ -204,10 +203,6 @@ GZ_PARAM := $(if $(and $(filter pigz%,$(GZ)),$(THREADS_BY_SAMPLE)),-p $(THREADS_
 
 
 
-
-# zcat Sample3.R1.fastq.gz | tr "\t" " " | paste - - - - | sort -n -k1,1 -t " " | tr "\t" "\n" | gzip -1 -c > Sample3.R1.sorted.fastq.gz
-
-
 ### FASTP
 
 %.fastp.R1.fastq.gz: %.log
@@ -217,7 +212,6 @@ GZ_PARAM := $(if $(and $(filter pigz%,$(GZ)),$(THREADS_BY_SAMPLE)),-p $(THREADS_
 	echo " --compression=$(FASTP_COMPRESSION_LEVEL) " >> $@.param;
 	echo " $(FASTP_ADDITIONAL_OPTIONS) " >> $@.param;
 	# UMI test
-	#if [ "$(UMI_RELOC)" != "" ]; then
 	if ! (( $$($(UNGZ) $(GZ_PARAM) -c $*.R1.fastq.gz | head -n 1 | cut -d" " -f1 | awk -F: '{if ($$8!="") {print $$0}}' | wc -l) )); then \
 		if [[ "$(UMI_RELOC)" =~ .*index.* ]] && (( $$($(UNGZ) $(GZ_PARAM) -c $*.R1.fastq.gz | head -n 1 | cut -d" " -f2- | grep -P '[0-9]*:N:0:[^\t $$]*' | wc -l) )); then \
 			echo " --umi --umi_loc=$(UMI_RELOC) " >> $@.param; \
@@ -232,8 +226,6 @@ GZ_PARAM := $(if $(and $(filter pigz%,$(GZ)),$(THREADS_BY_SAMPLE)),-p $(THREADS_
 	if (( $$($(UNGZ) $(GZ_PARAM) -c $*.R2.fastq.gz | head -n 1 | wc -l) )); then \
 		echo " --in1=$*.R1.fastq.gz --in2=$*.R2.fastq.gz " >> $@.param ; \
 		echo " --out1=$*.fastp.R1.fastq.gz --out2=$*.fastp.R2.fastq.gz " >> $@.param ; \
-		#if (($(DETECT_ADAPTER_FOR_PE))); then echo " --detect_adapter_for_pe " >> $@.param ; fi ; \
-		#echo " --detect_adapter_for_pe " >> $@.param ; \
 		if (($(ENABLE_ADAPTER_TRIMMING))); then echo " --detect_adapter_for_pe " >> $@.param ; fi ; \
 	else \
 		echo " --in1=$*.R1.fastq.gz " >> $@.param ; \
@@ -358,7 +350,7 @@ GZ_PARAM := $(if $(and $(filter pigz%,$(GZ)),$(THREADS_BY_SAMPLE)),-p $(THREADS_
 	$(UNGZ) $(GZ_PARAM) -c $*.R2.fastq.gz | head -n1 > $@.tmp.source
 	$(UNGZ) $(GZ_PARAM) -c $*.R2.fastq.gz | head -n1 | awk $(FASTQ_CLEAN_HEADER_PARAM) -f $(FASTQ_CLEAN_HEADER) > $@.tmp.target
 	if (( $$( diff $@.tmp.source $@.tmp.target | wc -l) )); then \
-			$(UNGZ) $(GZ_PARAM) -c $*.R2.fastq.gz | awk $(FASTQ_CLEAN_HEADER_PARAM) -f $(FASTQ_CLEAN_HEADER) | $(GZ) $(GZ_PARAM) -1 -c > $@; \
+		$(UNGZ) $(GZ_PARAM) -c $*.R2.fastq.gz | awk $(FASTQ_CLEAN_HEADER_PARAM) -f $(FASTQ_CLEAN_HEADER) | $(GZ) $(GZ_PARAM) -1 -c > $@; \
 	else \
 		ln -s $*.R2.fastq.gz $@; \
 	fi;
@@ -368,7 +360,7 @@ GZ_PARAM := $(if $(and $(filter pigz%,$(GZ)),$(THREADS_BY_SAMPLE)),-p $(THREADS_
 	$(UNGZ) $(GZ_PARAM) -c $*.I1.fastq.gz | head -n1 > $@.tmp.source
 	$(UNGZ) $(GZ_PARAM) -c $*.I1.fastq.gz | head -n1 | awk $(FASTQ_CLEAN_HEADER_PARAM) -f $(FASTQ_CLEAN_HEADER) > $@.tmp.target
 	if (( $$( diff $@.tmp.source $@.tmp.target | wc -l) )); then \
-			$(UNGZ) $(GZ_PARAM) -c $*.I1.fastq.gz | awk $(FASTQ_CLEAN_HEADER_PARAM) -f $(FASTQ_CLEAN_HEADER) | $(GZ) $(GZ_PARAM) -1 -c > $@; \
+		$(UNGZ) $(GZ_PARAM) -c $*.I1.fastq.gz | awk $(FASTQ_CLEAN_HEADER_PARAM) -f $(FASTQ_CLEAN_HEADER) | $(GZ) $(GZ_PARAM) -1 -c > $@; \
 	else \
 		ln -s $*.I1.fastq.gz $@; \
 	fi;
@@ -378,7 +370,7 @@ GZ_PARAM := $(if $(and $(filter pigz%,$(GZ)),$(THREADS_BY_SAMPLE)),-p $(THREADS_
 	$(UNGZ) $(GZ_PARAM) -c $*.I2.fastq.gz | head -n1 > $@.tmp.source
 	$(UNGZ) $(GZ_PARAM) -c $*.I2.fastq.gz | head -n1 | awk $(FASTQ_CLEAN_HEADER_PARAM) -f $(FASTQ_CLEAN_HEADER) > $@.tmp.target
 	if (( $$( diff $@.tmp.source $@.tmp.target | wc -l) )); then \
-			$(UNGZ) $(GZ_PARAM) -c $*.I2.fastq.gz | awk $(FASTQ_CLEAN_HEADER_PARAM) -f $(FASTQ_CLEAN_HEADER) | $(GZ) $(GZ_PARAM) -1 -c > $@; \
+		$(UNGZ) $(GZ_PARAM) -c $*.I2.fastq.gz | awk $(FASTQ_CLEAN_HEADER_PARAM) -f $(FASTQ_CLEAN_HEADER) | $(GZ) $(GZ_PARAM) -1 -c > $@; \
 	else \
 		ln -s $*.I2.fastq.gz $@; \
 	fi;
@@ -391,7 +383,6 @@ GZ_PARAM := $(if $(and $(filter pigz%,$(GZ)),$(THREADS_BY_SAMPLE)),-p $(THREADS_
 
 
 ### Reheader
-# if (( $(zcat /STARK/data/STARKData/RUN_TEST_UMI_index2/demultiplexing/RUN_TEST/Sample3UMI_S3_R1_001.fastq.gz  | head -n1 | grep -e "BC:" -e "RX" -c) )); then echo "exists BC or RX"; fi;
 
 %.fastq_reheader.R1.fastq.gz: %.log
 	#if (( $$($(UNGZ) $(GZ_PARAM) -c $*.R1.fastq.gz | head -n1 | grep -e "BC:Z:" -e "RX:Z:" -c) )); then \
@@ -406,7 +397,6 @@ GZ_PARAM := $(if $(and $(filter pigz%,$(GZ)),$(THREADS_BY_SAMPLE)),-p $(THREADS_
 			echo 'paste <($(UNGZ) $(GZ_PARAM) -c $*.R1.fastq.gz | tr "\t" " ") <($(UNGZ) $(GZ_PARAM) -c $*.I1.fastq.gz) <($(UNGZ) $(GZ_PARAM) -c $*.I2.fastq.gz) | awk -F"\t" -v READ=1 -f $(FASTQ_REHEADER) | $(GZ) $(GZ_PARAM) -1 -c > $@' > $@.tmp.cmd; \
 			chmod u+x $@.tmp.cmd; \
 			/bin/bash $@.tmp.cmd; \
-			#rm -f $@.tmp.cmd; \
 		else \
 			ln -s $*.R1.fastq.gz $@; \
 		fi; \
@@ -427,7 +417,6 @@ GZ_PARAM := $(if $(and $(filter pigz%,$(GZ)),$(THREADS_BY_SAMPLE)),-p $(THREADS_
 			echo 'paste <($(UNGZ) $(GZ_PARAM) -c $*.R2.fastq.gz | tr "\t" " ") <($(UNGZ) $(GZ_PARAM) -c $*.I1.fastq.gz) <($(UNGZ) $(GZ_PARAM) -c $*.I2.fastq.gz) | awk -F"\t" -v READ=1 -f $(FASTQ_REHEADER) | $(GZ) $(GZ_PARAM) -1 -c > $@' > $@.tmp.cmd; \
 			chmod u+x $@.tmp.cmd; \
 			/bin/bash $@.tmp.cmd; \
-			#rm -f $@.tmp.cmd; \
 		else \
 			ln -s $*.R2.fastq.gz $@; \
 		fi; \
@@ -448,7 +437,6 @@ GZ_PARAM := $(if $(and $(filter pigz%,$(GZ)),$(THREADS_BY_SAMPLE)),-p $(THREADS_
 			echo 'paste <($(UNGZ) $(GZ_PARAM) -c $*.I1.fastq.gz | tr "\t" " ") <($(UNGZ) $(GZ_PARAM) -c $*.I1.fastq.gz) <($(UNGZ) $(GZ_PARAM) -c $*.I2.fastq.gz) | awk -F"\t" -v READ=1 -f $(FASTQ_REHEADER) | $(GZ) $(GZ_PARAM) -1 -c > $@' > $@.tmp.cmd; \
 			chmod u+x $@.tmp.cmd; \
 			/bin/bash $@.tmp.cmd; \
-			#rm -f $@.tmp.cmd; \
 		else \
 			ln -s $*.I1.fastq.gz $@; \
 		fi; \
@@ -469,7 +457,6 @@ GZ_PARAM := $(if $(and $(filter pigz%,$(GZ)),$(THREADS_BY_SAMPLE)),-p $(THREADS_
 			echo 'paste <($(UNGZ) $(GZ_PARAM) -c $*.I2.fastq.gz | tr "\t" " ") <($(UNGZ) $(GZ_PARAM) -c $*.I1.fastq.gz) <($(UNGZ) $(GZ_PARAM) -c $*.I2.fastq.gz) | awk -F"\t" -v READ=1 -f $(FASTQ_REHEADER) | $(GZ) $(GZ_PARAM) -1 -c > $@' > $@.tmp.cmd; \
 			chmod u+x $@.tmp.cmd; \
 			/bin/bash $@.tmp.cmd; \
-			#rm -f $@.tmp.cmd; \
 		else \
 			ln -s $*.I2.fastq.gz $@; \
 		fi; \

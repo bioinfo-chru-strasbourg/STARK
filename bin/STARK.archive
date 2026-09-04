@@ -97,8 +97,6 @@ VERBOSE=0
 eval set -- "$ARGS"
 while true
 do
-	#echo "$1=$2"
-	#echo "Eval opts";
 	case "$1" in
 		-f|--fastq)
 			FASTQ_INPUT=$(echo "$2" | tr "," " ")
@@ -192,9 +190,6 @@ done
 ####################################################################################################################################
 # Checking the input parameter
 #--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-# if [ -z "$FASTQ_INPUT" ] && [ -z "$BAM_INPUT" ] && [ -z "$CRAM_INPUT" ] && ((!$DEBUG)); then
-# 	echo "#[ERROR] Required parameter: --fastq, --bam, and --cram. Use --help to display the help." && echo "" && usage && exit 1;
-# fi
 if [ -z "$CRAM_INPUT" ] && ((!$DEBUG)); then
 	echo "#[ERROR] Required parameter: --cram. Use --help to display the help." && echo "" && usage && exit 1;
 fi
@@ -221,9 +216,6 @@ in_array ()
 # input: $command
 checksum () 
 { 
-    #echo $(eval $1 | cut -f1 -d " " | paste - - - - | LC_COLLATE=C sort -S 100% -T SORT_PREFIX$RANDOM -n -k1,1 -t " " | tr "\t" "\n" | sha512sum | cut -d" " -f1)
-	#echo $(eval $1 | cut -f1 -d " " | paste - - - - | LC_COLLATE=C sort -S 7G -T SORT_PREFIX$RANDOM -n -k1,1 -t " " | tr "\t" "\n" | sha512sum | cut -d" " -f1)
-	#echo $(eval $1 | cut -f1 -d " " | paste - - - - | LC_COLLATE=C sort -T $TMP_FOLDER_TMP/SORT_PREFIX$RANDOM -n -k1,1 -t " " | tr "\t" "\n" | sha512sum | cut -d" " -f1)
 	local SORT_TMP=$TMP_FOLDER_TMP/SORT_PREFIX$RANDOM
 	mkdir -p $SORT_TMP
 	echo $(eval $1 | cut -f1 -d " " | paste - - - - | LC_COLLATE=C sort -T $SORT_TMP -n -k1,1 -t " " | tr "\t" "\n" | sha512sum | cut -d" " -f1)
@@ -318,8 +310,7 @@ fi;
 if [ "$REF_INPUT" != "" ] && [ -e $REF_INPUT ]; then
 	REF="$REF_INPUT"
 fi;
-(($VERBOSE)) && echo "#[INFO] REF '$GENOME'"
-
+(($VERBOSE)) && echo "#[INFO] REF '$REF'"
 
 
 # Checksum
@@ -366,8 +357,6 @@ fi;
 STATS=""
 if [ "$STATS_INPUT" != "" ]; then
 	STATS=$STATS_INPUT
-	#BAM_READ_integrity_checksum=1
-	#CRAM_READ_integrity_checksum=1
 	mkdir -p $(dirname $STATS)
 	> $STATS
 	(($VERBOSE)) && echo "#[INFO] CRAM statistics enabled '$STATS'"
@@ -416,8 +405,6 @@ if [ "$PICARD" == "" ]; then
 fi;
 
 
-
-
 # Init
 CRAM_validate=""
 CRAM_fastq_source=""
@@ -455,19 +442,16 @@ if [ ! -z "$FASTQ" ]; then
 		(($VERBOSE)) && echo "#[INFO] FASTQ '$FASTQ_names' STATS READS integrity checksum..."
 		[ "$FASTQ_checksum" == "" ] && FASTQ_checksum=$(checksum "$UNGZ -c $FASTQ")
 		(($VERBOSE)) && echo "#[INFO] FASTQ '$FASTQ_names' STATS READS integrity checksum '$FASTQ_checksum'"
-		#echo "FASTQ_checksum	$FASTQ_checksum" >> $STATS
 
 		# nbreads 
 		(($VERBOSE)) && echo "#[INFO] FASTQ '$FASTQ_names' STATS READS Number..."
 		FASTQ_nbreads=$($UNGZ -c $FASTQ | cut -f1 -d " " | paste - - - - | wc -l)
 		(($VERBOSE)) && echo "#[INFO] FASTQ '$FASTQ_names' STATS READS Number '$FASTQ_nbreads'"
-		#echo "FASTQ_nbreads	$FASTQ_nbreads" >> $STATS
 
 		# size 
 		(($VERBOSE)) && echo "#[INFO] FASTQ '$FASTQ_names' STATS FILES Size..."
 		FASTQ_size=$(ls -l $FASTQ | cut -d" " -f5 | awk '{ SUM+=$0} END {print SUM}')
 		(($VERBOSE)) && echo "#[INFO] FASTQ '$FASTQ_names' STATS FILES Size '$FASTQ_size'"
-		#echo "FASTQ_size	$FASTQ_size" >> $STATS
 
 	fi;
 
@@ -508,7 +492,6 @@ if [ ! -z "$BAM" ]; then
 				if [ "$REMOVE_TAGS" != "" ]; then
 					PRE_SAMTOOLS=" $SAMTOOLS view -h -@ $THREADS --reference $GENOME $bam | ";
 					BAM_FOR_SAMTOOLS=" ";
-					#sed 's/\tOQ\:Z\:[^\t]*//'
 					for TAG in $REMOVE_TAGS; do
 						PRE_SAMTOOLS="$PRE_SAMTOOLS sed 's/\t$TAG\:Z\:[^\t]*//' | ";
 					done;
@@ -520,8 +503,6 @@ if [ ! -z "$BAM" ]; then
 				COMMAND="$PRE_SAMTOOLS $SAMTOOLS $SAMTOOLS_CRAM_COMMAND $SAMTOOLS_CRAM_COMMAND_OPTIONS"
 				(($DEBUG)) && echo "#[INFO] COMMAND: $COMMAND "
 				time_start=$(date +%s%3N)
-				#if ! $SAMTOOLS $SAMTOOLS_CRAM_COMMAND -h -O CRAM,$CRAM_OPTIONS -@ $THREADS -T $bam.SAMTOOLS_PREFIX$RANDOM $bam --reference $GENOME $SAMTOOLS_CRAM_INDEX -o $CRAM.cram 2>/dev/null; then
-				#if ! $SAMTOOLS $SAMTOOLS_CRAM_COMMAND $SAMTOOLS_CRAM_COMMAND_OPTIONS 2>/dev/null ; then
 				if ! eval $COMMAND 2>/dev/null ; then
 					(($VERBOSE)) && echo "#[WARNING] BAM '$bam_name' CRAM generation failed!"
 					rm -f $CRAM.cram
@@ -571,18 +552,14 @@ if [ ! -z "$FASTQ" ]; then
 		PICARD_FASTQ_options=""
 		SAMTOOLS_IMPORT_options=""
 		FASTQ_first=$(echo $FASTQ | cut -d" " -f1)
-		#FASTQ_names=""
 		if [ "$(echo $FASTQ | wc -w)" -lt 3 ]; then
 
 			# CRAM Generation with PICARD
 			if ((0)); then
 				PICARD_FASTQ_index=0
 				for RX in $FASTQ; do
-					#(($PICARD_FASTQ_index)) && sep=" "
-					#FASTQ_names=$FASTQ_names$sep$(basename $RX)
 					if (($($UNGZ -c $RX | head -n 1 | wc -l))); then
 						((PICARD_FASTQ_index++))
-						#echo "RX=$RX"
 						PICARD_FASTQ_options=$PICARD_FASTQ_options" -F$PICARD_FASTQ_index $RX "
 					fi;
 				done;
@@ -679,10 +656,6 @@ if (($REHEADER)); then
 
 			(($VERBOSE)) && echo "#[INFO] CRAM rehead with genome reference '$REF_name'..."
 
-			# reheader
-			#$SAMTOOLS reheader -Pi -c "$SAMTOOLS view -H $CRAM_cram_source | $SAMTOOLS view -O CRAM -@ $THREADS --reference=$GENOME | samtools view -H " $CRAM_cram_source > $CRAM_cram_source.reheaded.cram
-			#mv -f $CRAM_cram_source.reheaded.cram $CRAM_cram_source
-
 			if $SAMTOOLS reheader -P -c "$SAMTOOLS view -H $CRAM_cram_source | $SAMTOOLS view -O CRAM -@ $THREADS --reference=$GENOME | $SAMTOOLS view -H " $CRAM_cram_source > $CRAM_cram_source.reheaded.cram; then
 				mv -f $CRAM_cram_source.reheaded.cram $CRAM_cram_source
 				(($VERBOSE)) && echo "#[INFO] CRAM rehead with genome reference '$REF_name' done."
@@ -743,9 +716,6 @@ if [ "$STATS" != "" ]; then
 
 		# Decode time
 		(($VERBOSE)) && echo "#[INFO] CRAM STATS TIME Decode..."
-		#time_start=$(date +%s%3N)
-        #$SAMTOOLS stats -@ $THREADS $CRAM_cram_source 1>/dev/null
-        #time_end=$(date +%s%3N)
         CRAM_decode_time=$(echo "scale=3; "$((time_end-time_start))" / 1000" | bc )
 		(($VERBOSE)) && echo "#[INFO] CRAM STATS TIME Decode '$CRAM_decode_time'"
 
@@ -818,9 +788,6 @@ if [ "$STATS" != "" ]; then
 	echo "BAM_checksum	$BAM_checksum" >> $STATS
 	echo "BAM_size	$BAM_size" >> $STATS
 	echo "BAM_nbreads	$BAM_nbreads" >> $STATS
-
-
-	#echo "CRAM_encode_time=$CRAM_encode_time"
 
 
 	(($VERBOSE)) && echo "#[INFO] STATS:" && cat $STATS | sed "s/^/#[INFO]   /" | column -t

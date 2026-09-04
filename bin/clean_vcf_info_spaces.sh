@@ -34,7 +34,6 @@ function release () {
 }
 
 # Usage
-# Usage
 function usage {
 	echo "# USAGE: $(basename "$0") -i <input.vcf> [-o <output.vcf>] [-r <replace_char>] [-h]";
 	echo "# -i, --input         Input VCF file (required)";
@@ -48,23 +47,6 @@ function usage {
 	echo "#";
 
 }
-
-# usage() {
-#   cat <<EOF
-# Usage: $(basename "$0") -i <input.vcf> [-o <output.vcf>] [-r <replace_char>] [-h]
-
-# Options:
-#   -i, --input         Input VCF file (required)
-#   -o, --output        Output cleaned VCF file (default: temp file)
-#   -r, --replace-char  Character to replace spaces in INFO (default: _)
-  
-#   -v/--verbose        VERBOSE option";
-# 	-d/--debug          DEBUG option";
-# 	-n/--release                   RELEASE option";
-# 	-h/--help                      HELP option";
-# EOF
-#   exit 1
-# }
 
 # Parse args with getopt
 ARGS=$(getopt -o i:o:r:h --long input:,output:,replace-char:,help -n "$(basename "$0")" -- "$@") || usage

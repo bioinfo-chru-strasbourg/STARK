@@ -14,7 +14,6 @@ SCRIPT_COPYRIGHT="HUS"
 SCRIPT_LICENCE="GNU-AGPL"
 
 # Release note
-#RELEASE_NOTES="#\n"
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.3b-09/10/2015: Add RUN configuration depending on Group and Project defined in RUN SampleSheet\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.4b-13/10/2015: Add Complete and Running flag files\n";
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9.5.1b-11/04/2016: Optimize Threads and modifiy options order\n";
@@ -121,13 +120,10 @@ ARGS=$(getopt -o "e:f:q:b:j:m:s:r:o:u:p:t:ga:vdnh" --long "env:,app:,application
 	exit 1
 eval set -- "$ARGS"
 
-#echo $PARAM
 PARAM=$@
 
 while true
 do
-	#echo "$1=$2"
-	#echo "Eval opts";
 	case "$1" in
 		-e|--env|--app|--application)
 			APP="$2"
@@ -867,7 +863,6 @@ fi;
 
 if ! [[ $THREADS_COPY =~ $re ]] || [ "$THREADS_COPY" == "" ]; then
 	THREADS_COPY=$THREADS
-	#THREADS_COPY=1
 fi;
 
 # gz et gunzip
@@ -947,10 +942,6 @@ if (($DEBUG)); then
 	echo "["$(timestamp)" | DEBUG] FAVORITES_FILE_PATTERNS=$FAVORITES_FILE_PATTERNS"
 fi;
 
-
-# if (($DEBUG)); then
-# 	echo -e "FASTQ $FASTQ\nFASTQ_R2 $FASTQ_R2\nSAMPLE $SAMPLE\nRUN $RUN\nBED $BED\nGENES $BEDFILE_GENES\nTRANSCRIPTS $TRANSCRIPTS\nPEDIGREE $PEDIGREE\nINPUT $INPUT\nOUTPUT $OUTPUT\nRESULTS $RESULTS\n\nPIPELINES $PIPELINES" | column -t;
-# fi;
 
 SAMPLE_ARRAY=($SAMPLE);
 FASTQ_ARRAY=($FASTQ);
@@ -1583,10 +1574,6 @@ for RUU in $RUN_UNIQ; do
 				# No Panel and no Design 
 				else 
 					(($VERBOSE)) && echo "["$(timestamp)" | WARN] NOT Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' (no Panel and no Design found). Panel will be autodetected."
-					# BEDFILE_GENES_ONE=$RUN_SAMPLE_DIR/$S.full.genes
-					# touch $BEDFILE_GENES_ONE
-					# #cp $REFSEQ_GENES $BEDFILE_GENES_ONE
-					# echo $(basename $BEDFILE_GENES_ONE) > $BEDFILE_GENES_LIST_ONE;
 				fi;
 
 			else

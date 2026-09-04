@@ -6,3 +6,4 @@ sources_old
 tmp/
 misc/
 *.DS_Store
+*TODO.md

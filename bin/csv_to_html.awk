@@ -15,7 +15,6 @@ BEGIN {
     nb_line=0;
     if (limit=="") limit=2000;
     if (limit_string=="") limit_string=50;
-    #header_replace_by_space="[_]";
     str2map(special_value_color,"|","=",special_value_color_array)
 }
 
