@@ -20,7 +20,6 @@ SCRIPT_LICENCE="GNU-GPL"
 #echo "#######################################";
 
 # Realse note
-#RELEASE_NOTES="#\n"
 RELEASE_NOTES=$RELEASE_NOTES"# 0.9b-14/04/2016: Creation script\n";
 
 # NOTES
@@ -40,9 +39,6 @@ if [ "${1^^}" == "HELP" ]; then
 	echo "# ENV         Environnement file (define folders, tools...)";
 	echo "# VARIABLE    Variable name to extract";
 	echo "#";
-	#echo "# DB_INTEGRATION   integrate data into database";
-	#echo "Usage : SELF <CONFIG> <RUNS> <SAMPLES>";
-
 	exit 0;
 fi;
 

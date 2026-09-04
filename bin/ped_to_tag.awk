@@ -5,10 +5,8 @@ BEGIN {
 }
 {
     if (NR==1) {
-        #print "HEADER " $0
         split($0, HEADER)
     } else {
-        #print SAMPLE " - "  " | " $0
         split($0, IND)
         if (SAMPLE=="" || SAMPLE==IND[2]) {
             # Fixed columns
@@ -19,7 +17,7 @@ BEGIN {
             if (IND[5]!="") TAGS = TAGS TAGS_sep TAGS_header "#sex:" IND[5]
             if (IND[6]!="") TAGS = TAGS TAGS_sep TAGS_header "#phenotype:" IND[6]
             # Additional columns
-            for (i in HEADER) { #print HEADER[i] "=" IND[i]
+            for (i in HEADER) {
                 if (i>6) {
                     if (IND[i]!="") {
                         # TAG column

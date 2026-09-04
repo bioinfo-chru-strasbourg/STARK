@@ -83,9 +83,6 @@ if [ $? -ne 0 ]; then
 	exit;
 fi;
 
-
-
-
 PARAM=$@
 DEBUG=0
 VERBOSE=0
@@ -93,8 +90,6 @@ VERBOSE=0
 eval set -- "$ARGS"
 while true
 do
-	#echo "$1=$2"
-	#echo "Eval opts";
 	case "$1" in
 		--docker-env-file)
 			DOCKER_ENV_FILE="$2"
@@ -157,7 +152,6 @@ if [ -z "$DOCKER_ENV_FILE" ]; then
 	if [ -e $SCRIPT_DIR/../.env ]; then
 		DOCKER_ENV_FILE=$SCRIPT_DIR/../.env
 	fi;
-	#echo "DOCKER_ENV_FILE empty"
 fi;
 
 [ ! -z "$DOCKER_ENV_FILE" ] && [ -e "$DOCKER_ENV_FILE" ] && source $DOCKER_ENV_FILE #&& echo "sourced"
@@ -225,7 +219,6 @@ for ANALYSIS_LOG in $(find -L $LISTENER_FOLDER -mindepth 1 -maxdepth 1 -name "ID
 	fi;
 
 	# Not finished
-	#if (($(ls $LAUNCHER_FOLDER/STARK.*.$ANALYSIS_NAME.json 2>/dev/null | wc -l))) && ! (($(ls $LAUNCHER_FOLDER/STARK.*.$ANALYSIS_NAME.info 2>/dev/null | wc -l))); then
 	if (($(ls $LAUNCHER_FOLDER/STARK.*.$ANALYSIS_NAME.info 2>/dev/null | wc -l))); then
 		(($VERBOSE)) && echo "["$(timestamp)" | INFO] STARK ANALYSIS '$ANALYSIS_NAME' finished "
 	else

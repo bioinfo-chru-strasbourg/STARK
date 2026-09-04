@@ -67,14 +67,11 @@ header;
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
 ARGS=$(getopt -o "i:o:rt:b:z:vdnh" --long "vcf:,input:,output:,reformat,threads:,bcftools:,bgzip:,verbose,debug,release,help" -- "$@" 2> /dev/null)
 
-
 PARAM=$@
 
 eval set -- "$ARGS"
 while true
 do
-	#echo "$1=$2"
-	#echo "Eval opts";
 	case "$1" in
 		-i|--vcf|--input)
 			VCF="$2"
@@ -212,10 +209,6 @@ $BCFTOOLS view --threads=$THREADS -h $VCF 2>$OUTPUT_TMP.input.header.err | awk '
         Source = arr_Source[2]
         match($0, /^##([^=]*)=.*[,<]Version=("[^"]*"|[^,]*).*[,>]$/, arr_Version);
         Version = arr_Version[2]
-        # match($0, /^##([^=]*)=.*[,<]Source=(".*"|[^,]*).*[,>]$/, arr_Source);
-        # Source = arr_Source[2]
-        # match($0, /^##([^=]*)=.*[,<]Version=(".*"|[^,]*).*[,>]$/, arr_Version);
-        #Version = arr_Version[2]
         match($0, /^##([^=]*)=.*[,<]length=([^,]*).*[,>]$/, arr_contig_length);
         contig_length = arr_contig_length[2]
         match($0, /^##([^=]*)=.*[,<]assembly=([^,]*).*[,>]$/, arr_assembly);
@@ -264,24 +257,6 @@ $BCFTOOLS view --threads=$THREADS -h $VCF 2>$OUTPUT_TMP.input.header.err | awk '
         if (substr(Version, 1 , 1) != "\"" && substr(Version, length(Version) , 1) != "\"") {
             Version = "\"" Version "\""
         }
-        # if (contig_length == "") {
-        #     contig_length = "1"
-        # }
-        # if (assembly == "") {
-        #     assembly = "unknown"
-        # }
-        # if (md5 == "") {
-        #     md5 = "unknown"
-        # }
-        # if (species == "") {
-        #     species = "\"unknown\""
-        # }
-        # if (substr(species, 1 , 1) != "\"" && substr(species, length(species) , 1) != "\"") {
-        #     species = "\"" species "\""
-        # }
-        # if (taxonomy == "") {
-        #     taxonomy = "unknown"
-        # }
 
         # Create line
         if (TAG == "INFO") {
@@ -408,7 +383,7 @@ if [ "$EXTENSION" == "gz" ]; then
     mv $OUTPUT_TMP.compressed $OUTPUT_TMP
 fi;
 
-#mv $OUTPUT_TMP $VCF_OUTPUT
+# Move final output to VCF_OUTPUT
 $BCFTOOLS view $OUTPUT_TMP > $VCF_OUTPUT
 
 # Clear

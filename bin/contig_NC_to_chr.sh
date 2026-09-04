@@ -54,19 +54,12 @@ function usage {
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
 ARGS=$(getopt -o "c:vdnh" --long "chr:,verbose,debug,release,help" -- "$@" 2> /dev/null)
-# || [ -z $@ ]
 
 PARAM=$@
-#PARAM=$(echo $@ | tr "\n" " ")
-#echo $PARAM;
-#PARAM=$(echo $ARGS | sed s/--//gi);
-#exit 0;
 
 eval set -- "$ARGS"
 while true
 do
-	#echo "$1=$2"
-	#echo "Eval opts";
 	case "$1" in
 		-c|--chr)
 			CHR="$2"

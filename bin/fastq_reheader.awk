@@ -12,7 +12,6 @@ BEGIN {
 		}
 }
 { 
-	#if(match($1, /^@/) )
 	if(NR%4 == 1)
 	{ 
 		H=$1
@@ -31,13 +30,11 @@ BEGIN {
 		I_TAG=""
 		if (I!="") {
 			gsub(" [0-9]*:N:0:[^ $]*", "",H)
-			#gsub("\n", "",H)
 			I_TAG= READ ":N:0:" I
 		}
 		if (I_TAG!="") {
 			H=H " " I_TAG 
 		}
-		#H=H " 1:N:0:CACCGGGA+GTCAATAC"
 		print H 
 		print R
 		H=""

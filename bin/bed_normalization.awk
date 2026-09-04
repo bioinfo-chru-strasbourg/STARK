@@ -19,13 +19,10 @@ function join(array, sep, start, end, result, i)
     if (length(end) == 0)
         end = 1
 
-    
-
     # result init
     result = array[start]
 
     for (i = start + 1; i <= end; i++)
-        #print i "=>" array[i]
         result = result sep array[i]
     return result
 }
@@ -44,8 +41,6 @@ function join(array, sep, start, end, result, i)
 
     # Normalizatino
     if (name == "") {line[4]=chr"_"start"_"stop}
-    #if (score == "") {line[5]="0"}
-    #if (strand !~ /[+-]/) {line[6]="+"}
 
     # Adjust number of fields
     if (nb_col<4) {nb_col=4}

@@ -30,11 +30,11 @@ include $(FUNCTIONS)
 include $(PARAM)
 
 # Release
-RELEASE_INFOS?=$(TMP_FOLDER_TMP)/$(ANALYSIS_DATE).release_infos # ANALYSIS_DATE
+RELEASE_INFOS?=$(TMP_FOLDER_TMP)/$(ANALYSIS_DATE).release_infos
 RELEASE_CMD := $(shell echo "" > $(RELEASE_INFOS) )
 
 # pipelines
-PIPELINES_INFOS?=$(TMP_FOLDER_TMP)/$(ANALYSIS_DATE).pipelines_infos # ANALYSIS_DATE
+PIPELINES_INFOS?=$(TMP_FOLDER_TMP)/$(ANALYSIS_DATE).pipelines_infos
 PIPELINES_CMD := $(shell echo "" > $(PIPELINES_INFOS) )
 PIPELINES_COMMENT := "\#STEP_TYPE:STEP_NAME:STEP_DESCRIPTION:STEP_PARAMETERS"
 PIPELINES_CMD := $(shell echo "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
@@ -132,7 +132,6 @@ VCF_REPORT_FILES=	$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RU
 		$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).reports/$(call sample,$(RUN_SAMPLE)).final.vcf.gz.tbi )
 
 
-#REPORT_FILES_EXT= final.vcf final.vcf.idx final.vcf.gz final.vcf.gz.tbi full.vcf full.vcf.idx full.vcf.gz full.vcf.gz.tbi final.tsv full.tsv final.vcf.metrics/metrics full.vcf.metrics/metrics config  $(ANALYSIS_DATE).final.vcf $(ANALYSIS_DATE).final.vcf.idx $(ANALYSIS_DATE).final.vcf.gz $(ANALYSIS_DATE).final.vcf.gz.tbi $(ANALYSIS_DATE).full.vcf $(ANALYSIS_DATE).full.vcf.idx $(ANALYSIS_DATE).full.vcf.gz $(ANALYSIS_DATE).full.vcf.gz.tbi $(ANALYSIS_DATE).final.tsv $(ANALYSIS_DATE).full.tsv $(ANALYSIS_DATE).config
 REPORT_FILES_EXT= final.vcf.gz final.vcf.gz.tbi full.vcf.gz full.vcf.gz.tbi final.vcf.metrics/metrics full.vcf.metrics/metrics config $(ANALYSIS_DATE).final.vcf.gz $(ANALYSIS_DATE).final.vcf.gz.tbi $(ANALYSIS_DATE).full.vcf.gz $(ANALYSIS_DATE).full.vcf.gz.tbi $(ANALYSIS_DATE).config
 
 REPORT_FILES=$(foreach EXT,$(REPORT_FILES_EXT), $(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).reports/$(call sample,$(RUN_SAMPLE)).$(EXT) ) )
@@ -205,7 +204,6 @@ $(RELEASE): $(RELEASE).empty.vcf
 
 
 ## Create all reports for all SAMPLES
-#$(FINAL_REPORT): %.$(ANALYSIS_DATE).report.summary $(REPORTS)
 $(FINAL_REPORT): $(FINAL_REPORT).report.header $(REPORTS)
 	@echo " " >> $@
 	# Creating Report $@ with Reports $^
@@ -237,10 +235,7 @@ CLEAN=	$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/
 	$(RELEASE).empty.vcf \
 	$(PIPELINES_INFOS)
 
-#$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).*.transcripts ) \
-# from_manifest.interval_list.bed
 
-
-clean: #$(CLEAN)
+clean:
 	echo $(CLEAN)
 	-rm -f $(CLEAN)

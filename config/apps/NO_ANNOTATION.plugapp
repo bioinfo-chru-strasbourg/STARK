@@ -16,28 +16,6 @@ APP_DESCRIPTION="PlugAPP to disable annotation and minimalize calculation, but k
 # ANALYSIS PARAMETERS
 #######################
 
-# HOWARD ANNOTATION/PRIOTITIZATION/TRANSLATION CONFIGURATION
-
-# ANNOTATION
-# Default annotation with HOWARD for intermediate VCF (for each caller) used by default with annotation rule "howard"
-#ANNOTATION_TYPE="core,frequency,score,annotation,prediction,snpeff,snpeff_hgvs" "core,symbol,location,outcome,hgvs,snpeff,snpeff_hgvs,snpeff_split"
-HOWARD_ANNOTATION="null"
-# Default annotation with HOWARD for minimal VCF annotation (rule howard_minimal)
-HOWARD_ANNOTATION_MINIMAL="null"
-# Default annotation with HOWARD for report
-HOWARD_ANNOTATION_REPORT="null"
-# Default annotation with HOWARD for whole analysis
-HOWARD_ANNOTATION_ANALYSIS="null" # no more annotation
-
-# CALCULATION
-# Default calculation with HOWARD for all VCF/pipelines
-HOWARD_CALCULATION="VARTYPE,NOMEN"
-# Default minimal calculation with HOWARD for final VCF report
-HOWARD_CALCULATION_MINIMAL="VARTYPE,NOMEN"
-# Default calculation with HOWARD for final VCF report
-HOWARD_CALCULATION_REPORT="FindByPipelines,VAF_STATS,DP_STATS,VARTYPE,NOMEN"
-
-
 # METRICS SNPEFF (default 0)
 # Generate snpEff variant metrics from VCF
 METRICS_SNPEFF=0

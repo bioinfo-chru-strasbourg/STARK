@@ -94,13 +94,10 @@ ARGS=$(getopt -o "e:f:o:vdnh" --long "env:,app:,application:,files:,folder:,fold
 	exit 1
 eval set -- "$ARGS"
 
-#echo $PARAM
 PARAM=$@
 
 while true
 do
-	#echo "$1=$2"
-	#echo "Eval opts";
 	case "$1" in
 		-e|--env|--app|--application)
 			APP="$2"
@@ -236,7 +233,6 @@ DEBUG=$(echo $DEBUG | awk '{print $0+0}')
 
 
 ### APPLICATION
-
 ENV=$(find_app "$APP" "$STARK_FOLDER_APPS")
 source_app "$APP" "$STARK_FOLDER_APPS" 1
 
@@ -255,7 +251,6 @@ fi;
 if [ ! -z "$FOLDER" ] && [ ! -z "$PATTERNS" ]; then
 	PATTERNS_PARAM="-name '"$(echo "$PATTERNS" | sed "s/ /' -or -name '/gi")"'"
 	FIND_CMD="find $FOLDER -mindepth $FOLDER_MINDEPTH -maxdepth $FOLDER_MAXDEPTH $PATTERNS_PARAM"
-	#FILES=$(find $FOLDER -mindepth $FOLDER_MINDEPTH -maxdepth $FOLDER_MAXDEPTH $PATTERNS_PARAM | tac | sed "s#$FOLDER/\(.*\)#\1:$FOLDER/\1#gi" | tr "\n" " ")
 	FILES=$(eval $FIND_CMD | tac | sed "s#$FOLDER/\(.*\)#\1:$FOLDER/\1#gi" | tr "\n" " ")
 fi;
 
@@ -274,8 +269,6 @@ fi;
 
 if [ "$DAS_URL" == "" ]; then
 	IGV_SESSION_JSON=""
-# elif [ -z "$IGV_SESSION_JSON" ]; then
-# 	IGV_SESSION_JSON="igv_session.json"
 fi;
 
 if (($VERBOSE)); then
@@ -307,7 +300,6 @@ if (($DEBUG)); then
 	echo "#[INFO] FILES=$FILES"
 	echo "#[INFO] PATTERNS=$PATTERNS"
 	echo "#[INFO] IGV_SESSION=$IGV_SESSION"
-	#exit 0
 fi;
 
 
@@ -424,7 +416,6 @@ for file_infos in $FILES; do
 					(($VERBOSE)) && echo "#[WARN] file JSON '$FORMAT' not processed!"
 				fi;
 			else
-				#(($VERBOSE)) && echo "#[WARN] file index not found!"
 				(($VERBOSE)) && echo "#[WARN] file '$FORMAT' do not contain variants!"
 			fi;
 		else
@@ -444,7 +435,6 @@ for file_infos in $FILES; do
 			(($DEBUG)) && echo "#[INFO] file '$FORMAT' regions processed"
 			# GMT
 			if [ "$GMT" != "" ]; then
-				#Regions=$Regions$"\n"$(cat $file_path | awk '{print "<Region chromosome=\""$1"\" description=\""$4"\" start=\""$2"\" end=\""$3"\"/>'$"\n"'"}')
 				echo -e "$file		"$(cat $file_path | cut -f4 | sort -u | tr "\n" "\t") >> $GMT
 				(($DEBUG)) && echo "#[INFO] file '$FORMAT' GMT processed"
 			else

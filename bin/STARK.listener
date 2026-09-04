@@ -292,7 +292,6 @@ fi;
 
 
 if ((1)) && (($DEBUG)); then
-#if (($DEBUG)); then
 	echo "APP:$APP"
 	echo "ENV:$ENV"
 	echo "INPUT_FOLDER:$INPUT_FOLDER"
@@ -323,19 +322,13 @@ if ((1)) && (($DEBUG)); then
 fi;
 
 
-# FOR DEV
-#rm $FOLDER_LOG/ID-*-NAME-*.log
-
-
 
 while ((1)); do
 
 	# foreach input folder
 	for IF in $INPUT_FOLDER; do
 		# for each analysis folder
-		#for IFA in $IF/*; do
 		for IFA in $(find -L $IF -mindepth 1 -maxdepth 1 -type d -mtime -$DAYS); do
-			#MD5=$(echo $IFA | md5sum | awk '{print $1}')
 			MD5=$(find -L $IFA -maxdepth 1 -xtype f -print0 | xargs -0 sha1sum | cut -b-40 | sha1sum | awk '{print $1}')
 			RUN_NAME=$(basename $IFA)
 			ID="ID-$MD5-NAME-$RUN_NAME"
@@ -364,7 +357,6 @@ while ((1)); do
 							CONDITION_TEST=1
 							break
 						fi;
-						#CONDITION_TEST=$(($CONDITION_TEST+$CONDITION_AND_TEST))
 					done;
 					(($VERBOSE)) && echo "["$(timestamp)" | INFO]    Condition '$C' test '$CONDITION_TEST'"
 					CMD=""
@@ -382,13 +374,10 @@ while ((1)); do
 
 
 						if [ "$COMMAND" == "LAUNCHER" ]; then
-							#CMD="curl -s -X POST -H 'Content-Type: application/json' -d '{\"run\":\"$IFA\"}' $LAUNCHER"
-							#CMD="curl -s -X POST -H 'Content-Type: application/json' -H \"Authorization: Bearer $TOKEN\" -d '{\"run\":\"$IFA\"}' $LAUNCHER"
 							JSON="{\"run\":\"$IFA\"}"
 							if [ ! -z "$DEFAULT_THREADS" ]; then
 								JSON="{\"run\":\"$IFA\", \"threads\":$DEFAULT_THREADS}"
 							fi;
-							#CMD="curl -s -X POST -H 'Content-Type: application/json' -H \"X-API-Key: $STARK_API_KEY\" -d '{\"run\":\"$IFA\"}' $LAUNCHER"
 							CMD="curl -s -X POST -H 'Content-Type: application/json' -H \"X-API-Key: $STARK_API_KEY\" -d '$JSON' $LAUNCHER"
 						elif [ "$COMMAND" == "DOCKER" ]; then
 							CMD="STARK --docker-stark-image=$DOCKER_STARK_IMAGE --docker-parameters='--rm;-d;--name=$ID' --run=$IFA"
@@ -398,9 +387,6 @@ while ((1)); do
 						#curl -X POST -H "Content-Type: application/json" -d @../data/cats.json http://STARK-service-launcher:8000/analysis
 
 
-						#--request POST \
-
-						#CMD="$COMMAND --run=$IFA"
 						EXEC_DATE=$(date '+%Y%m%d-%H%M%S')
 						(($VERBOSE)) && echo "["$(timestamp)" | INFO] Analysis/Run '$RUN_NAME' - folder '$IFA' [$ID] TO LAUNCH"
 						(($VERBOSE)) && echo "["$(timestamp)" | INFO] => Launch analysis '$IFA' with command '$COMMAND'"
@@ -428,7 +414,6 @@ while ((1)); do
 						fi;
 					else
 						(($VERBOSE)) && echo "["$(timestamp)" | INFO] Analysis/Run '$RUN_NAME' - folder '$IFA' [$MD5] NOT TO LAUNCH"
-						#(($VERBOSE)) && echo "["$(timestamp)" | INFO] => DO NOT Launch analysis '$IFA' with command '$COMMAND'"
 						rm $MD5_LOG # UnLockfile
 					fi;
 				else

@@ -210,8 +210,7 @@ def sort_output(output):
 	tmp_name = output+"_unsorted_"+str(time.time())
 	os.rename(output, tmp_name)
 	#http://azaleasays.com/2014/02/21/sort-chromosome-names-with-linux-sort/
-	# get_stdout("sort -k1,1 -V -s " + tmp_name + " > " + output)
-	get_stdout("sort -k1,1V -k2,2n " + tmp_name + " > " + output) #Mateusz
+	get_stdout("sort -k1,1V -k2,2n " + tmp_name + " > " + output)
 	os.remove(tmp_name)
 
 def main_download_and_format(args):
