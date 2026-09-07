@@ -21,6 +21,7 @@ NB_VARIANTS_TO_SHOW?=20
 NB_VARIANTS_TO_SHOW_FULL?=10
 REPORT_VARIANTS_FULL?=0
 REPORT_SECTIONS?=ALL
+REMOVE_INFO_DP_BY_VALIDATION_DEPTH?=1
 
 
 # Analysis Summary
@@ -133,18 +134,18 @@ REPORT_SECTIONS?=ALL
 	# Cleaning
 	rm -f $@.merge_step0.vcf;
 	# Add validation flags depth and alignments depth (if files exist)
-	if ((1)); then \
+	if (( $(REMOVE_INFO_DP_BY_VALIDATION_DEPTH) )); then \
 		if (( $$(ls $$(dirname $$(dirname $@))/*bam.metrics/*.validation.flags.Design.bed | wc -l) )) || (( $$(ls $$(dirname $$(dirname $@))/*bam.metrics/*.design.bed.HsMetrics.per_base_coverage.gz | wc -l) )); then \
 			if (( $$(ls $$(dirname $$(dirname $@))/*bam.metrics/*.validation.flags.Design.bed | wc -l) )); then \
 				cat $$(dirname $$(dirname $@))/*bam.metrics/*.validation.flags.Design.bed | sort -k1,1 -k2,2 | $(BEDTOOLS) merge -c 10 -o distinct | $(BGZIP) --threads=$(THREADS_BY_SAMPLE) -c --index --index-name $@.tmp.flags.bed.gz.tbi > $@.tmp.flags.bed.gz; \
-				$(BCFTOOLS) annotate --threads=$(THREADS_BY_SAMPLE) -a $@.tmp.flags.bed.gz -c CHROM,POS,TO,INFO/Validation_Depth_Flags -l Validation_Depth_Flags:unique $@.tmp.merged.reheaded.vcf > $@.tmp.merged.reheaded.flags.vcf; \
+				$(BCFTOOLS) annotate --threads=$(THREADS_BY_SAMPLE) -x INFO/DP -a $@.tmp.flags.bed.gz -c CHROM,POS,TO,INFO/Validation_Depth_Flags -l Validation_Depth_Flags:unique $@.tmp.merged.reheaded.vcf > $@.tmp.merged.reheaded.flags.vcf; \
 			else \
 				cp $@.tmp.merged.reheaded.vcf $@.tmp.merged.reheaded.flags.vcf; \
 			fi; \
 			if (( $$(ls $$(dirname $$(dirname $@))/*bam.metrics/*.design.bed.HsMetrics.per_base_coverage.gz | wc -l) )); then \
 				zcat $$(dirname $$(dirname $@))/*bam.metrics/*.design.bed.HsMetrics.per_base_coverage.gz | cut -f1,2,4 | grep ^chrom -v | sort -k1,1 -k2,2n | bgzip -c > $@.tmp.depth.tab.gz; \
 				tabix -s1 -b2 -e2 $@.tmp.depth.tab.gz; \
-				$(BCFTOOLS) annotate --threads=$(THREADS_BY_SAMPLE) -a $@.tmp.depth.tab.gz -c CHROM,POS,INFO/Validation_Depth -l Validation_Depth:avg $@.tmp.merged.reheaded.flags.vcf > $@; \
+				$(BCFTOOLS) annotate --threads=$(THREADS_BY_SAMPLE) -x INFO/DP -a $@.tmp.depth.tab.gz -c CHROM,POS,INFO/Validation_Depth -l Validation_Depth:avg $@.tmp.merged.reheaded.flags.vcf > $@; \
 			else \
 				cp $@.tmp.merged.reheaded.flags.vcf $@; \
 			fi; \

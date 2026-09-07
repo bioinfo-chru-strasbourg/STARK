@@ -18,7 +18,7 @@
 
 # Normalization of variants after calling
 %.vcf: %.variantnormalization.vcf
-	$(BCFTOOLS) norm -m- --multi-overlaps 0 -f $(GENOME) $< | $(BCFTOOLS) norm --rm-dup exact | $(BCFTOOLS) annotate -x INFO/DP | $(BCFTOOLS) +setGT -- -t . -n 0 | $(BCFTOOLS) +fixploidy -- | $(BCFTOOLS) +fill-tags -- -t all > $@
+	$(BCFTOOLS) norm -m- --multi-overlaps 0 -f $(GENOME) $< | $(BCFTOOLS) norm --rm-dup exact | $(BCFTOOLS) +setGT -- -t . -n 0 | $(BCFTOOLS) +fixploidy -- | $(BCFTOOLS) +fill-tags -- -t all > $@
 
 
 
