@@ -440,7 +440,7 @@ POST_ALIGNMENT_STEPS="sorting markduplicates realignment recalibration compress"
 
 
 
-# POST CALLING STEPS (default " ")
+# POST CALLING STEPS (default "variantnormalization")
 # All steps after calling
 # This sequence correspond to the VCF file generated just after the calling
 # Format: "step1 step2 step3"
@@ -451,18 +451,20 @@ POST_ALIGNMENT_STEPS="sorting markduplicates realignment recalibration compress"
 # Check available steps by using the command: STARK --pipelines_infos
 # Available steps (not up-to-date):
 #    sorting: VCF sort
-#    normalization: VCF normalization
+#    normalization: VCF normalization for post calling by splitting variants into one line (using BCFTools)
+#    variantnormalization: VCF normalization splitting variant in 1 line, removing duplicates, removing INFO/DP, fixing GT ploidy and tags (using BCFTools)
 #    variantrecalibration: VCF recalibration (using GATK4). Include variantfiltration if no recalibration possible
 #    variantfiltration: VCF filtration (using GATK4)
 # Usually:
 #    " " to avoid at this pipeline step (see POST_CALLING_MERGING_STEPS)
-#    "normalization variantfiltration" for gene panel
-#    "normalization variantrecalibration" for exome or genome
-POST_CALLING_STEPS=" "
+#    "variantnormalization" to prevent multiallelic or multiploidy inconsistency
+#    "variantnormalization normalization variantfiltration" for gene panel
+#    "variantnormalization normalization variantrecalibration" for exome or genome
+POST_CALLING_STEPS="variantnormalization"
 
 
 
-# POST CALLING MERGING STEPS (default "sorting normalization variantrecalibration")
+# POST CALLING MERGING STEPS (default "sorting variantrecalibration variantfiltration")
 # All steps after merging calling
 # This sequence correspond to the VCF file generated after the merge of VCF calling
 # Format: "step1 step2 step3"
@@ -473,13 +475,14 @@ POST_CALLING_STEPS=" "
 # Check available steps by using the command: STARK --pipelines_infos
 # Available steps (not up-to-date):
 #    sorting: VCF sort
-#    normalization: VCF normalization
+#    normalization: VCF normalization for post calling by splitting variants into one line (using BCFTools)
+#    variantnormalization: VCF normalization splitting variant in 1 line, removing duplicates, removing INFO/DP, fixing GT ploidy and tags (using BCFTools)
 #    variantrecalibration: VCF recalibration (using GATK4). Include variantfiltration if no recalibration possible
 #    variantfiltration: VCF filtration (using GATK4)
 # Usually:
 #    "sorting normalization variantrecalibration" for exome or genome
 #    "sorting normalization variantfiltration" for gene panel
-POST_CALLING_MERGING_STEPS="sorting normalization variantrecalibration variantfiltration"
+POST_CALLING_MERGING_STEPS="sorting variantrecalibration variantfiltration"
 
 
 

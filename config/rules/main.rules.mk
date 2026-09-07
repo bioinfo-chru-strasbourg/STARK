@@ -95,7 +95,7 @@ REMOVE_INTERMEDIATE_SAM?=1
 
 # VCF NORMALIZATION with BCFTOOLS
 %.vcf: %.normalization.vcf
-	$(BCFTOOLS) norm -m- -f $(GENOME) $< | $(BCFTOOLS) norm --rm-dup exact | $(BCFTOOLS) annotate -x INFO/DP | $(BCFTOOLS) +setGT -- -t . -n 0 | $(BCFTOOLS) +fixploidy -- | $(BCFTOOLS) +fill-tags -- -t all > $@
+	$(BCFTOOLS) norm -m- --multi-overlaps 0 -f $(GENOME) $<  > $@
 
 
 # MERGE SNP and InDel VCF
