@@ -133,7 +133,7 @@ WORKDIR $WORKDIR
 # This will install system packages, python packages and scripts to install tools
 
 #ENV YUM_INSTALL="autoconf automake htop bc bzip2 bzip2-devel curl gcc gcc-c++ git make mlocate ncurses-devel tbb-devel unzip rsync wget which xz xz-devel zlib zlib-devel docker java-17 java-1.8.0 curl-devel openssl-devel htslib diffutils parallel aria2 jq"
-ENV PACKAGES_INSTALL="autoconf automake htop tree bc bzip2 bzip2-devel pigz curl gcc gcc-c++ git make mlocate ncurses-devel tbb-devel unzip rsync wget which xz xz-devel zlib zlib-devel java-21 java-1.8.0 curl-devel openssl-devel diffutils parallel aria2 jq"
+ENV PACKAGES_INSTALL="autoconf automake htop tree bc bzip2 bzip2-devel curl pigz gcc gcc-c++ git make mlocate ncurses-devel tbb-devel unzip rsync wget which xz xz-devel zlib zlib-devel java-21 java-1.8.0 curl-devel openssl-devel diffutils parallel aria2 jq"
 
 ENV PYTHON_MODULE=" pathos numpy scipy argparse pandas bx-python requests"
 ENV PERL_INSTALL=" perl perl-Switch perl-Time-HiRes perl-Data-Dumper perl-Digest-MD5 perl-Tk perl-devel"
@@ -145,10 +145,17 @@ ENV GET_TOOL_SOURCE=$SOURCES/get_tool_source.sh
 ENV TOOL_INIT=$SOURCES/tool_init.sh
 ENV TOOL_CHECK=$SOURCES/tool_check.sh
 
-
 # System installation
 RUN echo "#[INFO] SYSTEM Packages installation" && \
-	${SOURCES}/install_system.sh --yum_install="${PACKAGES_INSTALL}" --yum_param="${YUM_PARAM}"
+	dnf install epel-release -y && \
+	dnf $YUM_PARAM config-manager --set-enabled crb 
+# curl-minimal is preinstalled in almalinux, installing curl (full) conflicts with it
+RUN dnf swap -y curl-minimal curl && \
+	dnf $YUM_PARAM install -y $PACKAGES_INSTALL && \
+	dnf clean all && \
+	rm -rf /var/cache/dnf
+
+RUN echo "alias ll='ls -lah'" >> ~/.bashrc
 
 
 #############
@@ -167,9 +174,9 @@ ENV PATH=$TOOLS/$TOOL_NAME/current/bin:$PATH
 
 # INSTALL
 RUN echo "#[INFO] SYSTEM Mamba installation '$TOOL_NAME:$TOOL_VERSION'" && \
-    wget $TARBALL_LOCATION/Miniforge3-$TOOL_VERSION-$(uname)-$(uname -m).sh -O $TARBALL && \
-    bash $TARBALL -b -p $DEST && \
-    rm -f $TARBALL && \
+	wget $TARBALL_LOCATION/Miniforge3-$TOOL_VERSION-$(uname)-$(uname -m).sh -O $TARBALL && \
+	bash $TARBALL -b -p $DEST && \
+	rm -f $TARBALL && \
 	find ${DEST} -follow -type f -name '*.a' -or -name '*.pyc' -delete && \
 	$MAMBA clean --force-pkgs-dirs --all --yes && \
 	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current ;
@@ -192,8 +199,8 @@ ENV PYTHON=$PYTHON_ENV/bin/python
 
 # INSTALL
 RUN echo "#[INFO] SYSTEM Python installation '$TOOL_NAME:$TOOL_VERSION'" && \
-    $MAMBA create -y python=$TOOL_VERSION -p ${DEST} && \
-    $MAMBA clean -y --all && \
+	$MAMBA create -y python=$TOOL_VERSION -p ${DEST} && \
+	$MAMBA clean -y --all && \
 	ln -s $TOOL_VERSION $TOOLS/$TOOL_NAME/current && \
 	$PYTHON -m pip install $PYTHON_MODULE && \
 	find ${DEST} -follow -ignore_readdir_race \( -name '*.a' -o -name '*.pyc' -o -name '*.txt' -o -name '*.md' -o -name '*.pdf' -o  -name '__pycache__' \) -exec rm -rf {} + || true
@@ -575,7 +582,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	$TOOLS/$TOOL_NAME/$TOOL_VERSION/bin/python -m pip install -e $TOOL_DEST && \
 	$TOOL_DEST/bin/variantconvert init -d $CONFIGS_VARIANTCONVERT_FOLDER && \
 	for variantconvert_assembly in $CONFIGS_VARIANTCONVERT_FOLDER/*; do \
-		$TOOL_DEST/bin/variantconvert config -c $variantconvert_assembly/* --set GENOME.path=$GENOMES/$(basename $variantconvert_assembly)/$(basename $variantconvert_assembly).fa; \
+	$TOOL_DEST/bin/variantconvert config -c $variantconvert_assembly/* --set GENOME.path=$GENOMES/$(basename $variantconvert_assembly)/$(basename $variantconvert_assembly).fa; \
 	done && \
 	$MAMBA clean -y --all && \
 	$TOOL_CHECK ;
@@ -608,7 +615,7 @@ RUN echo "#[INFO] TOOL installation '$TOOL_NAME:$TOOL_VERSION'" && \
 	$MAMBA clean -y --all && \
 	howard query --input=$TOOL_DEST/tests/data/example.vcf --query="SELECT 1" && \
 	$TOOL_CHECK ;
-	
+
 
 ##########
 # MKDOCS #
