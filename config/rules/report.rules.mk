@@ -133,7 +133,7 @@ REMOVE_INFO_DP_BY_VALIDATION_DEPTH?=1
 	$(BCFTOOLS) concat $@.tmp.merged.SNPINDELS.vcf.gz $@.tmp.merged.OTHERS.vcf.gz -a --threads=$(THREADS_BY_SAMPLE) | $(BCFTOOLS) sort | $(BCFTOOLS) norm --threads=$(THREADS_BY_SAMPLE) --rm-dup exact | $(BCFTOOLS) +fill-tags -- -t AN,AC,AF,AC_Hemi,AC_Hom,AC_Het,ExcHet,HWE,MAF,NS | $(BCFTOOLS) annotate -h $@.tmp.annotate.new_header.txt --threads=$(THREADS_BY_SAMPLE) -o $@.tmp.merged.reheaded.vcf;
 	# Cleaning
 	rm -f $@.merge_step0.vcf;
-	# Add validation flags depth and alignments depth (if files exist)
+	# Remove INFO/DP and add validation flags depth and alignments depth (if files exist)
 	if (( $(REMOVE_INFO_DP_BY_VALIDATION_DEPTH) )); then \
 		if (( $$(ls $$(dirname $$(dirname $@))/*bam.metrics/*.validation.flags.Design.bed | wc -l) )) || (( $$(ls $$(dirname $$(dirname $@))/*bam.metrics/*.design.bed.HsMetrics.per_base_coverage.gz | wc -l) )); then \
 			if (( $$(ls $$(dirname $$(dirname $@))/*bam.metrics/*.validation.flags.Design.bed | wc -l) )); then \
@@ -184,13 +184,13 @@ REMOVE_INFO_DP_BY_VALIDATION_DEPTH?=1
 	$(BCFTOOLS) view --threads=$(THREADS_BY_SAMPLE) -S $@.pipelines $*.full.vcf > $@
 	-rm -f $@.tmp* $@.pipelines
 
-# Generate FIANL VCF
+# Generate FINAL VCF
 %.final.vcf: %.full.vcf
 	-rm -f $<.tmp.*
 	for S in $$(grep "^#CHROM" $< | cut -f10-); do \
 		#$(BCFTOOLS) view --threads=$(THREADS_BY_SAMPLE) -U -s $$S $< | $(BCFTOOLS) view --threads=$(THREADS_BY_SAMPLE) -e 'FORMAT/GT="0/0"' | sed '/^#CHROM/s/'$$S'/'$$(echo $(@F) | cut -d\. -f1)'/' > $<.tmp.$$S; \
 		#$(BCFTOOLS) view --threads=$(THREADS_BY_SAMPLE) -U -s $$S $< | $(BCFTOOLS) sort | $(BCFTOOLS) view --threads=$(THREADS_BY_SAMPLE) -e 'FORMAT/GT="0/0"' | sed '/^#CHROM/s/'$$S'/'$$(echo $(@F) | cut -d\. -f1)'/' > $<.tmp.$$S; \
-		$(BCFTOOLS) view --threads=$(THREADS_BY_SAMPLE) -U -s $$S $< | $(BCFTOOLS) sort | $(BCFTOOLS) view --threads=$(THREADS_BY_SAMPLE) -e 'FORMAT/GT="0/0"' | sed '/^#CHROM/s/'$$S'/'$$(echo $(@F) | cut -d\. -f1)'/' | sed 's/Number=R/Number=./gi' > $<.tmp.$$S; \
+		$(BCFTOOLS) view --threads=$(THREADS_BY_SAMPLE) -U -s $$S $< | $(BCFTOOLS) sort | $(BCFTOOLS) view --threads=$(THREADS_BY_SAMPLE) -e 'FORMAT/GT="0/0"' | sed '/^#CHROM/s/'$$S'/'$$(echo $(@F) | cut -d\. -f1)'/' | sed '/^##/s/Number=R/Number=./gi' > $<.tmp.$$S; \
 		$(BGZIP) --threads=$(THREADS_BY_SAMPLE) -f $<.tmp.$$S; \
 		$(TABIX) -f $<.tmp.$$S.gz; \
 	done;
@@ -212,6 +212,7 @@ REMOVE_INFO_DP_BY_VALIDATION_DEPTH?=1
 	fi;
 	rm -f $<.tmp.*.gz* $@.tmp*
 
+# Generate report files for entire run
 %.variants: $(VCF_REPORT_FILES) %.variants_full
 	# List of final VCF files
 	echo $^ | tr " " "\n" | tr "\t" "\n" | grep "final.vcf.gz$$" > $@.tmp.vcf_list

@@ -1,5 +1,5 @@
 ############################
-# GATK4 Rules
+# Variant Normalization Rules
 # Release: 1.0.0
 # Date: 07/09/2026
 # Author: Antony Le Bechec
