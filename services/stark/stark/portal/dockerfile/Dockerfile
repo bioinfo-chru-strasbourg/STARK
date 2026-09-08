@@ -5,6 +5,8 @@ RUN echo "#[INFO] Installing dependencies" && \
     dnf install -y python3 python3-pip git && \
     pip3 install mkdocs mkdocs-material pymdown-extensions plotly mkdocs-macros-plugin mkdocs-include-dir-to-nav mkdocs-include-markdown-plugin "markdown-exec[ansi]" && \
     dnf clean all && \
+    mkdir -p /root/.cache/pip && \
+    chmod -R 777 /root/.cache/pip && \
     pip3 cache purge
 
 
