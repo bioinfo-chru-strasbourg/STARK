@@ -452,7 +452,7 @@ POST_ALIGNMENT_STEPS="sorting markduplicates realignment recalibration compress"
 # Available steps (not up-to-date):
 #    sorting: VCF sort
 #    normalization: VCF normalization for post calling by splitting variants into one line (using BCFTools)
-#    variantnormalization: VCF normalization splitting variant in 1 line, removing duplicates, removing INFO/DP, fixing GT ploidy and tags (using BCFTools)
+#    variantnormalization: VCF normalization splitting variant in 1 line, removing duplicates, fixing GT ploidy and tags (using BCFTools)
 #    variantrecalibration: VCF recalibration (using GATK4). Include variantfiltration if no recalibration possible
 #    variantfiltration: VCF filtration (using GATK4)
 # Usually:
@@ -476,7 +476,7 @@ POST_CALLING_STEPS="variantnormalization"
 # Available steps (not up-to-date):
 #    sorting: VCF sort
 #    normalization: VCF normalization for post calling by splitting variants into one line (using BCFTools)
-#    variantnormalization: VCF normalization splitting variant in 1 line, removing duplicates, removing INFO/DP, fixing GT ploidy and tags (using BCFTools)
+#    variantnormalization: VCF normalization splitting variant in 1 line, removing duplicates, fixing GT ploidy and tags (using BCFTools)
 #    variantrecalibration: VCF recalibration (using GATK4). Include variantfiltration if no recalibration possible
 #    variantfiltration: VCF filtration (using GATK4)
 # Usually:
