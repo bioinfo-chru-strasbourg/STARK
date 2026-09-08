@@ -10,7 +10,6 @@ version: '3'
 
 services:
 
-
     # STARK IMAGES
     ##############
 
@@ -26,19 +25,12 @@ services:
                 - THREADS=${DOCKER_STARK_BUILD_THREADS}
                 - REPO_SOURCES=${DOCKER_STARK_BUILD_SOURCES_URL}
                 - REMOVE_SOURCES=1
-                - HTTP_PROXY=${HTTP_PROXY}
-                - HTTPS_PROXY=${HTTPS_PROXY}
-                - FTP_PROXY=${FTP_PROXY}
-                - http_proxy=${http_proxy}
-                - https_proxy=${https_proxy}
-                - ftp_proxy=${ftp_proxy}
         container_name: STARK
         command: --help
         # depends_on:
         #     - stark-sources
         networks:
             - stark
-
 
     # STARK SETUP
     stark-setup:
@@ -55,7 +47,6 @@ services:
             - stark
         networks:
             - stark
-
 
     # STARK DATABASES POPULATION
     stark-databases:
@@ -77,7 +68,6 @@ services:
         networks:
             - stark
 
-            
 # NETWORK
 ###########
 
