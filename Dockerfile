@@ -147,8 +147,15 @@ ENV TOOL_CHECK=$SOURCES/tool_check.sh
 
 
 # System installation
+# curl-minimal is preinstalled in almalinux, installing curl (full) conflicts with it
 RUN echo "#[INFO] SYSTEM Packages installation" && \
-	${SOURCES}/install_system.sh --yum_install="${PACKAGES_INSTALL}" --yum_param="${YUM_PARAM}"
+	dnf install epel-release -y && \
+	dnf $YUM_PARAM config-manager --set-enabled crb && \
+	dnf swap -y curl-minimal curl && \
+	dnf $YUM_PARAM install -y $PACKAGES_INSTALL && \
+	dnf clean all && \
+	rm -rf /var/cache/dnf && \
+	echo "alias ll='ls -lah'" >> ~/.bashrc
 
 
 #############
