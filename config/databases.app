@@ -183,18 +183,22 @@ export CTAT_LIB_SOURCE
 if [ -z $CTAT_DATABASES_GENE_SOURCE ] || [ "$CTAT_DATABASES_GENE_SOURCE" == "" ]; then
 	CTAT_DATABASES_GENE_SOURCE="refgene"
 fi;
-#CTAT_DATABASES_GENE_SOURCE="gencode"
 export CTAT_DATABASES_GENE_SOURCE
 
 # Genome for STAR alignement. By default, the genome used for STAR alignement in STAR fusion will be the same as the genome used for DNA alignement (GENOME variable). However, if you want to use a different genome for STAR alignement in STAR fusion, you can set the GENOME_RNA variable to the path of the genome fasta file to use for STAR alignement in STAR fusion. Note that if you change the genome for STAR alignement in STAR fusion, you should also change the genome for STAR fusion annotation (STAR_FUSION_GENOME) to the same value to ensure consistency between fusion detection and annotation. This genome also depend on the gene source for CTAT lib (CTAT_DATABASES_GENE_SOURCE) because the genome used for STAR alignement in STAR fusion should be the same as the genome used for the gene annotation in CTAT lib to ensure consistency between fusion detection and annotation. By default, GENOME_RNA is set to the same genome as GENOME variable, but with a different path that depends on the gene source for CTAT lib (CTAT_DATABASES_GENE_SOURCE). If CTAT_DATABASES_GENE_SOURCE is set to "refgene", the genome used for STAR alignement in STAR fusion will be based on refGene annotation and will be located in $GENOME.ctat/ref_genome.fa. If CTAT_DATABASES_GENE_SOURCE is set to "gencode", the genome used for STAR alignement in STAR fusion will be based on gencode annotation and will be located in $GENOME.ctat/gencode/ref_genome.fa.
 # Default genome for STAR alignement in STAR fusion is based on refGene annotation. Use to switch path if gene source change by application inheritance (e.g. RNASEQ.app inherit from default.app)
-refpath="$GENOME.ctat/refgene/ref_genome.fa"
-gencodepath="$GENOME.ctat/gencode/ref_genome.fa"
-case "$GENOME_RNA" in
-    ""|"$refpath"|"$gencodepath")
-        GENOME_RNA="$GENOME.ctat/$CTAT_DATABASES_GENE_SOURCE/ref_genome.fa"
-        ;;
-esac
+# refpath="$GENOME.ctat/refgene/ref_genome.fa"
+# gencodepath="$GENOME.ctat/gencode/ref_genome.fa"
+# case "$GENOME_RNA" in
+#     ""|"$refpath"|"$gencodepath")
+#         GENOME_RNA="$GENOME.ctat/$CTAT_DATABASES_GENE_SOURCE/ref_genome.fa"
+#         ;;
+# esac
+# export GENOME_RNA
+if [ -z "${GENOME_RNA+x}" ] || [ "$ASSEMBLY" != "$_GENOME_RNA_ASSEMBLY" ]; then
+	GENOME_RNA="$GENOME.ctat/$CTAT_DATABASES_GENE_SOURCE/ref_genome.fa"
+ 	_GENOME_RNA_ASSEMBLY="$ASSEMBLY"
+fi
 export GENOME_RNA
 
 
