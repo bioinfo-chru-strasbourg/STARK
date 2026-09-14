@@ -316,9 +316,9 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 	# create directory
 	mkdir -p $(@D)
 	touch $@.txt
-	echo -e $$((($$(zcat $*.R2.fastq.gz | head -n1 | wc -l))) && echo "mode\tPaired-End" || echo "mode\tSingle-End") >> $@.txt
+	echo -e $$((($$($(UNGZ) -c $*.R2.fastq.gz | head -n1 | wc -l))) && echo "mode\tPaired-End" || echo "mode\tSingle-End") >> $@.txt
 	echo -e $$((($$(grep -c "Upstream Probe Length\|ULSO Sequence" $*.manifest))) && echo "technology\tAmplicon" || echo "technology\tCapture") >> $@.txt
-	echo -e $$((($$(zcat $*.R1.fastq.gz | head -n1 | cut -d" " -f1 | awk -F: '{print $$8}' | tr -d "\n" | wc -c))) && echo "UMI\ttrue" || echo "UMI\tfalse") >> $@.txt
+	echo -e $$((($$($(UNGZ) -c $*.R1.fastq.gz | head -n1 | cut -d" " -f1 | awk -F: '{print $$8}' | tr -d "\n" | wc -c))) && echo "UMI\ttrue" || echo "UMI\tfalse") >> $@.txt
 	echo "#[INFO] SEQUENCING INFOS done. See 'metrics.infos.txt' file." > $@;
 
 

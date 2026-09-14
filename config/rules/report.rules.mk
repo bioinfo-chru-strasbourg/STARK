@@ -143,7 +143,7 @@ REMOVE_INFO_DP_BY_VALIDATION_DEPTH?=1
 				cp $@.tmp.merged.reheaded.vcf $@.tmp.merged.reheaded.flags.vcf; \
 			fi; \
 			if (( $$(ls $$(dirname $$(dirname $@))/*bam.metrics/*.design.bed.HsMetrics.per_base_coverage.gz | wc -l) )); then \
-				zcat $$(dirname $$(dirname $@))/*bam.metrics/*.design.bed.HsMetrics.per_base_coverage.gz | cut -f1,2,4 | grep ^chrom -v | sort -k1,1 -k2,2n | bgzip -c > $@.tmp.depth.tab.gz; \
+				$(UNGZ) -c $$(dirname $$(dirname $@))/*bam.metrics/*.design.bed.HsMetrics.per_base_coverage.gz | cut -f1,2,4 | grep ^chrom -v | sort -k1,1 -k2,2n | $(BGZIP) -c > $@.tmp.depth.tab.gz; \
 				tabix -s1 -b2 -e2 $@.tmp.depth.tab.gz; \
 				$(BCFTOOLS) annotate --threads=$(THREADS_BY_SAMPLE) -x INFO/DP -a $@.tmp.depth.tab.gz -c CHROM,POS,INFO/Validation_Depth -l Validation_Depth:avg $@.tmp.merged.reheaded.flags.vcf > $@; \
 			else \
@@ -196,7 +196,7 @@ REMOVE_INFO_DP_BY_VALIDATION_DEPTH?=1
 	done;
 	# Prevent empty VCFs
 	#if (($$($(BCFTOOLS) view $<.tmp.*.gz | grep "^#" -v | head -n 1 | wc -l))); then
-	# if (($$(zcat $<.tmp.*.gz | grep "^#" -v | head -n 1 | wc -l))); then \
+	# if (($$($(UNGZ) -c $<.tmp.*.gz | grep "^#" -v | head -n 1 | wc -l))); then \
 	# 	$(BCFTOOLS) concat $<.tmp.*.gz -a -D > $@.tmp; \
 	# else \
 	# 	$(BCFTOOLS) view $<.tmp.*.gz > $@.tmp; \

@@ -42,7 +42,7 @@ STAR_FLAGS?=--outSAMtype BAM SortedByCoordinate --chimOutJunctionFormat 1 --outS
 		--cmd "$(STAR) --genomeDir $(GENOME_RNA).star.idx \
 			--runThreadN $(THREADS_STAR) \
 			--readFilesIn $*.R1$(POST_SEQUENCING).fastq.gz $*.R2$(POST_SEQUENCING).fastq.gz \
-			--readFilesCommand zcat \
+			--readFilesCommand '$(UNGZ) -c' \
 			--outFileNamePrefix $*.star.bam.metrics/$(*F).star_raw.bam.metrics/$(*F).star_raw. \
 			--outSAMattrRGline ID:1 PL:ILLUMINA PU:PU LB:001 \"SM:$(*F)\" $(STAR_FLAGS) \
 			1>$*.star.bam.metrics/$(*F).star_raw.bam.metrics/$(*F).star_raw.log \

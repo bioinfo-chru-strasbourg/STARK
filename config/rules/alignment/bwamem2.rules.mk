@@ -46,7 +46,7 @@ THREADS_BWAMEM2?=$(shell echo " if ($(MAX_CONCURRENT_ALIGNMENTS_BWAMEM2)<$(NB_SA
 
 %.bwamem2$(POST_ALIGNMENT).bam: %.R1$(POST_SEQUENCING).fastq.gz %.R2$(POST_SEQUENCING).fastq.gz
 	# List of FASTQs
-	if (($$(zcat $*.R2.fastq.gz | head -n 1 | wc -l))); then \
+	if (($$($(UNGZ) -c $*.R2.fastq.gz | head -n 1 | wc -l))); then \
 		echo "$*.R1$(POST_SEQUENCING).fastq.gz $*.R2$(POST_SEQUENCING).fastq.gz" > $@.fastq_list; \
 	else \
 		echo "$*.R1$(POST_SEQUENCING).fastq.gz" > $@.fastq_list; \

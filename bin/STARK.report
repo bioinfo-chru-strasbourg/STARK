@@ -1162,8 +1162,8 @@ GENES_BASES_HTML=$(echo $GENES_BASES_NUMBER | sed ':a;s/\B[0-9]\{3\}\>/,&/;ta')
 
 # VARIANTS count
 FINAL_VCF="$SAMPLE_FOLDER/$SAMPLE.reports/$SAMPLE.final.vcf.gz"
-VARIANT_NUMBER=$(zcat $FINAL_VCF | grep -cv "^#" )
-FINAL_VCF_PZFLAG_HEADER=$(zcat $FINAL_VCF | grep  "^##INFO=<ID=PZFlag")
+VARIANT_NUMBER=$($UNGZ -c $FINAL_VCF | grep -cv "^#" )
+FINAL_VCF_PZFLAG_HEADER=$($UNGZ -c $FINAL_VCF | grep  "^##INFO=<ID=PZFlag")
 
 # PIPELINES count
 ALIGNERS_HTML="$ALIGNERS_NUMBER aligner"$([ $ALIGNERS_NUMBER -gt 1 ] && echo "s")
