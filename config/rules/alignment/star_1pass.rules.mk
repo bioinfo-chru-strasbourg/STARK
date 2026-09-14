@@ -41,7 +41,7 @@ STAR_FLAGS_1PASS?=--outSAMtype BAM SortedByCoordinate --chimOutJunctionFormat 1 
 			--genomeLoad LoadAndKeep \
 			--runThreadN $(THREADS_BY_ALIGNER) \
 			--readFilesIn $*.R1$(POST_SEQUENCING).fastq.gz $*.R2$(POST_SEQUENCING).fastq.gz \
-			--readFilesCommand zcat \
+			--readFilesCommand '$(UNGZ) -c' \
 			--outFileNamePrefix $*.star_1pass.bam.metrics/$(*F).star_raw.bam.metrics/$(*F).star_raw. \
 			--outSAMattrRGline ID:1 PL:ILLUMINA PU:PU LB:001 \"SM:$(*F)\" \
 			$(STAR_FLAGS_1PASS)" \
