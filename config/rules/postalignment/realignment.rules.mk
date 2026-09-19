@@ -1,13 +1,14 @@
 ############################
 # GATK Realignment Rules
-# Release: 0.9.1
-# Date: 31/10/2025
+# Release: 0.9.2
+# Date: 18/09/2026
 # Author: Antony Le Bechec
 ############################
 
 # Release note
 # 10/03/2015-0.9.0: change genome reference location, in the file %.genome
 # 31/10/2025-0.9.1: Reduce IndelRealigner by filtering intervals on chromosomes
+# 18/09/2026-0.9.2: Fix chromosomes not in design/intervals
 
 
 ## INTERVALS
@@ -15,8 +16,7 @@
 
 # FLAGS and Options
 THREADS_RTC?=$(THREADS_BY_SAMPLE)
-GATKRealignerTargetCreatorFLAGS= -nt $(THREADS_RTC) #-nt 8
-#GATKRealignerTargetCreatorOptions= -known $(VCFDBSNP) -allowPotentiallyMisencodedQuals
+GATKRealignerTargetCreatorFLAGS= -nt $(THREADS_RTC)
 GATKRealignerTargetCreatorOptions= $(GATK_REALIGNMENT_KNOWN_OPTIONS) -allowPotentiallyMisencodedQuals
 
 GATKIndelRealignerFLAGS=
@@ -48,8 +48,10 @@ JAVA_FLAGS_REALIGNMENT=-Xmx$(JAVA_MEMORY_REALIGNMENT)g $(JAVA_FLAGS_OTHER_PARAM)
 				echo "	$(JAVA8) $(JAVA_FLAGS_REALIGNMENT) -jar $(GATK3) $(GATKIndelRealignerFLAGS) $(GATKIndelRealignerOptions) --analysis_type IndelRealigner --reference_sequence $(GENOME) --input_file $*.realignment.bam --out $*.for_realignment.$$chr.bam --interval_padding $(INTERVAL_PADDING) --targetIntervals $*.for_realignment.RealignerTargetCreator.$$chr.intervals --intervals $$chr" >> $*.realignment1.mk; \
 				echo -n " $*.for_realignment.$$chr.bam " >> $*.realignment2.mk; \
 			else \
-				echo "#[INFO] No intervals to realign on chromosome $$chr for $*:"; \
-				continue; \
+				echo "#[INFO] No intervals to realign on chromosome $$chr for $*: reads kept as is"; \
+				echo "$*.for_realignment.$$chr.bam: $*.realignment.bam" >> $*.realignment1.mk; \
+				echo "	$(SAMTOOLS) view -b $*.realignment.bam '$$chr' > $*.for_realignment.$$chr.bam" >> $*.realignment1.mk; \
+				echo -n " $*.for_realignment.$$chr.bam " >> $*.realignment2.mk; \
 			fi; \
 		done; \
 		echo -n "$@: " | cat - $*.realignment2.mk > $*.realignment3.mk; \

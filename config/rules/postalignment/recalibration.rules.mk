@@ -1,7 +1,7 @@
 ############################
 # GATK Recalibration Rules
-# Release: 0.9.3
-# Date: 31/10/2025
+# Release: 0.9.4
+# Date: 18/09/2026
 # Author: Antony Le Bechec
 ############################
 
@@ -9,6 +9,7 @@
 # 10/03/2015-0.9.0: Creation, BAM recalibration and variant recalibration
 # 29/07/2022-0.9.2: Remove variant recalibration
 # 31/10/2025-0.9.3: Change GATK3 to GATK4 for recalibration
+# 18/09/2026-0.9.4: Fix option --emit-original-quals for GATK4
 
 
 # BAM RECALIBRATION
@@ -33,6 +34,7 @@
 		-I $< \
 		--bqsr-recal-file $*.recalibration.bam.grp \
 		--use-original-qualities \
+		--emit-original-quals \
 		-O $@; \
 	then \
 		echo "Error: GATK ApplyBQSR failed for $<"; \
