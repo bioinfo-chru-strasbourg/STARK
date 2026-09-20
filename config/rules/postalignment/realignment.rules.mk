@@ -50,7 +50,7 @@ JAVA_FLAGS_REALIGNMENT=-Xmx$(JAVA_MEMORY_REALIGNMENT)g $(JAVA_FLAGS_OTHER_PARAM)
 			else \
 				echo "#[INFO] No intervals to realign on chromosome $$chr for $*: reads kept as is"; \
 				echo "$*.for_realignment.$$chr.bam: $*.realignment.bam" >> $*.realignment1.mk; \
-				echo "	$(SAMTOOLS) view -b $*.realignment.bam '$$chr' > $*.for_realignment.$$chr.bam" >> $*.realignment1.mk; \
+				echo "	$(SAMTOOLS) view --output-fmt-option level=1 -b $*.realignment.bam '$$chr' > $*.for_realignment.$$chr.bam" >> $*.realignment1.mk; \
 				echo -n " $*.for_realignment.$$chr.bam " >> $*.realignment2.mk; \
 			fi; \
 		done; \

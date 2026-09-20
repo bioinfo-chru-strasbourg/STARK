@@ -3,8 +3,8 @@
 # Author: Antony Le Bechec
 ############################
 # Release
-MK_RELEASE="0.9.6.0"
-MK_DATE="25/06/2025"
+MK_RELEASE="0.9.7"
+MK_DATE="18/09/2026"
 
 # Release note
 # 11/12/2015-0.9b: Create file
@@ -15,6 +15,7 @@ MK_DATE="25/06/2025"
 # 27/09/2019-0.9.4.1b: Add HOWARD NOMEN field option
 # 06/02/2023-0.9.5: Add INFO_to_FORMAT, add threads on bcftools and bgzip
 # 25/06/2025-0.9.6.0: STARK release 19 compatibility
+# 18/09/2026-0.9.7: Add list of BAM and VCF from specific sample
 
 INTERSEC?=2
 NB_VARIANTS_TO_SHOW?=20
@@ -86,10 +87,10 @@ REMOVE_INFO_DP_BY_VALIDATION_DEPTH?=1
 
 
 ## list of vcf
-%.$(ANALYSIS_DATE).final_variants_files_vcf_gz: %.$(ANALYSIS_DATE).vcfgzs.list $(VCF)
+%.$(ANALYSIS_DATE).final_variants_files_vcf_gz: %.$(ANALYSIS_DATE).vcfgzs_sample.list
 	mkdir -p $(@D)
 	# Include all vcf.gz of the sample in the list of all vcf.gz of the analysis
-	cat $< | tr " " "\n" | grep "^$$(dirname $(@D))/" > $@;
+	cat $< | tr " " "\n" | grep "^$$(dirname $(@D))/" | grep "\.vcf\.gz$$" > $@;
 	# TEST
 	echo "FINALVARIANTSFILES: $@"
 	cat $@
@@ -115,7 +116,8 @@ REMOVE_INFO_DP_BY_VALIDATION_DEPTH?=1
 
 
 ## MERGE OF GENERATED VCF
-%.merge$(POST_CALLING_MERGING).vcf: %.final_variants_files_vcf_gz $(BAM)
+# Waiting for pipeline VCF and BAM metrics for the sample
+%.merge$(POST_CALLING_MERGING).vcf: %.final_variants_files_vcf_gz %.bam_metrics_sample.list
 	# Generate pipeline name list
 	cat $< | rev | cut -d/ -f1 | rev | sed s/\.vcf.gz//gi | cut -d. -f2- > $@.pipelines
 	# Merge VCF, normalize and rehead with pipelines names (prevent empty VCFs, force single if only one VCF, separate SNP/INDEL and OTHERS to avoid bcftools norm issues with breakends)
@@ -125,7 +127,6 @@ REMOVE_INFO_DP_BY_VALIDATION_DEPTH?=1
 	# Merge VCF, normalize and rehead with pipelines names (prevent empty VCFs, force single if only one VCF)
 	$(BCFTOOLS) merge --threads=$(THREADS_BY_SAMPLE) -l $< --force-samples $$( [ $$(cat $< | wc -l) -lt 2 ] && echo " --force-single " ) -m none --info-rules - $$((($$($(BCFTOOLS) merge --force-samples $$( [ $$(cat $< | wc -l) -lt 2 ] && echo " --force-single " ) $$(cat $<) | grep "^#" -v | head -n 1 | wc -l))) && echo "" || echo " --print-header ") | $(BCFTOOLS) sort | $(BCFTOOLS) reheader --threads=$(THREADS_BY_SAMPLE) -s $@.pipelines -o $@.merge_step0.vcf;
 	# Extract SNP and InDels with normalization
-	#$(BCFTOOLS) view -v snps,mnps,indels --threads=$(THREADS_BY_SAMPLE) $@.merge_step0.vcf | $(BCFTOOLS) +fixploidy | $(BCFTOOLS) norm --threads=$(THREADS_BY_SAMPLE) -m- -f $(GENOME) --force --write-index -Oz -o $@.tmp.merged.SNPINDELS.vcf.gz;
 	$(BCFTOOLS) view -v snps,mnps,indels --threads=$(THREADS_BY_SAMPLE) $@.merge_step0.vcf | $(BCFTOOLS) +fixploidy | $(BCFTOOLS) norm --threads=$(THREADS_BY_SAMPLE) -m- --multi-overlaps 0 -f $(GENOME) --force --write-index -Oz -o $@.tmp.merged.SNPINDELS.vcf.gz;
 	# Extract others variants (e.g., SVs) without normalization, to avoid issues with bcftools norm on breakends
 	$(BCFTOOLS) view -V snps,mnps,indels --threads=$(THREADS_BY_SAMPLE) $@.merge_step0.vcf --write-index -Oz -o $@.tmp.merged.OTHERS.vcf.gz;
@@ -163,7 +164,6 @@ REMOVE_INFO_DP_BY_VALIDATION_DEPTH?=1
 	# Prevent comma in description in vcf header
 	$(STARK_FOLDER_BIN)/fix_vcf_header.sh --input=$< --output=$@.tmp00.vcf --threads=$(THREADS_BY_SAMPLE) --bcftools=$(BCFTOOLS) $(FIX_VCF_HEADER_REFORMAT_option);
 	# Normalisation for 1 variant per line (no multiple variants), and genotype 0/0* or 0|0* to ./., and genotype ./.* to ./.
-	#$(BCFTOOLS) norm -m- $@.tmp00.vcf --threads $(THREADS_BY_SAMPLE) --force | sed -E 's#\t[0|\.]([/|\|])[0|\.][^\t|$$]*#\t.\1.#g' > $@.tmp0.vcf;
 	if [ "$(VCF_MISSING_GENOTYPE)" = "missing" ]; then \
 		$(BCFTOOLS) norm -m- $@.tmp00.vcf --threads $(THREADS_BY_SAMPLE) --force | $(BCFTOOLS) +setGT -- -t q -i 'GT="\./\." || GT="\.|\." || GT="0/\." || GT="\./0" || GT="0|\." || GT="\.|0"' -n '.' | $(BCFTOOLS) view --threads $(THREADS_BY_SAMPLE) > $@.tmp0.vcf; \
 	elif [ "$(VCF_MISSING_GENOTYPE)" = "missing_clean" ]; then \
@@ -188,19 +188,11 @@ REMOVE_INFO_DP_BY_VALIDATION_DEPTH?=1
 %.final.vcf: %.full.vcf
 	-rm -f $<.tmp.*
 	for S in $$(grep "^#CHROM" $< | cut -f10-); do \
-		#$(BCFTOOLS) view --threads=$(THREADS_BY_SAMPLE) -U -s $$S $< | $(BCFTOOLS) view --threads=$(THREADS_BY_SAMPLE) -e 'FORMAT/GT="0/0"' | sed '/^#CHROM/s/'$$S'/'$$(echo $(@F) | cut -d\. -f1)'/' > $<.tmp.$$S; \
-		#$(BCFTOOLS) view --threads=$(THREADS_BY_SAMPLE) -U -s $$S $< | $(BCFTOOLS) sort | $(BCFTOOLS) view --threads=$(THREADS_BY_SAMPLE) -e 'FORMAT/GT="0/0"' | sed '/^#CHROM/s/'$$S'/'$$(echo $(@F) | cut -d\. -f1)'/' > $<.tmp.$$S; \
 		$(BCFTOOLS) view --threads=$(THREADS_BY_SAMPLE) -U -s $$S $< | $(BCFTOOLS) sort | $(BCFTOOLS) view --threads=$(THREADS_BY_SAMPLE) -e 'FORMAT/GT="0/0"' | sed '/^#CHROM/s/'$$S'/'$$(echo $(@F) | cut -d\. -f1)'/' | sed '/^##/s/Number=R/Number=./gi' > $<.tmp.$$S; \
 		$(BGZIP) --threads=$(THREADS_BY_SAMPLE) -f $<.tmp.$$S; \
 		$(TABIX) -f $<.tmp.$$S.gz; \
 	done;
 	# Prevent empty VCFs
-	#if (($$($(BCFTOOLS) view $<.tmp.*.gz | grep "^#" -v | head -n 1 | wc -l))); then
-	# if (($$($(UNGZ) -c $<.tmp.*.gz | grep "^#" -v | head -n 1 | wc -l))); then \
-	# 	$(BCFTOOLS) concat $<.tmp.*.gz -a -D > $@.tmp; \
-	# else \
-	# 	$(BCFTOOLS) view $<.tmp.*.gz > $@.tmp; \
-	# fi;
 	-if ! $(BCFTOOLS) concat $<.tmp.*.gz -a -D > $@.tmp; then \
 		$(BCFTOOLS) view $<.tmp.*.gz > $@.tmp; \
 	fi;

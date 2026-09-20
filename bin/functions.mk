@@ -1,7 +1,7 @@
 ############################
 # Makefile Functions
-# Release: 0.9.0
-# Date: 20/03/2014
+# Release: 0.9.1
+# Date: 18/09/2026
 # Author: Antony Le Bechec
 ############################
 
@@ -42,3 +42,5 @@ annotator = $(word 3,$(subst ., ,$1))
 #fastq = $(shell ls ./RUN*)
 #fastq = $1
 
+# Rules for generating reports and listing VCF files for each sample
+sample_from_target = $(firstword $(subst ., ,$(notdir $(1))))
