@@ -1,7 +1,7 @@
 #############################
 # NGS workflow
-# Release: 0.9.8.2
-# Date: 14/10/2019
+# Release: 0.9.9
+# Date: 18/09/2026
 # Author: Antony Le Bechec
 #############################
 
@@ -109,6 +109,11 @@ FASTQC_METRICS=$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_S
 SEQUENCING_METRICS=$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).sequencing/metrics )
 
 
+BAM_METRICS=$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(foreach ALIGNER,$(ALIGNERS),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).$(ALIGNER).bam.metrics/metrics )) \
+	$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(foreach PIPELINE,$(PIPELINES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).$(call aligner,$(PIPELINE)).bam.metrics/metrics ))
+
+
+
 CRAM=	$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).archive.cram ) \
 		$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).archive.cram.crai )
 
@@ -200,6 +205,61 @@ $(RELEASE): $(RELEASE).empty.vcf
 %.vcfgzs.list: $(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(foreach ALIGNER,$(ALIGNERS),$(foreach CALLER,$(CALLERS),$(foreach ANNOTATOR,$(ANNOTATORS),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).$(ALIGNER).$(CALLER).$(ANNOTATOR).vcf.gz )))) $(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(foreach PIPELINE,$(PIPELINES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).$(PIPELINE).vcf.gz ))
 	mkdir -p $(@D)
 	ls $^ > $@
+
+# Function to extract the sample files (bam) from a target string
+# The first argument $(1) should be the sample name
+# The second argument $(2) should be the file extension (e.g., "bam")
+bam_prereqs = \
+    $(foreach RUN_SAMPLE,$(RUNS_SAMPLES),\
+        $(if $(filter $(1),$(call sample,$(RUN_SAMPLE))),\
+            $(foreach ALIGNER,$(ALIGNERS),\
+                $(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).$(ALIGNER).$(2) \
+            )\
+            $(foreach PIPELINE,$(PIPELINES),\
+                $(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).$(call aligner,$(PIPELINE)).$(2) \
+            )\
+        )\
+    )
+
+# Function to extract the sample files (vcf) from a target string
+# The first argument $(1) should be the sample name
+# The second argument $(2) should be the file extension (e.g., "vcf.gz")
+vcf_prereqs = \
+    $(foreach RUN_SAMPLE,$(RUNS_SAMPLES),\
+        $(if $(filter $(1),$(call sample,$(RUN_SAMPLE))),\
+            $(foreach ALIGNER,$(ALIGNERS),\
+                $(foreach CALLER,$(CALLERS),\
+                    $(foreach ANNOTATOR,$(ANNOTATORS),\
+                        $(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).$(ALIGNER).$(CALLER).$(ANNOTATOR).$(2) \
+                    )\
+                )\
+            )\
+            $(foreach PIPELINE,$(PIPELINES),\
+                $(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).$(PIPELINE).$(2) \
+            )\
+        )\
+    )
+
+# Option to enable secondary expansion for make variables
+.SECONDEXPANSION:
+
+# Rule to generate a list of BAM files for each sample
+# List is generated only if bam and bai are present
+%.bams_sample.list: $$(call bam_prereqs,$$(call sample_from_target,$$*),bam) $$(call bam_prereqs,$$(call sample_from_target,$$*),bam.bai)
+	mkdir -p $(@D)
+	ls $^ | grep "\.bam$$" > $@
+
+# Rule to generate a list of BAM metrics files for each sample
+# List is generated only if bam.metrics/metrics are present
+%.bam_metrics_sample.list: $$(call bam_prereqs,$$(call sample_from_target,$$*),bam.metrics/metrics)
+	mkdir -p $(@D)
+	ls $^ | grep "bam.metrics/metrics$$" > $@
+
+# Rule to generate a list of VCF files for each sample
+# List is generated only if vcf.gz and vcf.gz.tbi are present
+%.vcfgzs_sample.list: $$(call vcf_prereqs,$$(call sample_from_target,$$*),vcf.gz) $$(call vcf_prereqs,$$(call sample_from_target,$$*),vcf.gz.tbi) 
+	mkdir -p $(@D)
+	ls $^ | grep "\.vcf\.gz$$" > $@
 
 
 
