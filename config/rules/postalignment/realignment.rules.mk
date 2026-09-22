@@ -39,7 +39,7 @@ JAVA_FLAGS_REALIGNMENT=-Xmx$(JAVA_MEMORY_REALIGNMENT)g $(JAVA_FLAGS_OTHER_PARAM)
 	rm -f $*.realignment*.mk;
 	+if (($$($(SAMTOOLS) idxstats $< | awk '{SUM+=$$3+$$4} END {print SUM}'))); then \
 		echo "$*.for_realignment.unmapped.bam: $*.realignment.bam" >> $*.realignment1.mk; \
-		echo "	$(SAMTOOLS) view -b -f 12 $*.realignment.bam > $*.for_realignment.unmapped.bam;" >> $*.realignment1.mk; \
+		echo "	$(SAMTOOLS) view --output-fmt-option level=1 -b $*.realignment.bam '*' > $*.for_realignment.unmapped.bam;" >> $*.realignment1.mk; \
 		echo -n " $*.for_realignment.unmapped.bam " > $*.realignment2.mk; \
 		for chr in $$($(SAMTOOLS) idxstats $< | grep -v "\*" | awk '{ if ($$3+$$4>0) print $$1 }'); do \
 			grep "^$$chr:" $*.for_realignment.RealignerTargetCreator.intervals > $*.for_realignment.RealignerTargetCreator.$$chr.intervals; \
