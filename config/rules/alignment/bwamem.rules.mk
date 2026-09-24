@@ -47,29 +47,62 @@ THREADS_BWAMEM?=$(shell echo " if ($(MAX_CONCURRENT_ALIGNMENTS_BWAMEM)<$(NB_SAMP
 	else \
 		echo "$*.R1$(POST_SEQUENCING).fastq.gz" > $@.fastq_list; \
 	fi;
-	# Alignment
+	# Alignment and sorting
 	$(PYTHON3) $(STARK_FOLDER_BIN)/concurrency.py launch \
-		--cmd "$(BWA) mem $(BWAMEM_FLAGS) -t $(THREADS_BWAMEM) -R '@RG\tID:1\tPL:ILLUMINA\tPU:PU\tLB:001\tSM:$(*F)' $(GENOME) $$(cat $@.fastq_list) -o $@.sam" \
+		--cmd "$(BWA) mem $(BWAMEM_FLAGS) -t $(THREADS_BWAMEM) -R '@RG\tID:1\tPL:ILLUMINA\tPU:PU\tLB:001\tSM:$(*F)' $(GENOME) $$(cat $@.fastq_list) | $(SAMTOOLS) sort -l 1 -O BAM -o $@.tmp.bam -T $@.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS)" \
 		--lockfile_prefix $$(echo $@ | xargs -0 dirname | xargs -0 dirname)/lockfile.bwamem. \
 		--target $@ \
 		--max_jobs $(MAX_CONCURRENT_ALIGNMENTS_BWAMEM);
-	# Sorting
-	echo "#[INFO] Sorting BAM file for $*:"
-	$(SAMTOOLS) view -h $(BWAMEM_SAMTOOLS_FILTER_FLAG) $@.sam -@ $(THREADS_SAMTOOLS) | $(SAMTOOLS) sort -l 1 -O BAM -o $@.tmp -T $@.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS)
-	# Samtools with docker
-	#$(DOCKER_RUN) --cpus $(THREADS_SAMTOOLS) --rm mgibio/samtools:cramify samtools view -h $(BWAMEM_SAMTOOLS_FILTER_FLAG) $@.sam -@ $(THREADS_SAMTOOLS) > $@.tmp1
-	#$(DOCKER_RUN) --cpus $(THREADS_SAMTOOLS) --rm mgibio/samtools:cramify samtools sort -l 1 -O BAM -o $@.tmp -T $@.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS) $@.tmp1
-	#-rm $@.tmp1
-	rm $@.sam
+	# Alignment without sorting
+# 	$(PYTHON3) $(STARK_FOLDER_BIN)/concurrency.py launch \
+# 		--cmd "$(BWA) mem $(BWAMEM_FLAGS) -t $(THREADS_BWAMEM) -R '@RG\tID:1\tPL:ILLUMINA\tPU:PU\tLB:001\tSM:$(*F)' $(GENOME) $$(cat $@.fastq_list) | $(SAMTOOLS) view --output-fmt-option level=1 -b -o $@.tmp.bam -@ $(THREADS_BWAMEM)" \
+# 		--lockfile_prefix $$(echo $@ | xargs -0 dirname | xargs -0 dirname)/lockfile.bwamem. \
+# 		--target $@ \
+# 		--max_jobs $(MAX_CONCURRENT_ALIGNMENTS_BWAMEM);
 	# AddOrReplaceReadGroups
-	if (($$($(SAMTOOLS) view $@.tmp -H | grep "^@RG" -c))); then \
+	if (($$($(SAMTOOLS) view $@.tmp.bam -H | grep "^@RG" -c))); then \
 		echo "#[INFO] BAM $@.tmp with read group"; \
-		mv $@.tmp $@; \
+		mv $@.tmp.bam $@; \
 	else \
 		echo "#[INFO] BAM $@.tmp without read group"; \
-		$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) AddOrReplaceReadGroups $(PICARD_FLAGS) -I $@.tmp O=$@ -COMPRESSION_LEVEL 1 -RGSM $(*F); \
+		$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) AddOrReplaceReadGroups $(PICARD_FLAGS) -I $@.tmp.bam O=$@ -COMPRESSION_LEVEL 1 -RGSM $(*F); \
 	fi;
-	-rm $@.tmp $@.RG $@.fastq_list
+	# Clean
+	-rm $@.tmp.bam $@.RG $@.fastq_list
+
+
+# BWA alignemnt with separated sorting with SAMTools
+# %.bwamem$(POST_ALIGNMENT).bam: %.R1$(POST_SEQUENCING).fastq.gz %.R2$(POST_SEQUENCING).fastq.gz
+# 	# List of FASTQs
+# 	if (($$($(UNGZ) -c $*.R2.fastq.gz | head -n 1 | wc -l))); then \
+# 		echo "$*.R1$(POST_SEQUENCING).fastq.gz $*.R2$(POST_SEQUENCING).fastq.gz" > $@.fastq_list; \
+# 	else \
+# 		echo "$*.R1$(POST_SEQUENCING).fastq.gz" > $@.fastq_list; \
+# 	fi;
+# 	# Alignment
+# 	$(PYTHON3) $(STARK_FOLDER_BIN)/concurrency.py launch \
+# 		--cmd "$(BWA) mem $(BWAMEM_FLAGS) -t $(THREADS_BWAMEM) -R '@RG\tID:1\tPL:ILLUMINA\tPU:PU\tLB:001\tSM:$(*F)' $(GENOME) $$(cat $@.fastq_list) -o $@.sam" \
+# 		--lockfile_prefix $$(echo $@ | xargs -0 dirname | xargs -0 dirname)/lockfile.bwamem. \
+# 		--target $@ \
+# 		--max_jobs $(MAX_CONCURRENT_ALIGNMENTS_BWAMEM);
+# 	# Sorting
+# 	echo "#[INFO] Sorting BAM file for $*:"
+# 	$(SAMTOOLS) view -h $(BWAMEM_SAMTOOLS_FILTER_FLAG) $@.sam -@ $(THREADS_SAMTOOLS) | $(SAMTOOLS) sort -l 1 -O BAM -o $@.tmp -T $@.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS)
+# 	# Samtools with docker
+# 	#$(DOCKER_RUN) --cpus $(THREADS_SAMTOOLS) --rm mgibio/samtools:cramify samtools view -h $(BWAMEM_SAMTOOLS_FILTER_FLAG) $@.sam -@ $(THREADS_SAMTOOLS) > $@.tmp1
+# 	#$(DOCKER_RUN) --cpus $(THREADS_SAMTOOLS) --rm mgibio/samtools:cramify samtools sort -l 1 -O BAM -o $@.tmp -T $@.SAMTOOLS_PREFIX -@ $(THREADS_SAMTOOLS) $@.tmp1
+# 	#-rm $@.tmp1
+# 	rm $@.sam
+# 	# AddOrReplaceReadGroups
+# 	if (($$($(SAMTOOLS) view $@.tmp -H | grep "^@RG" -c))); then \
+# 		echo "#[INFO] BAM $@.tmp with read group"; \
+# 		mv $@.tmp $@; \
+# 	else \
+# 		echo "#[INFO] BAM $@.tmp without read group"; \
+# 		$(JAVA) $(JAVA_FLAGS) -jar $(PICARD) AddOrReplaceReadGroups $(PICARD_FLAGS) -I $@.tmp O=$@ -COMPRESSION_LEVEL 1 -RGSM $(*F); \
+# 	fi;
+# 	-rm $@.tmp $@.RG $@.fastq_list
+
 
 
 # CONFIG/RELEASE
