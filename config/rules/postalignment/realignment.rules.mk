@@ -15,7 +15,7 @@
 ##############
 
 # FLAGS and Options
-THREADS_RTC?=$(THREADS_BY_SAMPLE)
+THREADS_RTC?=$(THREADS_BY_ALIGNER)
 GATKRealignerTargetCreatorFLAGS= -nt $(THREADS_RTC)
 GATKRealignerTargetCreatorOptions= $(GATK_REALIGNMENT_KNOWN_OPTIONS) -allowPotentiallyMisencodedQuals
 
@@ -26,6 +26,7 @@ GATKIndelRealignerOptions= $(GATK_REALIGNMENT_KNOWN_OPTIONS) --LODThresholdForCl
 JAVA_MEMORY_REALIGNMENT_MAX?=4
 JAVA_MEMORY_REALIGNMENT?=$(shell echo " if ($(JAVA_MEMORY_REALIGNMENT_MAX)>$(JAVA_MEMORY)) ($(JAVA_MEMORY_REALIGNMENT_MAX)) else ($(JAVA_MEMORY))" | bc)
 JAVA_FLAGS_REALIGNMENT=-Xmx$(JAVA_MEMORY_REALIGNMENT)g $(JAVA_FLAGS_OTHER_PARAM) $(JAVA_FLAGS_TMP_FOLDER)
+
 
 %.bam: %.realignment.bam %.realignment.bam.bai %.realignment.design.bed
 	# RealignerTargetCreator 
@@ -41,11 +42,11 @@ JAVA_FLAGS_REALIGNMENT=-Xmx$(JAVA_MEMORY_REALIGNMENT)g $(JAVA_FLAGS_OTHER_PARAM)
 		echo "$*.for_realignment.unmapped.bam: $*.realignment.bam" >> $*.realignment1.mk; \
 		echo "	$(SAMTOOLS) view --output-fmt-option level=1 -b $*.realignment.bam '*' > $*.for_realignment.unmapped.bam;" >> $*.realignment1.mk; \
 		echo -n " $*.for_realignment.unmapped.bam " > $*.realignment2.mk; \
-		for chr in $$($(SAMTOOLS) idxstats $< | grep -v "\*" | awk '{ if ($$3+$$4>0) print $$1 }'); do \
+		for chr in $$($(SAMTOOLS) idxstats $< | grep -v "\*" | awk '$$3+$$4>0 {print $$1, $$3+$$4}' | sort -k2,2nr | awk '{print $$1}'); do \
 			grep "^$$chr:" $*.for_realignment.RealignerTargetCreator.intervals > $*.for_realignment.RealignerTargetCreator.$$chr.intervals; \
 			if [ -s $*.for_realignment.RealignerTargetCreator.$$chr.intervals ]; then \
 				echo "$*.for_realignment.$$chr.bam: $*.realignment.bam" >> $*.realignment1.mk; \
-				echo "	$(JAVA8) $(JAVA_FLAGS_REALIGNMENT) -jar $(GATK3) $(GATKIndelRealignerFLAGS) $(GATKIndelRealignerOptions) --analysis_type IndelRealigner --reference_sequence $(GENOME) --input_file $*.realignment.bam --out $*.for_realignment.$$chr.bam --interval_padding $(INTERVAL_PADDING) --targetIntervals $*.for_realignment.RealignerTargetCreator.$$chr.intervals --intervals $$chr" >> $*.realignment1.mk; \
+				echo "	$(JAVA8) $(JAVA_FLAGS_REALIGNMENT) -Dsamjdk.compression_level=1 -jar $(GATK3) $(GATKIndelRealignerFLAGS) $(GATKIndelRealignerOptions) --analysis_type IndelRealigner --reference_sequence $(GENOME) --input_file $*.realignment.bam --out $*.for_realignment.$$chr.bam --interval_padding $(INTERVAL_PADDING) --targetIntervals $*.for_realignment.RealignerTargetCreator.$$chr.intervals --intervals $$chr" >> $*.realignment1.mk; \
 				echo -n " $*.for_realignment.$$chr.bam " >> $*.realignment2.mk; \
 			else \
 				echo "#[INFO] No intervals to realign on chromosome $$chr for $*: reads kept as is"; \
@@ -56,15 +57,57 @@ JAVA_FLAGS_REALIGNMENT=-Xmx$(JAVA_MEMORY_REALIGNMENT)g $(JAVA_FLAGS_OTHER_PARAM)
 		done; \
 		echo -n "$@: " | cat - $*.realignment2.mk > $*.realignment3.mk; \
 		echo ""  >> $*.realignment3.mk; \
-		echo "	$(SAMTOOLS) merge -f $@ $$(cat $*.realignment2.mk) -@ $(THREADS_BY_SAMPLE)" >> $*.realignment3.mk; \
+		echo "	$(SAMTOOLS) merge --output-fmt-option level=1 -f $@ $$(cat $*.realignment2.mk) -@ $(THREADS_BY_ALIGNER)" >> $*.realignment3.mk; \
 		cat $*.realignment1.mk $*.realignment3.mk >> $*.realignment.mk; \
-		cat $*.realignment.mk; \
 		make -f $*.realignment.mk $@; \
 	else \
 		cp $< $@; \
 	fi;
 	# clean
 	-rm -f $*.realignment.bam $*.realignment.bam.bai $*.realignment*.mk $*.for_realignment.*
+
+
+# OLD Version
+# %.bam: %.realignment.bam %.realignment.bam.bai %.realignment.design.bed
+# 	# RealignerTargetCreator 
+# 	$(JAVA8) $(JAVA_FLAGS_REALIGNMENT) -jar $(GATK3) $(GATKRealignerTargetCreatorFLAGS) $(GATKRealignerTargetCreatorOptions) \
+# 			-T RealignerTargetCreator \
+# 			-R $(GENOME) \
+# 			-I $< \
+# 			-o $*.for_realignment.RealignerTargetCreator.intervals \
+# 			$$(if (($$(grep ^ -c $*.realignment.design.bed))); then echo "-L $*.realignment.design.bed"; fi;);
+# 	# IF READS
+# 	rm -f $*.realignment*.mk;
+# 	+if (($$($(SAMTOOLS) idxstats $< | awk '{SUM+=$$3+$$4} END {print SUM}'))); then \
+# 		echo "$*.for_realignment.unmapped.bam: $*.realignment.bam" >> $*.realignment1.mk; \
+# 		echo "	$(SAMTOOLS) view --output-fmt-option level=1 -b $*.realignment.bam '*' > $*.for_realignment.unmapped.bam;" >> $*.realignment1.mk; \
+# 		echo -n " $*.for_realignment.unmapped.bam " > $*.realignment2.mk; \
+# 		for chr in $$($(SAMTOOLS) idxstats $< | grep -v "\*" | awk '{ if ($$3+$$4>0) print $$1 }'); do \
+# 			grep "^$$chr:" $*.for_realignment.RealignerTargetCreator.intervals > $*.for_realignment.RealignerTargetCreator.$$chr.intervals; \
+# 			if [ -s $*.for_realignment.RealignerTargetCreator.$$chr.intervals ]; then \
+# 				echo "$*.for_realignment.$$chr.bam: $*.realignment.bam" >> $*.realignment1.mk; \
+# 				echo "	$(JAVA8) $(JAVA_FLAGS_REALIGNMENT) -jar $(GATK3) $(GATKIndelRealignerFLAGS) $(GATKIndelRealignerOptions) --analysis_type IndelRealigner --reference_sequence $(GENOME) --input_file $*.realignment.bam --out $*.for_realignment.$$chr.bam --interval_padding $(INTERVAL_PADDING) --targetIntervals $*.for_realignment.RealignerTargetCreator.$$chr.intervals --intervals $$chr" >> $*.realignment1.mk; \
+# 				echo -n " $*.for_realignment.$$chr.bam " >> $*.realignment2.mk; \
+# 			else \
+# 				echo "#[INFO] No intervals to realign on chromosome $$chr for $*: reads kept as is"; \
+# 				echo "$*.for_realignment.$$chr.bam: $*.realignment.bam" >> $*.realignment1.mk; \
+# 				echo "	$(SAMTOOLS) view --output-fmt-option level=1 -b $*.realignment.bam '$$chr' > $*.for_realignment.$$chr.bam" >> $*.realignment1.mk; \
+# 				echo -n " $*.for_realignment.$$chr.bam " >> $*.realignment2.mk; \
+# 			fi; \
+# 		done; \
+# 		echo -n "$@: " | cat - $*.realignment2.mk > $*.realignment3.mk; \
+# 		echo ""  >> $*.realignment3.mk; \
+# 		echo "	$(SAMTOOLS) merge -f $@ $$(cat $*.realignment2.mk) -@ $(THREADS_BY_SAMPLE)" >> $*.realignment3.mk; \
+# 		cat $*.realignment1.mk $*.realignment3.mk >> $*.realignment.mk; \
+# 		cat $*.realignment.mk; \
+# 		make -f $*.realignment.mk $@; \
+# 	else \
+# 		cp $< $@; \
+# 	fi;
+# 	# clean
+# 	-rm -f $*.realignment.bam $*.realignment.bam.bai $*.realignment*.mk $*.for_realignment.*
+
+
 
 
 # CONFIG/RELEASE
