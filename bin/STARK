@@ -1281,6 +1281,8 @@ if [ ! -z "$RUNS" ]; then
 				RUN_SAMPLESHEET=""
 				# sampleSheet from Input
 				[ ! -z $SAMPLESHEET_INPUT_RI ] && [ -e $SAMPLESHEET_INPUT_RI ] && RUN_SAMPLESHEET=$SAMPLESHEET_INPUT_RI
+				# sampleSheet from Input within the RUN folder
+				[ -z $RUN_SAMPLESHEET ] && [ ! -z $SAMPLESHEET_INPUT_RI ] && [ -e $R/$SAMPLESHEET_INPUT_RI ] && RUN_SAMPLESHEET=$R/$SAMPLESHEET_INPUT_RI
 				# sampleSheet within the RUN folder
 				[ -z $RUN_SAMPLESHEET ] && RUN_SAMPLESHEET=$R/SampleSheet.csv
 				# Echo
