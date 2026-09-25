@@ -1831,6 +1831,7 @@ for RUU in $RUN_UNIQ; do
 		); do
 
 			if [ -d "$RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT/$RU" ] || mkdir -p "$RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT/$RU"; then
+				chmod $PERMS "$RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT/$RU"
 				cp -puf \
 					"$LOGFILE_RES_RUN" \
 					"$LOGFILE_DEM_RUN" \
@@ -2030,7 +2031,7 @@ for RUU in $RUN_UNIQ; do
 										F_SOURCE_BASE=\$\$(echo \$\$F_SOURCE | sed \"s#$ROOT_FILE_SOURCE/##\"); \
 										F_TARGET=$F_TARGET_FOLDER/\$\$(basename \$\$F_SOURCE); \
 										F_TARGET_BASE=\$\$(echo \$\$F_TARGET | sed \"s#$F_TARGET_FOLDER/##\"); \
-										if [ '$ROOT_FILE_PATTERN_TYPE' == "FOLDER" ]; then \
+										if [ '$ROOT_FILE_PATTERN_TYPE' == 'FOLDER' ]; then \
 											if ! $COMMAND_COPY_NO_COMPRESS \$\$F_SOURCE/ \$\$F_TARGET 1>/dev/null 2>/dev/null; then \
 												echo '[ERROR] Error copy \$\$F_SOURCE/ to \$\$F_TARGET'; \
 												exit_0; \
@@ -2042,9 +2043,9 @@ for RUU in $RUN_UNIQ; do
 											fi; \
 										fi; \
 										if [ ! -e \$\$F_TARGET ]; then \
-											(($DEBUG)) && echo '#[ERROR] Copy file $F_SOURCE_BASE to $F_TARGET_BASE FAILED'; \
+											echo '#[WARNING] Copy file $F_SOURCE_BASE to $F_TARGET_BASE FAILED'; \
 										else \
-											(($DEBUG)) && echo '#[INFO] Copy file $F_SOURCE_BASE to $F_TARGET_BASE SUCCESS'; \
+											echo '#[INFO] Copy file $F_SOURCE_BASE to $F_TARGET_BASE SUCCESS'; \
 										fi; \
 									done;
 								" >> $RES_MK
