@@ -323,11 +323,10 @@ fi
 # Script folder
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-
-COMMAND_COPY="rsync -auczqAXhi --no-links --no-perms --no-owner --no-group "
-COMMAND_COPY_NO_COMPRESS="rsync -aucqAXhi --no-links --no-perms --no-owner --no-group "
-COMMAND_LINK="ln " # "cp -auv" or "rsync -auv" # auvpAXog
 PERMS="a+rwx"
+COMMAND_COPY="rsync -auczqAXhi --no-links --no-owner --no-group --perms"
+COMMAND_COPY_NO_COMPRESS="rsync -aucqAXhi --no-links --no-owner --no-group --perms"
+COMMAND_LINK="ln "
 
 
 # FUNCTIONS
@@ -1763,7 +1762,7 @@ for RUU in $RUN_UNIQ; do
 	echo "["$(date '+%Y%m%d-%H%M%S')"] STARK Input Processing '$RELEASE_RUN' START" >>$LOGFILE_RES_RUN
 
 	if [ -s $INPUT_MK ]; then
-		(($VERBOSE)) && echo "["$(timestamp)" | INFO] Process Input data from FASTQ file(s) - multithreading mode [$THREADS]"
+		(($VERBOSE)) && echo "["$(timestamp)" | INFO] STARK Process Input data from FASTQ file(s) - multithreading mode [$THREADS]"
 		if make -j $THREADS -e THREADS_BY_SAMPLE=$THREADS_BY_SAMPLE -f $INPUT_MK -f $SCRIPT_DIR/STARK.launch.input.mk $INPUT_MK_ALL $INPUT_MK_ALL 1>$INPUT_MK.log 2>$INPUT_MK.err; then
 			cat $INPUT_MK.log $INPUT_MK.err >>$LOGFILE_RES_RUN
 			(($VERBOSE)) && echo "["$(timestamp)" | INFO] STARK Input Processing done."
@@ -1786,7 +1785,6 @@ for RUU in $RUN_UNIQ; do
 
 	echo "["$(date '+%Y%m%d-%H%M%S')"] Main Analysis Process for Analysis '$RELEASE_RUN' START" >>$LOGFILE_RES_RUN
 
-
 	MAKE_ERROR=0
 
 	export KEEP_ALIGNMENT
@@ -1796,6 +1794,10 @@ for RUU in $RUN_UNIQ; do
 	fi;
 	rm -f $MAKEFILE_ANALYSIS_RUN $FINAL_REPORT_RUN $RELEASE_RUN
 	echo "["$(date '+%Y%m%d-%H%M%S')"] Main Analysis Process for Analysis '$RELEASE_RUN' END" >>$LOGFILE_RES_RUN
+
+	# CHMOD
+	echo "["$(timestamp)" | INFO] STARK Results directory persmissions settings..."
+	chmod $PERMS -R $RESULTS/$RUU $RESULTS/$RUU/*
 
 	# LOG and END files
 
@@ -1809,37 +1811,34 @@ for RUU in $RUN_UNIQ; do
 			((I++))
 			continue;
 		fi;
+
+		# Check if this RU has already been processed
+		if [[ ${RU_COPIED[$RU]} ]]; then
+			((I++))
+			continue
+		fi
+		RU_COPIED[$RU]=1
 		
 		# REPOSITORY
 		# COPY of run/sample
 		# List of folders
 		# Repositories
-		if [ "$REPOSITORY" != "" ] ; then
-			for RESULTS_FOLDER_COPY_FOLDER in $(echo $REPOSITORY | tr "," " " | tr " " "\n" | sort -u ); do #
-				if [ -d $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT/$RU ] || \
-					mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT/$RU; then
-					cp -pf $LOGFILE_RES_RUN $LOGFILE_DEM_RUN $CONFIG_RES_RUN $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT/$RU/;
-				fi;
-			done;
-		fi;
-		# Archives
-		if [ "$ARCHIVES" != "" ] ; then
-			for RESULTS_FOLDER_COPY_FOLDER in $(echo $ARCHIVES | tr "," " " | tr " " "\n" | sort -u ); do #
-				if [ -d $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT/$RU ] || \
-					mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT/$RU; then
-					cp -pf $LOGFILE_RES_RUN $LOGFILE_DEM_RUN $CONFIG_RES_RUN $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT/$RU/;
-				fi;
-			done;
-		fi;
-		# Favorites
-		if [ "$FAVORITES" != "" ] ; then
-			for RESULTS_FOLDER_COPY_FOLDER in $(echo $FAVORITES | tr "," " " | tr " " "\n" | sort -u ); do #
-				if [ -d $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT/$RU ] || \
-					mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT/$RU; then
-					cp -pf $LOGFILE_RES_RUN $LOGFILE_DEM_RUN $CONFIG_RES_RUN $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT/$RU/;
-				fi;
-			done;
-		fi;
+
+		for RESULTS_FOLDER_COPY_FOLDER in $(
+			printf '%s\n' "$REPOSITORY" "$ARCHIVES" "$FAVORITES" |
+			tr ',' '\n' |
+			sort -u
+		); do
+
+			if [ -d "$RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT/$RU" ] || mkdir -p "$RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT/$RU"; then
+				cp -puf \
+					"$LOGFILE_RES_RUN" \
+					"$LOGFILE_DEM_RUN" \
+					"$CONFIG_RES_RUN" \
+					"$RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT/$RU/"
+			fi
+
+		done
 
 	done
 
@@ -1864,6 +1863,7 @@ for RUU in $RUN_UNIQ; do
 
 		# STARK COMPLETE
 		echo "#["`date '+%Y%m%d-%H%M%S'`"] RUN $RUN analyzed by STARK ($STARK_VERSION)" >> $STARK_COMPLETE_FILE
+		chmod $PERMS $STARK_COMPLETE_FILE;
 
 		# STARK RUNNING stop
 
@@ -1879,38 +1879,34 @@ for RUU in $RUN_UNIQ; do
 		RES_MK_ALL=""
 
 		# List of folders
+
+		declare -A FOLDERS_BY_TYPE=(
+			[repository]="$REPOSITORY"
+			[archives]="$ARCHIVES"
+			[favorites]="$FAVORITES"
+		)
+
 		RESULTS_FOLDER_COPY_ALL=""
-		# Repositories
-		if [ "$REPOSITORY" != "" ] ; then
-			for RESULTS_FOLDER_COPY_FOLDER in $(echo $REPOSITORY | tr "," " " | tr " " "\n" | sort -u ); do #
-				if [ -d $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT ] || \
-					mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT; then
-					RESULTS_FOLDER_COPY_ALL=$RESULTS_FOLDER_COPY_ALL" $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT:repository";
-				fi;
-			done;
-		fi;
-		# Archives
-		if ((1)); then
-			if [ "$ARCHIVES" != "" ] ; then
-				for RESULTS_FOLDER_COPY_FOLDER in $(echo $ARCHIVES | tr "," " " | tr " " "\n" | sort -u ); do #
-					if [ -d $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT ] || \
-						mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT; then
-						RESULTS_FOLDER_COPY_ALL=$RESULTS_FOLDER_COPY_ALL" $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT:archives";
-					fi;
-				done;
-			fi;
-		fi;
-		# Favorites
-		if ((1)); then
-			if [ "$FAVORITES" != "" ] ; then
-				for RESULTS_FOLDER_COPY_FOLDER in $(echo $FAVORITES | tr "," " " | tr " " "\n" | sort -u ); do #
-					if [ -d $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT ] || \
-						mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT; then
-						RESULTS_FOLDER_COPY_ALL=$RESULTS_FOLDER_COPY_ALL" $RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT:favorites";
-					fi;
-				done;
-			fi;
-		fi;
+
+		for TYPE in repository archives favorites; do
+
+			FOLDERS="${FOLDERS_BY_TYPE[$TYPE]}"
+			[ -z "$FOLDERS" ] && continue
+
+			while IFS= read -r RESULTS_FOLDER_COPY_FOLDER; do
+
+				DEST="$RESULTS_FOLDER_COPY_FOLDER/$SAMPLE_GROUP/$SAMPLE_PROJECT"
+
+				if [ -d "$DEST" ] || mkdir -p "$DEST"; then
+					chmod "$PERMS" "$DEST"
+					RESULTS_FOLDER_COPY_ALL+=" $DEST:$TYPE"
+				fi
+
+			done < <(printf '%s\n' "$FOLDERS" | tr ',' '\n' | sort -u)
+
+		done
+
+
 
 		IGV_SESSION_DAS_REPOSITORIES_ARRAY=($IGV_SESSION_DAS_REPOSITORIES)
 
@@ -1972,8 +1968,7 @@ for RUU in $RUN_UNIQ; do
 								if ! $COMMAND_COPY_NO_COMPRESS --exclude '*copy.mk*' --exclude $(basename $FINAL_REPORT_RUN)'.metrics' --exclude $(basename $FINAL_REPORT_RUN)'.variants' \$\$(find -L $RESULTS/$RUU -mindepth 1 -maxdepth 1 -name "$ANALYSIS_PREFIX*" -type f) $RESULTS_FOLDER_COPY_FOLDER/$RUU; then \
 									echo '[ERROR] Error copy within $RESULTS_FOLDER_COPY_FOLDER/$RUU'; \
 									exit_0; \
-								fi;
-								chmod $PERMS -R $RESULTS_FOLDER_COPY_FOLDER/$RUU $RESULTS_FOLDER_COPY_FOLDER/$RUU/* 
+								fi; 
 							" >> $RES_MK
 							RES_MK_ALL=$RES_MK_ALL" $RESULTS_FOLDER_COPY_FOLDER/$RUU"
 							RES_MK_ALL_RUU=$RES_MK_ALL_RUU" $RESULTS_FOLDER_COPY_FOLDER/$RUU"
@@ -1989,11 +1984,11 @@ for RUU in $RUN_UNIQ; do
 							echo $PRE_RULE"_$RESULTS_FOLDER_COPY_FOLDER$ROOT_FILE_SOURCE:
 								#[INFO] Copying '$RUU/$S' - STARK Results
 								mkdir -p $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA
+								chmod -R $PERMS $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S
 								if ! $COMMAND_COPY_NO_COMPRESS $REPOSITORY_FILE_SUBFOLDER_PATTERNS_PARAM $RESULTS/$RUU/$S/* $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA; then \
 									echo '[ERROR] Error copy $RESULTS/$RUU/$S/* to $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/$RESULTS_SUBFOLDER_DATA'; \
 									exit_0; \
-								fi;
-								chmod $PERMS -R $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S/* 
+								fi; 
 							" >> $RES_MK
 						elif [ "$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE" == "archives" ]; then
 							echo $PRE_RULE"_$RESULTS_FOLDER_COPY_FOLDER$ROOT_FILE_SOURCE:
@@ -2041,7 +2036,7 @@ for RUU in $RUN_UNIQ; do
 												exit_0; \
 											fi; \
 										else \
-											if ! cp \$\$F_SOURCE \$\$F_TARGET 1>/dev/null 2>/dev/null; then \
+											if ! cp -puf \$\$F_SOURCE \$\$F_TARGET 1>/dev/null 2>/dev/null; then \
 												echo '[ERROR] Error copy \$\$F_SOURCE to \$\$F_TARGET'; \
 												exit_0; \
 											fi; \
@@ -2049,7 +2044,7 @@ for RUU in $RUN_UNIQ; do
 										if [ ! -e \$\$F_TARGET ]; then \
 											(($DEBUG)) && echo '#[ERROR] Copy file $F_SOURCE_BASE to $F_TARGET_BASE FAILED'; \
 										else \
-											chmod $PERMS -R \$\$F_TARGET; \
+											(($DEBUG)) && echo '#[INFO] Copy file $F_SOURCE_BASE to $F_TARGET_BASE SUCCESS'; \
 										fi; \
 									done;
 								" >> $RES_MK
@@ -2171,21 +2166,22 @@ for RUU in $RUN_UNIQ; do
 
 
 		if [ -s $RES_MK ]; then
-			(($VERBOSE)) && echo "["$(timestamp)" | INFO] Process Copy - multithreading mode [$THREADS_COPY]"
-			echo "["$(date '+%Y%m%d-%H%M%S')"] Process Copy - multithreading mode [$THREADS_COPY] '$RELEASE_RUN' START" >>$LOGFILE_RES_RUN
+			(($VERBOSE)) && echo "["$(timestamp)" | INFO] STARK Process Copy - multithreading mode [$THREADS_COPY]"
+			echo "["$(date '+%Y%m%d-%H%M%S')"] STARK Process Copy - multithreading mode [$THREADS_COPY] '$RELEASE_RUN' START" >>$LOGFILE_RES_RUN
 			if make -j $THREADS_COPY --always-make -f $RES_MK all 1>$RES_MK.log 2>$RES_MK.err; then
 				cat $RES_MK.log $RES_MK.err >>$LOGFILE_RES_RUN
-				echo "["$(date '+%Y%m%d-%H%M%S')"] Process Copy - multithreading mode [$THREADS_COPY] '$RELEASE_RUN' END" >>$LOGFILE_RES_RUN
+				echo "["$(date '+%Y%m%d-%H%M%S')"] STARK Process Copy - multithreading mode [$THREADS_COPY] '$RELEASE_RUN' END" >>$LOGFILE_RES_RUN
 				(($VERBOSE)) && echo "["$(timestamp)" | INFO] STARK Copy Complete"
 
 			else
 				echo "["$(timestamp)" | ERROR] STARK Copy NOT Complete"
 				cat $RES_MK.log $RES_MK.err >>$LOGFILE_RES_RUN
-				echo "["$(date '+%Y%m%d-%H%M%S')"] Process Copy - multithreading mode [$THREADS_COPY] '$RELEASE_RUN' END" >>$LOGFILE_RES_RUN
+				echo "["$(date '+%Y%m%d-%H%M%S')"] STARK Process Copy - multithreading mode [$THREADS_COPY] '$RELEASE_RUN' END" >>$LOGFILE_RES_RUN
 				cat $RES_MK.err;
 				exit 1
 			fi
 		fi;
+		chmod $PERMS $RES_MK $RES_MK.log $RES_MK.err;
 		! (($DEBUG)) && rm -f $RES_MK $RES_MK.log $RES_MK.err
 
 		# Stop Analysis
