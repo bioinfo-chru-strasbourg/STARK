@@ -636,7 +636,7 @@ MAX_CONCURRENT_HSMETRICS_RAM?=24g
 #####################
 
 
-%.bams.for_metrics_bed: $(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(foreach ALIGNER,$(ALIGNERS),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).$(ALIGNER).design.bed )) $(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(foreach PIPELINE,$(PIPELINES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).$(call aligner,$(PIPELINE)).design.bed ))
+%.bams.for_metrics_bed: %.design_beds_sample.list
 	cat $^ | $(BEDTOOLS) sort -i - | $(BEDTOOLS) merge -i - | cut -f1,2,3 > $@
 	echo "BAMS for_metrics_bed: $^"
 	#cp $@ $*.test
@@ -744,7 +744,7 @@ MAX_CONCURRENT_HSMETRICS_RAM?=24g
 # Global run metrics (Sam)
 #############################
 # TODO add .genes
-%.metrics: $(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(foreach PIPELINE,$(PIPELINES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).$(call aligner,$(PIPELINE)).bam.metrics/metrics )) 
+%.metrics: $(BAM_FOLDER_METRICS)
 	$(PYTHON3) $(STARK_RUN_METRICS) --metricsFileList $$(echo $^ | tr " " ",") --outputPrefix $@. ;
 	echo "#[INFO] All metrics files on Design and Panel(s), by targets and by genes, for global coverage, depth and coverage, are named $$(basename $@).*" > $@;
 

@@ -109,7 +109,7 @@ FASTQC_METRICS=$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_S
 SEQUENCING_METRICS=$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).sequencing/metrics )
 
 
-BAM_METRICS=$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(foreach ALIGNER,$(ALIGNERS),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).$(ALIGNER).bam.metrics/metrics )) \
+BAM_FOLDER_METRICS=$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(foreach ALIGNER,$(ALIGNERS),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).$(ALIGNER).bam.metrics/metrics )) \
 	$(foreach RUN_SAMPLE,$(RUNS_SAMPLES),$(foreach PIPELINE,$(PIPELINES),$(OUTDIR)/$(call run,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE))/$(call sample,$(RUN_SAMPLE)).$(call aligner,$(PIPELINE)).bam.metrics/metrics ))
 
 
@@ -248,6 +248,12 @@ vcf_prereqs = \
 %.bams_sample.list: $$(call bam_prereqs,$$(call sample_from_target,$$*),bam) $$(call bam_prereqs,$$(call sample_from_target,$$*),bam.bai)
 	mkdir -p $(@D)
 	ls $^ | grep "\.bam$$" > $@
+
+# Rule to generate a list of Design BED files for each sample
+# List is generated only if design.bed files are present
+%.design_beds_sample.list: $$(call bam_prereqs,$$(call sample_from_target,$$*),design.bed)
+	mkdir -p $(@D)
+	ls $^ | grep "\.design\.bed$$" > $@
 
 # Rule to generate a list of BAM metrics files for each sample
 # List is generated only if bam.metrics/metrics are present
