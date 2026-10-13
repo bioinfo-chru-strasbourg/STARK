@@ -208,7 +208,7 @@ GZ_PARAM := $(if $(and $(filter pigz%,$(GZ)),$(THREADS_BY_SAMPLE)),-p $(THREADS_
 %.fastp.R1.fastq.gz: %.log
 	# FASTP parameters
 	echo " $(FASTP_PARAM) " > $@.param;
-	echo " --thread=1 " >> $@.param;
+	echo " --thread=$(THREADS_BY_SAMPLE) " >> $@.param;
 	echo " --compression=$(FASTP_COMPRESSION_LEVEL) " >> $@.param;
 	echo " $(FASTP_ADDITIONAL_OPTIONS) " >> $@.param;
 	# UMI test
