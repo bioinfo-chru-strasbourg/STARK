@@ -32,12 +32,35 @@ MPILEUP_OPTIONS?= -E -d 10000000 -C 50 -Q 10 -q 1
 
 
 %.bam.mpileup: %.bam %.bam.bai %.design.bed
-	if (( $$(grep -v "^#" -c $*.design.bed) )); then \
-		$(SAMTOOLS) view $< -L $*.design.bed -h | perl $(CAP_SOFTCLIPTOQ0) -v1 | $(SAMTOOLS) mpileup - -f $(GENOME) -l $*.design.bed $(MPILEUP_OPTIONS) > $@; \
+	# Clean and create split directory
+	rm -rf $@.split && mkdir -p $@.split
+	# Generate idxstats for the BAM file
+	$(SAMTOOLS) idxstats $< | awk '$$3>0' > $@.split/idxstats.txt
+	# Check if the design BED file has any non-comment lines and create the list of chromosomes accordingly
+	if (( $$(grep -v -e "^#" -e "^$$" -c $*.design.bed) )); then \
+		grep -v -e "^#" -e "^$$" $*.design.bed | cut -f1 | sort -u > $@.split/bedchroms.txt; \
+		cut -f1 $@.split/idxstats.txt | grep -Fx -f $@.split/bedchroms.txt > $@.split/chroms.txt; \
+		VIEW_L="-L $*.design.bed"; MP_L="-l $*.design.bed"; \
 	else \
-		$(SAMTOOLS) view $< -h | perl $(CAP_SOFTCLIPTOQ0) -v1 | $(SAMTOOLS) mpileup - -f $(GENOME) $(MPILEUP_OPTIONS) > $@; \
+		cut -f1 $@.split/idxstats.txt > $@.split/chroms.txt; \
+		VIEW_L=""; MP_L=""; \
 	fi;
-
+	# Order the chromosomes based on the idxstats information
+	awk 'NR==FNR{k[$$1];next} $$1 in k{print $$3"\t"$$1}' $@.split/chroms.txt $@.split/idxstats.txt \
+		| sort -k1,1nr | cut -f2 > $@.split/order.txt;
+	# Generate the sub Makefile for parallel processing of each chromosome part
+	{ \
+	printf '.DELETE_ON_ERROR:\n'; \
+	printf 'all: %s\n' "$$(sed 's|.*|$@.split/&.part|' $@.split/order.txt | tr '\n' ' ')"; \
+	printf '$@.split/%%.part:\n'; \
+	printf '\t$(SAMTOOLS) view $< "$$*" %s -h | perl $(CAP_SOFTCLIPTOQ0) -v1 | $(SAMTOOLS) mpileup - -f $(GENOME) %s $(MPILEUP_OPTIONS) > $$@\n' "$$VIEW_L" "$$MP_L"; \
+	} > $@.split/sub.mk
+	# Execute the sub Makefile to process all chromosome parts in parallel
+	+$(MAKE) -f $@.split/sub.mk all
+	# Concatenate all chromosome parts into the final mpileup file
+	sed 's|.*|$@.split/&.part|' $@.split/chroms.txt | xargs -r cat > $@
+	# Clean up the split directory
+	rm -rf $@.split
 
 
 # CONFIG/RELEASE
