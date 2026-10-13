@@ -20,18 +20,18 @@
 %.vcf: %.variantnormalization.vcf
 	# Add or replace dictionary of contig in the VCF file
 	if $(BCFTOOLS) view -h "$<" | grep -q '^##contig='; then \
-		ln -s $< $@.with_contigs; \
+		ln -s $< $@.with_contigs.vcf; \
 	else \
 		$(JAVA) $(JAVA_FLAGS_GATK4) -jar $(GATK4) \
 			UpdateVCFSequenceDictionary \
 			--sequence-dictionary $(DICT) \
 			--replace True \
 			--variant $< \
-			--output $@.with_contigs; \
+			--output $@.with_contigs.vcf; \
 	fi;
 	# Normalize the VCF file with BCFTOOLS
-	$(BCFTOOLS) norm -m- --multi-overlaps 0 -f $(GENOME) $@.with_contigs | $(BCFTOOLS) norm --rm-dup exact | $(BCFTOOLS) +setGT -- -t . -n 0 | $(BCFTOOLS) +fixploidy -- | $(BCFTOOLS) +fill-tags -- -t all > $@
-	rm -f $@.with_contigs
+	$(BCFTOOLS) norm -m- --multi-overlaps 0 -f $(GENOME) $@.with_contigs.vcf | $(BCFTOOLS) norm --rm-dup exact | $(BCFTOOLS) +setGT -- -t . -n 0 | $(BCFTOOLS) +fixploidy -- | $(BCFTOOLS) +fill-tags -- -t all > $@
+	rm -f $@.with_contigs.*
 
 
 
