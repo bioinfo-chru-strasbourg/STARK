@@ -1,7 +1,7 @@
 ############################
 # Main Rules
-# Release: 0.9.6.0
-# Date: 25/06/2025
+# Release: 0.9.6.1
+# Date: 12/10/2026
 # Author: Antony Le Bechec
 ############################
 
@@ -19,6 +19,7 @@
 # 28/07/2022-0.9.5.2: Change SNP and InDel merge, 2 rules for POST_CALLING and Callers (such as VarScan)
 # 25/05/2023-0.9.5.3: Cleaning
 # 25/06/2025-0.9.6.0: STARK release 19 compatibility
+# 12/10/2026-0.9.6.1: Add update of VCF sequence dictionary
 
 
 # HOWARD Prioritization
@@ -87,15 +88,34 @@ REMOVE_INTERMEDIATE_SAM?=1
 
 # VCF SORTING
 %.vcf: %.sorting.vcf
-	grep "^#" $< > $@
-	mkdir -p $<"_VCF_sort"
-	grep -v "^#" $< | sort -k1,1V -k2,2n -T $<"_VCF_sort" >> $@
-	rm -rf $<"_VCF_sort"
+	# Force replace dictionnary of contig in the VCF file
+	$(JAVA) $(JAVA_FLAGS_GATK4) -jar $(GATK4) \
+		UpdateVCFSequenceDictionary \
+		--sequence-dictionary $(DICT) \
+		--replace True \
+		--variant $< \
+		--output $@.with_contigs;
+	# Sort the VCF file by chromosome and position
+	$(BCFTOOLS) sort -T $@.SAMTOOLS_PREFIX $@.with_contigs -o $@
+	rm -rf $@.SAMTOOLS_PREFIX $@.with_contig
 
 
 # VCF NORMALIZATION with BCFTOOLS
 %.vcf: %.normalization.vcf
-	$(BCFTOOLS) norm -m- --multi-overlaps 0 -f $(GENOME) $<  > $@
+	# Add or replace dictionnary of contig in the VCF file
+	if $(BCFTOOLS) view -h "$<" | grep -q '^##contig='; then \
+		ln -s $< $@.with_contigs; \
+	else \
+		$(JAVA) $(JAVA_FLAGS_GATK4) -jar $(GATK4) \
+			UpdateVCFSequenceDictionary \
+			--sequence-dictionary $(DICT) \
+			--replace True \
+			--variant $< \
+			--output $@.with_contigs; \
+	fi;
+	# Normalize the VCF file with BCFTOOLS
+	$(BCFTOOLS) norm -m- --multi-overlaps 0 -f $(GENOME) $@.with_contigs -o $@
+	rm -f $@.with_contigs
 
 
 # MERGE SNP and InDel VCF
