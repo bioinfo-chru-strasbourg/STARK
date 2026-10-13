@@ -18,7 +18,7 @@
 
 # Normalization of variants after calling
 %.vcf: %.variantnormalization.vcf
-	# Add or replace dictionnary of contig in the VCF file
+	# Add or replace dictionary of contig in the VCF file
 	if $(BCFTOOLS) view -h "$<" | grep -q '^##contig='; then \
 		ln -s $< $@.with_contigs; \
 	else \

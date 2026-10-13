@@ -88,7 +88,7 @@ REMOVE_INTERMEDIATE_SAM?=1
 
 # VCF SORTING
 %.vcf: %.sorting.vcf
-	# Force replace dictionnary of contig in the VCF file
+	# Force replace dictionary of contig in the VCF file
 	$(JAVA) $(JAVA_FLAGS_GATK4) -jar $(GATK4) \
 		UpdateVCFSequenceDictionary \
 		--sequence-dictionary $(DICT) \
@@ -97,12 +97,12 @@ REMOVE_INTERMEDIATE_SAM?=1
 		--output $@.with_contigs;
 	# Sort the VCF file by chromosome and position
 	$(BCFTOOLS) sort -T $@.SAMTOOLS_PREFIX $@.with_contigs -o $@
-	rm -rf $@.SAMTOOLS_PREFIX $@.with_contig
+	rm -rf $@.SAMTOOLS_PREFIX $@.with_contigs
 
 
 # VCF NORMALIZATION with BCFTOOLS
 %.vcf: %.normalization.vcf
-	# Add or replace dictionnary of contig in the VCF file
+	# Add or replace dictionary of contig in the VCF file
 	if $(BCFTOOLS) view -h "$<" | grep -q '^##contig='; then \
 		ln -s $< $@.with_contigs; \
 	else \
