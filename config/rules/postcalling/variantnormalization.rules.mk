@@ -1,13 +1,13 @@
 ############################
 # Variant Normalization Rules
-# Release: 1.0.0
-# Date: 07/09/2026
+# Release: 1.1.0
+# Date: 12/10/2026
 # Author: Antony Le Bechec
 ############################
 
 # Release notes:
 # 1.0.0-07/09/2026: Creation, variant normalization
-
+# 1.1.0-12/10/2026: Add update of VCF sequence dictionary
 # OPTIONS
 
 
@@ -18,7 +18,20 @@
 
 # Normalization of variants after calling
 %.vcf: %.variantnormalization.vcf
-	$(BCFTOOLS) norm -m- --multi-overlaps 0 -f $(GENOME) $< | $(BCFTOOLS) norm --rm-dup exact | $(BCFTOOLS) +setGT -- -t . -n 0 | $(BCFTOOLS) +fixploidy -- | $(BCFTOOLS) +fill-tags -- -t all > $@
+	# Add or replace dictionnary of contig in the VCF file
+	if $(BCFTOOLS) view -h "$<" | grep -q '^##contig='; then \
+		ln -s $< $@.with_contigs; \
+	else \
+		$(JAVA) $(JAVA_FLAGS_GATK4) -jar $(GATK4) \
+			UpdateVCFSequenceDictionary \
+			--sequence-dictionary $(DICT) \
+			--replace True \
+			--variant $< \
+			--output $@.with_contigs; \
+	fi;
+	# Normalize the VCF file with BCFTOOLS
+	$(BCFTOOLS) norm -m- --multi-overlaps 0 -f $(GENOME) $@.with_contigs | $(BCFTOOLS) norm --rm-dup exact | $(BCFTOOLS) +setGT -- -t . -n 0 | $(BCFTOOLS) +fixploidy -- | $(BCFTOOLS) +fill-tags -- -t all > $@
+	rm -f $@.with_contigs
 
 
 
