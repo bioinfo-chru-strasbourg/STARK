@@ -33,152 +33,153 @@ APP_GROUP=""
 APP_PROJECT=""
 
 
-# FOLDERS
-###########
+# PIPELINES
+#############
 
-# Folders used for the analysis.
-# These folders will be automatically created if not exist.
-# The main folder is defined by STARK_FOLDER_MAIN variable, and all other folders are defined as subfolders of this main folder.
-# Folders can be redefined as absolute path, but we suggest to keep them as subfolders of the main folder for better organization and management of the data.
-# Folders like tools and databases contains pipeline tools and databases needed for the analysis, and will be used by the rules of the analysis.
-# Folders like input and output are used to store input data and results of the analysis, and will be used by the rules of the analysis.
-
-# MAIN STARK FOLDER
-# This is the main folder for the analysis, and all other folders are defined as subfolders of this main folder.
-# This folder will be automatically created if not exist, either during setup (for folders tools and databases) or during the analysis to store all the data and results of the analysis.
-STARK_FOLDER_MAIN="/STARK"
-
-# TOOLS FOLDER
-# All tools needed for STARK, and more, including STARK.
-# This folder will be automatically created during setup if not exist, and will be used to store all the tools needed for the analysis, including STARK itself. 
-# This folder will be used by the rules of the analysis to access the tools needed for the analysis.
-FOLDER_TOOLS=$STARK_FOLDER_MAIN/tools
-
-# DATABASES FOLDER
-# All databases needed for STARK, and more.
-# This folder will be automatically created during setup if not exist, and will be used to store all the databases needed for the analysis, including reference genomes and mandatory databases for calling and annotation.
-# Folder structure is important for the rules of the analysis to access the databases needed for the analysis, and to automatically detect the reference genome and mandatory databases for calling and annotation depending on the assembly defined in the manifest file (configured in the SampleSheet of each run), if any.
-# Folder structuer format: `$FOLDER_DATABASES/<DATABASE_NAME>/<DATABASE_RELEASE>/<ASSEMBLY>/<DATABASE_FILE>`
-# Examples of folder structure:
-# - `$FOLDER_DATABASES/genomes/current/hg19/hg19.fa`
-# - `$FOLDER_DATABASES/dbsnp/latest/hg19/dbsnp_138.hg19.vcf.gz`
-# - `$FOLDER_DATABASES/dbnsfp/4.4a/hg19/dbNSFP4.4a.hg19.parquet`
-FOLDER_DATABASES=$STARK_FOLDER_MAIN/databases
-
-
-# INPUT FOLDER
-# All input data for the analysis, including raw data and metadata, should be stored in this folder. This folder will be used by the rules of the analysis to access the input data needed for the analysis.
-# Folder structure is important for the rules of the analysis to access the input data needed for the analysis, and to automatically detect the input data needed for the analysis depending on the manifest file (configured in the SampleSheet of each run), if any.
-# Subfolders for runs, manifests and pedigree can be defined as absolute path, but we suggest to keep them as subfolders of the input folder for better organization and management of the data.
-FOLDER_INPUT=$STARK_FOLDER_MAIN/input
-
-# Illumina Sequencer repository Folder. Subfolder as runs
-# This folder will be used by the rules of the analysis to access the raw data of each run (from the sequencer, such as Illumina), organized as subfolder for each run (e.g. `$FOLDER_RUN/<RUN_NAME>/`), and to automatically detect the raw data information of each run on a SampleSheet file, or a analysis JSON file.
-#FOLDER_RUN=$FOLDER_INPUT/runs
-
-# Illumina Manifests repository.
-# This folder will be used by the rules of the analysis to access the manifest (Illumina format), design (BED format) and gene panels (BED format) files of each run (e.g. `$FOLDER_MANIFEST/my_manifest.manifest`, `$FOLDER_MANIFEST/my_design.bed`, `$FOLDER_MANIFEST/my_gene_panel.genes`).
-# These files are automatically detected within the SampleSheet of the run, or the analysis JSON file of the run.
-#FOLDER_MANIFEST=$FOLDER_INPUT/manifests
-
-# Pedigree repository.
-# This folder will be used by the rules of the analysis to access the pedigree file (PED format) of each run (e.g. `$FOLDER_PEDIGREE/my_pedigree.ped`).
-# These files are automatically detected within the SampleSheet of the run, or the analysis JSON file of the run, by using GROUP and PROJECT defined by the application used for the run.
-#FOLDER_PEDIGREE=$FOLDER_INPUT/pedigree
-
-
-# OUTPUT FOLDER
-# This folder will be used to store all the results of the analysis, including intermediate files and final results.
-# Subfolders for results, demultiplexing, log and tmp can be defined as absolute path, but we suggest to keep them as subfolders of the output folder for better organization and management of the data.
-FOLDER_OUTPUT=$STARK_FOLDER_MAIN/output
-
-# DEMULTIPLEXING FOLDER
-# This folder will be used by the rules of the analysis to store the results of the demultiplexing step (using SampleSheet file), including the demultiplexed FASTQ files and the demultiplexing report.
-#FOLDER_DEMULTIPLEXING=$FOLDER_OUTPUT/demultiplexing
-
-# FOLDER_RESULTS
-# This folder will be used to store all the results of the analysis, including intermediate files and final results (files such as BAM, VCF, metrics, annotation files, and more).
-#FOLDER_RESULTS=$FOLDER_OUTPUT/results
-
-
-# FOLDER_LOG
-# This folder will be used by the rules of the analysis to store log files of the analysis.
-#FOLDER_LOG=$FOLDER_OUTPUT/log
-
-# FOLDER_TMP
-# This folder will be used by the rules of the analysis to store temporary files of the analysis, and to store temporary files of the tools used for the analysis (e.g. temporary files of GATK tools).
-#FOLDER_TMP=$FOLDER_OUTPUT/tmp
-
-# REPOSITORY folder
-# This folder will be used by the rules of the analysis to copy some results of the analysis in a repository folder, organized by group and project (e.g. `$FOLDER_REPOSITORY/<GROUP>/<PROJECT>/`), and to automatically detect the files to copy in the repository folder depending on application.
-# For a full run analysis, repository folder is automatically defined with group pand project structure. For other analyses, such as a single sample analysis, repository folder is empty, and no copy is performed.
-# Leave it blank for no copy in repository folder.
-FOLDER_REPOSITORY=$FOLDER_OUTPUT/repository
-
-# ARCHIVES folder
-# This folder will be used by the rules of the analysis to copy some results of the analysis in a archives folder, organized by group and project (e.g. `$FOLDER_ARCHIVES/<GROUP>/<PROJECT>/`), and to automatically detect the files to copy in the archives folder depending on application.
-# For a full run analysis, archives folder is automatically defined with group pand project structure. For other analyses, such as a single sample analysis, archives folder is empty, and no copy is performed.
-# Leave it blank for no copy in archives folder.
-FOLDER_ARCHIVES=$FOLDER_OUTPUT/archives
-
-# FAVORITES folder
-# This folder will be used by the rules of the analysis to copy some results of the analysis in a favorites folder, organized by group and project (e.g. `$FOLDER_FAVORITES/<GROUP>/<PROJECT>/`), and to automatically detect the files to copy in the favorites folder depending on application.
-# For a full run analysis, favorites folder is automatically defined with group pand project structure. For other analyses, such as a single sample analysis, favorites folder is empty, and no copy is performed.
-# Leave it blank for no copy in favorites folder.
-# Configurations:
-#    - to NOT use favorites folder: FOLDER_FAVORITES=
-#    - to copy favorites within repository folder: FOLDER_FAVORITES=$FOLDER_REPOSITORY
-#    - to copy favorites within default favorites folder: FOLDER_FAVORITES=$FOLDER_OUTPUT/favorites
-FOLDER_FAVORITES=
-
-
-# PARAMETERS
-######################
-
-
-# Rules
-# Add specific rules to load.
-# These files will be added to the list of rules files from APPS folder
-# example: RULES_APP="MYGROUP/*.rules.mk" "$APP_FOLDER/*.rules.mk"
-# for inheritance, use RULES_APP="$RULES_APP MYGROUP/*.rules.mk"
-#RULES_APP=""
-
-
-# ASSEMBLY (default hg19)
+# ASSEMBLY
+# Assembly to use for the analysis, in UCSC format, such as `hg19` or `hg38`.
 # Assembly is automatically detected in manifest file (configured in the SampleSheet of each run), if any
 ASSEMBLY=hg19
 
-
-# PIPELINES (default "bwamem.gatkHC.howard")
-# pipelines to use for the analysis
-# Format: "ALIGNER1.CALLER1.ANNOTATOR ALIGNER1.CALLER2.ANNOTATOR1 ALIGNER2.CALLER1.ANNOTATOR1"
-# If variables ALIGNERS, CALLERS, and ANNOTATORS are defined (see below), PIPELINES variable will be automatically generated
-# This variable can be a additionnal pipeline that those defined by the combinasion of ALIGNERS, CALLERS, and ANNOTATORS
-# If no pipeline is finally defined, the default pipeline will be applied
+# PIPELINES
+# Pipelines to use for the analysis.
+# A pipeline is defining with an aligner, a caller and an annotator.
+# Each pipeline should be defined with a valid combination of aligner, caller, and annotator, in format `ALIGNER.CALLER.ANNOTATOR`.
+# All corresponding rules should be defined in the rules files.
+# If variables `ALIGNERS`, `CALLERS`, and `ANNOTATORS` are defined, this variable will be automatically generated by adding a combinations of all aligners, callers and annotators. If no pipeline is finally defined, the default pipeline will be applied.
+# Default: "bwamem.gatkHC.howard"
+# Examples:
+# - "bwamem.gatkHC.howard"
+# - "bwamem.VarScan.howard"
+# - "bwamem.gatkHC.howard bwamem.gatkUG.howard bwamem.VarScan.howard"
 PIPELINES="bwamem.gatkHC.howard"
 
-# ALIGNERS (default "")
-# Aligners to use for the analysis
-# Example of available aligners: bwamem  bwasw bwaaln
+# ALIGNERS
+# Aligners to use for the analysis (see `PIPELINES` parameter).
+# A corresponding rules file should exist for each aligner.
+# Default: ""
+# Examples (available aligners):
+# - "bwamem"
+# - "bowtie"
+# - "star"
 #ALIGNERS="bwamem"
 
-# CALLERS (default "")
-# Callers to use for the analysis
-# Example of available callers: gatkHC gatkUG VarScan samtools
+# CALLERS
+# Callers to use for the analysis (see `PIPELINES` parameter).
+# A corresponding rules file should exist for each caller.
+# Default: ""
+# Examples (available callers):
+# - "gatkHC"
+# - "gatkUG"
+# - "VarScan"
+# - "MuTect2"
 #CALLERS="gatkHC"
 
-# ANNOTATORS (default "")
-# Annotator to use for the analysis
-# Example of available annotators: howard snpeff
+# ANNOTATORS
+# Annotator to use for the analysis (see `PIPELINES` parameter).
+# A corresponding rules file should exist for each annotator.
+# Default: ""
+# Examples (available annotators):
+# - "howard"
+# - "snpeff"
 #ANNOTATORS="howard"
 
+# Rules
+# Add specific rules to load (see `PIPELINES` parameter).
+# These files will be added to the list of rules files from APPS folder.
+# Variable `$APP_FOLDER` corresponds to the folder of the current app.
+# For inheritance, use RULES_APP="$RULES_APP MYGROUP/*.rules.mk".
+# Default: ""
+# Examples:
+# - "MYGROUP/*.rules.mk"
+# - "$APP_FOLDER/*.rules.mk"
+#RULES_APP=""
+
 # BLANK samples
-# Used to reject for CNV analysis
+# Used to reject samples for particular analyses (such as CNV analysis).
+# List samples with a comma separating each sample.
+# Default: "BlcADN,blanc,BlcPCR,blcPCR,T_NTC,Z_NTC"
+# Examples:
+# - "BlcADN,blanc,BlcPCR,blcPCR"
+# - "T_NTC,Z_NTC"
 BLANK="BlcADN,blanc,BlcPCR,blcPCR,T_NTC,Z_NTC"
 
-# BARCODE_MISMATCHES (default 1)
-# Used to demultiplex
+
+# DEMULTIPLEXING
+#################
+
+# BARCODE_MISMATCHES
+# Number of allowed barcode mismatches during demultiplexing.
+# This value specifies how many mismatches are allowed when matching barcodes during the demultiplexing process.
+# Default: 1
 BARCODE_MISMATCHES=1
+
+# STARK_DEMULTIPLEXING_BASES_MASK
+# Bases mask for demultiplexing.
+# This setting determines how the sequencer reads are interpreted during the demultiplexing process.
+# Default: ""
+# Examples:
+# - "" (auto from SampleSheet)
+# - "Y150,I10,Y10,Y150"
+# - "Y150,I8,Y10,Y150" (UMI index2)
+STARK_DEMULTIPLEXING_BASES_MASK=""
+
+# STARK_DEMULTIPLEXING_MASK_SHORT_ADAPTATER_READ
+# Short adapter read mask for demultiplexing.
+# This setting determines the mask for short adapter reads during the demultiplexing process.
+# If demultiplexing UMI within a read must be set to 0 for Agilent XTHS kits.
+# Default: "" (auto)
+# Examples:
+# - "" (auto)
+# - "Y10" (short adapter read of 10 bases)
+STARK_DEMULTIPLEXING_MASK_SHORT_ADAPTATER_READ=""
+
+# STARK_DEMULTIPLEXING_READS_MAPPING
+# Read mapping for demultiplexing.
+# This setting defines the order of reads in the FASTQ files for demultiplexing.
+# Redefine FASTQ files in order to identify R1, R2, I1 and I2.
+# Default: "" (corresponding to "R1 I1 I2 R2")
+# Examples:
+# - "" (default, corresponding to "R1 I1 I2 R2")
+# - "R1 I1 R2 R3" (UMI index2)
+STARK_DEMULTIPLEXING_READS_MAPPING=""
+
+# ADAPTER_STRINGENCY
+# Adapter stringency for demultiplexing.
+# For BCL2FASTQ demultiplexing (see doc).
+# Default: 0.9
+ADAPTER_STRINGENCY=0.9
+
+# STARK_DEMULTIPLEXING_BCL2FASTQ_OPTIONS
+# BCL2FASTQ demultiplexing options (see doc).
+# This setting allows you to specify additional options for the BCL2FASTQ demultiplexing command.
+# Default: "--no-lane-splitting --create-fastq-for-index-reads"
+# Examples:
+# - "--no-lane-splitting --create-fastq-for-index-reads" (default)
+# - "--no-lane-splitting" (without creating fastq for index reads)
+STARK_DEMULTIPLEXING_BCL2FASTQ_OPTIONS="--no-lane-splitting --create-fastq-for-index-reads"
+
+# FASTQ_DEMULTIPLEXING_COMPRESSION_LEVEL
+# FASTQ compression level for demultiplexing FASTQ files.
+# This specifies the zlib compression level (1-9) used for FASTQ files during demultiplexing (BCL2FASTQ).
+# If FASTQ_DEMULTIPLEXING_KEEP=1, we suggest a high level of compression (at least 5)
+# Default: 1
+FASTQ_DEMULTIPLEXING_COMPRESSION_LEVEL=1
+
+# FASTQ_DEMULTIPLEXING_KEEP
+# Keep demultiplexing FASTQ files (1/TRUE/YES/Y or 0/FALSE/NO/N).
+# This setting determines whether the demultiplexed FASTQ files are kept into results after processing.
+# Default: 0
+FASTQ_DEMULTIPLEXING_KEEP=0
+
+# SEQUENCING_DEMULTIPLEXING_FOLDER
+# Folder for storing demultiplexed FASTQ files within the sequencing results (`$SAMPLE.sequencing` folder).
+# Default: "demultiplexing"
+SEQUENCING_DEMULTIPLEXING_FOLDER=demultiplexing
+
+
+# METRICS
+##########
 
 # BAM METRICS (default 1/TRUE/YES/Y)
 # Performs BAM METRICS (1/TRUE/YES/Y or 0/FALSE/NO/N). Time and space consuming. Switch off for exome/genome for better perfomances
@@ -269,40 +270,6 @@ PRIORITIZE_PIPELINES_LIST=""
 
 
 
-# FASTQ Processing
-
-# Set mask for demultiplexing
-# e.g. "" (auto from SampleSheet), "Y150,I10,Y10,Y150", "Y150,I8,Y10,Y150" (UMI index2)
-# default ""
-STARK_DEMULTIPLEXING_BASES_MASK=""
-
-# Set short read size for demultiplexing
-# If demultiplexing UMI within a read must be set to 0 for Agilent XTHS kits
-# default "" (auto)
-STARK_DEMULTIPLEXING_MASK_SHORT_ADAPTATER_READ=""
-
-# Set read mapping
-# Redefine FASTQ files in order to identify R1, R2, I1 and I2
-# Order: R1 I1 I2 R2
-# e.g. "" (default, corresponding to "R1 I1 I2 R2"), "R1 I1 R2 R3" (UMI index2)
-# default "R1 I1 I2 R2"
-STARK_DEMULTIPLEXING_READS_MAPPING=""
-
-# Demultiplexing adaptated stringency
-# For BCL2FASTQ demultiplexing (see doc)
-ADAPTER_STRINGENCY=0.9
-
-# Demultiplexing options
-# For BCL2FASTQ demultiplexing (see doc)
-# Usually: "--no-lane-splitting --create-fastq-for-index-reads"
-# Default: ""
-STARK_DEMULTIPLEXING_BCL2FASTQ_OPTIONS="--no-lane-splitting --create-fastq-for-index-reads"
-
-# FASTQ compression level for demultiplexing FASTQ files
-# zlib compression level (1-9) used for FASTQ files during demultiplexing
-# Used by BCL2FASTQ
-# If FASTQ_DEMULTIPLEXING_KEEP=1, we suggest a high level of compression (at least 5)
-FASTQ_DEMULTIPLEXING_COMPRESSION_LEVEL=1
 
 # FASTQ compression level for main FASTQ files
 # zlib compression level (1-9) used for FASTQ files
@@ -365,14 +332,6 @@ BARCODE_TAG=""
 # set variable to "READ_NAME_REGEX=null" to disable optical deduplication
 # PICARD_MARKDUP_OPTICAL_DEDUP="-READ_NAME_REGEX null"
 PICARD_MARKDUP_OPTICAL_DEDUP=""
-
-# Keep demultiplexing FASTQ
-# Keep fastq demultiplexed or from input reads/reads2
-FASTQ_DEMULTIPLEXING_KEEP=0
-
-# Folder for demultiplexing FASTQ
-# within $SAMPLE.sequencing folder
-SEQUENCING_DEMULTIPLEXING_FOLDER=demultiplexing
 
 # Additional FASTP options
 # see FASTP doc
@@ -994,3 +953,102 @@ IGV_SESSION_DAS="http://localhost:4201/static/data/public/repositories"
 IGV_SESSION_DAS_REPOSITORIES="$IGV_SESSION_DAS/Repository $IGV_SESSION_DAS/Archives $IGV_SESSION_DAS/Favorites"
 IGV_SESSION_JSON_TRACKS_ADDITIONAL=""
 
+
+
+# FOLDERS
+###########
+
+# Folders used for the analysis.
+# These folders will be automatically created if not exist.
+# The main folder is defined by STARK_FOLDER_MAIN variable, and all other folders are defined as subfolders of this main folder.
+# Folders can be redefined as absolute path, but we suggest to keep them as subfolders of the main folder for better organization and management of the data.
+# Folders like tools and databases contains pipeline tools and databases needed for the analysis, and will be used by the rules of the analysis.
+# Folders like input and output are used to store input data and results of the analysis, and will be used by the rules of the analysis.
+
+# MAIN STARK FOLDER
+# This is the main folder for the analysis, and all other folders are defined as subfolders of this main folder.
+# This folder will be automatically created if not exist, either during setup (for folders tools and databases) or during the analysis to store all the data and results of the analysis.
+STARK_FOLDER_MAIN="/STARK"
+
+# TOOLS FOLDER
+# All tools needed for STARK, and more, including STARK.
+# This folder will be automatically created during setup if not exist, and will be used to store all the tools needed for the analysis, including STARK itself. 
+# This folder will be used by the rules of the analysis to access the tools needed for the analysis.
+FOLDER_TOOLS=$STARK_FOLDER_MAIN/tools
+
+# DATABASES FOLDER
+# All databases needed for STARK, and more.
+# This folder will be automatically created during setup if not exist, and will be used to store all the databases needed for the analysis, including reference genomes and mandatory databases for calling and annotation.
+# Folder structure is important for the rules of the analysis to access the databases needed for the analysis, and to automatically detect the reference genome and mandatory databases for calling and annotation depending on the assembly defined in the manifest file (configured in the SampleSheet of each run), if any.
+# Folder structuer format: `$FOLDER_DATABASES/<DATABASE_NAME>/<DATABASE_RELEASE>/<ASSEMBLY>/<DATABASE_FILE>`
+# Examples of folder structure:
+# - `$FOLDER_DATABASES/genomes/current/hg19/hg19.fa`
+# - `$FOLDER_DATABASES/dbsnp/latest/hg19/dbsnp_138.hg19.vcf.gz`
+# - `$FOLDER_DATABASES/dbnsfp/4.4a/hg19/dbNSFP4.4a.hg19.parquet`
+FOLDER_DATABASES=$STARK_FOLDER_MAIN/databases
+
+
+# INPUT FOLDER
+# All input data for the analysis, including raw data and metadata, should be stored in this folder. This folder will be used by the rules of the analysis to access the input data needed for the analysis.
+# Folder structure is important for the rules of the analysis to access the input data needed for the analysis, and to automatically detect the input data needed for the analysis depending on the manifest file (configured in the SampleSheet of each run), if any.
+# Subfolders for runs, manifests and pedigree can be defined as absolute path, but we suggest to keep them as subfolders of the input folder for better organization and management of the data.
+FOLDER_INPUT=$STARK_FOLDER_MAIN/input
+
+# Illumina Sequencer repository Folder. Subfolder as runs
+# This folder will be used by the rules of the analysis to access the raw data of each run (from the sequencer, such as Illumina), organized as subfolder for each run (e.g. `$FOLDER_RUN/<RUN_NAME>/`), and to automatically detect the raw data information of each run on a SampleSheet file, or a analysis JSON file.
+#FOLDER_RUN=$FOLDER_INPUT/runs
+
+# Illumina Manifests repository.
+# This folder will be used by the rules of the analysis to access the manifest (Illumina format), design (BED format) and gene panels (BED format) files of each run (e.g. `$FOLDER_MANIFEST/my_manifest.manifest`, `$FOLDER_MANIFEST/my_design.bed`, `$FOLDER_MANIFEST/my_gene_panel.genes`).
+# These files are automatically detected within the SampleSheet of the run, or the analysis JSON file of the run.
+#FOLDER_MANIFEST=$FOLDER_INPUT/manifests
+
+# Pedigree repository.
+# This folder will be used by the rules of the analysis to access the pedigree file (PED format) of each run (e.g. `$FOLDER_PEDIGREE/my_pedigree.ped`).
+# These files are automatically detected within the SampleSheet of the run, or the analysis JSON file of the run, by using GROUP and PROJECT defined by the application used for the run.
+#FOLDER_PEDIGREE=$FOLDER_INPUT/pedigree
+
+
+# OUTPUT FOLDER
+# This folder will be used to store all the results of the analysis, including intermediate files and final results.
+# Subfolders for results, demultiplexing, log and tmp can be defined as absolute path, but we suggest to keep them as subfolders of the output folder for better organization and management of the data.
+FOLDER_OUTPUT=$STARK_FOLDER_MAIN/output
+
+# DEMULTIPLEXING FOLDER
+# This folder will be used by the rules of the analysis to store the results of the demultiplexing step (using SampleSheet file), including the demultiplexed FASTQ files and the demultiplexing report.
+#FOLDER_DEMULTIPLEXING=$FOLDER_OUTPUT/demultiplexing
+
+# FOLDER_RESULTS
+# This folder will be used to store all the results of the analysis, including intermediate files and final results (files such as BAM, VCF, metrics, annotation files, and more).
+#FOLDER_RESULTS=$FOLDER_OUTPUT/results
+
+
+# FOLDER_LOG
+# This folder will be used by the rules of the analysis to store log files of the analysis.
+#FOLDER_LOG=$FOLDER_OUTPUT/log
+
+# FOLDER_TMP
+# This folder will be used by the rules of the analysis to store temporary files of the analysis, and to store temporary files of the tools used for the analysis (e.g. temporary files of GATK tools).
+#FOLDER_TMP=$FOLDER_OUTPUT/tmp
+
+# REPOSITORY folder
+# This folder will be used by the rules of the analysis to copy some results of the analysis in a repository folder, organized by group and project (e.g. `$FOLDER_REPOSITORY/<GROUP>/<PROJECT>/`), and to automatically detect the files to copy in the repository folder depending on application.
+# For a full run analysis, repository folder is automatically defined with group pand project structure. For other analyses, such as a single sample analysis, repository folder is empty, and no copy is performed.
+# Leave it blank for no copy in repository folder.
+FOLDER_REPOSITORY=$FOLDER_OUTPUT/repository
+
+# ARCHIVES folder
+# This folder will be used by the rules of the analysis to copy some results of the analysis in a archives folder, organized by group and project (e.g. `$FOLDER_ARCHIVES/<GROUP>/<PROJECT>/`), and to automatically detect the files to copy in the archives folder depending on application.
+# For a full run analysis, archives folder is automatically defined with group pand project structure. For other analyses, such as a single sample analysis, archives folder is empty, and no copy is performed.
+# Leave it blank for no copy in archives folder.
+FOLDER_ARCHIVES=$FOLDER_OUTPUT/archives
+
+# FAVORITES folder
+# This folder will be used by the rules of the analysis to copy some results of the analysis in a favorites folder, organized by group and project (e.g. `$FOLDER_FAVORITES/<GROUP>/<PROJECT>/`), and to automatically detect the files to copy in the favorites folder depending on application.
+# For a full run analysis, favorites folder is automatically defined with group pand project structure. For other analyses, such as a single sample analysis, favorites folder is empty, and no copy is performed.
+# Leave it blank for no copy in favorites folder.
+# Configurations:
+#    - to NOT use favorites folder: FOLDER_FAVORITES=
+#    - to copy favorites within repository folder: FOLDER_FAVORITES=$FOLDER_REPOSITORY
+#    - to copy favorites within default favorites folder: FOLDER_FAVORITES=$FOLDER_OUTPUT/favorites
+FOLDER_FAVORITES=
