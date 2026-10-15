@@ -178,6 +178,118 @@ FASTQ_DEMULTIPLEXING_KEEP=0
 SEQUENCING_DEMULTIPLEXING_FOLDER=demultiplexing
 
 
+# FASTQ PROCESSING
+###################
+
+# FASTQ_COMPRESSION_LEVEL
+# Compression level for main FASTQ files (1-9).
+# Used by FASTP with zlib compression.
+# Default: 1
+FASTQ_COMPRESSION_LEVEL=1
+
+# ENABLE_ADAPTER_TRIMMING
+# Enable or disable adapter trimming for FASTQ files.
+# If enabled, FASTP will trim adapters from the reads based on the detected adapter sequences (autodetect).
+# This setting only affects adapter trimming and does not impact other FASTQ processing steps.
+# Note: Adapter trimming may affect read length and quality statistics.
+# Options: 0 (disabled) or 1 (enabled)
+# Default: 0 (disabled)
+ENABLE_ADAPTER_TRIMMING=0
+
+# FASTQ_QUALITY_FILTERING
+# Enable or disable read quality filtering for FASTQ files.
+# If enabled, reads with quality below the specified threshold will be removed.
+# Default: 0 (disabled)
+FASTQ_QUALITY_FILTERING=0
+
+# POLY_G TAIL TRIMMING
+# Enable or disable polyG tail trimming for FASTQ files.
+# If enabled, FASTP will trim polyG tails from the reads.
+# By default, trimming is automatically enabled for Illumina NextSeq/NovaSeq data.
+# The minimum length to detect polyG in the read tail.
+# Default: 0 (disabled)
+POLY_G_MIN_LEN=0
+
+# READ LENGTH FILTERING
+# Enable or disable read length filtering for FASTQ files.
+# If enabled, reads shorter than the specified length will be discarded.
+# Default: 0 (disabled)
+READ_LENGTH_REQUIRED=0
+
+# UMI_LOC
+# UMI extraction location for FASTQ files.
+# If not specified, UMI extraction will be disabled.
+# If UMI extraction is enabled, specify the location of the UMI within the reads or indexes.
+# See FASTP/UMI TOOLS documentation for more information.
+# Available locations: 
+# - "index1": the first index is used as UMI. If the data is PE, this UMI will be used for both read1/read2.
+# - "index2": the second index is used as UMI. PE data only, this UMI will be used for both read1/read2.
+# - "read1": the head of read1 is used as UMI. If the data is PE, this UMI will be used for both read1/read2.
+# - "read2": the head of read2 is used as UMI. PE data only, this UMI will be used for both read1/read2.
+# - "per_index": read1 will use UMI extracted from index1, read2 will use UMI extracted from index2.
+# - "per_read": read1 will use UMI extracted from the head of read1, read2 will use UMI extracted from the head of read2.
+# Default: "" (disabled)
+UMI_LOC=""
+
+# UMI_BARCODE_PATTERN
+# Pattern for UMI and optional cell barcodes within the reads or indexes.
+# If not specified, UMI extraction will be disabled.
+# Otherwise, UMI extraction will be performed according to the specified location.
+# Pattern will be used to extract UMIs and optional cell barcodes from the reads or indexes.
+# If UMI_LOC is "per_index" or "per_read", and UMI_BARCODE_PATTERN is defined as "NNNNN", it with be redefined as "NNNNN-NNNNN"
+# Only length of the first part of the duplex barcode will be used with FASTP.
+# See FASTP/UMI TOOLS documentation for more information
+# Default: "" (disabled)
+# Examples:
+# - "NNNNNNNNNN" (for simplex)
+# - "NNNNN-NNNNN" (for duplex)
+UMI_BARCODE_PATTERN=""
+
+# FASTP_ADDITIONAL_OPTIONS
+# Additional options to pass to FASTP.
+# This allows you to pass any additional command-line options to FASTP.
+# See FASTP documentation for available options.
+# Default: "" (no additional options)
+# Example: 
+# - "--trim_front1 3 --trim_front2 3"
+FASTP_ADDITIONAL_OPTIONS=""
+
+# FASTQ_PROCESSING_STEPS
+# All steps to process input FASTQ files, after sequencing and demultiplexing (if any)
+# Format: "step1 step2 step3"
+# Available steps:
+# - "fastq_reheader": FASTQ reheader to integreate index within FASTQ comment Illumina tag (e.g. 1:N:0:xxx). Nothing done if already integrated (same header or tag BC or RX exists)
+# - "fastq_clean_header": FASTQ read head formatting, especially SAMTOOLS tags. Nothing done if no needs
+# - "compress": FASTQ files compression (see FASTQ_COMPRESSION_LEVEL)
+# - "sort": sort FASTQ using read name
+# - "fastp": process FASTP algorithm and report, UMI extraction (if any, see UMI_LOC and UMI_BARCODE_PATTERN), quality filtration...
+# - "umi_tools": process UMITools algorithm for UMI extraction (if any, see UMI_LOC and UMI_BARCODE_PATTERN)
+# Default: "fastq_reheader sort fastp fastq_clean_header compress"
+# Examples:
+# - "fastq_reheader sort fastp fastq_clean_header compress" (for default sorting and compression)
+# - "fastq_reheader sort umi_tools fastp fastq_clean_header compress" (for UMI technology using umi tools)
+# - "sort compress" (for only sorting and compression)
+#FASTQ_PROCESSING_STEPS="fastq_reheader sort umi_tools fastp fastq_clean_header compress"
+FASTQ_PROCESSING_STEPS="fastq_reheader sort fastp fastq_clean_header compress"
+
+
+
+
+
+# BARCODE_TAG
+# Specify the barcode tag to use for marking duplicates in BAM files.
+# Barcode tag
+# Barcode to use for Mark Duplicates
+# If not null, Mark Duplicates will consider this tag (default null)
+# e.g.: BARCODE_TAG="BC" for 10X Genomics, BARCODE_TAG="BX" for UMI
+# See PICARD documentation for more information
+BARCODE_TAG=""
+
+# set variable to "READ_NAME_REGEX=null" to disable optical deduplication
+# PICARD_MARKDUP_OPTICAL_DEDUP="-READ_NAME_REGEX null"
+PICARD_MARKDUP_OPTICAL_DEDUP=""
+
+
 # METRICS
 ##########
 
@@ -269,94 +381,6 @@ METRICS_SNPEFF=0
 PRIORITIZE_PIPELINES_LIST=""
 
 
-
-
-# FASTQ compression level for main FASTQ files
-# zlib compression level (1-9) used for FASTQ files
-# Used by FASTP
-FASTQ_COMPRESSION_LEVEL=1
-
-# ENABLE_ADAPTER_TRIMMING
-# Trim adapter and autodetect adapter for paired end
-# Either 0 or 1
-# Default: 0 (i.e. adapter trimming is disabled)
-ENABLE_ADAPTER_TRIMMING=0
-
-# FASTQ Read quality filtering
-# Read Quality threshold. Read quality below will be removed
-# Default: 0 (i.e. disable)
-FASTQ_QUALITY_FILTERING=0
-
-# polyG tail trimming
-# force polyG tail trimming, by default trimming is automatically enabled for Illumina NextSeq/NovaSeq data
-# the minimum length to detect polyG in the read tail.
-# Default: 0 (i.e. disable)
-POLY_G_MIN_LEN=0
-
-# Read length filtering
-# reads shorter than length_required will be discarded
-# Default: 0 (i.e. disable)
-READ_LENGTH_REQUIRED=0
-
-# UMI extract location
-# Set the UMI location
-# If not null, NO UMI extraction and analysis
-# Available locations: 
-#    index1: the first index is used as UMI. If the data is PE, this UMI will be used for both read1/read2.
-#    index2 the second index is used as UMI. PE data only, this UMI will be used for both read1/read2.
-#    read1 the head of read1 is used as UMI. If the data is PE, this UMI will be used for both read1/read2.
-#    read2 the head of read2 is used as UMI. PE data only, this UMI will be used for both read1/read2.
-#    per_index read1 will use UMI extracted from index1, read2 will use UMI extracted from index2.
-#    per_read read1 will use UMI extracted from the head of read1, read2 will use UMI extracted from the head of read2.
-# e.g.: UMI_LOC="index2"
-# See FASTP/UMI TOOLS documentation for more information
-UMI_LOC=""
-
-# UMI extract tag
-# Set the UMI Barcode pattern
-# If not null, STARK will prepare fastq containg UMIs +/- cell barcodes for alignment
-# e.g.: UMI_BARCODE_PATTERN="NNNNNNNNNN" for simplex
-# e.g.: UMI_BARCODE_PATTERN="NNNNN-NNNNN" for duplex
-# if UMI_LOC is "per_index" or "per_read", and UMI_BARCODE_PATTERN is defined as "NNNNN", it with be redefined as "NNNNN-NNNNN"
-# Only length of the first part of the duplex barcode will be used with FASTP
-# See FASTP/UMI TOOLS documentation for more information
-UMI_BARCODE_PATTERN=""
-
-# Barcode tag
-# Barcode to use for Mark Duplicates
-# If not null, Mark Duplicates will consider this tag (default null)
-# e.g.: BARCODE_TAG="BC" for 10X Genomics, BARCODE_TAG="BX" for UMI
-# See PICARD documentation for more information
-BARCODE_TAG=""
-
-# set variable to "READ_NAME_REGEX=null" to disable optical deduplication
-# PICARD_MARKDUP_OPTICAL_DEDUP="-READ_NAME_REGEX null"
-PICARD_MARKDUP_OPTICAL_DEDUP=""
-
-# Additional FASTP options
-# see FASTP doc
-FASTP_ADDITIONAL_OPTIONS=""
-
-
-# FASTQ_PROCESSING_STEPS
-# All steps to process input FASTQ files, after sequencing and demultiplexing (if any)
-# Format: "step1 step2 step3"
-# Example (default): fastq_reheader sort fastp fastq_clean_header compress
-# Example (UMItools): fastq_reheader sort umi_tools fastp fastq_clean_header compress
-# Available steps:
-#    fastq_reheader: FASTQ reheader to integreate index within FASTQ comment Illumina tag (e.g. 1:N:0:xxx). Nothing done if already integrated (same header or tag BC or RX exists)
-#    fastq_clean_header: FASTQ read head formatting, especially SAMTOOLS tags. Nothing done if no needs
-#    compress: FASTQ files compression (see FASTQ_COMPRESSION_LEVEL)
-#    sort: sort FASTQ using read name
-#    fastp: process FASTP algorithm and report, UMI extraction (if any, see UMI_LOC and UMI_BARCODE_PATTERN), quality filtration...
-#    umi_tools: process UMITools algorithm for UMI extraction (if any, see UMI_LOC and UMI_BARCODE_PATTERN)
-# Usually:
-#    "fastq_reheader sort fastp fastq_clean_header compress" for UMI technology
-# dafault:
-#    "sort compress" for sorting and compression
-
-#FASTQ_PROCESSING_STEPS="fastq_reheader sort umi_tools fastp fastq_clean_header compress"
-FASTQ_PROCESSING_STEPS="fastq_reheader sort fastp fastq_clean_header compress"
 
 
 
