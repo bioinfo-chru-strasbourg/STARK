@@ -1,13 +1,14 @@
 ############################
 # MUTECT Calling Rules
-# Release: 1.0.0
-# Date: 19/02/2026
+# Release: 1.0.1
+# Date: 21/10/2026
 # Author: Antony Le Bechec
 ############################
 
 
 # Release note
 # 1.0.0-19/02/2026: Create MuTect2_RNASEQ with specific parameters for RNASeq data. No dbSNP because not same contig. Post alignment splitncigar mandatory.
+# 1.0.1-21/10/2026: Update release date and version.
 
 #################
 # MUTECT2 GATK4 #
@@ -28,12 +29,12 @@ GATK4_MUTECT2_RNASEQ_FLAGS_SHARED?=--disable-read-filter MateOnSameContigOrNoMap
 	--native-pair-hmm-threads $(THREADS_GATK4_MUTECT2_RNASEQ)
 
 
-%.MuTect2_RNASEQ$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed.interval_list
+%.MuTect2_RNASEQ$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK4) Mutect2 $(GATK4_MUTECT2_RNASEQ_FLAGS_SHARED) \
 		-R $(GENOME) \
 		-I $< \
 		-tumor $$(basename $< | cut -d"." -f1) \
-		$$(if [ "`grep ^ -c $*.design.bed.interval_list`" == "0" ]; then echo ""; else echo "-L $*.design.bed.interval_list"; fi;) \
+		$$(if [ "`grep ^ -c $*.design.bed`" == "0" ]; then echo ""; else echo "-L $*.design.bed"; fi;) \
 		-O $@.tmp1;
 	# Normalize
 	grep "^##" $@.tmp1 | sed s/ID=TLOD,Number=A/ID=TLOD,Number=./gi > $@.tmp.vcf
