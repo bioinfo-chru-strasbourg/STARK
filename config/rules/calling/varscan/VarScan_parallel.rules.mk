@@ -112,7 +112,7 @@ VARSCAN_PARALLEL_INDEL_OPTIONS= $(VARSCAN_PARALLEL_BOTH_OPTIONS) --min-avg-qual 
 RELEASE_COMMENT := "\#\# CALLING VARSCAN '$(MK_RELEASE)': VARSCAN tool in parallel identify variants from mpileup file, generated from aligned BAM"
 RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
-RELEASE_CMD := $(shell echo "\#\# VARSCAN_parallel: identify variants and generate *.VarScan.vcf files with parameters SAMTOOLS mpileup and VARSCAN standard application 'VARSCAN_PARALLEL_SNP_OPTIONS: $(VARSCAN_PARALLEL_SNP_OPTIONS)' 'VARSCAN_PARALLEL_INDEL_OPTIONS: $(VARSCAN_PARALLEL_INDEL_OPTIONS)' " >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "\#\# VARSCAN_parallel: identify variants and generate *.VarScan_parallel.vcf files with parameters SAMTOOLS mpileup and VARSCAN standard application 'VARSCAN_PARALLEL_SNP_OPTIONS: $(VARSCAN_PARALLEL_SNP_OPTIONS)' 'VARSCAN_PARALLEL_INDEL_OPTIONS: $(VARSCAN_PARALLEL_INDEL_OPTIONS)' " >> $(RELEASE_INFOS) )
 
 PIPELINES_COMMENT := "CALLER:VarScan_parallel:SAMTOOLS/VARSCAN - by default in parallel:VARSCAN_PARALLEL_SNP_OPTIONS='$(VARSCAN_PARALLEL_SNP_OPTIONS)', VARSCAN_PARALLEL_INDEL_OPTIONS='$(VARSCAN_PARALLEL_INDEL_OPTIONS)'"
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
