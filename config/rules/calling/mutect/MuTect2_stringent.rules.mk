@@ -31,7 +31,7 @@ GATK4_MUTECT2_STRINGENT_FLAGS_SHARED?=--disable-read-filter MateOnSameContigOrNo
 	--native-pair-hmm-threads $(THREADS_GATK4_MUTECT2_STRINGENT)
 
 
-%.MuTect2_stringent$(POST_CALLING).vcf_OLD: %.bam %.bam.bai %.empty.vcf %.design.bed
+%.MuTect2_stringent$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed
 	# Calling by MuTect2
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK4) Mutect2 $(GATK4_MUTECT2_STRINGENT_FLAGS_SHARED) \
 		-R $(GENOME) \
