@@ -5,6 +5,8 @@
 # Author: Antony Le Bechec
 ############################
 
+# Release note
+# 0.9.2-03/02/2023: Initial release of MuTect calling rules.
 
 ##########
 # MUTECT #
