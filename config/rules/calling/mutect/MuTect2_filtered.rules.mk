@@ -1,10 +1,13 @@
 ############################
 # MUTECT Calling Rules
-# Release: 0.9.3.0
-# Date: 25/06/2025
+# Release: 1.0.0
+# Date: 21/10/2026
 # Author: Antony Le Bechec
 ############################
 
+# Release note
+# 0.9.2-03/02/2023: Initial release of MuTect calling rules.
+# 1.0.0-21/10/2026: Update release date and version for MuTect2 filtered rules.
 
 #########################
 # MUTECT2 flagged GATK4 #
@@ -26,24 +29,24 @@ GATK4_MUTECT2_FILTERED_FLAGS_SHARED?=--disable-read-filter MateOnSameContigOrNoM
 	--verbosity ERROR \
 	--native-pair-hmm-threads $(THREADS_GATK4_MUTECT2_FILTERED)
 
-%.MuTect2_filtered$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed.interval_list
+%.MuTect2_filtered$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed
 	# Calling by MuTect2
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK4) Mutect2 $(GATK4_MUTECT2_FILTERED_FLAGS_SHARED) \
 		-R $(GENOME) \
 		-I $< \
 		-tumor $$(basename $< | cut -d"." -f1) \
-		$$(if [ "`grep ^ -c $*.design.bed.interval_list`" == "0" ]; then echo ""; else echo "-L $*.design.bed.interval_list"; fi;) \
+		$$(if [ "`grep ^ -c $*.design.bed`" == "0" ]; then echo ""; else echo "-L $*.design.bed"; fi;) \
 		-O $@.tmp.unfiltered.vcf;
 	# Normalization
 	grep "^##" $@.tmp.unfiltered.vcf | sed s/ID=TLOD,Number=A/ID=TLOD,Number=./gi > $@.tmp.unfiltered.TLOD.vcf
 	grep "^##" -v $@.tmp.unfiltered.vcf | cut -f1-10 >> $@.tmp.unfiltered.TLOD.vcf
 	# HOWARD VAF calculation & Filtration by BCFTOOLS
-	 +if (($$($(BCFTOOLS) view -H $@.tmp.unfiltered.TLOD.vcf | wc -l ))); then \
+	+if (($$($(BCFTOOLS) view -H $@.tmp.unfiltered.TLOD.vcf | wc -l ))); then \
 		$(HOWARD) calculation $(HOWARD_CONFIG_OPTIONS) $(HOWARD_CALCULATION_CONFIG_OPTIONS) --input=$@.tmp.unfiltered.TLOD.vcf --output=$@.tmp.unfiltered.TLOD.HOWARD.vcf --calculations="VAF"; \
-	 	$(BCFTOOLS) view -i 'FORMAT/DP>=$(DPMIN_MUTECT2_FILTERED) && FORMAT/VAF>=$(VAF_MUTECT2_FILTERED) && FORMAT/VAF<$(VAF_MUTECT2_FILTERED_HOM)' $@.tmp.unfiltered.TLOD.HOWARD.vcf | $(BCFTOOLS) view -e 'GT="0/0"' -o $@.tmp.cleaned.vcf; \
-	 else \
-	 	cp $@.tmp.unfiltered.TLOD.vcf $@.tmp.cleaned.vcf; \
-	 fi;
+		$(BCFTOOLS) view -i 'FORMAT/DP>=$(DPMIN_MUTECT2_FILTERED) && FORMAT/VAF>=$(VAF_MUTECT2_FILTERED) && FORMAT/VAF<$(VAF_MUTECT2_FILTERED_HOM)' $@.tmp.unfiltered.TLOD.HOWARD.vcf | $(BCFTOOLS) view -e 'GT="0/0"' -o $@.tmp.cleaned.vcf; \
+	else \
+		cp $@.tmp.unfiltered.TLOD.vcf $@.tmp.cleaned.vcf; \
+	fi;
 	#cp $@.tmp.unfiltered.TLOD.vcf $@.tmp.cleaned.vcf;
 	# Sorting and contig
 	$(JAVA) -jar $(PICARD) SortVcf -I $@.tmp.cleaned.vcf -O $@ -SD $(DICT);

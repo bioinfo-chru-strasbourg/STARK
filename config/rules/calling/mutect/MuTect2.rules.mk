@@ -1,10 +1,13 @@
 ############################
 # MUTECT Calling Rules
-# Release: 0.9.2
-# Date: 03/02/2023
+# Release: 1.0.0
+# Date: 21/10/2026
 # Author: Antony Le Bechec
 ############################
 
+# Release note
+# 0.9.2-03/02/2023: Initial release of MuTect calling rules.
+# 1.0.0-21/10/2026: Update release date and version for MuTect2 rules.
 
 #################
 # MUTECT2 GATK4 #
@@ -25,12 +28,12 @@ GATK4_MUTECT2_FLAGS_SHARED?=--disable-read-filter MateOnSameContigOrNoMappedMate
 	--native-pair-hmm-threads $(THREADS_GATK4_MUTECT2)
 
 
-%.MuTect2$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed.interval_list
+%.MuTect2$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed
 	$(JAVA) $(JAVA_FLAGS) -jar $(GATK4) Mutect2 $(GATK4_MUTECT2_FLAGS_SHARED) \
 		-R $(GENOME) \
 		-I $< \
 		-tumor $$(basename $< | cut -d"." -f1) \
-		$$(if [ "`grep ^ -c $*.design.bed.interval_list`" == "0" ]; then echo ""; else echo "-L $*.design.bed.interval_list"; fi;) \
+		$$(if [ "`grep ^ -c $*.design.bed`" == "0" ]; then echo ""; else echo "-L $*.design.bed"; fi;) \
 		-O $@.tmp1;
 	# Normalize
 	grep "^##" $@.tmp1 | sed s/ID=TLOD,Number=A/ID=TLOD,Number=./gi > $@.tmp.vcf
