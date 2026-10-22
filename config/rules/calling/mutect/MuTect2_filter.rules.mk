@@ -46,7 +46,7 @@ GATK4_MUTECT2_FILTER_FLAGS_SHARED?=--disable-read-filter MateOnSameContigOrNoMap
 	# sort
 	$(JAVA) -jar $(PICARD) SortVcf -I $@.tmp.vcf -O $@.tmp2.vcf -SD $(DICT);
 	# DPMIN_MUTECT2
-	$(BCFTOOLS) view  -i 'FORMAT/DP>=$(DPMIN_MUTECT2_FILTER)' $@.tmp2.vcf > $@.tmp3.vcf;
+	$(BCFTOOLS) view -f PASS -i 'FORMAT/DP>=$(DPMIN_MUTECT2_FILTER)' $@.tmp2.vcf > $@.tmp3.vcf;
 	# Empty
 	if [ ! -e $@.tmp3.vcf ]; then cp $*.empty.vcf $@.tmp3.vcf; fi;
 	# Copy
