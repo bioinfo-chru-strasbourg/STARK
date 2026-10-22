@@ -50,7 +50,7 @@ GATK4_MUTECT2_STRINGENT_FLAGS_SHARED?=--disable-read-filter MateOnSameContigOrNo
 	# Sorting
 	$(JAVA) -jar $(PICARD) SortVcf -I $@.tmp.FilterMutectCalls.TLOD.vcf -O $@.tmp.FilterMutectCalls.TLOD.sorted.vcf -SD $(DICT);
 	# Filtration by BCFTOOLS
-	$(BCFTOOLS) view -i 'FORMAT/DP>=$(DPMIN_MUTECT2_STRINGENT) && FORMAT/AF>=$(VAF_MUTECT2_STRINGENT) && FORMAT/AF<$(VAF_MUTECT2_STRINGENT_HOM)' $@.tmp.FilterMutectCalls.TLOD.sorted.vcf | $(BCFTOOLS) view -f PASS  -e 'GT="0/0"' -o $@;
+	$(BCFTOOLS) view -i 'FORMAT/DP>=$(DPMIN_MUTECT2_STRINGENT) && FORMAT/AF>=$(VAF_MUTECT2_STRINGENT) && FORMAT/AF<$(VAF_MUTECT2_STRINGENT_HOM)' $@.tmp.FilterMutectCalls.TLOD.sorted.vcf | $(BCFTOOLS) view -f PASS -e 'GT="0/0"' -o $@;
 	# Clean
 	rm -f $@.tmp* $@.idx
 

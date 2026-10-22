@@ -7,11 +7,11 @@
 
 # Release note
 # 0.9.2-03/02/2023: Initial release of MuTect calling rules.
-# 1.0.0-21/10/2026: Update release date and version for MuTect2 parallel rules.
+# 1.0.0-21/10/2026: Update release date and version for MuTect2 parallel filter rules.
 
-##########################
-# MUTECT2 GATK4 PARALLEL #
-##########################
+####################################
+# MUTECT2 GATK4 PARALLEL STRINGENT #
+####################################
 
 # Parameters
 THREADS_GATK4_MUTECT2_PARALLEL_STRINGENT?=1 #$(THREADS_BY_CALLER)
@@ -64,20 +64,28 @@ GATK4_MUTECT2_PARALLEL_STRINGENT_FLAGS_SHARED?=--disable-read-filter MateOnSameC
 	+make -f $@.split/sub.mk all
 	# No chromosome: the final output is the empty VCF
 	if [ ! -s $@.split/chroms.txt ]; then cp $*.empty.vcf $@; fi
-	# Otherwise: merge parts (VCF), filter, normalize, sort, filter
+	# Otherwise: merge parts (VCF + stats required by FilterMutectCalls), filter, normalize, sort, filter
 	if [ -s $@.split/chroms.txt ]; then \
 		set -e; \
 		if [ "$$(grep -c '' $@.split/chroms.txt)" -eq 1 ]; then \
 			c=$$(cat $@.split/chroms.txt); \
 			cp $@.split/$$c.vcf $@.tmp.unfiltered.vcf; \
+			cp $@.split/$$c.vcf.stats $@.tmp.unfiltered.vcf.stats; \
 		else \
 			sed 's|.*|$@.split/&.vcf|' $@.split/chroms.txt > $@.split/vcfs.list; \
 			$(BCFTOOLS) concat -f $@.split/vcfs.list -o $@.tmp.unfiltered.vcf; \
+			$(JAVA) $(JAVA_FLAGS) -jar $(GATK4) MergeMutectStats \
+				$$(sed 's|.*|-stats $@.split/&.vcf.stats|' $@.split/chroms.txt | tr '\n' ' ') \
+				-O $@.tmp.unfiltered.vcf.stats; \
 		fi; \
-		grep "^##" $@.tmp.unfiltered.vcf | sed s/ID=TLOD,Number=A/ID=TLOD,Number=./gi > $@.tmp.unfiltered.TLOD.vcf; \
-		grep "^##" -v $@.tmp.unfiltered.vcf | cut -f1-10 >> $@.tmp.unfiltered.TLOD.vcf; \
-		$(JAVA) -jar $(PICARD) SortVcf -I $@.tmp.unfiltered.TLOD.vcf -O $@.tmp.unfiltered.TLOD.sorted.vcf -SD $(DICT); \
-		$(BCFTOOLS) view -i 'FORMAT/DP>=$(DPMIN_MUTECT2_PARALLEL_STRINGENT) && FORMAT/AF>=$(VAF_MUTECT2_PARALLEL_STRINGENT) && FORMAT/AF<$(VAF_MUTECT2_PARALLEL_STRINGENT_HOM)' $@.tmp.unfiltered.TLOD.sorted.vcf | $(BCFTOOLS) view -e 'GT="0/0"' -o $@; \
+		$(JAVA) $(JAVA_FLAGS) -jar $(GATK4) FilterMutectCalls \
+			-R $(GENOME) \
+			-V $@.tmp.unfiltered.vcf \
+			-O $@.tmp.FilterMutectCalls.vcf; \
+		grep "^##" $@.tmp.FilterMutectCalls.vcf | sed s/ID=TLOD,Number=A/ID=TLOD,Number=./gi > $@.tmp.FilterMutectCalls.TLOD.vcf; \
+		grep "^##" -v $@.tmp.FilterMutectCalls.vcf | cut -f1-10 >> $@.tmp.FilterMutectCalls.TLOD.vcf; \
+		$(JAVA) -jar $(PICARD) SortVcf -I $@.tmp.FilterMutectCalls.TLOD.vcf -O $@.tmp.FilterMutectCalls.TLOD.sorted.vcf -SD $(DICT); \
+		$(BCFTOOLS) view -i 'FORMAT/DP>=$(DPMIN_MUTECT2_PARALLEL_STRINGENT) && FORMAT/AF>=$(VAF_MUTECT2_PARALLEL_STRINGENT) && FORMAT/AF<$(VAF_MUTECT2_PARALLEL_STRINGENT_HOM)' $@.tmp.FilterMutectCalls.TLOD.sorted.vcf | $(BCFTOOLS) view -f PASS -e 'GT="0/0"' -o $@; \
 	fi
 	# Clean
 	rm -rf $@.split
@@ -85,8 +93,8 @@ GATK4_MUTECT2_PARALLEL_STRINGENT_FLAGS_SHARED?=--disable-read-filter MateOnSameC
 
 
 # CONFIG/RELEASE
-RELEASE_COMMENT := "\#\# CALLING: MUTECT2 with GATK4 in parallel to identify somatic variants and generate *.MuTect2_parallel_stringent.vcf files, with DP filtration. Parameters GATK4_MUTECT2_PARALLEL_STRINGENT_FLAGS_SHARED='$(GATK4_MUTECT2_PARALLEL_STRINGENT_FLAGS_SHARED)', DPMIN_MUTECT2_PARALLEL_STRINGENT='$(DPMIN_MUTECT2_PARALLEL_STRINGENT)' "
+RELEASE_COMMENT := "\#\# CALLING: MUTECT2 with GATK4 in parallel to identify somatic variants and generate *.MuTect2_parallel_stringent.vcf files, with MuTect2 and DP filtration. Parameters GATK4_MUTECT2_PARALLEL_STRINGENT_FLAGS_SHARED='$(GATK4_MUTECT2_PARALLEL_STRINGENT_FLAGS_SHARED)', DPMIN_MUTECT2_PARALLEL_STRINGENT='$(DPMIN_MUTECT2_PARALLEL_STRINGENT)' "
 RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
-PIPELINES_COMMENT := "CALLER:MuTect2_parallel_stringent:MuTect2 with GATK4 - by default with DP filtration. Parameters GATK4_MUTECT2_PARALLEL_STRINGENT_FLAGS_SHARED='$(GATK4_MUTECT2_PARALLEL_STRINGENT_FLAGS_SHARED)', DPMIN_MUTECT2_PARALLEL_STRINGENT='$(DPMIN_MUTECT2_PARALLEL_STRINGENT)', VAF_MUTECT2_PARALLEL_STRINGENT='$(VAF_MUTECT2_PARALLEL_STRINGENT)', VAF_MUTECT2_PARALLEL_STRINGENT_HOM='$(VAF_MUTECT2_PARALLEL_STRINGENT_HOM)' "
+PIPELINES_COMMENT := "CALLER:MuTect2_parallel_stringent:MuTect2 with GATK4 - by default with MuTect2 and DP filtration. Parameters GATK4_MUTECT2_PARALLEL_STRINGENT_FLAGS_SHARED='$(GATK4_MUTECT2_PARALLEL_STRINGENT_FLAGS_SHARED)', DPMIN_MUTECT2_PARALLEL_STRINGENT='$(DPMIN_MUTECT2_PARALLEL_STRINGENT)' "
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
