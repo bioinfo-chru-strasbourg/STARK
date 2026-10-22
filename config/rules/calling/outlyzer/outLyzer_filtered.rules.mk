@@ -36,7 +36,7 @@ DPMIN_OUTLYZER_FILTERED?=30
 
 
 
-RELEASE_CMD := $(shell echo "\#\# OutLyzer: OutLyzer caller to detect variant with low VAF, generate *.outLyzer_filtered.vcf files. VCF file is modified to include GT/Genotype information, depending on AF value - greater than 80 is 1/1, othewise 0/1. Filtered on DP and VAF. DPMIN_OUTLYZER='$(DPMIN_OUTLYZER_FILTERED)', VAF_OUTLYZER='$(VAF_OUTLYZER_FILTERED)' " >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "\#\# OutLyzer: OutLyzer caller to detect variant with low VAF, generate *.outLyzer_filtered.vcf files. VCF file is modified to include GT/Genotype information. Filtered on DP and VAF. DPMIN_OUTLYZER_FILTERED='$(DPMIN_OUTLYZER_FILTERED)', VAF_OUTLYZER_FILTERED='$(VAF_OUTLYZER_FILTERED)' " >> $(RELEASE_INFOS) )
 
 PIPELINES_COMMENT := "CALLER:outLyzer_filtered:OutLyzer - OutLyzer caller, GT info added, filter on DP and VAF:DP and VAF"
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
