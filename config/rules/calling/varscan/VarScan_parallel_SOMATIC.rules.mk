@@ -67,7 +67,7 @@ VARSCAN_PARALLEL_SOMATIC_INDEL_OPTIONS= $(VARSCAN_PARALLEL_SOMATIC_BOTH_OPTIONS)
 		done; \
 		for c in $$(cat $@.split/chroms.txt); do grep -hv "^#" $@.split/$$c.vcf >> $@ || true; done; \
 	fi;
-	if [ ! -s $@ ]; then cp $*.empty.vcf $@; fi;
+	if [ ! -s $@.split/chroms.txt ] || [ ! -s $@ ]; then cp $*.empty.vcf $@; fi;
 	# Remove intermediate files
 	rm -rf $@.split
 	rm -f $@.idx $@.unfiltered.vcf*
@@ -102,7 +102,7 @@ VARSCAN_PARALLEL_SOMATIC_INDEL_OPTIONS= $(VARSCAN_PARALLEL_SOMATIC_BOTH_OPTIONS)
 		done; \
 		for c in $$(cat $@.split/chroms.txt); do grep -hv "^#" $@.split/$$c.vcf >> $@ || true; done; \
 	fi;
-	if [ ! -s $@ ]; then cp $*.empty.vcf $@; fi;
+	if [ ! -s $@.split/chroms.txt ] || [ ! -s $@ ]; then cp $*.empty.vcf $@; fi;
 	# Remove intermediate files
 	rm -rf $@.split
 	rm -f $@.idx $@.unfiltered.vcf*

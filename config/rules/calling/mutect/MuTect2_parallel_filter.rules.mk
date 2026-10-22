@@ -14,7 +14,7 @@
 #################################
 
 # Parameters
-THREADS_GATK4_MUTECT2_PARALLEL_FILTER?=$(THREADS_BY_CALLER)
+THREADS_GATK4_MUTECT2_PARALLEL_FILTER?=1 #$(THREADS_BY_CALLER)
 MINPRUNING_GATK4_MUTECT2_PARALLEL_FILTER?=20
 MAXREADS_GATK4_MUTECT2_PARALLEL_FILTER?=1000
 DPMIN_MUTECT2_PARALLEL_FILTER?=30
@@ -37,7 +37,7 @@ GATK4_MUTECT2_PARALLEL_FILTER_FLAGS_SHARED?=--disable-read-filter MateOnSameCont
 	# List of chromosomes (BAM header order), restricted to the BED if it has data lines
 	if (( $$(grep -v -e "^#" -e "^$$" -c $*.design.bed) )); then \
 		grep -v -e "^#" -e "^$$" $*.design.bed | cut -f1 | sort -u > $@.split/bedchroms.txt; \
-		cut -f1 $@.split/idxstats.txt | grep -Fx -f $@.split/bedchroms.txt > $@.split/chroms.txt; \
+		cut -f1 $@.split/idxstats.txt | grep -Fx -f $@.split/bedchroms.txt || [ "$$?" -eq 1 ] > $@.split/chroms.txt; \
 	else \
 		cut -f1 $@.split/idxstats.txt > $@.split/chroms.txt; \
 	fi;
