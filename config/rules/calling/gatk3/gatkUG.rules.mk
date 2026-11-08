@@ -1,10 +1,9 @@
 ############################
 # GATK Calling Rules
-# Release: 0.9.4
-# Date: 03/02/2023
+# Release: 1.1.0
+# Date: 03/11/2026
 # Author: Antony Le Bechec
 ############################
-
 
 # Release note
 # 0.9.1beta-10/03/2015: change genome reference location, in the file %.genome
@@ -21,20 +20,21 @@
 # 0.9.3.8-29/07/2022: Remove --dontUseSoftClippedBases for GATKHC
 # 0.9.3.9-29/07/2022: Add --dontUseSoftClippedBases for GATKHC, add GATKUG_LONG_INDELS and GATKHC_LONG_INDELS
 # 0.9.5.0-31/10/2025: Parallelised GATKUG
+# 1.0.0-22/10/2026: Parallelised implementation for gatkUG variant calling
+# 1.1.0-03/11/2026: Normalize variant calling parallelization and parametrization (use %.bam.chroms rule, use filter_vcf.sh for filtering)
 
 
-GATKUG_FLAGS_SHARED?=
-
-##########
-# gatkUG #
-##########
-
-# GATKUG DPMIN filter
-DPMIN_GATKUG=4
+########################
+# GATK UnifiedGenotyper #
+########################
 
 # GATKUG Flags
-GATKUG_FLAGS=$(GATKUG_FLAGS_SHARED) \
+# VCFDBSNP_WITH_GATK variable depends on USE_VCFDBSNP_WITH_GATK setting on Apps
+# INTERVAL_PADDING variable defines the padding around intervals for all callers, settings on Apps
+# This variable can be defined directly on Apps
+GATKUG_FLAGS?= \
 	$(VCFDBSNP_WITH_GATK) \
+	--interval_padding $(INTERVAL_PADDING) \
 	--genotype_likelihoods_model BOTH \
 	--read_filter BadCigar \
 	--baq OFF \
@@ -44,47 +44,58 @@ GATKUG_FLAGS=$(GATKUG_FLAGS_SHARED) \
 	--max_deletion_fraction 0.01 \
 	--standard_min_confidence_threshold_for_calling 10 \
 	--downsample_to_fraction 1 \
-	--min_base_quality_score 17
-		
+	--min_base_quality_score 17 \
+	--allow_potentially_misencoded_quality_scores
 
-#%.gatkUG$(POST_CALLING).vcf: %.softclippedtoq0.bam %.softclippedtoq0.bam.bai %.empty.vcf %.design.bed  #%.bam %.bam.bai %.empty.vcf %.design.bed
-%.gatkUG$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed
-	rm -f $@.for_gatkUG*.mk;
-	+if (($$($(SAMTOOLS) idxstats $< | awk '{SUM+=$$3+$$4} END {print SUM}'))); then \
-		for chr in $$($(SAMTOOLS) idxstats $< | grep -v "\*" | awk '{ if ($$3+$$4>0) print $$1 }'); do \
-			grep -P "^$$chr\t" $*.design.bed > $@.for_gatkUG.design.bed.$$chr.bed; \
-			if [ -s $@.for_gatkUG.design.bed.$$chr.bed ]; then \
-				echo "$@.for_gatkUG.$$chr.vcf.gz: $<" >> $@.for_gatkUG.generation_vcf.mk; \
-				echo "	$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) $(GATKUG_FLAGS) -T UnifiedGenotyper -R $(GENOME) $$(if [ "`grep ^ -c $@.for_gatkUG.design.bed.$$chr.bed`" == "0" ]; then echo ""; else echo "-L $@.for_gatkUG.design.bed.$$chr.bed"; fi;) -I $< -ip $(INTERVAL_PADDING) -o $@.for_gatkUG.$$chr.vcf.gz " >> $@.for_gatkUG.generation_vcf.mk; \
-				echo -n " $@.for_gatkUG.$$chr.vcf.gz " >> $@.for_gatkUG.list_of_vcfs.mk; \
-			else \
-				echo "#[INFO] No reads on chromosome $$chr for $<:"; \
-				continue; \
-			fi; \
-		done; \
-		echo -n "$@.tmp.vcf: " | cat - $@.for_gatkUG.list_of_vcfs.mk > $@.for_gatkUG.final_vcf.mk; \
-		echo ""  >> $@.for_gatkUG.final_vcf.mk; \
-		if [ -s $@.for_gatkUG.list_of_vcfs.mk ]; then \
-			echo "	$(BCFTOOLS) concat $$(cat $@.for_gatkUG.list_of_vcfs.mk) -a -d all --threads $(THREADS_BY_CALLER) | $(BCFTOOLS) norm -m -any -o $@.tmp.vcf --threads $(THREADS_BY_CALLER)" >> $@.for_gatkUG.final_vcf.mk; \
+# GATKUG filters Flags
+# This variable can be defined directly on Apps
+GATKUG_FILTERS_FLAGS?= \
+	--exclude-genotypes '0/0' \
+	--exclude '' \
+	--include 'FORMAT/DP>=4' \
+	--filter '' \
+	--sort
+
+
+# GATKUG target rule
+%.gatkUG$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed %.bam.chroms
+	# List of vcf files to be generated per chromosome
+	cut -f1 $*.bam.chroms | sed 's|.*|$@.split.&.vcf.gz|' | tr '\n' ' ' > $@.split.vcfs.list;
+	# Generate bed per chromosome
+	awk '{print > ("$@.split."$$1".bed")}' $*.design.bed
+	# Generate the sub Makefile: one explicit rule per chromosome (empty "all" if no chromosome)
+	{ \
+	printf 'all: %s\n' "$$(cat $@.split.vcfs.list)"; \
+	for c in $$(cut -f1 $*.bam.chroms); do \
+		if [ -s $@.split.$$c.bed ]; then \
+			L_ARG="$@.split.$$c.bed"; \
 		else \
-			echo "	touch $@.tmp.vcf " >> $@.for_gatkUG.final_vcf.mk; \
+			L_ARG="$$c"; \
 		fi; \
-		cat $@.for_gatkUG.generation_vcf.mk $@.for_gatkUG.final_vcf.mk >> $@.for_gatkUG.mk; \
-		cat $@.for_gatkUG.mk; \
-		make -f $@.for_gatkUG.mk $@.tmp.vcf; \
-		rm -rf $@.for_gatkUG*; \
-	else \
-		touch $@.tmp.vcf; \
-	fi;
-	-if [ ! -e $@.tmp.vcf ]; then cp $*.empty.vcf $@.tmp.vcf; fi;
-	-if [ ! -e $@.tmp.vcf ]; then touch $@.tmp.vcf; fi; 						# in case of no vcf creation, to not kill the pipeline
-	$(BCFTOOLS) view -i "FORMAT/DP>$(DPMIN_GATKUG)" $@.tmp.vcf --threads $(THREADS_BY_CALLER) > $@ 	# filter on DP, cause UG is too relax, espacially because the clipping can generate few errors
-	-if [ ! -e $@ ]; then cp $@.tmp.vcf $@; fi; 							# in case of error in previous line
-	-rm -f $@.tmp.vcf $@.tmp.vcf.idx $@.idx
+		printf '%s:\n' "$@.split.$$c.vcf.gz"; \
+		printf '\t$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) -T UnifiedGenotyper $(GATKUG_FLAGS) -L %s -R $(GENOME) -I $< -o %s --num_cpu_threads_per_data_thread 1\n' "$$L_ARG" "$@.split.$$c.vcf.gz"; \
+	done; \
+	} > $@.split.sub.mk
+	# Add rule to concat per-chromosome VCFs into the final VCF (empty VCF if no chromosome)
+	{ \
+		printf '%s: %s\n' "$@.tmp.unfiltered.vcf" "$$(cat $@.split.vcfs.list) $*.empty.vcf"; \
+		printf '\t$(BCFTOOLS) concat %s -Ov --threads $(THREADS_BY_CALLER) -o %s\n' "$$(cat $@.split.vcfs.list) $*.empty.vcf" "$@.tmp.unfiltered.vcf"; \
+	} >> $@.split.sub.mk;
+	# Calling all chromosomes in parallel (nothing to do if no chromosome, empty VCF will be used)
+	+make -f $@.split.sub.mk $@.tmp.unfiltered.vcf
+	# Filters
+	bash $(STARK_FOLDER_BIN)/filter_vcf.sh --input $@.tmp.unfiltered.vcf --output $@ --threads $(THREADS_BY_CALLER) --bcftools $(BCFTOOLS) $(GATKUG_FILTERS_FLAGS)
+	# Cleaning
+	rm -rf $@.tmp* $@.split* $@.idx $@.tbi
 
 
-RELEASE_COMMENT := "\#\# CALLING GATKUG identify variants and generate *.gatkUG.vcf files with parameters: GATKUG_FLAGS='$(GATKUG_FLAGS)', INTERVAL_PADDING='$(INTERVAL_PADDING)', DPMIN_UG='$(DPMIN_UG)'"
+# GATKUG Release documentation
+
+RELEASE_COMMENT := "\#\# CALLING GATK Unified Genotyper '$(MK_RELEASE)': GATK Unified Genotyper tool identify variants from aligned BAM"
 RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
-PIPELINES_COMMENT := "CALLER:gatkUG:GATK Unified Genotyper - designed for PARALLEL discovery:GATKUG_FLAGS='$(GATKUG_FLAGS)', INTERVAL_PADDING='$(INTERVAL_PADDING)', DPMIN_UG='$(DPMIN_UG)'"
+RELEASE_COMMENT := "\#\# CALLING GATKUG identify variants and generate *.gatkUG.vcf files with parameters: GATKUG_FLAGS='$(GATKUG_FLAGS)' and GATKUG_FILTERS_FLAGS='$(GATKUG_FILTERS_FLAGS)'"
+RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
+
+PIPELINES_COMMENT := "CALLER:gatkUG:GATK Unified Genotyper - designed for variant discovery:GATKUG_FLAGS='$(GATKUG_FLAGS)' and GATKUG_FILTERS_FLAGS='$(GATKUG_FILTERS_FLAGS)'"
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )

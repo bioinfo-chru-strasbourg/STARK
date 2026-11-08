@@ -1,35 +1,35 @@
 ############################
 # MUTECT Calling Rules
-# Release: 1.0.0
-# Date: 21/10/2026
+# Release: 1.1.0
+# Date: 23/10/2026
 # Author: Antony Le Bechec
 ############################
 
 # Release note
 # 0.9.2-03/02/2023: Initial release of MuTect calling rules.
 # 1.0.0-21/10/2026: Update release date and version for MuTect2 parallel filter rules.
+# 1.1.0-23/10/2026: Minor updates for MuTect2 filtered rules.
 
-#################################
-# MUTECT2 GATK4 PARALLEL FILTER #
-#################################
+#################
+# MUTECT2 GATK4 #
+#################
 
 # Parameters
-THREADS_GATK4_MUTECT2_PARALLEL_FILTER?=1 #$(THREADS_BY_CALLER)
-MINPRUNING_GATK4_MUTECT2_PARALLEL_FILTER?=20
-MAXREADS_GATK4_MUTECT2_PARALLEL_FILTER?=1000
-DPMIN_MUTECT2_PARALLEL_FILTER?=30
+GATK4_MUTECT2_RNASEQ_EXCLUDE?=
+GATK4_MUTECT2_RNASEQ_INCLUDE?=
+GATK4_MUTECT2_RNASEQ_FILTER?=
 
-GATK4_MUTECT2_PARALLEL_FILTER_FLAGS_SHARED?=--disable-read-filter MateOnSameContigOrNoMappedMateReadFilter \
-	--max-reads-per-alignment-start $(MAXREADS_GATK4_MUTECT2_PARALLEL_FILTER) \
+# Shared flags for MuTect2 parallel stringent calling
+GATK4_MUTECT2_RNASEQ_FLAGS_SHARED?=--native-pair-hmm-threads 1 \
+	--max-reads-per-alignment-start 1000 \
+	--min-pruning 20 \
+	--callable-depth 30 \
 	--dont-use-soft-clipped-bases true \
-	--min-pruning $(MINPRUNING_GATK4_MUTECT2_PARALLEL_FILTER) \
-	--callable-depth $(DPMIN_MUTECT2_PARALLEL_FILTER) \
-	--verbosity ERROR \
-	--native-pair-hmm-threads $(THREADS_GATK4_MUTECT2_PARALLEL_FILTER)
+	--disable-read-filter MateOnSameContigOrNoMappedMateReadFilter \
+	--verbosity ERROR
 
 
-
-%.MuTect2_parallel_filter$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed
+%.MuTect2_RNASEQ$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed
 	# Clean and create split directory
 	rm -rf $@.split && mkdir -p $@.split
 	# Generate idxstats for the BAM file (contigs with reads only)
@@ -56,7 +56,7 @@ GATK4_MUTECT2_PARALLEL_FILTER_FLAGS_SHARED?=--disable-read-filter MateOnSameCont
 			L_OPT="-L $@.split/$$c.bed"; \
 		fi; \
 		printf '%s:\n' "$@.split/$$c.vcf"; \
-		printf '\t$(JAVA) $(JAVA_FLAGS) -jar $(GATK4) Mutect2 $(GATK4_MUTECT2_PARALLEL_FILTER_FLAGS_SHARED) -R $(GENOME) -I $< -tumor %s %s -O %s\n' "$$SAMPLE" "$$L_OPT" "$@.split/$$c.vcf"; \
+		printf '\t$(JAVA) $(JAVA_FLAGS) -jar $(GATK4) Mutect2 $(GATK4_MUTECT2_RNASEQ_FLAGS_SHARED) -R $(GENOME) -I $< -tumor %s %s -O %s\n' "$$SAMPLE" "$$L_OPT" "$@.split/$$c.vcf"; \
 	done; \
 	} > $@.split/sub.mk
 	# Calling by MuTect2, all chromosomes in parallel (nothing to do if no chromosome)
@@ -77,24 +77,38 @@ GATK4_MUTECT2_PARALLEL_FILTER_FLAGS_SHARED?=--disable-read-filter MateOnSameCont
 				$$(sed 's|.*|-stats $@.split/&.vcf.stats|' $@.split/chroms.txt | tr '\n' ' ') \
 				-O $@.tmp.unfiltered.vcf.stats; \
 		fi; \
-		$(JAVA) $(JAVA_FLAGS) -jar $(GATK4) FilterMutectCalls \
-			-R $(GENOME) \
-			-V $@.tmp.unfiltered.vcf \
-			-O $@.tmp.FilterMutectCalls.vcf; \
+		if [ -n "$(GATK4_MUTECT2_RNASEQ_FILTER)" ]; then \
+			$(JAVA) $(JAVA_FLAGS) -jar $(GATK4) FilterMutectCalls \
+				-R $(GENOME) \
+				-V $@.tmp.unfiltered.vcf \
+				-O $@.tmp.FilterMutectCalls.vcf; \
+		else \
+			mv $@.tmp.unfiltered.vcf $@.tmp.FilterMutectCalls.vcf; \
+		fi; \
 		grep "^##" $@.tmp.FilterMutectCalls.vcf | sed s/ID=TLOD,Number=A/ID=TLOD,Number=./gi > $@.tmp.FilterMutectCalls.TLOD.vcf; \
 		grep "^##" -v $@.tmp.FilterMutectCalls.vcf | cut -f1-10 >> $@.tmp.FilterMutectCalls.TLOD.vcf; \
 		$(JAVA) -jar $(PICARD) SortVcf -I $@.tmp.FilterMutectCalls.TLOD.vcf -O $@.tmp.FilterMutectCalls.TLOD.sorted.vcf -SD $(DICT); \
-		$(BCFTOOLS) view -i 'FORMAT/DP>=$(DPMIN_MUTECT2_PARALLEL_FILTER)' $@.tmp.FilterMutectCalls.TLOD.sorted.vcf | $(BCFTOOLS) view -f PASS -e 'GT="0/0"' -o $@; \
+		CMD="bcftools view -e 'GT=\"0/0\"' --threads=$(THREADS_BY_CALLER) $@.tmp.FilterMutectCalls.TLOD.sorted.vcf"; \
+		if [ -n "$(GATK4_MUTECT2_RNASEQ_EXCLUDE)" ]; then \
+			CMD="$$CMD | bcftools view -e '$(GATK4_MUTECT2_RNASEQ_EXCLUDE)' --threads=$(THREADS_BY_CALLER)"; \
+		fi; \
+		if [ -n "$(GATK4_MUTECT2_RNASEQ_INCLUDE)" ]; then \
+			CMD="$$CMD | bcftools view -i '$(GATK4_MUTECT2_RNASEQ_INCLUDE)' --threads=$(THREADS_BY_CALLER)"; \
+		fi; \
+		if [ -n "$(GATK4_MUTECT2_RNASEQ_FILTER)" ]; then \
+			CMD="$$CMD | bcftools view -f '$(GATK4_MUTECT2_RNASEQ_FILTER)' --threads=$(THREADS_BY_CALLER)"; \
+		fi; \
+		CMD="$$CMD > $@" ; \
+		echo $$CMD; \
+		eval $$CMD; \
 	fi
 	# Clean
-	rm -rf $@.split
-	rm -f $@.tmp* $@.idx
-
+	rm -rf $@.split $@.tmp* $@.idx
 
 
 # CONFIG/RELEASE
-RELEASE_COMMENT := "\#\# CALLING: MUTECT2 with GATK4 in parallel to identify somatic variants and generate *.MuTect2_parallel_filter.vcf files, with MuTect2 and DP filtration. Parameters GATK4_MUTECT2_PARALLEL_FILTER_FLAGS_SHARED='$(GATK4_MUTECT2_PARALLEL_FILTER_FLAGS_SHARED)', DPMIN_MUTECT2_PARALLEL_FILTER='$(DPMIN_MUTECT2_PARALLEL_FILTER)' "
+RELEASE_COMMENT := "\#\# CALLING: MUTECT2 with GATK4 in parallel to identify somatic variants and generate *.MuTect2_RNASEQ.vcf files, with MuTect2 filtration. Parameters GATK4_MUTECT2_RNASEQ_FLAGS_SHARED='$(GATK4_MUTECT2_RNASEQ_FLAGS_SHARED)', GATK4_MUTECT2_RNASEQ_EXCLUDE='$(GATK4_MUTECT2_RNASEQ_EXCLUDE)', GATK4_MUTECT2_RNASEQ_INCLUDE='$(GATK4_MUTECT2_RNASEQ_INCLUDE)', GATK4_MUTECT2_RNASEQ_FILTER='$(GATK4_MUTECT2_RNASEQ_FILTER)' "
 RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
-PIPELINES_COMMENT := "CALLER:MuTect2_parallel_filter:MuTect2 with GATK4 - by default with MuTect2 and DP filtration. Parameters GATK4_MUTECT2_PARALLEL_FILTER_FLAGS_SHARED='$(GATK4_MUTECT2_PARALLEL_FILTER_FLAGS_SHARED)', DPMIN_MUTECT2_PARALLEL_FILTER='$(DPMIN_MUTECT2_PARALLEL_FILTER)' "
+PIPELINES_COMMENT := "CALLER:MuTect2_RNASEQ:MuTect2 with GATK4 - by default with MuTect2 and DP filtration. Parameters GATK4_MUTECT2_RNASEQ_FLAGS_SHARED='$(GATK4_MUTECT2_RNASEQ_FLAGS_SHARED)', GATK4_MUTECT2_RNASEQ_EXCLUDE='$(GATK4_MUTECT2_RNASEQ_EXCLUDE)', GATK4_MUTECT2_RNASEQ_INCLUDE='$(GATK4_MUTECT2_RNASEQ_INCLUDE)', GATK4_MUTECT2_RNASEQ_FILTER='$(GATK4_MUTECT2_RNASEQ_FILTER)' "
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )

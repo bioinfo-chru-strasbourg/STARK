@@ -578,7 +578,7 @@ USE_VCFDBSNP_WITH_GATK=0
 # This variable is automatically defined in default configuration in databases.app
 # Default: "" (corresponding to default VCF DBSNP defined in databases.app, depending on ASSEMBLY)
 # Example: VCF_DBSNP_GATK_CALLING=$FOLDER_DATABASES/dbsnp_138.hg19.vcf.gz
-VCFDBSNP=
+#VCFDBSNP=
 
 
 ### CRAM

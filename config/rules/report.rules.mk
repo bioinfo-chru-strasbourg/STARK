@@ -172,7 +172,9 @@ REMOVE_INFO_DP_BY_VALIDATION_DEPTH?=1
 		$(BCFTOOLS) norm -m- $@.tmp00.vcf --threads $(THREADS_BY_SAMPLE) --force | $(BCFTOOLS) view --threads $(THREADS_BY_SAMPLE) > $@.tmp0.vcf; \
 	fi;
 	# HOWARD annotation prioritization calculation process
-	$(HOWARD) process $(HOWARD_CONFIG_OPTIONS) $(HOWARD_PRIORITIZATION_CONFIG_OPTIONS) $(HOWARD_CALCULATION_CONFIG_OPTIONS) --input=$@.tmp0.vcf --output=$@ --param=$(HOWARD_PARAM_REPORT) --threads=$(THREADS_BY_SAMPLE) --memory=$$( (( $(MEMORY_BY_SAMPLE) > $(MEMORY) )) && echo "$(MEMORY_BY_SAMPLE)" || echo "$(MEMORY)" )G
+	$(HOWARD) process $(HOWARD_CONFIG_OPTIONS) $(HOWARD_PRIORITIZATION_CONFIG_OPTIONS) $(HOWARD_CALCULATION_CONFIG_OPTIONS) --input=$@.tmp0.vcf --output=$@.tmp00.vcf --param=$(HOWARD_PARAM_REPORT) --threads=$(THREADS_BY_SAMPLE) --memory=$$( (( $(MEMORY_BY_SAMPLE) > $(MEMORY) )) && echo "$(MEMORY_BY_SAMPLE)" || echo "$(MEMORY)" )G
+	# Sort VCF by genomic coordinates
+	$(BCFTOOLS) sort -T $@.tmp.SAMTOOLS_PREFIX $@.tmp00.vcf -o $@
 	# Clean INFO spaces
 	$(STARK_FOLDER_BIN)/clean_vcf_info_spaces.sh --input=$@ --output=$@
 	# cleaning

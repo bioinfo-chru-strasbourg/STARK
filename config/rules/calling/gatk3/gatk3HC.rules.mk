@@ -1,10 +1,9 @@
 ############################
 # GATK Calling Rules
-# Release: 0.9.5
-# Date: 31/10/2025
+# Release: 1.1.0
+# Date: 03/11/2026
 # Author: Antony Le Bechec
 ############################
-
 
 # Release note
 # 0.9.1beta-10/03/2015: change genome reference location, in the file %.genome
@@ -22,11 +21,7 @@
 # 0.9.3.9-29/07/2022: Add --dontUseSoftClippedBases for GATKHC, add GATKUG_LONG_INDELS and GATKHC_LONG_INDELS
 # 0.9.4-03/02/2023: Extract gatkHC
 # 0.9.5-31/10/2025: Change GATKHC to GATK3HC
-
-
-
-# OPTIONS
-GATK3HC_FLAGS_SHARED=--baq OFF --read_filter BadCigar --allow_potentially_misencoded_quality_scores --dontUseSoftClippedBases
+# 1.1.0-03/11/2026: Normalize variant calling parallelization and parametrization (use %.bam.chroms rule, use filter_vcf.sh for filtering)
 
 
 ########################
@@ -41,40 +36,72 @@ GATK3HC_FLAGS_SHARED=--baq OFF --read_filter BadCigar --allow_potentially_misenc
 # In addition, HaplotypeCaller is able to handle non-diploid organisms as well as pooled experiment data. Note however that the #algorithms used to calculate variant likelihoods is not well suited to extreme allele frequencies (relative to ploidy) so its #use is not recommended for somatic (cancer) variant discovery. For that purpose, use MuTect2 instead.
 # Finally, HaplotypeCaller is also able to correctly handle the splice junctions that make RNAseq a challenge for most variant callers.
 
-
-###########
-# gatk3HC #
-###########
-
 # GATK3HC Flags
-GATK3HC_FLAGS=$(GATK3HC_FLAGS_SHARED) \
-	--num_cpu_threads_per_data_thread $(THREADS_BY_CALLER) \
+# VCFDBSNP_WITH_GATK variable depends on USE_VCFDBSNP_WITH_GATK setting on Apps
+# INTERVAL_PADDING variable defines the padding around intervals for all callers, settings on Apps
+# This variable can be defined directly on Apps
+GATK3HC_FLAGS?= \
 	$(VCFDBSNP_WITH_GATK) \
+	--interval_padding $(INTERVAL_PADDING) \
+	--baq OFF \
+	--read_filter BadCigar \
+	--allow_potentially_misencoded_quality_scores \
+	--dontUseSoftClippedBases \
 	--standard_min_confidence_threshold_for_calling 10 \
 	--downsample_to_fraction 1 \
 	--maxReadsInRegionPerSample 250 \
 	--min_base_quality_score 17 \
 	--minPruning 4
 
-
-%.gatk3HC$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed.interval_list #%.from_manifest.interval_list
-	$(JAVA8) $(JAVA_FLAGS) -XX:ParallelGCThreads=$(THREADS_BY_CALLER) -jar $(GATK3) $(GATK3HC_FLAGS) \
-		-T HaplotypeCaller \
-		-R $(GENOME) \
-		$$(if [ "`grep ^ -c $*.design.bed.interval_list`" == "0" ]; then echo ""; else echo "-L $*.design.bed.interval_list"; fi;) \
-		-I $< \
-		-ip $(INTERVAL_PADDING) \
-		-o $@;
-	-if [ ! -e $@ ]; then cp $*.empty.vcf $@; fi;
-	-if [ ! -e $@ ]; then touch $@; fi;
-	-rm -f $@.idx
+# GATK3HC filters Flags
+# This variable can be defined directly on Apps
+GATK3HC_FILTERS_FLAGS?= \
+	--exclude-genotypes '' \
+	--exclude '' \
+	--include '' \
+	--filter '' \
+	--sort
 
 
-RELEASE_COMMENT := "\#\# CALLING GATK Haplotype Caller '$(MK_RELEASE)': GATK Haplotype Caller tool identify variants from aligned BAM with shared parameters: GATK='$(GATK3)'"
+# GATK3HC target rule
+%.gatk3HC$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed %.bam.chroms
+	# List of vcf files to be generated per chromosome
+	cut -f1 $*.bam.chroms | sed 's|.*|$@.split.&.vcf.gz|' | tr '\n' ' ' > $@.split.vcfs.list;
+	# Generate bed per chromosome
+	awk '{print > ("$@.split."$$1".bed")}' $*.design.bed
+	# Generate the sub Makefile: one explicit rule per chromosome (empty "all" if no chromosome)
+	{ \
+	printf 'all: %s\n' "$$(cat $@.split.vcfs.list)"; \
+	for c in $$(cut -f1 $*.bam.chroms); do \
+		if [ -s $@.split.$$c.bed ]; then \
+			L_ARG="$@.split.$$c.bed"; \
+		else \
+			L_ARG="$$c"; \
+		fi; \
+		printf '%s:\n' "$@.split.$$c.vcf.gz"; \
+		printf '\t$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) -T HaplotypeCaller $(GATK3HC_FLAGS) -L %s -R $(GENOME) -I $< -o %s --num_cpu_threads_per_data_thread 1\n' "$$L_ARG" "$@.split.$$c.vcf.gz"; \
+	done; \
+	} > $@.split.sub.mk
+	# Add rule to concat per-chromosome VCFs into the final VCF (empty VCF if no chromosome)
+	{ \
+		printf '%s: %s\n' "$@.tmp.unfiltered.vcf" "$$(cat $@.split.vcfs.list) $*.empty.vcf"; \
+		printf '\t$(BCFTOOLS) concat %s -Ov --threads $(THREADS_BY_CALLER) -o %s\n' "$$(cat $@.split.vcfs.list) $*.empty.vcf" "$@.tmp.unfiltered.vcf"; \
+	} >> $@.split.sub.mk;
+	# Calling all chromosomes in parallel (nothing to do if no chromosome, empty VCF will be used)
+	+make -f $@.split.sub.mk $@.tmp.unfiltered.vcf
+	# Filters
+	bash $(STARK_FOLDER_BIN)/filter_vcf.sh --input $@.tmp.unfiltered.vcf --output $@ --threads $(THREADS_BY_CALLER) --bcftools $(BCFTOOLS) $(GATK3HC_FILTERS_FLAGS)
+	# Cleaning
+	rm -rf $@.tmp* $@.split* $@.idx $@.tbi
+
+
+# GATK3HC Release documentation
+
+RELEASE_COMMENT := "\#\# CALLING GATK3 Haplotype Caller '$(MK_RELEASE)': GATK3 Haplotype Caller tool identify variants from aligned BAM"
 RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
-RELEASE_COMMENT := "\#\# CALLING GATK3HC identify variants and generate *.gatk3HC.vcf files with parameters: GATK3HC_FLAGS='$(GATK3HC_FLAGS)', INTERVAL_PADDING='$(INTERVAL_PADDING)'"
+RELEASE_COMMENT := "\#\# CALLING GATK3HC identify variants and generate *.gatk3HC.vcf files with parameters: GATK3HC_FLAGS='$(GATK3HC_FLAGS)' and GATK3HC_FILTERS_FLAGS='$(GATK3HC_FILTERS_FLAGS)'"
 RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
-PIPELINES_COMMENT := "CALLER:gatk3HC:GATK Haplotype Caller - by default:GATK3HC_FLAGS='$(GATK3HC_FLAGS)', INTERVAL_PADDING='$(INTERVAL_PADDING)'"
+PIPELINES_COMMENT := "CALLER:gatk3HC:GATK Haplotype Caller - by default:GATK3HC_FLAGS='$(GATK3HC_FLAGS)' and GATK3HC_FILTERS_FLAGS='$(GATK3HC_FILTERS_FLAGS)'"
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )

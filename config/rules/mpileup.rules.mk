@@ -39,7 +39,7 @@ MPILEUP_OPTIONS?= -E -d 10000000 -C 50 -Q 10 -q 1
 	# List of chromosomes (BAM header order), restricted to the BED if it has data lines
 	if (( $$(grep -v -e "^#" -e "^$$" -c $*.design.bed) )); then \
 		grep -v -e "^#" -e "^$$" $*.design.bed | cut -f1 | sort -u > $@.split/bedchroms.txt; \
-		cut -f1 $@.split/idxstats.txt | grep -Fx -f $@.split/bedchroms.txt > $@.split/chroms.txt; \
+		cut -f1 $@.split/idxstats.txt | grep -Fx -f $@.split/bedchroms.txt > $@.split/chroms.txt || echo "No chromosomes"; \
 	else \
 		cut -f1 $@.split/idxstats.txt > $@.split/chroms.txt; \
 	fi;

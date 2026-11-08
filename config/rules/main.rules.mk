@@ -253,6 +253,30 @@ REMOVE_INTERMEDIATE_SAM?=1
 	rm -f $< $<.bai;
 
 
+%.bam.chroms: %.bam %.bam.bai %.design.bed
+	# Generate the list of chromosomes to be used for variant calling based on the BAM file and design BED file
+	# This ensures that only chromosomes present in both the BAM file and the design BED file are considered for variant calling
+	# If no region are specified in the design BED file, all chromosomes with reads in the BAM file will be considered.
+	# The resulting file will list chromosomes ordered by the number of reads for each chromosome (descending order).
+	# Generate idxstats for the BAM file
+	$(SAMTOOLS) idxstats $< > $@.tmp.idxstats
+	# Extract chromosomes with reads from idxstats
+	awk -F'\t' '$$1!="*" && $$3+$$4>0 {print $$1"\t"$$3+$$4}' $@.tmp.idxstats > $@.tmp.idxstats_chroms
+	# Chromosomes of the design (empty file = empty design)
+	awk -F'\t' '!/^#/ && !/^(track|browser)/ && NF{print $$1}' $*.design.bed | sort -u > $@.tmp.design_chroms
+	# Chromosomes to call (BAM header order): design chromosomes with reads, or all chromosomes with reads if the design is empty
+	if [ -s $@.tmp.design_chroms ]; then \
+		cut -f1 $@.tmp.idxstats_chroms | grep -Fx -f $@.tmp.design_chroms > $@.tmp.chroms || { rc=$$?; [ $$rc -eq 1 ] || exit $$rc; }; \
+	else \
+		cp $@.tmp.idxstats_chroms $@.tmp.chroms; \
+	fi;
+	# Execution order: most reads first (merge order stays chroms.txt)
+	awk -F'\t' 'NR==FNR{k[$$1];next} $$1 in k{print $$1"\t"$$3+$$4}' $@.tmp.chroms $@.tmp.idxstats \
+		| sort -k2,2nr > $@
+	# Clean
+	rm -f $@.tmp*
+
+
 # FASTQ Compression with GZIP
 %.fastq.gz: %.fastq
 	$(GZ) --fast $< -c > $@;

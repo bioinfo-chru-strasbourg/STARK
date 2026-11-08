@@ -7,15 +7,15 @@
 
 
 #####################
-# OUTLYZER Parallel #
+# OUTLYZER Filtered #
 #####################
 
 # Parameters
-THREADS_OUTLYZER_PARALLEL?=1
-DPMIN_OUTLYZER_PARALLEL?=30
+OUTLYZER_FILTERED_EXCLUDE?=
+OUTLYZER_FILTERED_INCLUDE?=FORMAT/DP>=30 && FORMAT/VAF>=0.01
 
 
-%.outLyzer_parallel$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed
+%.outLyzer_filtered$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed
 	# Clean and create split directory
 	rm -rf $@.split && mkdir -p $@.split && : > $@.split/chroms.txt
 	# List of chromosomes (BAM header order): BED chromosomes having reads in the BAM
@@ -34,7 +34,7 @@ DPMIN_OUTLYZER_PARALLEL?=30
 	for c in $$(cat $@.split/order.txt); do \
 		awk -F'\t' -v c="$$c" '$$1==c' $*.design.bed > $@.split/$$c.bed; \
 		printf '%s:\n' "$@.split/$$c.done"; \
-		printf '\tmkdir -p %s && $(PYTHON) $(OUTLYZER) calling -pythonPath=$(PYTHON) -samtools=$(SAMTOOLS) -bed %s -bam $< -ref $(GENOME) -output %s/ -core $(THREADS_OUTLYZER_PARALLEL) -verbose 1 && touch %s\n' "$@.split/$$c.out" "$@.split/$$c.bed" "$@.split/$$c.out" "$@.split/$$c.done"; \
+		printf '\tmkdir -p %s && $(PYTHON) $(OUTLYZER) calling -pythonPath=$(PYTHON) -samtools=$(SAMTOOLS) -bed %s -bam $< -ref $(GENOME) -output %s/ -core 1 -verbose 1 && touch %s\n' "$@.split/$$c.out" "$@.split/$$c.bed" "$@.split/$$c.out" "$@.split/$$c.done"; \
 	done; \
 	} > $@.split/sub.mk
 	# Calling by OutLyzer, all chromosomes in parallel (nothing to do if no chromosome)
@@ -59,13 +59,22 @@ DPMIN_OUTLYZER_PARALLEL?=30
 		if [ "$$(xargs -r grep -h "^#CHROM" < $@.split/vcfs.list | sort -u | wc -l)" -ne 1 ]; then echo "[WARNING] OutLyzer VCF #CHROM lines differ between parts" >&2; fi; \
 		awk -f $(STARK_FOLDER_BIN)/outlyzer_norm.awk $@.tmp.merged.vcf > $@.tmp.normalized.vcf; \
 		$(JAVA) -jar $(PICARD) SortVcf -I $@.tmp.normalized.vcf -O $@.tmp.normalized.sorted.vcf -SD $(DICT); \
-		$(BCFTOOLS) view -i 'FORMAT/DP>=$(DPMIN_OUTLYZER_PARALLEL)' $@.tmp.normalized.sorted.vcf > $@; \
+		CMD="bcftools view -e 'GT=\"0/0\"' --threads=$(THREADS_BY_CALLER) $@.tmp.normalized.sorted.vcf"; \
+		if [ -n "$(OUTLYZER_FILTERED_EXCLUDE)" ]; then \
+			CMD="$$CMD | bcftools view -e '$(OUTLYZER_FILTERED_EXCLUDE)' --threads=$(THREADS_BY_CALLER)"; \
+		fi; \
+		if [ -n "$(OUTLYZER_FILTERED_INCLUDE)" ]; then \
+			CMD="$$CMD | bcftools view -i '$(OUTLYZER_FILTERED_INCLUDE)' --threads=$(THREADS_BY_CALLER)"; \
+		fi; \
+		CMD="$$CMD > $@" ; \
+		echo $$CMD; \
+		eval $$CMD; \
 	fi
 	# Cleaning
 	rm -rf $@.split $@.tmp* $@.idx
 
 
-RELEASE_CMD := $(shell echo "\#\# OutLyzer: OutLyzer caller parallelized to detect variant with low VAF, generate *.outLyzer_parallel.vcf files. VCF file is modified to include GT/Genotype information. Filtered on DP. DPMIN_OUTLYZER_PARALLEL='$(DPMIN_OUTLYZER_PARALLEL)' " >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "\#\# OutLyzer: OutLyzer caller to detect variant with low VAF, generate *.outLyzer_filtered.vcf files. VCF file is modified to include GT/Genotype information. Filtered on DP and VAF. DPMIN_OUTLYZER_FILTERED='$(DPMIN_OUTLYZER_FILTERED)', VAF_OUTLYZER_FILTERED='$(VAF_OUTLYZER_FILTERED)' " >> $(RELEASE_INFOS) )
 
-PIPELINES_COMMENT := "CALLER:outLyzer_parallel:OutLyzer - OutLyzer caller parallelized, GT info added, filter on DP:DP"
+PIPELINES_COMMENT := "CALLER:outLyzer_filtered:OutLyzer - OutLyzer caller, GT info added, filter on DP and VAF:DP and VAF"
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
