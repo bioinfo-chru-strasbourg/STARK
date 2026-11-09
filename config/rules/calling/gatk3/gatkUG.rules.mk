@@ -91,7 +91,7 @@ GATKUG_FILTERS_FLAGS?= \
 
 # GATKUG Release documentation
 
-RELEASE_COMMENT := "\#\# CALLING GATK Unified Genotyper '$(MK_RELEASE)': GATK Unified Genotyper tool identify variants from aligned BAM"
+RELEASE_COMMENT := "\#\# CALLING GATK Unified Genotyper: GATK Unified Genotyper tool identify variants from aligned BAM"
 RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
 RELEASE_COMMENT := "\#\# CALLING GATKUG identify variants and generate *.gatkUG.vcf files with parameters: GATKUG_FLAGS='$(GATKUG_FLAGS)' and GATKUG_FILTERS_FLAGS='$(GATKUG_FILTERS_FLAGS)'"

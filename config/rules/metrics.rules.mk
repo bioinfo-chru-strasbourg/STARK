@@ -74,6 +74,9 @@ GENESCOVERAGE_PRECISION?=2
 # RNASEQC
 RNASEQC_PARAM?=--coverage --detection-threshold=1 --mapping-quality=1 --verbose
 
+# HOWARD_REPORT_INFOS_FIELDS
+HOWARD_REPORT_INFOS_FIELDS?=.*
+
 
 ################################
 ## BED / INTERVALS for Metrics #
@@ -605,7 +608,8 @@ MAX_CONCURRENT_HSMETRICS_RAM?=24g
 			$(BCFTOOLS) view $*.vcf.gz | $(BCFTOOLS) norm --rm-dup exact > $@.$$bed_subname.vcf; \
 		fi ; \
 		# TSV \
-		$(HOWARD) convert $(HOWARD_CONFIG_OPTIONS) --input=$@.$$bed_subname.vcf --output=$@.$$bed_subname.tsv; \
+		$(HOWARD) convert $(HOWARD_CONFIG_OPTIONS) --input=$@.$$bed_subname.vcf --output=$@.$$bed_subname.tsv --explode_infos --explode_infos_fields="$(HOWARD_REPORT_INFOS_FIELDS)"; \
+		#$(HOWARD) query $(HOWARD_CONFIG_OPTIONS) --input=$@.$$bed_subname.vcf --output=$@.$$bed_subname.tsv --query="SELECT \"#CHROM\", POS, REF, ALT,  FROM variants_view"; \
 		touch $@.$$bed_subname.tsv; \
 		# HOWARD STATS \
 		$(HOWARD) stats $(HOWARD_CONFIG_OPTIONS) --input=$@.$$bed_subname.vcf --stats_md=$@.$$bed_subname.stats.md --stats_json=$@.$$bed_subname.stats.json --stats_html=$@.$$bed_subname.stats.html --annotations_stats; \

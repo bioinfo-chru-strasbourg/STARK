@@ -1228,6 +1228,16 @@ if [ -z "$HOWARD_PARAM_ANALYSIS" ]; then
 fi;
 export HOWARD_PARAM_ANALYSIS
 
+# HOWARD REPORT INFOS FIELDS
+# Fields from the INFO column to be exploded into separate columns in the TSV report
+# Default: "" (no fields exploded)
+# Examples:
+# - HOWARD_REPORT_INFOS_FIELDS="*": explode all INFO fields into separate columns in the TSV report
+# - HOWARD_REPORT_INFOS_FIELDS="DP,AF,AN": explode only the DP, AF, and AN INFO fields into separate columns in the TSV report
+if [ -z "$HOWARD_REPORT_INFOS_FIELDS" ]; then
+	HOWARD_REPORT_INFOS_FIELDS=""
+fi;
+export HOWARD_REPORT_INFOS_FIELDS
 
 # INFO to FORMAT
 # Transfers INFO annotation to FORMAT annotation

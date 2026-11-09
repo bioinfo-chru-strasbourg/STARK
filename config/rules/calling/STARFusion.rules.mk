@@ -1,15 +1,32 @@
 ############################
 # STAR-Fusion Calling Rules
-# Release: 0.9.4.8
-# Date: 26/08/2022
+# Release: 1.0.0
+# Date: 26/08/2026
 # Author: Samuel Nicaise, Thomas Lavaux
 ############################
 
+# Release note
+# 1.0.0-26/08/2026: Initial release of STARFusion calling rules.
 
+
+##############
+# STARFusion #
+##############
+
+# Detect fusions based on RNA-Seq data
 # STARFusion need raw alignement, without splitNcigar, to work properly. So we need to use bam without splitNcigar directly from STAR alignments (%$(POST_ALIGNMENT).bam).
 
-#%.STARFusion$(POST_CALLING).vcf: %$(POST_ALIGNMENT).bam %$(POST_ALIGNMENT).bam.bai %.empty.vcf %.junction
-%.STARFusion$(POST_CALLING).vcf: %.star_raw.bam %.star_raw.bam.bai %.empty.vcf #%.junction
+# STARFUSION filters Flags
+# This variable can be defined directly on Apps
+STARFUSION_FILTERS_FLAGS?= \
+	--exclude-genotypes '' \
+	--exclude '' \
+	--include '' \
+	--filter '' \
+	--sort
+
+
+%.STARFusion$(POST_CALLING).vcf: %.star_raw.bam %.star_raw.bam.bai %.empty.vcf
 	mkdir -p $*.fusion.reports;
 	$(MAMBA) run -p $(STARFUSION_ENV) $(STARFUSION) \
 		--chimeric_junction $*.junction \
@@ -26,15 +43,19 @@
 		-i $*.fusion.reports/$$(echo $(@F) | rev | cut -d"." -f4-  | rev).star-fusion.abridged.tsv \
 		-o $@ \
 		-c $@.variantconvert.config.json;
+	# Filters
+	bash $(STARK_FOLDER_BIN)/filter_vcf.sh --input $@ --output $@ --threads $(THREADS_BY_CALLER) --bcftools $(BCFTOOLS) $(STARFUSION_FILTERS_FLAGS);
 	# Clean
 	-rm $@.variantconvert.config.json
 
-# -fi breakpoints \
-# -fo vcf \
 
-# CONFIG/RELEASE
-RELEASE_COMMENT := "\#\# CALLING STARFusion '$(MK_RELEASE)': CTAT Tool to detect fusions based on RNA-Seq data"
+# ITDSEEK Release documentation
+
+RELEASE_COMMENT := "\#\# CALLING STARFusion: Tool to detect fusions based on RNA-Seq data"
 RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
-PIPELINES_COMMENT := "CALLER:STARFusion:STARFusion - by default: no options"
+RELEASE_COMMENT := "\#\# CALLING STARFusion: STARFusion Tool to detect fusions based on RNA-Seq data (using CTAT). Parameters STARFUSION_FILTERS_FLAGS='$(STARFUSION_FILTERS_FLAGS)'"
+RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
+
+PIPELINES_COMMENT := "CALLER:STARFusion:STARFusion - by default: no options, STARFUSION_FILTERS_FLAGS='$(STARFUSION_FILTERS_FLAGS)'"
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )

@@ -82,7 +82,7 @@ OUTLYZER_FILTERS_FLAGS?= \
 
 # OUTLYZER Release documentation
 
-RELEASE_COMMENT := "\#\# CALLING OutLyzer '$(MK_RELEASE)': OutLyzer tool identify variants from aligned BAM"
+RELEASE_COMMENT := "\#\# CALLING OutLyzer: OutLyzer tool identify variants from aligned BAM"
 RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
 RELEASE_COMMENT := "\#\# CALLING: OutLyzer in parallel to identify somatic variants with low VAF and generate *.outLyzer.vcf files. Parameters OUTLYZER_FLAGS='$(OUTLYZER_FLAGS)' and OUTLYZER_FILTERS_FLAGS='$(OUTLYZER_FILTERS_FLAGS)' "

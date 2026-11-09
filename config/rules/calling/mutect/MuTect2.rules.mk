@@ -34,7 +34,7 @@ MUTECT2_FLAGS?= \
 MUTECT2_FILTERS_FLAGS?= \
 	--exclude-genotypes '0/0' \
 	--exclude 'FILTER="FAIL"' \
-	--include 'FORMAT/DP>=30 && FORMAT/FA>=0.01' \
+	--include 'FORMAT/DP>=30 && FORMAT/AF>=0.01' \
 	--filter 'PASS' \
 	--sort
 
@@ -81,7 +81,7 @@ MUTECT2_FILTERS_FLAGS?= \
 
 # MUTECT2 Release documentation
 
-RELEASE_COMMENT := "\#\# CALLING MuTect2 '$(MK_RELEASE)': MuTect2 tool identify variants from aligned BAM"
+RELEASE_COMMENT := "\#\# CALLING MuTect2: MuTect2 tool identify variants from aligned BAM"
 RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
 RELEASE_COMMENT := "\#\# CALLING: MUTECT2 with GATK4 in parallel to identify somatic variants and generate *.MuTect2.vcf files, with MuTect2 and filtrations. Parameters MUTECT2_FLAGS='$(MUTECT2_FLAGS)', MUTECT2_FILTERS_FLAGS='$(MUTECT2_FILTERS_FLAGS)' "

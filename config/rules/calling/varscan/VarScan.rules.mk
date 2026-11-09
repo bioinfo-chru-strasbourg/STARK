@@ -92,7 +92,7 @@ VARSCAN_FILTERS_FLAGS?= \
 
 # VARSCAN Release documentation
 
-RELEASE_COMMENT := "\#\# CALLING VARSCAN '$(MK_RELEASE)': VARSCAN tool identify variants from mpileup file, generated from aligned BAM"
+RELEASE_COMMENT := "\#\# CALLING VARSCAN: VARSCAN tool identify variants from mpileup file, generated from aligned BAM"
 RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
 RELEASE_COMMENT := "\#\# CALLING: VarScan identify variants in parallel to identify somatic variants with low VAF and generate *.VarScan.vcf files. Parameters VARSCAN_SNP_FLAGS='$(VARSCAN_SNP_FLAGS)', VARSCAN_INDEL_FLAGS='$(VARSCAN_INDEL_FLAGS)' and VARSCAN_FILTERS_FLAGS='$(VARSCAN_FILTERS_FLAGS)' "

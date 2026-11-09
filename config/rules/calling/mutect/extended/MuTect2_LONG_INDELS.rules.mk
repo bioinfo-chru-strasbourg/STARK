@@ -84,7 +84,7 @@ MUTECT2_LONG_INDELS_FILTERS_FLAGS?= \
 
 # MUTECT2 Release documentation
 
-RELEASE_COMMENT := "\#\# CALLING MuTect2 Long Indels'$(MK_RELEASE)': MuTect2 tool identify long indels variants from aligned BAM"
+RELEASE_COMMENT := "\#\# CALLING MuTect2 Long Indels: MuTect2 tool identify long indels variants from aligned BAM"
 RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
 RELEASE_COMMENT := "\#\# CALLING: MUTECT2 with GATK4 in parallel to identify somatic variants and generate *.MuTect2_LONG_INDELS.vcf files, with MuTect2 and filtrations. Parameters MUTECT2_LONG_INDELS_FLAGS='$(MUTECT2_LONG_INDELS_FLAGS)', MUTECT2_LONG_INDELS_FILTERS_FLAGS='$(MUTECT2_LONG_INDELS_FILTERS_FLAGS)' "

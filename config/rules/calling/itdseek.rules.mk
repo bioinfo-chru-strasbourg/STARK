@@ -1,24 +1,32 @@
 ############################
 # ITDSeek Calling Rules
-# Release: 0.9
-# Date: 23/10/2017
+# Release: 1.0.0
+# Date: 09/11/2026
 # Author: Antony Le Bechec
 ############################
 
+# Release note
+# 1.0.0-09/11/2026: Initial release of ITDSeek calling rules.
 
 
 ############
 # ITDSEEK  #
 ############
 
-# Minimum coverage for a variant called by ITDSeek
-DPMIN_ITDSEEK=20
-VAFMIN_ITDSEEK=0.00
+# ITDSEEK filters Flags
+# This variable can be defined directly on Apps
+ITDSEEK_FILTERS_FLAGS?= \
+	--exclude-genotypes '' \
+	--exclude 'FORMAT/VAF <= 0.00' \
+	--include 'FORMAT/DP>=20' \
+	--filter '' \
+	--sort
+
 
 %.itdseek$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf 
-	#
 	# Generate VCF with ITDSeek
 	-$(ITDSEEK) $< $(GENOME) $(SAMTOOLS) > $@.tmp;
+	# Check for errors in ITDSeek output
 	if (( $$(grep -c ^ERROR $@.tmp) )); then \
 		echo "[ERROR] ITDSeek failed: "; \
 		grep ^ERROR $@.tmp; \
@@ -33,22 +41,27 @@ VAFMIN_ITDSEEK=0.00
 		# Add contig \
 		echo '##contig=<ID=chr13,assembly=hg19,length=115169878>' >> $@.tmp2; \
 		echo '##reference=file://'$(GENOME) >> $@.tmp2; \
-		# Add sample columns FORMAT and $SAMPLE \
+		# Add sample columns FORMAT and SAMPLE \
 		grep "^#CHROM" $@.tmp | sed "s/INFO$$/INFO\tFORMAT\t"`echo $$(basename $$(dirname $@))`"/" >> $@.tmp2; \
 		mkdir -p $@.tmp"_VCF_sort"; \
 		touch $@.tmp3; \
 		old_IFS=$$IFS; IFS=$$'\n'; for l in $$(grep -v "^#" $@.tmp); do VAF=$$(echo $$l | cut -d" " -f8 | cut -d";" -f5 | cut -d"=" -f2); AD=$$(echo $$l | cut -d" " -f8 | cut -d";" -f1 | cut -d"=" -f2); DP=$$(echo $$l | cut -d" " -f8 | cut -d";" -f1 | cut -d"=" -f2 | awk -F"," '{print $$1+$$2}'); echo -e $$l";ITD=1 GT:DP:VAF 0/1:$$DP:$$VAF" | tr " " "\t" >> $@.tmp3; done; IFS=$$old_IFS; \
-		cat $@.tmp3 | sort -k1,1V -k2,2n -T $@.tmp"_VCF_sort" >> $@.tmp2; \
-		# Filter on DP \
-		$(BCFTOOLS) view -e " FORMAT/DP[*] < $(DPMIN_ITDSEEK) || FORMAT/VAF[*] <= $(VAFMIN_ITDSEEK) "  $@.tmp2 > $@; \
+		cat $@.tmp2 > $@.tmp2.vcf; \
+		cat $@.tmp3 | sort -k1,1V -k2,2n -T $@.tmp"_VCF_sort" >> $@.tmp2.vcf; \
 	fi;
+	# Filters
+	bash $(STARK_FOLDER_BIN)/filter_vcf.sh --input $@.tmp2.vcf --output $@ --threads $(THREADS_BY_CALLER) --bcftools $(BCFTOOLS) $(ITDSEEK_FILTERS_FLAGS);
 	# Cleaning
 	rm -rf $@.tmp*
 
 
+# ITDSEEK Release documentation
 
+RELEASE_COMMENT := "\#\# CALLING ITDSeek: ITDSeek tool identify FLT3 ITD variants from aligned BAM"
+RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
-RELEASE_CMD := $(shell echo "\#\# ITDSeek: FLT3 ITD detection, generate *.itdseek.vcf files with with parameters: DPMIN_ITDSEEK='$(DPMIN_ITDSEEK)', VAFMIN_ITDSEEK='$(VAFMIN_ITDSEEK)'. VCF file is modified to include GT/Genotype information as 0/1 by default. Variants are excluded if DP lower than $(DPMIN_ITDSEEK) AND VAF lower than $(VAFMIN_ITDSEEK)" >> $(RELEASE_INFOS) )
+RELEASE_COMMENT := "\#\# CALLING: ITDSeek FLT3 ITD detection, generate *.itdseek.vcf files with with parameters. VCF file is modified to include GT/Genotype information as 0/1 by default, and DP and VAF. Parameters ITDSEEK_FILTERS_FLAGS='$(ITDSEEK_FILTERS_FLAGS)' "
+RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
-PIPELINES_COMMENT := "CALLER:itdseek:ITDSeek - FLT3 ITD detection:no parameters, GT info 0/1 added"
+PIPELINES_COMMENT := "CALLER:itdseek:ITDSeek - FLT3 ITD detection:Filter on DP and VAF, GT info 0/1 added, ITDSEEK_FILTERS_FLAGS='$(ITDSEEK_FILTERS_FLAGS)'"
 PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )

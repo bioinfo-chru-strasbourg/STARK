@@ -74,7 +74,7 @@ MUTECT_FILTERS_FLAGS?= \
 
 # MUTECT Release documentation
 
-RELEASE_COMMENT := "\#\# CALLING MuTect Caller '$(MK_RELEASE)': MuTect tool identify variants from aligned BAM"
+RELEASE_COMMENT := "\#\# CALLING MuTect Caller: MuTect tool identify variants from aligned BAM"
 RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
 RELEASE_COMMENT := "\#\# CALLING: MUTECT to identify somatic variants and generate *.MuTect.vcf files. Parameteres MUTECT_FLAGS='$(MUTECT_FLAGS)' and MUTECT_FILTERS_FLAGS='$(MUTECT_FILTERS_FLAGS)'"

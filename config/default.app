@@ -715,6 +715,16 @@ HOWARD_PARAM_REPORT=$HOWARD_FOLDER_CONFIG/param.report.json
 HOWARD_PARAM_ANALYSIS=$HOWARD_FOLDER_CONFIG/param.analysis.json
 #HOWARD_PARAM_ANALYSIS='{}'
 
+# HOWARD REPORT INFOS FIELDS
+# Fields from the INFO column to be exploded into separate columns in the TSV report
+# Default: "*" (all fields)
+# Examples:
+# - HOWARD_REPORT_INFOS_FIELDS="": explode no INFO fields into separate columns in the TSV report
+# - HOWARD_REPORT_INFOS_FIELDS="*": explode all INFO fields into separate columns in the TSV report
+# - HOWARD_REPORT_INFOS_FIELDS="DP,AF,AN": explode only the DP, AF, and AN INFO fields into separate columns in the TSV report
+# - HOWARD_REPORT_INFOS_FIELDS="NOMEN,snpeff_.*": explode only INFO fields NOMEN and starting with "snpeff_" into separate columns in the TSV report
+HOWARD_REPORT_INFOS_FIELDS="*"
+
 # INFO to FORMAT
 # Transfers INFO annotation to FORMAT annotation
 # Useful for annotations on full VCF to final VCF on each sample

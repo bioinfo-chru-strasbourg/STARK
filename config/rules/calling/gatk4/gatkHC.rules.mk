@@ -94,7 +94,7 @@ GATKHC_FILTERS_FLAGS?= \
 
 # GATKHC Release documentation
 
-RELEASE_COMMENT := "\#\# CALLING GATK Haplotype Caller '$(MK_RELEASE)': GATK Haplotype Caller tool identify variants from aligned BAM"
+RELEASE_COMMENT := "\#\# CALLING GATK Haplotype Caller: GATK Haplotype Caller tool identify variants from aligned BAM"
 RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
 RELEASE_COMMENT := "\#\# CALLING GATKHC identify variants and generate *.gatkHC.vcf files with parameters: GATKHC_FLAGS='$(GATKHC_FLAGS)' and GATKHC_FILTERS_FLAGS='$(GATKHC_FILTERS_FLAGS)'"
