@@ -21,11 +21,11 @@ SNPEFF_FLAGS?=
 # SNPEFF Stats 
 SNPEFF_STATS?=0
 # Generate command option if SNPEFF_STATS is 1
-SNPEFF_STATS_OPTION:=$(if $(filter 1,$(SNPEFF_STATS)),-stats $@.stats/$(@F).stats.html,)
+SNPEFF_STATS_OPTION=$(if $(filter 1,$(SNPEFF_STATS)),-stats $@.stats/$(@F).stats.html,)
 
 
 # Rule to generate SNPEFF annotated VCF files
-%.snpeff$(POST_ANNOTATION).vcf: %.vcf  %.empty.vcf
+%.snpeff$(POST_ANNOTATION).vcf: %.vcf %.empty.vcf
 	# Create stats directory
 	if [ $(SNPEFF_STATS) -eq 1 ]; then \
 		mkdir -p $@.stats; \

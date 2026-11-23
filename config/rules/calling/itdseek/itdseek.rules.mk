@@ -39,7 +39,7 @@ ITDSEEK_FILTERS_FLAGS?= \
 	if (( $$(grep -c ^ERROR $@.tmp) )); then \
 		echo "[ERROR] ITDSeek failed: "; \
 		grep ^ERROR $@.tmp; \
-		cp $*.empty.vcf $@; \
+		cp $*.empty.vcf $@.tmp2.vcf; \
 	else \
 		# Add header \
 		grep "^##" $@.tmp > $@.tmp2; \
