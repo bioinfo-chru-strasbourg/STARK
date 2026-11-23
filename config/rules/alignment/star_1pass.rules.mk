@@ -18,7 +18,7 @@ MK_DATE=24/03/2026
 STAR_KEEP_RAW_BAM?=0
 
 # STAR Flags to set specific parameters (see STAR help)
-STAR_1PASS_FLAGS_1PASS?= \
+STAR_1PASS_FLAGS?= \
 	--outSAMtype BAM SortedByCoordinate \
 	--chimOutJunctionFormat 1 \
 	--outSAMunmapped Within \
@@ -62,7 +62,7 @@ STAR_1PASS_FLAGS_1PASS?= \
 			--readFilesCommand '$(UNGZ) -c' \
 			--outFileNamePrefix $*.star_1pass.bam.metrics/$(*F).star_raw.bam.metrics/$(*F).star_raw. \
 			--outSAMattrRGline ID:1 PL:ILLUMINA PU:PU LB:001 \"SM:$(*F)\" \
-			$(STAR_1PASS_FLAGS_1PASS)" \
+			$(STAR_1PASS_FLAGS)" \
 		--lockfile_prefix $$(echo $@ | xargs -0 dirname | xargs -0 dirname)/lockfile.star_1pass.star_raw. \
 		--target $@ \
 		--max_jobs $(THREADS);
