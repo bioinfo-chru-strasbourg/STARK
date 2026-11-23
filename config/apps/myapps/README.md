@@ -1,0 +1,3 @@
+# MyApps
+
+Copy your own STARK Application *app in this foler

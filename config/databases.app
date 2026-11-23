@@ -134,42 +134,54 @@ fi;
 export DEEPVARIANT_DATABASES
 DATABASES_CONFIG_LIST=$DATABASES_CONFIG_LIST" DEEPVARIANT_DATABASES"
 
-# Default PAR BED
-# DEEPVARIANT_PAR_BED="/STARK/databases/deepvariant/current/$ASSEMBLY/GRCh37_PAR.bed"
-export DEEPVARIANT_PAR_BED
 
 # Default Haploid contigs
-# DEEPVARIANT_HAPLOID_CONTIGS=
-# DEEPVARIANT_HAPLOID_CONTIGS="chrX,chrY" # For human genome, but can be different for other organisms. Heterozygous variants in these contigs will be re-genotyped as the most likely (e.g., hom ref or hom alt) because of the haploid nature of these contigs. This option is useful to avoid false positive heterozygous calls in haploid contigs, especially in PAR regions.
+# Heterozygous variants in these contigs will be re-genotyped as the most likely (e.g., hom ref or hom alt) because of the haploid nature of these contigs.
+# This option is useful to avoid false positive heterozygous calls in haploid contigs, especially in PAR regions.
+# For human genome, but can be different for other organisms.
+# Default: "chrX,chrY" 
+if [ -z $DEEPVARIANT_HAPLOID_CONTIGS ] || [ "$DEEPVARIANT_HAPLOID_CONTIGS" == "" ]; then
+	DEEPVARIANT_HAPLOID_CONTIGS="chrX,chrY"
+fi;
 export DEEPVARIANT_HAPLOID_CONTIGS
 
+# Default PAR BED file for DeepVariant
+# If --haploid_contigs is set, then this can be used to provide PAR regions to be excluded from genotype adjustment.
+# It will look for a unique BED file in the DeepVariant databases folder for the given assembly.
+
+# Find Default PAR BED
+_NEW_DEEPVARIANT_PAR_BED_DEFAULT=
+shopt -s nullglob
+PAR_BED_FILES=("$DEEPVARIANT_DATABASES/$ASSEMBLY"/*.bed)
+PAR_BED_FILES_PAR=("$DEEPVARIANT_DATABASES/$ASSEMBLY"/*_PAR.bed)
+shopt -u nullglob
+# Determine the default PAR BED file if there is exactly one match in the database folder
+if [ ${#PAR_BED_FILES[@]} -eq 1 ]; then
+	_NEW_DEEPVARIANT_PAR_BED_DEFAULT=${PAR_BED_FILES[0]}
+elif [ ${#PAR_BED_FILES_PAR[@]} -eq 1 ]; then
+	_NEW_DEEPVARIANT_PAR_BED_DEFAULT=${PAR_BED_FILES_PAR[0]}
+fi;
+
+# Check if DEEPVARIANT_PAR_BED is set and if it matches the default
+if [ -z "${DEEPVARIANT_PAR_BED+x}" ] || [[ -z "$DEEPVARIANT_PAR_BED" ]] || [ "${DEEPVARIANT_PAR_BED}" = "${_DEEPVARIANT_PAR_BED_DEFAULT:-}" ]; then
+    DEEPVARIANT_PAR_BED="$_NEW_DEEPVARIANT_PAR_BED_DEFAULT"
+fi
+_DEEPVARIANT_PAR_BED_DEFAULT="$_NEW_DEEPVARIANT_PAR_BED_DEFAULT"
+export DEEPVARIANT_PAR_BED
+
+#echo "DEEPVARIANT_PAR_BED is set to: $DEEPVARIANT_PAR_BED"
 
 
-
-
+# _NEW_GENOME_RNA_DEFAULT="$GENOME.ctat/$CTAT_DATABASES_GENE_SOURCE/ref_genome.fa"
+# if [ -z "${GENOME_RNA+x}" ] || [ "${GENOME_RNA}" = "${_GENOME_RNA_DEFAULT:-}" ]; then
+#     GENOME_RNA="$_NEW_GENOME_RNA_DEFAULT"
+# fi
+# _GENOME_RNA_DEFAULT="$_NEW_GENOME_RNA_DEFAULT"
+# export GENOME_RNA
 
 
 # CTAT
 #######
-
-# # STAR Fusion (CTAT Lib)
-# # if [ $ASSEMBLY == "hg19" ] ; then CTAT_CURRENT="https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/GRCh37_gencode_v19_CTAT_lib_Mar012021.plug-n-play.tar.gz"; fi;
-# # if [ $ASSEMBLY == "hg38" ] ; then CTAT_CURRENT="https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/GRCh38_gencode_v37_CTAT_lib_Mar012021.plug-n-play.tar.gz"; fi;
-# if [ $ASSEMBLY == "hg19" ] ; then CTAT_CURRENT="https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/GRCh37_gencode_v19_CTAT_lib_Mar012021.STAR_v2.7.11a.plug-n-play.tar.gz"; fi;
-# if [ $ASSEMBLY == "hg38" ] ; then CTAT_CURRENT="https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/GRCh38_gencode_v44_CTAT_lib_Oct292023.plug-n-play.tar.gz"; fi;
-# #if [ $ASSEMBLY == "hg38" ] ; then CTAT_CURRENT="https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/GRCh38_gencode_v22_CTAT_lib_Mar012021.STAR_v2.7.11a.plug-n-play.tar.gz"; fi;
-# CTAT_PM="https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB/__genome_libs_StarFv1.10/AnnotFilterRule.pm"
-# export CTAT_CURRENT
-# export CTAT_PM
-
-# if [ ! -z $FOLDER_DATABASES_CTAT ] && [ "$FOLDER_DATABASES_CTAT" != "" ]; then
-# 	CTAT_DATABASES=$FOLDER_DATABASES_CTAT
-# else
-# 	CTAT_DATABASES=$DBFOLDER/CTAT_LIB/current
-# fi;
-# export CTAT_DATABASES
-# DATABASES_CONFIG_LIST=$DATABASES_CONFIG_LIST" CTAT_DATABASES"
-
 
 # STAR Fusion (CTAT lib source). This is the source of the CTAT lib used for STAR fusion. It can be used to build a custom CTAT lib with different gene annotation (refGene or gencode) or different genome version (hg19 or hg38). By default, the CTAT lib used for STAR fusion will be based on refGene annotation and will be located in $CTAT_URL_SOURCE/GRCh37_gencode_v19_CTAT_lib_Mar012021.source.tar.gz for hg19 and $CTAT_URL_SOURCE/GRCh38_gencode_v44_CTAT_lib_Oct292023.source.tar.gz for hg38. If you want to use a different CTAT lib for STAR fusion, you can set the CTAT_LIB_SOURCE variable to the URL of the CTAT lib source to use for STAR fusion. Note that if you change the CTAT lib source for STAR fusion, you should also change the gene source for CTAT lib (CTAT_DATABASES_GENE_SOURCE) to the same value to ensure consistency between fusion detection and annotation.
 CTAT_URL_SOURCE="https://data.broadinstitute.org/Trinity/CTAT_RESOURCE_LIB"
@@ -187,19 +199,6 @@ export CTAT_DATABASES_GENE_SOURCE
 
 # Genome for STAR alignement. By default, the genome used for STAR alignement in STAR fusion will be the same as the genome used for DNA alignement (GENOME variable). However, if you want to use a different genome for STAR alignement in STAR fusion, you can set the GENOME_RNA variable to the path of the genome fasta file to use for STAR alignement in STAR fusion. Note that if you change the genome for STAR alignement in STAR fusion, you should also change the genome for STAR fusion annotation (STAR_FUSION_GENOME) to the same value to ensure consistency between fusion detection and annotation. This genome also depend on the gene source for CTAT lib (CTAT_DATABASES_GENE_SOURCE) because the genome used for STAR alignement in STAR fusion should be the same as the genome used for the gene annotation in CTAT lib to ensure consistency between fusion detection and annotation. By default, GENOME_RNA is set to the same genome as GENOME variable, but with a different path that depends on the gene source for CTAT lib (CTAT_DATABASES_GENE_SOURCE). If CTAT_DATABASES_GENE_SOURCE is set to "refgene", the genome used for STAR alignement in STAR fusion will be based on refGene annotation and will be located in $GENOME.ctat/ref_genome.fa. If CTAT_DATABASES_GENE_SOURCE is set to "gencode", the genome used for STAR alignement in STAR fusion will be based on gencode annotation and will be located in $GENOME.ctat/gencode/ref_genome.fa.
 # Default genome for STAR alignement in STAR fusion is based on refGene annotation. Use to switch path if gene source change by application inheritance (e.g. RNASEQ.app inherit from default.app)
-# refpath="$GENOME.ctat/refgene/ref_genome.fa"
-# gencodepath="$GENOME.ctat/gencode/ref_genome.fa"
-# case "$GENOME_RNA" in
-#     ""|"$refpath"|"$gencodepath")
-#         GENOME_RNA="$GENOME.ctat/$CTAT_DATABASES_GENE_SOURCE/ref_genome.fa"
-#         ;;
-# esac
-# export GENOME_RNA
-# if [ -z "${GENOME_RNA+x}" ] || [ "$ASSEMBLY" != "$_GENOME_RNA_ASSEMBLY" ]; then
-# 	GENOME_RNA="$GENOME.ctat/$CTAT_DATABASES_GENE_SOURCE/ref_genome.fa"
-#  	_GENOME_RNA_ASSEMBLY="$ASSEMBLY"
-# fi
-# export GENOME_RNA
 
 _NEW_GENOME_RNA_DEFAULT="$GENOME.ctat/$CTAT_DATABASES_GENE_SOURCE/ref_genome.fa"
 if [ -z "${GENOME_RNA+x}" ] || [ "${GENOME_RNA}" = "${_GENOME_RNA_DEFAULT:-}" ]; then
@@ -288,20 +287,12 @@ fi;
 export DBSNP_DATABASES
 
 # Version of DBSNP to download ex "b156"
-#DBSNP_VERSION_DOWNLOAD="b151"
 DBSNP_VERSION_DOWNLOAD="b157"
 export DBSNP_VERSION_DOWNLOAD
 
-#--download-dbsnp-url-files='$DBSNP_URL_FILES'
-#DBSNP_URL_FILES="{"hg38": "GCF_000001405.38.bgz"}"
-#export DBSNP_URL_FILES
 
 # Version of DBSNP to use for GATK tools (realignement, recalibration, calling)
-# DBSNP_VERSION="b151"
-# dbSNPBuildID="b151"
-# DBSNP_VERSION="151"
 DBSNP_BUILDID="151"
-#dbSNPBuildID="b153"
 
 # export DBSNP_VERSION
 # export dbSNPBuildID
@@ -311,12 +302,6 @@ DATABASES_CONFIG_LIST=$DATABASES_CONFIG_LIST" DBSNP_DATABASES"
 DBFOLDER_DBSNP=$DBFOLDER/dbsnp
 
 # VCF dbSNP for GATK tools (realignement, recalibration, calling)
-#export VCFDBSNP=$DBFOLDER_DBSNP/current/$ASSEMBLY/dbsnp.$DBSNP_VERSION.vcf.gz
-#export VCFDBSNP=$DBFOLDER_DBSNP/current/$ASSEMBLY/$DBSNP_VERSION/dbsnp.vcf.gz
-# if [ -z "$VCFDBSNP" ]; then
-# 	VCFDBSNP=$DBFOLDER_DBSNP/current/$ASSEMBLY/$DBSNP_VERSION_DOWNLOAD/dbsnp.b$DBSNP_BUILDID.vcf.gz
-# fi;
-# export VCFDBSNP #=$DBFOLDER_DBSNP/current/$ASSEMBLY/$DBSNP_VERSION_DOWNLOAD/dbsnp.b$DBSNP_BUILDID.vcf.gz
 if [ -z "${VCFDBSNP+x}" ] || [ "$ASSEMBLY" != "$_VCFDBSNP_ASSEMBLY" ]; then
 	VCFDBSNP="$DBFOLDER_DBSNP/current/$ASSEMBLY/$DBSNP_VERSION_DOWNLOAD/dbsnp.b$DBSNP_BUILDID.vcf.gz"
  	_VCFDBSNP_ASSEMBLY="$ASSEMBLY"
@@ -361,29 +346,43 @@ export REFSEQ_GENES_GTF=$REFGENE_DATABASES/$ASSEMBLY/ncbiRefSeq.gtf
 ##################
 
 # # GATK VARIANT RECALIBRATION URLs
-# if [ $ASSEMBLY == "hg38" ]; then
-# 	DBFOLDER_GATK_URL_DEFAULT="https://storage.googleapis.com/genomics-public-data/resources/broad/hg38/v0"
-# 	DBFOLDER_GATK_URL_DBSNP="https://storage.googleapis.com/gcp-public-data--broad-references/hg38/v0"
-# elif [ $ASSEMBLY == "hg19" ]; then
-# 	DBFOLDER_GATK_URL_DEFAULT="https://data.broadinstitute.org/snowman/hg19/variant_calling/vqsr_resources/Exome/v2"
-# 	DBFOLDER_GATK_URL="https://data.broadinstitute.org/snowman/hg19/variant_calling/vqsr_resources/Exome/v2"
-# else
-# 	DBFOLDER_GATK_URL_DEFAULT="https://data.broadinstitute.org/snowman/hg19/variant_calling/vqsr_resources/Exome/v2"
-# 	DBFOLDER_GATK_URL="https://data.broadinstitute.org/snowman/hg19/variant_calling/vqsr_resources/Exome/v2"
-# fi;
-# export DBFOLDER_GATK_URL_DEFAULT
-# export DBFOLDER_GATK_URL_DBSNP
-
-###### NEW URL
-### ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/
-# hg19: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg19
-# hg38: ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38
 DBFOLDER_GATK_URL_DEFAULT=ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle
 export DBFOLDER_GATK_URL_DEFAULT
 
 
 # Gatk resources folder
 DBFOLDER_GATK=$DBFOLDER/gatk
+
+# Main Folder for GATK configuration
+GATK_FOLDER_CONFIG=$STARK_FOLDER_CONFIG/gatk
+export GATK_FOLDER_CONFIG
+
+
+# VARIANTRECALIBRATION_SNP_RESOURCES
+VARIANTRECALIBRATION_SNP_RESOURCES=""
+# Read file containing GATK variant recalibration resources for the current assembly
+if [ -f $GATK_FOLDER_CONFIG/resources.$ASSEMBLY.snp.tsv ]; then
+    # Read each line
+	VARIANTRECALIBRATION_SNP_RESOURCES=""
+	while IFS= read -r line; do
+		VARIANTRECALIBRATION_SNP_RESOURCES="$VARIANTRECALIBRATION_SNP_RESOURCES -resource:$line"
+	done < $GATK_FOLDER_CONFIG/resources.$ASSEMBLY.snp.tsv
+fi;
+export VARIANTRECALIBRATION_SNP_RESOURCES
+
+# VARIANTRECALIBRATION_INDEL_RESOURCES
+VARIANTRECALIBRATION_INDEL_RESOURCES=""
+# Read file containing GATK variant recalibration resources for the current assembly
+if [ -f $GATK_FOLDER_CONFIG/resources.$ASSEMBLY.indel.tsv ]; then
+    # Read each line
+	VARIANTRECALIBRATION_INDEL_RESOURCES=""
+	while IFS= read -r line; do
+		VARIANTRECALIBRATION_INDEL_RESOURCES="$VARIANTRECALIBRATION_INDEL_RESOURCES -resource:$line"
+	done < $GATK_FOLDER_CONFIG/resources.$ASSEMBLY.indel.tsv
+fi;
+export VARIANTRECALIBRATION_INDEL_RESOURCES
+
+
 
 # Check resources
 GATK_DATABASES_SNP_LIST=$(echo $VARIANTRECALIBRATION_SNP_RESOURCES | tr '\t' ' ' | tr "-" "\n" | sed 's/resource:\([^,]*\),[^ ]* \(.*\)/\1:\2/')
@@ -414,6 +413,33 @@ else
 fi;
 export VARIANTRECALIBRATION_SNP_RESOURCES_OPTION
 export VARIANTRECALIBRATION_INDEL_RESOURCES_OPTION
+
+
+# GATK BAM Realignment
+# Realignment is a process of correcting misalignments around indels. It is recommended to perform realignment before variant calling, especially for indel calling, to improve the accuracy of variant calling (not for GATK4 Haplotype Caller and MuTect2).
+# This option allow GATK to perform realignment, if the file is available and not empty. If not, GATK will be used without realignment.
+# Realignemnt is performed with GATK3 RealignerTargetCreator and IndelRealigner, and not performed with GATK4 (GATK4 Haplotype Caller and MuTect2 perform local realignment during calling, so GATK4 do not include Realignemnt tools).
+# This option is used with the GATK3 RealignerTargetCreator command to identify regions to realign, and with the GATK3 IndelRealigner command to perform realignment.
+# The VCF files include Indels and can be the same as for VCF recalibration (see VARIANTRECALIBRATION_INDEL_RESOURCES).
+# Exemple:
+# - GATK_REALIGNMENT_KNOWN_OPTIONS="--known $VCFDBSNP"
+# default:
+GATK_REALIGNMENT_KNOWN_OPTIONS=$(echo -e "$VARIANTRECALIBRATION_INDEL_RESOURCES" | sed "s#-resource.* \(.*\)#-known "$DBFOLDER"/gatk/current/"$ASSEMBLY"/\1#gi" | xargs echo)
+export GATK_REALIGNMENT_KNOWN_OPTIONS
+
+# GATK BAM Recalibration
+# Recalibration is a process of correcting base quality scores. It is recommended to perform recalibration before variant calling to improve the accuracy of variant calling.
+# This option allow GATK to perform recalibration, if the file is available and not empty. If not, GATK will be used without recalibration.
+# Recalibration is performed with GATK4 BaseRecalibrator and PrintReads
+# This option is used with the GATK4 BaseRecalibrator command to identify covariates to recalibrate, and with the GATK4 PrintReads command to perform recalibration.
+# The VCF files include SNPs and can be the same as for VCF recalibration (see VARIANTRECALIBRATION_SNP_RESOURCES).
+# Exemple:
+# - GATK_RECALIBRATION_KNOWN_OPTIONS="--known-sites $VCFDBSNP"
+# default:
+GATK_RECALIBRATION_KNOWN_OPTIONS=$(echo -e "$VARIANTRECALIBRATION_SNP_RESOURCES" | sed "s#-resource.* \(.*\)#--known-sites "$DBFOLDER"/gatk/current/"$ASSEMBLY"/\1#gi" | xargs echo)
+export GATK_RECALIBRATION_KNOWN_OPTIONS
+
+
 
 ##########
 # SNPEFF #
@@ -452,33 +478,8 @@ export VARIANTCONVERT_FOLDER_CONFIG=$STARK_FOLDER_CONFIG/variantconvert
 # Main Folder for HOWARD configuration
 export HOWARD_FOLDER_CONFIG=$STARK_FOLDER_CONFIG/howard
 
-#if [ -z $HOWARD_CONFIG ] || [ ! -e $HOWARD_CONFIG ]; then
-#	HOWARD_CONFIG=$HOWARD_FOLDER_CONFIG/config.ini			# INI
-#fi;
-#export HOWARD_CONFIG
-#DATABASES_CONFIG_LIST=$DATABASES_CONFIG_LIST" HOWARD_CONFIG"
-
-#if [ -z $HOWARD_CONFIG_ANNOTATION ] || [ ! -e $HOWARD_CONFIG_ANNOTATION ]; then
-#	HOWARD_CONFIG_ANNOTATION=$HOWARD_FOLDER_CONFIG/config.annotation.ini
-#fi;
-#export HOWARD_CONFIG_ANNOTATION
-#DATABASES_CONFIG_LIST=$DATABASES_CONFIG_LIST" HOWARD_CONFIG_ANNOTATION"
-
-#if [ -z $HOWARD_CONFIG_PRIORITIZATION ] || [ ! -e $HOWARD_CONFIG_PRIORITIZATION ]; then
-#	HOWARD_CONFIG_PRIORITIZATION=$HOWARD_FOLDER_CONFIG/config.prioritization.ini
-#fi;
-#export HOWARD_CONFIG_PRIORITIZATION
-#DATABASES_CONFIG_LIST=$DATABASES_CONFIG_LIST" HOWARD_CONFIG_PRIORITIZATION"
-
-# DEJAVU ANNOVAR annotation
-#if [ "$HOWARD_CONFIG_DEJAVU_ANNOTATION" == "" ] || [ -z $HOWARD_CONFIG_DEJAVU_ANNOTATION ] || [ ! -e $HOWARD_CONFIG_DEJAVU_ANNOTATION ]; then
-#	HOWARD_CONFIG_DEJAVU_ANNOTATION=$HOWARD_FOLDER_CONFIG/config.annotation.ini
-#fi;
-#export HOWARD_CONFIG_DEJAVU_ANNOTATION
-#DATABASES_CONFIG_LIST=$DATABASES_CONFIG_LIST" HOWARD_CONFIG_DEJAVU_ANNOTATION"
 
 ############### Main Folder for HOWARD configuration
-#export HOWARD_FOLDER_CONFIG="/STARK/tools/howard/devel/config"
 export HOWARD_FOLDER_CONFIG=$STARK_FOLDER_CONFIG/howard
 
 if [ -z $HOWARD_CONFIG ] || [ ! -e $HOWARD_CONFIG ]; then

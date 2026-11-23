@@ -1,15 +1,14 @@
 ############################
 # Variant Normalization Rules
-# Release: 1.1.0
-# Date: 12/10/2026
 # Author: Antony Le Bechec
 ############################
+# Release
+MK_RELEASE=1.1.0
+MK_DATE=12/10/2026
 
 # Release notes:
 # 1.0.0-07/09/2026: Creation, variant normalization
 # 1.1.0-12/10/2026: Add update of VCF sequence dictionary
-# OPTIONS
-
 
 
 # Variant Normalization
@@ -34,9 +33,6 @@
 	rm -f $@.with_contigs.*
 
 
-
-RELEASE_COMMENT := "\#\# Variant Normalization: BCFTools variant normalization."
-RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
-
-PIPELINES_COMMENT := "POST_CALLING:variantnormalization:Variant Normalization of VCF using BCFTools."
-PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
+# Documentation
+$(file >>$(RELEASE_INFOS),## POST_CALLING variantnormalization '$(MK_RELEASE)': Variant Normalization of VCF using BCFTools.)
+$(file >>$(PIPELINES_INFOS),POST_CALLING:variantnormalization:Variant Normalization of VCF using BCFTools.)

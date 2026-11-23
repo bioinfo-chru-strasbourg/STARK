@@ -3,8 +3,8 @@
 # Author: Antony Le Bechec
 ############################
 # Release
-MK_RELEASE="0.9.4.1"
-MK_DATE="27/10/2025"
+MK_RELEASE=0.9.4.1
+MK_DATE=27/10/2025
 
 # Release note
 # 25/07/20140.2b: add clipping step (".unclipped" on targets)
@@ -14,7 +14,6 @@ MK_DATE="27/10/2025"
 # 23/05/2021-0.9.3.1: Remove samtools view step
 # 12/05/2023-0.9.4.0: BWA MEM2
 # 27/10/2025-0.9.4.1: Add checks for BWA2 MEM success
-
 
 
 ####################################
@@ -27,8 +26,6 @@ MK_DATE="27/10/2025"
 # Options
 
 # BWA MEM flags to set specific parameters (see BWA help)
-#BWAMEM2_FLAGS?= -C -M -k 19 -w 100 -T 30 -A 2 -B 2 
-#BWAMEM2_FLAGS?= -C -M -k 19 -w 100 -T 30 
 BWAMEM2_FLAGS?=-C -M 
 
 # Add flag to post alignment samtools view to remove specific reads (e.g. secondary, supplementary)
@@ -71,13 +68,6 @@ THREADS_BWAMEM2?=$(shell echo " if ($(MAX_CONCURRENT_ALIGNMENTS_BWAMEM2)<$(NB_SA
 	fi;
 	-rm $@.tmp $@.RG $@.fastq_list
 
-
-# CONFIG/RELEASE
-RELEASE_COMMENT := "\#\# BWA2 ALIGNMENT '$(MK_RELEASE)': BWA2 generates an aligned BAM file from FASTQ file, and ask for post alignment processes 'sorting', 'realignment', 'clipping' \(if needed\) and 'recalibration'. PICARD TOOL is used to Add Or Replace Read Groups and modified the BAM header. Options: BWA2='$(BWA2)', BWAMEM2_FLAGS='$(BWAMEM2_FLAGS)', PICARD='$(PICARD)', PICARD_FLAGS='$(PICARD_FLAGS)'"
-RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
-
-
-# PIPELINES INFOS
-PIPELINES_COMMENT := "ALIGNER:bwamem2:BWA2 MEM - Last powerful algorithm. From FASTQ files."
-PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
-
+# Documentation
+$(file >>$(RELEASE_INFOS),## ALIGNER bwamem2 '$(MK_RELEASE)': BWA MEM2 generates an aligned BAM file from FASTQ file. Parameters BWAMEM2_FLAGS='$(BWAMEM2_FLAGS)')
+$(file >>$(PIPELINES_INFOS),ALIGNER:bwamem2:BWA MEM2 - Last powerful algorithm:BWAMEM2_FLAGS='$(BWAMEM2_FLAGS)')

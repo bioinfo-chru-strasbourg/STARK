@@ -1,9 +1,10 @@
 ############################
 # GATK Calling Rules
-# Release: 1.0.0
-# Date: 03/11/2026
 # Author: Antony Le Bechec
 ############################
+# Release
+MK_RELEASE=1.0.0
+MK_DATE=03/11/2026
 
 # Release note
 # 0.9.1beta-10/03/2015: change genome reference location, in the file %.genome
@@ -36,7 +37,7 @@
 # In addition, HaplotypeCaller is able to handle non-diploid organisms as well as pooled experiment data. Note however that the #algorithms used to calculate variant likelihoods is not well suited to extreme allele frequencies (relative to ploidy) so its #use is not recommended for somatic (cancer) variant discovery. For that purpose, use MuTect2 instead.
 # Finally, HaplotypeCaller is also able to correctly handle the splice junctions that make RNAseq a challenge for most variant callers.
 
-# GATKHC Flags
+# Flags
 # VCFDBSNP_WITH_GATK variable depends on USE_VCFDBSNP_WITH_GATK setting on Apps
 # INTERVAL_PADDING variable defines the padding around intervals for all callers, settings on Apps
 # This variable can be defined directly on Apps
@@ -50,7 +51,7 @@ GATKHC_FLAGS?= \
 	--dont-use-soft-clipped-bases true \
 	--recover-dangling-heads true
 
-# GATKHC filters Flags
+# Filters Flags
 # This variable can be defined directly on Apps
 GATKHC_FILTERS_FLAGS?= \
 	--exclude-genotypes '' \
@@ -60,7 +61,7 @@ GATKHC_FILTERS_FLAGS?= \
 	--sort
 
 
-# GATKHC target rule
+# Rule
 %.gatkHC$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed %.bam.chroms
 	# List of vcf files to be generated per chromosome
 	cut -f1 $*.bam.chroms | sed 's|.*|$@.split.&.vcf.gz|' | tr '\n' ' ' > $@.split.vcfs.list;
@@ -92,13 +93,6 @@ GATKHC_FILTERS_FLAGS?= \
 	rm -rf $@.tmp* $@.split* $@.idx $@.tbi
 
 
-# GATKHC Release documentation
-
-RELEASE_COMMENT := "\#\# CALLING GATK Haplotype Caller: GATK Haplotype Caller tool identify variants from aligned BAM"
-RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
-
-RELEASE_COMMENT := "\#\# CALLING GATKHC identify variants and generate *.gatkHC.vcf files with parameters: GATKHC_FLAGS='$(GATKHC_FLAGS)' and GATKHC_FILTERS_FLAGS='$(GATKHC_FILTERS_FLAGS)'"
-RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
-
-PIPELINES_COMMENT := "CALLER:gatkHC:GATK Haplotype Caller - by default:GATKHC_FLAGS='$(GATKHC_FLAGS)' and GATKHC_FILTERS_FLAGS='$(GATKHC_FILTERS_FLAGS)'"
-PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
+# Documentation
+$(file >>$(RELEASE_INFOS),## CALLER gatkHC '$(MK_RELEASE)': GATK Haplotype Caller tool identify variants from aligned BAM, generates *.gatkHC.vcf files. Parameters GATKHC_FLAGS='$(GATKHC_FLAGS)', GATKHC_FILTERS_FLAGS='$(GATKHC_FILTERS_FLAGS)')
+$(file >>$(PIPELINES_INFOS),CALLER:gatkHC:GATK Haplotype Caller - by default:GATKHC_FLAGS='$(GATKHC_FLAGS)', GATKHC_FILTERS_FLAGS='$(GATKHC_FILTERS_FLAGS)')

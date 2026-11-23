@@ -1,10 +1,9 @@
 #!/bin/bash
-## STARK application SOLIDTUMOR
 
 # DEFAULT ENV
 ######################
-#source_app $CONFIG_DEFAULT_APP,SOMATIC_PARAMETERS
 source_app SOMATIC
+
 
 # APPLICATION INFOS
 #####################
@@ -16,7 +15,4 @@ APP_PROJECT="SOLIDTUMOR"
 
 # ANALYSIS PARAMETERS
 #######################
-
-# PIPELINES
-PIPELINES="bwamem.gatkUG_SOMATIC.howard bwamem.gatkHC_SOMATIC.howard bwamem.MuTect2.howard bwamem.VarScan_SOMATIC.howard bwamem.outLyzer_filtered.howard "
 

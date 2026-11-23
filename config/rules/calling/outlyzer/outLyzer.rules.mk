@@ -1,12 +1,14 @@
 ############################
 # OutLyzer Calling Rules
-# Release: 1.0.0
-# Date: 03/02/2023
 # Author: Antony Le Bechec
 ############################
+# Release
+MK_RELEASE=1.1.0
+MK_DATE=12/11/2026
 
 # Release note
 # 1.0.0-03/02/2023: Initial release of OutLyzer calling rules.
+# 1.1.0-12/11/2026: Normalize parallelization and filtration
 
 
 ############
@@ -27,11 +29,11 @@
 #   -force FORCE          Force noise background determination to go below a fixed proportion of the Depth [default = disabled; 0 -> 1 ex: "-force 0.2"]
 #   -HSM HSM              HotSpot Metrics: Produce sensitivity Threshold for HotSpot positions, in an additional file. Requires formated HotSpot File in argument (see documentation for more details).
 
-# OUTLYZER Flags
+# Flags
 # This variable can be defined directly on Apps
 OUTLYZER_FLAGS?=-FRcor
 
-# OUTLYZER filters Flags
+# Filters Flags
 # This variable can be defined directly on Apps
 OUTLYZER_FILTERS_FLAGS?= \
 	--exclude-genotypes '' \
@@ -41,7 +43,7 @@ OUTLYZER_FILTERS_FLAGS?= \
 	--sort
 
 
-# MUTECT2 target rule
+# Rule
 %.outLyzer$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed %.bam.chroms
 	# List of vcf and auxiliary files to be generated per chromosome
 	cut -f1 $*.bam.chroms | sed 's|.*|$@.split.&.vcf.gz|' | tr '\n' ' ' > $@.split.vcfs.list;
@@ -80,13 +82,6 @@ OUTLYZER_FILTERS_FLAGS?= \
 	rm -rf $@.tmp* $@.split* $@.idx $@.tbi
 
 
-# OUTLYZER Release documentation
-
-RELEASE_COMMENT := "\#\# CALLING OutLyzer: OutLyzer tool identify variants from aligned BAM"
-RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
-
-RELEASE_COMMENT := "\#\# CALLING: OutLyzer in parallel to identify somatic variants with low VAF and generate *.outLyzer.vcf files. Parameters OUTLYZER_FLAGS='$(OUTLYZER_FLAGS)' and OUTLYZER_FILTERS_FLAGS='$(OUTLYZER_FILTERS_FLAGS)' "
-RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
-
-PIPELINES_COMMENT := "CALLER:outLyzer:OutLyzer - OutLyzer caller, GT info added, filter on DP:OUTLYZER_FLAGS='$(OUTLYZER_FLAGS)', OUTLYZER_FILTERS_FLAGS='$(OUTLYZER_FILTERS_FLAGS)'"
-PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
+# Documentation
+$(file >>$(RELEASE_INFOS),## CALLER outLyzer '$(MK_RELEASE)': OutLyzer caller in parallel to identify somatic variants with low VAF and generate *.outLyzer.vcf files, with filtrations. Parameters OUTLYZER_FLAGS='$(OUTLYZER_FLAGS)', OUTLYZER_FILTERS_FLAGS='$(OUTLYZER_FILTERS_FLAGS)')
+$(file >>$(PIPELINES_INFOS),CALLER:outLyzer:OutLyzer - by default with filtration:OUTLYZER_FLAGS='$(OUTLYZER_FLAGS)', OUTLYZER_FILTERS_FLAGS='$(OUTLYZER_FILTERS_FLAGS)')

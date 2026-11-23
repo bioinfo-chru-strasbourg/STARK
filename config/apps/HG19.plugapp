@@ -1,86 +1,53 @@
 #!/bin/bash
-## STARK application HG38
 
 # DEFAULT ENV
 ######################
+# No default environment is sourced for this plugapp
 #source_app $CONFIG_DEFAULT_APP
+
 
 # APPLICATION INFOS
 #####################
 APP_NAME="HG19"
 APP_RELEASE="1.0"
 APP_DESCRIPTION="PlugAPP to use hg19 genome reference"
-#APP_GROUP=""
-#APP_PROJECT=""
 
 
-# ASSEMBLY
+# PIPELINES
 #############
 
+# ASSEMBLY
+# Assembly to use for the analysis, in UCSC format, such as "hg19" or "hg38".
+# Assembly is automatically detected in manifest file (configured in the SampleSheet of each run), if any.
+# Specify GRCh38/hg38
 ASSEMBLY=hg19
 
 
-# Variant Recalibrator
-######################
+# IGV SESSION
+###############
 
-# Variant Recalibrator main option (see documentation guide for more info)
-# default: VARIANTRECALIBRATOR_OPTIONS=
-#VARIANTRECALIBRATOR_OPTIONS=
+# IGV_SESSION_RESSOURCES
+# Additionnal databases for IGV session (see IGV doc).
+# These resources can be added to an IGV session to provide additional data tracks.
+# Default: '<Resource index="https://s3.amazonaws.com/igv.org.genomes/hg19/ncbiRefSeq.sorted.txt.gz.tbi" name="Refseq Genes" path="https://s3.amazonaws.com/igv.org.genomes/hg19/ncbiRefSeq.sorted.txt.gz" type="refgene"/>' (refSeq Genes)
+# Examples:
+# - '<Resource index="https://ftp.ncbi.nlm.nih.gov/snp/organisms/human_9606_b151_GRCh37p13/VCF/00-All.vcf.gz.tbi" path="https://ftp.ncbi.nlm.nih.gov/snp/organisms/human_9606_b151_GRCh37p13/VCF/00-All.vcf.gz" type="vcf"/>'
+# - '<Resource index="http://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/clinvar.vcf.gz.tbi" path="http://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/clinvar.vcf.gz" type="vcf"/>'
+# - '<Resource name="GC Percentage" path="http://www.broadinstitute.org/igvdata/annotations/hg19/hg19.gc5base.tdf" type="tdf"/>'
+# - '<Resource index="https://s3.amazonaws.com/igv.org.genomes/hg19/ncbiRefSeq.sorted.txt.gz.tbi" name="Refseq Genes" path="https://s3.amazonaws.com/igv.org.genomes/hg19/ncbiRefSeq.sorted.txt.gz" type="refgene"/>'
+# - '<Resource hyperlink="http://www.gencodegenes.org/" index="https://s3.amazonaws.com/igv.broadinstitute.org/annotations/hg19/genes/gencode.v18.annotation.sorted.gtf.gz.tbi" name="Gencode Genes (v18)" path="https://s3.amazonaws.com/igv.broadinstitute.org/annotations/hg19/genes/gencode.v18.annotation.sorted.gtf.gz" trackLine="visibilitywindow:10000000" type="gtf"/>'
+# Specify additional resources for the IGV session for hg38 assembly
+IGV_SESSION_RESSOURCES='<Resource index="https://s3.amazonaws.com/igv.org.genomes/hg19/ncbiRefSeq.sorted.txt.gz.tbi" name="Refseq Genes" path="https://s3.amazonaws.com/igv.org.genomes/hg19/ncbiRefSeq.sorted.txt.gz" type="refgene"/>'
 
-# Variant Recalibrator SNP resources option (see documentation guide for more info)
-# These resources need to be available on STARK Databases folder for GATK
-# default:
-VARIANTRECALIBRATION_SNP_RESOURCES_DEFAULT_HG19="
-	-resource:hapmap,known=false,training=true,truth=true,prior=15.0 hapmap_3.3.hg19.sites.vcf.gz
-	-resource:omni,known=false,training=true,truth=true,prior=12.0 1000G_omni2.5.hg19.sites.vcf.gz
-	-resource:1000G,known=false,training=true,truth=false,prior=10.0 1000G_phase1.snps.high_confidence.hg19.sites.vcf.gz
-	-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.hg19.vcf.gz
-"
-# VARIANTRECALIBRATION_SNP_RESOURCES_DEFAULT_HG38="
-# 	-resource:hapmap,known=false,training=true,truth=true,prior=15.0 hapmap_3.3.hg38.vcf.gz
-# 	-resource:omni,known=false,training=true,truth=true,prior=12.0 1000G_omni2.5.hg38.vcf.gz
-# 	-resource:1000G,known=false,training=true,truth=false,prior=10.0 1000G_phase1.snps.high_confidence.hg38.vcf.gz
-# 	-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.hg38.vcf.gz
-# "
-VARIANTRECALIBRATION_SNP_RESOURCES=$VARIANTRECALIBRATION_SNP_RESOURCES_DEFAULT_HG19
-
-# Variant Recalibrator INDEL resources option (see documentation guide for more info)
-# These resources need to be available on STARK Databases folder for GATK
-# default:
-VARIANTRECALIBRATION_INDEL_RESOURCES_DEFAULT_HG19="
-	-resource:mills,known=false,training=true,truth=true,prior=12.0 Mills_and_1000G_gold_standard.indels.hg19.sites.vcf.gz
-	-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.hg19.vcf.gz
-"
-# VARIANTRECALIBRATION_INDEL_RESOURCES_DEFAULT_HG38="
-# 	-resource:mills,known=false,training=true,truth=true,prior=12.0 Mills_and_1000G_gold_standard.indels.hg38.vcf.gz
-# 	-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.hg38.vcf.gz
-# "
-VARIANTRECALIBRATION_INDEL_RESOURCES=$VARIANTRECALIBRATION_INDEL_RESOURCES_DEFAULT_HG19
-
-
-# GATK BAM Realignment and Recalibration
-########################################
-
-# GATK BAM Realignment
-# Realignment is a process of correcting misalignments around indels. It is recommended to perform realignment before variant calling, especially for indel calling, to improve the accuracy of variant calling (not for GATK4 Haplotype Caller and MuTect2).
-# This option allow GATK to perform realignment, if the file is available and not empty. If not, GATK will be used without realignment.
-# Realignemnt is performed with GATK3 RealignerTargetCreator and IndelRealigner, and not performed with GATK4 (GATK4 Haplotype Caller and MuTect2 perform local realignment during calling, so GATK4 do not include Realignemnt tools).
-# This option is used with the GATK3 RealignerTargetCreator command to identify regions to realign, and with the GATK3 IndelRealigner command to perform realignment.
-# The VCF files include Indels and can be the same as for VCF recalibration (see VARIANTRECALIBRATION_INDEL_RESOURCES).
-# Exemple:
-# - GATK_REALIGNMENT_KNOWN_OPTIONS="--known $VCFDBSNP"
-# default:
-GATK_REALIGNMENT_KNOWN_OPTIONS=$(echo -e "$VARIANTRECALIBRATION_INDEL_RESOURCES" | sed "s#-resource.* \(.*\)#-known "$DBFOLDER"/gatk/current/"$ASSEMBLY"/\1#gi" | xargs echo)
-
-
-# GATK BAM Recalibration
-# Recalibration is a process of correcting base quality scores. It is recommended to perform recalibration before variant calling to improve the accuracy of variant calling.
-# This option allow GATK to perform recalibration, if the file is available and not empty. If not, GATK will be used without recalibration.
-# Recalibration is performed with GATK4 BaseRecalibrator and PrintReads
-# This option is used with the GATK4 BaseRecalibrator command to identify covariates to recalibrate, and with the GATK4 PrintReads command to perform recalibration.
-# The VCF files include SNPs and can be the same as for VCF recalibration (see VARIANTRECALIBRATION_SNP_RESOURCES).
-# Exemple:
-# - GATK_RECALIBRATION_KNOWN_OPTIONS="--known-sites $VCFDBSNP"
-# default:
-GATK_RECALIBRATION_KNOWN_OPTIONS=$(echo -e "$VARIANTRECALIBRATION_SNP_RESOURCES" | sed "s#-resource.* \(.*\)#--known-sites "$DBFOLDER"/gatk/current/"$ASSEMBLY"/\1#gi" | xargs echo)
-
+# IGV_SESSION_FEATUREPANEL
+# Tracks for the IGV feature panel (see IGV doc).
+# Theses tracks will be displayed in the IGV feature panel.
+# Default: '<Track attributeKey="Refseq Genes" clazz="org.broad.igv.track.FeatureTrack" featureVisibilityWindow="63761233" fontSize="10" groupByStrand="false" id="https://s3.amazonaws.com/igv.org.genomes/hg19/ncbiRefSeq.sorted.txt.gz" name="Refseq Genes" visible="true"/>' (Refseq Genes)
+# Examples:
+# - '<Track attributeKey="GC Percentage" autoScale="false" clazz="org.broad.igv.track.DataSourceTrack" colorScale="ContinuousColorScale;0.0;80.0;255,255,255;0,0,178" fontSize="10" height="20" id="http://www.broadinstitute.org/igvdata/annotations/hg19/hg19.gc5base.tdf" name="GC Percentage" renderer="HEATMAP" visible="true" windowFunction="mean">
+# 		<DataRange baseline="0.0" drawBaseline="true" flipAxis="false" maximum="80.0" minimum="0.0" type="LINEAR"/>
+# 	</Track>'
+# - '<Track attributeKey="Refseq Genes" clazz="org.broad.igv.track.FeatureTrack" featureVisibilityWindow="63761233" fontSize="10" groupByStrand="false" id="https://s3.amazonaws.com/igv.org.genomes/hg19/ncbiRefSeq.sorted.txt.gz" name="Refseq Genes" visible="true"/>'
+# - '<Track attributeKey="Gencode Genes (v18)" clazz="org.broad.igv.track.FeatureTrack" featureVisibilityWindow="1000000" fontSize="10" groupByStrand="false" id="https://s3.amazonaws.com/igv.broadinstitute.org/annotations/hg19/genes/gencode.v18.annotation.sorted.gtf.gz" name="Gencode Genes (v18)" visible="true"/>'
+# Specify tracks for the IGV feature panel for hg38 assembly
+IGV_SESSION_FEATUREPANEL='<Track attributeKey="Refseq Genes" clazz="org.broad.igv.track.FeatureTrack" featureVisibilityWindow="63761233" fontSize="10" groupByStrand="false" id="https://s3.amazonaws.com/igv.org.genomes/hg19/ncbiRefSeq.sorted.txt.gz" name="Refseq Genes" visible="true"/>'

@@ -13,7 +13,7 @@ DOCKER_LIST=""
 # GZIP
 # export GZ="gzip"			# BIN
 # export UNGZ="gzip -d"		# BIN
-# export GZIP=""				# PARAM GZIP
+# export GZIP=""			# PARAM GZIP
 export GZ="pigz"			# BIN
 export UNGZ="pigz -d"		# BIN
 export GZIP=""				# PARAM GZIP
@@ -44,15 +44,6 @@ export JAVA7_PATH=$NGS_TOOLS/java/$JAVA7_VERSION/bin			# BIN
 export JAVA7_DESCRIPTION="A high-level programming language developed by Sun Microsystems"
 export JAVA7_REF="http://java.com"
 TOOLS_LIST=$TOOLS_LIST" JAVA7"
-
-
-# # JAVA17
-# export JAVA17_VERSION=17 							# VER
-# export JAVA17=$NGS_TOOLS/java/$JAVA17_VERSION/bin/java			# BIN
-# export JAVA17_PATH=$NGS_TOOLS/java/$JAVA17_VERSION/bin			# BIN
-# export JAVA17_DESCRIPTION="A high-level programming language developed by Sun Microsystems"
-# export JAVA17_REF="http://java.com"
-# TOOLS_LIST=$TOOLS_LIST" JAVA17"
 
 
 # PYTHON
@@ -192,14 +183,6 @@ export OUTLYZER_REF="https://github.com/EtieM/outLyzer"
 TOOLS_LIST=$TOOLS_LIST" OUTLYZER"
 
 
-# FASTQC
-# export FASTQC=$NGS_TOOLS/fastqc/current/bin/fastqc		# BIN
-# export FASTQC_VERSION=0.11.8								# VER
-# export FASTQC_DESCRIPTION="A quality control tool for high throughput sequence data."
-# export FASTQC_REF="http://www.bioinformatics.bbsrc.ac.uk/projects/fastqc"
-# TOOLS_LIST=$TOOLS_LIST" FASTQC"
-
-
 # FASTP
 export FASTP_VERSION=1.1.0							# VER
 export FASTP=$NGS_TOOLS/fastp/current/bin/fastp		# BIN $NGS_TOOLS/fastp/current/bin/
@@ -335,8 +318,6 @@ TOOLS_LIST=$TOOLS_LIST" STARFUSION"
 export VARIANTCONVERT_VERSION=2.0.1															# VER
 export VARIANTCONVERT=$NGS_TOOLS/variantconvert/$VARIANTCONVERT_VERSION/bin/variantconvert	# BIN
 export VARIANTCONVERT_ENV=$NGS_TOOLS/variantconvert/$VARIANTCONVERT_VERSION					# ENV
-#export VARIANTCONVERT_CONFIGS=$NGS_TOOLS/variantconvert/$VARIANTCONVERT_VERSION/src/variantconvert/configs	# CONFIG
-#export VARIANTCONVERT_CONFIGS=$NGS_TOOLS/variantconvert/$VARIANTCONVERT_VERSION/configs		# CONFIG
 export VARIANTCONVERT_DESCRIPTION="VariantConvert is a tool for converting variant call formats."
 export VARIANTCONVERT_REF="https://github.com/SamuelNicaise/variantconvert"
 TOOLS_LIST=$TOOLS_LIST" VARIANTCONVERT"

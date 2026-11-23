@@ -1,0 +1,4 @@
+hapmap,known=false,training=true,truth=true,prior=15.0 hapmap_3.3.hg38.vcf.gz
+omni,known=false,training=true,truth=true,prior=12.0 1000G_omni2.5.hg38.vcf.gz
+1000G,known=false,training=true,truth=false,prior=10.0 1000G_phase1.snps.high_confidence.hg38.vcf.gz
+dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.hg38.vcf.gz

@@ -1,9 +1,10 @@
 ############################
 # MUTECT Calling Rules
-# Release: 1.0.0
-# Date: 03/11/2026
 # Author: Antony Le Bechec
 ############################
+# Release
+MK_RELEASE=1.0.0
+MK_DATE=03/11/2026
 
 # Release note
 # 0.9.2-03/02/2023: Initial release of MuTect calling rules.
@@ -14,7 +15,7 @@
 # MUTECT #
 ##########
 
-# MUTECT Flags
+# Flags
 # VCFDBSNP_WITH_GATK variable depends on USE_VCFDBSNP_WITH_GATK setting on Apps
 # INTERVAL_PADDING variable defines the padding around intervals for all callers, settings on Apps
 # This variable can be defined directly on Apps
@@ -28,7 +29,7 @@ MUTECT_FLAGS?= \
 	--min_qscore 17 \
 	--allow_potentially_misencoded_quality_scores
 
-# MUTECT filters Flags
+# Filters Flags
 # This variable can be defined directly on Apps
 MUTECT_FILTERS_FLAGS?= \
 	--exclude-genotypes '0/0' \
@@ -38,7 +39,7 @@ MUTECT_FILTERS_FLAGS?= \
 	--sort
 
 
-# MUTECT target rule
+# Rule
 %.MuTect$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed %.bam.chroms
 	# List of vcf files to be generated per chromosome
 	cut -f1 $*.bam.chroms | sed 's|.*|$@.split.&.vcf.gz|' | tr '\n' ' ' > $@.split.vcfs.list;
@@ -72,13 +73,6 @@ MUTECT_FILTERS_FLAGS?= \
 	rm -rf $@.tmp* $@.split* $@.idx $@.tbi
 
 
-# MUTECT Release documentation
-
-RELEASE_COMMENT := "\#\# CALLING MuTect Caller: MuTect tool identify variants from aligned BAM"
-RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
-
-RELEASE_COMMENT := "\#\# CALLING: MUTECT to identify somatic variants and generate *.MuTect.vcf files. Parameteres MUTECT_FLAGS='$(MUTECT_FLAGS)' and MUTECT_FILTERS_FLAGS='$(MUTECT_FILTERS_FLAGS)'"
-RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
-
-PIPELINES_COMMENT := "CALLER:MuTect:MuTect - by default, no filtering:MUTECT_FLAGS='$(MUTECT_FLAGS)' and MUTECT_FILTERS_FLAGS='$(MUTECT_FILTERS_FLAGS)'"
-PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
+# Documentation
+$(file >>$(RELEASE_INFOS),## CALLER MuTect '$(MK_RELEASE)': MUTECT to identify somatic variants and generate *.MuTect.vcf files. Parameteres MUTECT_FLAGS='$(MUTECT_FLAGS)' and MUTECT_FILTERS_FLAGS='$(MUTECT_FILTERS_FLAGS)')
+$(file >>$(PIPELINES_INFOS),CALLER:MuTect:MuTect - by default filtration:MUTECT_FLAGS='$(MUTECT_FLAGS)', MUTECT_FILTERS_FLAGS='$(MUTECT_FILTERS_FLAGS)')

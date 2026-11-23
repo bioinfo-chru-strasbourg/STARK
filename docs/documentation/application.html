@@ -1,0 +1,2123 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>application.md</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> or <div class="page"></div> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<h1 id="application-configuration">Application Configuration</h1>
+<p>This document describes the configuration variables for the STARK application, as defined in <code>config/default.app</code>.</p>
+<p>Example of application configuration file:</p>
+<pre class="hljs"><code><div><span class="hljs-meta">#!/bin/bash</span>
+<span class="hljs-comment">## STARK application EXOME</span>
+
+<span class="hljs-comment"># DEFAULT ENV</span>
+<span class="hljs-comment">######################</span>
+source_app <span class="hljs-variable">$CONFIG_DEFAULT_APP</span>
+
+<span class="hljs-comment"># APPLICATION INFOS</span>
+<span class="hljs-comment">#####################</span>
+APP_NAME=<span class="hljs-string">&quot;EXOME&quot;</span>
+APP_RELEASE=<span class="hljs-string">&quot;1.0&quot;</span>
+APP_DESCRIPTION=<span class="hljs-string">&quot;Application to detect germline mutations in exome sequencing data&quot;</span>
+APP_GROUP=<span class="hljs-string">&quot;GENETIC&quot;</span>
+APP_PROJECT=<span class="hljs-string">&quot;EXOME&quot;</span>
+
+<span class="hljs-comment"># PIPELINES PARAMETERS</span>
+<span class="hljs-comment">#######################</span>
+
+<span class="hljs-comment"># PIPELINES</span>
+PIPELINES=<span class="hljs-string">&quot;bwamem.gatkHC.howard bwamem.gatkUG.howard&quot;</span>
+
+<span class="hljs-comment"># INTERVAL_PADDING</span>
+INTERVAL_PADDING=100
+
+</div></code></pre>
+<p><em>Application for Exome analysis: From default application, information of application are defined, as well as specific pipelines and interval padding</em></p>
+<h2 id="application-infos">Application Infos</h2>
+<p>Application information that describes the application, including its name, release, description, group, and project.</p>
+<p><strong>Source application configuration</strong></p>
+<p>Specify the base application configuration to inherit from, if any.
+Use &quot;source_app &lt;APPLICATION_NAME_OR_FILE&gt;&quot; to include another application's configuration.
+Include the default configuration &quot;$CONFIG_DEFAULT_APP&quot; for an application that do not heritate from another.
+To configure an application that inherates from another, specify the application with its name or file.
+To configure with a plugApp application (that modify some variables of the base application configuration, without fully inheriting it), add the corresponding plusApp in the source_app line.</p>
+<ul>
+<li>Example
+<ul>
+<li><code>source_app $CONFIG_DEFAULT_APP</code> (default application configuration)</li>
+<li><code>source_app $CONFIG_DEFAULT_APP,SOMATIC_PARAMETERS</code> (e.g. a &quot;SOMATIC&quot; application with &quot;SOMATIC_PARAMETERS&quot; plugApp)</li>
+<li><code>source_app SOMATIC</code> (e.g. a &quot;SOLIDTUMOR&quot; application inheriting from the &quot;SOMATIC&quot; application)</li>
+</ul>
+</li>
+</ul>
+<h3 id="app_name">APP_NAME</h3>
+<p>Name of the application.
+Auto-detect by file name using pattern: <code>&lt;APP_NAME&gt;.app</code>.
+This name is used to identify which application to apply, with parameter <code>--app|--application</code> (e.g. <code>--application=EXOME</code> or <code>--application=EXOME.app</code>).
+Also usefull to include specific rules if exists (e.g. <code>$RULES_APP/$APP_NAME.rules.mk/*rules.mk</code>, <code>&lt;APP_NAME&gt;.rules.mk/*rules.mk</code>).</p>
+<ul>
+<li>Default: <code>&quot;DEFAULT&quot;</code></li>
+</ul>
+<h3 id="app_release">APP_RELEASE</h3>
+<p>Release of the application.
+Should follow <a href="https://semver.org/">Semantic Versioning</a> system (i.e. <code>MAJOR.MINOR.PATCH</code>)</p>
+<ul>
+<li>Default: <code>&quot;1.0.0&quot;</code></li>
+</ul>
+<h3 id="app_description">APP_DESCRIPTION</h3>
+<p>Description of the application.
+Will be using parameter <code>--applications_infos</code> in the command line to display it in the help message of the application.</p>
+<ul>
+<li>Default: <code>&quot;No description available for this application&quot;</code></li>
+</ul>
+<h3 id="app_group">APP_GROUP</h3>
+<p>Group associated with the application.
+Use to structure data in the repository folder (i.e. <code>&lt;GROUP&gt;/&lt;PROJECT&gt;</code>).
+Leave it blank for no group (i.e. <code>UNKNOWN</code>).</p>
+<ul>
+<li>Default: <code>&quot;UNKNOWN&quot;</code></li>
+</ul>
+<h3 id="app_project">APP_PROJECT</h3>
+<p>Project associated with the application.
+Use to structure data in the repository folder (i.e. <code>&lt;GROUP&gt;/&lt;PROJECT&gt;</code>).
+Leave it blank for no project (i.e. <code>UNKNOWN</code>).</p>
+<ul>
+<li>Default: <code>&quot;UNKNOWN&quot;</code></li>
+</ul>
+<h2 id="pipeline-parameters">Pipeline parameters</h2>
+<p>Pipelines parameters define the configuration for the analysis pipelines, including the choice of aligners, callers, and annotators, and also intermediate steps (such as the post-alignment and post-calling steps). Moreover, specific rules should be defined for each component to ensure proper execution of the pipelines.</p>
+<h3 id="assembly">ASSEMBLY</h3>
+<p>Assembly to use for the analysis, in UCSC format, such as <code>hg19</code> or <code>hg38</code>.
+Assembly is automatically detected in manifest file (configured in the SampleSheet of each run), if any.</p>
+<ul>
+<li>
+<p>Default: <code>&quot;hg19&quot;</code></p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>&quot;hg19&quot;</code></li>
+<li><code>&quot;hg38&quot;</code></li>
+</ul>
+</li>
+</ul>
+<h3 id="pipelines">PIPELINES</h3>
+<p>Pipelines to use for the analysis.
+A pipeline is defining with an aligner, a caller and an annotator.
+Each pipeline should be defined with a valid combination of aligner, caller, and annotator, in format <code>ALIGNER.CALLER.ANNOTATOR</code>.
+All corresponding rules should be defined in the rules files.
+If no pipeline is finally defined, the default pipeline will be applied.</p>
+<ul>
+<li>
+<p>Default: <code>&quot;bwamem.gatkHC.howard&quot;</code></p>
+</li>
+<li>
+<p>Format: <code>&quot;ALIGNER1.CALLER1.ANNOTATOR ALIGNER1.CALLER2.ANNOTATOR1 ALIGNER2.CALLER1.ANNOTATOR1&quot;</code></p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>&quot;bwamem.gatkHC.howard&quot;</code> (BWA mem alignment, GATK HaplotypeCaller, HOWARD annotator)</li>
+<li><code>&quot;bwamem.VarScan.howard&quot;</code> (BWA mem alignment, VarScan variant caller, HOWARD annotator)</li>
+<li><code>&quot;bwamem.gatkHC.howard bwamem.gatkUG.howard bwamem.VarScan.howard&quot;</code> (Multiple pipelines with different callers, all using BWA mem alignment and HOWARD annotator)</li>
+</ul>
+</li>
+<li>
+<p>Notes:</p>
+<ul>
+<li>If variables <code>ALIGNERS</code>, <code>CALLERS</code>, and <code>ANNOTATORS</code> are defined, this variable will be automatically generated by adding a combinations of all aligners, callers and annotators.</li>
+</ul>
+</li>
+</ul>
+<h3 id="aligners">ALIGNERS</h3>
+<p>Aligners to use for the analysis (see <code>PIPELINES</code> parameter).
+A corresponding rules file should exist for each aligner.</p>
+<ul>
+<li>
+<p>Default: <code>&quot;&quot;</code></p>
+</li>
+<li>
+<p>Examples (available aligners):</p>
+<ul>
+<li><code>&quot;bwamem&quot;</code> (BWA mem alignment algorithm)</li>
+<li><code>&quot;bowtie&quot;</code> (Bowtie2 alignment algorithm)</li>
+<li><code>&quot;star&quot;</code> (STAR alignment algorithm for RNA-Seq data)</li>
+</ul>
+</li>
+</ul>
+<h3 id="callers">CALLERS</h3>
+<p>Callers to use for the analysis (see <code>PIPELINES</code> parameter).
+A corresponding rules file should exist for each caller.</p>
+<ul>
+<li>
+<p>Default: <code>&quot;&quot;</code></p>
+</li>
+<li>
+<p>Examples (available callers):</p>
+<ul>
+<li><code>&quot;gatkHC&quot;</code> (GATK HaplotypeCaller)</li>
+<li><code>&quot;gatkUG&quot;</code> (GATK UnifiedGenotyper)</li>
+<li><code>&quot;VarScan&quot;</code> (VarScan variant caller)</li>
+<li><code>&quot;MuTect2&quot;</code> (GATK MuTect2)</li>
+</ul>
+</li>
+</ul>
+<h3 id="annotators">ANNOTATORS</h3>
+<p>Annotator to use for the analysis (see <code>PIPELINES</code> parameter).
+A corresponding rules file should exist for each annotator.</p>
+<ul>
+<li>
+<p>Default: <code>&quot;&quot;</code></p>
+</li>
+<li>
+<p>Examples (available annotators):</p>
+<ul>
+<li><code>&quot;howard&quot;</code> (HOWARD annotator)</li>
+<li><code>&quot;snpeff&quot;</code> (SnpEff annotator)</li>
+</ul>
+</li>
+</ul>
+<h3 id="post_sequencing_steps">POST_SEQUENCING_STEPS</h3>
+<p>Post-sequencing steps are the steps to be executed after FASTQ processing and before alignment.
+The steps are defined as makefiles rules.
+Check available steps by using the command <code>STARK --pipelines_infos</code>.</p>
+<ul>
+<li>
+<p>Format: &quot;step1 step2 step3&quot;</p>
+</li>
+<li>
+<p>Default: <code>&quot;&quot;</code> (nothing to do)</p>
+</li>
+<li>
+<p>Available steps (not up-to-date):</p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>&quot;&quot;</code> (nothing to do)</li>
+</ul>
+</li>
+</ul>
+<h3 id="post_alignment_steps">POST_ALIGNMENT_STEPS</h3>
+<p>Post-alignment steps are the steps to be executed after alignment and before calling.
+This sequence correspond to a BAM file processing just after the alignment.
+The steps are defined as makefiles rules.
+Check available steps by using the command <code>STARK --pipelines_infos</code>.
+Usage example: steps <code>&quot;sorting realignment clipping compress&quot;</code> will process the <code>$ALIGNER.compress.clipping.realigned.sorting.bam</code> BAM file to generate the final <code>$ALIGNER.bam</code> BAM file after all specified post-alignment steps. Thus, this BAM file will be 1/ sorted, 2/ realigned, 3/ clipped and 4/ compressed.</p>
+<ul>
+<li>
+<p>Format: &quot;step1 step2 step3&quot;</p>
+</li>
+<li>
+<p>Default: <code>&quot;sorting markduplicates realignment recalibration compress&quot;</code></p>
+</li>
+<li>
+<p>Available steps (not up-to-date):</p>
+<ul>
+<li><code>sorting</code>: BAM sorting</li>
+<li><code>compress</code>: BAM compression (see $BAM_COMPRESSION variable)</li>
+<li><code>realignment</code>: local realignment</li>
+<li><code>recalibration</code>: reads recalibration</li>
+<li><code>gencore</code>: gencore is a tool for fast and powerful deduplication for paired-end next-generation sequencing</li>
+<li><code>markduplicates</code>: Mark duplicated reads in BAM with PICARD MarkDuplicates. Use BARCODE_TAG to specify tag</li>
+<li><code>clipping</code>: BAM Clipping according to primer definition in manifest file, if any</li>
+</ul>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>&quot;sorting realignment clipping compress&quot;</code> (for Amplicon technology)</li>
+<li><code>&quot;sorting markduplicates realignment compress&quot;</code> (for Capture technology)</li>
+<li><code>&quot;sorting gencore markduplicates realignment compress&quot;</code> (for UMI technology)</li>
+</ul>
+</li>
+</ul>
+<h3 id="post_calling_steps">POST_CALLING_STEPS</h3>
+<p>Post-calling steps are the steps to be executed after variant calling and before annotation.
+This sequence correspond to the VCF file generated just after the calling.
+The steps are defined as makefiles rules.
+Check available steps by using the command <code>STARK --pipelines_infos</code>.
+Usage example: steps <code>&quot;recalibration filtration&quot;</code> will process the <code>$ALIGNER.$CALLER.filtration.recalibration.vcf</code> VCF file to generate the final <code>$ALIGNER.$CALLER.vcf</code> VCF file after all specified post-calling steps. Thus, this VCF file will be 1/ recalibrated and 2/ filtered.</p>
+<ul>
+<li>
+<p>Format: &quot;step1 step2 step3&quot;</p>
+</li>
+<li>
+<p>Default: <code>&quot;normalization&quot;</code></p>
+</li>
+<li>
+<p>Available steps (not up-to-date):</p>
+<ul>
+<li><code>sorting</code>: VCF sort</li>
+<li><code>normalization</code>: VCF normalization for post calling by splitting variants into one line (using BCFTools)</li>
+<li><code>variantnormalization</code>: VCF normalization splitting variant in 1 line, removing duplicates, fixing GT ploidy and recalculate tags (using BCFTools)</li>
+<li><code>variantrecalibration</code>: VCF recalibration (using GATK4). Include variantfiltration if no recalibration possible</li>
+<li><code>variantfiltration</code>: VCF filtration (using GATK4)</li>
+</ul>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>&quot; &quot;</code> (to avoid at this pipeline step, see POST_CALLING_MERGING_STEPS)</li>
+<li><code>&quot;normalization&quot;</code> (to minimal normalize the VCF file after calling)</li>
+<li><code>&quot;variantnormalization&quot;</code> (to prevent multiallelic or multiploidy inconsistency, recalculate tags)</li>
+<li><code>&quot;variantnormalization normalization variantfiltration&quot;</code> (for gene panel)</li>
+<li><code>&quot;variantnormalization normalization variantrecalibration variantfiltration&quot;</code> (for exome or genome)</li>
+</ul>
+</li>
+<li>
+<p>Warning:</p>
+<ul>
+<li>Using <code>variantnormalization</code> recalculate tags (with BCFTools), including VAF tag, which can not be properly recalculated with HOWARD VAF normalization.</li>
+</ul>
+</li>
+</ul>
+<h3 id="post_annotation_steps">POST_ANNOTATION_STEPS</h3>
+<p>Post-annotation steps are the steps to be executed after annotation and before any further processing (such as final VCF for reports).
+The steps are defined as makefiles rules.
+Check available steps by using the command <code>STARK --pipelines_infos</code>.
+Usage example: steps <code>&quot;sorting normalization&quot;</code> will process the <code>$ALIGNER.$CALLER.$ANNOTATION.normalization.sorting.vcf</code> VCF file whose variants will be 1/ sorted and 2/ normalized, to generate the <code>$ALIGNER.$CALLER.$ANNOTATION.vcf</code> VCF file.</p>
+<ul>
+<li>
+<p>Format: &quot;step1 step2 step3&quot;</p>
+</li>
+<li>
+<p>Default: <code>&quot; &quot;</code></p>
+</li>
+<li>
+<p>Available steps (not up-to-date):</p>
+<ul>
+<li><code>sorting</code>: VCF sort</li>
+<li><code>normalization</code>: VCF normalization for post calling by splitting variants into one line (using BCFTools)</li>
+<li><code>variantnormalization</code>: VCF normalization splitting variant in 1 line, removing duplicates, fixing GT ploidy and recalculate tags (using BCFTools)</li>
+<li><code>variantrecalibration</code>: VCF recalibration (using GATK4). Include variantfiltration if no recalibration possible</li>
+<li><code>variantfiltration</code>: VCF filtration (using GATK4)</li>
+</ul>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>&quot; &quot;</code> (to avoid at this pipeline step, see POST_CALLING_MERGING_STEPS)</li>
+<li><code>&quot;normalization&quot;</code> (to minimal normalize the VCF file after calling)</li>
+<li><code>&quot;variantnormalization&quot;</code> (to prevent multiallelic or multiploidy inconsistency, recalculate tags)</li>
+<li><code>&quot;variantnormalization normalization variantfiltration&quot;</code> (for gene panel)</li>
+<li><code>&quot;variantnormalization normalization variantrecalibration variantfiltration&quot;</code> (for exome or genome)</li>
+</ul>
+</li>
+</ul>
+<h3 id="post_calling_merging_steps">POST_CALLING_MERGING_STEPS</h3>
+<p>Post-calling merging steps are steps applied after merging VCF files from different callers, to generate final VCF files for reports.
+The steps are defined as makefiles rules.
+Check available steps by using the command <code>STARK --pipelines_infos</code>.
+Usage example: steps <code>&quot;sorting normalization&quot;</code> will process the <code>$ALIGNER.$CALLER.$ANNOTATION.normalization.sorting.vcf</code> VCF file whose variants will be 1/ sorted and 2/ normalized, to generate the <code>$ALIGNER.$CALLER.$ANNOTATION.vcf</code> VCF file.</p>
+<ul>
+<li>
+<p>Format: &quot;step1 step2 step3&quot;</p>
+</li>
+<li>
+<p>Default: <code>&quot;sorting variantrecalibration variantfiltration&quot;</code></p>
+</li>
+<li>
+<p>Available steps (not up-to-date):</p>
+<ul>
+<li><code>sorting</code>: VCF sort</li>
+<li><code>normalization</code>: VCF normalization for post calling by splitting variants into one line (using BCFTools)</li>
+<li><code>variantnormalization</code>: VCF normalization splitting variant in 1 line, removing duplicates, fixing GT ploidy and recalculate tags (using BCFTools)</li>
+<li><code>variantrecalibration</code>: VCF recalibration (using GATK4). Include variantfiltration if no recalibration possible</li>
+<li><code>variantfiltration</code>: VCF filtration (using GATK4)</li>
+</ul>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>&quot; &quot;</code> (to avoid at this pipeline step, see POST_CALLING_MERGING_STEPS)</li>
+<li><code>&quot;normalization&quot;</code> (to minimal normalize the VCF file after calling)</li>
+<li><code>&quot;variantnormalization&quot;</code> (to prevent multiallelic or multiploidy inconsistency, recalculate tags)</li>
+<li><code>&quot;variantnormalization normalization variantfiltration&quot;</code> (for gene panel)</li>
+<li><code>&quot;variantnormalization normalization variantrecalibration variantfiltration&quot;</code> (for exome or genome)</li>
+</ul>
+</li>
+</ul>
+<h3 id="rules_app">RULES_APP</h3>
+<p>Add specific rules to load (see <code>PIPELINES</code> parameter).
+These files will be added to the list of rules files from APPS folder.
+Variable <code>$APP_FOLDER</code> corresponds to the folder of the current app.
+For inheritance, use <code>RULES_APP=&quot;$RULES_APP MYGROUP/*.rules.mk&quot;</code>.</p>
+<ul>
+<li>
+<p>Default: <code>&quot;&quot;</code></p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>&quot;MYGROUP/*.rules.mk&quot;</code></li>
+<li><code>&quot;$APP_FOLDER/*.rules.mk&quot;</code></li>
+</ul>
+</li>
+</ul>
+<h2 id="demultiplexing">Demultiplexing</h2>
+<h3 id="barcode_mismatches">BARCODE_MISMATCHES</h3>
+<p>Number of allowed barcode mismatches during demultiplexing.
+This value specifies how many mismatches are allowed when matching barcodes during the demultiplexing process.</p>
+<ul>
+<li>Default: <code>1</code></li>
+</ul>
+<h3 id="stark_demultiplexing_bases_mask">STARK_DEMULTIPLEXING_BASES_MASK</h3>
+<p>Bases mask for demultiplexing.
+This setting determines how the sequencer reads are interpreted during the demultiplexing process.</p>
+<ul>
+<li>
+<p>Default: <code>&quot;&quot;</code> (auto from SampleSheet)</p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>&quot;&quot;</code> (auto from SampleSheet)</li>
+<li><code>&quot;Y150,I10,Y10,Y150&quot;</code></li>
+<li><code>&quot;Y150,I8,Y10,Y150&quot;</code> (UMI index2)</li>
+</ul>
+</li>
+</ul>
+<h3 id="stark_demultiplexing_mask_short_adaptater_read">STARK_DEMULTIPLEXING_MASK_SHORT_ADAPTATER_READ</h3>
+<p>Short adapter read mask for demultiplexing.
+This setting determines the mask for short adapter reads during the demultiplexing process.
+If demultiplexing UMI within a read must be set to 0 for Agilent XTHS kits.</p>
+<ul>
+<li>
+<p>Default: <code>&quot;&quot;</code> (auto)</p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>&quot;&quot;</code> (auto)</li>
+<li><code>&quot;Y10&quot;</code> (short adapter read of 10 bases)</li>
+</ul>
+</li>
+</ul>
+<h3 id="stark_demultiplexing_reads_mapping">STARK_DEMULTIPLEXING_READS_MAPPING</h3>
+<p>Read mapping for demultiplexing.
+This setting defines the order of reads in the FASTQ files for demultiplexing.
+Redefine FASTQ files in order to identify R1, R2, I1 and I2.</p>
+<ul>
+<li>
+<p>Default: <code>&quot;&quot;</code> (corresponding to <code>&quot;R1 I1 I2 R2&quot;</code>)</p>
+</li>
+<li>
+<p>Examples</p>
+<ul>
+<li><code>&quot;&quot;</code> (default, corresponding to <code>&quot;R1 I1 I2 R2&quot;</code>)</li>
+<li><code>&quot;R1 I1 R2 R3&quot;</code> (UMI index2)</li>
+</ul>
+</li>
+</ul>
+<h3 id="adapter_stringency">ADAPTER_STRINGENCY</h3>
+<p>Adapter stringency for demultiplexing.
+For BCL2FASTQ demultiplexing (see doc).</p>
+<ul>
+<li>Default: <code>0.9</code></li>
+</ul>
+<h3 id="stark_demultiplexing_bcl2fastq_options">STARK_DEMULTIPLEXING_BCL2FASTQ_OPTIONS</h3>
+<p>BCL2FASTQ demultiplexing options (see doc).
+This setting allows you to specify additional options for the BCL2FASTQ demultiplexing command.</p>
+<ul>
+<li>
+<p>Default: <code>&quot;--no-lane-splitting --create-fastq-for-index-reads&quot;</code></p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>&quot;--no-lane-splitting --create-fastq-for-index-reads&quot;</code> (default)</li>
+<li><code>&quot;--no-lane-splitting&quot;</code> (without creating fastq for index reads)</li>
+</ul>
+</li>
+</ul>
+<h3 id="fastq_demultiplexing_compression_level">FASTQ_DEMULTIPLEXING_COMPRESSION_LEVEL</h3>
+<p>FASTQ compression level for demultiplexing FASTQ files.
+This specifies the zlib compression level (1-9) used for FASTQ files during demultiplexing (BCL2FASTQ).
+If FASTQ_DEMULTIPLEXING_KEEP=1, we suggest a high level of compression (at least 5).</p>
+<ul>
+<li>Default: <code>1</code></li>
+</ul>
+<h3 id="fastq_demultiplexing_keep">FASTQ_DEMULTIPLEXING_KEEP</h3>
+<p>Keep demultiplexing FASTQ files (1/TRUE/YES/Y or 0/FALSE/NO/N).
+This setting determines whether the demultiplexed FASTQ files are kept into results after processing.</p>
+<ul>
+<li>Default: <code>0</code></li>
+</ul>
+<h3 id="sequencing_demultiplexing_folder">SEQUENCING_DEMULTIPLEXING_FOLDER</h3>
+<p>Folder for storing demultiplexed FASTQ files within the sequencing results (<code>$SAMPLE.sequencing</code> folder).</p>
+<ul>
+<li>Default: <code>&quot;demultiplexing&quot;</code></li>
+</ul>
+<h2 id="fastq-processing">FASTQ Processing</h2>
+<h3 id="fastq_compression_level">FASTQ_COMPRESSION_LEVEL</h3>
+<p>Compression level for main FASTQ files (1-9).
+Used by FASTP with zlib compression.</p>
+<ul>
+<li>Default: <code>1</code></li>
+</ul>
+<h3 id="enable_adapter_trimming">ENABLE_ADAPTER_TRIMMING</h3>
+<p>Enable or disable adapter trimming for FASTQ files.
+If enabled, FASTP will trim adapters from the reads based on the detected adapter sequences (autodetect).
+This setting only affects adapter trimming and does not impact other FASTQ processing steps.</p>
+<ul>
+<li>
+<p>Note: Adapter trimming may affect read length and quality statistics.</p>
+</li>
+<li>
+<p>Options: <code>0</code> (disabled) or <code>1</code> (enabled)</p>
+</li>
+<li>
+<p>Default: <code>0</code> (disabled)</p>
+</li>
+</ul>
+<h3 id="fastq_quality_filtering">FASTQ_QUALITY_FILTERING</h3>
+<p>Enable or disable read quality filtering for FASTQ files.
+If enabled, reads with quality below the specified threshold will be removed.</p>
+<ul>
+<li>Default: <code>0</code> (disable)</li>
+</ul>
+<h3 id="poly_g_min_len">POLY_G_MIN_LEN</h3>
+<p>Enable or disable polyG tail trimming for FASTQ files.
+If enabled, FASTP will trim polyG tails from the reads.
+By default, trimming is automatically enabled for Illumina NextSeq/NovaSeq data.
+The minimum length to detect polyG in the read tail.</p>
+<ul>
+<li>Default: <code>0</code> (disabled)</li>
+</ul>
+<h3 id="read_length_required">READ_LENGTH_REQUIRED</h3>
+<p>Enable or disable read length filtering for FASTQ files.
+If enabled, reads shorter than the specified length will be discarded.</p>
+<ul>
+<li>Default: <code>0</code> (disabled)</li>
+</ul>
+<h3 id="umi_loc">UMI_LOC</h3>
+<p>UMI extraction location for FASTQ files.
+If not specified, UMI extraction will be disabled.
+If UMI extraction is enabled, specify the location of the UMI within the reads or indexes.
+See FASTP/UMI TOOLS documentation for more information.</p>
+<ul>
+<li>
+<p>Available locations:</p>
+<ul>
+<li><code>&quot;index1&quot;</code>: the first index is used as UMI. If the data is PE, this UMI will be used for both read1/read2.</li>
+<li><code>&quot;index2&quot;</code>: the second index is used as UMI. PE data only, this UMI will be used for both read1/read2.</li>
+<li><code>&quot;read1&quot;</code>: the head of read1 is used as UMI. If the data is PE, this UMI will be used for both read1/read2.</li>
+<li><code>&quot;read2&quot;</code>: the head of read2 is used as UMI. PE data only, this UMI will be used for both read1/read2.</li>
+<li><code>&quot;per_index&quot;</code>: read1 will use UMI extracted from index1, read2 will use UMI extracted from index2.</li>
+<li><code>&quot;per_read&quot;</code>: read1 will use UMI extracted from the head of read1, read2 will use UMI extracted from the head of read2.</li>
+</ul>
+</li>
+<li>
+<p>Default: <code>&quot;&quot;</code> (disabled)</p>
+</li>
+</ul>
+<h3 id="umi_barcode_pattern">UMI_BARCODE_PATTERN</h3>
+<p>Pattern for UMI and optional cell barcodes within the reads or indexes.
+If not specified, UMI extraction will be disabled.
+Otherwise, UMI extraction will be performed according to the specified location.
+Pattern will be used to extract UMIs and optional cell barcodes from the reads or indexes.</p>
+<p>If UMI_LOC is &quot;per_index&quot; or &quot;per_read&quot;, and UMI_BARCODE_PATTERN is defined as &quot;NNNNN&quot;, it with be redefined as &quot;NNNNN-NNNNN&quot;.
+Only length of the first part of the duplex barcode will be used with FASTP.
+See FASTP/UMI TOOLS documentation for more information.</p>
+<ul>
+<li>
+<p>Default: <code>&quot;&quot;</code> (disable)</p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>&quot;NNNNNNNNNN&quot;</code> (for simplex)</li>
+<li><code>&quot;NNNNN-NNNNN&quot;</code> (for duplex)</li>
+</ul>
+</li>
+</ul>
+<h3 id="fastp_additional_options">FASTP_ADDITIONAL_OPTIONS</h3>
+<p>Additional options to pass to FASTP.
+This allows you to pass any additional command-line options to FASTP.
+See FASTP documentation for available options.</p>
+<ul>
+<li>
+<p>Default: <code>&quot;&quot;</code> (no additional options)</p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>&quot;--trim_front1 3 --trim_front2 3&quot;</code></li>
+</ul>
+</li>
+</ul>
+<h3 id="fastq_processing_steps">FASTQ_PROCESSING_STEPS</h3>
+<p>All steps to process input FASTQ files, after sequencing and demultiplexing (if any).</p>
+<ul>
+<li>
+<p>Format: `&quot;step1 step2 step3&quot;</p>
+</li>
+<li>
+<p>Available steps:</p>
+<ul>
+<li><code>fastq_reheader</code>: FASTQ reheader to integrate index within FASTQ comment Illumina tag (e.g. 1:N:0:xxx). Nothing done if already integrated.</li>
+<li><code>fastq_clean_header</code>: FASTQ read head formatting, especially SAMTOOLS tags. Nothing done if not needed.</li>
+<li><code>compress</code>: FASTQ files compression (see <code>FASTQ_COMPRESSION_LEVEL</code>).</li>
+<li><code>sort</code>: Sort FASTQ using read name.</li>
+<li><code>fastp</code>: Process FASTP algorithm and report, UMI extraction, quality filtration...</li>
+<li><code>umi_tools</code>: Process UMITools algorithm for UMI extraction.</li>
+</ul>
+</li>
+<li>
+<p>Default: <code>&quot;fastq_reheader sort fastp fastq_clean_header compress&quot;</code></p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>&quot;fastq_reheader sort fastp fastq_clean_header compress&quot;</code> (for default sorting and compression)</li>
+<li><code>&quot;fastq_reheader sort umi_tools fastp fastq_clean_header compress&quot;</code> (for UMI technology using umi tools)</li>
+<li><code>&quot;sort compress&quot;</code> (for only sorting and compression)</li>
+<li><code>&quot;&quot;</code> (for no processing steps, FASTQ files will remain unprocessed and identical as from demultiplexing)</li>
+</ul>
+</li>
+</ul>
+<h2 id="archives">Archives</h2>
+<h3 id="cram_options">CRAM_OPTIONS</h3>
+<p>Final CRAM options for compression (archive.cram).
+Specify the CRAM compression options to use when creating the archive.cram file.</p>
+<ul>
+<li>
+<p>Default: <code>&quot;version=3.0,level=9,no_ref&quot;</code></p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>&quot;version=3.0,level=9,no_ref&quot;</code> (default compression)</li>
+<li><code>&quot;version=3.0,level=6&quot;</code> (for faster compression with lower level and no reference included)</li>
+<li><code>&quot;version=3.0,level=9,no_ref,use_lzma,use_bzip2,use_fqz,seqs_per_slice=100000&quot;</code> (for maximum compression with additional algorithms)</li>
+</ul>
+</li>
+</ul>
+<h3 id="cram_remove_tags">CRAM_REMOVE_TAGS</h3>
+<p>Final CRAM options for tags (archive.cram).
+Remove tags from the CRAM file during compression. Specify the tags to be removed as a comma-separated list.</p>
+<ul>
+<li>
+<p>Default: <code>&quot;BD,BI&quot;</code> (remove BD and BI tags by default)</p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>&quot;BD,BI,OQ&quot;</code> (remove BD, BI, and OQ tags)</li>
+<li><code>&quot;&quot;</code> (do not remove any tags)</li>
+</ul>
+</li>
+</ul>
+<h2 id="alignment-and-post-alignment">Alignment and post alignment</h2>
+<h3 id="barcode_tag">BARCODE_TAG</h3>
+<p>Specify the barcode tag to use for marking duplicates in BAM files.
+Barcode to use for Mark Duplicates. If not null, Mark Duplicates will consider this tag.
+See PICARD documentation for more information.</p>
+<ul>
+<li>
+<p>Default: <code>&quot;&quot;</code></p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>&quot;BC&quot;</code> (default Illumina, 10X genomics)</li>
+<li><code>&quot;RX&quot;</code> (standard SAM UMI barcode tag)</li>
+<li><code>&quot;BX&quot;</code> (UMI)</li>
+</ul>
+</li>
+</ul>
+<h3 id="picard_markdup_optical_dedup">PICARD_MARKDUP_OPTICAL_DEDUP</h3>
+<p>Regular expression that can be used to parse read names in the incoming SAM file.
+Set variable to &quot;READ_NAME_REGEX=null&quot; to disable optical deduplication.</p>
+<ul>
+<li>
+<p>Default: <code>&quot;&quot;</code></p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>&quot;-READ_NAME_REGEX null&quot;</code> (disable optical deduplication)</li>
+</ul>
+</li>
+</ul>
+<h3 id="bam_compression">BAM_COMPRESSION</h3>
+<p>Final BAM compression level (for <code>&lt;ALIGNER&gt;.bam</code>).</p>
+<ul>
+<li>Default: <code>9</code></li>
+</ul>
+<h3 id="bam_validation_compression">BAM_VALIDATION_COMPRESSION</h3>
+<p>Validation BAM compression level (<code>&lt;ALIGNER&gt;.validation.bam</code>).</p>
+<ul>
+<li>Default: <code>5</code></li>
+</ul>
+<h3 id="gencore_sup_reads">GENCORE_SUP_READS</h3>
+<p>Gencore supporting reads threshold.
+The minimum number of supporting reads required to form a cluster.
+This parameter helps to control the stringency of clustering in Gencore.
+This setting is particularly useful when dealing with low-frequency variants or noisy data.
+Higher values increase stringency, lower values make clustering more permissive.</p>
+<ul>
+<li>
+<p>Default: <code>&quot;&quot;</code> (corresponding to <code>&quot;--supporting_reads 1&quot;</code>, see gencore doc)</p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>2</code> (keep clusters with 2 or more supporting reads, ultrasensible filter)</li>
+<li><code>1</code> (replace Picard Markduplicates dedup)</li>
+</ul>
+</li>
+</ul>
+<h3 id="gencore_score_threeshold">GENCORE_SCORE_THREESHOLD</h3>
+<p>Gencore score threshold for forming consensus reads.
+Higher values increase stringency, lower values make clustering more permissive.</p>
+<ul>
+<li>
+<p>Default: <code>&quot;&quot;</code> (corresponding to <code>&quot;--score_threshold 6&quot;</code>, see gencore doc)</p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>8</code> (recommended for dup-rate &lt; 50% to keep all DNA fragments and discard low quality unoverlapped mutations)</li>
+<li><code>6</code> (default, see gencore doc)</li>
+</ul>
+</li>
+<li>
+<p>Default: <code>&quot;&quot;</code> (corresponds to <code>--score_threshold 6</code>)</p>
+</li>
+</ul>
+<h3 id="gencore_ratio_threeshold">GENCORE_RATIO_THREESHOLD</h3>
+<p>Gencore ratio threshold for major base comparison.
+If the ratio of the major base in a cluster is less than this threshold, it will be further compared to the reference.
+The value should be 0.5~1.0, and the default value is 0.8.</p>
+<ul>
+<li>
+<p>Default: <code>&quot;&quot;</code> (corresponding to <code>&quot;--ratio_threshold 0.8&quot;</code>, see gencore doc)</p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>0.8</code> (default, see gencore doc)</li>
+<li><code>0.9</code> (more stringent, require higher major base ratio)</li>
+</ul>
+</li>
+</ul>
+<h3 id="gencore_diff_threeshold">GENCORE_DIFF_THREESHOLD</h3>
+<p>Gencore UMI difference threshold for merging reads.
+If two reads with identical mapping position have UMI difference &lt;= &lt;umi_diff_threshold&gt;, then they will be merged to generate a consensus read.</p>
+<ul>
+<li>
+<p>Default: <code>&quot;&quot;</code> (corresponding to <code>&quot;--umi_diff_threshold 2&quot;</code>, see gencore doc)</p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>2</code> (default, see gencore doc)</li>
+<li><code>1</code> (more stringent, require lower UMI difference)</li>
+</ul>
+</li>
+</ul>
+<h3 id="gencore_qual_threeshold">GENCORE_QUAL_THREESHOLD</h3>
+<p>Gencore quality threshold for base comparison.
+This sets the minimum quality score for considering a base in the consensus read.
+Higher values increase stringency, lower values make clustering more permissive.</p>
+<ul>
+<li>
+<p>Available options:</p>
+<ul>
+<li><code>&quot;--high_qual &lt;value&gt;&quot;</code> (the threshold for a quality score to be considered as high quality. Default 30 means Q30. (int [=30]))</li>
+<li><code>&quot;--moderate_qual &lt;value&gt;&quot;</code> (the threshold for a quality score to be considered as moderate quality. Default 20 means Q20. (int [=20]))</li>
+<li><code>&quot;--low_qual &lt;value&gt;&quot;</code> (the threshold for a quality score to be considered as low quality. Default 15 means Q15. (int [=15]))</li>
+</ul>
+</li>
+<li>
+<p>Default: <code>&quot;&quot;</code> (corresponding to default quality, see gencore doc)</p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>&quot;--moderate_qual 20&quot;</code> (Moderate defined as Q20)</li>
+<li><code>&quot;--high_qual 20 --moderate_qual 15 --low_qual 10&quot;</code> (Threasholds changed to Q20, Q15, Q10)</li>
+</ul>
+</li>
+</ul>
+<h3 id="gencore_coverage_sampling">GENCORE_COVERAGE_SAMPLING</h3>
+<p>Gencore coverage sampling for genome scale coverage statistics (value 10000 means 1/10000).
+This option sets the sampling rate for genome scale coverage statistics in Gencore.
+The higher the value, the lower the sampling rate, which can improve performance at the cost of accuracy.</p>
+<ul>
+<li>
+<p>Default: <code>&quot;&quot;</code> (corresponding to <code>&quot;--coverage_sampling=10000&quot;</code>, see gencore doc)</p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>10000</code> (default, see gencore doc)</li>
+<li><code>5000</code> (higher sampling rate, more accurate but slower)</li>
+</ul>
+</li>
+</ul>
+<h2 id="calling-and-post-calling">Calling and post calling</h2>
+<h3 id="use_vcfdbsnp_with_gatk">USE_VCFDBSNP_WITH_GATK</h3>
+<p>Enable VCF DBSNP for GATK calling and annotation. This option allows GATK to use the VCF DBSNP if the file is available and not empty.
+dbSNP database as VCF is used to annotate variant ID in ID VCF field and to provide known variants for GATK calling and annotation (if any)
+See <a href="https://gatk.broadinstitute.org/hc/en-us/articles/360046786692-VariantAnnotator#--dbsnp">https://gatk.broadinstitute.org/hc/en-us/articles/360046786692-VariantAnnotator#--dbsnp</a>.
+This option allow GATK to use the VCF DBSNP for calling and annotation, if the file is available and not empty. If not, GATK will be used without DBSNP for calling and annotation.
+See rules that use GATK for calling and annotation (e.g. <code>gatkHC</code>, <code>gatkUG</code>, <code>MuTect2</code>) for more information about the use of VCF DBSNP for GATK calling and annotation.
+Variable <code>VCFDBSNP_WITH_GATK</code> is generated automatically and indicates whether to use the VCF DBSNP file for GATK calling and annotation.
+See <code>VCFDBSNP</code> variable for the VCF DBSNP file path (in <code>databases.app</code>).</p>
+<ul>
+<li>
+<p>Default: <code>0</code> (do not use VCF DBSNP with GATK)</p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>1</code> (enable use of VCF DBSNP with GATK)</li>
+<li><code>0</code> (do not enable use of VCF DBSNP with GATK)</li>
+</ul>
+</li>
+</ul>
+<h3 id="vcfdbsnp">VCFDBSNP</h3>
+<p>VCF DBSNP path for GATK calling and annotation.
+Path to the dbSNP database as VCF used for GATK calling and annotation (if any).
+This file need to be available and not empty for GATK to use it for calling and annotation (if <code>USE_VCFDBSNP_WITH_GATK=1</code>).
+This variable is automatically defined in default configuration in <code>databases.app</code>.</p>
+<ul>
+<li>
+<p>Default: <code>&quot;&quot;</code> (corresponding to default VCF DBSNP defined in <code>databases.app</code>, depending on <code>ASSEMBLY</code>)</p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>&quot;&quot;</code> (use default VCF DBSNP defined in <code>databases.app</code>)</li>
+<li><code>&quot;$FOLDER_DATABASES/dbsnp_138.hg19.vcf.gz&quot;</code> (use specific VCF DBSNP file for GATK calling and annotation)</li>
+</ul>
+</li>
+</ul>
+<h3 id="variantfiltration_snp_filter_option">VARIANTFILTRATION_SNP_FILTER_OPTION</h3>
+<p>Options for SNP variant filtration based on INFO fields using GATK VariantFiltration.
+One or more expression used with INFO fields to filter SNP (see documentation guide for more info).</p>
+<ul>
+<li>
+<p>Default: <code>'--filter-name &quot;SNP_filter_QD&quot; --filter-expression &quot;QD &lt; 2.0&quot; --filter-name &quot;SNP_filter_FS&quot; --filter-expression &quot;FS &gt; 60.0&quot; --filter-name &quot;SNP_filter_MQ&quot; --filter-expression &quot;MQ &lt; 40.0&quot; --filter-name &quot;SNP_filter_MQRankSum&quot; --filter-expression &quot;MQRankSum &lt; -12.5&quot; --filter-name &quot;SNP_filter_ReadPosRankSum&quot; --filter-expression &quot;ReadPosRankSum &lt; -8.0&quot;'</code></p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>'--filter-name &quot;SNP_filter_QD&quot; --filter-expression &quot;QD &lt; 2.0&quot; --filter-name &quot;SNP_filter_FS&quot; --filter-expression &quot;FS &gt; 60.0&quot; --filter-name &quot;SNP_filter_MQ&quot; --filter-expression &quot;MQ &lt; 40.0&quot; --filter-name &quot;SNP_filter_MQRankSum&quot; --filter-expression &quot;MQRankSum &lt; -12.5&quot; --filter-name &quot;SNP_filter_ReadPosRankSum&quot; --filter-expression &quot;ReadPosRankSum &lt; -8.0&quot;'</code></li>
+<li><code>'--filter-name &quot;HARD_TO_VALIDATE&quot; --filter-expression &quot;MQ0 &gt;= 4 &amp;&amp; ((MQ0 / (1.0 * DP)) &gt; 0.1)&quot;    --filter-name &quot;VeryVeryLowDepth&quot; --filter-expression &quot;DP == 0&quot;    --filter-name &quot;VeryLowDepth&quot; --filter-expression &quot;DP &gt; 0 &amp;&amp; DP &lt; 10&quot;    --filter-name &quot;LowDepth&quot; --filter-expression &quot;DP &gt;= 10 &amp;&amp; DP &lt; 30&quot;    --filter-name &quot;VeryVeryLowQual&quot; --filter-expression &quot;QUAL == 0&quot;    --filter-name &quot;VeryLowQual&quot; --filter-expression &quot;QUAL &gt; 0 &amp;&amp; QUAL &lt; 30.0&quot;    --filter-name &quot;LowQual&quot; --filter-expression &quot;QUAL &gt;= 30.0 &amp;&amp; QUAL &lt; 50.0&quot;    --filter-name &quot;LowQD&quot; --filter-expression &quot;QD &gt;= 0.0 &amp;&amp; QD &lt; 1.5&quot;'</code></li>
+</ul>
+</li>
+</ul>
+<h3 id="variantfiltration_snp_filter_expression_option">VARIANTFILTRATION_SNP_FILTER_EXPRESSION_OPTION</h3>
+<p>Options for SNP variant filtration based on FORMAT fields using GATK VariantFiltration.
+One or more expression used with FORMAT (sample/genotype-level) fields to filter SNP (see documentation guide for more info).</p>
+<ul>
+<li>
+<p>Default: <code>'--genotype-filter-expression &quot;GQ == 0&quot; --genotype-filter-name &quot;genotype_GQ_filter_VeryVeryLow&quot; --genotype-filter-expression &quot;GQ &gt; 0 &amp;&amp; GQ &lt; 50.0&quot; --genotype-filter-name &quot;genotype_GQ_filter_VeryLow&quot;  --genotype-filter-expression &quot;GQ &gt;= 50.0 &amp;&amp; GQ &lt; 90.0&quot; --genotype-filter-name &quot;genotype_GQ_filter_Low&quot; --genotype-filter-expression &quot;DP == 0&quot; --genotype-filter-name &quot;genotype_DP_filter_VeryVeryLow&quot; --genotype-filter-expression &quot;DP &gt;= 0 &amp;&amp; DP &lt; 10&quot; --genotype-filter-name &quot;genotype_DP_filter_VeryLow&quot;  --genotype-filter-expression &quot;DP &gt;= 10 &amp;&amp; DP &lt; 30&quot; --genotype-filter-name &quot;genotype_GQ_filter_Low&quot;'</code></p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>'--genotype-filter-expression &quot;GQ == 0&quot; --genotype-filter-name &quot;genotype_GQ_filter_VeryVeryLow&quot; --genotype-filter-expression &quot;GQ &gt; 0 &amp;&amp; GQ &lt; 50.0&quot; --genotype-filter-name &quot;genotype_GQ_filter_VeryLow&quot;  --genotype-filter-expression &quot;GQ &gt;= 50.0 &amp;&amp; GQ &lt; 90.0&quot; --genotype-filter-name &quot;genotype_GQ_filter_Low&quot; --genotype-filter-expression &quot;DP == 0&quot; --genotype-filter-name &quot;genotype_DP_filter_VeryVeryLow&quot; --genotype-filter-expression &quot;DP &gt;= 0 &amp;&amp; DP &lt; 10&quot; --genotype-filter-name &quot;genotype_DP_filter_VeryLow&quot;  --genotype-filter-expression &quot;DP &gt;= 10 &amp;&amp; DP &lt; 30&quot; --genotype-filter-name &quot;genotype_GQ_filter_Low&quot;'</code></li>
+<li><code>'--genotype-filter-name &quot;VeryVeryLowGQ&quot; --genotype-filter-expression &quot;GQ == 0&quot;    --genotype-filter-name &quot;VeryLowGQ&quot; --genotype-filter-expression &quot;GQ &gt; 0 &amp;&amp; GQ &lt; 50.0&quot;    --genotype-filter-name &quot;LowGQ&quot; --genotype-filter-expression &quot;GQ &gt;= 50.0 &amp;&amp; GQ &lt; 90.0&quot;    --genotype-filter-name &quot;VeryVeryLowDP&quot; --genotype-filter-expression &quot;DP == 0&quot;    --genotype-filter-name &quot;VeryLowDP&quot; --genotype-filter-expression &quot;DP &gt;= 0 &amp;&amp; DP &lt; 10&quot;    --genotype-filter-name &quot;LowDP&quot; --genotype-filter-expression &quot;DP &gt;= 10 &amp;&amp; DP &lt; 30&quot; '</code></li>
+</ul>
+</li>
+</ul>
+<h3 id="variantfiltration_indel_filter_option">VARIANTFILTRATION_INDEL_FILTER_OPTION</h3>
+<p>Options for InDel variant filtration based on INFO fields using GATK VariantFiltration.
+One or more expression used with INFO fields to filter INDEL (see documentation guide for more info).</p>
+<ul>
+<li>
+<p>Default: <code>'--filter-name &quot;INDEL_filter_QD&quot; --filter-expression &quot;QD &lt; 2.0&quot; --filter-name &quot;INDEL_filter_FS&quot; --filter-expression &quot;FS &gt; 200.0&quot; --filter-name &quot;INDEL_filter_ReadPosRankSum&quot; --filter-expression &quot;ReadPosRankSum &lt; -20.0&quot;'</code></p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>'--filter-name &quot;INDEL_filter_QD&quot; --filter-expression &quot;QD &lt; 2.0&quot; --filter-name &quot;INDEL_filter_FS&quot; --filter-expression &quot;FS &gt; 200.0&quot; --filter-name &quot;INDEL_filter_ReadPosRankSum&quot; --filter-expression &quot;ReadPosRankSum &lt; -20.0&quot;'</code></li>
+<li><code>'--filter-name &quot;HARD_TO_VALIDATE&quot; --filter-expression &quot;MQ0 &gt;= 4 &amp;&amp; ((MQ0 / (1.0 * DP)) &gt; 0.1)&quot;    --filter-name &quot;VeryVeryLowDepth&quot; --filter-expression &quot;DP == 0&quot;    --filter-name &quot;VeryLowDepth&quot; --filter-expression &quot;DP &gt; 0 &amp;&amp; DP &lt; 10&quot;    --filter-name &quot;LowDepth&quot; --filter-expression &quot;DP &gt;= 10 &amp;&amp; DP &lt; 30&quot;    --filter-name &quot;VeryVeryLowQual&quot; --filter-expression &quot;QUAL == 0&quot;    --filter-name &quot;VeryLowQual&quot; --filter-expression &quot;QUAL &gt; 0 &amp;&amp; QUAL &lt; 30.0&quot;    --filter-name &quot;LowQual&quot; --filter-expression &quot;QUAL &gt;= 30.0 &amp;&amp; QUAL &lt; 50.0&quot;    --filter-name &quot;LowQD&quot; --filter-expression &quot;QD &gt;= 0.0 &amp;&amp; QD &lt; 1.5&quot;'</code></li>
+</ul>
+</li>
+</ul>
+<h3 id="variantfiltration_indel_filter_expression_option">VARIANTFILTRATION_INDEL_FILTER_EXPRESSION_OPTION</h3>
+<p>Options for InDel variant filtration based on FORMAT fields using GATK VariantFiltration.
+One or more expression used with FORMAT (sample/genotype-level) fields to filter INDEL (see documentation guide for more info).</p>
+<ul>
+<li>
+<p>Default: <code>'--genotype-filter-expression &quot;GQ == 0&quot; --genotype-filter-name &quot;genotype_GQ_filter_VeryVeryLow&quot; --genotype-filter-expression &quot;GQ &gt; 0 &amp;&amp; GQ &lt; 50.0&quot; --genotype-filter-name &quot;genotype_GQ_filter_VeryLow&quot;  --genotype-filter-expression &quot;GQ &gt;= 50.0 &amp;&amp; GQ &lt; 90.0&quot; --genotype-filter-name &quot;genotype_GQ_filter_Low&quot; --genotype-filter-expression &quot;DP == 0&quot; --genotype-filter-name &quot;genotype_DP_filter_VeryVeryLow&quot; --genotype-filter-expression &quot;DP &gt;= 0 &amp;&amp; DP &lt; 10&quot; --genotype-filter-name &quot;genotype_DP_filter_VeryLow&quot;  --genotype-filter-expression &quot;DP &gt;= 10 &amp;&amp; DP &lt; 30&quot; --genotype-filter-name &quot;genotype_GQ_filter_Low&quot;'</code></p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>'--genotype-filter-expression &quot;GQ == 0&quot; --genotype-filter-name &quot;genotype_GQ_filter_VeryVeryLow&quot; --genotype-filter-expression &quot;GQ &gt; 0 &amp;&amp; GQ &lt; 50.0&quot; --genotype-filter-name &quot;genotype_GQ_filter_VeryLow&quot;  --genotype-filter-expression &quot;GQ &gt;= 50.0 &amp;&amp; GQ &lt; 90.0&quot; --genotype-filter-name &quot;genotype_GQ_filter_Low&quot; --genotype-filter-expression &quot;DP == 0&quot; --genotype-filter-name &quot;genotype_DP_filter_VeryVeryLow&quot; --genotype-filter-expression &quot;DP &gt;= 0 &amp;&amp; DP &lt; 10&quot; --genotype-filter-name &quot;genotype_DP_filter_VeryLow&quot;  --genotype-filter-expression &quot;DP &gt;= 10 &amp;&amp; DP &lt; 30&quot; --genotype-filter-name &quot;genotype_GQ_filter_Low&quot;'</code></li>
+<li><code>'--genotype-filter-name &quot;VeryVeryLowGQ&quot; --genotype-filter-expression &quot;GQ == 0&quot;    --genotype-filter-name &quot;VeryLowGQ&quot; --genotype-filter-expression &quot;GQ &gt; 0 &amp;&amp; GQ &lt; 50.0&quot;    --genotype-filter-name &quot;LowGQ&quot; --genotype-filter-expression &quot;GQ &gt;= 50.0 &amp;&amp; GQ &lt; 90.0&quot;    --genotype-filter-name &quot;VeryVeryLowDP&quot; --genotype-filter-expression &quot;DP == 0&quot;    --genotype-filter-name &quot;VeryLowDP&quot; --genotype-filter-expression &quot;DP &gt;= 0 &amp;&amp; DP &lt; 10&quot;    --genotype-filter-name &quot;LowDP&quot; --genotype-filter-expression &quot;DP &gt;= 10 &amp;&amp; DP &lt; 30&quot; '</code></li>
+</ul>
+</li>
+</ul>
+<h3 id="variantfiltration_invalidate_previous_filters">VARIANTFILTRATION_INVALIDATE_PREVIOUS_FILTERS</h3>
+<p>Remove previous filters applied to the VCF before applying new filters,
+using the --invalidate-previous-filters option in GATK VariantFiltration.</p>
+<ul>
+<li>
+<p>Default: <code>1</code> (invalidate previous filters)</p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>1</code> (invalidate previous filters)</li>
+<li><code>0</code> (do not invalidate previous filters)</li>
+</ul>
+</li>
+</ul>
+<h3 id="variantrecalibrator_options">VARIANTRECALIBRATOR_OPTIONS</h3>
+<p>Variant Recalibrator additional option (see GATK VariantRecalibrator documentation guide for more info).</p>
+<ul>
+<li>Default: <code>&quot;&quot;</code> (no additional options)</li>
+</ul>
+<h3 id="variantrecalibration_snp_annotations">VARIANTRECALIBRATION_SNP_ANNOTATIONS</h3>
+<p>Variant Recalibrator SNP annotations option (see GATK VariantRecalibrator documentation guide for more info).</p>
+<ul>
+<li>Default: <code>&quot;-an QD -an MQ -an MQRankSum -an ReadPosRankSum -an FS -an SOR -an DP&quot;</code></li>
+</ul>
+<h3 id="variantrecalibration_indel_annotations">VARIANTRECALIBRATION_INDEL_ANNOTATIONS</h3>
+<p>Variant Recalibrator INDEL annotations option (see GATK VariantRecalibrator documentation guide for more info).</p>
+<ul>
+<li>Default: <code>&quot;-an QD -an DP -an FS -an SOR -an ReadPosRankSum -an MQRankSum&quot;</code></li>
+</ul>
+<h3 id="variantrecalibration_snp_tranches">VARIANTRECALIBRATION_SNP_TRANCHES</h3>
+<p>Variant Recalibrator SNP tranches option (see GATK VariantRecalibrator documentation guide for more info).</p>
+<ul>
+<li>Default: <code>&quot;-tranche 100.0 -tranche 99.95 -tranche 99.9 -tranche 99.8 -tranche 99.7 -tranche 99.6 -tranche 99.5 -tranche 99.4 -tranche 99.3 -tranche 99.2 -tranche 99.1 -tranche 99.0 -tranche 98.0 -tranche 97.0 -tranche 96.0 -tranche 95.0 -tranche 94.0 -tranche 93.0 -tranche 92.0 -tranche 91.0 -tranche 90.0&quot;</code></li>
+</ul>
+<h3 id="variantrecalibration_indel_tranches">VARIANTRECALIBRATION_INDEL_TRANCHES</h3>
+<p>Variant Recalibrator INDEL tranches option (see GATK VariantRecalibrator documentation guide for more info).</p>
+<ul>
+<li>Default: <code>&quot;-tranche 100.0 -tranche 99.95 -tranche 99.9 -tranche 99.8 -tranche 99.7 -tranche 99.6 -tranche 99.5 -tranche 99.4 -tranche 99.3 -tranche 99.2 -tranche 99.1 -tranche 99.0 -tranche 98.0 -tranche 97.0 -tranche 96.0 -tranche 95.0 -tranche 94.0 -tranche 93.0 -tranche 92.0 -tranche 91.0 -tranche 90.0&quot;</code></li>
+</ul>
+<h2 id="annotation-and-post-annotation">Annotation and post annotation</h2>
+<h3 id="howard_config">HOWARD_CONFIG</h3>
+<p>HOWARD main configuration JSON file (See HOWARD documentation for details).
+This file contains the main configuration for HOWARD, such as databases folders and tools.
+Use <code>$HOWARD_FOLDER_CONFIG</code> or <code>$APP_FOLDER</code> if necessary to specify the configuration file location.
+A JSON string can also be used directly instead of a file path (e.g. <code>'{}'</code>, <code>'{&quot;key&quot;: &quot;value&quot;}'</code>).</p>
+<ul>
+<li>
+<p>Default: <code>&quot;$HOWARD_FOLDER_CONFIG/config.json&quot;</code></p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>&quot;$HOWARD_FOLDER_CONFIG/config.json&quot;</code> (default location)</li>
+<li><code>&quot;$APP_FOLDER/config.json&quot;</code> (alternative location, relative to the app folder)</li>
+<li><code>'{}'</code> (empty JSON string)</li>
+</ul>
+</li>
+</ul>
+<h3 id="howard_prioritization_config">HOWARD_PRIORITIZATION_CONFIG</h3>
+<p>HOWARD prioritization configuration JSON file (See HOWARD documentation for details).
+This file contains the prioritization profiles for HOWARD.
+Use <code>$HOWARD_FOLDER_CONFIG</code> or <code>$APP_FOLDER</code> if necessary to specify the configuration file location.
+A JSON string can also be used directly instead of a file path (e.g. <code>'{}'</code>, <code>'{&quot;key&quot;: &quot;value&quot;}'</code>).</p>
+<ul>
+<li>
+<p>Default: <code>&quot;$HOWARD_FOLDER_CONFIG/prioritization_profiles.json&quot;</code></p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>&quot;$HOWARD_FOLDER_CONFIG/prioritization_profiles.json&quot;</code> (default location)</li>
+<li><code>&quot;$APP_FOLDER/prioritization_profiles.json&quot;</code> (alternative location, relative to the app folder)</li>
+<li><code>'{}'</code> (empty JSON string)</li>
+</ul>
+</li>
+</ul>
+<h3 id="howard_calculation_config">HOWARD_CALCULATION_CONFIG</h3>
+<p>HOWARD calculation configuration JSON file (See HOWARD documentation for details).
+This file contains the calculation settings for HOWARD.
+Use <code>$HOWARD_FOLDER_CONFIG</code> or <code>$APP_FOLDER</code> if necessary to specify the configuration file location.
+A JSON string can also be used directly instead of a file path (e.g. <code>'{}'</code>, <code>'{&quot;key&quot;: &quot;value&quot;}'</code>).</p>
+<ul>
+<li>
+<p>Default: <code>&quot;$HOWARD_FOLDER_CONFIG/calculation_config.json&quot;</code></p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>&quot;$HOWARD_FOLDER_CONFIG/calculation_config.json&quot;</code> (default location)</li>
+<li><code>&quot;$APP_FOLDER/calculation_config.json&quot;</code> (alternative location, relative to the app folder)</li>
+<li><code>'{}'</code> (empty JSON string)</li>
+</ul>
+</li>
+</ul>
+<h3 id="howard_param">HOWARD_PARAM</h3>
+<p>HOWARD parameters JSON file for VCF annotation and analysis (see HOWARD documentation for details).
+This file contains the parameters for HOWARD analysis for VCF from callers (rule &quot;howard&quot;).
+Use <code>$HOWARD_FOLDER_CONFIG</code> or <code>$APP_FOLDER</code> if necessary to specify the configuration file location.
+A JSON string can also be used directly instead of a file path (e.g. <code>'{}'</code>, <code>'{&quot;key&quot;: &quot;value&quot;}'</code>).</p>
+<ul>
+<li>
+<p>Default: <code>&quot;$HOWARD_FOLDER_CONFIG/param.howard.json&quot;</code></p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>&quot;$HOWARD_FOLDER_CONFIG/param.howard.json&quot;</code> (default location)</li>
+<li><code>&quot;$APP_FOLDER/param.howard.json&quot;</code> (alternative location, relative to the app folder)</li>
+<li><code>'{}'</code> (empty JSON string)</li>
+</ul>
+</li>
+</ul>
+<h3 id="howard_param_minimal">HOWARD_PARAM_MINIMAL</h3>
+<p>HOWARD parameters JSON file for VCF annotation and analysis (see HOWARD documentation for details).
+This file contains the parameters for minimal VCF annotation (rule &quot;howard_minimal&quot;).
+Use <code>$HOWARD_FOLDER_CONFIG</code> or <code>$APP_FOLDER</code> if necessary to specify the configuration file location.
+A JSON string can also be used directly instead of a file path (e.g. <code>'{}'</code>, <code>'{&quot;key&quot;: &quot;value&quot;}'</code>).</p>
+<ul>
+<li>
+<p>Default: <code>&quot;$HOWARD_FOLDER_CONFIG/param.howard.minimal.json&quot;</code></p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>&quot;$HOWARD_FOLDER_CONFIG/param.howard.minimal.json&quot;</code> (default location)</li>
+<li><code>&quot;$APP_FOLDER/param.howard.minimal.json&quot;</code> (alternative location, relative to the app folder)</li>
+<li><code>'{}'</code> (empty JSON string)</li>
+</ul>
+</li>
+</ul>
+<h3 id="howard_param_report">HOWARD_PARAM_REPORT</h3>
+<p>HOWARD parameters JSON file for VCF annotation and analysis (see HOWARD documentation for details).
+This file contains the parameters for report VCF (Full and Final VCF).
+Use <code>$HOWARD_FOLDER_CONFIG</code> or <code>$APP_FOLDER</code> if necessary to specify the configuration file location.
+A JSON string can also be used directly instead of a file path (e.g. <code>'{}'</code>, <code>'{&quot;key&quot;: &quot;value&quot;}'</code>).</p>
+<ul>
+<li>
+<p>Default: <code>&quot;$HOWARD_FOLDER_CONFIG/param.report.json&quot;</code></p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>&quot;$HOWARD_FOLDER_CONFIG/param.report.json&quot;</code> (default location)</li>
+<li><code>&quot;$APP_FOLDER/param.report.json&quot;</code> (alternative location, relative to the app folder)</li>
+<li><code>'{}'</code> (empty JSON string)</li>
+</ul>
+</li>
+</ul>
+<h3 id="howard_param_analysis">HOWARD_PARAM_ANALYSIS</h3>
+<p>HOWARD parameters JSON file for VCF annotation and analysis (see HOWARD documentation for details).
+This file contains the parameters for whole analysis (VCF with all merged samples).
+Use <code>$HOWARD_FOLDER_CONFIG</code> or <code>$APP_FOLDER</code> if necessary to specify the configuration file location.
+A JSON string can also be used directly instead of a file path (e.g. <code>'{}'</code>, <code>'{&quot;key&quot;: &quot;value&quot;}'</code>).</p>
+<ul>
+<li>
+<p>Default: <code>&quot;$HOWARD_FOLDER_CONFIG/param.analysis.json&quot;</code></p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>&quot;$HOWARD_FOLDER_CONFIG/param.analysis.json&quot;</code> (default location)</li>
+<li><code>&quot;$APP_FOLDER/param.analysis.json&quot;</code> (alternative location, relative to the app folder)</li>
+<li><code>'{}'</code> (empty JSON string)</li>
+</ul>
+</li>
+</ul>
+<h2 id="reports">Reports</h2>
+<h3 id="howard_report_infos_fields">HOWARD_REPORT_INFOS_FIELDS</h3>
+<p>Fields from the INFO column to be exploded into separate columns in the TSV report file (see HOWARD documentation for details).</p>
+<ul>
+<li>
+<p>Default: <code>&quot;*&quot;</code> (all fields)</p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>&quot;&quot;</code> (explode no INFO fields into separate columns in the TSV report file)</li>
+<li><code>&quot;*&quot;</code>(explode all INFO fields into separate columns in the TSV report file)</li>
+<li><code>&quot;DP,AF,AN&quot;</code> (explode only the DP, AF, and AN INFO fields into separate columns in the TSV report file)</li>
+<li><code>&quot;NOMEN,snpeff_.*&quot;</code> (explode only INFO fields NOMEN and starting with &quot;snpeff_&quot; into separate columns in the TSV report file)</li>
+</ul>
+</li>
+</ul>
+<h3 id="info_to_format_annotations">INFO_TO_FORMAT_ANNOTATIONS</h3>
+<p>Transfers INFO annotation to FORMAT annotation (such as DP_stats, VAF_stats).
+Used for annotations on full VCF to final VCF on each sample.
+Beware that annotation exists (see HOWARD documentation for details) and check the relevant parameters in HOWARD.</p>
+<ul>
+<li>
+<p>Default: <code>&quot;&quot;</code> (no transfer)</p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>&quot;&quot;</code> (no transfer)</li>
+<li><code>&quot;DP_stats,VAF_stats&quot;</code> (transfer only the DP_stats and VAF_stats INFO annotations to FORMAT annotations)</li>
+</ul>
+</li>
+</ul>
+<h3 id="vcf_missing_genotype">VCF_MISSING_GENOTYPE</h3>
+<p>Options for handling missing genotypes in VCF report files.</p>
+<ul>
+<li>
+<p>Available options:</p>
+<ul>
+<li><code>&quot;missing&quot;</code> (replace 0/0 or 0|0 genotypes by ./. and .|.)</li>
+<li><code>&quot;missing_clean&quot;</code> (replace 0/0 or 0|0 genotypes by ./. and .|. and clean by removing other FORMAT fields)</li>
+</ul>
+</li>
+<li>
+<p>Default: <code>&quot;missing_clean&quot;</code></p>
+</li>
+</ul>
+<h3 id="report_sections">REPORT_SECTIONS</h3>
+<p>List of sections to show in the HTML report.</p>
+<ul>
+<li>
+<p>Available sections :</p>
+<ul>
+<li><code>results_summary</code> (summary of the analysis results)</li>
+<li><code>sequencing_mapping</code> (information about sequencing and mapping quality)</li>
+<li><code>depth</code> (coverage depth statistics)</li>
+<li><code>coverage</code> (coverage metrics for target regions)</li>
+<li><code>variant_calling</code> (summary of variant calling results)</li>
+<li><code>variant_stats</code> (statistics on called variants)</li>
+<li><code>annex_coverage</code>(detailed coverage information)</li>
+<li><code>annex_depth</code> (detailed depth information)</li>
+<li><code>annex_genes_coverage</code> (coverage information for individual genes)</li>
+<li><code>annex_variants</code> (detailed variant information)</li>
+<li><code>annex_annotations</code> (detailed annotation information)</li>
+</ul>
+</li>
+<li>
+<p>Default: <code>&quot;ALL&quot;</code> (all available sections)</p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>&quot;ALL&quot;</code> (include all available sections)</li>
+<li><code>&quot;results_summary sequencing_mapping depth coverage variant_calling variant_stats&quot;</code> (include only the main sections)</li>
+<li><code>&quot;results_summary sequencing_mapping depth coverage annex_coverage annex_depth annex_genes_coverage&quot;</code> (include only sections related to coverage/depth information, without variants informations)</li>
+</ul>
+</li>
+</ul>
+<h2 id="metrics">Metrics</h2>
+<h3 id="bam_metrics">BAM_METRICS</h3>
+<p>Performs BAM metrics (time and space consuming).
+Switch off for exome/genome for better performances.</p>
+<ul>
+<li>
+<p>Available values:</p>
+<ul>
+<li><code>1</code>, <code>&quot;TRUE&quot;</code>, <code>&quot;YES&quot;</code>, <code>&quot;Y&quot;</code> (enable)</li>
+<li><code>0</code>, <code>&quot;FALSE&quot;</code>, <code>&quot;NO&quot;</code>, <code>&quot;N&quot;</code> (disable)</li>
+</ul>
+</li>
+<li>
+<p>Default: <code>0</code></p>
+</li>
+</ul>
+<h3 id="bam_gene_coverage_metrics">BAM_GENE_COVERAGE_METRICS</h3>
+<p>Performs BAM GENE COVERAGE METRICS (time and space consuming).
+Switch off for exome/genome for better performances.</p>
+<ul>
+<li>
+<p>Available values:</p>
+<ul>
+<li><code>1</code>, <code>&quot;TRUE&quot;</code>, <code>&quot;YES&quot;</code>, <code>&quot;Y&quot;</code> (enable)</li>
+<li><code>0</code>, <code>&quot;FALSE&quot;</code>, <code>&quot;NO&quot;</code>, <code>&quot;N&quot;</code> (disable)</li>
+</ul>
+</li>
+<li>
+<p>Default: <code>1</code></p>
+</li>
+</ul>
+<h3 id="metrics_minimum_mapping_quality">METRICS_MINIMUM_MAPPING_QUALITY</h3>
+<p>Minimum mapping quality to consider in the BAM metrics.</p>
+<ul>
+<li>Default: <code>10</code></li>
+</ul>
+<h3 id="metrics_minimum_base_quality">METRICS_MINIMUM_BASE_QUALITY</h3>
+<p>Minimum base quality to consider in the BAM metrics.</p>
+<ul>
+<li>Default: <code>10</code></li>
+</ul>
+<h3 id="clip_overlapping_reads">CLIP_OVERLAPPING_READS</h3>
+<p>Clipping overlapping reads in the metrics BAM.
+From PICARD: For paired reads, soft clip the 3' end of each read if necessary so that it does not extend past the 5' end of its mate.</p>
+<ul>
+<li>Default: <code>1</code></li>
+</ul>
+<h3 id="metrics_flags">METRICS_FLAGS</h3>
+<p>Flagged reads to exclude in the metrics BAM (mpileup format).</p>
+<ul>
+<li>
+<p>Available values (not exhaustive):</p>
+<ul>
+<li><code>UNMAP</code> (unmapped reads)</li>
+<li><code>SECONDARY</code> (secondary alignments)</li>
+<li><code>QCFAIL</code> (reads failing quality control)</li>
+<li><code>DUP</code> (duplicate reads)</li>
+</ul>
+</li>
+<li>
+<p>Default: <code>&quot;UNMAP,SECONDARY,QCFAIL,DUP&quot;</code></p>
+</li>
+</ul>
+<h3 id="samtools_metrics_flag_param">SAMTOOLS_METRICS_FLAG_PARAM</h3>
+<p>Flagged reads filter in the metrics BAM (samtools format).
+Generated from mpileup format (if empty).</p>
+<ul>
+<li>
+<p>Default: <code>&quot; -F 0x4 -F 0x100 -F 0x200 -F 0x400&quot;</code> (if generated from default <code>METRICS_FLAGS</code>)</p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>&quot; -F 0x4 -F 0x100 -F 0x200 -F 0x400&quot;</code> (exclude unmapped, secondary, QC fail, and duplicate reads)</li>
+</ul>
+</li>
+</ul>
+<h3 id="interval_padding">INTERVAL_PADDING</h3>
+<p>Add some “padding” to the intervals used (manifest) in order to include the flanking regions (typically ~100 bp).</p>
+<ul>
+<li>Default: <code>0</code></li>
+</ul>
+<h3 id="coverage_criteria">COVERAGE_CRITERIA</h3>
+<p>Threshold for gene coverage metrics.
+The criteria to calculate the percent of bases over $COVERAGE_CRITERIA X (e.g. &quot;30&quot; for &quot;30X&quot;).</p>
+<ul>
+<li>
+<p>Default: <code>&quot;1,5,10,20,30,50,100,200,300&quot;</code></p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>&quot;1,30&quot;</code> (calculate coverage for 1X and 30X)</li>
+<li><code>&quot;1,10,30,50,100,200,500,1000&quot;</code> (calculate coverage for multiple depths)</li>
+</ul>
+</li>
+</ul>
+<h3 id="sequencing_depth">SEQUENCING_DEPTH</h3>
+<p>Sequencing depth threshold for gene coverage metrics.
+The minimum sequencing depth required for a base to be considered covered.
+This defines the minimum sequencing depth required for a base to be considered covered.</p>
+<ul>
+<li>Default: <code>1</code></li>
+</ul>
+<h3 id="sequencing_coverage_threshold">SEQUENCING_COVERAGE_THRESHOLD</h3>
+<p>Sequencing coverage threshold for gene coverage metrics.
+The minimum fraction of bases that must meet the sequencing depth requirement.
+This defines the minimum fraction of bases that must meet the sequencing depth requirement for a gene to be considered covered.</p>
+<ul>
+<li>Default: <code>1</code></li>
+</ul>
+<h3 id="minimum_depth">MINIMUM_DEPTH</h3>
+<p>Minimum sequencing depth for a gene to be considered failing the coverage threshold.
+This defines the minimum sequencing depth for a gene to be considered failing the coverage threshold.</p>
+<ul>
+<li>Default: <code>30</code></li>
+</ul>
+<h3 id="expected_depth">EXPECTED_DEPTH</h3>
+<p>Expected sequencing depth for a gene to be considered warning the coverage threshold.
+This defines the expected sequencing depth for a gene to be considered warning the coverage threshold.</p>
+<ul>
+<li>Default: <code>100</code></li>
+</ul>
+<h3 id="depth_coverage_threshold">DEPTH_COVERAGE_THRESHOLD</h3>
+<p>Threshold percentage of bases over the DP threshold.
+This defines the minimum fraction of bases that must meet the DP threshold for a gene to be considered covered.</p>
+<ul>
+<li>Default: <code>0.95</code></li>
+</ul>
+<h3 id="nb_bases_around">NB_BASES_AROUND</h3>
+<p>For gene coverage metrics, the number of bases to look around the exons from the given bed file.</p>
+<ul>
+<li>Default: <code>0</code></li>
+</ul>
+<h3 id="genescoverage_precision">GENESCOVERAGE_PRECISION</h3>
+<p>Genes Coverage calculation precision (number of decimal places).</p>
+<ul>
+<li>Default: <code>2</code></li>
+</ul>
+<h3 id="bedfile_genes">BEDFILE_GENES</h3>
+<p>For gene coverage metrics.
+A file or a list of files.
+The bed file should include the regions of interest, such as exons, introns and other genomic coordinates.
+The bed file should be in standard BED format with chromosome, start, and end positions for each region of interest.
+This file is usually provided in the command line when running the analysis (and defined in the configuration file).
+Metrics and VCF files are generated based on the regions defined in this bed file.</p>
+<ul>
+<li>Default: <code>&quot;&quot;</code></li>
+</ul>
+<h3 id="bam_check_steps">BAM_CHECK_STEPS</h3>
+<p>Check BAM for each manipulation step (clipping, realignment...).
+Time consuming, but will stop the analysis in case of missing reads.
+A Metrics on each BAM check the BAM discrepancy in any case.</p>
+<ul>
+<li>Default: <code>0</code></li>
+</ul>
+<h3 id="metrics_snpeff">METRICS_SNPEFF</h3>
+<p>Generate snpEff variant metrics from VCF.
+Only for Report final VCF.</p>
+<ul>
+<li>Default: <code>0</code></li>
+</ul>
+<h2 id="resources">Resources</h2>
+<h3 id="threads">THREADS</h3>
+<p>Threads configuration for the analysis.
+Value <code>AUTO</code> will consider CORE threads to use.
+The number of threads need to be between 1 and the total number of cores available (autoadjusting if bad value).</p>
+<ul>
+<li>
+<p>Default: <code>AUTO</code> (uses CORE threads)</p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>AUTO</code> (uses CORE threads)</li>
+<li><code>&quot;&quot;</code> (uses CORE threads, as if AUTO was specified)</li>
+<li><code>4</code> (uses 4 threads)</li>
+<li><code>12</code> (uses 12 threads if CORES&gt;=12, otherwise uses CORES threads)</li>
+</ul>
+</li>
+</ul>
+<h3 id="threads_loading">THREADS_LOADING</h3>
+<p>Threads configuration for loading demultiplexed data.
+The number of threads need to be between 1 and the total number of cores available (autoadjusting if bad value).</p>
+<ul>
+<li>
+<p>Default: <code>&quot;&quot;</code> (uses <code>THREADS</code> threads)</p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>&quot;&quot;</code> (uses <code>THREADS</code> threads)</li>
+<li><code>4</code> (uses 4 threads)</li>
+</ul>
+</li>
+</ul>
+<h3 id="threads_writing">THREADS_WRITING</h3>
+<p>Threads configuration for writing demultiplexed data.
+The number of threads need to be between 1 and the total number of cores available (autoadjusting if bad value).</p>
+<ul>
+<li>
+<p>Default: <code>&quot;&quot;</code> (uses THREADS threads)</p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>&quot;&quot;</code> (uses THREADS threads)</li>
+<li><code>4</code> (uses 4 threads)</li>
+</ul>
+</li>
+</ul>
+<h3 id="threads_copy">THREADS_COPY</h3>
+<p>Threads configuration for copying files in repositories.
+The number of threads need to be between 1 and the total number of cores available (autoadjusting if bad value).</p>
+<ul>
+<li>
+<p>Default: <code>1</code> (uses 1 thread)</p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>1</code> (uses 1 thread)</li>
+<li><code>2</code> (uses 2 threads)</li>
+</ul>
+</li>
+</ul>
+<h3 id="memory">MEMORY</h3>
+<p>Total memory to use by thread.
+Memory is automatically defined based on the system's available memory and the number of threads.
+(MemTotal from /proc/meminfo divided by number of threads).
+Use unit as needed (e.g., &quot;g&quot; for gigabytes, &quot;m&quot; for megabytes).</p>
+<ul>
+<li>
+<p>Default: <code>&quot;&quot;</code> (automatically calculated based on system memory and number of threads)</p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>&quot;4g&quot;</code> (4 gigabytes)</li>
+<li><code>&quot;8192m&quot;</code> (8192 megabytes)</li>
+</ul>
+</li>
+</ul>
+<h3 id="java_memory">JAVA_MEMORY</h3>
+<p>Maximum memory to use for Java (e.g., &quot;4g&quot; for 4 gigabytes).
+By défault JAVA_MEMORY uses MEMORY value</p>
+<ul>
+<li>Default: <code>&quot;&quot;</code> (corresponds to <code>MEMORY</code>)</li>
+</ul>
+<h3 id="max_validation_bam_size">MAX_VALIDATION_BAM_SIZE</h3>
+<p>If validation bam is small enough (lower than MAX_VALIDATION_BAM_SIZE Kb), launch CollectHsMetrics the classic way.
+Otherwise increase RAM to MAX_CONCURRENT_HSMETRICS_RAM and limit command to MAX_CONCURRENT_HSMETRICS concurrent launches.</p>
+<p>If validation bam is small enough (lower than MAX_VALIDATION_BAM_SIZE Kb), launch CollectHsMetrics the classic way.
+Otherwise increase RAM to MAX_CONCURRENT_HSMETRICS_RAM and limit command to MAX_CONCURRENT_HSMETRICS concurrent launches.</p>
+<ul>
+<li>
+<p>Default: <code>0</code> (switch off the size check for validation BAM, effectively disables the classic way and forces the use of concurrent launches)</p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>0</code> (switch off the size check for validation BAM, effectively disables the classic way and forces the use of concurrent launches)</li>
+<li><code>2097152</code> (for BAM file of maximum 2 Go)</li>
+<li><code>1000000000</code> (around 1To, exageratly big to switch on the classic way)</li>
+</ul>
+</li>
+</ul>
+<h3 id="max_concurrent_hsmetrics_ram">MAX_CONCURRENT_HSMETRICS_RAM</h3>
+<p>RAM allocated for each concurrent CollectHsMetrics launch.</p>
+<ul>
+<li>
+<p>Default: <code>&quot;36g&quot;</code> (16 gigabytes of RAM for each HsMetrics)</p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>&quot;16g&quot;</code> (16 gigabytes of RAM for each HsMetrics)</li>
+<li><code>&quot;36g&quot;</code> (36 gigabytes of RAM for each HsMetrics)</li>
+</ul>
+</li>
+</ul>
+<h3 id="max_concurrent_hsmetrics">MAX_CONCURRENT_HSMETRICS</h3>
+<p>Maximum number of concurrent CollectHsMetrics launches.
+Can be set to &quot;AUTO&quot; to automatically determine the number of concurrent launches based on system resources and RAM requirements.</p>
+<ul>
+<li>
+<p>Default: <code>&quot;AUTO&quot;</code> (automatically determined based on system resources and RAM requirements)</p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>&quot;AUTO&quot;</code> (automatically determined based on system resources and RAM requirements)</li>
+<li><code>1</code> (no concurrency, only 1 HsMetrics at once)</li>
+<li><code>4</code> (up to 4 HsMetrics can run concurrently)</li>
+</ul>
+</li>
+</ul>
+<h2 id="repository-and-archives">Repository and Archives</h2>
+<h3 id="repository_file_patterns">REPOSITORY_FILE_PATTERNS</h3>
+<p>Copy files into each sample folders for repository (root).
+Patterns are defined using shell-style wildcards and can include variables like $SAMPLE.
+Each pattern should match the files you want to include in the repository.
+Mandatory files (such as reports files) are automatically included and do not need to be specified in the patterns.</p>
+<ul>
+<li>
+<p>Default: <code>' $SAMPLE.*.validation.bam $SAMPLE.*.validation.bam.bai $SAMPLE.*.bam.metrics/$SAMPLE.*.validation.flags.Design.bed $SAMPLE.reports/$SAMPLE.full.Design.vcf.gz $SAMPLE.reports/$SAMPLE.full.Design.vcf.gz.tbi $SAMPLE.reports/$SAMPLE.full.Design.tsv '</code></p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>' $SAMPLE.*.validation.bam $SAMPLE.*.validation.bam.bai $SAMPLE.*.bam.metrics/$SAMPLE.*.validation.flags.Design.bed $SAMPLE.reports/$SAMPLE.full.Design.vcf.gz $SAMPLE.reports/$SAMPLE.full.Design.vcf.gz.tbi $SAMPLE.reports/$SAMPLE.full.Design.tsv '</code> (default)</li>
+<li><code>' $SAMPLE.*.bam $SAMPLE.*.bam.bai $SAMPLE.reports/$SAMPLE.full.vcf.gz $SAMPLE.reports/$SAMPLE.full.vcf.gz.tbi '</code> (alternative pattern for only BAM and VCF files)</li>
+</ul>
+</li>
+</ul>
+<h3 id="repository_file_subfolder_patterns">REPOSITORY_FILE_SUBFOLDER_PATTERNS</h3>
+<p>Patterns to exclude files in repository subfolders (usually 'STARK'). Useful to reduce storage and exclude repeated files.
+Files such as raw FASTQ files or intermediate validation BAM files (already in repository folders) can be excluded from repository subfolders to save space.</p>
+<ul>
+<li>
+<p>Default: <code>' $SAMPLE.*fastq.gz $SAMPLE.*.validation.bam $SAMPLE.*.validation.bam.bai '</code></p>
+</li>
+<li>
+<p>Example:</p>
+<ul>
+<li><code>' $SAMPLE.*fastq.gz $SAMPLE.*.validation.bam $SAMPLE.*.validation.bam.bai '</code> (default)</li>
+<li><code>' $SAMPLE.*.bam $SAMPLE.*.bam.bai '</code> (alternative pattern for repository subfolders)</li>
+</ul>
+</li>
+</ul>
+<h3 id="archives_file_patterns">ARCHIVES_FILE_PATTERNS</h3>
+<p>Archives files patterns to include in the archives folder.
+These patterns define which files will be copied into the archives folder.
+Mandatory files (such as CRAM files for archives) are automatically included and do not need to be specified in the patterns.</p>
+<ul>
+<li>
+<p>Default: <code>' $SAMPLE.reports/$SAMPLE.full.vcf.gz $SAMPLE.reports/$SAMPLE.full.vcf.gz.tbi $SAMPLE.reports/$SAMPLE.final.tsv $SAMPLE.*.bam.metrics/$SAMPLE.*.validation.flags.*.bed '</code></p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>' $SAMPLE.reports/$SAMPLE.full.vcf.gz $SAMPLE.reports/$SAMPLE.full.vcf.gz.tbi $SAMPLE.reports/$SAMPLE.final.tsv $SAMPLE.*.bam.metrics/$SAMPLE.*.validation.flags.*.bed '</code> (default)</li>
+<li><code>' $SAMPLE.*.bam $SAMPLE.*.bam.bai '</code> (alternative pattern for archives, only BAM files without additional metrics or flags)</li>
+</ul>
+</li>
+</ul>
+<h3 id="favorites_file_patterns">FAVORITES_FILE_PATTERNS</h3>
+<p>Favorites files patterns to add to the favorites folder.
+These patterns define which files will be copied into the favorites folder.</p>
+<ul>
+<li>
+<p>Default: <code>''</code> (no additional favorites files specified)</p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>''</code> (default, no additional favorites files specified)</li>
+<li><code>' $SAMPLE.*fastq.gz '</code> (alternative pattern for favorites, only main FASTQ files, useful for FASTQ only projects)</li>
+<li><code>' $SAMPLE.reports/$SAMPLE.final.tsv '</code> (alternative pattern for favorites, only report files without additional metrics or flags)</li>
+</ul>
+</li>
+</ul>
+<h2 id="igv-session">IGV Session</h2>
+<p>IGV session xml file (*igv_session.xml) is generated with Samples and Runs files (BAM, VCF, BED).
+Parameters select files through patterns and folder depth.
+Be aware that these patterns should match the files available in the repository for the samples or runs.</p>
+<h3 id="igv_session_patterns_sample_default">IGV_SESSION_PATTERNS_SAMPLE_DEFAULT</h3>
+<p>IGV session XML file (*igv_session.xml) patterns for samples.
+These patterns define which files will be included in the IGV session for samples.
+Be aware that these patterns should match the files available in the repository for the samples.
+Theses files can be VCF, BAM, CRAM, or BED files related to the sample.</p>
+<ul>
+<li>
+<p>Default: <code>' $SAMPLE.final.vcf.gz $SAMPLE*Design*bed $SAMPLE*Panel*bed *Design*vcf.gz *Panel*vcf.gz *bam *cram '</code></p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>' $SAMPLE.final.vcf.gz $SAMPLE*Design*bed $SAMPLE*Panel*bed *Design*vcf.gz *Panel*vcf.gz *bam *cram '</code> (default)</li>
+<li><code>' $SAMPLE.final.vcf.gz $SAMPLE.*.bam $SAMPLE.*.bam.bai '</code> (alternative pattern for samples, only main VCF file and BAM files without additional files for Panel or Design)</li>
+</ul>
+</li>
+</ul>
+<h3 id="igv_session_patterns_run_default">IGV_SESSION_PATTERNS_RUN_DEFAULT</h3>
+<p>IGV session XML file (*igv_session.xml) patterns for runs.
+These patterns define which files will be included in the IGV session for runs.
+Be aware that these patterns should match the files available in the repository for the runs.
+Theses files can be VCF, BAM, CRAM, or BED files related to the run.</p>
+<ul>
+<li>
+<p>Default: <code>' *.final.vcf.gz *Design*bed *Panel*bed *Design*vcf.gz *Panel*vcf.gz *bam *cram '</code></p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>' *.final.vcf.gz *Design*bed *Panel*bed *Design*vcf.gz *Panel*vcf.gz *bam *cram '</code> (default)</li>
+<li><code>' *.final.vcf.gz *.bam *.bam.bai '</code> (alternative pattern for runs, only main VCF file and BAM files without additional files for Panel or Design)</li>
+</ul>
+</li>
+</ul>
+<h3 id="displaymode_bam">DISPLAYMODE_BAM</h3>
+<p>IGV Display mode for BAM files (in IGV sessions patterns).
+These allow you to display overlapping features, such as different transcripts of a gene, on one line or multiple lines.</p>
+<ul>
+<li>
+<p>Available display mode options in IGV:</p>
+<ul>
+<li><code>SQUISHED</code> (features are compressed to occupy minimal vertical space)</li>
+<li><code>COLLAPSED</code>(features are displayed in a single line per track)</li>
+<li><code>EXPANDED</code> (features are displayed in multiple lines per track)</li>
+</ul>
+</li>
+<li>
+<p>Default: <code>&quot;SQUISHED&quot;</code></p>
+</li>
+</ul>
+<h3 id="displaymode_vcf">DISPLAYMODE_VCF</h3>
+<p>IGV Display mode for VCF files (in IGV sessions patterns).
+These allow you to display overlapping features, such as different transcripts of a gene, on one line or multiple lines.</p>
+<ul>
+<li>
+<p>Available display mode options in IGV:</p>
+<ul>
+<li><code>SQUISHED</code> (features are compressed to occupy minimal vertical space)</li>
+<li><code>COLLAPSED</code>(features are displayed in a single line per track)</li>
+<li><code>EXPANDED</code> (features are displayed in multiple lines per track)</li>
+</ul>
+</li>
+<li>
+<p>Default: <code>&quot;COLLAPSED&quot;</code></p>
+</li>
+</ul>
+<h3 id="displaymode_bed">DISPLAYMODE_BED</h3>
+<p>IGV Display mode for BED files (in IGV sessions patterns).
+These allow you to display overlapping features, such as different transcripts of a gene, on one line or multiple lines.</p>
+<ul>
+<li>
+<p>Available display mode options in IGV:</p>
+<ul>
+<li><code>SQUISHED</code> (features are compressed to occupy minimal vertical space)</li>
+<li><code>COLLAPSED</code>(features are displayed in a single line per track)</li>
+<li><code>EXPANDED</code> (features are displayed in multiple lines per track)</li>
+</ul>
+</li>
+<li>
+<p>Default: <code>&quot;COLLAPSED&quot;</code></p>
+</li>
+</ul>
+<h3 id="igv_session_ressources">IGV_SESSION_RESSOURCES</h3>
+<p>Additionnal databases for IGV session (see IGV doc).
+These resources can be added to an IGV session to provide additional data tracks.</p>
+<ul>
+<li>
+<p>Default: <code>'&lt;Resource index=&quot;https://s3.amazonaws.com/igv.org.genomes/hg19/ncbiRefSeq.sorted.txt.gz.tbi&quot; name=&quot;Refseq Genes&quot; path=&quot;https://s3.amazonaws.com/igv.org.genomes/hg19/ncbiRefSeq.sorted.txt.gz&quot; type=&quot;refgene&quot;/&gt;'</code> (refSeq Genes)</p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>'&lt;Resource index=&quot;https://ftp.ncbi.nlm.nih.gov/snp/organisms/human_9606_b151_GRCh37p13/VCF/00-All.vcf.gz.tbi&quot; path=&quot;https://ftp.ncbi.nlm.nih.gov/snp/organisms/human_9606_b151_GRCh37p13/VCF/00-All.vcf.gz&quot; type=&quot;vcf&quot;/&gt;'</code></li>
+<li><code>'&lt;Resource index=&quot;http://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/clinvar.vcf.gz.tbi&quot; path=&quot;http://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/clinvar.vcf.gz&quot; type=&quot;vcf&quot;/&gt;'</code></li>
+<li><code>'&lt;Resource name=&quot;GC Percentage&quot; path=&quot;http://www.broadinstitute.org/igvdata/annotations/hg19/hg19.gc5base.tdf&quot; type=&quot;tdf&quot;/&gt;'</code></li>
+<li><code>'&lt;Resource index=&quot;https://s3.amazonaws.com/igv.org.genomes/hg19/ncbiRefSeq.sorted.txt.gz.tbi&quot; name=&quot;Refseq Genes&quot; path=&quot;https://s3.amazonaws.com/igv.org.genomes/hg19/ncbiRefSeq.sorted.txt.gz&quot; type=&quot;refgene&quot;/&gt;'</code></li>
+<li><code>'&lt;Resource hyperlink=&quot;http://www.gencodegenes.org/&quot; index=&quot;https://s3.amazonaws.com/igv.broadinstitute.org/annotations/hg19/genes/gencode.v18.annotation.sorted.gtf.gz.tbi&quot; name=&quot;Gencode Genes (v18)&quot; path=&quot;https://s3.amazonaws.com/igv.broadinstitute.org/annotations/hg19/genes/gencode.v18.annotation.sorted.gtf.gz&quot; trackLine=&quot;visibilitywindow:10000000&quot; type=&quot;gtf&quot;/&gt;'</code></li>
+</ul>
+</li>
+</ul>
+<h3 id="igv_session_datapanel">IGV_SESSION_DATAPANEL</h3>
+<p>Additionnal tracks for the IGV data panel (see IGV doc).
+These tracks will be displayed in the IGV data panel.</p>
+<ul>
+<li>
+<p>Default: <code>''</code> (no additional tracks)</p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>&lt;Track attributeKey=&quot;00-All.vcf.gz&quot; clazz=&quot;org.broad.igv.variant.VariantTrack&quot; featureVisibilityWindow=&quot;100100&quot; fontSize=&quot;10&quot; groupByStrand=&quot;false&quot; id=&quot;https://ftp.ncbi.nlm.nih.gov/snp/organisms/human_9606_b151_GRCh37p13/VCF/00-All.vcf.gz&quot; name=&quot;dbSNP&quot; siteColorMode=&quot;ALLELE_FREQUENCY&quot; displayMode=&quot;COLLAPSE&quot; visible=&quot;true&quot;/&gt;</code></li>
+<li><code>'&lt;Track attributeKey=&quot;clinvar.vcf.gz&quot; clazz=&quot;org.broad.igv.variant.VariantTrack&quot; featureVisibilityWindow=&quot;100100&quot; fontSize=&quot;10&quot; groupByStrand=&quot;false&quot; id=&quot;http://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/clinvar.vcf.gz&quot; name=&quot;ClinVar&quot; siteColorMode=&quot;ALLELE_FREQUENCY&quot; displayMode=&quot;COLLAPSE&quot; visible=&quot;true&quot;/&gt;'</code></li>
+</ul>
+</li>
+</ul>
+<h3 id="igv_session_featurepanel">IGV_SESSION_FEATUREPANEL</h3>
+<p>Tracks for the IGV feature panel (see IGV doc).
+Theses tracks will be displayed in the IGV feature panel.</p>
+<ul>
+<li>
+<p>Default: <code>'&lt;Track attributeKey=&quot;Refseq Genes&quot; clazz=&quot;org.broad.igv.track.FeatureTrack&quot; featureVisibilityWindow=&quot;63761233&quot; fontSize=&quot;10&quot; groupByStrand=&quot;false&quot; id=&quot;https://s3.amazonaws.com/igv.org.genomes/hg19/ncbiRefSeq.sorted.txt.gz&quot; name=&quot;Refseq Genes&quot; visible=&quot;true&quot;/&gt;'</code> (Refseq Genes)</p>
+</li>
+<li>
+<p>Examples:</p>
+<ul>
+<li><code>&lt;Track attributeKey=&quot;GC Percentage&quot; autoScale=&quot;false&quot; clazz=&quot;org.broad.igv.track.DataSourceTrack&quot; colorScale=&quot;ContinuousColorScale;0.0;80.0;255,255,255;0,0,178&quot; fontSize=&quot;10&quot; height=&quot;20&quot; id=&quot;http://www.broadinstitute.org/igvdata/annotations/hg19/hg19.gc5base.tdf&quot; name=&quot;GC Percentage&quot; renderer=&quot;HEATMAP&quot; visible=&quot;true&quot; windowFunction=&quot;mean&quot;&gt; &lt;DataRange baseline=&quot;0.0&quot; drawBaseline=&quot;true&quot; flipAxis=&quot;false&quot; maximum=&quot;80.0&quot; minimum=&quot;0.0&quot; type=&quot;LINEAR&quot;/&gt; &lt;/Track&gt;</code></li>
+<li><code>'&lt;Track attributeKey=&quot;Refseq Genes&quot; clazz=&quot;org.broad.igv.track.FeatureTrack&quot; featureVisibilityWindow=&quot;63761233&quot; fontSize=&quot;10&quot; groupByStrand=&quot;false&quot; id=&quot;https://s3.amazonaws.com/igv.org.genomes/hg19/ncbiRefSeq.sorted.txt.gz&quot; name=&quot;Refseq Genes&quot; visible=&quot;true&quot;/&gt;'</code></li>
+<li><code>'&lt;Track attributeKey=&quot;Gencode Genes (v18)&quot; clazz=&quot;org.broad.igv.track.FeatureTrack&quot; featureVisibilityWindow=&quot;1000000&quot; fontSize=&quot;10&quot; groupByStrand=&quot;false&quot; id=&quot;https://s3.amazonaws.com/igv.broadinstitute.org/annotations/hg19/genes/gencode.v18.annotation.sorted.gtf.gz&quot; name=&quot;Gencode Genes (v18)&quot; visible=&quot;true&quot;/&gt;'</code></li>
+</ul>
+</li>
+</ul>
+<h3 id="igv_session_das">IGV_SESSION_DAS</h3>
+<p>URL for the IGV DAS (Distributed Annotation System) server.
+These URLs will be used to access the DAS repositories, and allow to open the generate JSON IGV sessions.</p>
+<ul>
+<li>Default: <code>'http://localhost:4201/static/data/public/repositories'</code></li>
+</ul>
+<h3 id="igv_session_das_repositories">IGV_SESSION_DAS_REPOSITORIES</h3>
+<p>List of DAS repositories to be used by IGV.</p>
+<ul>
+<li>Default: <code>'$IGV_SESSION_DAS/Repository $IGV_SESSION_DAS/Archives $IGV_SESSION_DAS/Favorites'</code></li>
+</ul>
+<h3 id="igv_session_json_tracks_additional">IGV_SESSION_JSON_TRACKS_ADDITIONAL</h3>
+<p>Additional JSON tracks to be added to the IGV session.</p>
+<ul>
+<li>
+<p>Default: <code>''</code> (no additional tracks)</p>
+</li>
+<li>
+<p>Example:</p>
+<pre class="hljs"><code><div><span class="hljs-punctuation">{</span>
+ <span class="hljs-attr">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;bed&quot;</span><span class="hljs-punctuation">,</span>
+ <span class="hljs-attr">&quot;url&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;https://s3.amazonaws.com/igv.org.test/data/gencode.v18.collapsed.bed&quot;</span><span class="hljs-punctuation">,</span>
+ <span class="hljs-attr">&quot;indexURL&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;https://s3.amazonaws.com/igv.org.test/data/gencode.v18.collapsed.bed.idx&quot;</span><span class="hljs-punctuation">,</span>
+ <span class="hljs-attr">&quot;name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Gencode V18&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;annotation&quot;</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">&quot;displayMode&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;COLLAPSED&quot;</span>
+<span class="hljs-punctuation">}</span>
+</div></code></pre>
+</li>
+</ul>
+<h2 id="folders">Folders</h2>
+<p>Folders used for the analysis.
+These folders will be automatically created if not exist.
+The main folder is defined by STARK_FOLDER_MAIN variable, and all other folders are defined as subfolders of this main folder.
+Folders can be redefined as absolute path, but we suggest to keep them as subfolders of the main folder for better organization and management of the data.
+Folders like tools and databases contains tools and databases needed for the analysis, and will be used by the rules of the analysis.
+Folders like input and output are used to store input data and results of the analysis, and will be used by the rules of the analysis.</p>
+<h3 id="stark_folder_main">STARK_FOLDER_MAIN</h3>
+<p>This is the main folder for the analysis, and all other folders are defined as subfolders of this main folder.
+This folder will be automatically created if not exist, either during setup (for folders tools and databases) or during the analysis to store all the data and results of the analysis.</p>
+<ul>
+<li>Default: <code>&quot;/STARK&quot;</code></li>
+</ul>
+<h3 id="folder_tools">FOLDER_TOOLS</h3>
+<p>All tools needed for STARK, and more, including STARK.
+This folder will be automatically created during setup if not exist, and will be used to store all the tools needed for the analysis, including STARK itself.
+This folder will be used by the rules of the analysis to access the tools needed for the analysis.</p>
+<ul>
+<li>Default: <code>&quot;$STARK_FOLDER_MAIN/tools&quot;</code></li>
+</ul>
+<h3 id="folder_databases">FOLDER_DATABASES</h3>
+<p>All databases needed for STARK, and more.
+This folder will be automatically created during setup if not exist, and will be used to store all the databases needed for the analysis, including reference genomes and mandatory databases for calling and annotation.
+Folder structure is important for the rules of the analysis to access the databases needed for the analysis, and to automatically detect the reference genome and mandatory databases for calling and annotation depending on the assembly defined in the manifest file (configured in the SampleSheet of each run), if any.</p>
+<p>Folder structuer format: <code>$FOLDER_DATABASES/&lt;DATABASE_NAME&gt;/&lt;DATABASE_RELEASE&gt;/&lt;ASSEMBLY&gt;/&lt;DATABASE_FILE&gt;</code>.</p>
+<ul>
+<li>Default: <code>&quot;$STARK_FOLDER_MAIN/databases&quot;</code></li>
+</ul>
+<p>Examples of folder structure:</p>
+<ul>
+<li><code>$FOLDER_DATABASES/genomes/current/hg19/hg19.fa</code></li>
+<li><code>$FOLDER_DATABASES/dbsnp/latest/hg19/dbsnp_138.hg19.vcf.gz</code></li>
+<li><code>$FOLDER_DATABASES/dbnsfp/4.4a/hg19/dbNSFP4.4a.hg19.parquet</code></li>
+</ul>
+<h3 id="folder_input">FOLDER_INPUT</h3>
+<p>All input data for the analysis, including raw data and metadata, should be stored in this folder. This folder will be used by the rules of the analysis to access the input data needed for the analysis.
+Folder structure is important for the rules of the analysis to access the input data needed for the analysis, and to automatically detect the input data needed for the analysis depending on the manifest file (configured in the SampleSheet of each run), if any.</p>
+<ul>
+<li>Default: <code>&quot;$STARK_FOLDER_MAIN/input&quot;</code></li>
+</ul>
+<h3 id="folder_run">FOLDER_RUN</h3>
+<p>This folder will be used by the rules of the analysis to access the raw data of each run (from the sequencer, such as Illumina), organized as subfolder for each run (e.g. <code>$FOLDER_RUN/&lt;RUN_NAME&gt;/</code>), and to automatically detect the raw data information of each run on a SampleSheet file, or a analysis JSON file.</p>
+<ul>
+<li>Default: <code>&quot;$FOLDER_INPUT/runs&quot;</code></li>
+</ul>
+<h3 id="folder_manifest">FOLDER_MANIFEST</h3>
+<p>This folder will be used by the rules of the analysis to access the manifest (Illumina format), design (BED format) and gene panels (BED format) files of each run (e.g. <code>$FOLDER_MANIFEST/my_manifest.manifest</code>, <code>$FOLDER_MANIFEST/my_design.bed</code>, <code>$FOLDER_MANIFEST/my_gene_panel.genes</code>).
+These files are automatically detected within the SampleSheet of the run, or the analysis JSON file of the run.</p>
+<ul>
+<li>Default: <code>&quot;$FOLDER_INPUT/manifests&quot;</code></li>
+</ul>
+<h3 id="folder_pedigree">FOLDER_PEDIGREE</h3>
+<p>This folder will be used by the rules of the analysis to access the pedigree file (PED format) of each run (e.g. <code>$FOLDER_PEDIGREE/my_pedigree.ped</code>).
+These files are automatically detected within the SampleSheet of the run, or the analysis JSON file of the run, by using GROUP and PROJECT defined by the application used for the run.</p>
+<ul>
+<li>Default: <code>&quot;$FOLDER_INPUT/pedigree&quot;</code></li>
+</ul>
+<h3 id="folder_output">FOLDER_OUTPUT</h3>
+<p>This folder will be used to store all the results of the analysis, including intermediate files and final results.
+Subfolders for results, demultiplexing, log and tmp can be defined as absolute path, but we suggest to keep them as subfolders of the output folder for better organization and management of the data.</p>
+<ul>
+<li>Default: <code>&quot;$STARK_FOLDER_MAIN/output&quot;</code></li>
+</ul>
+<h3 id="folder_demultiplexing">FOLDER_DEMULTIPLEXING</h3>
+<p>This folder will be used by the rules of the analysis to store the results of the demultiplexing step (using SampleSheet file), including the demultiplexed FASTQ files and the demultiplexing report.</p>
+<ul>
+<li>Default: <code>&quot;$FOLDER_OUTPUT/demultiplexing&quot;</code></li>
+</ul>
+<h3 id="folder_results">FOLDER_RESULTS</h3>
+<p>This folder will be used to store all the results of the analysis, including intermediate files and final results (files such as BAM, VCF, metrics, annotation files, and more).</p>
+<ul>
+<li>Default: <code>&quot;$FOLDER_OUTPUT/results&quot;</code></li>
+</ul>
+<h3 id="folder_log">FOLDER_LOG</h3>
+<p>This folder will be used by the rules of the analysis to store log files of the analysis.</p>
+<ul>
+<li>Default: <code>&quot;$FOLDER_OUTPUT/log&quot;</code> (Commented out by default)</li>
+</ul>
+<h3 id="folder_tmp">FOLDER_TMP</h3>
+<p>This folder will be used by the rules of the analysis to store temporary files of the analysis, and to store temporary files of the tools used for the analysis (e.g. temporary files of GATK tools).</p>
+<ul>
+<li>Default: <code>&quot;$FOLDER_OUTPUT/tmp&quot;</code> (Commented out by default)</li>
+</ul>
+<h3 id="folder_repository">FOLDER_REPOSITORY</h3>
+<p>This folder will be used by the rules of the analysis to copy some results of the analysis in a repository folder, organized by group and project (e.g. <code>$FOLDER_REPOSITORY/&lt;GROUP&gt;/&lt;PROJECT&gt;/</code>), and to automatically detect the files to copy in the repository folder depending on application.
+For a full run analysis, repository folder is automatically defined with group pand project structure. For other analyses, such as a single sample analysis, repository folder is empty, and no copy is performed.
+Leave it blank for no copy in repository folder.</p>
+<ul>
+<li>Default: <code>&quot;$FOLDER_OUTPUT/repository&quot;</code> (for run analysis) or <code>&quot;&quot;</code> (for single sample analysis)</li>
+</ul>
+<h3 id="folder_archives">FOLDER_ARCHIVES</h3>
+<p>This folder will be used by the rules of the analysis to copy some results of the analysis in a archives folder, organized by group and project (e.g. <code>$FOLDER_ARCHIVES/&lt;GROUP&gt;/&lt;PROJECT&gt;/</code>), and to automatically detect the files to copy in the archives folder depending on application.
+For a full run analysis, archives folder is automatically defined with group pand project structure. For other analyses, such as a single sample analysis, archives folder is empty, and no copy is performed.
+Leave it blank for no copy in archives folder.</p>
+<ul>
+<li>Default: <code>&quot;$FOLDER_OUTPUT/archives&quot;</code> (for run analysis) or <code>&quot;&quot;</code> (for single sample analysis)</li>
+</ul>
+<h3 id="folder_favorites">FOLDER_FAVORITES</h3>
+<p>This folder will be used by the rules of the analysis to copy some results of the analysis in a favorites folder, organized by group and project (e.g. <code>$FOLDER_FAVORITES/&lt;GROUP&gt;/&lt;PROJECT&gt;/</code>), and to automatically detect the files to copy in the favorites folder depending on application.
+For a full run analysis, favorites folder is automatically defined with group pand project structure. For other analyses, such as a single sample analysis, favorites folder is empty, and no copy is performed.
+Leave it blank for no copy in favorites folder.</p>
+<ul>
+<li>
+<p>Default: <code>&quot;&quot;</code></p>
+</li>
+<li>
+<p>Configurations:</p>
+<ul>
+<li>To NOT use favorites folder: <code>FOLDER_FAVORITES=</code></li>
+<li>To copy favorites within repository folder: <code>FOLDER_FAVORITES=$FOLDER_REPOSITORY</code></li>
+<li>To copy favorites within default favorites folder: <code>FOLDER_FAVORITES=$FOLDER_OUTPUT/favorites</code></li>
+</ul>
+</li>
+</ul>
+<h2 id="supplementary-variables">Supplementary variables</h2>
+<p>This section can be used to define supplementary variables that are not directly available
+in the main configuration sections, but in rules or scripts used during the analysis.
+Theses variables need to be exported to be available in the environment of the analysis.</p>
+<ul>
+<li>
+<p>Format: <code>export MY_SUPPLEMENTARY_VARIABLE=&quot;value&quot;</code></p>
+</li>
+<li>
+<p>Example:</p>
+<ul>
+<li><code>export GATKHC_FILTERS_FLAGS=&quot; --include 'FORMAT/DP&gt;=10' --sort&quot;</code> (Change filter after GATK Haplotype Genotyper call)</li>
+</ul>
+</li>
+</ul>
+
+</body>
+</html>

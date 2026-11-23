@@ -1,9 +1,10 @@
 ############################
 # MUTECT Calling Rules
-# Release: 1.2.0
-# Date: 03/11/2026
 # Author: Antony Le Bechec
 ############################
+# Release
+MK_RELEASE=1.2.0
+MK_DATE=03/11/2026
 
 # Release note
 # 0.9.2-03/02/2023: Initial release of MuTect calling rules.
@@ -16,7 +17,7 @@
 # MUTECT2 #
 ###########
 
-# MUTECT2 Flags
+# Flags
 # This variable can be defined directly on Apps
 MUTECT2_FLAGS?= \
 	$(VCFDBSNP_WITH_GATK) \
@@ -29,7 +30,7 @@ MUTECT2_FLAGS?= \
 	--disable-read-filter MateOnSameContigOrNoMappedMateReadFilter \
 	--verbosity ERROR
 
-# MUTECT2 filters Flags
+# Filters Flags
 # This variable can be defined directly on Apps
 MUTECT2_FILTERS_FLAGS?= \
 	--exclude-genotypes '0/0' \
@@ -39,7 +40,7 @@ MUTECT2_FILTERS_FLAGS?= \
 	--sort
 
 
-# MUTECT2 target rule
+# Rule
 %.MuTect2$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed %.bam.chroms
 	# List of vcf and stats files to be generated per chromosome
 	cut -f1 $*.bam.chroms | sed 's|.*|$@.split.&.vcf.gz|' | tr '\n' ' ' > $@.split.vcfs.list;
@@ -79,13 +80,6 @@ MUTECT2_FILTERS_FLAGS?= \
 	rm -rf $@.tmp* $@.split* $@.idx $@.tbi
 
 
-# MUTECT2 Release documentation
-
-RELEASE_COMMENT := "\#\# CALLING MuTect2: MuTect2 tool identify variants from aligned BAM"
-RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
-
-RELEASE_COMMENT := "\#\# CALLING: MUTECT2 with GATK4 in parallel to identify somatic variants and generate *.MuTect2.vcf files, with MuTect2 and filtrations. Parameters MUTECT2_FLAGS='$(MUTECT2_FLAGS)', MUTECT2_FILTERS_FLAGS='$(MUTECT2_FILTERS_FLAGS)' "
-RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
-
-PIPELINES_COMMENT := "CALLER:MuTect2:MuTect2 with GATK4 - by default with MuTect2 and filtration:MUTECT2_FLAGS='$(MUTECT2_FLAGS)', MUTECT2_FILTERS_FLAGS='$(MUTECT2_FILTERS_FLAGS)' "
-PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
+# Documentation
+$(file >>$(RELEASE_INFOS),## CALLER MuTect2 '$(MK_RELEASE)': MuTect2 caller with GATK4 in parallel to identify somatic variants and generate *.MuTect2.vcf files, with MuTect2 and filtrations. Parameters MUTECT2_FLAGS='$(MUTECT2_FLAGS)', MUTECT2_FILTERS_FLAGS='$(MUTECT2_FILTERS_FLAGS)')
+$(file >>$(PIPELINES_INFOS),CALLER:MuTect2:MuTect2 with GATK4 - by default with MuTect2 and filtration:MUTECT2_FLAGS='$(MUTECT2_FLAGS)', MUTECT2_FILTERS_FLAGS='$(MUTECT2_FILTERS_FLAGS)')

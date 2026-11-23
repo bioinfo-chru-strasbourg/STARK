@@ -510,6 +510,16 @@ echo ""
 # Search application
 ENV=$(cd $SCRIPT_DIR && CONFIG_APP=$CONFIG_APP && find_app "$APP" "$STARK_FOLDER_APPS")
 
+# Check number of environment files found compared to expected Application
+NUM_ENV=$(echo "$ENV" | tr "," " " | wc -w)
+NUM_APP=$(echo "$APP" | tr "," " " | wc -w)
+if [ "$NUM_ENV" -ne "$NUM_APP" ]; then
+	echo "["$(timestamp)" | ERROR] Number of environment files ($NUM_ENV) does not match number of applications ($NUM_APP) for application '$APP'"
+	echo "["$(timestamp)" | ERROR] Environment files found: $ENV"
+	echo "["$(timestamp)" | ERROR] Applications specified: $APP"
+	exit 1
+fi
+
 # Debug
 (($DEBUG)) && echo "["$(timestamp)" | DEBUG] Application '$APP' configuration loaded from '$ENV' environment file.";
 
@@ -519,7 +529,7 @@ if [ "$ENV" == "" ] && [ "$APP" != "" ]; then
 	echo "["$(timestamp)" | ERROR] Application '$APP' configuration file not found!";
 	exit 1
 elif [ "$ENV" != "" ] && [ "$APP" != "" ]; then
-	echo "["$(timestamp)" | INFO] Application '$APP' found and loading ('$ENV')";
+	(($NO_HEADER)) || echo "["$(timestamp)" | INFO] Application '$APP' found and loading ('$ENV')";
 	source_app "$APP" "$STARK_FOLDER_APPS" 1
 fi
 
@@ -615,7 +625,6 @@ if (($APPLICATIONS_INFOS)); then
 	echo "#[INFO] ######################"
 	echo "#[INFO] #### APPLICATIONS ####"
 	echo "#[INFO] ######################"
-	echo ""
 
 	RAW_LIST="";
 	FOLDER_RUN_ORIGINAL=$FOLDER_RUN
@@ -796,7 +805,8 @@ if (($APPLICATIONS_INFOS)); then
 				echo "#[INFO]    POST CALLING STEPS     $POST_CALLING_STEPS "
 				echo "#[INFO]    POST ANNOTATION STEPS  $POST_ANNOTATION_STEPS "
 			fi;
-			if (($APPLICATIONS_INFOS_ALL)); then
+			# Print all variables for the current application if requested
+			if (($APPLICATIONS_INFOS_ALL)) && [ "$APP_TEST" == "" ]; then
 				echo "#[INFO]    ALL VARIABLES"
 				if [ "$APP_TYPE" == "APP" ]; then
 					(env -i bash -c "export APP=$APP && source /tool/config/config.app && source_app $APP && env | awk '{print \"#[INFO]        \"\$0}'")
@@ -810,6 +820,13 @@ if (($APPLICATIONS_INFOS)); then
 
 	done;
 	RAW_LIST=$(echo $RAW_LIST | sed "s/ /\n/gi" | sort | uniq | sed "s/\n/ /gi" );
+
+	# Print all variables for the test application if specified
+	if (($APPLICATIONS_INFOS_ALL)) && [ "$APP_TEST" != "" ]; then
+		echo ""
+		echo "#[INFO] ALL VARIABLES"
+		(env -i bash -c "export APP=$APP_TEST && source /tool/config/config.app && source_app $APP_TEST && env -0 | tr '\n\0' ' \n' | sort | awk '{print \"#[INFO]    \"\$0}'")
+	fi;
 
 	echo "";
 
@@ -854,9 +871,9 @@ fi;
 if (($TOOLS_INFOS)); then
 
 	echo ""
-	echo "####################"
-	echo "#### TOOLS LIST ####"
-	echo "####################"
+	echo "###############"
+	echo "#### TOOLS ####"
+	echo "###############"
 	echo ""
 	for T in $TOOLS_LIST; do
 		VAR_VERSION=$T"_VERSION";
@@ -877,18 +894,14 @@ fi;
 if (($DATABASES_INFOS)); then
 
 	echo ""
-	echo "########################"
-	echo "#### DATABASES LIST ####"
-	echo "########################"
+	echo "####################"
+	echo "#### DATABASES  ####"
+	echo "####################"
+	echo ""
 	for D in $DATABASES_LIST; do
 		VAR_D=$D;
 		echo "## $D: "${!VAR_D}"";
 	done
-
-	echo ""
-	echo "##########################"
-	echo "#### DATABASES CONFIG ####"
-	echo "##########################"
 	for DC in $DATABASES_CONFIG_LIST; do
 		VAR_DC=$DC;
 		echo "## $DC: "${!VAR_DC}"";

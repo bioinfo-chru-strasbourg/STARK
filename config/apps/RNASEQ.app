@@ -18,19 +18,19 @@ APP_PROJECT="UNKNOWN"
 # ANALYSIS PARAMETERS
 #######################
 
-# Option to keep raw BAM file from STAR (with splitNcigar for SNV calling). This option is useful to keep BAM without post-alignment steps (e.g. realignment, recalibration...).
-# Default: False (0)
-#STAR_KEEP_RAW_BAM=0
+# PIPELINES
+# Use STAR to align RNA-Seq data and then different callers to detect mutations (Fusions and SNVs/Indels)
+PIPELINES="star.Arriba.howard star.STARFusion.howard star.deepvariant.howard star.gatkHC.howard"
 
 # POST ALIGNMENT STEPS 
 # No need to realign because of STAR alignemnt
-# POST_ALIGNMENT_STEPS="sorting markduplicates realignment recalibration compress" # DEFAULT
+# Need splitncigar for SNV calling
 POST_ALIGNMENT_STEPS="sorting splitncigar markduplicates recalibration compress"
 
-# PIPELINES
-# Use STAR to align RNA-Seq data and then different callers to detect mutations (Fusions and SNVs/Indels)
-PIPELINES="star.Arriba.howard star.STARFusion.howard star.gatkHC.howard"
+# Option to keep raw BAM file from STAR (with splitNcigar for SNV calling). This option is useful to keep BAM without post-alignment steps (e.g. realignment, recalibration...).
+# Default: False (0)
+STAR_KEEP_RAW_BAM=0
 
-# POST_CALLING_MERGING_STEPS
-# No variant filtration, because of dealing only with SNV and InDels (not Fusions)
-POST_CALLING_MERGING_STEPS="sorting normalization variantrecalibration"
+# CTAT_DATABASES_GENE_SOURCE can be "refgene" or "gencode". If "refgene" the gene annotation used for CTAT lib will be based on refGene (NCBI RefSeq) annotation. If "gencode" the gene annotation used for CTAT lib will be based on gencode annotation. The choice of gene annotation can impact the fusion detection results, especially for fusions involving genes that are not well annotated in refGene but are annotated in gencode. By default, CTAT_DATABASES_GENE_SOURCE is set to "refgene" because refGene annotation is more conservative and less likely to include dubious gene models that could lead to false positive fusion calls. However, if you want to use gencode annotation for CTAT lib, you can set CTAT_DATABASES_GENE_SOURCE to "gencode". Note that if you change the gene source for CTAT lib, you should also change the gene source for STAR fusion annotation (STAR_FUSION_GENE_SOURCE) to the same value to ensure consistency between fusion detection and annotation.
+# Either "refgene" or "gencode"
+CTAT_DATABASES_GENE_SOURCE="refgene"

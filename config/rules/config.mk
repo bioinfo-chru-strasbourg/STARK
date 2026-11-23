@@ -1,10 +1,10 @@
 ##############################
 # CONFIGURATION Rules
-# Release: 0.9.3
-# Date: 25/06/2025
 # Author: Antony Le Bechec
 ##############################
-
+# Release
+MK_RELEASE=0.9.3
+MK_DATE=25/06/2025
 
 NGSscripts?=$(NGS_SCRIPTS)
 NGSEnv?=/tool/
@@ -47,7 +47,6 @@ JAVA?=java
 TABIX?=tabix
 BGZIP?=bgzip
 GZ?=gzip
-#HOWARD?=HOWARD
 HOWARD?=howard
 SNPEFF?=snpEff.jar
 VARSCAN?=varscan.jar
@@ -82,14 +81,6 @@ DBFOLDER?=/STARK/databases
 VCFDBSNP?=$(DBFOLDER)/snp138.vcf.gz
 VCFDBSNP_WITH_GATK?=$(shell if (( $(USE_VCFDBSNP_WITH_GATK) )); then echo " --dbsnp $(VCFDBSNP) "; fi;)
 KNOWN_SITES?=$(VCFDBSNP)
-# VCFDBSNP137VCF?=$(DBFOLDER)/dbsnp_137.hg19.vcf
-# VCF1000G?=$(DBFOLDER)/1000G_phase1.indels.hg19.vcf
-# VCFMILLS1000G?=$(DBFOLDER)/Mills_and_1000G_gold_standard.indels.hg19.sites.vcf
-# COSMIC?=$(DBFOLDER)/COSMIC.CodingMuts.vcf
-# KNOWN_ALLELES?=$(VCFMILLS1000G)
-# HAPMAP?=$(DBFOLDER)/hapmap_3.3.hg19.sites.vcf
-# OMNI?=$(DBFOLDER)/1000G_omni2.5.hg19.vcf
-# PHASE1_1000G?=$(DBFOLDER)/1000G_phase1.snps.high_confidence.hg19.sites.vcf
 
 # HOWARD Configuration
 HOWARD_CONFIG_OPTIONS?=--config=$(HOWARD_CONFIG) --threads=$(THREADS) --verbosity=DEBUG
@@ -101,7 +92,6 @@ HOWARD_PRIORITIZATION_CONFIG_OPTIONS?=$(shell if [ "$(HOWARD_PRIORITIZATION_CONF
 HOWARD_CALCULATION_CONFIG_OPTIONS?=$(shell if [ "$(HOWARD_CALCULATION_CONFIG)" != "" ] && [ -f "$(HOWARD_CALCULATION_CONFIG)" ]; then echo " --calculation_config=$(HOWARD_CALCULATION_CONFIG) "; fi;)
 
 # HOWARD DejaVu Configuration
-#--config=$(HOWARD_CONFIG) --threads=$(THREADS) --verbosity=DEBUG
 HOWARD_DEJAVU_CONFIG_OPTIONS?=$(HOWARD_CONFIG_OPTIONS) 
 
 
@@ -129,13 +119,9 @@ POST_ALIGNMENT?=
 
 # POST_CALLING
 POST_CALLING?=
-#.normalization.sorting
-#.filtration.recalibration
 
 # POST_ANNOTATION
 POST_ANNOTATION?=
-#.normalization.sorting
-#.filtration.recalibration
 
 # COLORS RGB
 PASS_COLOR_RGB?=0,255,0
@@ -144,59 +130,31 @@ FAIL_COLOR_RGB?=255,0,0
 MISS_COLOR_RGB?=139,0,0
 FILTERED_COLOR_RGB?=252,161,6
 
-# HEADER
-RELEASE_CMD := $(shell echo "\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#" >> $(RELEASE_INFOS) )
-RELEASE_CMD := $(shell echo "\# $(ENV_NAME) - $(ENV_DESCRIPTION)" >> $(RELEASE_INFOS) )
-RELEASE_CMD := $(shell echo "\# RELEASE $(ENV_RELEASE) [$(ENV_DATE)]" >> $(RELEASE_INFOS) )
-RELEASE_CMD := $(shell echo "\# AUTHORS $(ENV_AUTHOR)" >> $(RELEASE_INFOS) )
-RELEASE_CMD := $(shell echo "\# COPYRIGHT $(ENV_COPYRIGHT)" >> $(RELEASE_INFOS) )
-RELEASE_CMD := $(shell echo "\# LICENCE $(ENV_LICENCE)" >> $(RELEASE_INFOS) )
-RELEASE_CMD := $(shell echo "\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#" >> $(RELEASE_INFOS) )
-
-
-# RELEASE
-RELEASE_CMD := $(shell echo "\#\# STARK_RELEASE: $(ENV_RELEASE)" >> $(RELEASE_INFOS) )
-RELEASE_CMD := $(shell echo "\#\# APP_NAME: $(APP_NAME)" >> $(RELEASE_INFOS) )
-#RELEASE_CMD := $(shell echo "\#\# APP_RELEASE: $(APP_RELEASE)" >> $(RELEASE_INFOS) )
-
-# GROUP/PROJECT
-#RELEASE_CMD := $(shell echo "\#\# GROUP: $(GROUP)" >> $(RELEASE_INFOS) )
-#RELEASE_CMD := $(shell echo "\#\# PROJECT: $(PROJECT)" >> $(RELEASE_INFOS) )
-
 # INFRASTRUCTURE
-RELEASE_CMD := $(shell echo "\#\# INFRASTRUCTURE:" >> $(RELEASE_INFOS) )
-RELEASE_CMD := $(shell echo "\#\#    THREADS=$(THREADS)" >> $(RELEASE_INFOS) )
-RELEASE_CMD := $(shell echo "\#\#    THREADS_BY_SAMPLE=$(THREADS_BY_SAMPLE)" >> $(RELEASE_INFOS) )
-RELEASE_CMD := $(shell echo "\#\#    THREADS_BY_PIPELINE=$(THREADS_BY_PIPELINE)" >> $(RELEASE_INFOS) )
-RELEASE_CMD := $(shell echo "\#\#    THREADS_BY_ALIGNER=$(THREADS_BY_ALIGNER)" >> $(RELEASE_INFOS) )
-RELEASE_CMD := $(shell echo "\#\#    THREADS_BY_CALLER=$(THREADS_BY_CALLER)" >> $(RELEASE_INFOS) )
-RELEASE_CMD := $(shell echo "\#\#    MEMORY=$(MEMORY)" >> $(RELEASE_INFOS) )
-#RELEASE_CMD := $(shell echo "\#\# CONFIG FILES:" >> $(RELEASE_INFOS) )
-#RELEASE_CMD := $(shell echo "\#\#    CONFIG=$(CONFIG)" >> $(RELEASE_INFOS) )
-#RELEASE_CMD := $(shell echo "\#\#    FUNCTIONS=$(FUNCTIONS)" >> $(RELEASE_INFOS) )
-#RELEASE_CMD := $(shell echo "\#\#    PARAM=$(PARAM)" >> $(RELEASE_INFOS) )
-
-
-# RELEASE_CMD := $(shell echo "" >> $(RELEASE_INFOS) )
-
-# # APPLICATION
-# RELEASE_CMD := $(shell $(STARK_FOLDER_BIN)/STARK --applications_infos --app="$(ENV)" >> $(RELEASE_INFOS) )
-
-# # TOOLS
-# #RELEASE_CMD := $(shell echo "\#\# TOOLS INFOS" >> $(RELEASE_INFOS) )
-# RELEASE_CMD := $(shell $(STARK_FOLDER_BIN)/STARK --tools_infos --app="$(ENV)" >> $(RELEASE_INFOS) )
-
-# # DATABASES
-# #RELEASE_CMD := $(shell echo "\#\# DATABASES INFOS" >> $(RELEASE_INFOS) )
-# RELEASE_CMD := $(shell $(STARK_FOLDER_BIN)/STARK --databases_infos --app="$(ENV)" >> $(RELEASE_INFOS) )
-# RELEASE_CMD := $(shell echo "" >> $(RELEASE_INFOS) )
-
-# # APPLICATION ALL
-# RELEASE_CMD := $(shell $(STARK_FOLDER_BIN)/STARK --applications_infos_all --app="$(ENV)" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "########################" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "#### INFRASTRUCTURE ####" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "########################" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "## MEMORY=$(MEMORY)" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "## MEMORY_BY_SAMPLE=$(MEMORY_BY_SAMPLE)" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "## MEMORY_BY_PIPELINE=$(MEMORY_BY_PIPELINE)" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "## MEMORY_BY_ALIGNER=$(MEMORY_BY_ALIGNER)" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "## MEMORY_BY_CALLER=$(MEMORY_BY_CALLER)" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "## THREADS=$(THREADS)" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "## THREADS_BY_SAMPLE=$(THREADS_BY_SAMPLE)" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "## THREADS_BY_PIPELINE=$(THREADS_BY_PIPELINE)" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "## THREADS_BY_ALIGNER=$(THREADS_BY_ALIGNER)" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "## THREADS_BY_CALLER=$(THREADS_BY_CALLER)" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "## THREADS_COPY=$(THREADS_COPY)" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "## THREADS_LOADING=$(THREADS_LOADING)" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "## THREADS_WRITING=$(THREADS_WRITING)" >> $(RELEASE_INFOS) )
 
 
 # OTHER INFORMATIONS
 RELEASE_CMD := $(shell echo "" >> $(RELEASE_INFOS) )
-RELEASE_CMD := $(shell echo "\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#" >> $(RELEASE_INFOS) )
-RELEASE_CMD := $(shell echo "\#\#\#\# INFORMATIONS ON RULES \#\#\#\#" >> $(RELEASE_INFOS) )
-RELEASE_CMD := $(shell echo "\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#\#" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "###############" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "#### RULES ####" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "###############" >> $(RELEASE_INFOS) )
+RELEASE_CMD := $(shell echo "" >> $(RELEASE_INFOS) )

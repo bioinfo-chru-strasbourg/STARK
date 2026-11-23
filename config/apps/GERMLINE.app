@@ -1,9 +1,9 @@
 #!/bin/bash
-## STARK application GERMLINE
 
 # DEFAULT ENV
 ######################
 source_app $CONFIG_DEFAULT_APP
+
 
 # APPLICATION INFOS
 #####################
@@ -12,6 +12,7 @@ APP_RELEASE="1.0"
 APP_DESCRIPTION="Application to detect germline mutations in gene panel sequencing data"
 APP_GROUP="GENETIC"
 APP_PROJECT="GERMLINE"
+
 
 # ANALYSIS PARAMETERS
 #######################

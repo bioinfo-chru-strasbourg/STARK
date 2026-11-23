@@ -1,17 +1,17 @@
 #!/bin/bash
-## STARK application NO_ANNOTATION
 
 # DEFAULT ENV
 ######################
+# No default environment is sourced for this plugapp
 #source $CONFIG_DEFAULT_APP
+
 
 # APPLICATION INFOS
 #####################
 APP_NAME="NO_ANNOTATION"
 APP_RELEASE="1.0"
 APP_DESCRIPTION="PlugAPP to disable annotation and minimalize calculation, but keep prioritization (if defined)"
-#APP_GROUP=""
-#APP_PROJECT=""
+
 
 # ANALYSIS PARAMETERS
 #######################
@@ -19,7 +19,6 @@ APP_DESCRIPTION="PlugAPP to disable annotation and minimalize calculation, but k
 # METRICS SNPEFF (default 0)
 # Generate snpEff variant metrics from VCF
 METRICS_SNPEFF=0
-
 
 # Report Sections
 REPORT_SECTIONS="results_summary sequencing_mapping depth coverage variant_stats annex_coverage annex_depth annex_genes_coverage"

@@ -3,14 +3,30 @@
 # Authoring : Thomas LAVAUX
 ############################
 # Release
-
-MK_RELEASE=0.2.0.0
-MK_DATE=12/09/2021
+MK_RELEASE=1.0.0
+MK_DATE=12/11/2026
 
 ## Release note
 # 0.1.0.0-12/12/2020 : DEV version
 # 0.2.0.0-12/09/2021 : Pre-Prod version
+# 1.0.0-12/11/2026 : Add GENCORE_FLAGS for gencore configuration
 
+
+###########
+# Gencore #
+###########
+
+# Flags
+GENCORE_FLAGS?= \
+	$(GENCORE_SUP_READS) \
+	$(GENCORE_SCORE_THREESHOLD) \
+	$(GENCORE_DIFF_THREESHOLD) \
+	$(GENCORE_RATIO_THREESHOLD) \
+	$(GENCORE_QUAL_THREESHOLD) \
+	$(GENCORE_COVERAGE_SAMPLING)
+
+
+# Rule
 %.bam: %.gencore.bam %.gencore.bam.bai %.gencore.design.bed 
 	# gencore is a tool for fast and powerful deduplication for paired-end next-generation sequencing
 	mkdir -p $<.metrics;
@@ -22,7 +38,7 @@ MK_DATE=12/09/2021
 		ln -s $< $@.tmp.preformatted.bam; \
 	fi;
 	# gencore -i input.sorted.bam -o output.bam -r hg19.fasta -b test.bed
-	$(GENCORE) -i $@.tmp.preformatted.bam -o $@.tmp.gencore.bam -r $(GENOME) -b $*.gencore.design.bed -j $<.metrics/$(*F).gencore.metrics.json -h $<.metrics/$(*F).gencore.metrics.html $(GENCORE_SUP_READS) $(GENCORE_SCORE_THREESHOLD) $(GENCORE_DIFF_THREESHOLD) $(GENCORE_RATIO_THREESHOLD) $(GENCORE_QUAL_THREESHOLD) $(GENCORE_QUAL_THREESHOLD);
+	$(GENCORE) -i $@.tmp.preformatted.bam -o $@.tmp.gencore.bam -r $(GENOME) -b $*.gencore.design.bed -j $<.metrics/$(*F).gencore.metrics.json -h $<.metrics/$(*F).gencore.metrics.html $(GENCORE_FLAGS);
 	# reformat BAM TODO
 	if [ "$$($(SAMTOOLS) view $@.tmp.gencore.bam | head -n1)" != "$$($(SAMTOOLS) view $@.tmp.gencore.bam | head -n1 | awk -v INPUT_FORMAT=BAM -v UMI_REFORMAT=1 -v UMI_TAG=1 -v UMI_SEP=- -f $(FASTQ_CLEAN_HEADER))" ]; then \
 		$(SAMTOOLS) view -h $@.tmp.gencore.bam | awk -v INPUT_FORMAT=BAM -v UMI_REFORMAT=1 -v UMI_TAG=1 -v UMI_SEP=- -f $(FASTQ_CLEAN_HEADER) | $(SAMTOOLS) view --bam --fast > $@.tmp.reformatted.bam; \
@@ -35,10 +51,6 @@ MK_DATE=12/09/2021
 	-rm $< $@.tmp.* ;
 
 
-
-
-RELEASE_COMMENT := "\#\# GENCORE : gencore is a tool for fast and powerful deduplication for paired-end next-generation sequencing"
-RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
-
-PIPELINES_COMMENT := "POST_ALIGNMENT:gencore:gencore is a tool for fast and powerful deduplication for paired-end next-generation sequencing"
-PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
+# Documentation
+$(file >>$(RELEASE_INFOS),## POST_ALIGNMENT gencore '$(MK_RELEASE)': gencore is a tool for fast and powerful deduplication for paired-end next-generation sequencing. Parameters GENCORE_FLAGS='$(GENCORE_FLAGS)')
+$(file >>$(PIPELINES_INFOS),POST_ALIGNMENT:gencore:deduplication for paired-end next-generation sequencing:GENCORE_FLAGS='$(GENCORE_FLAGS)')

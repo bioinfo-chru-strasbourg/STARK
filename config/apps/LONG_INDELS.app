@@ -1,5 +1,4 @@
 #!/bin/bash
-## STARK application LONG_INDELS
 # Detect long indels in gene panel sequencing data
 # Use bwamem for alignment and GATK HaplotypeCaller, GATK UnifiedGenotyper, or MuTect2 for variant calling
 # Disable MuTect2 to avoid calling somatic variants in this analysis

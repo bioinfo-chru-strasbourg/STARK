@@ -1,9 +1,10 @@
 ############################
 # GATK Calling Rules
-# Release: 1.1.0
-# Date: 03/11/2026
 # Author: Antony Le Bechec
 ############################
+# Release
+MK_RELEASE=1.1.0
+MK_DATE=03/11/2026
 
 # Release note
 # 0.9.1beta-10/03/2015: change genome reference location, in the file %.genome
@@ -28,7 +29,7 @@
 # GATK UnifiedGenotyper #
 ########################
 
-# GATKUG Flags
+# Flags
 # VCFDBSNP_WITH_GATK variable depends on USE_VCFDBSNP_WITH_GATK setting on Apps
 # INTERVAL_PADDING variable defines the padding around intervals for all callers, settings on Apps
 # This variable can be defined directly on Apps
@@ -47,7 +48,7 @@ GATKUG_FLAGS?= \
 	--min_base_quality_score 17 \
 	--allow_potentially_misencoded_quality_scores
 
-# GATKUG filters Flags
+# Filters Flags
 # This variable can be defined directly on Apps
 GATKUG_FILTERS_FLAGS?= \
 	--exclude-genotypes '0/0' \
@@ -57,7 +58,7 @@ GATKUG_FILTERS_FLAGS?= \
 	--sort
 
 
-# GATKUG target rule
+# Rule
 %.gatkUG$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed %.bam.chroms
 	# List of vcf files to be generated per chromosome
 	cut -f1 $*.bam.chroms | sed 's|.*|$@.split.&.vcf.gz|' | tr '\n' ' ' > $@.split.vcfs.list;
@@ -89,13 +90,6 @@ GATKUG_FILTERS_FLAGS?= \
 	rm -rf $@.tmp* $@.split* $@.idx $@.tbi
 
 
-# GATKUG Release documentation
-
-RELEASE_COMMENT := "\#\# CALLING GATK Unified Genotyper: GATK Unified Genotyper tool identify variants from aligned BAM"
-RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
-
-RELEASE_COMMENT := "\#\# CALLING GATKUG identify variants and generate *.gatkUG.vcf files with parameters: GATKUG_FLAGS='$(GATKUG_FLAGS)' and GATKUG_FILTERS_FLAGS='$(GATKUG_FILTERS_FLAGS)'"
-RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
-
-PIPELINES_COMMENT := "CALLER:gatkUG:GATK Unified Genotyper - designed for variant discovery:GATKUG_FLAGS='$(GATKUG_FLAGS)' and GATKUG_FILTERS_FLAGS='$(GATKUG_FILTERS_FLAGS)'"
-PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
+# Documentation
+$(file >>$(RELEASE_INFOS),## CALLER gatkUG '$(MK_RELEASE)': GATK Unified Genotyper tool identify variants from aligned BAM, generates *.gatkUG.vcf files. Parameters GATKUG_FLAGS='$(GATKUG_FLAGS)', GATKUG_FILTERS_FLAGS='$(GATKUG_FILTERS_FLAGS)')
+$(file >>$(PIPELINES_INFOS),CALLER:gatkUG:GATK Unified Genotyper - by default:GATKUG_FLAGS='$(GATKUG_FLAGS)', GATKUG_FILTERS_FLAGS='$(GATKUG_FILTERS_FLAGS)')

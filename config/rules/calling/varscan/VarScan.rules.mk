@@ -1,9 +1,10 @@
 ############################
 # VarScan Calling Rules
-# Release: 1.0.0
-# Date: 04/11/2026
 # Author: Antony Le Bechec
 ############################
+# Release
+MK_RELEASE=1.0.0
+MK_DATE=04/11/2026
 
 # Release notes:
 # 0.9.1-24/04/2015: Add 'varscanlowfreqlowcovsnp' calling
@@ -28,7 +29,7 @@
 # VARSCAN #
 ###########
 
-# VARSCAN SNP Flags
+# Flags SNP
 # This variable can be defined directly on Apps
 VARSCAN_SNP_FLAGS?= \
 	--min-var-freq 0.01 \
@@ -37,7 +38,7 @@ VARSCAN_SNP_FLAGS?= \
 	--p-value 1e-3 \
 	--min-avg-qual 30
 
-# VARSCAN INDEL Flags
+# Flags INDEL
 # This variable can be defined directly on Apps
 VARSCAN_INDEL_FLAGS?= \
 	--min-var-freq 0.01 \
@@ -46,7 +47,7 @@ VARSCAN_INDEL_FLAGS?= \
 	--p-value 1e-3 \
 	--min-avg-qual 10
 
-# VARSCAN filters Flags
+# Filters Flags
 # This variable can be defined directly on Apps
 VARSCAN_FILTERS_FLAGS?= \
 	--exclude-genotypes '' \
@@ -56,7 +57,7 @@ VARSCAN_FILTERS_FLAGS?= \
 	--sort
 
 
-# VARSCAN target rule
+# Rule
 %.VarScan$(POST_CALLING).vcf: %.bam %.bam.bai %.bam.mpileup %.empty.vcf %.design.bed %.bam.chroms
 	# List of vcf and sample files to be generated per chromosome
 	cut -f1 $*.bam.chroms | sed 's|.*|$@.split.&.vcf.gz|' | tr '\n' ' ' > $@.split.vcfs.list;
@@ -90,13 +91,6 @@ VARSCAN_FILTERS_FLAGS?= \
 	rm -rf $@.tmp* $@.split* $@.idx $@.tbi
 
 
-# VARSCAN Release documentation
-
-RELEASE_COMMENT := "\#\# CALLING VARSCAN: VARSCAN tool identify variants from mpileup file, generated from aligned BAM"
-RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
-
-RELEASE_COMMENT := "\#\# CALLING: VarScan identify variants in parallel to identify somatic variants with low VAF and generate *.VarScan.vcf files. Parameters VARSCAN_SNP_FLAGS='$(VARSCAN_SNP_FLAGS)', VARSCAN_INDEL_FLAGS='$(VARSCAN_INDEL_FLAGS)' and VARSCAN_FILTERS_FLAGS='$(VARSCAN_FILTERS_FLAGS)' "
-RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
-
-PIPELINES_COMMENT := "CALLER:VarScan:SAMTOOLS/VARSCAN - by default:VARSCAN_SNP_FLAGS='$(VARSCAN_SNP_FLAGS)', VARSCAN_INDEL_FLAGS='$(VARSCAN_INDEL_FLAGS)', VARSCAN_FILTERS_FLAGS='$(VARSCAN_FILTERS_FLAGS)'"
-PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
+# Documentation
+$(file >>$(RELEASE_INFOS),## CALLER VarScan '$(MK_RELEASE)': VarScan caller to identify SNP and InDels somatic variants from mpileup files, generated from aligned BAM, with filtrations. Parameters VARSCAN_SNP_FLAGS='$(VARSCAN_SNP_FLAGS)', VARSCAN_INDEL_FLAGS='$(VARSCAN_INDEL_FLAGS)', VARSCAN_FILTERS_FLAGS='$(VARSCAN_FILTERS_FLAGS)')
+$(file >>$(PIPELINES_INFOS),CALLER:VarScan:VarScan - by default with filtration:VARSCAN_SNP_FLAGS='$(VARSCAN_SNP_FLAGS)', VARSCAN_INDEL_FLAGS='$(VARSCAN_INDEL_FLAGS)', VARSCAN_FILTERS_FLAGS='$(VARSCAN_FILTERS_FLAGS)')
