@@ -13,12 +13,15 @@ APP_RELEASE="1.0"
 APP_DESCRIPTION="PlugAPP for specific parameters to extract and mark UMI tags"
 
 
-# ANALYSIS PARAMETERS
-#######################
+# PIPELINES
+#############
 
 # POST ALIGNMENT STEPS
 POST_ALIGNMENT_STEPS="sorting markduplicates realignment recalibration compress"
 
+
+# DEMULTIPLEXING
+##################
 
 # Demultiplexing Mask
 

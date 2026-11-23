@@ -13,6 +13,3 @@ APP_DESCRIPTION="Application to detect somatic mutations in solid tumor gene pan
 APP_GROUP="SOMATIC"
 APP_PROJECT="SOLIDTUMOR"
 
-# ANALYSIS PARAMETERS
-#######################
-

@@ -15,10 +15,8 @@ APP_GROUP="SOMATIC"
 APP_PROJECT="EXOME"
 
 
-# ANALYSIS PARAMETERS
-#######################
+# METRICS
+##########
 
 # INTERVAL_PADDING / add some padding to the intervals used (manifest) in order to include the flanking regions (typically ~100 bp)
 INTERVAL_PADDING=100
-
-

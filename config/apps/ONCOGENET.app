@@ -15,15 +15,15 @@ APP_GROUP="GENETIC"
 APP_PROJECT="ONCOGENETIC"
 
 
-# ANALYSIS PARAMETERS
-#######################
+# PIPELINES
+#############
 
 # PIPELINES
 PIPELINES="bwamem.gatkHC.howard bwamem.gatkUG.howard"
 
 
-# Callers parameters
-######################
+# ADDITIONAL PARAMETERS
+#########################
 
 # GATKHC Flags
 # VCFDBSNP_WITH_GATK variable depends on USE_VCFDBSNP_WITH_GATK setting on Apps

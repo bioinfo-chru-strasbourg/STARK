@@ -13,15 +13,16 @@ APP_DESCRIPTION="Application to detect somatic mutations in solid tumor gene pan
 APP_GROUP="SOMATIC"
 APP_PROJECT="UNKNOWN"
 
-# ANALYSIS PARAMETERS
-#######################
 
 # PIPELINES
-PIPELINES="bwamem.deepvariant.howard bwamem.gatkHC.howard bwamem.gatkUG.howard bwamem.outLyzer.howard bwamem.VarScan.howard bwamem.MuTect2.howard"
+#############
+
+# PIPELINES
+PIPELINES="bwamem.gatkHC.howard bwamem.gatkUG.howard bwamem.outLyzer.howard bwamem.VarScan.howard bwamem.MuTect2.howard"
 
 
-# Callers parameters
-######################
+# ADDITIONAL PARAMETERS
+#########################
 
 # GATKHC Flags
 # VCFDBSNP_WITH_GATK variable depends on USE_VCFDBSNP_WITH_GATK setting on Apps

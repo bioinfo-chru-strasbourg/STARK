@@ -908,6 +908,7 @@ export FASTP_ADDITIONAL_OPTIONS
 if [ -z "$FASTQ_PROCESSING_STEPS" ]; then
 	FASTQ_PROCESSING_STEPS="sort compress"
 fi;
+export FASTQ_PROCESSING_STEPS
 
 # Create FASTQ_PROCESSED_STEPS variable
 [ "$FASTQ_PROCESSING_STEPS" != "" ] && FASTQ_PROCESSED_STEPS=$(echo -n "." && echo $FASTQ_PROCESSING_STEPS | tr -d "." | tr " " ".") || FASTQ_PROCESSED_STEPS=""
@@ -928,6 +929,7 @@ export FASTQ_PROCESSED_STEPS
 if [ -z "$POST_SEQUENCING_STEPS" ]; then
 	POST_SEQUENCING_STEPS=""
 fi;
+export POST_SEQUENCING_STEPS
 
 # Create POST_ALIGNEMENT variable
 [ "$(echo $POST_SEQUENCING_STEPS | sed 's/[[:blank:]]*$//' | sed 's/^[[:blank:]]*//')" != "" ] && POST_SEQUENCING="."$(echo $POST_SEQUENCING_STEPS | tr "," " " | tr "." " " | tr " " "\n" | sed '/^$/d' | tac  | tr "\n" " " | sed s/\.$//g | tr " " ".") || POST_SEQUENCING=""
@@ -961,6 +963,7 @@ export POST_SEQUENCING
 if [ -z "$POST_ALIGNMENT_STEPS" ]; then
 	POST_ALIGNMENT_STEPS="sorting realignment clipping compress"
 fi;
+export POST_ALIGNMENT_STEPS
 
 # Create POST_ALIGNEMENT variable
 [ "$(echo $POST_ALIGNMENT_STEPS | sed 's/[[:blank:]]*$//' | sed 's/^[[:blank:]]*//')" != "" ] && POST_ALIGNMENT="."$(echo $POST_ALIGNMENT_STEPS | tr "," " " | tr "." " " | tr " " "\n" | sed '/^$/d' | tac  | tr "\n" " " | sed s/\.$//g | tr " " ".") || POST_ALIGNMENT=""
@@ -989,6 +992,7 @@ export POST_ALIGNMENT
 if [ -z "$POST_CALLING_STEPS" ]; then
 	POST_CALLING_STEPS=" "
 fi;
+export POST_CALLING_STEPS
 
 # Create POST_CALLING variable
 #[ "$POST_CALLING_STEPS" != "" ] && POST_CALLING="."$(echo $POST_CALLING_STEPS | tr "," " " | tr "." " " | tr " " "\n" | sed '/^$/d' | tac  | tr "\n" " " | sed s/\.$//g | tr " " ".") || POST_CALLING=""
@@ -1017,6 +1021,7 @@ export POST_CALLING
 if [ -z "$POST_CALLING_MERGING_STEPS" ]; then
 	POST_CALLING_MERGING_STEPS="sorting normalization variantrecalibration"
 fi;
+export POST_CALLING_MERGING_STEPS
 
 # Create POST_CALLING variable
 [ "$(echo $POST_CALLING_MERGING_STEPS | sed 's/[[:blank:]]*$//' | sed 's/^[[:blank:]]*//')" != "" ] && POST_CALLING_MERGING="."$(echo $POST_CALLING_MERGING_STEPS | tr "," " " | tr "." " " | tr " " "\n" | sed '/^$/d' | tac  | tr "\n" " " | sed s/\.$//g | tr " " ".") || POST_CALLING_MERGING=""
@@ -1041,11 +1046,20 @@ export POST_CALLING_MERGING
 if [ -z "$POST_ANNOTATION_STEPS" ]; then
 	POST_ANNOTATION_STEPS=" "
 fi;
+export POST_ANNOTATION_STEPS
 
 # Create POST_ANNOTATION variable
 [ "$(echo $POST_ANNOTATION_STEPS | sed 's/[[:blank:]]*$//' | sed 's/^[[:blank:]]*//')" != "" ] && POST_ANNOTATION="."$(echo $POST_ANNOTATION_STEPS | tr "," " " | tr "." " " | tr " " "\n" | sed '/^$/d' | tac  | tr "\n" " " | sed s/\.$//g | tr " " ".") || POST_ANNOTATION=""
 export POST_ANNOTATION
 
+
+# STAR_KEEP_RAW_BAM
+# Option to keep raw BAM file from STAR (with splitNcigar for SNV calling). This option is useful to keep BAM without post-alignment steps (e.g. realignment, recalibration...).
+# Default: 0 (False)
+if [ -z "$STAR_KEEP_RAW_BAM" ]; then
+	STAR_KEEP_RAW_BAM=0
+fi;
+export STAR_KEEP_RAW_BAM
 
 
 # BAM COMPRESSION

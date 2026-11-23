@@ -14,8 +14,8 @@ APP_GROUP="SOMATIC"
 APP_PROJECT="HEMATOLOGY"
 
 
-# ANALYSIS PARAMETERS
-#######################
+# PIPELINES
+#############
 
 # PIPELINES
 # Add the ITDSeek pipeline to the existing pipelines

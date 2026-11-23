@@ -13,15 +13,15 @@ APP_RELEASE="1.0"
 APP_DESCRIPTION="PlugAPP for specific parameters to extract and mark UMI tags - gencore"
 
 
-# ANALYSIS PARAMETERS
-#######################
+# PIPELINES
+#############
 
 # POST ALIGNMENT STEPS
 POST_ALIGNMENT_STEPS="sorting gencore realignment recalibration compress"
 
 
-# GENCORE options
-###################
+# ADDITIONAL PARAMETERS
+#########################
 
 # GENCORE Flags
 export GENCORE_FLAGS="\

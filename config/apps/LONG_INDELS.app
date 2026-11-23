@@ -10,6 +10,7 @@
 ######################
 source_app $CONFIG_DEFAULT_APP
 
+
 # APPLICATION INFOS
 #####################
 APP_NAME="LONG_INDELS"
@@ -18,18 +19,15 @@ APP_DESCRIPTION="Application to detect long indels in gene panel sequencing data
 APP_GROUP="GENETIC"
 APP_PROJECT="LONG_INDELS"
 
-# ANALYSIS PARAMETERS
-#######################
+# PIPELINES
+#############
 
 # PIPELINES
 PIPELINES="bwamem.gatkHC.howard bwamem.gatkUG.howard bwamem.MuTect2.howard"
 
-# INTERVAL_PADDING / add some padding to the intervals used (manifest) in order to include the flanking regions (typically ~100 bp)
-INTERVAL_PADDING=100
 
-
-# Callers parameters
-######################
+# ADDITIONAL PARAMETERS
+#########################
 
 # GATKHC Flags
 # VCFDBSNP_WITH_GATK variable depends on USE_VCFDBSNP_WITH_GATK setting on Apps
@@ -106,4 +104,11 @@ export MUTECT2_FILTERS_FLAGS=" \
 	--include 'FORMAT/AF>=0.01 && FORMAT/AF<0.80 && TYPE=\"indel\" && abs(strlen(REF)-strlen(ALT)) > 10' \
 	--filter 'PASS' \
 	--sort"
+
+
+# METRICS
+##########
+
+# INTERVAL_PADDING / add some padding to the intervals used (manifest) in order to include the flanking regions (typically ~100 bp)
+INTERVAL_PADDING=100
 

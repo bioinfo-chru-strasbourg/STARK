@@ -13,32 +13,30 @@ APP_RELEASE="1.0"
 APP_DESCRIPTION="PlugAPP to disable pipeline and generates only FASTQ"
 
 
-# ANALYSIS PARAMETERS
-#######################
-
-# Demultiplexing options
-STARK_DEMULTIPLEXING_BCL2FASTQ_OPTIONS="--create-fastq-for-index-reads"
-
-# FASTQ compression level for demultiplexing FASTQ files
-FASTQ_DEMULTIPLEXING_COMPRESSION_LEVEL=9
-
-# FASTQ compression level for main FASTQ files
-FASTQ_COMPRESSION_LEVEL=1
-
-# FASTQ_PROCESSING_STEPS
-FASTQ_PROCESSING_STEPS=" "
+# PIPELINES
+#############
 
 # PIPELINES
-PIPELINES="no_alignment.no_calling.no_annotation"
+PIPELINES="empty_alignment.no_calling.no_annotation"
 
 # POST ALIGNEMENT STEPS (default "sorting realignment clipping compress")
-POST_ALIGNMENT_STEPS=" compress "
+POST_ALIGNMENT_STEPS=" "
 
 # POST CALLING STEPS (default "recalibration filtration")
 POST_CALLING_STEPS=" "
 
 # POST ANNOTATION STEPS (default "sorting normalization")
 POST_ANNOTATION_STEPS=" "
+
+
+# DEMULTIPLEXING
+#################
+
+# Demultiplexing options
+STARK_DEMULTIPLEXING_BCL2FASTQ_OPTIONS="--create-fastq-for-index-reads"
+
+# FASTQ compression level for demultiplexing FASTQ files
+FASTQ_DEMULTIPLEXING_COMPRESSION_LEVEL=9
 
 # Keep demultiplexing FASTQ
 FASTQ_DEMULTIPLEXING_KEEP=1
@@ -47,11 +45,26 @@ FASTQ_DEMULTIPLEXING_KEEP=1
 SEQUENCING_DEMULTIPLEXING_FOLDER=demultiplexing
 
 
+# FASTQ PROCESSING
+###################
+
+# FASTQ compression level for main FASTQ files
+FASTQ_COMPRESSION_LEVEL=1
+
+# FASTQ_PROCESSING_STEPS
+FASTQ_PROCESSING_STEPS=" "
+
+
+# FOLDERS
+###########
+
 # REPOSITORY and ARCHIVES folder
 # Results data can be copy in a favorites folder. leave it blank for no copy
 FOLDER_FAVORITES=$FOLDER_REPOSITORY
-#FOLDER_FAVORITES=$FOLDER_OUTPUT/favorites
 
+
+# REPOSITORY and ARCHIVES
+###########################
 
 # REPOSITORY and ARCHIVES
 # Copy files into folders for repository and archives

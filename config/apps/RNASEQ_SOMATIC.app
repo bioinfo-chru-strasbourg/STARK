@@ -16,8 +16,8 @@ APP_GROUP="UNKNOWN"
 APP_PROJECT="UNKNOWN"
 
 
-# ANALYSIS PARAMETERS
-#######################
+# PIPELINES
+#############
 
 # PIPELINES
 # Use STAR to align RNA-Seq data and then different callers to detect mutations (Fusions and SNVs/Indels)

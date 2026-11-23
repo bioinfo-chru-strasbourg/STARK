@@ -13,8 +13,8 @@ APP_RELEASE="1.0"
 APP_DESCRIPTION="PlugAPP for specific parameters to extract and mark UMI tags - index2"
 
 
-# ANALYSIS PARAMETERS
-#######################
+# DEMULTIPLEXING
+##################
 
 # Demultiplexing Mask
 

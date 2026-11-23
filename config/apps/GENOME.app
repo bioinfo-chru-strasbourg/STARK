@@ -14,18 +14,15 @@ APP_GROUP="GENETIC"
 APP_PROJECT="GENOME"
 
 
-# ANALYSIS PARAMETERS
-#######################
+# PIPELINES
+#############
 
 # PIPELINES
 PIPELINES="bwamem.gatkHC.howard bwamem.gatkUG.howard"
 
-# INTERVAL_PADDING / add some padding to the intervals used (manifest) in order to include the flanking regions (typically ~100 bp)
-INTERVAL_PADDING=100
 
-
-# Callers parameters
-######################
+# ADDITIONAL PARAMETERS
+#########################
 
 # GATKHC Flags
 # VCFDBSNP_WITH_GATK variable depends on USE_VCFDBSNP_WITH_GATK setting on Apps
@@ -75,3 +72,11 @@ export GATKUG_FILTERS_FLAGS=" \
     --include 'FORMAT/DP>=4' \
     --filter '' \
     --sort"
+
+
+# METRICS
+##########
+
+# INTERVAL_PADDING / add some padding to the intervals used (manifest) in order to include the flanking regions (typically ~100 bp)
+INTERVAL_PADDING=100
+

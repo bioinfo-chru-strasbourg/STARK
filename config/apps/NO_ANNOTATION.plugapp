@@ -13,12 +13,31 @@ APP_RELEASE="1.0"
 APP_DESCRIPTION="PlugAPP to disable annotation and minimalize calculation, but keep prioritization (if defined)"
 
 
-# ANALYSIS PARAMETERS
-#######################
+# PIPELINES
+#############
+
+# PIPELINES
+# Replace all annotation pipelines with no_annotation annotator
+PIPELINES=$(echo "$PIPELINES" | sed -E 's/(\.[^. ]+)( |$)/.no_annotation\2/g')
+
+# ANNOTATORS
+# Replace existing annotators with no_annotation, if any are defined
+if [ ! -z "$ANNOTATORS" ]; then
+    ANNOTATORS="no_annotation"
+fi
+
+
+# METRICS
+##########
 
 # METRICS SNPEFF (default 0)
 # Generate snpEff variant metrics from VCF
 METRICS_SNPEFF=0
 
+
+# REPORTS
+###########
+
 # Report Sections
 REPORT_SECTIONS="results_summary sequencing_mapping depth coverage variant_stats annex_coverage annex_depth annex_genes_coverage"
+

@@ -280,6 +280,12 @@ Usage example: steps `"sorting normalization"` will process the `$ALIGNER.$CALLE
   - `"variantnormalization normalization variantfiltration"` (for gene panel)
   - `"variantnormalization normalization variantrecalibration variantfiltration"` (for exome or genome)
 
+### STAR_KEEP_RAW_BAM
+
+Option to keep raw BAM file from STAR (with splitNcigar for SNV calling). This option is useful to keep BAM without post-alignment steps (e.g. realignment, recalibration...)
+
+- Default: `0` (False)
+
 ### RULES_APP
 
 Add specific rules to load (see `PIPELINES` parameter).

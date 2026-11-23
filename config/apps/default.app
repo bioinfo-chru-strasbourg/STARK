@@ -126,7 +126,6 @@ POST_SEQUENCING_STEPS=""
 #    "sorting realignment clipping compress" (for Amplicon technology)
 #    "sorting markduplicates realignment compress" (for Capture technology)
 #    "sorting gencore markduplicates realignment compress" (for UMI technology)
-#POST_ALIGNMENT_STEPS="sorting realignment recalibration clipping compress"
 POST_ALIGNMENT_STEPS="sorting markduplicates realignment recalibration compress"
 
 # POST_CALLING_STEPS
@@ -179,20 +178,25 @@ POST_ANNOTATION_STEPS=" "
 # The steps are defined as makefiles rules.
 # Check available steps by using the command "STARK --pipelines_infos".
 # Format: "step1 step2 step3"
-# Default: "sorting variantrecalibration variantfiltration"
+# Default: "sorting variantnormalization variantrecalibration variantfiltration"
 # Available steps (not up-to-date):
 #    sorting: VCF sort
 #    normalization: VCF normalization for post calling by splitting variants into one line (using BCFTools)
 #    variantnormalization: VCF normalization splitting variant in 1 line, removing duplicates, fixing GT ploidy and recalculate tags (using BCFTools)
-#    variantrecalibration: VCF recalibration (using GATK4). Include variantfiltration if no recalibration possible
+#    variantrecalibration: VCF recalibration (using GATK4). Includes variantfiltration if no recalibration possible
 #    variantfiltration: VCF filtration (using GATK4)
 # Examples:
 #    " " (to avoid at this pipeline step, see POST_CALLING_MERGING_STEPS)
 #    "normalization" (to minimal normalize the VCF file after calling)
 #    "variantnormalization" (to prevent multiallelic or multiploidy inconsistency, recalculate tags)
-#    "variantnormalization normalization variantfiltration" (for gene panel)
-#    "variantnormalization normalization variantrecalibration variantfiltration" (for exome or genome)
-POST_CALLING_MERGING_STEPS="sorting variantrecalibration variantfiltration"
+#    "sorting variantnormalization variantfiltration" (for gene panel)
+#    "sorting variantnormalization variantrecalibration variantfiltration" (for exome or genome)
+POST_CALLING_MERGING_STEPS="sorting variantnormalization variantrecalibration variantfiltration"
+
+# STAR_KEEP_RAW_BAM
+# Option to keep raw BAM file from STAR (with splitNcigar for SNV calling). This option is useful to keep BAM without post-alignment steps (e.g. realignment, recalibration...).
+# Default: 0 (False)
+STAR_KEEP_RAW_BAM=0
 
 # RULES_APP
 # Add specific rules to load (see `PIPELINES` parameter).
@@ -207,7 +211,7 @@ POST_CALLING_MERGING_STEPS="sorting variantrecalibration variantfiltration"
 
 
 # DEMULTIPLEXING
-#################
+##################
 
 # BARCODE_MISMATCHES
 # Number of allowed barcode mismatches during demultiplexing.
