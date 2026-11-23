@@ -1,23 +1,22 @@
 #!/bin/bash
-## STARK application NO_ANNOTATION
 
 # DEFAULT ENV
 ######################
+# No default environment sourced, because PlugApp
 #source $CONFIG_DEFAULT_APP
+
 
 # APPLICATION INFOS
 #####################
 APP_NAME="FASTQ_DEMULTIPLEXING"
 APP_RELEASE="1.0"
 APP_DESCRIPTION="PlugAPP to disable pipeline and generates only FASTQ"
-#APP_GROUP=""
-#APP_PROJECT=""
+
 
 # ANALYSIS PARAMETERS
 #######################
 
 # Demultiplexing options
-#STARK_DEMULTIPLEXING_BCL2FASTQ_OPTIONS="--no-lane-splitting --create-fastq-for-index-reads"
 STARK_DEMULTIPLEXING_BCL2FASTQ_OPTIONS="--create-fastq-for-index-reads"
 
 # FASTQ compression level for demultiplexing FASTQ files

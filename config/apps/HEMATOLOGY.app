@@ -1,10 +1,9 @@
 #!/bin/bash
-## STARK application HEMATOLOGY
 
 # DEFAULT ENV
 ######################
-#source_app $CONFIG_DEFAULT_APP,SOMATIC_PARAMETERS
 source_app SOMATIC
+
 
 # APPLICATION INFOS
 #####################
@@ -14,9 +13,10 @@ APP_DESCRIPTION="Application to detect somatic mutations in hematology gene pane
 APP_GROUP="SOMATIC"
 APP_PROJECT="HEMATOLOGY"
 
+
 # ANALYSIS PARAMETERS
 #######################
 
 # PIPELINES
-#PIPELINES="bwamem.gatkUG_SOMATIC.howard bwamem.gatkHC_SOMATIC.howard bwamem.MuTect2.howard bwamem.VarScan.howard bwamem.outLyzer.howard "
+# Add the ITDSeek pipeline to the existing pipelines
 PIPELINES=$PIPELINES" bwamem.itdseek.howard"

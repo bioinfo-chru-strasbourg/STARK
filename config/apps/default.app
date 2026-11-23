@@ -42,30 +42,15 @@ APP_GROUP=""
 APP_PROJECT=""
 
 
-# ASSEMBLY and SAMPLES parameters
-###################################
+# PIPELINES
+#############
 
-# Definition of assembly and blank/control samples (to be used in the analysis) should be properly specified to ensure accurate analysis.
+# Pipelines parameters define the configuration for the analysis pipelines, including the choice of aligners, callers, and annotators, and also intermediate steps (such as the post-alignment and post-calling steps). Moreover, specific rules should be defined for each component to ensure proper execution of the pipelines.
 
 # ASSEMBLY
 # Assembly to use for the analysis, in UCSC format, such as "hg19" or "hg38".
 # Assembly is automatically detected in manifest file (configured in the SampleSheet of each run), if any.
 ASSEMBLY="hg19"
-
-# BLANK
-# Used to reject samples for particular analyses (such as CNV analysis).
-# List samples with a comma separating each sample.
-# Default: "BlcADN,blanc,BlcPCR,blcPCR,T_NTC,Z_NTC"
-# Examples:
-# - "BlcADN,blanc,BlcPCR,blcPCR"
-# - "T_NTC,Z_NTC"
-BLANK="BlcADN,blanc,BlcPCR,blcPCR,T_NTC,Z_NTC"
-
-
-# PIPELINES
-#############
-
-# Pipelines parameters define the configuration for the analysis pipelines, including the choice of aligners, callers, and annotators, and also intermediate steps (such as the post-alignment and post-calling steps). Moreover, specific rules should be defined for each component to ensure proper execution of the pipelines.
 
 # PIPELINES
 # Pipelines to use for the analysis.
@@ -385,605 +370,746 @@ FASTP_ADDITIONAL_OPTIONS=""
 # - "fastq_reheader sort fastp fastq_clean_header compress" (for default sorting and compression)
 # - "fastq_reheader sort umi_tools fastp fastq_clean_header compress" (for UMI technology using umi tools)
 # - "sort compress" (for only sorting and compression)
-#FASTQ_PROCESSING_STEPS="fastq_reheader sort umi_tools fastp fastq_clean_header compress"
+# - "" (for no processing steps, FASTQ files will remain unprocessed and identical as from demultiplexing)
 FASTQ_PROCESSING_STEPS="fastq_reheader sort fastp fastq_clean_header compress"
 
 
+# ARCHIVES
+############
+
+# CRAM_OPTIONS
+# Final CRAM options for compression (archive.cram).
+# Specify the CRAM compression options to use when creating the archive.cram file.
+# Default: "version=3.0,level=9,no_ref"
+# Examples:
+# - "version=3.0,level=9,no_ref" (default compression)
+# - "version=3.0,level=6" (for faster compression with lower level and no reference included)
+# - "version=3.0,level=9,no_ref,use_lzma,use_bzip2,use_fqz,seqs_per_slice=100000" (for maximum compression with additional algorithms)
+CRAM_OPTIONS="version=3.0,level=9,no_ref"
+
+# CRAM_REMOVE_TAGS
+# Final CRAM options for tags (archive.cram).
+# Remove tags from the CRAM file during compression. Specify the tags to be removed as a comma-separated list.
+# Default: "BD,BI" (remove BD and BI tags by default)
+# Examples: 
+#  - "BD,BI,OQ" (remove BD, BI, and OQ tags)
+# - "" (do not remove any tags)
+CRAM_REMOVE_TAGS="BD,BI"
 
 
-
-
-
-
-
-
-
-
+# ALIGNMENT AND POST ALIGNMENT
+################################
 
 # BARCODE_TAG
 # Specify the barcode tag to use for marking duplicates in BAM files.
-# Barcode tag
-# Barcode to use for Mark Duplicates
-# If not null, Mark Duplicates will consider this tag (default null)
-# e.g.: BARCODE_TAG="BC" for 10X Genomics, BARCODE_TAG="BX" for UMI
-# See PICARD documentation for more information
+# Barcode to use for Mark Duplicates. If not null, Mark Duplicates will consider this tag.
+# See PICARD documentation for more information.
+# Default: `""`
+# Examples:
+# - "BC" (default Illumina, 10X genomics)
+# - "RX" (standard SAM UMI barcode tag)
+# - "BX" (UMI)
 BARCODE_TAG=""
 
-# set variable to "READ_NAME_REGEX=null" to disable optical deduplication
-# PICARD_MARKDUP_OPTICAL_DEDUP="-READ_NAME_REGEX null"
+# PICARD MARKDUP OPTICAL DEDUP
+# Regular expression that can be used to parse read names in the incoming SAM file.
+# Set variable to "READ_NAME_REGEX=null" to disable optical deduplication.
+# Default: ""
+# Examples:
+# - "-READ_NAME_REGEX null" (disable optical deduplication)
 PICARD_MARKDUP_OPTICAL_DEDUP=""
+
+# BAM_COMPRESSION
+# Final BAM compression level (for ALIGNER.bam)
+# default: 9
+BAM_COMPRESSION=9
+
+# BAM_VALIDATION_COMPRESSION
+# Validation BAM compression level (for ALIGNER.validation.bam)
+# default: 5
+BAM_VALIDATION_COMPRESSION=5
+
+### GENCORE
+
+# GENCORE_SUP_READS
+# Gencore supporting reads threshold. 
+# The minimum number of supporting reads required to form a cluster.
+# This parameter helps to control the stringency of clustering in Gencore.
+# This setting is particularly useful when dealing with low-frequency variants or noisy data.
+# Higher values increase stringency, lower values make clustering more permissive.
+# Default: "" (corresponding to "--supporting_reads 1", see gencore doc)
+# Examples:
+# - "2" (keep clusters with 2 or more supporting reads, ultrasensible filter)
+# - "1" (replace Picard Markduplicates dedup)
+GENCORE_SUP_READS=""
+
+# GENCORE_SCORE_THREESHOLD
+# Gencore score threshold for forming consensus reads.
+# Higher values increase stringency, lower values make clustering more permissive.
+# Default: "" (corresponding to "--score_threshold 6", see gencore doc)
+# Examples:
+# - "8" (recommended for dup-rate < 50% to keep all DNA fragments and discard low quality unoverlapped mutations)
+# - "6" (default, see gencore doc)
+GENCORE_SCORE_THREESHOLD=""
+
+# GENCORE_RATIO_THREESHOLD
+# Gencore ratio threshold for major base comparison.
+# If the ratio of the major base in a cluster is less than this threshold, it will be further compared to the reference.
+# The value should be 0.5~1.0, and the default value is 0.8.
+# Default: "" (corresponding to "--ratio_threshold 0.8", see gencore doc)
+# Examples:
+# - "0.8" (default, see gencore doc)
+# - "0.9" (more stringent, require higher major base ratio)
+GENCORE_RATIO_THREESHOLD=""
+
+# GENCORE_DIFF_THREESHOLD
+# Gencore UMI difference threshold for merging reads.
+# If two reads with identical mapping position have UMI difference <= <umi_diff_threshold>, then they will be merged to generate a consensus read.
+# Default: "" (corresponding to "--umi_diff_threshold 2", see gencore doc)
+# Examples:
+# - "2" (default, see gencore doc)
+# - "1" (more stringent, require lower UMI difference)
+GENCORE_DIFF_THREESHOLD=""
+
+# GENCORE_QUAL_THREESHOLD
+# Gencore quality threshold for base comparison.
+# This sets the minimum quality score for considering a base in the consensus read.
+# Higher values increase stringency, lower values make clustering more permissive.
+# Available options:
+# - "--high_qual <value>" (the threshold for a quality score to be considered as high quality. Default 30 means Q30. (int [=30]))
+# - "--moderate_qual <value>" (the threshold for a quality score to be considered as moderate quality. Default 20 means Q20. (int [=20]))
+# - "--low_qual <value>" (the threshold for a quality score to be considered as low quality. Default 15 means Q15. (int [=15]))
+# Default: "" (corresponding to default quality, see gencore doc)
+# Examples:
+# - "--moderate_qual 20" (Moderate defined as Q20)
+# - "--high_qual 20 --moderate_qual 15 --low_qual 10" (Threasholds changed to Q20, Q15, Q10)
+GENCORE_QUAL_THREESHOLD=""
+
+# GENCORE_COVERAGE_SAMPLING
+# Gencore coverage sampling for genome scale coverage statistics (value 10000 means 1/10000).
+# This option sets the sampling rate for genome scale coverage statistics in Gencore.
+# The higher the value, the lower the sampling rate, which can improve performance at the cost of accuracy.
+# Default: "" (corresponding to "--coverage_sampling=10000", see gencore doc)
+# Examples:
+# - "10000" (default, see gencore doc)
+# - "5000" (higher sampling rate, more accurate but slower)
+GENCORE_COVERAGE_SAMPLING=""
+
+
+# CALLING AND POST CALLING
+###########################
+
+# USE_VCFDBSNP_WITH_GATK
+# Enable VCF DBSNP for GATK calling and annotation.
+# This option allows GATK to use the VCF DBSNP if the file is available and not empty.
+# dbSNP database as VCF is used to annotate variant ID in ID VCF field and to provide known variants for GATK calling and annotation (if any)
+# See https://gatk.broadinstitute.org/hc/en-us/articles/360046786692-VariantAnnotator#--dbsnp.
+# This option allow GATK to use the VCF DBSNP for calling and annotation, if the file is available and not empty. If not, GATK will be used without DBSNP for calling and annotation.
+# See rules that use GATK for calling and annotation (e.g. "gatkHC", "gatkUG", "MuTect2") for more information about the use of VCF DBSNP for GATK calling and annotation.
+# Variable VCFDBSNP_WITH_GATK is generated automatically and indicates whether to use the VCF DBSNP file for GATK calling and annotation.
+# See VCFDBSNP variable for the VCF DBSNP file path (in databases.app)
+# Default: 0 (do not use VCF DBSNP with GATK)
+# Example: 
+# - 1 (enable use of VCF DBSNP with GATK)
+# - 0 (do not enable use of VCF DBSNP with GATK)
+USE_VCFDBSNP_WITH_GATK=0
+
+# VCFDBSNP
+# VCF DBSNP path for GATK calling and annotation.
+# Path to the dbSNP database as VCF used for GATK calling and annotation (if any).
+# This file need to be available and not empty for GATK to use it for calling and annotation (if USE_VCFDBSNP_WITH_GATK=1).
+# This variable is automatically defined in default configuration in databases.app.
+# Default: "" (corresponding to default VCF DBSNP defined in databases.app, depending on ASSEMBLY)
+# Examples: 
+# - "" (use default VCF DBSNP defined in databases.app)
+# - "$FOLDER_DATABASES/dbsnp_138.hg19.vcf.gz" (use specific VCF DBSNP file for GATK calling and annotation)
+#VCFDBSNP=
+
+# VARIANTFILTRATION_SNP_FILTER_OPTION
+# Options for SNP variant filtration based on INFO fields using GATK VariantFiltration.
+# One or more expression used with INFO fields to filter SNP (see documentation guide for more info).
+# Default: '--filter-name "SNP_filter_QD" --filter-expression "QD < 2.0" --filter-name "SNP_filter_FS" --filter-expression "FS > 60.0" --filter-name "SNP_filter_MQ" --filter-expression "MQ < 40.0" --filter-name "SNP_filter_MQRankSum" --filter-expression "MQRankSum < -12.5" --filter-name "SNP_filter_ReadPosRankSum" --filter-expression "ReadPosRankSum < -8.0"'
+# Examples: 
+# - '--filter-name "SNP_filter_QD" --filter-expression "QD < 2.0" --filter-name "SNP_filter_FS" --filter-expression "FS > 60.0" --filter-name "SNP_filter_MQ" --filter-expression "MQ < 40.0" --filter-name "SNP_filter_MQRankSum" --filter-expression "MQRankSum < -12.5" --filter-name "SNP_filter_ReadPosRankSum" --filter-expression "ReadPosRankSum < -8.0"'
+# - '--filter-name "HARD_TO_VALIDATE" --filter-expression "MQ0 >= 4 && ((MQ0 / (1.0 * DP)) > 0.1)"    --filter-name "VeryVeryLowDepth" --filter-expression "DP == 0"    --filter-name "VeryLowDepth" --filter-expression "DP > 0 && DP < 10"    --filter-name "LowDepth" --filter-expression "DP >= 10 && DP < 30"    --filter-name "VeryVeryLowQual" --filter-expression "QUAL == 0"    --filter-name "VeryLowQual" --filter-expression "QUAL > 0 && QUAL < 30.0"    --filter-name "LowQual" --filter-expression "QUAL >= 30.0 && QUAL < 50.0"    --filter-name "LowQD" --filter-expression "QD >= 0.0 && QD < 1.5"'
+VARIANTFILTRATION_SNP_FILTER_OPTION='--filter-name "SNP_filter_QD" --filter-expression "QD < 2.0" --filter-name "SNP_filter_FS" --filter-expression "FS > 60.0" --filter-name "SNP_filter_MQ" --filter-expression "MQ < 40.0" --filter-name "SNP_filter_MQRankSum" --filter-expression "MQRankSum < -12.5" --filter-name "SNP_filter_ReadPosRankSum" --filter-expression "ReadPosRankSum < -8.0"'
+
+# VARIANTFILTRATION_SNP_FILTER_EXPRESSION_OPTION
+# Options for SNP variant filtration based on FORMAT fields using GATK VariantFiltration.
+# One or more expression used with FORMAT (sample/genotype-level) fields to filter SNP (see documentation guide for more info).
+# Default: '--genotype-filter-expression "GQ == 0" --genotype-filter-name "genotype_GQ_filter_VeryVeryLow" --genotype-filter-expression "GQ > 0 && GQ < 50.0" --genotype-filter-name "genotype_GQ_filter_VeryLow"  --genotype-filter-expression "GQ >= 50.0 && GQ < 90.0" --genotype-filter-name "genotype_GQ_filter_Low" --genotype-filter-expression "DP == 0" --genotype-filter-name "genotype_DP_filter_VeryVeryLow" --genotype-filter-expression "DP >= 0 && DP < 10" --genotype-filter-name "genotype_DP_filter_VeryLow"  --genotype-filter-expression "DP >= 10 && DP < 30" --genotype-filter-name "genotype_GQ_filter_Low"'
+# Examples:
+# - '--genotype-filter-expression "GQ == 0" --genotype-filter-name "genotype_GQ_filter_VeryVeryLow" --genotype-filter-expression "GQ > 0 && GQ < 50.0" --genotype-filter-name "genotype_GQ_filter_VeryLow"  --genotype-filter-expression "GQ >= 50.0 && GQ < 90.0" --genotype-filter-name "genotype_GQ_filter_Low" --genotype-filter-expression "DP == 0" --genotype-filter-name "genotype_DP_filter_VeryVeryLow" --genotype-filter-expression "DP >= 0 && DP < 10" --genotype-filter-name "genotype_DP_filter_VeryLow"  --genotype-filter-expression "DP >= 10 && DP < 30" --genotype-filter-name "genotype_GQ_filter_Low"'
+# - '--genotype-filter-name "VeryVeryLowGQ" --genotype-filter-expression "GQ == 0"    --genotype-filter-name "VeryLowGQ" --genotype-filter-expression "GQ > 0 && GQ < 50.0"    --genotype-filter-name "LowGQ" --genotype-filter-expression "GQ >= 50.0 && GQ < 90.0"    --genotype-filter-name "VeryVeryLowDP" --genotype-filter-expression "DP == 0"    --genotype-filter-name "VeryLowDP" --genotype-filter-expression "DP >= 0 && DP < 10"    --genotype-filter-name "LowDP" --genotype-filter-expression "DP >= 10 && DP < 30" '
+VARIANTFILTRATION_SNP_FILTER_EXPRESSION_OPTION='--genotype-filter-expression "GQ == 0" --genotype-filter-name "genotype_GQ_filter_VeryVeryLow" --genotype-filter-expression "GQ > 0 && GQ < 50.0" --genotype-filter-name "genotype_GQ_filter_VeryLow"  --genotype-filter-expression "GQ >= 50.0 && GQ < 90.0" --genotype-filter-name "genotype_GQ_filter_Low" --genotype-filter-expression "DP == 0" --genotype-filter-name "genotype_DP_filter_VeryVeryLow" --genotype-filter-expression "DP >= 0 && DP < 10" --genotype-filter-name "genotype_DP_filter_VeryLow"  --genotype-filter-expression "DP >= 10 && DP < 30" --genotype-filter-name "genotype_GQ_filter_Low"'
+
+# VARIANTFILTRATION_INDEL_FILTER_OPTION
+# Options for InDel variant filtration based on INFO fields using GATK VariantFiltration.
+# One or more expression used with INFO fields to filter INDEL (see documentation guide for more info).
+# Default: '--filter-name "INDEL_filter_QD" --filter-expression "QD < 2.0" --filter-name "INDEL_filter_FS" --filter-expression "FS > 200.0" --filter-name "INDEL_filter_ReadPosRankSum" --filter-expression "ReadPosRankSum < -20.0"'
+# Examples:
+# - '--filter-name "INDEL_filter_QD" --filter-expression "QD < 2.0" --filter-name "INDEL_filter_FS" --filter-expression "FS > 200.0" --filter-name "INDEL_filter_ReadPosRankSum" --filter-expression "ReadPosRankSum < -20.0"'
+# - '--filter-name "HARD_TO_VALIDATE" --filter-expression "MQ0 >= 4 && ((MQ0 / (1.0 * DP)) > 0.1)"    --filter-name "VeryVeryLowDepth" --filter-expression "DP == 0"    --filter-name "VeryLowDepth" --filter-expression "DP > 0 && DP < 10"    --filter-name "LowDepth" --filter-expression "DP >= 10 && DP < 30"    --filter-name "VeryVeryLowQual" --filter-expression "QUAL == 0"    --filter-name "VeryLowQual" --filter-expression "QUAL > 0 && QUAL < 30.0"    --filter-name "LowQual" --filter-expression "QUAL >= 30.0 && QUAL < 50.0"    --filter-name "LowQD" --filter-expression "QD >= 0.0 && QD < 1.5"'
+VARIANTFILTRATION_INDEL_FILTER_OPTION='--filter-name "INDEL_filter_QD" --filter-expression "QD < 2.0" --filter-name "INDEL_filter_FS" --filter-expression "FS > 200.0" --filter-name "INDEL_filter_ReadPosRankSum" --filter-expression "ReadPosRankSum < -20.0"'
+
+# VARIANTFILTRATION_INDEL_FILTER_EXPRESSION_OPTION
+# Options for InDel variant filtration based on FORMAT fields using GATK VariantFiltration.
+# One or more expression used with FORMAT (sample/genotype-level) fields to filter INDEL (see documentation guide for more info).
+# Default: '--genotype-filter-expression "GQ == 0" --genotype-filter-name "genotype_GQ_filter_VeryVeryLow" --genotype-filter-expression "GQ > 0 && GQ < 50.0" --genotype-filter-name "genotype_GQ_filter_VeryLow"  --genotype-filter-expression "GQ >= 50.0 && GQ < 90.0" --genotype-filter-name "genotype_GQ_filter_Low" --genotype-filter-expression "DP == 0" --genotype-filter-name "genotype_DP_filter_VeryVeryLow" --genotype-filter-expression "DP >= 0 && DP < 10" --genotype-filter-name "genotype_DP_filter_VeryLow"  --genotype-filter-expression "DP >= 10 && DP < 30" --genotype-filter-name "genotype_GQ_filter_Low"'
+# Examples: 
+# - '--genotype-filter-expression "GQ == 0" --genotype-filter-name "genotype_GQ_filter_VeryVeryLow" --genotype-filter-expression "GQ > 0 && GQ < 50.0" --genotype-filter-name "genotype_GQ_filter_VeryLow"  --genotype-filter-expression "GQ >= 50.0 && GQ < 90.0" --genotype-filter-name "genotype_GQ_filter_Low" --genotype-filter-expression "DP == 0" --genotype-filter-name "genotype_DP_filter_VeryVeryLow" --genotype-filter-expression "DP >= 0 && DP < 10" --genotype-filter-name "genotype_DP_filter_VeryLow"  --genotype-filter-expression "DP >= 10 && DP < 30" --genotype-filter-name "genotype_GQ_filter_Low"'
+# - '--genotype-filter-name "VeryVeryLowGQ" --genotype-filter-expression "GQ == 0"    --genotype-filter-name "VeryLowGQ" --genotype-filter-expression "GQ > 0 && GQ < 50.0"    --genotype-filter-name "LowGQ" --genotype-filter-expression "GQ >= 50.0 && GQ < 90.0"    --genotype-filter-name "VeryVeryLowDP" --genotype-filter-expression "DP == 0"    --genotype-filter-name "VeryLowDP" --genotype-filter-expression "DP >= 0 && DP < 10"    --genotype-filter-name "LowDP" --genotype-filter-expression "DP >= 10 && DP < 30" '
+VARIANTFILTRATION_INDEL_FILTER_EXPRESSION_OPTION='--genotype-filter-expression "GQ == 0" --genotype-filter-name "genotype_GQ_filter_VeryVeryLow" --genotype-filter-expression "GQ > 0 && GQ < 50.0" --genotype-filter-name "genotype_GQ_filter_VeryLow"  --genotype-filter-expression "GQ >= 50.0 && GQ < 90.0" --genotype-filter-name "genotype_GQ_filter_Low" --genotype-filter-expression "DP == 0" --genotype-filter-name "genotype_DP_filter_VeryVeryLow" --genotype-filter-expression "DP >= 0 && DP < 10" --genotype-filter-name "genotype_DP_filter_VeryLow"  --genotype-filter-expression "DP >= 10 && DP < 30" --genotype-filter-name "genotype_GQ_filter_Low"'
+
+# VARIANTFILTRATION_INVALIDATE_PREVIOUS_FILTERS
+# Remove previous filters applied to the VCF before applying new filters,
+# using the --invalidate-previous-filters option in GATK VariantFiltration.
+# Default: 1 (invalidate previous filters)
+# Examples:
+# - 1 (invalidate previous filters)
+# - 0 (do not invalidate previous filters)
+VARIANTFILTRATION_INVALIDATE_PREVIOUS_FILTERS=1
+
+# VARIANTRECALIBRATOR_OPTIONS
+# Variant Recalibrator additional option (see GATK VariantRecalibrator documentation guide for more info).
+# Default: "" (no additional options)
+#VARIANTRECALIBRATOR_OPTIONS=
+
+# VARIANTRECALIBRATION_SNP_ANNOTATIONS
+# Variant Recalibrator SNP annotations option (see GATK VariantRecalibrator documentation guide for more info).
+# Default: "-an QD -an MQ -an MQRankSum -an ReadPosRankSum -an FS -an SOR -an DP"
+VARIANTRECALIBRATION_SNP_ANNOTATIONS="-an QD -an MQ -an MQRankSum -an ReadPosRankSum -an FS -an SOR -an DP"
+
+# VARIANTRECALIBRATION_INDEL_ANNOTATIONS
+# Variant Recalibrator INDEL annotations option (see GATK VariantRecalibrator documentation guide for more info).
+# Default: "-an QD -an DP -an FS -an SOR -an ReadPosRankSum -an MQRankSum"
+VARIANTRECALIBRATION_INDEL_ANNOTATIONS="-an QD -an DP -an FS -an SOR -an ReadPosRankSum -an MQRankSum"
+
+# VARIANTRECALIBRATION_SNP_TRANCHES
+# Variant Recalibrator SNP tranches option (see GATK VariantRecalibrator documentation guide for more info).
+# Default: "-tranche 100.0 -tranche 99.95 -tranche 99.9 -tranche 99.8 -tranche 99.7 -tranche 99.6 -tranche 99.5 -tranche 99.4 -tranche 99.3 -tranche 99.2 -tranche 99.1 -tranche 99.0 -tranche 98.0 -tranche 97.0 -tranche 96.0 -tranche 95.0 -tranche 94.0 -tranche 93.0 -tranche 92.0 -tranche 91.0 -tranche 90.0"
+VARIANTRECALIBRATION_SNP_TRANCHES="-tranche 100.0 -tranche 99.95 -tranche 99.9 -tranche 99.8 -tranche 99.7 -tranche 99.6 -tranche 99.5 -tranche 99.4 -tranche 99.3 -tranche 99.2 -tranche 99.1 -tranche 99.0 -tranche 98.0 -tranche 97.0 -tranche 96.0 -tranche 95.0 -tranche 94.0 -tranche 93.0 -tranche 92.0 -tranche 91.0 -tranche 90.0"
+
+# VARIANTRECALIBRATION_INDEL_TRANCHES
+# Variant Recalibrator INDEL tranches option (see GATK VariantRecalibrator documentation guide for more info).
+# Default: "-tranche 100.0 -tranche 99.95 -tranche 99.9 -tranche 99.8 -tranche 99.7 -tranche 99.6 -tranche 99.5 -tranche 99.4 -tranche 99.3 -tranche 99.2 -tranche 99.1 -tranche 99.0 -tranche 98.0 -tranche 97.0 -tranche 96.0 -tranche 95.0 -tranche 94.0 -tranche 93.0 -tranche 92.0 -tranche 91.0 -tranche 90.0"
+VARIANTRECALIBRATION_INDEL_TRANCHES="-tranche 100.0 -tranche 99.95 -tranche 99.9 -tranche 99.8 -tranche 99.7 -tranche 99.6 -tranche 99.5 -tranche 99.4 -tranche 99.3 -tranche 99.2 -tranche 99.1 -tranche 99.0 -tranche 98.0 -tranche 97.0 -tranche 96.0 -tranche 95.0 -tranche 94.0 -tranche 93.0 -tranche 92.0 -tranche 91.0 -tranche 90.0"
+
+
+# ANNOTATION AND POST_ANNOTATION
+#################################
+
+# HOWARD_CONFIG
+# HOWARD main configuration JSON file (See HOWARD documentation for details).
+# This file contains the main configuration for HOWARD, such as databases folders and tools.
+# Use $HOWARD_FOLDER_CONFIG or $APP_FOLDER if necessary to specify the configuration file location.
+# A JSON string can also be used directly instead of a file path (e.g. '{}', '{"key": "value"}').
+# Default: "$HOWARD_FOLDER_CONFIG/config.json"
+# Examples:
+# - "$HOWARD_FOLDER_CONFIG/config.json" (default location)
+# - "$APP_FOLDER/config.json" (alternative location, relative to the app folder)
+# - "'{}'" (empty JSON string)
+HOWARD_CONFIG="$HOWARD_FOLDER_CONFIG/config.json"
+
+# HOWARD_PRIORITIZATION_CONFIG
+# HOWARD prioritization configuration JSON file (See HOWARD documentation for details).
+# This file contains the prioritization profiles for HOWARD.
+# Use $HOWARD_FOLDER_CONFIG or $APP_FOLDER if necessary to specify the configuration file location.
+# A JSON string can also be used directly instead of a file path (e.g. '{}', '{"key": "value"}').
+# Default: "$HOWARD_FOLDER_CONFIG/prioritization_profiles.json"
+# Examples:
+# - "$HOWARD_FOLDER_CONFIG/prioritization_profiles.json" (default location)
+# - "$APP_FOLDER/prioritization_profiles.json" (alternative location, relative to the app folder)
+# - "'{}'" (empty JSON string)
+HOWARD_PRIORITIZATION_CONFIG="$HOWARD_FOLDER_CONFIG/prioritization_profiles.json"
+
+# HOWARD_CALCULATION_CONFIG
+# HOWARD calculation configuration JSON file (See HOWARD documentation for details).
+# This file contains the calculation settings for HOWARD.
+# Use $HOWARD_FOLDER_CONFIG or $APP_FOLDER if necessary to specify the configuration file location.
+# A JSON string can also be used directly instead of a file path (e.g. '{}', '{"key": "value"}').
+# Default: "$HOWARD_FOLDER_CONFIG/calculation_config.json"
+# Examples:
+# - "$HOWARD_FOLDER_CONFIG/calculation_config.json" (default location)
+# - "$APP_FOLDER/calculation_config.json" (alternative location, relative to the app folder)
+# - "'{}'" (empty JSON string)
+HOWARD_CALCULATION_CONFIG="$HOWARD_FOLDER_CONFIG/calculation_config.json"
+
+# HOWARD_PARAM
+# HOWARD parameters JSON file for VCF annotation and analysis (see HOWARD documentation for details).
+# This file contains the parameters for HOWARD analysis for VCF from callers (rule "howard").
+# Use $HOWARD_FOLDER_CONFIG or $APP_FOLDER if necessary to specify the configuration file location.
+# A JSON string can also be used directly instead of a file path (e.g. '{}', '{"key": "value"}').
+# Default: "$HOWARD_FOLDER_CONFIG/param.howard.json"
+# Examples:
+# - "$HOWARD_FOLDER_CONFIG/param.howard.json" (default location)
+# - "$APP_FOLDER/param.howard.json" (alternative location, relative to the app folder)
+# - "'{}'" (empty JSON string)
+HOWARD_PARAM=$HOWARD_FOLDER_CONFIG/param.howard.json
+
+# HOWARD_PARAM_MINIMAL
+# HOWARD parameters JSON file for VCF annotation and analysis (see HOWARD documentation for details).
+# This file contains the parameters for minimal VCF annotation (rule "howard_minimal").
+# Use $HOWARD_FOLDER_CONFIG or $APP_FOLDER if necessary to specify the configuration file location.
+# A JSON string can also be used directly instead of a file path (e.g. '{}', '{"key": "value"}').
+# Default: "$HOWARD_FOLDER_CONFIG/param.howard.minimal.json"
+# Examples:
+# - "$HOWARD_FOLDER_CONFIG/param.howard.minimal.json" (default location)
+# - "$APP_FOLDER/param.howard.minimal.json" (alternative location, relative to the app folder)
+# - "'{}'" (empty JSON string)
+HOWARD_PARAM_MINIMAL=$HOWARD_FOLDER_CONFIG/param.howard.minimal.json
+
+# HOWARD_PARAM_REPORT
+# HOWARD parameters JSON file for VCF annotation and analysis (see HOWARD documentation for details).
+# This file contains the parameters for report VCF (Full and Final VCF).
+# Use $HOWARD_FOLDER_CONFIG or $APP_FOLDER if necessary to specify the configuration file location.
+# A JSON string can also be used directly instead of a file path (e.g. '{}', '{"key": "value"}').
+# Default: "$HOWARD_FOLDER_CONFIG/param.report.json"
+# Examples:
+# - "$HOWARD_FOLDER_CONFIG/param.report.json" (default location)
+# - "$APP_FOLDER/param.report.json" (alternative location, relative to the app folder)
+# - "'{}'" (empty JSON string)
+HOWARD_PARAM_REPORT=$HOWARD_FOLDER_CONFIG/param.report.json
+
+# HOWARD_PARAM_ANALYSIS
+# HOWARD parameters JSON file for VCF annotation and analysis (see HOWARD documentation for details).
+# This file contains the parameters for whole analysis (VCF with all merged samples).
+# Use $HOWARD_FOLDER_CONFIG or $APP_FOLDER if necessary to specify the configuration file location.
+# A JSON string can also be used directly instead of a file path (e.g. '{}', '{"key": "value"}').
+# Default: "$HOWARD_FOLDER_CONFIG/param.analysis.json"
+# Examples:
+# - "$HOWARD_FOLDER_CONFIG/param.analysis.json" (default location)
+# - "$APP_FOLDER/param.analysis.json" (alternative location, relative to the app folder)
+# - "'{}'" (empty JSON string)
+HOWARD_PARAM_ANALYSIS=$HOWARD_FOLDER_CONFIG/param.analysis.json
+
+
+# REPORTS
+###########
+
+# HOWARD_REPORT_INFOS_FIELDS
+# Fields from the INFO column to be exploded into separate columns in the TSV report file (see HOWARD documentation for details).
+# Default: "*" (all fields)
+# Examples:
+# - "" (explode no INFO fields into separate columns in the TSV report file)
+# - "*" (explode all INFO fields into separate columns in the TSV report file)
+# - "DP,AF,AN" (explode only the DP, AF, and AN INFO fields into separate columns in the TSV report file)
+# - "NOMEN,snpeff_.*" (explode only INFO fields NOMEN and starting with "snpeff_" into separate columns in the TSV report file)
+HOWARD_REPORT_INFOS_FIELDS="*"
+
+# INFO_TO_FORMAT_ANNOTATIONS
+# Transfers INFO annotation to FORMAT annotation (such as DP_stats, VAF_stats).
+# Used for annotations on full VCF to final VCF on each sample.
+# Beware that annotation exists (see HOWARD documentation for details) and check the relevant parameters in HOWARD.
+# Default: "" (no transfer)
+# Examples:
+# - "" (no transfer)
+# - "DP_stats,VAF_stats" (transfer only the DP_stats and VAF_stats INFO annotations to FORMAT annotations)
+INFO_TO_FORMAT_ANNOTATIONS=""
+
+# VCF_MISSING_GENOTYPE
+# Options for handling missing genotypes in VCF report files.
+# Available options:
+#  - "missing" (replace 0/0 or 0|0 genotypes by ./. and .|.)
+#  - "missing_clean" (replace 0/0 or 0|0 genotypes by ./. and .|. and clean by removing other FORMAT fields)
+# Default: "missing_clean"
+VCF_MISSING_GENOTYPE="missing_clean"
+
+# REPORT_SECTIONS
+# List of sections to show in the HTML report.
+# Available sections :
+#	- results_summary (summary of the analysis results)
+#	- sequencing_mapping (information about sequencing and mapping quality)
+#	- depth (coverage depth statistics)
+#	- coverage (coverage metrics for target regions)
+#	- variant_calling (summary of variant calling results)
+#	- variant_stats (statistics on called variants)
+#	- annex_coverage (detailed coverage information)
+#	- annex_depth (detailed depth information)
+#	- annex_genes_coverage (coverage information for individual genes)
+#	- annex_variants (detailed variant information)
+#	- annex_annotations (detailed annotation information)
+# Default: "ALL" (all available sections)
+# Examples:
+# - "ALL" (include all available sections)
+# - "results_summary sequencing_mapping depth coverage variant_calling variant_stats" (include only the main sections)
+# - "results_summary sequencing_mapping depth coverage annex_coverage annex_depth annex_genes_coverage" (include only sections related to coverage/depth information, without variants informations)
+REPORT_SECTIONS="ALL"
 
 
 # METRICS
 ##########
 
-# BAM METRICS (default 1/TRUE/YES/Y)
-# Performs BAM METRICS (1/TRUE/YES/Y or 0/FALSE/NO/N). Time and space consuming. Switch off for exome/genome for better perfomances
+# BAM METRICS
+# Performs BAM metrics (time and space consuming).
+# Switch off for exome/genome for better performances.
+# Available values:
+#  - `1`, `"TRUE"`, `"YES"`, `"Y"` (enable)
+#  - `0`, `"FALSE"`, `"NO"`, `"N"` (disable)
+# Default: `0`
 BAM_METRICS=0
 
-# BAM GENE COVERAGE METRICS (default 1/TRUE/YES/Y)
-# Performs BAM GENE COVERAGE METRICS (1/TRUE/YES/Y or 0/FALSE/NO/N) using RNASeQC. Time and space consuming.
+# BAM GENE COVERAGE METRICS
+# Performs BAM GENE COVERAGE METRICS (time and space consuming).
+# Switch off for exome/genome for better performances.
+# Available values:
+#  - `1`, `"TRUE"`, `"YES"`, `"Y"` (enable)
+#  - `0`, `"FALSE"`, `"NO"`, `"N"` (disable)
+# Default: `1`
 BAM_GENE_COVERAGE_METRICS=1
 
-# GLOBAL METRICS VARIABLES
-# Values for BAM metrics
+# METRICS_MINIMUM_MAPPING_QUALITY
 # Minimum mapping quality to consider in the metrics BAM
 METRICS_MINIMUM_MAPPING_QUALITY=10
 
+# METRICS_MINIMUM_BASE_QUALITY
 # Minimum bases quality to consider in the metrics BAM
 METRICS_MINIMUM_BASE_QUALITY=10
 
+# CLIP_OVERLAPPING_READS
 # Clipping overlapping reads in the metrics BAM
+# From PICARD: For paired reads, soft clip the 3' end of each read if necessary so that it does not extend past the 5' end of its mate.
 CLIP_OVERLAPPING_READS=1
 
-# Flagged reads in the metrics BAM (mpileup format)
-# default UNMAP,SECONDARY,QCFAIL,DUP
+# METRICS_FLAGS
+# Flagged reads to exclude in the metrics BAM (mpileup format)
+# default "UNMAP,SECONDARY,QCFAIL,DUP"
+# Available values (not exhaustive):
+#  - `UNMAP` (unmapped reads)
+#  - `SECONDARY` (secondary alignments)
+#  - `QCFAIL` (reads failing quality control)
+#  - `DUP` (duplicate reads)
 METRICS_FLAGS="UNMAP,SECONDARY,QCFAIL,DUP"
 
-# Flagged reads in the metrics BAM (samtools format)
+# SAMTOOLS_METRICS_FLAG_PARAM
+# Flagged reads filter in the metrics BAM (samtools format)
 # Generated from mpileup format (if empty)
+# Default: `" -F 0x4 -F 0x100 -F 0x200 -F 0x400"` (if generated from default METRICS_FLAGS)
+# Examples:
+# - `" -F 0x4 -F 0x100 -F 0x200 -F 0x400"` (exclude unmapped, secondary, QC fail, and duplicate reads)
 #SAMTOOLS_METRICS_FLAG_PARAM=" -F 0x4 -F 0x100 -F 0x200 -F 0x400"
 
-
-# INTERVAL_PADDING (default 0)
+# INTERVAL_PADDING
 # Add some “padding” to the intervals used (manifest) in order to include the flanking regions (typically ~100 bp)
+# Default: `0`
 INTERVAL_PADDING=0
 
-
-# COVERAGE CRITERIA (default "1,30")
-# For gene coverage metrics
-# the criteria to calculate the percent of bases over $COVERAGE_CRITERIA X (eg 30 for 30X)
-#COVERAGE_CRITERIA="1,30"
+# COVERAGE CRITERIA
+# Threshold for gene coverage metrics
+# The criteria to calculate the percent of bases over $COVERAGE_CRITERIA X (e.g. "30" for "30X")
+# Default: `"1,5,10,20,30,50,100,200,300"`
+# Examples: 
+# - `"1,30"` (calculate coverage for 1X and 30X)
+# - `"1,10,30,50,100,200,500,1000"` (calculate coverage for multiple depths)
 COVERAGE_CRITERIA="1,5,10,20,30,50,100,200,300"
 
-# COVERAGE DP THRESHOLD (default "30" "100" "1")
-# For gene coverage metrics
-# the criteria test if genes failed (or just warning) the coverage threshold
-SEQUENCING_DEPTH="1" # Sequencing depth threshold
-SEQUENCING_COVERAGE_THRESHOLD="1" # Sequencing coverage threshold
-MINIMUM_DEPTH="30" # fail DP threshold (default 30X)
-EXPECTED_DEPTH="100" # warn DP threshold (default 100X)
-DEPTH_COVERAGE_THRESHOLD="0.95" # threshold percentage of bases over the DP threshold
+# SEQUENCING_DEPTH
+# Sequencing depth threshold for gene coverage metrics
+# The minimum sequencing depth required for a base to be considered covered.
+# This defines the minimum sequencing depth required for a base to be considered covered.
+# default: 1
+SEQUENCING_DEPTH=1
 
-# CLIP_OVERLAPPING_READS (default 1)
-# From PICARD: For paired reads, soft clip the 3' end of each read if necessary so that it does not extend past the 5' end of its mate
-CLIP_OVERLAPPING_READS=1
+# SEQUENCING_COVERAGE_THRESHOLD
+# Sequencing coverage threshold for gene coverage metrics
+# The minimum fraction of bases that must meet the sequencing depth requirement.
+# This defines the minimum fraction of bases that must meet the sequencing depth requirement for a gene to be considered covered.
+# default: 1
+SEQUENCING_COVERAGE_THRESHOLD=1
 
-# NB_BASES_AROUND (default 0)
+# MINIMUM_DEPTH
+# Minimum sequencing depth for a gene to be considered failing the coverage threshold.
+# This defines the minimum sequencing depth for a gene to be considered failing the coverage threshold.
+# default: 30
+MINIMUM_DEPTH=30
+
+# EXPECTED_DEPTH
+# Expected sequencing depth for a gene to be considered warning the coverage threshold.
+# This defines the expected sequencing depth for a gene to be considered warning the coverage threshold.
+# default: 100
+EXPECTED_DEPTH=100
+
+# DEPTH_COVERAGE_THRESHOLD
+# Threshold percentage of bases over the DP threshold.
+# This defines the minimum fraction of bases that must meet the DP threshold for a gene to be considered covered.
+# default: 0.95
+DEPTH_COVERAGE_THRESHOLD=0.95
+
+# NB_BASES_AROUND
 # For gene coverage metrics
-# the number of bases to look around the exons from the given bed file
+# The number of bases to look around the exons from the given bed file
+# default: 0
 NB_BASES_AROUND=0
 
-# GENESCOVERAGE_PRECISION (default 2)
-# Genes Coverage calculation precision
+# GENESCOVERAGE_PRECISION
+# Genes Coverage calculation precision (number of decimal places)
+# default: 2
 GENESCOVERAGE_PRECISION=2
 
-# BEDFILE_GENES (default "")
-# For gene coverage metrics
-# the bed file containing the 5'UTR, 3'UTR and genomic coding coordinates.
+# BEDFILE_GENES
+# For gene coverage metrics.
+# A file or a list of files.
+# The bed file should include the regions of interest, such as exons, introns and other genomic coordinates.
+# The bed file should be in standard BED format with chromosome, start, and end positions for each region of interest.
+# This file is usually provided in the command line when running the analysis (and defined in the configuration file).
+# Metrics and VCF files are generated based on the regions defined in this bed file.
+# default: ""
 BEDFILE_GENES=""
 
-# VARANK ANALYSIS (default 0)
-# Performs VARANK ANALYSIS with Alamut (1 (for true) or 0 (for false))
-VARANK_ANALYSIS=0
-# if yes, define a folder to store the results
-# VARANK_FOLDER=$FOLDER_RESULTS/VARANK
-
-# BAM CHECK (default 0)
+# BAM CHECK
 # Check BAM for each manipulation step (clipping, realignment...)
 # Time consuming, but will stop the analysis in case of missing reads.
 # A Metrics on each BAM check the BAM decrependy in any case
 BAM_CHECK_STEPS=0
 
-# METRICS SNPEFF (default 0)
-# Generate snpEff variant metrics from VCF
-# Only for Report final VCF
+# METRICS SNPEFF
+# Generate snpEff variant metrics from VCF.
+# Only for Report final VCF.
 METRICS_SNPEFF=0
 
-# PIPELINES PRIORITIZATION
-# List of pipelines to prioritize for the report (final.vcf)
-PRIORITIZE_PIPELINES_LIST=""
 
+# RESOURCES
+#############
 
-
-
-
-# BAM COMPRESSION
-# Final BAM compression level (ALIGNER.bam)
-BAM_COMPRESSION=9
-
-
-# BAM VALIDATION COMPRESSION
-# Validation BAM compression level (ALIGNER.validation.bam)
-BAM_VALIDATION_COMPRESSION=5
-
-
-### GENCORE
-
-# supporting_reads ; set to 2 to keep the clusters with 2 or more supporting reads / ultrasensible filter
-# set to 1 to replace Picard Markduplicates dedup
-# default "" (corresponding to "--supporting_reads 1", see gencore doc)
-GENCORE_SUP_READS=""
-
-# --score_threshold
-# set to 8 recommanded for dup-rate < 50% if you want to keep all the DNA fragments, and for each output read you want to discard all the low quality unoverlapped mutations to obtain a relative clean data
-# default "" (corresponfing to "--score_threshold 6", see gencore doc)
-GENCORE_SCORE_THREESHOLD=""
-
-# --ratio_threshold
-# if the ratio of the major base in a cluster is less than <ratio_threshold>, it will be further compared to the reference.
-# The valud should be 0.5~1.0, and the default value is 0.8
-# default "" (corresponding to "--ratio_threshold 0.8", see gencore doc)
-GENCORE_RATIO_THREESHOLD=""
-
-# --umi_diff_threshold
-# if two reads with identical mapping position have UMI difference <= <umi_diff_threshold>, then they will be merged to generate a consensus read
-# Default "" (corresponding to "--umi_diff_threshold 2", see gencore doc)
-GENCORE_DIFF_THREESHOLD=""
-
-# Quality Threeshold
-# --high_qual (Q30) ; --moderate_qual (Q20) ; --low_qual (Q15)
-# --high_qual : the threshold for a quality score to be considered as high quality. Default 30 means Q30. (int [=30])
-# --moderate_qual : the threshold for a quality score to be considered as moderate quality. Default 20 means Q20. (int [=20])
-# --low_qual : the threshold for a quality score to be considered as low quality. Default 15 means Q15. (int [=15])
-# e.g. "--moderate_qual 20", "--high_qual 20 --moderate_qual 15 --low_qual 10"
-# default "" (corresponding to default quality, see gencore doc)
-GENCORE_QUAL_THREESHOLD=""
-
-# --coverage_sampling
-# the sampling rate for genome scale coverage statistics. Default 10000 means 1/10000
-# for statistics purpose, can be reduce to gain performance
-# not included in the mk file
-# default "" (corresponding to "--coverage_sampling=10000", see gencore doc)
-GENCORE_COVERAGE_SAMPLING=""
-
-
-### GATK CALLING
-
-# VCF DBSNP for GATK Calling and annotation
-# dbSNP database as VCF is used to annotate variant ID in ID VCF field and to provide known variants for GATK calling and annotation (if any)
-# https://gatk.broadinstitute.org/hc/en-us/articles/360046786692-VariantAnnotator#--dbsnp
-# This option allow GATK to use the VCF DBSNP for calling and annotation, if the file is available and not empty. If not, GATK will be used without DBSNP for calling and annotation.
-# See rules that use GATK for calling and annotation (e.g. "gatk_calling", "gatk_annotation", "gatk_calling_annotation") for more information about the use of VCF DBSNP for GATK calling and annotation.
-# See VCFDBSNP variable for the VCF DBSNP file path (in databases.app)
-# Default False
-# Example: 
-# - USE_VCFDBSNP_WITH_GATK=1
-# - USE_VCFDBSNP_WITH_GATK=0
-USE_VCFDBSNP_WITH_GATK=0
-
-# VCF DBSNP path
-# Path to the dbSNP database as VCF used for GATK calling and annotation (if any)
-# This file need to be available and not empty for GATK to use it for calling and annotation, if USE_VCFDBSNP_WITH_GATK=1
-# This variable is automatically defined in default configuration in databases.app
-# Default: "" (corresponding to default VCF DBSNP defined in databases.app, depending on ASSEMBLY)
-# Example: VCF_DBSNP_GATK_CALLING=$FOLDER_DATABASES/dbsnp_138.hg19.vcf.gz
-VCFDBSNP=
-
-
-### CRAM
-
-# CRAM OPTIONS
-# Final CRAM options for compression (archive.cram)
-# example: CRAM_OPTIONS="version=3.0,level=9,no_ref,use_lzma,use_bzip2,use_fqz,seqs_per_slice=100000"
-CRAM_OPTIONS="version=3.0,level=9,no_ref"
-
-
-# CRAM REMOVE TAGS
-# Final CRAM options for tags (archive.cram)
-# example: CRAM_REMOVE_TAGS="BD,BI,OQ"
-CRAM_REMOVE_TAGS="BD,BI"
-
-
-### VCF Report
-
-# VCF genotype missing
-# "missing": Replace 0/0 or 0|0 genotypes by ./. and .|.
-# "missing_clean": Replace 0/0 or 0|0 genotypes by ./. and .|. and clean by removing other FORMAT fields
-VCF_MISSING_GENOTYPE="missing_clean"
-
-
-# THREADS (default AUTO)
-# Number of threads to use for the analysis
-# AUTO will considere CORE-1 threads to use
+# THREADS
+# Threads configuration for the analysis
+# Value AUTO will consider CORE threads to use
 # The number of threads need to be between 1 and the total number of cores available (autoadjusting if bad value)
+# Default: AUTO (uses CORE threads)
+# Examples:
+# - AUTO (uses CORE threads)
+# - "" (uses CORE threads, as if AUTO was specified)
+# - 4 (uses 4 threads)
+# - 12 (uses 12 threads if CORES>=12, otherwise uses CORES threads)
 THREADS=AUTO
 
-# THREADS_LOADING (default THREADS)
-# Number of threads used for loading demultiplexed data
-# AUTO will considere THREADS threads to use
-# The number of threads need to be between 1 and the total number of cores available (autoadjusting if bad value)
+# THREADS_LOADING
+# Threads configuration for loading demultiplexed data.
+# The number of threads need to be between 1 and the total number of cores available (autoadjusting if bad value).
+# Default: "" (uses THREADS threads)
+# Examples:
+# - "" (uses THREADS threads)
+# - 4 (uses 4 threads)
 #THREADS_LOADING=
 
-# THREADS_WRITING (default THREADS)
-# Number of threads used for writing demultiplexed data
-# AUTO will considere THREADS threads to use
-# The number of threads need to be between 1 and the total number of cores available (autoadjusting if bad value)
+# THREADS_WRITING
+# Threads configuration for writing demultiplexed data.
+# The number of threads need to be between 1 and the total number of cores available (autoadjusting if bad value).
+# Default: "" (uses THREADS threads)
+# Examples:
+# - "" (uses THREADS threads)
+# - 4 (uses 4 threads)
 #THREADS_WRITING=
 
-# THREADS_COPY (default 1)
-# Number of threads used for copy files in repositories
-# The number of threads need to be between 1 and the total number of cores available (autoadjusting if bad value)
+# THREADS_COPY
+# Threads configuration for copying files in repositories.
+# The number of threads need to be between 1 and the total number of cores available (autoadjusting if bad value).
+# Default: 1 (uses 1 thread)
+# Examples:
+# - 1 (uses 1 thread)
+# - 2 (uses 2 threads)
 #THREADS_COPY=
 
-
-# MEMORY (default AUTO)
-
-# Total memory to use by thread
-# default: MemTotal from /proc/meminfo divided by number of threads
+# MEMORY
+# Total memory to use by thread.
+# Memory is automatically defined based on the system's available memory and the number of threads.
+# (MemTotal from /proc/meminfo divided by number of threads).
+# Use unit as needed (e.g., "g" for gigabytes, "m" for megabytes).
+# Default: "" (automatically calculated based on system memory and number of threads)
+# Examples:
+# - "4g" (4 gigabytes)
+# - "8192m" (8192 megabytes)
 #MEMORY=
 
-# Maximum memory to use for Java
-# default: MEMORY
+# JAVA_MEMORY
+# Maximum memory to use for Java (e.g., "4g" for 4 gigabytes).
+# By défault JAVA_MEMORY uses MEMORY value.
+# default: "" (corresponds to MEMORY)
 #JAVA_MEMORY=
 
+# MAX_VALIDATION_BAM_SIZE
+# If validation bam is small enough (lower than MAX_VALIDATION_BAM_SIZE Kb), launch CollectHsMetrics the classic way.
+# Otherwise increase RAM to MAX_CONCURRENT_HSMETRICS_RAM and limit command to MAX_CONCURRENT_HSMETRICS concurrent launches.
+# Default: 0 (switch off the size check for validation BAM, effectively disables the classic way and forces the use of concurrent launches)
+# Examples:
+# - 0 (switch off the size check for validation BAM, effectively disables the classic way and forces the use of concurrent launches)
+# - 2097152 (for BAM file of maximum 2 Go)
+# - 1000000000 (around 1To, exageratly big to switch on the classic way)
+MAX_VALIDATION_BAM_SIZE=0
 
-# RESOURCES MANAGMENT
-#######################
+# MAX_CONCURRENT_HSMETRICS_RAM
+# RAM allocated for each concurrent CollectHsMetrics launch (in Go with "g" suffix).
+# Default: "36g" (36 gigabytes of RAM for each HsMetrics)
+# Examples:
+# - "16g" (16 gigabytes of RAM for each HsMetrics)
+# - "36g" (36 gigabytes of RAM for each HsMetrics)
+MAX_CONCURRENT_HSMETRICS_RAM=36g
 
-### Picard CollectHsMetrics
-# If validation bam is small enough (lower than MAX_VALIDATION_BAM_SIZE Kb), launch CollectHsMetrics the classic way
-# Otherwise increase RAM to MAX_CONCURRENT_HSMETRICS_RAM and limit command to MAX_CONCURRENT_HSMETRICS concurrent launches
-# default: MAX_VALIDATION_BAM_SIZE=1000000000 (exageratly big to switch off)
-# example:
-# - MAX_VALIDATION_BAM_SIZE=2097152		# 2Go
-# - MAX_CONCURRENT_HSMETRICS=1 			# No concurrence, only 1 HsMetrics at once
-# - MAX_CONCURRENT_HSMETRICS_RAM=16g 	# 16Go of RAM to Collect HsMetrics
-MAX_VALIDATION_BAM_SIZE=1000000000
-MAX_CONCURRENT_HSMETRICS=1
-MAX_CONCURRENT_HSMETRICS_RAM=16g
-
-
-
-# HOWARD ANNOTATION/PRIOTITIZATION/TRANSLATION CONFIGURATION
-
-
-# DATABASES FOLDER for HOWARD/ANNOVAR/SNPEFF/DEJAVU
-# Define ANNOVAR and SNPEFF and DEJAVU folders by default
-#FOLDER_DATABASES_ANNOVAR=$FOLDER_DATABASES/annovar
-#FOLDER_DATABASES_SNPEFF=$FOLDER_DATABASES/snpeff/current
-#FOLDER_DATABASES_DEJAVU_ANNOVAR=$FOLDER_DATABASES/annovar
-#FOLDER_DATABASES_DEJAVU_ANNOVAR=$FOLDER_DATABASES/dejavu/latest/annovar
-
-
-# HOWARD Configuration files for Annotation and Prioritization
-# Use APP_FOLDER if necessary
-# default: $HOWARD_FOLDER_CONFIG/config.annotation.ini and $HOWARD_FOLDER_CONFIG/config.prioritization.ini
-# Example: HOWARD_CONFIG_ANNOTATION=$APP_FOLDER/config.annotation.ini
-# Example: HOWARD_CONFIG_PRIORITIZATION=$STARK_FOLDER_APPS/MY_APP_GROUP/config.prioritization.ini
-#HOWARD_CONFIG_ANNOTATION=$HOWARD_FOLDER_CONFIG/config.annotation.ini
-#HOWARD_CONFIG_PRIORITIZATION=$HOWARD_FOLDER_CONFIG/config.prioritization.ini
-
-# HOWARD DEJAVU Configuration files for Annotation
-# Use APP_FOLDER if necessary
-# default: $HOWARD_FOLDER_CONFIG/config.annotation.ini
-# Example: HOWARD_CONFIG_DEJAVU_ANNOTATION=$APP_FOLDER/config.annotation.ini
-# Example: HOWARD_CONFIG_DEJAVU_ANNOTATION=$STARK_FOLDER_APPS/MY_APP_GROUP/config.annotation.ini
-#HOWARD_CONFIG_DEJAVU_ANNOTATION=$HOWARD_FOLDER_CONFIG/config.annotation.ini
-
-
-# HOWARD CONFIG
-HOWARD_CONFIG=$HOWARD_FOLDER_CONFIG/config.json
-#HOWARD_CONFIG={}
-
-# HOWARD prioritization configuration
-HOWARD_PRIORITIZATION_CONFIG="$HOWARD_FOLDER_CONFIG/prioritization_profiles.json" # default prioritization config
-
-# HOWARD calculation configuration
-HOWARD_CALCULATION_CONFIG="$HOWARD_FOLDER_CONFIG/calculation_config.json" # default calculation config
-
-
-# HOWARD PARAM
-# Use $HOWARD_FOLDER_CONFIG if necessary
-# default: $HOWARD_FOLDER_CONFIG/param.json
-# Example: HOWARD_PARAM=$APP_FOLDER/param.json
-# Example: HOWARD_PARAM=$STARK_FOLDER_APPS/MY_APP_GROUP/param.json
-
-# Default HOWARD parameters
-HOWARD_PARAM=$HOWARD_FOLDER_CONFIG/param.howard.json
-#HOWARD_PARAM='{}'
-
-# Default HOWARD parameters for minimal VCF annotation (rule howard_minimal)
-HOWARD_PARAM_MINIMAL=$HOWARD_FOLDER_CONFIG/param.howard.minimal.json
-#HOWARD_PARAM_MINIMAL='{}'
-
-# Default HOWARD parameters for report (rule howard)
-HOWARD_PARAM_REPORT=$HOWARD_FOLDER_CONFIG/param.report.json
-#HOWARD_PARAM_REPORT='{}'
-
-# Default HOWARD parameters for whole analysis (rule howard)
-HOWARD_PARAM_ANALYSIS=$HOWARD_FOLDER_CONFIG/param.analysis.json
-#HOWARD_PARAM_ANALYSIS='{}'
-
-# INFO to FORMAT
-# Transfers INFO annotation to FORMAT annotation
-# Useful for annotations on full VCF to final VCF on each sample
-# (such as DP_stats, VAF_stats, etc.)
-# Beware that annotation exists (see annotation parameters in HOWARD)
-# Available in HOWARD (see Parameters JSON help)
-# Default: "" (no transfer)
-INFO_TO_FORMAT_ANNOTATIONS=""
-
-
-# GATK4 Recalibrator and Filtration
-
-# Variant Filtration
-# Filter variant calls based on INFO and/or FORMAT annotations
-
-# Variant Filtration main option (see documentation guide for more info)
-# default: VARIANTFILTRATION_OPTIONS=
-#VARIANTFILTRATION_OPTIONS=
-
-# One or more expression used with INFO fields to filter SNP (see documentation guide for more info)
-# default: VARIANTFILTRATION_SNP_FILTER_OPTION=''
-# example: VARIANTFILTRATION_SNP_FILTER_OPTION='--filter-name "SNP_filter_QD" --filter-expression "QD < 2.0" --filter-name "SNP_filter_FS" --filter-expression "FS > 60.0" --filter-name "SNP_filter_MQ" --filter-expression "MQ < 40.0" --filter-name "SNP_filter_MQRankSum" --filter-expression "MQRankSum < -12.5" --filter-name "SNP_filter_ReadPosRankSum" --filter-expression "ReadPosRankSum < -8.0"'
-# example: VARIANTFILTRATION_SNP_FILTER_OPTION='--filter-name "HARD_TO_VALIDATE" --filter-expression "MQ0 >= 4 && ((MQ0 / (1.0 * DP)) > 0.1)"    --filter-name "VeryVeryLowDepth" --filter-expression "DP == 0"    --filter-name "VeryLowDepth" --filter-expression "DP > 0 && DP < 10"    --filter-name "LowDepth" --filter-expression "DP >= 10 && DP < 30"    --filter-name "VeryVeryLowQual" --filter-expression "QUAL == 0"    --filter-name "VeryLowQual" --filter-expression "QUAL > 0 && QUAL < 30.0"    --filter-name "LowQual" --filter-expression "QUAL >= 30.0 && QUAL < 50.0"    --filter-name "LowQD" --filter-expression "QD >= 0.0 && QD < 1.5"'
-VARIANTFILTRATION_SNP_FILTER_OPTION='--filter-name "SNP_filter_QD" --filter-expression "QD < 2.0" --filter-name "SNP_filter_FS" --filter-expression "FS > 60.0" --filter-name "SNP_filter_MQ" --filter-expression "MQ < 40.0" --filter-name "SNP_filter_MQRankSum" --filter-expression "MQRankSum < -12.5" --filter-name "SNP_filter_ReadPosRankSum" --filter-expression "ReadPosRankSum < -8.0"'
-
-# One or more expression used with FORMAT (sample/genotype-level) fields to filter SNP (see documentation guide for more info)
-# default: VARIANTFILTRATION_SNP_FILTER_EXPRESSION_OPTION=''
-# example: VARIANTFILTRATION_SNP_FILTER_EXPRESSION_OPTION='--genotype-filter-expression "GQ == 0" --genotype-filter-name "genotype_GQ_filter_VeryVeryLow" --genotype-filter-expression "GQ > 0 && GQ < 50.0" --genotype-filter-name "genotype_GQ_filter_VeryLow"  --genotype-filter-expression "GQ >= 50.0 && GQ < 90.0" --genotype-filter-name "genotype_GQ_filter_Low" --genotype-filter-expression "DP == 0" --genotype-filter-name "genotype_DP_filter_VeryVeryLow" --genotype-filter-expression "DP >= 0 && DP < 10" --genotype-filter-name "genotype_DP_filter_VeryLow"  --genotype-filter-expression "DP >= 10 && DP < 30" --genotype-filter-name "genotype_GQ_filter_Low"'
-# example: VARIANTFILTRATION_SNP_FILTER_EXPRESSION_OPTION='--genotype-filter-name "VeryVeryLowGQ" --genotype-filter-expression "GQ == 0"    --genotype-filter-name "VeryLowGQ" --genotype-filter-expression "GQ > 0 && GQ < 50.0"    --genotype-filter-name "LowGQ" --genotype-filter-expression "GQ >= 50.0 && GQ < 90.0"    --genotype-filter-name "VeryVeryLowDP" --genotype-filter-expression "DP == 0"    --genotype-filter-name "VeryLowDP" --genotype-filter-expression "DP >= 0 && DP < 10"    --genotype-filter-name "LowDP" --genotype-filter-expression "DP >= 10 && DP < 30" '
-VARIANTFILTRATION_SNP_FILTER_EXPRESSION_OPTION='--genotype-filter-expression "GQ == 0" --genotype-filter-name "genotype_GQ_filter_VeryVeryLow" --genotype-filter-expression "GQ > 0 && GQ < 50.0" --genotype-filter-name "genotype_GQ_filter_VeryLow"  --genotype-filter-expression "GQ >= 50.0 && GQ < 90.0" --genotype-filter-name "genotype_GQ_filter_Low" --genotype-filter-expression "DP == 0" --genotype-filter-name "genotype_DP_filter_VeryVeryLow" --genotype-filter-expression "DP >= 0 && DP < 10" --genotype-filter-name "genotype_DP_filter_VeryLow"  --genotype-filter-expression "DP >= 10 && DP < 30" --genotype-filter-name "genotype_GQ_filter_Low"'
-
-# One or more expression used with INFO fields to filter INDEL (see documentation guide for more info)
-# default: VARIANTFILTRATION_INDEL_FILTER_OPTION=''
-# example: VARIANTFILTRATION_INDEL_FILTER_OPTION='--filter-name "INDEL_filter_QD" --filter-expression "QD < 2.0" --filter-name "INDEL_filter_FS" --filter-expression "FS > 200.0" --filter-name "INDEL_filter_ReadPosRankSum" --filter-expression "ReadPosRankSum < -20.0"'
-# example: VARIANTFILTRATION_INDEL_FILTER_OPTION='--filter-name "HARD_TO_VALIDATE" --filter-expression "MQ0 >= 4 && ((MQ0 / (1.0 * DP)) > 0.1)"    --filter-name "VeryVeryLowDepth" --filter-expression "DP == 0"    --filter-name "VeryLowDepth" --filter-expression "DP > 0 && DP < 10"    --filter-name "LowDepth" --filter-expression "DP >= 10 && DP < 30"    --filter-name "VeryVeryLowQual" --filter-expression "QUAL == 0"    --filter-name "VeryLowQual" --filter-expression "QUAL > 0 && QUAL < 30.0"    --filter-name "LowQual" --filter-expression "QUAL >= 30.0 && QUAL < 50.0"    --filter-name "LowQD" --filter-expression "QD >= 0.0 && QD < 1.5"'
-VARIANTFILTRATION_INDEL_FILTER_OPTION='--filter-name "INDEL_filter_QD" --filter-expression "QD < 2.0" --filter-name "INDEL_filter_FS" --filter-expression "FS > 200.0" --filter-name "INDEL_filter_ReadPosRankSum" --filter-expression "ReadPosRankSum < -20.0"'
-
-# One or more expression used with FORMAT (sample/genotype-level) fields to filter INDEL (see documentation guide for more info)
-# default: VARIANTFILTRATION_INDEL_FILTER_EXPRESSION_OPTION=''
-# example: VARIANTFILTRATION_INDEL_FILTER_EXPRESSION_OPTION='--genotype-filter-expression "GQ == 0" --genotype-filter-name "genotype_GQ_filter_VeryVeryLow" --genotype-filter-expression "GQ > 0 && GQ < 50.0" --genotype-filter-name "genotype_GQ_filter_VeryLow"  --genotype-filter-expression "GQ >= 50.0 && GQ < 90.0" --genotype-filter-name "genotype_GQ_filter_Low" --genotype-filter-expression "DP == 0" --genotype-filter-name "genotype_DP_filter_VeryVeryLow" --genotype-filter-expression "DP >= 0 && DP < 10" --genotype-filter-name "genotype_DP_filter_VeryLow"  --genotype-filter-expression "DP >= 10 && DP < 30" --genotype-filter-name "genotype_GQ_filter_Low"'
-# example: VARIANTFILTRATION_INDEL_FILTER_EXPRESSION_OPTION='--genotype-filter-name "VeryVeryLowGQ" --genotype-filter-expression "GQ == 0"    --genotype-filter-name "VeryLowGQ" --genotype-filter-expression "GQ > 0 && GQ < 50.0"    --genotype-filter-name "LowGQ" --genotype-filter-expression "GQ >= 50.0 && GQ < 90.0"    --genotype-filter-name "VeryVeryLowDP" --genotype-filter-expression "DP == 0"    --genotype-filter-name "VeryLowDP" --genotype-filter-expression "DP >= 0 && DP < 10"    --genotype-filter-name "LowDP" --genotype-filter-expression "DP >= 10 && DP < 30" '
-VARIANTFILTRATION_INDEL_FILTER_EXPRESSION_OPTION='--genotype-filter-expression "GQ == 0" --genotype-filter-name "genotype_GQ_filter_VeryVeryLow" --genotype-filter-expression "GQ > 0 && GQ < 50.0" --genotype-filter-name "genotype_GQ_filter_VeryLow"  --genotype-filter-expression "GQ >= 50.0 && GQ < 90.0" --genotype-filter-name "genotype_GQ_filter_Low" --genotype-filter-expression "DP == 0" --genotype-filter-name "genotype_DP_filter_VeryVeryLow" --genotype-filter-expression "DP >= 0 && DP < 10" --genotype-filter-name "genotype_DP_filter_VeryLow"  --genotype-filter-expression "DP >= 10 && DP < 30" --genotype-filter-name "genotype_GQ_filter_Low"'
-
-# Remove previous filters applied to the VCF
-# within makefile rule: VARIANTFILTRATION_INVALIDATE_PREVIOUS_FILTERS_OPTION?=$(shell if (( $(VARIANTFILTRATION_INVALIDATE_PREVIOUS_FILTERS) )); then echo " --invalidate-previous-filters "; fi )
-# default: VARIANTFILTRATION_INVALIDATE_PREVIOUS_FILTERS=0
-VARIANTFILTRATION_INVALIDATE_PREVIOUS_FILTERS=1
-
-
-# Variant Recalibrator
-
-# Variant Recalibrator main option (see documentation guide for more info)
-# default: VARIANTRECALIBRATOR_OPTIONS=
-#VARIANTRECALIBRATOR_OPTIONS=
-
-# Variant Recalibrator SNP resources option (see documentation guide for more info)
-# These resources need to be available on STARK Databases folder for GATK
-# default:
-VARIANTRECALIBRATION_SNP_RESOURCES_DEFAULT_HG19="
-	-resource:hapmap,known=false,training=true,truth=true,prior=15.0 hapmap_3.3.hg19.sites.vcf.gz
-	-resource:omni,known=false,training=true,truth=true,prior=12.0 1000G_omni2.5.hg19.sites.vcf.gz
-	-resource:1000G,known=false,training=true,truth=false,prior=10.0 1000G_phase1.snps.high_confidence.hg19.sites.vcf.gz
-	-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.hg19.vcf.gz
-"
-VARIANTRECALIBRATION_SNP_RESOURCES_DEFAULT_HG38="
-	-resource:hapmap,known=false,training=true,truth=true,prior=15.0 hapmap_3.3.hg38.vcf.gz
-	-resource:omni,known=false,training=true,truth=true,prior=12.0 1000G_omni2.5.hg38.vcf.gz
-	-resource:1000G,known=false,training=true,truth=false,prior=10.0 1000G_phase1.snps.high_confidence.hg38.vcf.gz
-	-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.hg38.vcf.gz
-"
-if [ "$ASSEMBLY" == 'hg19' ]; then
-    VARIANTRECALIBRATION_SNP_RESOURCES=$VARIANTRECALIBRATION_SNP_RESOURCES_DEFAULT_HG19
-fi;
-if [ "$ASSEMBLY" == 'hg38' ]; then
-    VARIANTRECALIBRATION_SNP_RESOURCES=$VARIANTRECALIBRATION_SNP_RESOURCES_DEFAULT_HG38
-fi;
-
-# Variant Recalibrator INDEL resources option (see documentation guide for more info)
-# These resources need to be available on STARK Databases folder for GATK
-# default:
-VARIANTRECALIBRATION_INDEL_RESOURCES_DEFAULT_HG19="
-	-resource:mills,known=false,training=true,truth=true,prior=12.0 Mills_and_1000G_gold_standard.indels.hg19.sites.vcf.gz
-	-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.hg19.vcf.gz
-"
-VARIANTRECALIBRATION_INDEL_RESOURCES_DEFAULT_HG38="
-	-resource:mills,known=false,training=true,truth=true,prior=12.0 Mills_and_1000G_gold_standard.indels.hg38.vcf.gz
-	-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.hg38.vcf.gz
-"
-if [ "$ASSEMBLY" == 'hg19' ]; then
-    VARIANTRECALIBRATION_INDEL_RESOURCES=$VARIANTRECALIBRATION_INDEL_RESOURCES_DEFAULT_HG19
-fi;
-if [ "$ASSEMBLY" == 'hg38' ]; then
-    VARIANTRECALIBRATION_INDEL_RESOURCES=$VARIANTRECALIBRATION_INDEL_RESOURCES_DEFAULT_HG38
-fi;
-
-# Variant Recalibrator SNP annotations option (see documentation guide for more info)
-# default: VARIANTRECALIBRATION_SNP_ANNOTATIONS="-an QD -an MQ -an MQRankSum -an ReadPosRankSum -an FS -an SOR -an DP"
-VARIANTRECALIBRATION_SNP_ANNOTATIONS="-an QD -an MQ -an MQRankSum -an ReadPosRankSum -an FS -an SOR -an DP"
-
-# Variant Recalibrator INDEL annotations option (see documentation guide for more info)
-# default: VARIANTRECALIBRATION_INDEL_ANNOTATIONS="-an QD -an DP -an FS -an SOR -an ReadPosRankSum -an MQRankSum"
-VARIANTRECALIBRATION_INDEL_ANNOTATIONS="-an QD -an DP -an FS -an SOR -an ReadPosRankSum -an MQRankSum"
-
-# Variant Recalibrator SNP tranches option (see documentation guide for more info)
-# default: VARIANTRECALIBRATION_SNP_TRANCHES="-tranche 100.0 -tranche 99.95 -tranche 99.9 -tranche 99.8 -tranche 99.7 -tranche 99.6 -tranche 99.5 -tranche 99.4 -tranche 99.3 -tranche 99.2 -tranche 99.1 -tranche 99.0 -tranche 98.0 -tranche 97.0 -tranche 96.0 -tranche 95.0 -tranche 94.0 -tranche 93.0 -tranche 92.0 -tranche 91.0 -tranche 90.0"
-VARIANTRECALIBRATION_SNP_TRANCHES="-tranche 100.0 -tranche 99.95 -tranche 99.9 -tranche 99.8 -tranche 99.7 -tranche 99.6 -tranche 99.5 -tranche 99.4 -tranche 99.3 -tranche 99.2 -tranche 99.1 -tranche 99.0 -tranche 98.0 -tranche 97.0 -tranche 96.0 -tranche 95.0 -tranche 94.0 -tranche 93.0 -tranche 92.0 -tranche 91.0 -tranche 90.0"
-
-# Variant Recalibrator INDEL tranches option (see documentation guide for more info)
-# default: VARIANTRECALIBRATION_INDEL_TRANCHES="-tranche 100.0 -tranche 99.95 -tranche 99.9 -tranche 99.8 -tranche 99.7 -tranche 99.6 -tranche 99.5 -tranche 99.4 -tranche 99.3 -tranche 99.2 -tranche 99.1 -tranche 99.0 -tranche 98.0 -tranche 97.0 -tranche 96.0 -tranche 95.0 -tranche 94.0 -tranche 93.0 -tranche 92.0 -tranche 91.0 -tranche 90.0"
-VARIANTRECALIBRATION_INDEL_TRANCHES="-tranche 100.0 -tranche 99.95 -tranche 99.9 -tranche 99.8 -tranche 99.7 -tranche 99.6 -tranche 99.5 -tranche 99.4 -tranche 99.3 -tranche 99.2 -tranche 99.1 -tranche 99.0 -tranche 98.0 -tranche 97.0 -tranche 96.0 -tranche 95.0 -tranche 94.0 -tranche 93.0 -tranche 92.0 -tranche 91.0 -tranche 90.0"
-
-
-# Variant Recalibrator Optional Variant Filtration 
-# If Variant Recalibrator failed, usually due to lack of variant in the input callset, a Variant Filtration is optional
-# default: no filtration
-# example: Use empty value to switch off this option (no filtration)
-# VARIANTRECALIBRATOR_VARIANTFILTRATION_SNP_FILTER_OPTION=
-# VARIANTRECALIBRATOR_VARIANTFILTRATION_SNP_FILTER_EXPRESSION_OPTION=
-# VARIANTRECALIBRATOR_VARIANTFILTRATION_INDEL_FILTER_OPTION=
-# VARIANTRECALIBRATOR_VARIANTFILTRATION_INDEL_FILTER_EXPRESSION_OPTION=
-# example: Use same options than Variant Filtration in stand alone (see above)
-# VARIANTRECALIBRATOR_VARIANTFILTRATION_SNP_FILTER_OPTION=$VARIANTFILTRATION_SNP_FILTER_OPTION
-# VARIANTRECALIBRATOR_VARIANTFILTRATION_SNP_FILTER_EXPRESSION_OPTION=$VARIANTFILTRATION_SNP_FILTER_EXPRESSION_OPTION
-# VARIANTRECALIBRATOR_VARIANTFILTRATION_INDEL_FILTER_OPTION=$VARIANTFILTRATION_INDEL_FILTER_OPTION
-# VARIANTRECALIBRATOR_VARIANTFILTRATION_INDEL_FILTER_EXPRESSION_OPTION=$VARIANTFILTRATION_INDEL_FILTER_EXPRESSION_OPTION
-# Filter variant calls based on INFO and/or FORMAT annotations for SNP and INDEL 
-VARIANTRECALIBRATOR_VARIANTFILTRATION_SNP_FILTER_OPTION=$VARIANTFILTRATION_SNP_FILTER_OPTION
-VARIANTRECALIBRATOR_VARIANTFILTRATION_SNP_FILTER_EXPRESSION_OPTION=$VARIANTFILTRATION_SNP_FILTER_EXPRESSION_OPTION
-VARIANTRECALIBRATOR_VARIANTFILTRATION_INDEL_FILTER_OPTION=$VARIANTFILTRATION_INDEL_FILTER_OPTION
-VARIANTRECALIBRATOR_VARIANTFILTRATION_INDEL_FILTER_EXPRESSION_OPTION=$VARIANTFILTRATION_INDEL_FILTER_EXPRESSION_OPTION
-
-
-
-# GATK BAM Realignment and Recalibration
-#####################################
-
-# GATK BAM Realignment
-# Realignment is a process of correcting misalignments around indels. It is recommended to perform realignment before variant calling, especially for indel calling, to improve the accuracy of variant calling (not for GATK4 Haplotype Caller and MuTect2).
-# This option allow GATK to perform realignment, if the file is available and not empty. If not, GATK will be used without realignment.
-# Realignemnt is performed with GATK3 RealignerTargetCreator and IndelRealigner, and not performed with GATK4 (GATK4 Haplotype Caller and MuTect2 perform local realignment during calling, so GATK4 do not include Realignemnt tools).
-# This option is used with the GATK3 RealignerTargetCreator command to identify regions to realign, and with the GATK3 IndelRealigner command to perform realignment.
-# The VCF files include Indels and can be the same as for VCF recalibration (see VARIANTRECALIBRATION_INDEL_RESOURCES).
-# Exemple:
-# - GATK_REALIGNMENT_KNOWN_OPTIONS="--known $VCFDBSNP"
-# default:
-GATK_REALIGNMENT_KNOWN_OPTIONS=$(echo -e "$VARIANTRECALIBRATION_INDEL_RESOURCES" | sed "s#-resource.* \(.*\)#-known "$DBFOLDER"/gatk/current/"$ASSEMBLY"/\1#gi" | xargs echo)
-
-# GATK BAM Recalibration
-# Recalibration is a process of correcting base quality scores. It is recommended to perform recalibration before variant calling to improve the accuracy of variant calling.
-# This option allow GATK to perform recalibration, if the file is available and not empty. If not, GATK will be used without recalibration.
-# Recalibration is performed with GATK4 BaseRecalibrator and PrintReads
-# This option is used with the GATK4 BaseRecalibrator command to identify covariates to recalibrate, and with the GATK4 PrintReads command to perform recalibration.
-# The VCF files include SNPs and can be the same as for VCF recalibration (see VARIANTRECALIBRATION_SNP_RESOURCES).
-# Exemple:
-# - GATK_RECALIBRATION_KNOWN_OPTIONS="--known-sites $VCFDBSNP"
-# default:
-GATK_RECALIBRATION_KNOWN_OPTIONS=$(echo -e "$VARIANTRECALIBRATION_SNP_RESOURCES" | sed "s#-resource.* \(.*\)#--known-sites "$DBFOLDER"/gatk/current/"$ASSEMBLY"/\1#gi" | xargs echo)
-
-
-
-# REPORT
-# Report variables
-
-# Report Sections
-# List of sections to show in the report (default "ALL")
-# Sections :
-#   Report Sections: results_summary sequencing_mapping depth coverage variant_calling variant_stats
-#   Report Annex Sections: annex_coverage annex_depth annex_genes_coverage annex_variants annex_annotations
-REPORT_SECTIONS="ALL"
-
-
-### REPORT for run Files
-# Generate variants files from run with full VCF (include all calling information)
-REPORT_VARIANTS_FULL=0
+# MAX_CONCURRENT_HSMETRICS
+# Maximum number of concurrent CollectHsMetrics launches.
+# Can be set to "AUTO" to automatically determine the number of concurrent launches based on system resources and RAM requirements.
+# Default: "AUTO" (automatically determined based on system resources and RAM requirements)
+# Examples:
+# - "AUTO" (automatically determined based on system resources and RAM requirements)
+# - 1 (no concurrency, only 1 HsMetrics at once)
+# - 4 (up to 4 HsMetrics can run concurrently)
+MAX_CONCURRENT_HSMETRICS="AUTO"
 
 
 # REPOSITORY and ARCHIVES
-# Copy files into folders for repository and archives
-# Repository files patterns to add
+###########################
+
+# REPOSITORY_FILE_PATTERNS
+# Copy files into each sample folders for repository (root).
+# Patterns are defined using shell-style wildcards and can include variables like $SAMPLE.
+# Each pattern should match the files you want to include in the repository.
+# Mandatory files (such as reports files) are automatically included and do not need to be specified in the patterns.
+# Default: ' $SAMPLE.*.validation.bam $SAMPLE.*.validation.bam.bai $SAMPLE.*.bam.metrics/$SAMPLE.*.validation.flags.Design.bed $SAMPLE.reports/$SAMPLE.full.Design.vcf.gz $SAMPLE.reports/$SAMPLE.full.Design.vcf.gz.tbi $SAMPLE.reports/$SAMPLE.full.Design.tsv '
+# Examples:
+# - ' $SAMPLE.*.validation.bam $SAMPLE.*.validation.bam.bai $SAMPLE.*.bam.metrics/$SAMPLE.*.validation.flags.Design.bed $SAMPLE.reports/$SAMPLE.full.Design.vcf.gz $SAMPLE.reports/$SAMPLE.full.Design.vcf.gz.tbi $SAMPLE.reports/$SAMPLE.full.Design.tsv ' (default)
+# - ' $SAMPLE.*.bam $SAMPLE.*.bam.bai $SAMPLE.reports/$SAMPLE.full.vcf.gz $SAMPLE.reports/$SAMPLE.full.vcf.gz.tbi ' (alternative pattern for only BAM and VCF files)
 REPOSITORY_FILE_PATTERNS=' $SAMPLE.*.validation.bam $SAMPLE.*.validation.bam.bai $SAMPLE.*.bam.metrics/$SAMPLE.*.validation.flags.Design.bed $SAMPLE.reports/$SAMPLE.full.Design.vcf.gz $SAMPLE.reports/$SAMPLE.full.Design.vcf.gz.tbi $SAMPLE.reports/$SAMPLE.full.Design.tsv '
-# Repository files patterns to exclude on results subfolder (usually 'STARK'). Useful to reduce storage and exclude repeated files (in others files patterns varaibles)
+
+# REPOSITORY_FILE_SUBFOLDER_PATTERNS
+# Patterns to exclude files in repository subfolders (usually 'STARK'). Useful to reduce storage and exclude repeated files.
+# Files such as raw FASTQ files or intermediate validation BAM files (already in repository folders) can be excluded from repository subfolders to save space.
+# Default: ' $SAMPLE.*fastq.gz $SAMPLE.*.validation.bam $SAMPLE.*.validation.bam.bai '
+# Example:
+# - ' $SAMPLE.*fastq.gz $SAMPLE.*.validation.bam $SAMPLE.*.validation.bam.bai ' (default)
+# - ' $SAMPLE.*.bam $SAMPLE.*.bam.bai ' (alternative pattern for repository subfolders)
 REPOSITORY_FILE_SUBFOLDER_PATTERNS=' $SAMPLE.*fastq.gz $SAMPLE.*.validation.bam $SAMPLE.*.validation.bam.bai '
-# Archives files patterns to add
+
+# ARCHIVES_FILE_PATTERNS
+# Archives files patterns to include in the archives folder.
+# These patterns define which files will be copied into the archives folder.
+# Mandatory files (such as CRAM files for archives) are automatically included and do not need to be specified in the patterns.
+# Default: ' $SAMPLE.reports/$SAMPLE.full.vcf.gz $SAMPLE.reports/$SAMPLE.full.vcf.gz.tbi $SAMPLE.reports/$SAMPLE.final.tsv $SAMPLE.*.bam.metrics/$SAMPLE.*.validation.flags.*.bed '
+# Examples:
+# - ' $SAMPLE.reports/$SAMPLE.full.vcf.gz $SAMPLE.reports/$SAMPLE.full.vcf.gz.tbi $SAMPLE.reports/$SAMPLE.final.tsv $SAMPLE.*.bam.metrics/$SAMPLE.*.validation.flags.*.bed ' (default)
+# - ' $SAMPLE.*.bam $SAMPLE.*.bam.bai ' (alternative pattern for archives, only BAM files without additional metrics or flags)
 ARCHIVES_FILE_PATTERNS=' $SAMPLE.reports/$SAMPLE.full.vcf.gz $SAMPLE.reports/$SAMPLE.full.vcf.gz.tbi $SAMPLE.reports/$SAMPLE.final.tsv $SAMPLE.*.bam.metrics/$SAMPLE.*.validation.flags.*.bed '
-# Favorites files patterns to add
+
+# FAVORITES_FILE_PATTERNS
+# Favorites files patterns to add to the favorites folder.
+# These patterns define which files will be copied into the favorites folder.
+# Default: '' (no additional favorites files specified)
+# Examples:
+# - '' (default, no additional favorites files specified)
+# - ' $SAMPLE.*fastq.gz ' (alternative pattern for favorites, only main FASTQ files, useful for FASTQ only projects)
+# - ' $SAMPLE.reports/$SAMPLE.final.tsv ' (alternative pattern for favorites, only report files without additional metrics or flags)
 FAVORITES_FILE_PATTERNS=''
 
 
 # IGV SESSION
-# IGV session xml file (*igv_session.xml) is generated with Samples and Runs files (BAM, VCF, BED)
-# Parameters select files through patterns and folder depth
-# Be aware to coordinate these parameters with availabled files within repositories folders
+###############
 
-# SAMPLE
-IGV_SESSION_PATTERNS_SAMPLE_DEFAULT_APP=' $SAMPLE.final.vcf.gz $SAMPLE*Design*bed $SAMPLE*Panel*bed *Design*vcf.gz *Panel*vcf.gz *bam *cram '
-IGV_SESSION_MINDEPTH_SAMPLE_DEFAULT_APP=0
-IGV_SESSION_MAXDEPTH_SAMPLE_DEFAULT_APP=1
+# IGV session xml file (*igv_session.xml) is generated with Samples and Runs files (BAM, VCF, BED).
+# Parameters select files through patterns and folder depth.
+# Be aware that these patterns should match the files available in the repository for the samples or runs.
 
-REPOSITORY_SAMPLE_IGV_SESSION_PATTERNS=$IGV_SESSION_PATTERNS_SAMPLE_DEFAULT_APP
-REPOSITORY_SAMPLE_IGV_SESSION_MINDEPTH=$IGV_SESSION_MINDEPTH_SAMPLE_DEFAULT_APP
-REPOSITORY_SAMPLE_IGV_SESSION_MAXDEPTH=$IGV_SESSION_MAXDEPTH_SAMPLE_DEFAULT_APP
+# IGV_SESSION_PATTERNS_SAMPLE_DEFAULT
+# IGV session XML file (*igv_session.xml) patterns for samples.
+# These patterns define which files will be included in the IGV session for samples.
+# Be aware that these patterns should match the files available in the repository for the samples.
+# Theses files can be VCF, BAM, CRAM, or BED files related to the sample.
+# Default: ' $SAMPLE.final.vcf.gz $SAMPLE*Design*bed $SAMPLE*Panel*bed *Design*vcf.gz *Panel*vcf.gz *bam *cram '
+# Examples:
+# - ' $SAMPLE.final.vcf.gz $SAMPLE*Design*bed $SAMPLE*Panel*bed *Design*vcf.gz *Panel*vcf.gz *bam *cram ' (default)
+# - ' $SAMPLE.final.vcf.gz $SAMPLE.*.bam $SAMPLE.*.bam.bai ' (alternative pattern for samples, only main VCF file and BAM files without additional files for Panel or Design)
+IGV_SESSION_PATTERNS_SAMPLE_DEFAULT=' $SAMPLE.final.vcf.gz $SAMPLE*Design*bed $SAMPLE*Panel*bed *Design*vcf.gz *Panel*vcf.gz *bam *cram '
 
-ARCHIVES_SAMPLE_IGV_SESSION_PATTERNS=$IGV_SESSION_PATTERNS_SAMPLE_DEFAULT_APP
-ARCHIVES_SAMPLE_IGV_SESSION_MINDEPTH=$IGV_SESSION_MINDEPTH_SAMPLE_DEFAULT_APP
-ARCHIVES_SAMPLE_IGV_SESSION_MAXDEPTH=$IGV_SESSION_MAXDEPTH_SAMPLE_DEFAULT_APP
+# IGV_SESSION_PATTERNS_RUN_DEFAULT
+# IGV session XML file (*igv_session.xml) patterns for runs.
+# These patterns define which files will be included in the IGV session for runs.
+# Be aware that these patterns should match the files available in the repository for the runs.
+# Theses files can be VCF, BAM, CRAM, or BED files related to the run.
+# Default: ' *.final.vcf.gz *Design*bed *Panel*bed *Design*vcf.gz *Panel*vcf.gz *bam *cram '
+# Examples:
+# - ' *.final.vcf.gz *Design*bed *Panel*bed *Design*vcf.gz *Panel*vcf.gz *bam *cram ' (default)
+# - ' *.final.vcf.gz *.bam *.bam.bai ' (alternative pattern for runs, only main VCF file and BAM files without additional files for Panel or Design)
+IGV_SESSION_PATTERNS_RUN_DEFAULT=' *.final.vcf.gz *Design*bed *Panel*bed *Design*vcf.gz *Panel*vcf.gz *bam *cram '
 
-FAVORITES_SAMPLE_IGV_SESSION_PATTERNS=$IGV_SESSION_PATTERNS_SAMPLE_DEFAULT_APP
-FAVORITES_SAMPLE_IGV_SESSION_MINDEPTH=$IGV_SESSION_MINDEPTH_SAMPLE_DEFAULT_APP
-FAVORITES_SAMPLE_IGV_SESSION_MAXDEPTH=$IGV_SESSION_MAXDEPTH_SAMPLE_DEFAULT_APP
-
-# RUN
-IGV_SESSION_PATTERNS_RUN_DEFAULT_APP=' *.final.vcf.gz *Design*bed *Panel*bed *Design*vcf.gz *Panel*vcf.gz *bam *cram '
-IGV_SESSION_MINDEPTH_RUN_DEFAULT_APP=0
-IGV_SESSION_MAXDEPTH_RUN_DEFAULT_APP=2
-
-REPOSITORY_RUN_IGV_SESSION_PATTERNS=$IGV_SESSION_PATTERNS_RUN_DEFAULT_APP
-REPOSITORY_RUN_IGV_SESSION_MINDEPTH=$IGV_SESSION_MINDEPTH_RUN_DEFAULT_APP
-REPOSITORY_RUN_IGV_SESSION_MAXDEPTH=$IGV_SESSION_MAXDEPTH_RUN_DEFAULT_APP
-
-ARCHIVES_RUN_IGV_SESSION_PATTERNS=$IGV_SESSION_PATTERNS_RUN_DEFAULT_APP
-ARCHIVES_RUN_IGV_SESSION_MINDEPTH=$IGV_SESSION_MINDEPTH_RUN_DEFAULT_APP
-ARCHIVES_RUN_IGV_SESSION_MAXDEPTH=$IGV_SESSION_MAXDEPTH_RUN_DEFAULT_APP
-
-FAVORITES_RUN_IGV_SESSION_PATTERNS=$IGV_SESSION_PATTERNS_RUN_DEFAULT_APP
-FAVORITES_RUN_IGV_SESSION_MINDEPTH=$IGV_SESSION_MINDEPTH_RUN_DEFAULT_APP
-FAVORITES_RUN_IGV_SESSION_MAXDEPTH=$IGV_SESSION_MAXDEPTH_RUN_DEFAULT_APP
-
-
-# IGV Display Mode
-# IGV Display mode for files found in patterns
-# Depend on file format: either BEM, VCF or BED formats
-# There are 3 different options for viewing the feature track.  These allow you to display overlapping features, such as different transcripts of a gene, on one line or multiple lines
-# Dislpay mode options available in IGV: SQUISHED, COLLAPSED and EXPANDED
+# DISPLAYMODE_BAM
+# IGV Display mode for BAM files (in IGV sessions patterns).
+# These allow you to display overlapping features, such as different transcripts of a gene, on one line or multiple lines.
+# Available display mode options in IGV:
+# - SQUISHED (features are compressed to occupy minimal vertical space)
+# - COLLAPSED (features are displayed in a single line per track)
+# - EXPANDED (features are displayed in multiple lines per track)
+# Default: SQUISHED
 DISPLAYMODE_BAM="SQUISHED"
+
+# DISPLAYMODE_VCF
+# IGV Display mode for VCF files (in IGV sessions patterns).
+# These allow you to display overlapping features, such as different transcripts of a gene, on one line or multiple lines.
+# Available display mode options in IGV:
+# - SQUISHED (features are compressed to occupy minimal vertical space)
+# - COLLAPSED (features are displayed in a single line per track)
+# - EXPANDED (features are displayed in multiple lines per track)
+# Default: COLLAPSED
 DISPLAYMODE_VCF="COLLAPSED"
+
+# DISPLAYMODE_BED
+# IGV Display mode for BED files (in IGV sessions patterns).
+# These allow you to display overlapping features, such as different transcripts of a gene, on one line or multiple lines.
+# Available display mode options in IGV:
+# - SQUISHED (features are compressed to occupy minimal vertical space)
+# - COLLAPSED (features are displayed in a single line per track)
+# - EXPANDED (features are displayed in multiple lines per track)
+# Default: COLLAPSED
 DISPLAYMODE_BED="COLLAPSED"
 
 
-# IGV SESSION DB
-# Additionnal databases for IGV session (see IGV doc)
-# Example :
-# IGV_SESSION_RESSOURCES='
-# 	<Resource index="https://ftp.ncbi.nlm.nih.gov/snp/organisms/human_9606_b151_GRCh37p13/VCF/00-All.vcf.gz.tbi" path="https://ftp.ncbi.nlm.nih.gov/snp/organisms/human_9606_b151_GRCh37p13/VCF/00-All.vcf.gz" type="vcf"/>
-# 	<Resource index="http://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/clinvar.vcf.gz.tbi" path="http://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/clinvar.vcf.gz" type="vcf"/>
-# 	<Resource name="GC Percentage" path="http://www.broadinstitute.org/igvdata/annotations/hg19/hg19.gc5base.tdf" type="tdf"/>
-# 	<Resource index="https://s3.amazonaws.com/igv.org.genomes/hg19/ncbiRefSeq.sorted.txt.gz.tbi" name="Refseq Genes" path="https://s3.amazonaws.com/igv.org.genomes/hg19/ncbiRefSeq.sorted.txt.gz" type="refgene"/>
-# 	<Resource hyperlink="http://www.gencodegenes.org/" index="https://s3.amazonaws.com/igv.broadinstitute.org/annotations/hg19/genes/gencode.v18.annotation.sorted.gtf.gz.tbi" name="Gencode Genes (v18)" path="https://s3.amazonaws.com/igv.broadinstitute.org/annotations/hg19/genes/gencode.v18.annotation.sorted.gtf.gz" trackLine="visibilitywindow:10000000" type="gtf"/>
-# '
-# IGV_SESSION_DATAPANEL='
-# 	<Track attributeKey="00-All.vcf.gz" clazz="org.broad.igv.variant.VariantTrack" featureVisibilityWindow="100100" fontSize="10" groupByStrand="false" id="https://ftp.ncbi.nlm.nih.gov/snp/organisms/human_9606_b151_GRCh37p13/VCF/00-All.vcf.gz" name="dbSNP" siteColorMode="ALLELE_FREQUENCY" displayMode="COLLAPSE" visible="true"/>
-# 	<Track attributeKey="clinvar.vcf.gz" clazz="org.broad.igv.variant.VariantTrack" featureVisibilityWindow="100100" fontSize="10" groupByStrand="false" id="http://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/clinvar.vcf.gz" name="ClinVar" siteColorMode="ALLELE_FREQUENCY" displayMode="COLLAPSE" visible="true"/>
-# '
-# IGV_SESSION_FEATUREPANEL='
-# 	<Track attributeKey="GC Percentage" autoScale="false" clazz="org.broad.igv.track.DataSourceTrack" colorScale="ContinuousColorScale;0.0;80.0;255,255,255;0,0,178" fontSize="10" height="20" id="http://www.broadinstitute.org/igvdata/annotations/hg19/hg19.gc5base.tdf" name="GC Percentage" renderer="HEATMAP" visible="true" windowFunction="mean">
-# 		<DataRange baseline="0.0" drawBaseline="true" flipAxis="false" maximum="80.0" minimum="0.0" type="LINEAR"/>
-# 	</Track>
-# 	<Track attributeKey="Refseq Genes" clazz="org.broad.igv.track.FeatureTrack" featureVisibilityWindow="63761233" fontSize="10" groupByStrand="false" id="https://s3.amazonaws.com/igv.org.genomes/hg19/ncbiRefSeq.sorted.txt.gz" name="Refseq Genes" visible="true"/>
-# 	<Track attributeKey="Gencode Genes (v18)" clazz="org.broad.igv.track.FeatureTrack" featureVisibilityWindow="1000000" fontSize="10" groupByStrand="false" id="https://s3.amazonaws.com/igv.broadinstitute.org/annotations/hg19/genes/gencode.v18.annotation.sorted.gtf.gz" name="Gencode Genes (v18)" visible="true"/>
-# '
-# Default Refseq Gene
+# IGV_SESSION_RESSOURCES
+# Additionnal databases for IGV session (see IGV doc).
+# These resources can be added to an IGV session to provide additional data tracks.
+# Default: '<Resource index="https://s3.amazonaws.com/igv.org.genomes/hg19/ncbiRefSeq.sorted.txt.gz.tbi" name="Refseq Genes" path="https://s3.amazonaws.com/igv.org.genomes/hg19/ncbiRefSeq.sorted.txt.gz" type="refgene"/>' (refSeq Genes)
+# Examples:
+# - '<Resource index="https://ftp.ncbi.nlm.nih.gov/snp/organisms/human_9606_b151_GRCh37p13/VCF/00-All.vcf.gz.tbi" path="https://ftp.ncbi.nlm.nih.gov/snp/organisms/human_9606_b151_GRCh37p13/VCF/00-All.vcf.gz" type="vcf"/>'
+# - '<Resource index="http://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/clinvar.vcf.gz.tbi" path="http://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/clinvar.vcf.gz" type="vcf"/>'
+# - '<Resource name="GC Percentage" path="http://www.broadinstitute.org/igvdata/annotations/hg19/hg19.gc5base.tdf" type="tdf"/>'
+# - '<Resource index="https://s3.amazonaws.com/igv.org.genomes/hg19/ncbiRefSeq.sorted.txt.gz.tbi" name="Refseq Genes" path="https://s3.amazonaws.com/igv.org.genomes/hg19/ncbiRefSeq.sorted.txt.gz" type="refgene"/>'
+# - '<Resource hyperlink="http://www.gencodegenes.org/" index="https://s3.amazonaws.com/igv.broadinstitute.org/annotations/hg19/genes/gencode.v18.annotation.sorted.gtf.gz.tbi" name="Gencode Genes (v18)" path="https://s3.amazonaws.com/igv.broadinstitute.org/annotations/hg19/genes/gencode.v18.annotation.sorted.gtf.gz" trackLine="visibilitywindow:10000000" type="gtf"/>'
 IGV_SESSION_RESSOURCES='<Resource index="https://s3.amazonaws.com/igv.org.genomes/hg19/ncbiRefSeq.sorted.txt.gz.tbi" name="Refseq Genes" path="https://s3.amazonaws.com/igv.org.genomes/hg19/ncbiRefSeq.sorted.txt.gz" type="refgene"/>'
+
+# IGV_SESSION_DATAPANEL
+# Additionnal tracks for the IGV data panel (see IGV doc).
+# These tracks will be displayed in the IGV data panel.
+# Default: '' (no additional tracks)
+# Examples:
+# - '<Track attributeKey="00-All.vcf.gz" clazz="org.broad.igv.variant.VariantTrack" featureVisibilityWindow="100100" fontSize="10" groupByStrand="false" id="https://ftp.ncbi.nlm.nih.gov/snp/organisms/human_9606_b151_GRCh37p13/VCF/00-All.vcf.gz" name="dbSNP" siteColorMode="ALLELE_FREQUENCY" displayMode="COLLAPSE" visible="true"/>'
+# - '<Track attributeKey="clinvar.vcf.gz" clazz="org.broad.igv.variant.VariantTrack" featureVisibilityWindow="100100" fontSize="10" groupByStrand="false" id="http://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh37/clinvar.vcf.gz" name="ClinVar" siteColorMode="ALLELE_FREQUENCY" displayMode="COLLAPSE" visible="true"/>'
 IGV_SESSION_DATAPANEL=''
+
+# IGV_SESSION_FEATUREPANEL
+# Tracks for the IGV feature panel (see IGV doc).
+# Theses tracks will be displayed in the IGV feature panel.
+# Default: '<Track attributeKey="Refseq Genes" clazz="org.broad.igv.track.FeatureTrack" featureVisibilityWindow="63761233" fontSize="10" groupByStrand="false" id="https://s3.amazonaws.com/igv.org.genomes/hg19/ncbiRefSeq.sorted.txt.gz" name="Refseq Genes" visible="true"/>' (Refseq Genes)
+# Examples:
+# - '<Track attributeKey="GC Percentage" autoScale="false" clazz="org.broad.igv.track.DataSourceTrack" colorScale="ContinuousColorScale;0.0;80.0;255,255,255;0,0,178" fontSize="10" height="20" id="http://www.broadinstitute.org/igvdata/annotations/hg19/hg19.gc5base.tdf" name="GC Percentage" renderer="HEATMAP" visible="true" windowFunction="mean">
+# 		<DataRange baseline="0.0" drawBaseline="true" flipAxis="false" maximum="80.0" minimum="0.0" type="LINEAR"/>
+# 	</Track>'
+# - '<Track attributeKey="Refseq Genes" clazz="org.broad.igv.track.FeatureTrack" featureVisibilityWindow="63761233" fontSize="10" groupByStrand="false" id="https://s3.amazonaws.com/igv.org.genomes/hg19/ncbiRefSeq.sorted.txt.gz" name="Refseq Genes" visible="true"/>'
+# - '<Track attributeKey="Gencode Genes (v18)" clazz="org.broad.igv.track.FeatureTrack" featureVisibilityWindow="1000000" fontSize="10" groupByStrand="false" id="https://s3.amazonaws.com/igv.broadinstitute.org/annotations/hg19/genes/gencode.v18.annotation.sorted.gtf.gz" name="Gencode Genes (v18)" visible="true"/>'
 IGV_SESSION_FEATUREPANEL='<Track attributeKey="Refseq Genes" clazz="org.broad.igv.track.FeatureTrack" featureVisibilityWindow="63761233" fontSize="10" groupByStrand="false" id="https://s3.amazonaws.com/igv.org.genomes/hg19/ncbiRefSeq.sorted.txt.gz" name="Refseq Genes" visible="true"/>'
 
 
-# IGV SESSION JSON
+# IGV_SESSION_DAS
+# URL for the IGV DAS (Distributed Annotation System) server.
+# These URLs will be used to access the DAS repositories, and allow to open the generate JSON IGV sessions.
+# Default: 'http://localhost:4201/static/data/public/repositories'
+IGV_SESSION_DAS="http://localhost:4201/static/data/public/repositories"
+
+# IGV_SESSION_DAS_REPOSITORIES
+# List of DAS repositories to be used by IGV.
+# Default: '$IGV_SESSION_DAS/Repository $IGV_SESSION_DAS/Archives $IGV_SESSION_DAS/Favorites'
+IGV_SESSION_DAS_REPOSITORIES="$IGV_SESSION_DAS/Repository $IGV_SESSION_DAS/Archives $IGV_SESSION_DAS/Favorites"
+
+# IGV_SESSION_JSON_TRACKS_ADDITIONAL
+# Additional JSON tracks to be added to the IGV session.
+# Default: '' (no additional tracks)
 # Example:
-# IGV_SESSION_JSON_TRACKS_ADDITIONAL='
-# {
+# - '{
 # 	"type": "bed",
 # 	"url": "https://s3.amazonaws.com/igv.org.test/data/gencode.v18.collapsed.bed",
 # 	"indexURL": "https://s3.amazonaws.com/igv.org.test/data/gencode.v18.collapsed.bed.idx",
@@ -991,10 +1117,7 @@ IGV_SESSION_FEATUREPANEL='<Track attributeKey="Refseq Genes" clazz="org.broad.ig
 #   "type": "annotation",
 #   "displayMode": "COLLAPSED"
 # }'
-IGV_SESSION_DAS="http://localhost:4201/static/data/public/repositories"
-IGV_SESSION_DAS_REPOSITORIES="$IGV_SESSION_DAS/Repository $IGV_SESSION_DAS/Archives $IGV_SESSION_DAS/Favorites"
 IGV_SESSION_JSON_TRACKS_ADDITIONAL=""
-
 
 
 # FOLDERS
@@ -1094,3 +1217,15 @@ FOLDER_ARCHIVES=$FOLDER_OUTPUT/archives
 #    - to copy favorites within repository folder: FOLDER_FAVORITES=$FOLDER_REPOSITORY
 #    - to copy favorites within default favorites folder: FOLDER_FAVORITES=$FOLDER_OUTPUT/favorites
 FOLDER_FAVORITES=
+
+
+# SUPPLEMENTARY VARIABLES
+###########################
+
+# This section can be used to define supplementary variables that are not directly available 
+# in the main configuration sections, but in rules or scripts used during the analysis.
+# Theses variables need to be exported to be available in the environment of the analysis.
+# Format: `export MY_SUPPLEMENTARY_VARIABLE="value"`
+# Example:
+#  - `export GATKHC_FILTERS_FLAGS=" --include 'FORMAT/DP>=10' --sort"` (Change filter after GATK Haplotype Genotyper call)
+

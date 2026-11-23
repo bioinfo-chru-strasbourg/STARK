@@ -1,10 +1,10 @@
 ############################
 # GATK Calling Rules
-# Release: 0.9.4
-# Date: 03/02/2023
 # Author: Antony Le Bechec
 ############################
-
+# Release
+MK_RELEASE=1.2.0
+MK_DATE=08/11/2026
 
 # Release note
 # 0.9.1beta-10/03/2015: change genome reference location, in the file %.genome
@@ -20,52 +20,78 @@
 # 0.9.3.7b-22/03/2019: Add --dontUseSoftClippedBases for GATKHC
 # 0.9.3.8-29/07/2022: Remove --dontUseSoftClippedBases for GATKHC
 # 0.9.3.9-29/07/2022: Add --dontUseSoftClippedBases for GATKHC, add GATKUG_LONG_INDELS and GATKHC_LONG_INDELS
-# 0.9.4-03/02/2023: Extract gatkUG LONG INDELS
+# 0.9.5.0-31/10/2025: Parallelised GATKUG
+# 1.0.0-22/10/2026: Parallelised implementation for gatkUG variant calling
+# 1.1.0-03/11/2026: Normalize variant calling parallelization and parametrization (use %.bam.chroms rule, use filter_vcf.sh for filtering)
+# 1.2.0-08/11/2026: Parameters for long indels variants
 
 
+########################
+# GATK UnifiedGenotyper #
+########################
 
-######################
-# gatkUG_LONG_INDELS #
-######################
+# Flags
+# VCFDBSNP_WITH_GATK variable depends on USE_VCFDBSNP_WITH_GATK setting on Apps
+# INTERVAL_PADDING variable defines the padding around intervals for all callers, settings on Apps
+# This variable can be defined directly on Apps
+GATKUG_LONG_INDELS_FLAGS?= \
+	$(VCFDBSNP_WITH_GATK) \
+	--interval_padding $(INTERVAL_PADDING) \
+	--genotype_likelihoods_model INDEL \
+    --read_filter BadCigar \
+    --baq OFF \
+    --downsampling_type NONE \
+    --min_indel_fraction_per_sample 0.01 \
+    --min_indel_count_for_genotyping 2 \
+    --max_deletion_fraction 0.01 \
+    --standard_min_confidence_threshold_for_calling 10 \
+    --downsample_to_fraction 1 \
+    --min_base_quality_score 17 \
+    --max_alternate_alleles 6 \
+    --allow_potentially_misencoded_quality_scores
 
-DFRAC_UG_LONG_INDELS=1
-MBQ_UG_LONG_INDELS=17
-THREADS_GATKUG_LONG_INDELS?=$(THREADS_BY_CALLER)
-INTERVAL_PADDING?=0
-DPMIN_UG_LONG_INDELS?=4
-GATKUG_INDEL_SIZE_LONG_INDELS?=20
-GATKUG_LONG_INDELS_FLAGS= -nct $(THREADS_GATKUG_LONG_INDELS) -glm INDEL \
-		-minIndelFrac 0.01 \
-		-minIndelCnt 2 \
-		-deletions 0.01 \
-		-baq OFF \
-		-stand_call_conf 10 \
-		-dfrac $(DFRAC_UG_LONG_INDELS) \
-		$(VCFDBSNP_WITH_GATK) \
-		-mbq $(MBQ_UG_LONG_INDELS) \
-		-rf BadCigar \
-		-dt NONE \
-		-allowPotentiallyMisencodedQuals
-
-%.gatkUG_LONG_INDELS$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed.interval_list
-	$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) $(GATKUG_LONG_INDELS_FLAGS) \
-		-T UnifiedGenotyper \
-		-R $(GENOME) \
-		$$(if [ "`grep ^ -c $*.design.bed.interval_list`" == "0" ]; then echo ""; else echo "-L $*.design.bed.interval_list"; fi;) \
-		-I $< \
-		-ip $(INTERVAL_PADDING) \
-		-o $@.tmp;
-	-if [ ! -e $@.tmp ]; then cp $*.empty.vcf $@.tmp; fi;
-	-if [ ! -e $@.tmp ]; then touch $@.tmp; fi; 								# in case of no vcf creation, to not kill the pipeline
-	$(JAVA) $(JAVA_FLAGS) -jar $(GATK4) SelectVariants -V $@.tmp --select-type-to-include INDEL --min-indel-size $(GATKUG_INDEL_SIZE_LONG_INDELS) -O $@.tmp2;
-	$(BCFTOOLS) view -i "FORMAT/DP>$(DPMIN_UG_LONG_INDELS)" $@.tmp2 > $@ 		# filter on DP, cause UG is too relax, espacially because the clipping can generate few errors
-	-if [ ! -e $@ ]; then cp $@.tmp $@; fi; 									# in case of error in previous line
-	-rm -f $@.tmp* $@.idx
+# Filters Flags
+# This variable can be defined directly on Apps
+GATKUG_LONG_INDELS_FILTERS_FLAGS?= \
+	--exclude-genotypes '0/0' \
+	--exclude '' \
+	--include 'FORMAT/DP>=4 && TYPE="indel" && abs(strlen(REF)-strlen(ALT)) > 20' \
+	--filter '' \
+	--sort
 
 
+# Rule
+%.gatkUG_LONG_INDELS$(POST_CALLING).vcf: %.bam %.bam.bai %.empty.vcf %.design.bed %.bam.chroms
+	# List of vcf files to be generated per chromosome
+	cut -f1 $*.bam.chroms | sed 's|.*|$@.split.&.vcf.gz|' | tr '\n' ' ' > $@.split.vcfs.list;
+	# Generate bed per chromosome
+	awk '{print > ("$@.split."$$1".bed")}' $*.design.bed
+	# Generate the sub Makefile: one explicit rule per chromosome (empty "all" if no chromosome)
+	{ \
+	printf 'all: %s\n' "$$(cat $@.split.vcfs.list)"; \
+	for c in $$(cut -f1 $*.bam.chroms); do \
+		if [ -s $@.split.$$c.bed ]; then \
+			L_ARG="$@.split.$$c.bed"; \
+		else \
+			L_ARG="$$c"; \
+		fi; \
+		printf '%s:\n' "$@.split.$$c.vcf.gz"; \
+		printf '\t$(JAVA8) $(JAVA_FLAGS) -jar $(GATK3) -T UnifiedGenotyper $(GATKUG_LONG_INDELS_FLAGS) -L %s -R $(GENOME) -I $< -o %s --num_cpu_threads_per_data_thread 1\n' "$$L_ARG" "$@.split.$$c.vcf.gz"; \
+	done; \
+	} > $@.split.sub.mk
+	# Add rule to concat per-chromosome VCFs into the final VCF (empty VCF if no chromosome)
+	{ \
+		printf '%s: %s\n' "$@.tmp.unfiltered.vcf" "$$(cat $@.split.vcfs.list) $*.empty.vcf"; \
+		printf '\t$(BCFTOOLS) concat %s -Ov --threads $(THREADS_BY_CALLER) -o %s\n' "$$(cat $@.split.vcfs.list) $*.empty.vcf" "$@.tmp.unfiltered.vcf"; \
+	} >> $@.split.sub.mk;
+	# Calling all chromosomes in parallel (nothing to do if no chromosome, empty VCF will be used)
+	+make -f $@.split.sub.mk $@.tmp.unfiltered.vcf
+	# Filters
+	bash $(STARK_FOLDER_BIN)/filter_vcf.sh --input $@.tmp.unfiltered.vcf --output $@ --threads $(THREADS_BY_CALLER) --bcftools $(BCFTOOLS) $(GATKUG_LONG_INDELS_FILTERS_FLAGS)
+	# Cleaning
+	rm -rf $@.tmp* $@.split* $@.idx $@.tbi
 
-RELEASE_COMMENT := "\#\# CALLING GATKUG LONG INDELS identify long indels and generate *.gatkUG_LONG INDELS.vcf files with parameters: GATKUG_LONG_INDELS_FLAGS='$(GATKUG_LONG_INDELS_FLAGS)', DPMIN_UG_LONG_INDELS='$(DPMIN_UG_LONG_INDELS)', GATKUG_INDEL_SIZE_LONG_INDELS='$(GATKUG_INDEL_SIZE_LONG_INDELS)'"
-RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
 
-PIPELINES_COMMENT := "CALLER:gatkUG_LONG_INDELS:GATK Unified Genotyper - designed for LONG INDELS discovery:GATKUG_LONG_INDELS_FLAGS='$(GATKUG_LONG_INDELS_FLAGS)', DPMIN_UG_LONG_INDELS='$(DPMIN_UG_LONG_INDELS)', GATKUG_INDEL_SIZE_LONG_INDELS='$(GATKUG_INDEL_SIZE_LONG_INDELS)'"
-PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
+# Documentation
+$(file >>$(RELEASE_INFOS),## CALLER gatkUG_LONG_INDELS '$(MK_RELEASE)': GATK3 Unified Genotyper caller tool to identify long indels variants from aligned BAM, generates *.gatkUG_LONG_INDELS.vcf files. Parameters GATKUG_LONG_INDELS_FLAGS='$(GATKUG_LONG_INDELS_FLAGS)', GATKUG_LONG_INDELS_FILTERS_FLAGS='$(GATKUG_LONG_INDELS_FILTERS_FLAGS)')
+$(file >>$(PIPELINES_INFOS),CALLER:gatkUG_LONG_INDELS:GATK3 Unified Genotyper Long Indels caller - by default:GATKUG_LONG_INDELS_FLAGS='$(GATKUG_LONG_INDELS_FLAGS)', GATKUG_LONG_INDELS_FILTERS_FLAGS='$(GATKUG_LONG_INDELS_FILTERS_FLAGS)')

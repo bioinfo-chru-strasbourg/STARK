@@ -219,6 +219,26 @@ if [ -d $HOWARD_FOLDER_CONFIG ] || [ -L $HOWARD_FOLDER_CONFIG ]; then
 fi;
 
 
+### GATK DEFAULT config
+if [ -z "$GATK_FOLDER_CONFIG" ]; then
+	GATK_FOLDER_CONFIG=$DOCKER_STARK_INNER_FOLDER_CONFIG_GATK
+fi;
+
+# Create GATK config folder external for setup if not exists
+if [ "$DOCKER_STARK_INNER_FOLDER_CONFIG_GATK" != "" ] && [ ! -d $SETUP_MAIN_FOLDER_PATTERN/$DOCKER_STARK_INNER_FOLDER_CONFIG_GATK ] && [ ! -L $SETUP_MAIN_FOLDER_PATTERN/$DOCKER_STARK_INNER_FOLDER_CONFIG_GATK ]; then
+	(($VERBOSE)) && echo "["$(timestamp)" | INFO] Create GATK configuration folder (if not exists)"
+	mkdir -p $SETUP_MAIN_FOLDER_PATTERN/$DOCKER_STARK_INNER_FOLDER_CONFIG/$GATK_SUBFOLDER 
+fi;
+
+# If inner GATK folder exists, copy config files to external setup folder
+if [ -d $GATK_FOLDER_CONFIG ] || [ -L $GATK_FOLDER_CONFIG ]; then
+	echo "["$(timestamp)" | INFO] GATK configuration folder '$GATK_FOLDER_CONFIG' exists"
+	(($VERBOSE)) && echo "["$(timestamp)" | INFO] Copy GATK configuration files (if not exists)"
+	(($VERBOSE)) && echo "["$(timestamp)" | INFO] Copy '$GATK_FOLDER_CONFIG/*' to '$DOCKER_STARK_INNER_FOLDER_CONFIG_GATK/'"
+	cp -nr $GATK_FOLDER_CONFIG/* $SETUP_MAIN_FOLDER_PATTERN/$DOCKER_STARK_INNER_FOLDER_CONFIG_GATK/ 
+fi;
+
+
 ### VARIANTCONVERT DEFAULT config
 if [ -z "$VARIANTCONVERT_FOLDER_CONFIG" ]; then
 	VARIANTCONVERT_FOLDER_CONFIG=$DOCKER_STARK_INNER_FOLDER_CONFIG_VARIANTCONVERT

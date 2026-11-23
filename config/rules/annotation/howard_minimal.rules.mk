@@ -3,8 +3,8 @@
 # Author: Antony Le Bechec
 ############################
 # Release
-MK_RELEASE="0.9.5.0"
-MK_DATE="25/06/2025"
+MK_RELEASE=0.9.5.0
+MK_DATE=25/06/2025
 
 ## Release note
 # 10/07/2015-V0.9b: Create HOWARD annotation and VCF translation
@@ -20,33 +20,26 @@ MK_DATE="25/06/2025"
 # HOWARD Variables
 ####################
 
-HOWARD_ANNOTATION?="core,frequency,score,annotation,prediction,snpeff,snpeff_hgvs"
-HOWARD_CALCULATION?=VAF,NOMEN,VAF_STATS,DP_STATS,VARTYPE
-HOWARD_NOMEN_FIELDS?="hgvs"
-
-HOWARD_ANNOTATION_MINIMAL?="Symbol,location,outcome,hgvs"
-HOWARD_CALCULATION?=VAF,NOMEN,VAF_STATS,DP_STATS,VARTYPE
-HOWARD_NOMEN_FIELDS?="hgvs"
+HOWARD_CONFIG_OPTIONS?=
+HOWARD_PRIORITIZATION_CONFIG_OPTIONS?=
+HOWARD_CALCULATION_CONFIG_OPTIONS?=
+HOWARD_PARAM_MINIMAL?={}
 
 
 # RULES
 ########
 %.howard_minimal$(POST_ANNOTATION).vcf: %.vcf %.empty.vcf %.transcripts
 	# Annotation step
-	if (( $$(grep -v "^#" $< | head -n1 | wc -l) )); then \
-		$(HOWARD) process $(HOWARD_CONFIG_OPTIONS) $(HOWARD_PRIORITIZATION_CONFIG_OPTIONS) $(HOWARD_CALCULATION_CONFIG_OPTIONS) --input=$< --output=$@ --param=$(HOWARD_PARAM_MINIMAL)
-	else \
-		cp $< $@; \
-	fi;
+	$(HOWARD) process $(HOWARD_CONFIG_OPTIONS) $(HOWARD_PRIORITIZATION_CONFIG_OPTIONS) $(HOWARD_CALCULATION_CONFIG_OPTIONS) --input=$< --output=$@ --param=$(HOWARD_PARAM_MINIMAL) --assembly=$(ASSEMBLY)
 	# Clean INFO spaces
 	$(STARK_FOLDER_BIN)/clean_vcf_info_spaces.sh --input=$@
 	# Empty
-	-if [ ! -e $@ ]; then cp $*.empty.vcf $@; fi;
+	if [ ! -e $@ ]; then \
+		echo "Creating empty VCF file $@ as it does not exist"; \
+		cp $*.empty.vcf $@; \
+	fi;
 
 
-# CONFIG/RELEASE
-RELEASE_COMMENT := "\#\# HOWARD ANNOTATION '$(MK_RELEASE)': HOWARD MINIMAL annotates and prioritizes variants on a VCF, and generates *.howard_minimal.vcf file. Releases: '$(HOWARD_VERSION)'. Options: , HOWARD_ANNOTATION='$(HOWARD_ANNOTATION_MINIMAL)', HOWARD_CALCULATION='$(HOWARD_CALCULATION_MINIMAL)', SORT_BY='$(SORT_BY)', ORDER_BY='$(ORDER_BY)'"
-RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
-
-PIPELINES_COMMENT := "ANNOTATOR:howard_minimal:HOWARD MINIMAL annotates and prioritizes variants:HOWARD_ANNOTATION='$(HOWARD_ANNOTATION_MINIMAL)', HOWARD_CALCULATION='$(HOWARD_CALCULATION_MINIMAL)', SORT_BY='$(SORT_BY)', ORDER_BY='$(ORDER_BY)', HOWARD_NOMEN_FIELDS='$(HOWARD_NOMEN_FIELDS)'"
-PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
+# Documentation
+$(file >>$(RELEASE_INFOS),## ANNOTATOR howard_minimal '$(MK_RELEASE)': HOWARD MINIMAL annotates and prioritizes variants on a VCF file, and generates *.howard_minimal.vcf file. Parameters HOWARD_CONFIG_OPTIONS='$(HOWARD_CONFIG_OPTIONS)', HOWARD_PRIORITIZATION_CONFIG_OPTIONS='$(HOWARD_PRIORITIZATION_CONFIG_OPTIONS)', HOWARD_CALCULATION_CONFIG_OPTIONS='$(HOWARD_CALCULATION_CONFIG_OPTIONS)', HOWARD_PARAM_MINIMAL='$(HOWARD_PARAM_MINIMAL)')
+$(file >>$(PIPELINES_INFOS),ANNOTATOR:howard_minimal:HOWARD MINIMAL annotates and prioritizes variants:HOWARD_CONFIG_OPTIONS='$(HOWARD_CONFIG_OPTIONS)', HOWARD_PRIORITIZATION_CONFIG_OPTIONS='$(HOWARD_PRIORITIZATION_CONFIG_OPTIONS)', HOWARD_CALCULATION_CONFIG_OPTIONS='$(HOWARD_CALCULATION_CONFIG_OPTIONS)', HOWARD_PARAM_MINIMAL='$(HOWARD_PARAM_MINIMAL)')

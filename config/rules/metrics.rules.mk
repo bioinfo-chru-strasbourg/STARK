@@ -1,9 +1,10 @@
 ############################
 # Metrics Rules
-# Release: 0.9.6.1
-# Date: 31/10/2025
 # Author: Antony Le Bechec
 ############################
+# Release
+MK_RELEASE=0.9.6.1
+MK_DATE=31/10/2025
 
 # Release note
 # 18/12/2015 - 0.9.2b : Force gzip metrics files
@@ -13,7 +14,6 @@
 # 27/09/2019 - 0.9.5.1b: Change FATBAM to CAP tool, add HOWARD option
 # 25/06/2025 - 0.9.6.0: STARK release 19 compatibility
 # 31/10/2025 - 0.9.6.1: DepthOfCoverage GATK4 output format TABLE
-
 
 
 
@@ -73,6 +73,9 @@ GENESCOVERAGE_PRECISION?=2
 
 # RNASEQC
 RNASEQC_PARAM?=--coverage --detection-threshold=1 --mapping-quality=1 --verbose
+
+# HOWARD_REPORT_INFOS_FIELDS
+HOWARD_REPORT_INFOS_FIELDS?=.*
 
 
 ################################
@@ -335,9 +338,9 @@ GATKDOC_FLAGS= -rf BadCigar -allowPotentiallyMisencodedQuals
 # PICARD Metrics
 ##################
 
-MAX_VALIDATION_BAM_SIZE?=3145728
-MAX_CONCURRENT_HSMETRICS?=4
-MAX_CONCURRENT_HSMETRICS_RAM?=24g
+MAX_VALIDATION_BAM_SIZE?=0
+MAX_CONCURRENT_HSMETRICS?=1
+MAX_CONCURRENT_HSMETRICS_RAM?=36g
 
 %.bam.metrics/metrics.picard: %.validation.bam %.validation.bam.bai %.empty.HsMetrics %.list.genes %.design.bed
 	# Create directory
@@ -605,7 +608,8 @@ MAX_CONCURRENT_HSMETRICS_RAM?=24g
 			$(BCFTOOLS) view $*.vcf.gz | $(BCFTOOLS) norm --rm-dup exact > $@.$$bed_subname.vcf; \
 		fi ; \
 		# TSV \
-		$(HOWARD) convert $(HOWARD_CONFIG_OPTIONS) --input=$@.$$bed_subname.vcf --output=$@.$$bed_subname.tsv; \
+		$(HOWARD) convert $(HOWARD_CONFIG_OPTIONS) --input=$@.$$bed_subname.vcf --output=$@.$$bed_subname.tsv --explode_infos --explode_infos_fields="$(HOWARD_REPORT_INFOS_FIELDS)"; \
+		#$(HOWARD) query $(HOWARD_CONFIG_OPTIONS) --input=$@.$$bed_subname.vcf --output=$@.$$bed_subname.tsv --query="SELECT \"#CHROM\", POS, REF, ALT,  FROM variants_view"; \
 		touch $@.$$bed_subname.tsv; \
 		# HOWARD STATS \
 		$(HOWARD) stats $(HOWARD_CONFIG_OPTIONS) --input=$@.$$bed_subname.vcf --stats_md=$@.$$bed_subname.stats.md --stats_json=$@.$$bed_subname.stats.json --stats_html=$@.$$bed_subname.stats.html --annotations_stats; \
@@ -749,6 +753,3 @@ MAX_CONCURRENT_HSMETRICS_RAM?=24g
 	echo "#[INFO] All metrics files on Design and Panel(s), by targets and by genes, for global coverage, depth and coverage, are named $$(basename $@).*" > $@;
 
 
-# CONFIG/RELEASE
-RELEASE_COMMENT := "\#\# MAIN RULES '$(MK_RELEASE)' : basicaly to manage VCF, BAM, FASTQ, METRICS, MANIFEST, INTERVAL, BED... using SAMTOOLS, FASTQC GATK, PICARD, CAP, BWA, TABIX, IGV..."
-RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )

@@ -1,9 +1,9 @@
 #!/bin/bash
-## STARK application NO_ANNOTATION
 
 # DEFAULT ENV
 ######################
 #source $CONFIG_DEFAULT_APP
+
 
 # APPLICATION INFOS
 #####################
@@ -13,8 +13,12 @@ APP_DESCRIPTION="PlugAPP for Amplicon sequencing"
 #APP_GROUP=""
 #APP_PROJECT=""
 
+
 # ANALYSIS PARAMETERS
 #######################
 
 # POST ALIGNEMENT STEPS
+# Default post-alignment steps for Amplicon sequencing
+# No Mark Duplicates for Amplicon sequencing
+# Clipping is included to remove primer sequences
 POST_ALIGNMENT_STEPS="sorting realignment recalibration clipping compress"

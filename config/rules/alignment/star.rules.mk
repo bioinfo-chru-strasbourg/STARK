@@ -1,12 +1,10 @@
 ############################
 # STAR Aligner Rules
-# Release: 1.0.0
-# Date: 19/03/2026
 # Author: Samuel Nicaise, Thomas Lavaux, Antony Le Béchec
 ############################
 # Release
-MK_RELEASE="1.0.0"
-MK_DATE="19/03/2026"
+MK_RELEASE=1.0.0
+MK_DATE=19/03/2026
 
 # Release note
 # 0.9.3.1-24/08/2022: First rules for STAR aligner, with memory management for STAR processes. The memory management is based on a lockfile system to avoid multiple STAR processes to run at the same time if not enough memory is available. The lockfile is created in the parent folder of the target (e.g. postalignment) to avoid multiple STAR processes to run at the same time if not enough memory is available.
@@ -30,7 +28,26 @@ THREADS_STAR?=$(shell echo " if ($(MAX_CONCURRENT_ALIGNMENTS_STAR)<$(NB_SAMPLE))
 STAR_KEEP_RAW_BAM?=0
 
 # STAR Flags to set specific parameters (see STAR help)
-STAR_FLAGS?=--outSAMtype BAM SortedByCoordinate --chimOutJunctionFormat 1 --outSAMunmapped Within --outBAMcompression 0 --outFilterMultimapNmax 50 --peOverlapNbasesMin 10 --alignSplicedMateMapLminOverLmate 0.5 --alignSJstitchMismatchNmax 5 -1 5 5 --chimSegmentMin 10 --chimOutType Junctions WithinBAM --chimJunctionOverhangMin 10 --chimScoreDropMax 30 --chimScoreJunctionNonGTAG 0 --chimScoreSeparation 1 --chimSegmentReadGapMax 3 --chimMultimapNmax 50 --twopassMode Basic --quantMode TranscriptomeSAM GeneCounts --quantTranscriptomeSAMoutput BanSingleEnd
+STAR_FLAGS?= \
+	--outSAMtype BAM SortedByCoordinate \
+	--chimOutJunctionFormat 1 \
+	--outSAMunmapped Within \
+	--outBAMcompression 0 \
+	--outFilterMultimapNmax 50 \
+	--peOverlapNbasesMin 10 \
+	--alignSplicedMateMapLminOverLmate 0.5 \
+	--alignSJstitchMismatchNmax 5 -1 5 5 \
+	--chimSegmentMin 10 \
+	--chimOutType Junctions WithinBAM \
+	--chimJunctionOverhangMin 10 \
+	--chimScoreDropMax 30 \
+	--chimScoreJunctionNonGTAG 0 \
+	--chimScoreSeparation 1 \
+	--chimSegmentReadGapMax 3 \
+	--chimMultimapNmax 50 \
+	--twopassMode Basic \
+	--quantMode TranscriptomeSAM GeneCounts \
+	--quantTranscriptomeSAMoutput BanSingleEnd
 
 # Raw alignemnt with STAR
 # File star_raw.bam is an intermediate file
@@ -68,11 +85,6 @@ STAR_FLAGS?=--outSAMtype BAM SortedByCoordinate --chimOutJunctionFormat 1 --outS
 	ln -s $< $@
 
 
-# CONFIG/RELEASE
-RELEASE_COMMENT := "\#\# STAR ALIGNMENT '$(MK_RELEASE)': STAR generates an aligned BAM file from FASTQ files."
-RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
-
-
-# PIPELINES INFOS
-PIPELINES_COMMENT := "ALIGNER:star:STAR - Excellent for RNA-Seq data. From FASTQ files."
-PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
+# Documentation
+$(file >>$(RELEASE_INFOS),## ALIGNER star '$(MK_RELEASE)': STAR 2-pass generates an aligned BAM file from FASTQ file. Parameters STAR_FLAGS='$(STAR_FLAGS)')
+$(file >>$(PIPELINES_INFOS),ALIGNER:star:STAR 2-pass - for RNA-Seq data:STAR_FLAGS='$(STAR_FLAGS)')

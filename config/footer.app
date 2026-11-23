@@ -3,23 +3,9 @@
 ## STARK environment
 #################################
 
+# Load common functions for the application.
 source $STARK_FOLDER_CONFIG/functions.app
 
-# FUNCTIONS
-#############
-
-# function in_array
-# input: $element $array
-in_array () 
-{ 
-	param=$1;
-	shift;
-	for elem in "$@";
-	do
-		[[ "$param" = "$elem" ]] && return 0;
-	done;
-	return 1
-}
 
 # APPLICATION INFOS
 ############
@@ -65,8 +51,8 @@ export APP_PROJECT
 
 
 
-# FOLDERS
-#################
+## FOLDERS
+############
 
 # Folders used for the analysis.
 # These folders will be automatically created if not exist.
@@ -160,6 +146,7 @@ fi;
 if [ "$FOLDER_LOG" == "" ]; then
 	FOLDER_LOG="$FOLDER_OUTPUT/log"
 fi;
+#export FOLDER_LOG
 
 # TMP FOLDER
 # This folder will be used by the rules of the analysis to store temporary files of the analysis, and to store temporary files of the tools used for the analysis (e.g. temporary files of GATK tools).
@@ -167,6 +154,7 @@ fi;
 if [ "$FOLDER_TMP" == "" ]; then
 	FOLDER_TMP="$FOLDER_OUTPUT/tmp"
 fi;
+#export FOLDER_TMP
 
 # EXPORT FOLDER REPOSITORY
 # This folder will be used by the rules of the analysis to copy some results of the analysis in a repository folder, organized by group and project (e.g. `$FOLDER_REPOSITORY/<GROUP>/<PROJECT>/`), and to automatically detect the files to copy in the repository folder depending on application.
@@ -214,46 +202,66 @@ export FOLDER_DATABASES
 
 
 # RUNS FOLDER
-export MISEQ_FOLDER=$FOLDER_RUN				# MISEQ RAW folder
-MSR_SUBFOLDER=Data/Intensities/BaseCalls		# SUBFOLDER Illumina Sequencer Data subfolder
+# RUNS FOLDER for sequencing data (e.g. /STARK/input/runs)
+export MISEQ_FOLDER=$FOLDER_RUN
+# SUBFOLDER for Illumina Sequencer Data within the RUNS folder
+MSR_SUBFOLDER=Data/Intensities/BaseCalls
 
 # MANIFEST FOLDER
-export MANIFEST_FOLDER=$FOLDER_MANIFEST			# MANIFEST folder
+# MANIFEST FOLDER for storing manifest files (e.g. /STARK/input/manifests)
+export MANIFEST_FOLDER=$FOLDER_MANIFEST
 
 # PEDIGREE FOLDER
-export PEDIGREE_FOLDER=$FOLDER_PEDIGREE			# PEDIGREE folder
+# PEDIGREE FOLDER for storing pedigree files (e.g. /STARK/input/pedigrees)
+export PEDIGREE_FOLDER=$FOLDER_PEDIGREE
 
 
 # RESULTS FOLDER
-#export DEMULTIPLEXING_FOLDER=$FOLDER_RESULTS/DEM	# DEMULTIPLEXING folder
-export DEMULTIPLEXING_FOLDER=$FOLDER_DEMULTIPLEXING	# DEMULTIPLEXING folder
-export RESULTS_FOLDER=$FOLDER_RESULTS		# RESULTS folder ALL
-#export ANALYSIS_FOLDER=$FOLDER_RESULTS/ANA		# ANALYSIS folder
-export ANALYSIS_FOLDER=$FOLDER_LOG		# ANALYSIS folder
-#export TMP_FOLDER_TMP=$FOLDER_RESULTS/TMP		# TEMPORARY folder tmp
-export TMP_FOLDER_TMP=$FOLDER_TMP		# TEMPORARY folder tmp
-#export VALIDATION_FOLDER=$FOLDER_RESULTS/VAL		# VALIDATION folder
-#export VALIDATION_FOLDER=$FOLDER_VALIDATION		# VALIDATION folder
-export TMP_FOLDER=$FOLDER_OUTPUT			# TEMPORARY folder = MAIN V2 folder
-export MAIN_FOLDER=$FOLDER_OUTPUT			# MAIN V2 Folder (RES, DEM...)
+# DEMULTIPLEXING folder for storing demultiplexed sequencing data
+export DEMULTIPLEXING_FOLDER=$FOLDER_DEMULTIPLEXING
+# RESULTS folder for storing all analysis results
+export RESULTS_FOLDER=$FOLDER_RESULTS
+# ANALYSIS folder for storing analysis logs and intermediate files
+export ANALYSIS_FOLDER=$FOLDER_LOG
+# TEMPORARY folder tmp for storing temporary files
+export TMP_FOLDER_TMP=$FOLDER_TMP
+# TEMPORARY folder for storing temporary output files
+export TMP_FOLDER=$FOLDER_OUTPUT
+# MAIN folder for storing main output results (RES, DEM, etc.)
+export MAIN_FOLDER=$FOLDER_OUTPUT
 
 # Create directories if does not exist
 mkdir -p $DEMULTIPLEXING_FOLDER $RESULTS_FOLDER $ANALYSIS_FOLDER $TMP_FOLDER_TMP $TMP_FOLDER $MAIN_FOLDER 2>/dev/null
+
+
 # TOOLS FOLDER
-export NGS_TOOLS=$FOLDER_TOOLS				# TOOLS
-export DBFOLDER=$FOLDER_DATABASES			# DB
-export NGS_GENOMES=$DBFOLDER/genomes			# GENOMES folder
-export APPS=$STARK_FOLDER_APPS				# APPS
-#export GENOMES=$NGS_GENOMES				# Genomes folder in NGS folder
-export TMP_SYS_FOLDER=/tmp				# TEMPORARY SYSTEM folder (tmpfs)
+# TOOLS folder configuration
+export NGS_TOOLS=$FOLDER_TOOLS
+# DATABASES folder configuration
+export DBFOLDER=$FOLDER_DATABASES
+# GENOMES folder configuration
+export NGS_GENOMES=$DBFOLDER/genomes
+# APPS folder configuration
+export APPS=$STARK_FOLDER_APPS
+# SYSTEM TEMPORARY folder configuration
+export TMP_SYS_FOLDER=/tmp
+# NGS folder configuration
 export NGS_FOLDER=$FOLDER_TOOLS
-export NGS_SCRIPTS=$STARK_FOLDER_BIN			#"$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd -P )"
+# Scripts folder configuration
+export NGS_SCRIPTS=$STARK_FOLDER_BIN
 
 
 # REPOSITORY AND ARCHIVES FOLDER
-export RESULTS_FOLDER_BY_GROUP_PROJECT_COPY=$FOLDER_REPOSITORY	# Copy data into group and project (if defined)
-export RESULTS_SUBFOLDER_DATA="STARK";				# Copy sample results in a SUBFOLDER
+# REPOSITORY AND ARCHIVES folder configuration (Copy data into group and project (if defined))
+export RESULTS_FOLDER_BY_GROUP_PROJECT_COPY=$FOLDER_REPOSITORY	
+# Subfolder for storing sample results within the repository
+export RESULTS_SUBFOLDER_DATA="STARK"
 
+
+## Repository and Archives
+############################
+
+# CORE Files configuration for REPOSITORY, ARCHIVES, and FAVORITES
 # CORE Files to copy to REPOSITORY
 export REPOSITORY_FILE_PATTERNS_CORE='$SAMPLE.reports/$SAMPLE.final.vcf.gz $SAMPLE.reports/$SAMPLE.final.vcf.gz.tbi $SAMPLE.reports/$SAMPLE.final.Panel*.vcf.gz $SAMPLE.reports/$SAMPLE.final.Panel*.vcf.gz.tbi $SAMPLE.reports/*.*.config $SAMPLE.reports/*.report*.html $SAMPLE.reports/*.report.html.folder:FOLDER $SAMPLE.*.bam.metrics/$SAMPLE.*.validation.flags.Panel*.bed $SAMPLE*.tag $SAMPLE.reports/$SAMPLE.final.Panel*.tsv ';
 # CORE Files to exclude to REPOSITORY results subfolder
@@ -281,9 +289,44 @@ export FAVORITES_FILE_PATTERNS=$(echo $FAVORITES_FILE_PATTERNS' '$FAVORITES_FILE
 # Be aware to coordonate these parameters with availabled files within repositories folders
 
 # SAMPLE
-IGV_SESSION_PATTERNS_SAMPLE_DEFAULT=' $SAMPLE.final.vcf.gz $SAMPLE*Design*bed $SAMPLE*Panel*bed *Design*vcf.gz *Panel*vcf.gz *bam *cram '
-IGV_SESSION_MINDEPTH_SAMPLE_DEFAULT=0
-IGV_SESSION_MAXDEPTH_SAMPLE_DEFAULT=1
+# IGV_SESSION_PATTERNS_SAMPLE_DEFAULT
+# IGV session XML file (*igv_session.xml) patterns for samples.
+# These patterns define which files will be included in the IGV session for samples.
+# Be aware that these patterns should match the files available in the repository for the samples.
+# Theses files can be VCF, BAM, CRAM, or BED files related to the sample.
+# Default: ' $SAMPLE.final.vcf.gz $SAMPLE*Design*bed $SAMPLE*Panel*bed *Design*vcf.gz *Panel*vcf.gz *bam *cram '
+# Examples:
+# - ' $SAMPLE.final.vcf.gz $SAMPLE*Design*bed $SAMPLE*Panel*bed *Design*vcf.gz *Panel*vcf.gz *bam *cram ' (default)
+# - ' $SAMPLE.final.vcf.gz $SAMPLE.*.bam $SAMPLE.*.bam.bai ' (alternative pattern for samples, only main VCF file and BAM files without additional files for Panel or Design)
+if [ -z "$IGV_SESSION_PATTERNS_SAMPLE_DEFAULT" ]; then
+	IGV_SESSION_PATTERNS_SAMPLE_DEFAULT=' $SAMPLE.final.vcf.gz $SAMPLE*Design*bed $SAMPLE*Panel*bed *Design*vcf.gz *Panel*vcf.gz *bam *cram '
+fi;
+
+
+# IGV_SESSION_MINDEPTH_SAMPLE_DEFAULT
+# Minimum folder depth for sample IGV session files.
+# This defines the minimum folder depth to search for IGV session files related to samples.
+# Default: 0
+# Examples:
+# - 0 (default, search from the current folder)
+# - 1 (search from one folder level deeper)
+if [ -z "$IGV_SESSION_MINDEPTH_SAMPLE_DEFAULT" ]; then
+	IGV_SESSION_MINDEPTH_SAMPLE_DEFAULT=0
+fi;
+
+# IGV_SESSION_MAXDEPTH_SAMPLE_DEFAULT
+# Maximum folder depth for sample IGV session files.
+# This defines the maximum folder depth to search for IGV session files related to samples.
+# Default: 1
+# Examples:
+# - 1 (default, search up to one folder level deeper)
+# - 2 (search up to two folder levels deeper)
+if [ -z "$IGV_SESSION_MAXDEPTH_SAMPLE_DEFAULT" ]; then
+	IGV_SESSION_MAXDEPTH_SAMPLE_DEFAULT=1
+fi;
+
+# IGV session configuration for samples
+# This section defines the default patterns and folder depth for IGV session files related to samples.
 
 [ "$REPOSITORY_SAMPLE_IGV_SESSION_PATTERNS" == "" ] && REPOSITORY_SAMPLE_IGV_SESSION_PATTERNS=$IGV_SESSION_PATTERNS_SAMPLE_DEFAULT
 export REPOSITORY_SAMPLE_IGV_SESSION_PATTERNS
@@ -307,9 +350,40 @@ export FAVORITES_SAMPLE_IGV_SESSION_MINDEPTH
 export FAVORITES_SAMPLE_IGV_SESSION_MAXDEPTH
 
 # RUN
+# IGV session XML file (*igv_session.xml) patterns for runs.
+# These patterns define which files will be included in the IGV session for runs.
+# Be aware that these patterns should match the files available in the repository for the runs.
+# Theses files can be VCF, BAM, CRAM, or BED files related to the run.
+# Default: ' *.final.vcf.gz *Design*bed *Panel*bed *Design*vcf.gz *Panel*vcf.gz *bam *cram '
+# Examples:
+# - ' *.final.vcf.gz *Design*bed *Panel*bed *Design*vcf.gz *Panel*vcf.gz *bam *cram ' (default)
+# - ' *.final.vcf.gz *.bam *.bam.bai ' (alternative pattern for runs, only main VCF file and BAM files without additional files for Panel or Design)
 IGV_SESSION_PATTERNS_RUN_DEFAULT=' *.final.vcf.gz *Design*bed *Panel*bed *Design*vcf.gz *Panel*vcf.gz *bam *cram '
-IGV_SESSION_MINDEPTH_RUN_DEFAULT=0
-IGV_SESSION_MAXDEPTH_RUN_DEFAULT=2
+
+# IGV_SESSION_MINDEPTH_RUN_DEFAULT
+# Minimum folder depth for run IGV session files.
+# This defines the minimum folder depth to search for IGV session files related to runs.
+# Default: 0
+# Examples:
+# - 0 (default, search from the current folder)
+# - 1 (search from one folder level deeper)
+if [ -z "$IGV_SESSION_MINDEPTH_RUN_DEFAULT" ]; then
+	IGV_SESSION_MINDEPTH_RUN_DEFAULT=0
+fi;
+
+# IGV_SESSION_MAXDEPTH_RUN_DEFAULT_APP
+# Maximum folder depth for run IGV session files.
+# This defines the maximum folder depth to search for IGV session files related to runs.
+# Default: 2
+# Examples:
+# - 2 (default, search up to two folder levels deeper)
+# - 3 (search up to three folder levels deeper)
+if [ -z "$IGV_SESSION_MAXDEPTH_RUN_DEFAULT" ]; then
+	IGV_SESSION_MAXDEPTH_RUN_DEFAULT=2
+fi;
+
+# IGV session configuration for repository, archives, and favorites
+# This section sets the default patterns and folder depth for IGV session files in different locations.
 
 [ "$REPOSITORY_RUN_IGV_SESSION_PATTERNS" == "" ] && REPOSITORY_RUN_IGV_SESSION_PATTERNS=$IGV_SESSION_PATTERNS_RUN_DEFAULT
 export REPOSITORY_RUN_IGV_SESSION_PATTERNS
@@ -413,6 +487,8 @@ export IGV_SESSION_DAS_REPOSITORIES
 export IGV_SESSION_JSON_TRACKS_ADDITIONAL
 
 
+## Applications infos
+#######################
 
 #Rules defined in the app
 for RA in $(echo "$RULES_APP" | tr "," " " | tr " " "\n"); do
@@ -495,8 +571,6 @@ export PIPELINES
 # MANIFEST
 export MANIFEST
 
-# BLANK samples
-export BLANK
 
 # BARCODE_MISMATCHES (default 1)
 # Used to demultiplex
@@ -542,6 +616,7 @@ fi;
 export METRICS_MINIMUM_BASE_QUALITY
 
 # Clipping overlapping reads in the metrics BAM
+# From PICARD: For paired reads, soft clip the 3' end of each read if necessary so that it does not extend past the 5' end of its mate
 if [ -z "$CLIP_OVERLAPPING_READS" ]; then
 	CLIP_OVERLAPPING_READS=1
 fi;
@@ -569,19 +644,6 @@ if [ -z "$SAMTOOLS_METRICS_FLAG_PARAM" ]; then
 fi;
 export SAMTOOLS_METRICS_FLAG_PARAM
 
-
-# VARIANT RECALIBRATION (default 0/FALSE/NO/N)
-# Performs Variant recalibration after Calling (1/TRUE/YES/Y or 0/FALSE/NO/N).
-# If the recalibration fail (usually due to lack of data for statistic calculation), nothing will be done
-# if [ -z "$VARIANT_RECALIBRATION" ] || [ "${VARIANT_RECALIBRATION^^}" == "FALSE" ] || [ "${VARIANT_RECALIBRATION^^}" == "NO" ] || [ "${VARIANT_RECALIBRATION^^}" == "N" ]  || [ "$VARIANT_RECALIBRATION" == "0" ]; then
-# 	VARIANT_RECALIBRATION=0
-# elif [ "${VARIANT_RECALIBRATION^^}" == "TRUE" ] || [ "${VARIANT_RECALIBRATION^^}" == "YES" ] || [ "${VARIANT_RECALIBRATION^^}" == "Y" ]  || [ "$VARIANT_RECALIBRATION" == "1" ]; then
-# 	VARIANT_RECALIBRATION=1
-
-# else
-# 	VARIANT_RECALIBRATION=0
-# fi;
-# export VARIANT_RECALIBRATION
 
 # INTERVAL_PADDING (default 0)
 # Add some “padding” to the intervals used (manifest) in order to include the flanking regions (typically ~100 bp)
@@ -633,13 +695,6 @@ export DEPTH_COVERAGE_THRESHOLD
 COVERAGE_CRITERIA=$(echo "$SEQUENCING_DEPTH,$MINIMUM_DEPTH,$EXPECTED_DEPTH,$COVERAGE_CRITERIA" | tr "," "\n" | tr " " "\n" | grep -v "^$" | sort -u -n | tr "\n" ","  | sed "s/,$//")
 export COVERAGE_CRITERIA
 
-# CLIP_OVERLAPPING_READS (default 1)
-# From PICARD: For paired reads, soft clip the 3' end of each read if necessary so that it does not extend past the 5' end of its mate
-if [ -z "$CLIP_OVERLAPPING_READS" ]; then
-	CLIP_OVERLAPPING_READS=1
-fi;
-export CLIP_OVERLAPPING_READS
-
 
 # NB_BASES_AROUND (default 0)
 # For gene coverage metrics
@@ -662,23 +717,8 @@ export GENESCOVERAGE_PRECISION
 # For gene coverage metrics
 # the bed file containing the 5'UTR, 3'UTR and genomic coding coordinates.
 #BEDFILE_GENES=""
-#if [ "$BEDFILE_GENES" != "" ] && [ ! -s $BEDFILE_GENES ]; then
-	export BEDFILE_GENES
-#fi;
+export BEDFILE_GENES
 
-# VARANK ANALYSIS (default 0/FALSE/NO/N)
-# Performs VARANK ANALYSIS with Alamut (1/TRUE/YES/Y or 0/FALSE/NO/N).
-if [ -z $VARANK_ANALYSIS ] || [ "${VARANK_ANALYSIS^^}" == "FALSE" ] || [ "${VARANK_ANALYSIS^^}" == "NO" ] || [ "${VARANK_ANALYSIS^^}" == "N" ]  || [ "$VARANK_ANALYSIS" == "0" ]; then
-	VARANK_ANALYSIS=0
-elif [ "${VARANK_ANALYSIS^^}" == "TRUE" ] || [ "${VARANK_ANALYSIS^^}" == "YES" ] || [ "${VARANK_ANALYSIS^^}" == "Y" ]  || [ "$VARANK_ANALYSIS" == "1" ]; then
-	VARANK_ANALYSIS=1
-else
-	VARANK_ANALYSIS=0
-fi;
-export VARANK_ANALYSIS
-# if yes, define a folder to store the results
-#VARANK_FOLDER=$FOLDER_RESULTS/VARANK
-export VARANK_FOLDER
 
 # BAM CHECK (default 0)
 # Check BAM for each manipulation step (clipping, realignment...)
@@ -694,7 +734,6 @@ fi;
 export BAM_CHECK_STEPS
 
 
-
 # METRICS SNPEFF (default 0)
 # Generate snpEff variant metrics from VCF
 # Only for Report final VCF
@@ -706,13 +745,6 @@ else
 	METRICS_SNPEFF=0
 fi;
 export METRICS_SNPEFF
-
-
-
-# PIPELINES PRIORITIZATION
-# List of pipelines to prioritize for the report (final.vcf)
-#PRIORITIZE_PIPELINES_LIST=""
-export PRIORITIZE_PIPELINES_LIST
 
 
 
@@ -1068,22 +1100,35 @@ export STAR_KEEP_RAW_BAM
 # supporting_reads ; set to 2 to keep the clusters with 2 or more supporting reads / ultrasensible filter
 # set to 1 to replace Picard Markduplicates dedup
 # default "" (corresponding to "--supporting_reads 1", see gencore doc)
+# if numeric value is provided, it will be used as the supporting reads threshold for gencore
+if [ ! -z $GENCORE_SUP_READS ] && [[ $GENCORE_SUP_READS =~ ^[0-9]$ ]]; then
+	GENCORE_SUP_READS="--supporting_reads $GENCORE_SUP_READS"
+fi;
 export GENCORE_SUP_READS
 
 # --score_threshold
 # set to 8 recommanded for dup-rate < 50% if you want to keep all the DNA fragments, and for each output read you want to discard all the low quality unoverlapped mutations to obtain a relative clean data
 # default "" (corresponfing to "--score_threshold 6", see gencore doc)
+if [ ! -z $GENCORE_SCORE_THREESHOLD ] && [[ $GENCORE_SCORE_THREESHOLD =~ ^[0-9]$ ]]; then
+	GENCORE_SCORE_THREESHOLD="--score_threshold $GENCORE_SCORE_THREESHOLD"
+fi;
 export GENCORE_SCORE_THREESHOLD
 
 # --ratio_threshold
 # if the ratio of the major base in a cluster is less than <ratio_threshold>, it will be further compared to the reference.
 # The valud should be 0.5~1.0, and the default value is 0.8
 # default "" (corresponding to "--ratio_threshold 0.8", see gencore doc)
+if [ ! -z $GENCORE_RATIO_THREESHOLD ] && [[ $GENCORE_RATIO_THREESHOLD =~ ^[0-9]\.?[0-9]?$ ]]; then
+	GENCORE_RATIO_THREESHOLD="--ratio_threshold $GENCORE_RATIO_THREESHOLD"
+fi;
 export GENCORE_RATIO_THREESHOLD
 
 # --umi_diff_threshold
 # if two reads with identical mapping position have UMI difference <= <umi_diff_threshold>, then they will be merged to generate a consensus read
 # Default "" (corresponding to "--umi_diff_threshold 2", see gencore doc)
+if [ ! -z $GENCORE_DIFF_THREESHOLD ] && [[ $GENCORE_DIFF_THREESHOLD =~ ^[0-9]$ ]]; then
+	GENCORE_DIFF_THREESHOLD="--umi_diff_threshold $GENCORE_DIFF_THREESHOLD"
+fi;
 export GENCORE_DIFF_THREESHOLD
 
 # Quality Threeshold
@@ -1100,6 +1145,9 @@ export GENCORE_QUAL_THREESHOLD
 # for statistics purpose, can be reduce to gain performance
 # not included in the mk file
 # default "" (corresponding to "--coverage_sampling=10000", see gencore doc)
+if [ ! -z $GENCORE_COVERAGE_SAMPLING ] && [[ $GENCORE_COVERAGE_SAMPLING =~ ^[0-9]+$ ]]; then
+	GENCORE_COVERAGE_SAMPLING="--coverage_sampling $GENCORE_COVERAGE_SAMPLING"
+fi;
 export GENCORE_COVERAGE_SAMPLING
 
 
@@ -1150,23 +1198,6 @@ export VCF_MISSING_GENOTYPE
 
 # ANNOTATION
 #############
-
-
-# # DEJAVU
-# if [ -s $DEJAVU_ANNOVAR_DATABASES/$ASSEMBLY"_dejavu."$APP_GROUP.$APP_PROJECT.txt ]; then
-# 	HOWARD_DEJAVU_ANNOTATION="dejavu.$APP_GROUP.$APP_PROJECT"
-# fi
-# # DEJAVU for all the GROUP
-# for DEJAVU_DATABASE_ONE in $(find $DEJAVU_ANNOVAR_DATABASES -name $ASSEMBLY"_dejavu."$APP_GROUP".*txt" 2>/dev/null); do
-# 	HOWARD_DEJAVU_ANNOTATION=$HOWARD_DEJAVU_ANNOTATION","$(basename $DEJAVU_DATABASE_ONE | sed s/^$ASSEMBLY"_"//g | sed s/.txt$//g );
-# done;
-# HOWARD_DEJAVU_ANNOTATION=$(echo $HOWARD_DEJAVU_ANNOTATION | tr "," "\n" | sort -u | tr "\n" "," | sed s/,$//)
-# export HOWARD_DEJAVU_ANNOTATION
-
-
-# HOWARD
-##########
-
 
 # HOWARD CONFIG
 
@@ -1228,6 +1259,16 @@ if [ -z "$HOWARD_PARAM_ANALYSIS" ]; then
 fi;
 export HOWARD_PARAM_ANALYSIS
 
+# HOWARD REPORT INFOS FIELDS
+# Fields from the INFO column to be exploded into separate columns in the TSV report
+# Default: "" (no fields exploded)
+# Examples:
+# - HOWARD_REPORT_INFOS_FIELDS="*": explode all INFO fields into separate columns in the TSV report
+# - HOWARD_REPORT_INFOS_FIELDS="DP,AF,AN": explode only the DP, AF, and AN INFO fields into separate columns in the TSV report
+if [ -z "$HOWARD_REPORT_INFOS_FIELDS" ]; then
+	HOWARD_REPORT_INFOS_FIELDS=""
+fi;
+export HOWARD_REPORT_INFOS_FIELDS
 
 # INFO to FORMAT
 # Transfers INFO annotation to FORMAT annotation
@@ -1300,57 +1341,6 @@ export VARIANTFILTRATION_INVALIDATE_PREVIOUS_FILTERS
 
 # Variant Recalibrator
 
-# Variant Recalibrator main option (see documentation guide for more info)
-# default: VARIANTRECALIBRATOR_OPTIONS=
-#VARIANTRECALIBRATOR_OPTIONS=
-export VARIANTRECALIBRATOR_OPTIONS
-
-# Variant Recalibrator SNP resources option (see documentation guide for more info)
-# These resources need to be available on STARK Databases folder for GATK
-# default:
-VARIANTRECALIBRATION_SNP_RESOURCES_DEFAULT_HG19="
-	-resource:hapmap,known=false,training=true,truth=true,prior=15.0 hapmap_3.3.hg19.sites.vcf.gz
-	-resource:omni,known=false,training=true,truth=true,prior=12.0 1000G_omni2.5.hg19.sites.vcf.gz
-	-resource:1000G,known=false,training=true,truth=false,prior=10.0 1000G_phase1.snps.high_confidence.hg19.sites.vcf.gz
-	-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.hg19.vcf.gz
-"
-VARIANTRECALIBRATION_SNP_RESOURCES_DEFAULT_HG38="
-	-resource:hapmap,known=false,training=true,truth=true,prior=15.0 hapmap_3.3.hg38.vcf.gz
-	-resource:omni,known=false,training=true,truth=true,prior=12.0 1000G_omni2.5.hg38.vcf.gz
-	-resource:1000G,known=false,training=true,truth=false,prior=10.0 1000G_phase1.snps.high_confidence.hg38.vcf.gz
-	-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.hg38.vcf.gz
-"
-if [ -z "$VARIANTRECALIBRATION_SNP_RESOURCES" ] || [ "$VARIANTRECALIBRATION_SNP_RESOURCES" == "$VARIANTRECALIBRATION_SNP_RESOURCES_DEFAULT_HG19" ] || [ "$VARIANTRECALIBRATION_SNP_RESOURCES" == "$VARIANTRECALIBRATION_SNP_RESOURCES_DEFAULT_HG38" ]; then
-	if [ "$ASSEMBLY" == 'hg19' ]; then
-		VARIANTRECALIBRATION_SNP_RESOURCES=$VARIANTRECALIBRATION_SNP_RESOURCES_DEFAULT_HG19
-	fi;
-	if [ "$ASSEMBLY" == 'hg38' ]; then
-		VARIANTRECALIBRATION_SNP_RESOURCES=$VARIANTRECALIBRATION_SNP_RESOURCES_DEFAULT_HG38
-	fi;
-fi;
-export VARIANTRECALIBRATION_SNP_RESOURCES
-
-# Variant Recalibrator INDEL resources option (see documentation guide for more info)
-# These resources need to be available on STARK Databases folder for GATK
-# default:
-VARIANTRECALIBRATION_INDEL_RESOURCES_DEFAULT_HG19="
-	-resource:mills,known=false,training=true,truth=true,prior=12.0 Mills_and_1000G_gold_standard.indels.hg19.sites.vcf.gz
-	-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.hg19.vcf.gz
-"
-VARIANTRECALIBRATION_INDEL_RESOURCES_DEFAULT_HG38="
-	-resource:mills,known=false,training=true,truth=true,prior=12.0 Mills_and_1000G_gold_standard.indels.hg38.vcf.gz
-	-resource:dbsnp,known=true,training=false,truth=false,prior=2.0 dbsnp_138.hg38.vcf.gz
-"
-if [ -z "$VARIANTRECALIBRATION_INDEL_RESOURCES" ] || [ "$VARIANTRECALIBRATION_INDEL_RESOURCES" == "$VARIANTRECALIBRATION_INDEL_RESOURCES_DEFAULT_HG19" ] || [ "$VARIANTRECALIBRATION_INDEL_RESOURCES" == "$VARIANTRECALIBRATION_INDEL_RESOURCES_DEFAULT_HG38" ]; then
-	if [ "$ASSEMBLY" == 'hg19' ]; then
-		VARIANTRECALIBRATION_INDEL_RESOURCES=$VARIANTRECALIBRATION_INDEL_RESOURCES_DEFAULT_HG19
-	fi;
-	if [ "$ASSEMBLY" == 'hg38' ]; then
-		VARIANTRECALIBRATION_INDEL_RESOURCES=$VARIANTRECALIBRATION_INDEL_RESOURCES_DEFAULT_HG38
-	fi;
-fi;
-export VARIANTRECALIBRATION_INDEL_RESOURCES
-
 # Variant Recalibrator SNP annotations option (see documentation guide for more info)
 # default: VARIANTRECALIBRATION_SNP_ANNOTATIONS="-an QD -an MQ -an MQRankSum -an ReadPosRankSum -an FS -an SOR -an DP"
 VARIANTRECALIBRATION_SNP_ANNOTATIONS="-an QD -an MQ -an MQRankSum -an ReadPosRankSum -an FS -an SOR -an DP"
@@ -1392,58 +1382,21 @@ export VARIANTRECALIBRATION_INDEL_TRANCHES
 # VARIANTRECALIBRATOR_VARIANTFILTRATION_INDEL_FILTER_EXPRESSION_OPTION=$VARIANTFILTRATION_INDEL_FILTER_EXPRESSION_OPTION
 # Filter variant calls based on INFO and/or FORMAT annotations for SNP and INDEL 
 if [ -z "$VARIANTRECALIBRATOR_VARIANTFILTRATION_SNP_FILTER_OPTION" ]; then
-	VARIANTRECALIBRATOR_VARIANTFILTRATION_SNP_FILTER_OPTION=""
+	VARIANTRECALIBRATOR_VARIANTFILTRATION_SNP_FILTER_OPTION=$VARIANTFILTRATION_SNP_FILTER_OPTION
 fi;
 export VARIANTRECALIBRATOR_VARIANTFILTRATION_SNP_FILTER_OPTION
 if [ -z "$VARIANTRECALIBRATOR_VARIANTFILTRATION_SNP_FILTER_EXPRESSION_OPTION" ]; then
-	VARIANTRECALIBRATOR_VARIANTFILTRATION_SNP_FILTER_EXPRESSION_OPTION=""
+	VARIANTRECALIBRATOR_VARIANTFILTRATION_SNP_FILTER_EXPRESSION_OPTION=$VARIANTFILTRATION_SNP_FILTER_EXPRESSION_OPTION
 fi;
 export VARIANTRECALIBRATOR_VARIANTFILTRATION_SNP_FILTER_EXPRESSION_OPTION
 if [ -z "$VARIANTRECALIBRATOR_VARIANTFILTRATION_INDEL_FILTER_OPTION" ]; then
-	VARIANTRECALIBRATOR_VARIANTFILTRATION_INDEL_FILTER_OPTION=""
+	VARIANTRECALIBRATOR_VARIANTFILTRATION_INDEL_FILTER_OPTION=$VARIANTFILTRATION_INDEL_FILTER_OPTION
 fi;
 export VARIANTRECALIBRATOR_VARIANTFILTRATION_INDEL_FILTER_OPTION
 if [ -z "$VARIANTRECALIBRATOR_VARIANTFILTRATION_INDEL_FILTER_EXPRESSION_OPTION" ]; then
-	VARIANTRECALIBRATOR_VARIANTFILTRATION_INDEL_FILTER_EXPRESSION_OPTION=""
+	VARIANTRECALIBRATOR_VARIANTFILTRATION_INDEL_FILTER_EXPRESSION_OPTION=$VARIANTFILTRATION_INDEL_FILTER_EXPRESSION_OPTION
 fi;
 export VARIANTRECALIBRATOR_VARIANTFILTRATION_INDEL_FILTER_EXPRESSION_OPTION
-
-
-# GATK BAM Realignment and Recalibration
-#####################################
-
-# GATK BAM Realignment
-# Realignment is a process of correcting misalignments around indels. It is recommended to perform realignment before variant calling, especially for indel calling, to improve the accuracy of variant calling (not for GATK4 Haplotype Caller and MuTect2).
-# This option allow GATK to perform realignment, if the file is available and not empty. If not, GATK will be used without realignment.
-# Realignemnt is performed with GATK3 RealignerTargetCreator and IndelRealigner, and not performed with GATK4 (GATK4 Haplotype Caller and MuTect2 perform local realignment during calling, so GATK4 do not include Realignemnt tools).
-# This option is used with the GATK3 RealignerTargetCreator command to identify regions to realign, and with the GATK3 IndelRealigner command to perform realignment.
-# The VCF files include Indels and can be the same as for VCF recalibration (see VARIANTRECALIBRATION_INDEL_RESOURCES).
-# Exemple:
-# - GATK_REALIGNMENT_KNOWN_OPTIONS="--known $VCFDBSNP"
-# default:
-GATK_REALIGNMENT_KNOWN_OPTIONS_DEFAULT_HG19=$(echo -e "$VARIANTRECALIBRATION_INDEL_RESOURCES_DEFAULT_HG19" | sed "s#-resource.* \(.*\)#-known "$DBFOLDER"/gatk/current/hg19/\1#gi" | xargs echo)
-GATK_REALIGNMENT_KNOWN_OPTIONS_DEFAULT_HG38=$(echo -e "$VARIANTRECALIBRATION_INDEL_RESOURCES_DEFAULT_HG38" | sed "s#-resource.* \(.*\)#-known "$DBFOLDER"/gatk/current/hg38/\1#gi" | xargs echo)
-if [ -z "$GATK_REALIGNMENT_KNOWN_OPTIONS" ] || [ "$GATK_REALIGNMENT_KNOWN_OPTIONS" == "$GATK_REALIGNMENT_KNOWN_OPTIONS_DEFAULT_HG19" ] || [ "$GATK_REALIGNMENT_KNOWN_OPTIONS" == "$GATK_REALIGNMENT_KNOWN_OPTIONS_DEFAULT_HG38" ]; then
-	GATK_REALIGNMENT_KNOWN_OPTIONS=$(echo -e "$VARIANTRECALIBRATION_INDEL_RESOURCES" | sed "s#-resource.* \(.*\)#-known "$DBFOLDER"/gatk/current/"$ASSEMBLY"/\1#gi" | xargs echo)
-fi;
-export GATK_REALIGNMENT_KNOWN_OPTIONS
-
-# GATK BAM Recalibration
-# Recalibration is a process of correcting base quality scores. It is recommended to perform recalibration before variant calling to improve the accuracy of variant calling.
-# This option allow GATK to perform recalibration, if the file is available and not empty. If not, GATK will be used without recalibration.
-# Recalibration is performed with GATK4 BaseRecalibrator and PrintReads
-# This option is used with the GATK4 BaseRecalibrator command to identify covariates to recalibrate, and with the GATK4 PrintReads command to perform recalibration.
-# The VCF files include SNPs and can be the same as for VCF recalibration (see VARIANTRECALIBRATION_SNP_RESOURCES).
-# Exemple:
-# - GATK_RECALIBRATION_KNOWN_OPTIONS="--known-sites $VCFDBSNP"
-# default:
-GATK_RECALIBRATION_KNOWN_OPTIONS_DEFAULT_HG19=$(echo -e "$VARIANTRECALIBRATION_SNP_RESOURCES_DEFAULT_HG19" | sed "s#-resource.* \(.*\)#-known "$DBFOLDER"/gatk/current/hg19/\1#gi" | xargs echo)
-GATK_RECALIBRATION_KNOWN_OPTIONS_DEFAULT_HG38=$(echo -e "$VARIANTRECALIBRATION_SNP_RESOURCES_DEFAULT_HG38" | sed "s#-resource.* \(.*\)#-known "$DBFOLDER"/gatk/current/hg38/\1#gi" | xargs echo)
-if [ -z "$GATK_RECALIBRATION_KNOWN_OPTIONS" ] || [ "$GATK_RECALIBRATION_KNOWN_OPTIONS" == "$GATK_RECALIBRATION_KNOWN_OPTIONS_DEFAULT_HG19" ] || [ "$GATK_RECALIBRATION_KNOWN_OPTIONS" == "$GATK_RECALIBRATION_KNOWN_OPTIONS_DEFAULT_HG38" ]; then
-	GATK_RECALIBRATION_KNOWN_OPTIONS=$(echo -e "$VARIANTRECALIBRATION_SNP_RESOURCES" | sed "s#-resource.* \(.*\)#--known-sites "$DBFOLDER"/gatk/current/"$ASSEMBLY"/\1#gi" | xargs echo)
-fi;
-export GATK_RECALIBRATION_KNOWN_OPTIONS
-
 
 
 # DAEMON CONFIG
@@ -1469,17 +1422,10 @@ RELEASE_FILE=$STARK_FOLDER_CONFIG/RELEASE
 [ -z $CORES ] && CORES=$(get_cores)
 
 if [ -z $THREADS ] || [ "${THREADS^^}" == "AUTO" ] || ! [[ $THREADS =~ ^[0-9]+$ ]]; then
-	#export CORES=$(ls -d /sys/devices/system/cpu/cpu[[:digit:]]* | wc -w)	# NB of cores in the server
-	export CORES	# NB of cores in the server
-	export CORES_FREE=0							# Number of threads free for other command
-	export CORES_TO_USE=$(($CORES-$CORES_FREE))				# Nb of cores to use
+	export CORES									# NB of cores in the server
+	export CORES_FREE=0								# Number of threads free for other command
+	export CORES_TO_USE=$(($CORES-$CORES_FREE))		# Nb of cores to use
 	THREADS=$CORES_TO_USE
-	#THREADS=2
-	#if ! [[ $THREADS =~ "^\d+" ]]; then # || [ "$THREADS" == "" ]; then
-	#if [[ -z $THREADS ]]; then # || [ "$THREADS" == "" ]; then
-	#	THREADS=1
-	#fi;
-	#echo "|$THREADS|"
 	if [ $THREADS -gt $CORES ]; then
 		THREADS=$CORES
 	fi;
@@ -1487,16 +1433,6 @@ if [ -z $THREADS ] || [ "${THREADS^^}" == "AUTO" ] || ! [[ $THREADS =~ ^[0-9]+$ 
 fi;
 export THREADS
 export CORES_TO_USE=$THREADS
-
-#export THREADS_BY_SAMPLE=1				# Number of threads for a sample's command
-#export THREADS_BY_PIPELINE=1				# Number of threads for a pipeline's command
-#export THREADS_BY_ALIGNER=1				# Number of threads for a aligner's command
-#export THREADS_BY_CALLER=1				# Number of threads for a caller's command
-#export THREADS=$(($CORES_TO_USE/$THREADS_BY_SAMPLE))	# Total nb of threads to use for Makefile
-#export THREADS_BWA=$THREADS_BY_SAMPLE			# NB of threads for BWA command
-#export THREADS_RTC=$THREADS_BY_SAMPLE			# NB of threads for GATK realigment RealignerTargetCreator command
-
-export THREADS_AUTO=1					# Automatize nb of threads depending on the input and number of cores to use (TRUE if = 1)
 
 
 # THREADS_LOADING (default THREADS)
@@ -1555,22 +1491,6 @@ if ((1)); then
 	export NB_ALIGNERS
 	export NB_CALLERS
 
-	# # Default
-	# JAVA_MEMORY_BY_SAMPLE=$JAVA_MEMORY
-	# JAVA_MEMORY_BY_CALLER=$JAVA_MEMORY
-
-	# # Calcul
-	# JAVA_MEMORY_BY_SAMPLE=$(($MEMTOTAL/$NB_SAMPLE/1024/1024))				# Number of threads by sample
-	# JAVA_MEMORY_BY_PIPELINE=$(($JAVA_MEMORY_BY_SAMPLE/$NB_PIPELINES))	# Number of threads for a pipeline's command
-	# JAVA_MEMORY_BY_ALIGNER=$(($JAVA_MEMORY_BY_SAMPLE/$NB_ALIGNERS))	# Number of threads for a aligner's command
-	# JAVA_MEMORY_BY_CALLER=$(($JAVA_MEMORY_BY_SAMPLE/$NB_CALLERS))		# Number of threads for a caller's command
-
-	# # Test
-	# if [ "$JAVA_MEMORY_BY_SAMPLE" == "" ] || [ $JAVA_MEMORY_BY_SAMPLE -lt 1 ]; then JAVA_MEMORY_BY_SAMPLE=1; fi;
-	# if [ "$JAVA_MEMORY_BY_PIPELINE" == "" ] || [ $JAVA_MEMORY_BY_PIPELINE -lt 1 ]; then JAVA_MEMORY_BY_PIPELINE=1; fi;
-	# if [ "$JAVA_MEMORY_BY_ALIGNER" == "" ] || [ $JAVA_MEMORY_BY_ALIGNER -lt 1 ]; then JAVA_MEMORY_BY_ALIGNER=1; fi;
-	# if [ "$JAVA_MEMORY_BY_CALLER" == "" ] || [ $JAVA_MEMORY_BY_CALLER -lt 1 ]; then JAVA_MEMORY_BY_CALLER=1; fi;
-
 	# Default
 	MEMORY_BY_SAMPLE=$MEMORY
 	MEMORY_BY_CALLER=$MEMORY
@@ -1611,12 +1531,8 @@ export JAVA_FLAGS_DEFAULT=" -Xmx"$JAVA_MEMORY"g $JAVA_FLAGS_OTHER_PARAM $JAVA_FL
 if [ "$JAVA_FLAGS" == "" ]; then
 	JAVA_FLAGS=$JAVA_FLAGS_DEFAULT;
 fi;
-#JAVA_FLAGS=$JAVA_FLAGS_DEFAULT;
 export JAVA_FLAGS;
-#if [ "$JAVA_FLAGS_BY_SAMPLE" == "" ]; then
-#	JAVA_FLAGS_BY_SAMPLE=" -Xmx"$JAVA_MEMORY_BY_SAMPLE"g $JAVA_FLAGS_OTHER_PARAM $JAVA_FLAGS_TMP_FOLDER";
-#fi;
-#export JAVA_FLAGS_BY_SAMPLE;
+
 
 
 # RESOURCES MANAGMENT
@@ -1625,24 +1541,31 @@ export JAVA_FLAGS;
 ### Picard CollectHsMetrics
 # If validation bam is small enough (lower than MAX_VALIDATION_BAM_SIZE Kb), launch CollectHsMetrics the classic way
 # Otherwise increase RAM to MAX_CONCURRENT_HSMETRICS_RAM and limit command to MAX_CONCURRENT_HSMETRICS concurrent launches
-# default: MAX_VALIDATION_BAM_SIZE=1000000000 (exageratly big to switch off)
+# default: MAX_VALIDATION_BAM_SIZE=2097152 (for BAM file of maximum 2 Go)
 # example:
 # - MAX_VALIDATION_BAM_SIZE=2097152		# 2Go
+# - MAX_VALIDATION_BAM_SIZE=1000000000  # around 1To, exageratly big to switch on the classic way
+# - MAX_VALIDATION_BAM_SIZE=0  			# Switch off the size check for validation BAM, effectively disables the classic way and forces the use of concurrent launches
 # - MAX_CONCURRENT_HSMETRICS=1 			# No concurrence, only 1 HsMetrics at once
-# - MAX_CONCURRENT_HSMETRICS_RAM=16g 	# 16Go of RAM to Collect HsMetrics
-if [ "$MAX_VALIDATION_BAM_SIZE" == "" ]; then
-	MAX_VALIDATION_BAM_SIZE=1000000000;
+# - MAX_CONCURRENT_HSMETRICS="AUTO" 	# Automatically set based on system resources and RAM requirements
+# - MAX_CONCURRENT_HSMETRICS_RAM=36g 	# 36Go of RAM to Collect HsMetrics
+if [ "$MAX_VALIDATION_BAM_SIZE" == "" ] || ! [[ "$MAX_CONCURRENT_HSMETRICS" =~ ^[0-9]+$ ]]; then
+	MAX_VALIDATION_BAM_SIZE=0;
 fi;
 export MAX_VALIDATION_BAM_SIZE
-if [ "$MAX_CONCURRENT_HSMETRICS" == "" ]; then
-	MAX_CONCURRENT_HSMETRICS=1;
-fi;
-export MAX_CONCURRENT_HSMETRICS
 if [ "$MAX_CONCURRENT_HSMETRICS_RAM" == "" ]; then
-	MAX_CONCURRENT_HSMETRICS_RAM=16g;
+	MAX_CONCURRENT_HSMETRICS_RAM=36g;
 fi;
 export MAX_CONCURRENT_HSMETRICS_RAM
-
+if [ "$MAX_CONCURRENT_HSMETRICS" == "" ] || ! [[ "$MAX_CONCURRENT_HSMETRICS" =~ ^[0-9]+$ ]]; then
+	# Automatically set based on system resources if not specified
+	# Calculation based on available system resources (MEMORY) and the RAM required for each HsMetrics launch (MAX_CONCURRENT_HSMETRICS_RAM, with unit conversion)
+	MAX_CONCURRENT_HSMETRICS=$(($MEMORY / $(echo $MAX_CONCURRENT_HSMETRICS_RAM | sed 's/g//')))
+	if [ "$MAX_CONCURRENT_HSMETRICS" -lt 1 ]; then
+		MAX_CONCURRENT_HSMETRICS=1;
+	fi;
+fi;
+export MAX_CONCURRENT_HSMETRICS
 
 
 

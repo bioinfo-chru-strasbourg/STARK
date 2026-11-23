@@ -1,11 +1,9 @@
 ############################
 # Clipping Rules
-# Release: 0.9.4
-# Date: 27/09/2019
 # Author: Antony Le Bechec
 ############################
-MK_RELEASE="0.9.4"
-MK_DATE="27/09/2019"
+MK_RELEASE=1.0.0
+MK_DATE=05/11/2026
 
 ## Release note
 # 25/07/2014: DEV into PROD. Creation V0.9. Splitting clipping. Option file from BED file. Checking Option file empty. Merge resulting SAM
@@ -14,25 +12,31 @@ MK_DATE="27/09/2019"
 # 29/09/2016: New clipping script including multithreading
 # 27/08/2019: Changing FATBAM to CAP tool
 # 03/02/2023: Extract clipping rule
-
-# TOOLS & OPTION
-CAP_THREADS?=$(THREADS)
-CAP_OPTIONS?=--verbose # Default options + verbose
-CAP_TMP_FOLDER?=$(TMP_FOLDER_TMP) # TMP_SYS_FOLDER ???
+# 05/11/2026: Change compression to 1, change threads to THREADS_BY_ALIGNER
 
 
-# Soft Clipping primer bam file from a manifest
+############
+# Clipping #
+############
+
+# Threads and temporary folder for CAP tool
+CAP_THREADS?=$(THREADS_BY_ALIGNER)
+CAP_TMP_FOLDER?=$(TMP_FOLDER_TMP)
+
+# CAP Option
+# This variable defines additional options to pass to the CAP tool during clipping.
+# It can be set directly in the Makefile or inherited from the environment.
+CAP_OPTIONS?=
+
+
+# Rule: Soft Clipping primer BAM file from a manifest
 %.bam: %.clipping.bam %.clipping.bam.bai %.manifest
 	# Clipping
-	+$(CAP) --function=clipping --env=$(CONFIG_TOOLS) --ref=$(GENOME) --bam=$< --manifest=$*.manifest --output=$@ --threads=$(CAP_THREADS) --bedtools=$(BEDTOOLS) --samtools=$(SAMTOOLS) --picard=$(PICARD) --tmp=$(CAP_TMP_FOLDER) $(CAP_OPTIONS)
+	+$(CAP) --function=clipping --env=$(CONFIG_TOOLS) --ref=$(GENOME) --bam=$< --manifest=$*.manifest --output=$@ --compress=1 --threads=$(CAP_THREADS) --bedtools=$(BEDTOOLS) --samtools=$(SAMTOOLS) --picard=$(PICARD) --tmp=$(CAP_TMP_FOLDER) $(CAP_OPTIONS)
+	# Clean
 	-rm $*.clipping.*
 
 
-
-# CONFIG/RELEASE
-RELEASE_COMMENT := "\#\# CLIPPING: CAP tool removes primers described in BED file from a BAM file. It parallelizes over chromosomes. Options: CAP='$(CAP)', CAP_THREADS=$(CAP_THREADS), CAP_OPTIONS='$(CAP_OPTIONS)'"
-RELEASE_CMD := $(shell echo "$(RELEASE_COMMENT)" >> $(RELEASE_INFOS) )
-
-
-PIPELINES_COMMENT := "POST_ALIGNMENT:clipping:Primers Soft-Clipping for Amplicon sequencing"
-PIPELINES_CMD := $(shell echo -e "$(PIPELINES_COMMENT)" >> $(PIPELINES_INFOS) )
+# Documentation
+$(file >>$(RELEASE_INFOS),## POST_ALIGNMENT clipping '$(MK_RELEASE)': Clipping tool for Amplicon sequencing, to remove primers described in a manifest file from BAM files by soft-clipping. Parameters CAP_OPTIONS='$(CAP_OPTIONS)')
+$(file >>$(PIPELINES_INFOS),POST_ALIGNMENT:clipping:Primers Soft-Clipping for Amplicon sequencing:CAP_OPTIONS='$(CAP_OPTIONS)')

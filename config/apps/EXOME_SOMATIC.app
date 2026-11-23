@@ -1,9 +1,10 @@
 #!/bin/bash
-## STARK application EXOME_SOMATIC
 
 # DEFAULT ENV
 ######################
+# Depend on SOMATIC App and CAPTURE PlugApp
 source_app SOMATIC,CAPTURE
+
 
 # APPLICATION INFOS
 #####################
@@ -13,11 +14,11 @@ APP_DESCRIPTION="Application to detect somatic mutations in exome sequencing dat
 APP_GROUP="SOMATIC"
 APP_PROJECT="EXOME"
 
+
 # ANALYSIS PARAMETERS
 #######################
 
-# PIPELINES
-PIPELINES="bwamem.gatkHC_EXOME_SOMATIC.howard bwamem.gatkUG_EXOME_SOMATIC.howard bwamem.outLyzer_filtered.howard bwamem.VarScan_EXOME_SOMATIC.howard bwamem.MuTect2_stringent.howard"
-
 # INTERVAL_PADDING / add some padding to the intervals used (manifest) in order to include the flanking regions (typically ~100 bp)
 INTERVAL_PADDING=100
+
+

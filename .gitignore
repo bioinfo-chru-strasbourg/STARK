@@ -5,5 +5,7 @@ __pycache__/
 sources_old
 tmp/
 misc/
+archives/
+config/apps/my_apps/
 *.DS_Store
 *TODO.md

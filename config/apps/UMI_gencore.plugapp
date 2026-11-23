@@ -1,38 +1,40 @@
 #!/bin/bash
-## STARK application SOMATIC_PARAMETERS
 
 # DEFAULT ENV
 ######################
+# No default environment is sourced for this plugapp
 #source $CONFIG_DEFAULT_APP
+
 
 # APPLICATION INFOS
 #####################
 APP_NAME="UMI_gencore"
 APP_RELEASE="1.0"
 APP_DESCRIPTION="PlugAPP for specific parameters to extract and mark UMI tags - gencore"
-#APP_GROUP=""
-#APP_PROJECT=""
+
 
 # ANALYSIS PARAMETERS
 #######################
-
 
 # POST ALIGNMENT STEPS
 POST_ALIGNMENT_STEPS="sorting gencore realignment recalibration compress"
 
 
+# GENCORE options
+###################
 
-###################
-# GENCORE options #
-###################
+# GENCORE Flags
+GENCORE_FLAGS="\
+	--supporting_reads 1 \
+	--score_threshold 6"
 
 # supporting_reads ; set to 2 to keep the clusters with 2 or more supporting reads / ultrasensible filter
 # set to 1 to replace Picard Markduplicates dedup
-GENCORE_SUP_READS="--supporting_reads 1"
+#GENCORE_SUP_READS="--supporting_reads 1"
 
 # --score_threshold
 # set to 8 recommanded for dup-rate < 50% if you want to keep all the DNA fragments, and for each output read you want to discard all the low quality unoverlapped mutations to obtain a relative clean data
-GENCORE_SCORE_THREESHOLD="--score_threshold 6"
+#GENCORE_SCORE_THREESHOLD="--score_threshold 6"
 
 # --ratio_threshold
 # if the ratio of the major base in a cluster is less than <ratio_threshold>, it will be further compared to the reference.
