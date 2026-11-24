@@ -22,6 +22,7 @@ log_prefix () {
 	case "$LEVEL" in
 		INFO)    LABEL="INFO";  COLOR=$'\033[0;32m' ;;
 		WARNING) LABEL="WARN";  COLOR=$'\033[0;33m' ;;
+		WARN) 	 LABEL="WARN";  COLOR=$'\033[0;33m' ;;
 		ERROR)   LABEL="ERROR"; COLOR=$'\033[0;31m' ;;
 		DEBUG)   LABEL="DEBUG"; COLOR=$'\033[0;35m' ;;
 		*)       LABEL="$LEVEL"; NC="" ;;
@@ -31,9 +32,9 @@ log_prefix () {
 	printf -v PAD '%5s' "$LABEL"   # right-aligned on 5 chars
 
 	case "$TYPE" in
-		FULL)    printf '#[%s] %s|%s %s%s\n' "$TS" "$PAD" "$COLOR" "$LOG" "$NC" ;;
-		NOCOLOR) printf '#[%s] %s| %s\n'     "$TS" "$PAD" "$LOG" ;;
-		*)       printf '#[%s] %s%s%s| %s\n' "$TS" "$COLOR" "$PAD" "$NC" "$LOG" ;;
+		full)    printf '#[%s] %s|%s %s%s\n' "$TS" "$PAD" "$COLOR" "$LOG" "$NC" ;;
+		color)   printf '#[%s] %s%s%s| %s\n' "$TS" "$COLOR" "$PAD" "$NC" "$LOG" ;;
+		*)       printf '#[%s] %s| %s\n'     "$TS" "$PAD" "$LOG" ;;
 	esac
 
 }
