@@ -4,11 +4,45 @@
 #################################
 
 
+# Timestamp
+function timestamp() {
+    date +"%Y-%m-%d %H:%M:%S"
+}
+
+# Log prefix function
+# $1: LEVEL (INFO, WARNING, ERROR, DEBUG)
+# $2: message
+# $3: TYPE (FULL, NOCOLOR, or anything else for colored level only; default NOCOLOR)
+log_prefix () {
+
+	local LEVEL=$1 LOG=$2 TYPE=$3
+	local LABEL COLOR="" NC=$'\033[0m' TS PAD
+
+	# Short label and color per level
+	case "$LEVEL" in
+		INFO)    LABEL="INFO";  COLOR=$'\033[0;32m' ;;
+		WARNING) LABEL="WARN";  COLOR=$'\033[0;33m' ;;
+		ERROR)   LABEL="ERROR"; COLOR=$'\033[0;31m' ;;
+		DEBUG)   LABEL="DEBUG"; COLOR=$'\033[0;35m' ;;
+		*)       LABEL="$LEVEL"; NC="" ;;
+	esac
+
+	TS=$(timestamp)
+	printf -v PAD '%5s' "$LABEL"   # right-aligned on 5 chars
+
+	case "$TYPE" in
+		FULL)    printf '#[%s] %s|%s %s%s\n' "$TS" "$PAD" "$COLOR" "$LOG" "$NC" ;;
+		NOCOLOR) printf '#[%s] %s| %s\n'     "$TS" "$PAD" "$LOG" ;;
+		*)       printf '#[%s] %s%s%s| %s\n' "$TS" "$COLOR" "$PAD" "$NC" "$LOG" ;;
+	esac
+
+}
+
 # function in_array
 # input: $element $array
 in_array () 
 { 
-	param=$1;
+	local param=$1;
 	shift;
 	for elem in "$@";
 	do
@@ -22,7 +56,7 @@ get_cores() {
 # Get the number of cores available for the current process, taking into account cgroup limits if applicable.
 
 	compute_cores() {
-        cores=$(((quota + period - 1) / period))
+        local cores=$(((quota + period - 1) / period))
 
         # Clamp minimum to 1
         [ "$cores" -lt 1 ] && cores=1
@@ -48,8 +82,8 @@ get_cores() {
     # --- Cgroups v1 ---
     if [ -f /sys/fs/cgroup/cpu/cpu.cfs_quota_us ]; then
 
-        quota=$(cat /sys/fs/cgroup/cpu/cpu.cfs_quota_us)
-        period=$(cat /sys/fs/cgroup/cpu/cpu.cfs_period_us)
+        local quota=$(cat /sys/fs/cgroup/cpu/cpu.cfs_quota_us)
+        local period=$(cat /sys/fs/cgroup/cpu/cpu.cfs_period_us)
 
         if [ "${quota:-0}" -gt 0 ] 2>/dev/null; then
 			compute_cores
