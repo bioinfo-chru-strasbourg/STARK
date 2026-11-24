@@ -32,10 +32,6 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 ENV_CONFIG=$(find -L $SCRIPT_DIR/.. -name config.app)
 source $ENV_CONFIG
 
-# Timestamp
-function timestamp() {
-    date +"%Y-%m-%d %H:%M:%S"
-}
 
 # Header
 function header () {
@@ -91,18 +87,17 @@ function usage {
 	echo "# -g|--by_sample                                  Split analysis by SAMPLE, all threads on each sample, one by one";
 	echo "# --keep_alignment                                Keep alignment from input read file, for format BAM|SAM|CRAM only (alignment autodetected).";
 	echo "#                                                 CRAM Archives integrity will not be checked";
-
 	echo "# -a|--adapters=<STRING>                          Adapters to trim.";
 
+	echo "# --keep-going                             		Keep going on errors instead of stopping";
+	echo "# --logging-style=<STRING>                     	Set the logging style (options: full, color, nocolor)";
+	echo "#                                                 Default: nocolor";
 	echo "# -v|--verbose                                    VERBOSE option";
 	echo "# -d|--debug                                      DEBUG option";
 	echo "# -n|--release                                    RELEASE option";
 	echo "# -h|--help                                       HELP option";
 	echo "#";
 }
-
-# header
-header;
 
 
 # USAGE exemple
@@ -114,10 +109,10 @@ header;
 # Getting parameters from the input
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 # ":" tells that the option has a required argument, "::" tells that the option has an optional argument, no ":" tells no argument
-ARGS=$(getopt -o "e:f:q:b:j:m:s:r:o:u:p:t:ga:vdnh" --long "env:,app:,application:,reads:,fastq:,reads1:,reads:,fastq_R1:,fastq_R2:,reads2:,index1:,index2:,analysis_tag:,sample_tag:,other_files:,design:,bed:,manifest:,genes:,panels:,transcripts:,pedigree:,sample:,sample_list:,sample_filter:,runs:,demultiplexing:,demultiplexing_only,samplesheet:,analysis:,analysis_name:,output:,analysis_dir:,results:,repository:,archives:,favorites:,databases:,input:,output:,tmp:,log:,pipelines:,threads:,no_header,by_sample,keep_alignment,adapters:,verbose,debug,release,help" -- "$@" 2> /dev/null)
+ARGS=$(getopt -o "e:f:q:b:j:m:s:r:o:u:p:t:ga:vdnh" --long "env:,app:,application:,reads:,fastq:,reads1:,reads:,fastq_R1:,fastq_R2:,reads2:,index1:,index2:,analysis_tag:,sample_tag:,other_files:,design:,bed:,manifest:,genes:,panels:,transcripts:,pedigree:,sample:,sample_list:,sample_filter:,runs:,demultiplexing:,demultiplexing_only,samplesheet:,analysis:,analysis_name:,output:,analysis_dir:,results:,repository:,archives:,favorites:,databases:,input:,output:,tmp:,log:,pipelines:,threads:,no_header,by_sample,keep_alignment,adapters:,keep-going,logging-style:,verbose,debug,release,help" -- "$@" 2> /dev/null)
 [ $? -ne 0 ] && \
-	echo "["$(timestamp)" | ERROR] Error in the argument list." "Use -h or --help to display the help." >&2 && usage && \
-	exit 1
+	#echo "["$(timestamp)" | ERROR] Error in the argument list." "Use -h or --help to display the help." >&2 && usage && exit 1
+	log_prefix "ERROR" "Exiting due to argument parsing error. Use -h or --help to display the help." >&2 && usage && exit 1
 eval set -- "$ARGS"
 
 PARAM=$@
@@ -273,6 +268,14 @@ do
 			#RUNS="$2"
 			shift 2
 			;;
+		--keep-going)
+			KEEP_GOING=1
+			shift 1
+			;;
+		--logging-style)
+			LOGGING_STYLE="$2"
+			shift 2
+			;;
 		-v|--verbose)
 			VERBOSE=1
 			shift 1
@@ -306,10 +309,19 @@ do
 		--) shift
 			break
 			;;
-		*) 	echo "["$(timestamp)" | WARNING] Option $1 is not recognized. Use -h or --help to display the help." && usage && exit 1
+		*) 	log_prefix "WARN" "Option $1 is not recognized. Use -h or --help to display the help." && usage && exit 1
+		
 			;;
 	esac
 done
+
+# Logging style
+if [ "$LOGGING_STYLE" == "" ]; then
+	LOGGING_STYLE="nocolor"
+fi
+
+((NO_HEADER)) || header;
+
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 ####################################################################################################################################
@@ -332,19 +344,32 @@ COMMAND_LINK="ln "
 # FUNCTIONS
 #############
 
-# function in_array
-# input: $element $array
-in_array () 
-{ 
-    param=$1;
-    shift;
-    for elem in "$@";
-    do
-        [[ "$param" = "$elem" ]] && return 0;
-    done;
-    return 1
-}
+# # function in_array
+# # input: $element $array
+# in_array () 
+# { 
+#     param=$1;
+#     shift;
+#     for elem in "$@";
+#     do
+#         [[ "$param" = "$elem" ]] && return 0;
+#     done;
+#     return 1
+# }
 
+
+# General options
+###################
+
+# Initialize MAKE_PARAM for general options
+MAKE_PARAM=""
+
+# Keep going on errors instead of stopping
+if [ "$KEEP_GOING" == "1" ]; then
+	MAKE_PARAM="--keep-going"
+fi
+
+# Verbose and debug flags
 VERBOSE=$(echo $VERBOSE | awk '{print $0+0}')
 DEBUG=$(echo $DEBUG | awk '{print $0+0}')
 
@@ -353,7 +378,7 @@ DEBUG=$(echo $DEBUG | awk '{print $0+0}')
 ### APPLICATION
 ################
 
-echo ""
+#echo ""
 
 # Default application
 [ "$APP" == "" ] && APP="default.app" 
@@ -363,12 +388,11 @@ ENV=$(find_app "$APP" "$STARK_FOLDER_APPS")
 source_app "$APP" "$STARK_FOLDER_APPS" 1
 
 # Debug
-(($DEBUG)) && echo "["$(timestamp)" | DEBUG] Application '$APP' configuration loaded from '$ENV' environment file.";
+(($DEBUG)) && log_prefix "DEBUG" "Application '$APP' configuration loaded from '$ENV' environment file." "$LOGGING_STYLE"
 
 # Error if application not found
 if [ "$ENV" == "" ] && [ "$APP" != "" ]; then
-	echo ""
-	echo "["$(timestamp)" | ERROR] Application '$APP' configuration file not found!";
+	log_prefix "ERROR" "Application '$APP' configuration file not found!" "$LOGGING_STYLE"
 	exit 1
 fi
 
@@ -382,13 +406,13 @@ if [ "$FASTQ" != "" ]; then
 			# Find file
 			F=$(echo $(ls $F_INPUT 2>/dev/null | xargs realpath 2>/dev/null) $(cd $ANALYSIS_DIR && ls $F_INPUT 2>/dev/null | xargs realpath 2>/dev/null) | tr " " "\n" | sort -u)
 			if [ "$F" == "" ] || [ $(echo $F | wc -w) -gt 1 ] || [ ! -f "$F" ]; then
-				echo "["$(timestamp)" | ERROR] No input FASTQ/BAM/CRAM/SAM '$F' file!";
+				log_prefix "ERROR" "No input FASTQ/BAM/CRAM/SAM '$F' file!" "$LOGGING_STYLE"
 				exit 0;
 			fi
-			(($DEBUG)) && echo "["$(timestamp)" | DEBUG] F=$F";
+			(($DEBUG)) && log_prefix "DEBUG" "F=$F" "$LOGGING_STYLE"
 			# Relocate
 			if ! (($(echo "$F" | grep ".fastq.gz$\|.fq.gz$\|.bam$\|.ubam$\|.cram$\|.ucram$" -c))); then
-				echo "["$(timestamp)" | ERROR] Format of input file '$F' Unknown! Please check file format (.fastq.gz|.fq.gz|.bam|.ubam|.cram|.ucram)";
+				log_prefix "ERROR" "Format of input file '$F' Unknown! Please check file format (.fastq.gz|.fq.gz|.bam|.ubam|.cram|.ucram)" "$LOGGING_STYLE"
 				exit 0;
 			fi
 			FS_INPUT_RELOC=$FS_INPUT_RELOC"+"$F
@@ -409,13 +433,13 @@ if [ "$FASTQ_R2" != "" ]; then
 			# Find file
 			F=$(echo $(ls $F_INPUT 2>/dev/null | xargs realpath 2>/dev/null) $(cd $ANALYSIS_DIR && ls $F_INPUT 2>/dev/null | xargs realpath 2>/dev/null) | tr " " "\n" | sort -u)
 			if [ "$F" == "" ] || [ $(echo $F | wc -w) -gt 1 ] || [ ! -f "$F" ]; then
-				echo "["$(timestamp)" | ERROR] No input FASTQ '$F' file!";
+				log_prefix "ERROR" "No input FASTQ '$F' file!" "$LOGGING_STYLE"
 				exit 0;
 			fi
-			(($DEBUG)) && echo "["$(timestamp)" | DEBUG] Q=$F";
+			(($DEBUG)) && log_prefix "DEBUG" "Q=$F" "$LOGGING_STYLE"
 			# Relocated
 			if ! (($(echo "$F" | grep ".fastq.gz$\|.fq.gz$" -c))); then
-				echo "["$(timestamp)" | ERROR] Format of input file '$F' Unknown! Please check file format (.fastq.gz|.fq.gz)";
+				log_prefix "ERROR" "Format of input file '$F' Unknown! Please check file format (.fastq.gz|.fq.gz)" "$LOGGING_STYLE"
 				exit 0;
 			fi
 			FS_INPUT_RELOC=$FS_INPUT_RELOC"+"$F
@@ -436,12 +460,12 @@ if [ "$INDEX1" != "" ]; then
 			# Find file
 			F=$(echo $(ls $F_INPUT 2>/dev/null | xargs realpath 2>/dev/null) $(cd $ANALYSIS_DIR && ls $F_INPUT 2>/dev/null | xargs realpath 2>/dev/null) | tr " " "\n" | sort -u)
 			if [ "$F" == "" ] || [ $(echo $F | wc -w) -gt 1 ] || [ ! -f "$F" ]; then
-				echo "["$(timestamp)" | ERROR] No input FASTQ '$F' file!";
+				log_prefix "ERROR" "No input FASTQ '$F' file!" "$LOGGING_STYLE";
 				exit 0;
 			fi
-			(($DEBUG)) && echo "["$(timestamp)" | DEBUG] I1=$F";
+			(($DEBUG)) && log_prefix "DEBUG" "I1=$F" "$LOGGING_STYLE";
 			if ! (($(echo "$F" | grep ".fastq.gz$\|.fq.gz$" -c))); then
-				echo "["$(timestamp)" | ERROR] Format of input file '$F' Unknown! Please check file format (.fastq.gz|.fq.gz)";
+				log_prefix "ERROR" "Format of input file '$F' Unknown! Please check file format (.fastq.gz|.fq.gz)" "$LOGGING_STYLE";
 				exit 0;
 			fi
 			FS_INPUT_RELOC=$FS_INPUT_RELOC"+"$F
@@ -462,12 +486,12 @@ if [ "$INDEX2" != "" ]; then
 			# Find file
 			F=$(echo $(ls $F_INPUT 2>/dev/null | xargs realpath 2>/dev/null) $(cd $ANALYSIS_DIR && ls $F_INPUT 2>/dev/null | xargs realpath 2>/dev/null) | tr " " "\n" | sort -u)
 			if [ "$F" == "" ] || [ $(echo $F | wc -w) -gt 1 ] || [ ! -f "$F" ]; then
-				echo "["$(timestamp)" | ERROR] No input FASTQ '$F' file!";
+				log_prefix "ERROR" "No input FASTQ '$F' file!" "$LOGGING_STYLE";
 				exit 0;
 			fi
-			(($DEBUG)) && echo "["$(timestamp)" | DEBUG] I2=$F";
+			(($DEBUG)) && log_prefix "DEBUG" "I2=$F" "$LOGGING_STYLE";
 			if ! (($(echo "$F" | grep ".fastq.gz$\|.fq.gz$" -c))); then
-				echo "["$(timestamp)" | ERROR] Format of input file '$F' Unknown! Please check file format (.fastq.gz|.fq.gz)";
+				log_prefix "ERROR" "Format of input file '$F' Unknown! Please check file format (.fastq.gz|.fq.gz)" "$LOGGING_STYLE";
 				exit 0;
 			fi
 			FS_INPUT_RELOC=$FS_INPUT_RELOC"+"$F
@@ -483,16 +507,16 @@ fi;
 OTHER_FILES_RELOCATED=""
 if [ "$OTHER_FILES" != "" ]; then
 	for OFCF in $OTHER_FILES; do
-		(($DEBUG)) && echo "["$(timestamp)" | DEBUG] OFCF=$OFCF"
+		(($DEBUG)) && log_prefix "DEBUG" "OFCF=$OFCF" "$LOGGING_STYLE"
 		OTHER_FILES_RELOCATED_ONE=""
 		for OFCF_ONE in $(echo $OFCF | tr "+" " "); do
 			# Original other file
 			OF_ONE=$(echo $OFCF_ONE | awk -F: '{print $1}')
 			# Copy other file
 			CF_ONE=$(echo $OFCF_ONE | awk -F: '{print $2}')
-			(($DEBUG)) && echo "["$(timestamp)" | DEBUG]    OFCF_ONE=$OFCF_ONE"
+			(($DEBUG)) && log_prefix "DEBUG" "    OFCF_ONE=$OFCF_ONE" "$LOGGING_STYLE"
 			if [ "$OF_ONE" == "" ] || [ ! -e "$OF_ONE" ]; then
-				echo "["$(timestamp)" | ERROR] No input '$OF_ONE' file/folder!";
+				log_prefix "ERROR" "No input '$OF_ONE' file/folder!" "$LOGGING_STYLE"
 				exit 0;
 			fi
 			# Relocation
@@ -518,14 +542,14 @@ if [ "$BED_INPUT" != "" ]; then
 		if [ -f "$B" ] || [ -f "$ANALYSIS_DIR/$B" ]; then
 			# Relocation
 			if [ -f "$B" ]; then
-				(($DEBUG)) && echo "["$(timestamp)" | DEBUG] B=$B";
+				(($DEBUG)) && log_prefix "DEBUG" "B=$B" "$LOGGING_STYLE";
 				BED_RELOCATED="$BED_RELOCATED $B"
 		 	elif [ -f "$ANALYSIS_DIR/$B" ]; then
-				(($DEBUG)) && echo "["$(timestamp)" | DEBUG] B=$ANALYSIS_DIR/$B";
+				(($DEBUG)) && log_prefix "DEBUG" "B=$ANALYSIS_DIR/$B" "$LOGGING_STYLE";
 				BED_RELOCATED="$BED_RELOCATED $ANALYSIS_DIR/$B"
 			fi;
 		else
-			echo "["$(timestamp)" | ERROR] BED '$B' file DOES NOT exist!";
+			log_prefix "ERROR" "BED '$B' file DOES NOT exist!" "$LOGGING_STYLE"
 			exit 0;
 		fi;
 	done;
@@ -550,14 +574,14 @@ if [ "$BEDFILE_GENES" != "" ]; then
 			if [ -f "$G" ] || [ -f "$ANALYSIS_DIR/$G" ]; then
 				# Relocation
 				if [ -f "$G" ]; then
-					(($DEBUG)) && echo "["$(timestamp)" | DEBUG] G=$G";
+					(($DEBUG)) && log_prefix "DEBUG" "G=$G" "$LOGGING_STYLE";
 					BEDFILE_GENES_LIST="$BEDFILE_GENES_LIST+$G"
 			 	elif [ -f "$ANALYSIS_DIR/$G" ]; then
-					(($DEBUG)) && echo "["$(timestamp)" | DEBUG] G=$ANALYSIS_DIR/$G";
+					(($DEBUG)) && log_prefix "DEBUG" "G=$ANALYSIS_DIR/$G" "$LOGGING_STYLE";
 					BEDFILE_GENES_LIST="$BEDFILE_GENES_LIST+$ANALYSIS_DIR/$G"
 				fi;
 			else
-				echo "["$(timestamp)" | ERROR] BEDFILE_GENES '$G' file DOES NOT exist!";
+				log_prefix "ERROR" "BEDFILE_GENES '$G' file DOES NOT exist!" "$LOGGING_STYLE";
 				exit 0;
 			fi;
 		done;
@@ -583,14 +607,14 @@ if [ "$TRANSCRIPTS" != "" ]; then
 			if [ -f "$T" ] || [ -f "$ANALYSIS_DIR/$T" ]; then
 				# Relocation
 				if [ -f "$T" ]; then
-					(($DEBUG)) && echo "["$(timestamp)" | DEBUG] T=$T";
+					(($DEBUG)) && log_prefix "DEBUG" "T=$T" "$LOGGING_STYLE";
 					TRANSCRIPTS_LIST="$TRANSCRIPTS_LIST+$T"
 				elif [ -f "$ANALYSIS_DIR/$T" ]; then
-					(($DEBUG)) && echo "["$(timestamp)" | DEBUG] T=$ANALYSIS_DIR/$T";
+					(($DEBUG)) && log_prefix "DEBUG" "T=$ANALYSIS_DIR/$T" "$LOGGING_STYLE";
 					TRANSCRIPTS_LIST="$TRANSCRIPTS_LIST+$ANALYSIS_DIR/$T"
 				fi;
 			else
-				echo "["$(timestamp)" | ERROR] TRANSCRIPTS '$T' file DOES NOT exist!";
+				log_prefix "ERROR" "TRANSCRIPTS '$T' file DOES NOT exist!" "$LOGGING_STYLE";
 				exit 0;
 			fi;
 		done;
@@ -615,7 +639,7 @@ if [ "$PEDIGREE" != "" ]; then
 		PEDIGREE_LIST=""
 		for P in $(echo $P_LIST_ONE | tr "+" " "); do
 			if [ -f "$P" ] || [ -f "$ANALYSIS_DIR/$P" ]; then
-				(($DEBUG)) && echo "["$(timestamp)" | DEBUG] P=$P";
+				(($DEBUG)) && log_prefix "DEBUG" "P=$P" "$LOGGING_STYLE";
 				# Relocation
 				if [ -f "$P" ]; then
 					PEDIGREE_LIST="$PEDIGREE_LIST+$P"
@@ -623,7 +647,7 @@ if [ "$PEDIGREE" != "" ]; then
 					PEDIGREE_LIST="$PEDIGREE_LIST+$ANALYSIS_DIR/$P"
 				fi;
 			else
-				echo "["$(timestamp)" | ERROR] PEDIGREE '$P' file DOES NOT exist!";
+				log_prefix "ERROR" "PEDIGREE '$P' file DOES NOT exist!" "$LOGGING_STYLE";
 				exit 0;
 			fi;
 		done;
@@ -669,7 +693,7 @@ SAMPLE_TAG_CHECKED=""
 SAMPLE_TAG_ARRAY=($SAMPLE_TAG);
 
 
-(($DEBUG)) && echo "["$(timestamp)" | DEBUG] FASTQ=$FASTQ";
+(($DEBUG)) && log_prefix "DEBUG" "FASTQ=$FASTQ" "$LOGGING_STYLE"
 
 
 for F in $FASTQ; do
@@ -677,10 +701,10 @@ for F in $FASTQ; do
 	# Test FASTQ format
 	for F1_TEST in $(echo $F | tr "+" " "); do
 		if ! (($(echo "$F1_TEST" | grep ".fastq.gz$\|.fq.gz$\|.bam$\|.ubam$\|.cram$\|.ucram$\|.sam$\|.usam$" -c))); then
-			echo "["$(timestamp)" | ERROR] Format of input file '$F1_TEST' Unknown! Please check file format (.fastq.gz|.fq.gz|.bam|.ubam|.cram|.ucram|.sam|.usam)";
+			log_prefix "ERROR" "Format of input file '$F1_TEST' Unknown! Please check file format (.fastq.gz|.fq.gz|.bam|.ubam|.cram|.ucram|.sam|.usam)" "$LOGGING_STYLE";
 			exit 0;
 		else
-			(($DEBUG)) && echo "["$(timestamp)" | DEBUG] Format of input file '$F1_TEST' ok"
+			(($DEBUG)) && log_prefix "DEBUG" "Format of input file '$F1_TEST' ok" "$LOGGING_STYLE"
 		fi;
 	done;
 
@@ -688,10 +712,10 @@ for F in $FASTQ; do
 	for F2_TEST in $(echo ${FASTQ_R2_ARRAY[$NB_SAMPLE]} | tr "+" " "); do
 		if [ "$F2_TEST" != "" ]; then
 			if ! (($(echo "$F2_TEST" | grep ".fastq.gz$\|.fq.gz$" -c))); then
-				echo "["$(timestamp)" | ERROR] Format of input file Read2 '$F2_TEST' Unknown! Please check file format (.fastq.gz|.fq.gz)";
+				log_prefix "ERROR" "Format of input file Read2 '$F2_TEST' Unknown! Please check file format (.fastq.gz|.fq.gz)" "$LOGGING_STYLE";
 				exit 0;
 			else
-				(($DEBUG)) && echo "["$(timestamp)" | DEBUG] Format of input file '$F2_TEST' ok"
+				(($DEBUG)) && log_prefix "DEBUG" "Format of input file '$F2_TEST' ok" "$LOGGING_STYLE"
 			fi;
 		fi;
 	done;
@@ -700,10 +724,10 @@ for F in $FASTQ; do
 	for I1_TEST in $(echo ${FASTQ_I1_ARRAY[$NB_SAMPLE]} | tr "+" " "); do
 		if [ "$I1_TEST" != "" ]; then
 			if ! (($(echo "$I1_TEST" | grep ".fastq.gz$\|.fq.gz$" -c))); then
-				echo "["$(timestamp)" | ERROR] Format of input file Read2 '$I1_TEST' Unknown! Please check file format (.fastq.gz|.fq.gz)";
+				log_prefix "ERROR" "Format of input file Index1 '$I1_TEST' Unknown! Please check file format (.fastq.gz|.fq.gz)" "$LOGGING_STYLE";
 				exit 0;
 			else
-				(($DEBUG)) && echo "["$(timestamp)" | DEBUG] Format of input file '$I1_TEST' ok"
+				(($DEBUG)) && log_prefix "DEBUG" "Format of input file '$I1_TEST' ok" "$LOGGING_STYLE"
 			fi;
 		fi;
 	done;
@@ -712,10 +736,10 @@ for F in $FASTQ; do
 	for I2_TEST in $(echo ${FASTQ_I2_ARRAY[$NB_SAMPLE]} | tr "+" " "); do
 		if [ "$I2_TEST" != "" ]; then
 			if ! (($(echo "$I2_TEST" | grep ".fastq.gz$\|.fq.gz$" -c))); then
-				echo "["$(timestamp)" | ERROR] Format of input file Read2 '$I2_TEST' Unknown! Please check file format (.fastq.gz|.fq.gz)";
+				log_prefix "ERROR" "Format of input file Index2 '$I2_TEST' Unknown! Please check file format (.fastq.gz|.fq.gz)" "$LOGGING_STYLE";
 				exit 0;
 			else
-				(($DEBUG)) && echo "["$(timestamp)" | DEBUG] Format of input file '$I2_TEST' ok"
+				(($DEBUG)) && log_prefix "DEBUG" "Format of input file '$I2_TEST' ok" "$LOGGING_STYLE"
 			fi;
 		fi;
 	done;
@@ -930,15 +954,15 @@ if [ -z "$APP_NAME" ]; then APP_NAME="UNKNOWN"; fi;
 
 
 if (($DEBUG)); then
-	echo "["$(timestamp)" | DEBUG] FOLDER_REPOSITORY=$FOLDER_REPOSITORY"
-	echo "["$(timestamp)" | DEBUG] FOLDER_ARCHIVES=$FOLDER_ARCHIVES"
-	echo "["$(timestamp)" | DEBUG] FOLDER_FAVORITES=$FOLDER_FAVORITES"
-	echo "["$(timestamp)" | DEBUG] REPOSITORY=$REPOSITORY"
-	echo "["$(timestamp)" | DEBUG] ARCHIVES=$ARCHIVES"
-	echo "["$(timestamp)" | DEBUG] FAVORITES=$FAVORITES"
-	echo "["$(timestamp)" | DEBUG] REPOSITORY_FILE_PATTERNS=$REPOSITORY_FILE_PATTERNS"
-	echo "["$(timestamp)" | DEBUG] ARCHIVES_FILE_PATTERNS=$ARCHIVES_FILE_PATTERNS"
-	echo "["$(timestamp)" | DEBUG] FAVORITES_FILE_PATTERNS=$FAVORITES_FILE_PATTERNS"
+	log_prefix "DEBUG" "FOLDER_REPOSITORY=$FOLDER_REPOSITORY" "$LOGGING_STYLE"
+	log_prefix "DEBUG" "FOLDER_ARCHIVES=$FOLDER_ARCHIVES" "$LOGGING_STYLE"
+	log_prefix "DEBUG" "FOLDER_FAVORITES=$FOLDER_FAVORITES" "$LOGGING_STYLE"
+	log_prefix "DEBUG" "REPOSITORY=$REPOSITORY" "$LOGGING_STYLE"
+	log_prefix "DEBUG" "ARCHIVES=$ARCHIVES" "$LOGGING_STYLE"
+	log_prefix "DEBUG" "FAVORITES=$FAVORITES" "$LOGGING_STYLE"
+	log_prefix "DEBUG" "REPOSITORY_FILE_PATTERNS=$REPOSITORY_FILE_PATTERNS" "$LOGGING_STYLE"
+	log_prefix "DEBUG" "ARCHIVES_FILE_PATTERNS=$ARCHIVES_FILE_PATTERNS" "$LOGGING_STYLE"
+	log_prefix "DEBUG" "FAVORITES_FILE_PATTERNS=$FAVORITES_FILE_PATTERNS" "$LOGGING_STYLE"
 fi;
 
 
@@ -958,12 +982,12 @@ PEDIGREE_ARRAY=($PEDIGREE);
 RUN_UNIQ=$(echo $RUN | tr " " "\n" | sort | uniq | tr "\n" " ");
 
 
-(($VERBOSE)) && echo "["$(timestamp)" | INFO] *** Start Analysis        ["$(date)"]"
+(($VERBOSE)) && log_prefix "INFO" "*** Start Analysis        [$(date)]" "$LOGGING_STYLE"
 START_ANALYSIS=$(date +%s)
 
-echo "["$(timestamp)" | INFO] *** Input"
+log_prefix "INFO" "*** Input" "$LOGGING_STYLE"
 
-echo "["$(timestamp)" | INFO] Check Input Files..."
+log_prefix "INFO" "Check Input Files..." "$LOGGING_STYLE"
 
 
 RUN_ANALYZED=0
@@ -1102,7 +1126,8 @@ for RUU in $RUN_UNIQ; do
 
 
 
-	(($VERBOSE)) && echo "["$(timestamp)" | INFO] RUN '$RUU'"
+	(($VERBOSE)) && log_prefix "INFO" "RUN '$RUU'" "$LOGGING_STYLE"
+	
 	echo "## ANALYSIS" > $MAKEFILE_ANALYSIS_RUN
 	RUNS_SAMPLES="";
 
@@ -1147,24 +1172,24 @@ for RUU in $RUN_UNIQ; do
 		RUN_SAMPLE_DIR=$RESULTS/$RU/$S
 
 		if (($DEBUG)); then
-			echo "["$(timestamp)" | DEBUG] $F | $F_R2 | $I1 | $I2 | $OFCF | $S | $RU | $B | $G | $T | $P | $PIPELINES | $INPUT | $RESULTS | $RUN_SAMPLE_DIR ";
+			log_prefix "DEBUG" "$F | $F_R2 | $I1 | $I2 | $OFCF | $S | $RU | $B | $G | $T | $P | $PIPELINES | $INPUT | $RESULTS | $RUN_SAMPLE_DIR " "$LOGGING_STYLE"
 		fi;
 
 		mkdir -p $RUN_SAMPLE_DIR
 
 		# INFOS
-		(($VERBOSE)) && echo "["$(timestamp)" | INFO] RUN '$RUU' - SAMPLE '$S'"
-		(($VERBOSE)) && echo "["$(timestamp)" | INFO] SAMPLE '$RU/$S' from file(s):"
-		(($VERBOSE)) && echo "["$(timestamp)" | INFO]    Read1:         $F"
-		(($VERBOSE)) && echo "["$(timestamp)" | INFO]    Read2:         $F_R2"
-		(($VERBOSE)) && echo "["$(timestamp)" | INFO]    Index1:        $I1"
-		(($VERBOSE)) && echo "["$(timestamp)" | INFO]    Index2:        $I2"
-		(($VERBOSE)) && echo "["$(timestamp)" | INFO]    Others:        $OFCF"
-		(($VERBOSE)) && echo "["$(timestamp)" | INFO]    Design:        $B"
-		(($VERBOSE)) && echo "["$(timestamp)" | INFO]    Panels:        $G"
-		(($VERBOSE)) && echo "["$(timestamp)" | INFO]    Transcripts:   $T"
-		(($VERBOSE)) && echo "["$(timestamp)" | INFO]    Pedigree:      $P"
-		(($VERBOSE)) && echo "["$(timestamp)" | INFO]    Tags:          $TAG"
+		(($VERBOSE)) && log_prefix "INFO" "RUN '$RUU' - SAMPLE '$S'" "$LOGGING_STYLE"
+		(($VERBOSE)) && log_prefix "INFO" "SAMPLE '$RU/$S' from file(s):" "$LOGGING_STYLE"
+		(($VERBOSE)) && log_prefix "INFO" "Read1:         $F" "$LOGGING_STYLE"
+		(($VERBOSE)) && log_prefix "INFO" "Read2:         $F_R2" "$LOGGING_STYLE"
+		(($VERBOSE)) && log_prefix "INFO" "Index1:        $I1" "$LOGGING_STYLE"
+		(($VERBOSE)) && log_prefix "INFO" "Index2:        $I2" "$LOGGING_STYLE"
+		(($VERBOSE)) && log_prefix "INFO" "Others:        $OFCF" "$LOGGING_STYLE"
+		(($VERBOSE)) && log_prefix "INFO" "Design:        $B" "$LOGGING_STYLE"
+		(($VERBOSE)) && log_prefix "INFO" "Panels:        $G" "$LOGGING_STYLE"
+		(($VERBOSE)) && log_prefix "INFO" "Transcripts:   $T" "$LOGGING_STYLE"
+		(($VERBOSE)) && log_prefix "INFO" "Pedigree:      $P" "$LOGGING_STYLE"
+		(($VERBOSE)) && log_prefix "INFO" "Tags:          $TAG" "$LOGGING_STYLE"
 
 		# Copy FASTQ
 		PICARD_FLAGS="COMPRESSION_LEVEL=1 MAX_RECORDS_IN_RAM=500000"
@@ -1179,7 +1204,7 @@ for RUU in $RUN_UNIQ; do
 		if [ ! -s $RUN_SAMPLE_DIR/$S.R1.fastq.gz ]; then
 			# FASTQ
 			if (($(echo "$F" | grep ".fastq.gz$\|.fq.gz$" -c))); then
-				(($VERBOSE)) && echo "["$(timestamp)" | INFO] Create Input data from FASTQ file(s)"
+				(($VERBOSE)) && log_prefix "INFO" "Create Input data from FASTQ file(s)" "$LOGGING_STYLE"
 
 				# Create FASTQ
 
@@ -1257,7 +1282,7 @@ for RUU in $RUN_UNIQ; do
 
 				# Generate FASTQ from BAM/SAM/CRAM
 				if ((1)); then
-					(($VERBOSE)) && echo "["$(timestamp)" | INFO] Create Input data from BAM/CRAM/SAM file"
+					(($VERBOSE)) && log_prefix "INFO" "Create Input data from BAM/CRAM/SAM file" "$LOGGING_STYLE"
 
 					# Sort and FASTQ generation
 					TMP_INPUT_BAM=$TMP_FOLDER_TMP/INPUT_BAM_$RANDOM
@@ -1303,7 +1328,8 @@ for RUU in $RUN_UNIQ; do
 					INPUT_MK_ALL=$INPUT_MK_ALL" $RUN_SAMPLE_DIR/$S.I2.fastq.gz"
 
 					if (($KEEP_ALIGNMENT)); then
-						(($VERBOSE)) && echo "["$(timestamp)" | INFO] Keep Alignment from Input BAM/CRAM/SAM file"
+						(($VERBOSE)) && log_prefix "INFO" "Keep Alignment from Input BAM/CRAM/SAM file" "$LOGGING_STYLE"
+						
 						for PIPELINE in $(echo $PIPELINES | tr "," " " | tr " " "\n" | sed '/^[[:space:]]*$/d' | tr "." " " | cut -d" " -f1 | sort -u); do
 							AL=$(echo $PIPELINE | cut -d. -f1)
 							echo "$RUN_SAMPLE_DIR/$S.$AL.bam: $F 
@@ -1322,7 +1348,7 @@ for RUU in $RUN_UNIQ; do
 			fi;
 
 		else
-			(($VERBOSE)) && echo "["$(timestamp)" | INFO] Input file '$RUN_SAMPLE_DIR/$S.R1.fastq.gz' DOES exist"
+			(($VERBOSE)) && log_prefix "INFO" "Input file '$RUN_SAMPLE_DIR/$S.R1.fastq.gz' DOES exist" "$LOGGING_STYLE"
 		fi;
 
 		# FASTQ PROCESSING
@@ -1336,7 +1362,7 @@ for RUU in $RUN_UNIQ; do
 
 			if [ ! -e $FASTP_LOG ]; then
 
-				(($VERBOSE)) && echo "["$(timestamp)" | INFO] FASTQ processing (Adaptors, UMIs, quality)"
+				(($VERBOSE)) && log_prefix "INFO" "FASTQ processing (Adaptors, UMIs, quality)" "$LOGGING_STYLE"
 
 
 				### INIT
@@ -1432,7 +1458,7 @@ for RUU in $RUN_UNIQ; do
 		# assembly & genome
 		if ((0)); then
 			if [ ! -e $RUN_SAMPLE_DIR/$S.genome ]; then
-				(($VERBOSE)) && echo "["$(timestamp)" | INFO] Create genome."
+				(($VERBOSE)) && log_prefix "INFO" "Create genome." "$LOGGING_STYLE"
 				[ -e "$GENOME" ] && echo $GENOME > $RUN_SAMPLE_DIR/$S.genome
 			fi;
 		fi;
@@ -1441,21 +1467,21 @@ for RUU in $RUN_UNIQ; do
 		# OTHER_FILES
 		if [ "$OFCF" != "" ]; then
 
-			(($VERBOSE)) && echo "["$(timestamp)" | INFO] Copy OTHER FILES."
+			(($VERBOSE)) && log_prefix "INFO" "Copy OTHER FILES." "$LOGGING_STYLE"
 			for OFCF_ONE in $(echo $OFCF | tr "+" " "); do
 				# Original other file
 				OF=$(echo $OFCF_ONE | awk -F: '{print $1}')
 				# Copy other file
 				CF=$(echo $OFCF_ONE | awk -F: '{print $2}')
 				[ "$CF" == "" ] && CF=$(basename $OF)
-				(($DEBUG)) && echo "["$(timestamp)" | DEBUG] Copy OTHER FILES '$OF' to '$CF'."
+				(($DEBUG)) && log_prefix "DEBUG" "Copy OTHER FILES '$OF' to '$CF'." "$LOGGING_STYLE"
 				if [ -d $OF ]; then
 					mkdir -p $RUN_SAMPLE_DIR/$CF
 					$COMMAND_COPY $OF/* $RUN_SAMPLE_DIR/$CF/
 				else
 					mkdir -p $RUN_SAMPLE_DIR/$(dirname $CF)
 					if ! $COMMAND_COPY $OF/* $RUN_SAMPLE_DIR/$CF/ 2>/dev/null; then
-						(($VERBOSE)) && echo "["$(timestamp)" | WARNING] Copy OTHER FILES '$OF' to '$CF' failed!"
+						(($VERBOSE)) && log_prefix "WARNING" "Copy OTHER FILES '$OF' to '$CF' failed!" "$LOGGING_STYLE"
 					fi;
 				fi;
 			done;
@@ -1470,10 +1496,10 @@ for RUU in $RUN_UNIQ; do
 					if [[ $B =~ .bed$ ]]; then
 						if [ -e $B ] && [ "$B" != "" ] && [ ! -e $RUN_SAMPLE_DIR/$S.bed ]; then
 
-							(($VERBOSE)) && echo "["$(timestamp)" | INFO] Copy original BED file."
+							(($VERBOSE)) && log_prefix "INFO" "Copy original BED file." "$LOGGING_STYLE"
 							$COMMAND_COPY -p $B $RUN_SAMPLE_DIR/$S.original.bed;
 
-							(($VERBOSE)) && echo "["$(timestamp)" | INFO] Sort/Merge/Normalize BED file."
+							(($VERBOSE)) && log_prefix "INFO" "Sort/Merge/Normalize BED file." "$LOGGING_STYLE"
 							if (( $(cat $B | grep "^#" -v | grep "^browser" -v | grep "^track" -v | wc -l) )); then
 								$BEDTOOLS sort -i $B  | $STARK_BED_NORMALIZATION | $BEDTOOLS merge -i - -c 4 -o distinct > $RUN_SAMPLE_DIR/$S.bed;
 							else
@@ -1490,7 +1516,7 @@ for RUU in $RUN_UNIQ; do
 						fi;
 					else
 						if [ -e $B ] && [ "$B" != "" ] && [ ! -e $RUN_SAMPLE_DIR/$S.manifest ]; then
-							(($VERBOSE)) && echo "["$(timestamp)" | INFO] Copy Manifest file."
+							(($VERBOSE)) && log_prefix "INFO" "Copy Manifest file." "$LOGGING_STYLE"
 							$COMMAND_COPY -p $B $RUN_SAMPLE_DIR/$S.manifest;
 							touch $RUN_SAMPLE_DIR/$S.manifest -r $B;
 							echo -e $(basename $B)"\tfrom option - manifest" > $RUN_SAMPLE_DIR/$S.bed_name
@@ -1509,18 +1535,18 @@ for RUU in $RUN_UNIQ; do
 			if [ ! -e $BEDFILE_GENES_LIST_ONE ]; then
 				# Add Genes
 				if [ "$G" != "" ]; then
-					(($VERBOSE)) && echo "["$(timestamp)" | INFO] Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' and copy Panel .genes files."
+					(($VERBOSE)) && log_prefix "INFO" "Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' and copy Panel .genes files." "$LOGGING_STYLE"
 					for G_ONE in $(echo $G | tr "+" " "); do
 						# add '.genes' extension if not exists
 						[ "${G_ONE##*.}" != "genes" ] && G_ONE_TARGET=$(basename $G_ONE)".genes" || G_ONE_TARGET=$(basename $G_ONE);
 						# remove Sample name (mainly in case of relauch)
 						G_ONE_TARGET=$(echo $G_ONE_TARGET | sed "s/$S\.//gi")
 						if $BEDTOOLS sort -i $G_ONE | $STARK_BED_NORMALIZATION > $RUN_SAMPLE_DIR/$S.$G_ONE_TARGET; then
-							(($VERBOSE)) && echo "["$(timestamp)" | INFO] Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' and copy Panel .genes files - Panel '$G_ONE' found "
+							(($VERBOSE)) && log_prefix "INFO" "Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' and copy Panel .genes files - Panel '$G_ONE' found " "$LOGGING_STYLE"
 						elif $BEDTOOLS sort -i $G_ONE | $STARK_BED_NORMALIZATION > $RUN_SAMPLE_DIR/$S.$G_ONE_TARGET; then
-							(($VERBOSE)) && echo "["$(timestamp)" | INFO] Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' and copy Panel .genes files - Panel '$G_ONE' found (but cutted)"
+							(($VERBOSE)) && log_prefix "INFO" "Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' and copy Panel .genes files - Panel '$G_ONE' found (but cutted)" "$LOGGING_STYLE"
 						else
-							echo "["$(timestamp)" | ERROR] Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' and copy Panel .genes files - Panel '$G_ONE' failed!!!"
+							log_prefix "ERROR" "Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' and copy Panel .genes files - Panel '$G_ONE' failed!!!" "$LOGGING_STYLE"
 							exit 0
 						fi;
 						echo $S.$G_ONE_TARGET >> $BEDFILE_GENES_LIST_ONE
@@ -1528,7 +1554,7 @@ for RUU in $RUN_UNIQ; do
 				# Design is not empty
 				elif [ -s $B ] && [ "$B" != "" ]; then
 					# Generate BEDFILE_GENES from design
-					(($VERBOSE)) && echo "["$(timestamp)" | INFO] Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' from Design file '$B'."
+					(($VERBOSE)) && log_prefix "INFO" "Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' from Design file '$B'." "$LOGGING_STYLE"
 					# Generate intermediate bed from Design (BED or manifest)
 					BEDFILE_GENES_INTERMEDIATE=$RUN_SAMPLE_DIR/$S.genes.tmp
 					BEDFILE_GENES_ONE=$RUN_SAMPLE_DIR/$S.from_design.genes
@@ -1552,7 +1578,7 @@ for RUU in $RUN_UNIQ; do
 					fi;
 
 					if [ -s $BEDFILE_GENES_INTERMEDIATE ] ; then
-						(($VERBOSE)) && echo "["$(timestamp)" | INFO] Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' with intersection between Design file '$B' and RefSeq '$REFSEQ_GENES'."
+						(($VERBOSE)) && log_prefix "INFO" "Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' with intersection between Design file '$B' and RefSeq '$REFSEQ_GENES'." "$LOGGING_STYLE"
 						$BEDTOOLS intersect -wb -a $BEDFILE_GENES_INTERMEDIATE -b $REFSEQ_GENES | cut -f7 | sort -u > $BEDFILE_GENES_INTERMEDIATE.intersect;
 						sort -k4 $REFSEQ_GENES > $BEDFILE_GENES_INTERMEDIATE.refseq;
 						# Join
@@ -1560,7 +1586,7 @@ for RUU in $RUN_UNIQ; do
 						echo $(basename $BEDFILE_GENES_ONE) > $BEDFILE_GENES_LIST_ONE;
 					else
 						# Generate BEDFILE_GENES from design
-						(($VERBOSE)) && echo "["$(timestamp)" | WARN] Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' with empty Panel (no regions found)."
+						(($VERBOSE)) && log_prefix "WARN" "Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' with empty Panel (no regions found)." "$LOGGING_STYLE"
 						# Generate intermediate bed from Design (BED or manifest)
 						BEDFILE_GENES_ONE=$RUN_SAMPLE_DIR/$S.empty_design.genes
 						touch $BEDFILE_GENES_ONE
@@ -1572,29 +1598,29 @@ for RUU in $RUN_UNIQ; do
 					G=$BEDFILE_GENES_ONE
 				# No Panel and no Design 
 				else 
-					(($VERBOSE)) && echo "["$(timestamp)" | WARN] NOT Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' (no Panel and no Design found). Panel will be autodetected."
+					(($VERBOSE)) && log_prefix "WARN" "NOT Create LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes' (no Panel and no Design found). Panel will be autodetected." "$LOGGING_STYLE"
 				fi;
 
 			else
-				(($VERBOSE)) && echo "["$(timestamp)" | INFO] LIST.GENES already exists."
+				(($VERBOSE)) && log_prefix "INFO" "LIST.GENES already exists." "$LOGGING_STYLE"
 			fi;
 		fi;
 
 
 		# Create genes.bed from genes
-		(($VERBOSE)) && echo "["$(timestamp)" | INFO] Generate genes.bed from .genes files within LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes'."
+		(($VERBOSE)) && log_prefix "INFO" "Generate genes.bed from .genes files within LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes'." "$LOGGING_STYLE"
 		if [ -e $BEDFILE_GENES_LIST_ONE ]; then
 			for BEDFILE_GENES_LIST_ONE_GENES_FILE in $(cat $BEDFILE_GENES_LIST_ONE); do
 				cp -p $RUN_SAMPLE_DIR/$BEDFILE_GENES_LIST_ONE_GENES_FILE $RUN_SAMPLE_DIR/$BEDFILE_GENES_LIST_ONE_GENES_FILE.bed
 			done;
 		else
-			(($VERBOSE)) && echo "["$(timestamp)" | WARN] Generate genes.bed from .genes files within LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes': failed because no .genes file found."
+			(($VERBOSE)) && log_prefix "WARN" "Generate genes.bed from .genes files within LIST.GENES file '$RUN_SAMPLE_DIR/$S.list.genes': failed because no .genes file found." "$LOGGING_STYLE"
 		fi;
 
 
 		# Copy TRANSCRIPTS
 		if [ "$T" != "" ] && [ ! -e $RUN_SAMPLE_DIR/$T.list.transcripts ]; then
-			(($VERBOSE)) && echo "["$(timestamp)" | INFO] Create LIST.TRANSCRIPTS file '$RUN_SAMPLE_DIR/$S.list.transcripts' and concatenated file .transcripts"
+			(($VERBOSE)) && log_prefix "INFO" "Create LIST.TRANSCRIPTS file '$RUN_SAMPLE_DIR/$S.list.transcripts' and concatenated file .transcripts" "$LOGGING_STYLE"
 			echo $T | tr "+" "\n" | xargs -l basename | sed "s/^/$S./gi" > $RUN_SAMPLE_DIR/$S.list.transcripts;
 			> $RUN_SAMPLE_DIR/$S.transcripts.tmp;
 			for T_ONE in $(echo $T | tr "+" "\n"); do
@@ -1607,7 +1633,7 @@ for RUU in $RUN_UNIQ; do
 
 		# Copy PEDIGREE
 		if [ "$P" != "" ] && [ ! -e $RUN_SAMPLE_DIR/$T.list.pedigree ]; then
-			(($VERBOSE)) && echo "["$(timestamp)" | INFO] Create LIST.PEDIGREE file '$RUN_SAMPLE_DIR/$S.list.pedigree' and concatenated file .ped"
+			(($VERBOSE)) && log_prefix "INFO" "Create LIST.PEDIGREE file '$RUN_SAMPLE_DIR/$S.list.pedigree' and concatenated file .ped" "$LOGGING_STYLE"
 			echo $P | tr "+" "\n" | xargs -l basename | sed "s/^/$S./gi" > $RUN_SAMPLE_DIR/$S.list.pedigree;
 			> $RUN_SAMPLE_DIR/$S.pedigree.tmp;
 			for P_ONE in $(echo $P | tr "+" "\n"); do
@@ -1619,7 +1645,7 @@ for RUU in $RUN_UNIQ; do
 			grep "^#" -v $RUN_SAMPLE_DIR/$S.pedigree.tmp.clean | sort -u > $RUN_SAMPLE_DIR/$S.pedigree.tmp.samples
 			cat $RUN_SAMPLE_DIR/$S.pedigree.tmp.header $RUN_SAMPLE_DIR/$S.pedigree.tmp.samples > $RUN_SAMPLE_DIR/$S.ped
 			if [[ $(grep "^#" -c $RUN_SAMPLE_DIR/$S.ped) -gt 1 ]]; then
-				echo "["$(timestamp)" | ERROR] Pedigree files not compatible (check header):"
+				log_prefix "ERROR" "Pedigree files not compatible (check header):" "$LOGGING_STYLE"
 				grep "^#" $RUN_SAMPLE_DIR/$S.ped
 				exit 1
 			fi;
@@ -1630,14 +1656,14 @@ for RUU in $RUN_UNIQ; do
 
 		# SAMPLE TAG
 		if [ ! -e $RUN_SAMPLE_DIR/$S.tag ]; then
-			(($VERBOSE)) && echo "["$(timestamp)" | INFO] Create TAG file."
+			(($VERBOSE)) && log_prefix "INFO" "Create TAG file." "$LOGGING_STYLE"
 			echo $TAG > $RUN_SAMPLE_DIR/$S.tag;
 		fi;
 
 
 		# ANALYSIS TAG
 		if [ ! -e $RUN_SAMPLE_DIR/$S.analysis.tag ]; then
-			(($VERBOSE)) && echo "["$(timestamp)" | INFO] Create Analysis TAG file."
+			(($VERBOSE)) && log_prefix "INFO" "Create Analysis TAG file." "$LOGGING_STYLE"
 			echo $ANALYSIS_TAG > $RUN_SAMPLE_DIR/$S.analysis.tag;
 		fi;
 
@@ -1646,17 +1672,17 @@ for RUU in $RUN_UNIQ; do
 
 		# Relocated SampleSheet
 		if [ -f "$SAMPLESHEET_INPUT" ]; then
-			(($DEBUG)) && echo "["$(timestamp)" | DEBUG] SampleSheet input file '$SAMPLESHEET_INPUT' found."
+			(($DEBUG)) && log_prefix "DEBUG" "SampleSheet input file '$SAMPLESHEET_INPUT' found." "$LOGGING_STYLE"
 			SAMPLESHEET_RELOCATED=$SAMPLESHEET_INPUT
 		elif [ -f "$ANALYSIS_DIR/$SAMPLESHEET_INPUT" ]; then
-			(($DEBUG)) && echo "["$(timestamp)" | DEBUG] SampleSheet input file '$ANALYSIS_DIR/$SAMPLESHEET_INPUT' found."
+			(($DEBUG)) && log_prefix "DEBUG" "SampleSheet input file '$ANALYSIS_DIR/$SAMPLESHEET_INPUT' found." "$LOGGING_STYLE"
 			SAMPLESHEET_RELOCATED=$ANALYSIS_DIR/$SAMPLESHEET_INPUT
 		fi;
 		SAMPLESHEET_INPUT="$SAMPLESHEET_RELOCATED"
 
 		# Copy SampleSheet
 		if [ ! -e $RUN_SAMPLE_DIR/$S.SampleSheet.csv ]; then
-			(($VERBOSE)) && echo "["$(timestamp)" | INFO] Copy SampleSheet."
+			(($VERBOSE)) && log_prefix "INFO" "Copy SampleSheet." "$LOGGING_STYLE"
 			[ -f "$SAMPLESHEET_INPUT" ] && $COMMAND_COPY $SAMPLESHEET_INPUT $RUN_SAMPLE_DIR/$S.SampleSheet.csv
 			touch $RUN_SAMPLE_DIR/$S.SampleSheet.csv;
 			if [ -e $RUN_SAMPLE_DIR/$S.manifest ]; then
@@ -1692,48 +1718,46 @@ for RUU in $RUN_UNIQ; do
 
 	# RESULTS
 
-	echo "["$(timestamp)" | INFO] *** Configuration"
-
-	(($VERBOSE)) && echo "["$(timestamp)" | INFO] * ANALYSIS                "
-	echo "["$(timestamp)" | INFO] ANALYSIS NAME             $RUU"
-	echo "["$(timestamp)" | INFO] ANALYSIS TAG              $ANALYSIS_TAG"
-	(($VERBOSE)) && echo "["$(timestamp)" | INFO] * SAMPLES                 "
-	echo "["$(timestamp)" | INFO] SAMPLE NAMES              $S_LIST"
-	echo "["$(timestamp)" | INFO] SAMPLE TAG                $TAG_LIST"
-	(($VERBOSE)) && echo "["$(timestamp)" | INFO] FASTQ/BAM/CRAM            $F_LIST"
-	(($VERBOSE)) && echo "["$(timestamp)" | INFO] FASTQ R2                  $Q_LIST"
-	(($VERBOSE)) && echo "["$(timestamp)" | INFO] INDEX1                    $I1_LIST"
-	(($VERBOSE)) && echo "["$(timestamp)" | INFO] INDEX2                    $I2_LIST"
-	(($VERBOSE)) && echo "["$(timestamp)" | INFO] OTHER_FILES               $OFCF_LIST"
-	(($VERBOSE)) && echo "["$(timestamp)" | INFO] DESIGN                    $B_LIST"
-	(($VERBOSE)) && echo "["$(timestamp)" | INFO] GENES                     $G_LIST"
-	(($VERBOSE)) && echo "["$(timestamp)" | INFO] TRANSCRIPTS               $T_LIST"
-	(($VERBOSE)) && echo "["$(timestamp)" | INFO] PEDIGREE                  $P_LIST"
-	(($VERBOSE)) && echo "["$(timestamp)" | INFO] * APPLICATION               "
-	echo "["$(timestamp)" | INFO] APPLICATION NAME          $APP_NAME"
-	(($VERBOSE)) && echo "["$(timestamp)" | INFO] APPLICATION FILE          "$(echo $ENV | sed s#$STARK_FOLDER_APPS/##gi)
-	echo "["$(timestamp)" | INFO] GROUP                     $SAMPLE_GROUP"
-	echo "["$(timestamp)" | INFO] PROJECT                   $SAMPLE_PROJECT"
-	echo "["$(timestamp)" | INFO] PIPELINES                 $PIPELINES"
-	echo "["$(timestamp)" | INFO] POST SEQUENCING           "$(echo $POST_SEQUENCING | tr "." "\n" | tac | tr "\n" " " )""
-	echo "["$(timestamp)" | INFO] POST ALIGNMENT            "$(echo $POST_ALIGNMENT | tr "." "\n" | tac | tr "\n" " " )""
-	echo "["$(timestamp)" | INFO] POST CALLING              "$(echo $POST_CALLING | tr "." "\n" | tac | tr "\n" " " )""
-	echo "["$(timestamp)" | INFO] POST CALLING MERGING      "$(echo $POST_CALLING_MERGING | tr "." "\n" | tac | tr "\n" " " )""
-	echo "["$(timestamp)" | INFO] POST ANNOTATION           "$(echo $POST_ANNOTATION | tr "." "\n" | tac | tr "\n" " " )""
-	echo "["$(timestamp)" | INFO] RESULTS                   $RESULTS"
-	echo "["$(timestamp)" | INFO] REPOSITORY                $REPOSITORY"
-	echo "["$(timestamp)" | INFO] ARCHIVES                  $ARCHIVES"
-	echo "["$(timestamp)" | INFO] FAVORITES                 $FAVORITES"
-	(($VERBOSE)) && echo "["$(timestamp)" | INFO] RELEASE INFOS             $RELEASE_RUN"
-	(($VERBOSE)) && echo "["$(timestamp)" | INFO] MAKEFILE CONFIGURATION    $MAKEFILE_ANALYSIS_RUN"
-	(($VERBOSE)) && echo "["$(timestamp)" | INFO] LOGFILE                   $LOGFILE_RES_RUN"
-	(($VERBOSE)) && echo "["$(timestamp)" | INFO] THREADS                   $THREADS"
-	(($VERBOSE)) && echo "["$(timestamp)" | INFO] THREADS BY SAMPLE         $THREADS_BY_SAMPLE"
-	(($VERBOSE)) && echo "["$(timestamp)" | INFO] THREADS_COPY              $THREADS_COPY"
-	(($VERBOSE)) && echo "["$(timestamp)" | INFO] MEMORY BY THREAD          $MEMORY"
-	# (($VERBOSE)) && echo "["$(timestamp)" | INFO] JAVA_MEMORY               $JAVA_MEMORY"
-	(($VERBOSE)) && echo "["$(timestamp)" | INFO] MEMORY BY SAMPLE          $JAVA_MEMORY_BY_SAMPLE"
-	
+	log_prefix "INFO" "*** Configuration" "$LOGGING_STYLE"
+	(($VERBOSE)) && log_prefix "INFO" "* ANALYSIS                " "$LOGGING_STYLE"
+	log_prefix "INFO" "ANALYSIS NAME             $RUU" "$LOGGING_STYLE"
+	log_prefix "INFO" "ANALYSIS TAG              $ANALYSIS_TAG" "$LOGGING_STYLE"
+	(($VERBOSE)) && log_prefix "INFO" "* SAMPLES                 " "$LOGGING_STYLE"
+	log_prefix "INFO" "SAMPLE NAMES              $S_LIST" "$LOGGING_STYLE"
+	log_prefix "INFO" "SAMPLE TAG                $TAG_LIST" "$LOGGING_STYLE"
+	(($VERBOSE)) && log_prefix "INFO" "FASTQ/BAM/CRAM            $F_LIST" "$LOGGING_STYLE"
+	(($VERBOSE)) && log_prefix "INFO" "FASTQ R2                  $Q_LIST" "$LOGGING_STYLE"
+	(($VERBOSE)) && log_prefix "INFO" "INDEX1                    $I1_LIST" "$LOGGING_STYLE"
+	(($VERBOSE)) && log_prefix "INFO" "INDEX2                    $I2_LIST" "$LOGGING_STYLE"
+	(($VERBOSE)) && log_prefix "INFO" "OTHER_FILES               $OFCF_LIST" "$LOGGING_STYLE"
+	(($VERBOSE)) && log_prefix "INFO" "DESIGN                    $B_LIST" "$LOGGING_STYLE"
+	(($VERBOSE)) && log_prefix "INFO" "GENES                     $G_LIST" "$LOGGING_STYLE"
+	(($VERBOSE)) && log_prefix "INFO" "TRANSCRIPTS               $T_LIST" "$LOGGING_STYLE"
+	(($VERBOSE)) && log_prefix "INFO" "PEDIGREE                  $P_LIST" "$LOGGING_STYLE"
+	(($VERBOSE)) && log_prefix "INFO" "* APPLICATION               " "$LOGGING_STYLE"
+	log_prefix "INFO" "APPLICATION NAME          $APP_NAME" "$LOGGING_STYLE"
+	(($VERBOSE)) && log_prefix "INFO" "APPLICATION FILE          "$(echo $ENV | sed s#$STARK_FOLDER_APPS/##gi) "$LOGGING_STYLE"
+	log_prefix "INFO" "GROUP                     $SAMPLE_GROUP" "$LOGGING_STYLE"
+	log_prefix "INFO" "PROJECT                   $SAMPLE_PROJECT" "$LOGGING_STYLE"
+	log_prefix "INFO" "PIPELINES                 $PIPELINES" "$LOGGING_STYLE"
+	log_prefix "INFO" "POST SEQUENCING           $(echo $POST_SEQUENCING | tr "." "\n" | tac | tr "\n" " " )""" "$LOGGING_STYLE"
+	log_prefix "INFO" "POST ALIGNMENT            $(echo $POST_ALIGNMENT | tr "." "\n" | tac | tr "\n" " " )""" "$LOGGING_STYLE"
+	log_prefix "INFO" "POST CALLING              $(echo $POST_CALLING | tr "." "\n" | tac | tr "\n" " " )""" "$LOGGING_STYLE"
+	log_prefix "INFO" "POST CALLING MERGING      $(echo $POST_CALLING_MERGING | tr "." "\n" | tac | tr "\n" " " )""" "$LOGGING_STYLE"
+	log_prefix "INFO" "POST ANNOTATION           $(echo $POST_ANNOTATION | tr "." "\n" | tac | tr "\n" " " )""" "$LOGGING_STYLE"
+	log_prefix "INFO" "RESULTS                   $RESULTS" "$LOGGING_STYLE"
+	log_prefix "INFO" "REPOSITORY                $REPOSITORY" "$LOGGING_STYLE"
+	log_prefix "INFO" "ARCHIVES                  $ARCHIVES" "$LOGGING_STYLE"
+	log_prefix "INFO" "FAVORITES                 $FAVORITES" "$LOGGING_STYLE"
+	(($VERBOSE)) && log_prefix "INFO" "RELEASE INFOS             $RELEASE_RUN" "$LOGGING_STYLE"
+	(($VERBOSE)) && log_prefix "INFO" "MAKEFILE CONFIGURATION    $MAKEFILE_ANALYSIS_RUN" "$LOGGING_STYLE"
+	(($VERBOSE)) && log_prefix "INFO" "LOGFILE                   $LOGFILE_RES_RUN" "$LOGGING_STYLE"
+	(($VERBOSE)) && log_prefix "INFO" "THREADS                   $THREADS" "$LOGGING_STYLE"
+	(($VERBOSE)) && log_prefix "INFO" "THREADS BY SAMPLE         $THREADS_BY_SAMPLE" "$LOGGING_STYLE"
+	(($VERBOSE)) && log_prefix "INFO" "THREADS_COPY              $THREADS_COPY" "$LOGGING_STYLE"
+	(($VERBOSE)) && log_prefix "INFO" "MEMORY BY THREAD          $MEMORY" "$LOGGING_STYLE"
+	# (($VERBOSE)) && log_prefix "INFO" "JAVA_MEMORY               $JAVA_MEMORY"
+	(($VERBOSE)) && log_prefix "INFO" "MEMORY BY SAMPLE          $JAVA_MEMORY_BY_SAMPLE" "$LOGGING_STYLE"
 
 	STARK_QUEUED=$(source_app "$APP" "$STARK_FOLDER_APPS"; echo $STARK_QUEUED)
 	STARK_RUNNING=$(source_app "$APP" "$STARK_FOLDER_APPS"; echo $STARK_RUNNING)
@@ -1751,24 +1775,24 @@ for RUU in $RUN_UNIQ; do
 	# TREADS
 	#THREADS_BY_SAMPLE=$THREADS; # Allocate all thread to the sample because no other sample analysed in parallele
 
-	echo "["$(timestamp)" | INFO] *** Process"
+	log_prefix "INFO" "*** Process" "$LOGGING_STYLE"
 
 	echo "["$(date '+%Y%m%d-%H%M%S')"] STARK Analysis '$RELEASE_RUN' START" >>$LOGFILE_RES_RUN
 
 	# FASTQ && FASTP process
 
-	echo "["$(timestamp)" | INFO] STARK Input Processing..."
+	log_prefix "INFO" "STARK Input Processing..." "$LOGGING_STYLE"
 
 	echo "["$(date '+%Y%m%d-%H%M%S')"] STARK Input Processing '$RELEASE_RUN' START" >>$LOGFILE_RES_RUN
 
 	if [ -s $INPUT_MK ]; then
-		(($VERBOSE)) && echo "["$(timestamp)" | INFO] STARK Process Input data from FASTQ file(s) - multithreading mode [$THREADS]"
-		if make -j $THREADS -e THREADS_BY_SAMPLE=$THREADS_BY_SAMPLE -f $INPUT_MK -f $SCRIPT_DIR/STARK.launch.input.mk $INPUT_MK_ALL $INPUT_MK_ALL 1>$INPUT_MK.log 2>$INPUT_MK.err; then
+		(($VERBOSE)) && log_prefix "INFO" "STARK Process Input data from FASTQ file(s) - multithreading mode [$THREADS]" "$LOGGING_STYLE"
+		if make $MAKE_PARAM -j $THREADS -e THREADS_BY_SAMPLE=$THREADS_BY_SAMPLE -f $INPUT_MK -f $SCRIPT_DIR/STARK.launch.input.mk $INPUT_MK_ALL $INPUT_MK_ALL 1>$INPUT_MK.log 2>$INPUT_MK.err; then
 			cat $INPUT_MK.log $INPUT_MK.err >>$LOGFILE_RES_RUN
-			(($VERBOSE)) && echo "["$(timestamp)" | INFO] STARK Input Processing done."
+			(($VERBOSE)) && log_prefix "INFO" "STARK Input Processing done." "$LOGGING_STYLE"
 			echo "["$(date '+%Y%m%d-%H%M%S')"] STARK Input Processing '$RELEASE_RUN' END" >>$LOGFILE_RES_RUN
 		else
-			echo "["$(timestamp)" | ERROR] STARK Input Processing failed"
+			log_prefix "ERROR" "STARK Input Processing failed" "$LOGGING_STYLE"
 			cat $INPUT_MK.log $INPUT_MK.err >>$LOGFILE_RES_RUN
 			echo "["$(date '+%Y%m%d-%H%M%S')"] STARK Input Processing '$RELEASE_RUN' END" >>$LOGFILE_RES_RUN
 			cat $INPUT_MK.err
@@ -1781,7 +1805,7 @@ for RUU in $RUN_UNIQ; do
 	! (($DEBUG)) && rm -f $INPUT_MK $INPUT_MK.log $INPUT_MK.err
 
 
-	echo "["$(timestamp)" | INFO] STARK Analysis Processing..."
+	log_prefix "INFO" "STARK Analysis Processing..." "$LOGGING_STYLE"
 
 	echo "["$(date '+%Y%m%d-%H%M%S')"] Main Analysis Process for Analysis '$RELEASE_RUN' START" >>$LOGFILE_RES_RUN
 
@@ -1789,14 +1813,14 @@ for RUU in $RUN_UNIQ; do
 
 	export KEEP_ALIGNMENT
 
-	if ! make -k -j $THREADS $JAVA_MEMORY_PARAMETERS $MEMORY_PARAMETERS -e ENV="$ENV" PARAM=$MAKEFILE_ANALYSIS_RUN $PARAMETERS $THREAD_PARAMETERS SNAPSHOT=0 VALIDATION=1 INPUT=$INPUT OUTDIR=$RESULTS RELEASE=$RELEASE_RUN FINAL_REPORT=$FINAL_REPORT_RUN ANALYSIS_REF=$ANALYSIS_REF -f $NGS_SCRIPTS/STARK.launch.analysis.mk 1>>$LOGFILE_RES_RUN 2>>$LOGFILE_RES_RUN; then
+	if ! make $MAKE_PARAM -j $THREADS $JAVA_MEMORY_PARAMETERS $MEMORY_PARAMETERS -e ENV="$ENV" PARAM=$MAKEFILE_ANALYSIS_RUN $PARAMETERS $THREAD_PARAMETERS SNAPSHOT=0 VALIDATION=1 INPUT=$INPUT OUTDIR=$RESULTS RELEASE=$RELEASE_RUN FINAL_REPORT=$FINAL_REPORT_RUN ANALYSIS_REF=$ANALYSIS_REF -f $NGS_SCRIPTS/STARK.launch.analysis.mk 1>>$LOGFILE_RES_RUN 2>>$LOGFILE_RES_RUN; then
 		MAKE_ERROR=1
 	fi;
 	rm -f $MAKEFILE_ANALYSIS_RUN $FINAL_REPORT_RUN $RELEASE_RUN
 	echo "["$(date '+%Y%m%d-%H%M%S')"] Main Analysis Process for Analysis '$RELEASE_RUN' END" >>$LOGFILE_RES_RUN
 
 	# CHMOD
-	echo "["$(timestamp)" | INFO] STARK Results directory persmissions settings..."
+	log_prefix "INFO" "STARK Results directory persmissions settings..." "$LOGGING_STYLE"
 	chmod $PERMS -R $RESULTS/$RUU $RESULTS/$RUU/*
 
 	# LOG and END files
@@ -1853,7 +1877,8 @@ for RUU in $RUN_UNIQ; do
 		echo "["`date '+%Y%m%d-%H%M%S'`"] Main Analysis Process for Analysis '$RELEASE_RUN' ERROR" >>$LOGFILE_RES_RUN
 		STOP_ANALYSIS=$(date +%s)
 		ANALYSIS_TIME=$(convertsecs $((STOP_ANALYSIS - START_ANALYSIS)))
-		echo "["$(timestamp)" | INFO] Main Analysis Process for Analysis '$RELEASE_RUN' finished with ERRORS [`date`] - $ANALYSIS_TIME"
+		log_prefix "INFO" "Main Analysis Process for Analysis '$RELEASE_RUN' finished with ERRORS [`date`] - $ANALYSIS_TIME" "$LOGGING_STYLE"
+		
 		(($VERBOSE)) && grep "make: \*\*\*" $LOGFILE_RES_RUN -B10 | awk '{print "#[ERROR] LOG: "$0}';
 		# RUNNING stop
 		
@@ -1871,7 +1896,7 @@ for RUU in $RUN_UNIQ; do
 
 		# STARK Copy Reports Files
 
-		echo "["$(timestamp)" | INFO] STARK Copy Processing...";
+		log_prefix "INFO" "STARK Copy Processing..." "$LOGGING_STYLE" "$LOGGING_STYLE"
 
 		I=0
 		RESULTS_FOLDER_COPY_FOLDER_RUU_STARKCopyComplete_list=""
@@ -1955,11 +1980,11 @@ for RUU in $RUN_UNIQ; do
 							REPOSITORY_TYPE_FILE_PATTERNS=$FAVORITES_FILE_PATTERNS
 							F_TARGET_FOLDER=$RESULTS_FOLDER_COPY_FOLDER/$RUU
 						else
-							echo "["$(timestamp)" | ERROR] Repository type '$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE' failed"
+							log_prefix "ERROR" "Repository type '$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE' failed" "$LOGGING_STYLE"
 						fi;
 
 
-						(($VERBOSE)) && echo "["$(timestamp)" | INFO] STARK Copy '$RUU/$S' Process... from '$RESULTS' to '$RESULTS_FOLDER_COPY_FOLDER' [$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE]"
+						(($VERBOSE)) && log_prefix "INFO" "STARK Copy '$RUU/$S' Process... from '$RESULTS' to '$RESULTS_FOLDER_COPY_FOLDER' [$RESULTS_FOLDER_COPY_FOLDER_INFO_TYPE]" "$LOGGING_STYLE"
 						 
 
 						# Copy RUN files
@@ -2003,14 +2028,15 @@ for RUU in $RUN_UNIQ; do
 								#[INFO] Copying '$RUU/$S' - NO Copy
 							" >> $RES_MK
 						else
-							echo "["$(timestamp)" | ERROR] Repository type failed"
+							log_prefix "ERROR" "Repository type failed" "$LOGGING_STYLE"
+							
 						fi;
 						RES_MK_ALL=$RES_MK_ALL" "$PRE_RULE"_"$RESULTS_FOLDER_COPY_FOLDER$ROOT_FILE_SOURCE
 						RES_MK_ALL_RUU_S=$RES_MK_ALL_RUU_S" "$PRE_RULE"_"$RESULTS_FOLDER_COPY_FOLDER$ROOT_FILE_SOURCE
 
 						
 						# Copy ROOT FILE PATTERNS
-						#echo "["$(timestamp)" | INFO] Copying REPOSITORY files patterns to $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S..."
+						#(($DEBUG)) && log_prefix "DEBUG" "Copying REPOSITORY files patterns to $RESULTS_FOLDER_COPY_FOLDER/$RUU/$S..." "$LOGGING_STYLE"
 						if [ $RESULTS_SUBFOLDER_DATA != "" ]; then
 
 							for ROOT_FILE_PATTERN_INFO in $REPOSITORY_TYPE_FILE_PATTERNS; do
@@ -2168,15 +2194,16 @@ for RUU in $RUN_UNIQ; do
 
 
 		if [ -s $RES_MK ]; then
-			(($VERBOSE)) && echo "["$(timestamp)" | INFO] STARK Process Copy - multithreading mode [$THREADS_COPY]"
+			(($VERBOSE)) && log_prefix "INFO" "STARK Process Copy - multithreading mode [$THREADS_COPY]" "$LOGGING_STYLE"
+			
 			echo "["$(date '+%Y%m%d-%H%M%S')"] STARK Process Copy - multithreading mode [$THREADS_COPY] '$RELEASE_RUN' START" >>$LOGFILE_RES_RUN
-			if make -j $THREADS_COPY --always-make -f $RES_MK all 1>$RES_MK.log 2>$RES_MK.err; then
+			if make $MAKE_PARAM -j $THREADS_COPY --always-make -f $RES_MK all 1>$RES_MK.log 2>$RES_MK.err; then
 				cat $RES_MK.log $RES_MK.err >>$LOGFILE_RES_RUN
 				echo "["$(date '+%Y%m%d-%H%M%S')"] STARK Process Copy - multithreading mode [$THREADS_COPY] '$RELEASE_RUN' END" >>$LOGFILE_RES_RUN
-				(($VERBOSE)) && echo "["$(timestamp)" | INFO] STARK Copy Complete"
+				(($VERBOSE)) && log_prefix "INFO" "STARK Copy Complete" "$LOGGING_STYLE"
 
 			else
-				echo "["$(timestamp)" | ERROR] STARK Copy NOT Complete"
+				log_prefix "ERROR" "STARK Copy NOT Complete" "$LOGGING_STYLE"
 				cat $RES_MK.log $RES_MK.err >>$LOGFILE_RES_RUN
 				echo "["$(date '+%Y%m%d-%H%M%S')"] STARK Process Copy - multithreading mode [$THREADS_COPY] '$RELEASE_RUN' END" >>$LOGFILE_RES_RUN
 				cat $RES_MK.err;
@@ -2214,9 +2241,9 @@ for RUU in $RUN_UNIQ; do
 	STOP_ANALYSIS=$(date +%s)
 	ANALYSIS_TIME=$(convertsecs $((STOP_ANALYSIS - START_ANALYSIS)))
 
-	echo "["$(timestamp)" | INFO] STARK Execution Time: $ANALYSIS_TIME"
+	log_prefix "INFO" "STARK Execution Time: $ANALYSIS_TIME" "$LOGGING_STYLE"
 
-	(($VERBOSE)) && echo "["$(timestamp)" | INFO] *** Stop Analysis         ["$(date)"] - $ANALYSIS_TIME"
+	(($VERBOSE)) && log_prefix "INFO" "*** Stop Analysis         [$(date)] - $ANALYSIS_TIME" "$LOGGING_STYLE"
 
 	
 
