@@ -478,8 +478,8 @@ fi;
 ENV=$(cd $SCRIPT_DIR && CONFIG_APP=$CONFIG_APP && find_app "$APP" "$STARK_FOLDER_APPS")
 
 # Check number of environment files found compared to expected Application
-NUM_ENV=$(echo "$ENV" | tr "," " " | wc -w)
-NUM_APP=$(echo "$APP" | tr "," " " | wc -w)
+NUM_ENV=$(echo "$ENV" | tr "," " " | tr "+" " " | wc -w)
+NUM_APP=$(echo "$APP" | tr "," " " | tr "+" " " | wc -w)
 if [ "$NUM_ENV" -ne "$NUM_APP" ]; then
 	log_prefix "ERROR" "Number of environment files ($NUM_ENV) does not match number of applications ($NUM_APP) for application '$APP'" "$LOGGING_STYLE"
 	log_prefix "ERROR" "Environment files found: $ENV" "$LOGGING_STYLE"
